@@ -98,6 +98,11 @@ param (
     $ScriptAnalyzer
 )
 
+<#
+Remove-Module -Name Pester
+Import-Module -name Pester -MaximumVersion 4.*
+#>
+
 $invokeFormatterVersion = (Get-Command Invoke-Formatter -ErrorAction SilentlyContinue).Version
 $HasScriptAnalyzer = $null -ne $invokeFormatterVersion
 $MinimumPesterVersion = [Version] '3.4.5.0' # Because this is when -Show was introduced

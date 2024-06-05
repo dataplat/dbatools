@@ -26,6 +26,7 @@ Describe "Testing data table output when using a complex object" {
         UInt64           = [System.UInt64]123456
         dbadatetime      = [dbadatetime[]]$(Get-Date -Year 2024 -Month 05 -Day 19 -Hour 5 -Minute 52 -Second 0 -Millisecond 0)
         dbadatetimeArray = [dbadatetime[]]($(Get-Date -Year 2024 -Month 05 -Day 19 -Hour 5 -Minute 52 -Second 0 -Millisecond 0), $(Get-Date -Year 2024 -Month 05 -Day 19 -Hour 5 -Minute 52 -Second 0 -Millisecond 0).AddHours(1))
+        inlining         = [pscustomobject]@{Mission = 'Keep Hank alive'}
     }
 
     $innedobj = New-Object -TypeName psobject -Property @{
@@ -44,7 +45,7 @@ Describe "Testing data table output when using a complex object" {
             $firstRow.guid | Should -BeOfType [System.guid]
         }
         It 'Has the following guid: "32ccd4c4-282a-4c0d-997c-7b5deb97f9e0"' {
-            $firstRow.guid | Should Be '32ccd4c4-282a-4c0d-997c-7b5deb97f9e0'
+            $firstRow.guid | Should -Be '32ccd4c4-282a-4c0d-997c-7b5deb97f9e0'
         }
     }
 
@@ -57,7 +58,7 @@ Describe "Testing data table output when using a complex object" {
 
         }
         It "Has the following timespan: 15724800000" {
-            $firstRow.timespan | Should Be 15724800000
+            $firstRow.timespan | Should -Be 15724800000
         }
     }
 
@@ -70,7 +71,7 @@ Describe "Testing data table output when using a complex object" {
         }
         It "Has the following datetime: 2016-10-30 05:52:00.000" {
             $date = Get-Date -Year 2016 -Month 10 -Day 30 -Hour 5 -Minute 52 -Second 0 -Millisecond 0
-            $firstRow.datetime -eq $date | Should Be $true
+            $firstRow.datetime -eq $date | Should -Be $true
         }
     }
 
@@ -82,7 +83,7 @@ Describe "Testing data table output when using a complex object" {
             $firstRow.char | Should -BeOfType [System.Char]
         }
         It "Has the following char: T" {
-            $firstRow.char | Should Be "T"
+            $firstRow.char | Should -Be "T"
         }
     }
 
@@ -94,7 +95,7 @@ Describe "Testing data table output when using a complex object" {
             $firstRow.true | Should -BeOfType [System.Boolean]
         }
         It "Has the following bool: true" {
-            $firstRow.true | Should Be $true
+            $firstRow.true | Should -Be $true
         }
     }
 
@@ -106,7 +107,7 @@ Describe "Testing data table output when using a complex object" {
             $firstRow.false | Should -BeOfType [System.Boolean]
         }
         It "Has the following bool: false" {
-            $firstRow.false | Should Be $false
+            $firstRow.false | Should -Be $false
         }
     }
 
@@ -130,7 +131,7 @@ Describe "Testing data table output when using a complex object" {
             $firstRow.string | Should -BeOfType [System.String]
         }
         It "Has the following string: it's a boy." {
-            $firstRow.string | Should Be "it's a boy."
+            $firstRow.string | Should -Be "it's a boy."
         }
     }
 
@@ -142,13 +143,31 @@ Describe "Testing data table output when using a complex object" {
             $firstRow.UInt64 | Should -BeOfType [System.UInt64]
         }
         It "Has the following number: 123456" {
-            $firstRow.UInt64 | Should Be 123456
+            $firstRow.UInt64 | Should -Be 123456
         }
     }
 
     Context "Property: myObject" {
         It 'Has a column called "myObject"' {
             $result.Columns.ColumnName | Should -Contain 'myObject'
+        }
+    }
+
+    Context "Property: myObject" {
+        It 'Has a column called "inlining"' {
+            $result.Columns.ColumnName | Should -Contain 'inlining'
+        }
+        It 'Has a [string] data type on the column "inlining"' {
+            Write-Host -Fore Magenta "START 'inlining'"
+            Write-Host -Fore Magenta "type dump $($result.inlining.GetType() | Format-Table | Out-String)"
+            Write-Host -Fore Magenta "type dump2 $($firstRow.inlining.GetType() | Format-Table | Out-String)"
+            Write-Host -Fore Magenta "type dump3 $($firstRow.UInt64.GetType() | Format-Table | Out-String)"
+            Write-Host -Fore Magenta "type dump4 $($result.UInt64.GetType() | Format-Table | Out-String)"
+            Write-Host -Fore Magenta "obj dump $($firstRow.inlining | ConvertTo-Json | Out-String)"
+            Write-Host -Fore Magenta "row dump $($firstRow | ConvertTo-Json -Depth 2 | Out-String)"
+            Write-Host -Fore Magenta "orig dump $($obj | ConvertTo-Json -Depth 2 | Out-String)"
+            Write-Host -Fore Magenta "END 'inlining'"
+            $firstRow.inlining | Should -BeOfType [System.String]
         }
     }
 
