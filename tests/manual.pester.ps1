@@ -131,13 +131,13 @@ if ($PesterVersion -lt $MinimumPesterVersion) {
     Write-Warning "     Install-Module -Name Pester  -MaximumVersion '4.10' -Force -SkipPublisherCheck"
     Write-Warning "     or go to https://github.com/pester/Pester"
 }
-if ($PesterVersion -ge $MaximumPesterVersion) {
+if ($PesterVersion -gt $MaximumPesterVersion) {
     Write-Warning "Please get Pester to the 4.* release"
     Write-Warning "     Install-Module -Name Pester  -MaximumVersion '4.10' -Force -SkipPublisherCheck"
     Write-Warning "     or go to https://github.com/pester/Pester"
 }
 
-if (($HasPester -and $HasScriptAnalyzer -and ($PesterVersion -ge $MinimumPesterVersion) -and ($PesterVersion -ge $MaximumPesterVersion) -and ($invokeFormatterVersion -eq $ScriptAnalyzerCorrectVersion)) -eq $false) {
+if (($HasPester -and $HasScriptAnalyzer -and ($PesterVersion -ge $MinimumPesterVersion) -and ($PesterVersion -lt $MaximumPesterVersion) -and ($invokeFormatterVersion -eq $ScriptAnalyzerCorrectVersion)) -eq $false) {
     Write-Warning "Exiting..."
     return
 }
