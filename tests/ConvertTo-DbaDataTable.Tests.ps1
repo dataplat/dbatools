@@ -39,9 +39,14 @@ Describe "Testing data table output when using a complex object" {
     
     $firstRow = $result[0].Rows[0]
     Context "Lengths" {
-        It 'Length of the result' {
-            $result.Length | Should -Be 1
+        It 'Count of the result' {
+            $result.Count | Should -Be 1
+        }
+        It 'Count of the Rows' {
             $result.Rows.Count | Should -Be 1
+        }
+        It 'Count of firstRow' {
+            $firstRow.Count | Should -Be 1
         }
         Write-Host -ForegroundColor Magenta "result.GetType $($result.GetType())"
         Write-Host -ForegroundColor Magenta "result.Rows.Count $($result.Rows.Count)"
@@ -164,13 +169,16 @@ Describe "Testing data table output when using a complex object" {
         It 'Has a column called "myObject"' {
             $result.Columns.ColumnName | Should -Contain 'myObject'
         }
-        It 'Has a [string] data type on the column "myObject"' {
+        It 'Has a [string] data type on the column "myObject" - using firstRow["myObject"]' {
             Write-Host -Fore Magenta "START 'myObject'"
             Write-Host -Fore Magenta "result   type dump $($result.myObject.GetType() | Format-Table | Out-String)"
             Write-Host -Fore Magenta "firstRow type dump $($firstRow.myObject.GetType() | Format-Table | Out-String)"
             Write-Host -Fore Magenta "myObject      dump $($firstRow.myObject | ConvertTo-Json | Out-String)"
             Write-Host -Fore Magenta "END 'myObject'"
-            $firstRow['myObject'] | Should -BeOfType [System.String]
+            $firstRow["myObject"] | Should -BeOfType [System.String]
+            $firstRow.myObject | Should -BeOfType [System.String]
+        }
+        It 'Has a [string] data type on the column "myObject" - using firstRow.myObject' {
             $firstRow.myObject | Should -BeOfType [System.String]
         }
     }
