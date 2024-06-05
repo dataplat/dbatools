@@ -8,7 +8,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         [object[]]$knownParameters = 'InputObject', 'TimeSpanType', 'SizeType', 'IgnoreNull', 'Raw', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should -Be 0
         }
     }
 }
@@ -27,6 +27,7 @@ Describe "Testing data table output when using a complex object" {
         dbadatetime      = [dbadatetime[]]$(Get-Date -Year 2024 -Month 05 -Day 19 -Hour 5 -Minute 52 -Second 0 -Millisecond 0)
         dbadatetimeArray = [dbadatetime[]]($(Get-Date -Year 2024 -Month 05 -Day 19 -Hour 5 -Minute 52 -Second 0 -Millisecond 0), $(Get-Date -Year 2024 -Month 05 -Day 19 -Hour 5 -Minute 52 -Second 0 -Millisecond 0).AddHours(1))
         inlining         = [pscustomobject]@{Mission = 'Keep Hank alive'}
+        inlining2        = [psobject]@{Mission = 'Keep Hank alive'}
     }
 
     $innedobj = New-Object -TypeName psobject -Property @{
@@ -153,7 +154,7 @@ Describe "Testing data table output when using a complex object" {
         }
     }
 
-    Context "Property: myObject" {
+    Context "Property: inlining" {
         It 'Has a column called "inlining"' {
             $result.Columns.ColumnName | Should -Contain 'inlining'
         }
@@ -171,16 +172,34 @@ Describe "Testing data table output when using a complex object" {
         }
     }
 
+    Context "Property: inlining2" {
+        It 'Has a column called "inlining2"' {
+            $result.Columns.ColumnName | Should -Contain 'inlining2'
+        }
+        It 'Has a [string] data type on the column "inlining2"' {
+            Write-Host -Fore Magenta "START 'inlining2'"
+            Write-Host -Fore Magenta "type dump $($result.inlining2.GetType() | Format-Table | Out-String)"
+            Write-Host -Fore Magenta "type dump2 $($firstRow.inlining2.GetType() | Format-Table | Out-String)"
+            Write-Host -Fore Magenta "type dump3 $($firstRow.UInt64.GetType() | Format-Table | Out-String)"
+            Write-Host -Fore Magenta "type dump4 $($result.UInt64.GetType() | Format-Table | Out-String)"
+            Write-Host -Fore Magenta "obj dump $($firstRow.inlining2 | ConvertTo-Json | Out-String)"
+            Write-Host -Fore Magenta "row dump $($firstRow | ConvertTo-Json -Depth 2 | Out-String)"
+            Write-Host -Fore Magenta "orig dump $($obj | ConvertTo-Json -Depth 2 | Out-String)"
+            Write-Host -Fore Magenta "END 'inlining2'"
+            $firstRow.inlining2 | Should -BeOfType [System.String]
+        }
+    }
+
     Context "Property: dbadatetime" {
         It 'Has a column called "dbadatetime"' {
             $result.Columns.ColumnName | Should -Contain 'dbadatetime'
         }
-        It 'Has a [dbadatetime] data type on the column "myObject"' {
+        It 'Has a [System.String] data type on the column "myObject"' {
             $firstRow.dbadatetime | Should -BeOfType [System.String]
         }
         It "Has the following dbadatetime: 2024-05-19 05:52:00.000" {
             $date = Get-Date -Year 2024 -Month 5 -Day 19 -Hour 5 -Minute 52 -Second 0 -Millisecond 0
-            [datetime]$result.dbadatetime -eq $date | Should Be $true
+            [datetime]$result.dbadatetime -eq $date | Should -Be $true
         }
     }
 
@@ -188,12 +207,12 @@ Describe "Testing data table output when using a complex object" {
         It 'Has a column called "dbadatetimeArray"' {
             $result.Columns.ColumnName | Should -Contain 'dbadatetimeArray'
         }
-        It 'Has a [dbadatetimeArray] data type on the column "myObject"' {
+        It 'Has a [System.String] data type on the column "myObject"' {
             $firstRow.dbadatetimeArray | Should -BeOfType [System.String]
         }
         It "Has the following dbadatetimeArray converted to strings: 2024-05-19 05:52:00.000, 2024-05-19 06:52:00.000" {
             $string = '2024-05-19 05:52:00.000, 2024-05-19 06:52:00.000'
-            $firstRow.dbadatetimeArray -eq $string | Should Be $true
+            $firstRow.dbadatetimeArray -eq $string | Should -Be $true
         }
     }
 }
@@ -205,25 +224,25 @@ Describe "Testing input parameters" {
 
     Context "Verifying TimeSpanType" {
         It "Should return '1.00:00:00' when String is used" {
-            (ConvertTo-DbaDataTable -InputObject $obj -TimeSpanType String).Timespan | Should Be '1.00:00:00'
+            (ConvertTo-DbaDataTable -InputObject $obj -TimeSpanType String).Timespan | Should -Be '1.00:00:00'
         }
         It "Should return 864000000000 when Ticks is used" {
-            (ConvertTo-DbaDataTable -InputObject $obj -TimeSpanType Ticks).Timespan | Should Be 864000000000
+            (ConvertTo-DbaDataTable -InputObject $obj -TimeSpanType Ticks).Timespan | Should -Be 864000000000
         }
         It "Should return 1 when TotalDays is used" {
-            (ConvertTo-DbaDataTable -InputObject $obj -TimeSpanType TotalDays).Timespan | Should Be 1
+            (ConvertTo-DbaDataTable -InputObject $obj -TimeSpanType TotalDays).Timespan | Should -Be 1
         }
         It "Should return 24 when TotalHours is used" {
-            (ConvertTo-DbaDataTable -InputObject $obj -TimeSpanType TotalHours).Timespan | Should Be 24
+            (ConvertTo-DbaDataTable -InputObject $obj -TimeSpanType TotalHours).Timespan | Should -Be 24
         }
         It "Should return 86400000 when TotalMilliseconds is used" {
-            (ConvertTo-DbaDataTable -InputObject $obj -TimeSpanType TotalMilliseconds).Timespan | Should Be 86400000
+            (ConvertTo-DbaDataTable -InputObject $obj -TimeSpanType TotalMilliseconds).Timespan | Should -Be 86400000
         }
         It "Should return 1440 when TotalMinutes is used" {
-            (ConvertTo-DbaDataTable -InputObject $obj -TimeSpanType TotalMinutes).Timespan | Should Be 1440
+            (ConvertTo-DbaDataTable -InputObject $obj -TimeSpanType TotalMinutes).Timespan | Should -Be 1440
         }
         It "Should return 86400 when TotalSeconds is used" {
-            (ConvertTo-DbaDataTable -InputObject $obj -TimeSpanType TotalSeconds).Timespan | Should Be 86400
+            (ConvertTo-DbaDataTable -InputObject $obj -TimeSpanType TotalSeconds).Timespan | Should -Be 86400
         }
     }
 
@@ -245,26 +264,26 @@ Describe "Testing input parameters" {
 
         It "Does not create row if null is in array when IgnoreNull is set" {
             $result = ConvertTo-DbaDataTable -InputObject (returnnull) -IgnoreNull -WarningAction SilentlyContinue
-            $result.Rows.Count | Should Be 2
+            $result.Rows.Count | Should -Be 2
         }
 
         It "Does not create row if null is in pipeline when IgnoreNull is set" {
             $result = returnnull | ConvertTo-DbaDataTable -IgnoreNull -WarningAction SilentlyContinue
-            $result.Rows.Count | Should Be 2
+            $result.Rows.Count | Should -Be 2
         }
 
         It "Returns empty row when null value is provided (without IgnoreNull)" {
             $result = ConvertTo-DbaDataTable -InputObject (returnnull)
-            $result.Name[0] | Should Be 1
-            $result.Name[1].GetType().FullName | Should Be 'System.DBNull'
-            $result.Name[2] | Should Be 3
+            $result.Name[0] | Should -Be 1
+            $result.Name[1].GetType().FullName | Should -Be 'System.DBNull'
+            $result.Name[2] | Should -Be 3
         }
 
         It "Returns empty row when null value is passed in pipe (without IgnoreNull)" {
             $result = returnnull | ConvertTo-DbaDataTable
-            $result.Name[0] | Should Be 1
-            $result.Name[1].GetType().FullName | Should Be 'System.DBNull'
-            $result.Name[2] | Should Be 3
+            $result.Name[0] | Should -Be 1
+            $result.Name[1].GetType().FullName | Should -Be 'System.DBNull'
+            $result.Name[2] | Should -Be 3
         }
     }
 
@@ -278,7 +297,7 @@ Describe "Testing input parameters" {
 
         It "Suppresses warning messages when Silent is used" {
             $null = ConvertTo-DbaDataTable -InputObject (returnnull) -IgnoreNull -EnableException -WarningVariable warn -WarningAction SilentlyContinue
-            $warn.message -eq $null | Should Be $true
+            $warn.message -eq $null | Should -Be $true
         }
     }
 
@@ -288,7 +307,7 @@ Describe "Testing input parameters" {
             $myobj = New-Object -TypeName psobject -Property @{ Name = 'Test' }
             $myobj | Add-Member -Force -MemberType ScriptProperty -Name ScriptNothing -Value { $null }
             $r = ConvertTo-DbaDataTable -InputObject $myobj
-            ($r.Columns | Where-Object ColumnName -eq ScriptNothing | Select-Object -ExpandProperty DataType).ToString() | Should Be 'System.String'
+            ($r.Columns | Where-Object ColumnName -eq ScriptNothing | Select-Object -ExpandProperty DataType).ToString() | Should -Be 'System.String'
 
         }
     }
