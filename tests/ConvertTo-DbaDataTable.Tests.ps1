@@ -38,6 +38,18 @@ Describe "Testing data table output when using a complex object" {
     $result = ConvertTo-DbaDataTable -InputObject $obj
     
     $firstRow = $result[0].Rows[0]
+    Context "Lengths" {
+        It 'Length of the result' {
+            $result.Length | Should -Be 1
+            $result.Rows.Count | Should -Be 1
+        }
+        Write-Host -ForegroundColor Magenta "result.GetType $($result.GetType())"
+        Write-Host -ForegroundColor Magenta "result.Rows.Count $($result.Rows.Count)"
+        Write-Host -Fore Magenta "row dump $($firstRow | ConvertTo-Json -Depth 2 | Out-String)"
+        Write-Host -Fore Magenta "orig dump $($obj | ConvertTo-Json -Depth 2 | Out-String)"
+    }
+
+
     Context "Property: guid" {
         It 'Has a column called "guid"' {
             $result.Columns.ColumnName | Should -Contain 'guid'
@@ -154,14 +166,11 @@ Describe "Testing data table output when using a complex object" {
         }
         It 'Has a [string] data type on the column "myObject"' {
             Write-Host -Fore Magenta "START 'myObject'"
-            Write-Host -Fore Magenta "type dump $($result.myObject.GetType() | Format-Table | Out-String)"
-            Write-Host -Fore Magenta "type dump2 $($firstRow.myObject.GetType() | Format-Table | Out-String)"
-            Write-Host -Fore Magenta "type dump3 $($firstRow.UInt64.GetType() | Format-Table | Out-String)"
-            Write-Host -Fore Magenta "type dump4 $($result.UInt64.GetType() | Format-Table | Out-String)"
-            Write-Host -Fore Magenta "obj dump $($firstRow.myObject | ConvertTo-Json | Out-String)"
-            Write-Host -Fore Magenta "row dump $($firstRow | ConvertTo-Json -Depth 2 | Out-String)"
-            Write-Host -Fore Magenta "orig dump $($obj | ConvertTo-Json -Depth 2 | Out-String)"
+            Write-Host -Fore Magenta "result   type dump $($result.myObject.GetType() | Format-Table | Out-String)"
+            Write-Host -Fore Magenta "firstRow type dump $($firstRow.myObject.GetType() | Format-Table | Out-String)"
+            Write-Host -Fore Magenta "myObject      dump $($firstRow.myObject | ConvertTo-Json | Out-String)"
             Write-Host -Fore Magenta "END 'myObject'"
+            $firstRow['myObject'] | Should -BeOfType [System.String]
             $firstRow.myObject | Should -BeOfType [System.String]
         }
     }
@@ -172,14 +181,11 @@ Describe "Testing data table output when using a complex object" {
         }
         It 'Has a [string] data type on the column "inlining"' {
             Write-Host -Fore Magenta "START 'inlining'"
-            Write-Host -Fore Magenta "type dump $($result.inlining.GetType() | Format-Table | Out-String)"
-            Write-Host -Fore Magenta "type dump2 $($firstRow.inlining.GetType() | Format-Table | Out-String)"
-            Write-Host -Fore Magenta "type dump3 $($firstRow.UInt64.GetType() | Format-Table | Out-String)"
-            Write-Host -Fore Magenta "type dump4 $($result.UInt64.GetType() | Format-Table | Out-String)"
-            Write-Host -Fore Magenta "obj dump $($firstRow.inlining | ConvertTo-Json | Out-String)"
-            Write-Host -Fore Magenta "row dump $($firstRow | ConvertTo-Json -Depth 2 | Out-String)"
-            Write-Host -Fore Magenta "orig dump $($obj | ConvertTo-Json -Depth 2 | Out-String)"
+            Write-Host -Fore Magenta "result   type dump $($result.inlining.GetType() | Format-Table | Out-String)"
+            Write-Host -Fore Magenta "firstRow type dump $($firstRow.inlining.GetType() | Format-Table | Out-String)"
+            Write-Host -Fore Magenta "inlining      dump $($firstRow.inlining | ConvertTo-Json | Out-String)"
             Write-Host -Fore Magenta "END 'inlining'"
+            $firstRow['inlining'] | Should -BeOfType [System.String]
             $firstRow.inlining | Should -BeOfType [System.String]
         }
     }
@@ -190,13 +196,9 @@ Describe "Testing data table output when using a complex object" {
         }
         It 'Has a [string] data type on the column "inlining2"' {
             Write-Host -Fore Magenta "START 'inlining2'"
-            Write-Host -Fore Magenta "type dump $($result.inlining2.GetType() | Format-Table | Out-String)"
-            Write-Host -Fore Magenta "type dump2 $($firstRow.inlining2.GetType() | Format-Table | Out-String)"
-            Write-Host -Fore Magenta "type dump3 $($firstRow.UInt64.GetType() | Format-Table | Out-String)"
-            Write-Host -Fore Magenta "type dump4 $($result.UInt64.GetType() | Format-Table | Out-String)"
-            Write-Host -Fore Magenta "obj dump $($firstRow.inlining2 | ConvertTo-Json | Out-String)"
-            Write-Host -Fore Magenta "row dump $($firstRow | ConvertTo-Json -Depth 2 | Out-String)"
-            Write-Host -Fore Magenta "orig dump $($obj | ConvertTo-Json -Depth 2 | Out-String)"
+            Write-Host -Fore Magenta "result   type dump $($result.inlining2.GetType() | Format-Table | Out-String)"
+            Write-Host -Fore Magenta "firstRow type dump $($firstRow.inlining2.GetType() | Format-Table | Out-String)"
+            Write-Host -Fore Magenta "inlining2     dump $($firstRow.inlining2 | ConvertTo-Json | Out-String)"
             Write-Host -Fore Magenta "END 'inlining2'"
             $firstRow.inlining2 | Should -BeOfType [System.String]
         }
