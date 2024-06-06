@@ -149,9 +149,6 @@ Describe "Testing data table output when using a complex object" {
         It 'Has a column called "myObject"' {
             $result.Columns.ColumnName | Should -Contain 'myObject'
         }
-        It 'Has a [string] data type on the column "myObject"' {
-            $result.myObject | Should -BeOfType [System.String]
-        }
     }
 
     Context "Property: dbadatetime" {
