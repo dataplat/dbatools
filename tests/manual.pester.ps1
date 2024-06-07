@@ -98,9 +98,15 @@ param (
     $ScriptAnalyzer
 )
 
+<#
+Remove-Module -Name Pester
+Import-Module -name Pester -MaximumVersion 4.*
+#>
+
 $invokeFormatterVersion = (Get-Command Invoke-Formatter -ErrorAction SilentlyContinue).Version
 $HasScriptAnalyzer = $null -ne $invokeFormatterVersion
 $MinimumPesterVersion = [Version] '3.4.5.0' # Because this is when -Show was introduced
+$MaximumPesterVersion = [Version] '5.0.0.0' # Because our tests (and runners) are only compatible with 4.*
 $PesterVersion = (Get-Command Invoke-Pester -ErrorAction SilentlyContinue).Version
 $HasPester = $null -ne $PesterVersion
 $ScriptAnalyzerCorrectVersion = '1.18.2'
@@ -127,11 +133,16 @@ if (!($HasPester)) {
 }
 if ($PesterVersion -lt $MinimumPesterVersion) {
     Write-Warning "Please update Pester to at least 3.4.5"
-    Write-Warning "     Install-Module -Name Pester -Force -SkipPublisherCheck"
+    Write-Warning "     Install-Module -Name Pester  -MaximumVersion '4.10' -Force -SkipPublisherCheck"
+    Write-Warning "     or go to https://github.com/pester/Pester"
+}
+if ($PesterVersion -gt $MaximumPesterVersion) {
+    Write-Warning "Please get Pester to the 4.* release"
+    Write-Warning "     Install-Module -Name Pester  -MaximumVersion '4.10' -Force -SkipPublisherCheck"
     Write-Warning "     or go to https://github.com/pester/Pester"
 }
 
-if (($HasPester -and $HasScriptAnalyzer -and ($PesterVersion -ge $MinimumPesterVersion) -and ($invokeFormatterVersion -eq $ScriptAnalyzerCorrectVersion)) -eq $false) {
+if (($HasPester -and $HasScriptAnalyzer -and ($PesterVersion -ge $MinimumPesterVersion) -and ($PesterVersion -lt $MaximumPesterVersion) -and ($invokeFormatterVersion -eq $ScriptAnalyzerCorrectVersion)) -eq $false) {
     Write-Warning "Exiting..."
     return
 }
