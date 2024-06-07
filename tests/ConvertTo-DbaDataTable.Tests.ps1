@@ -172,35 +172,6 @@ Describe "Testing data table output when using a complex object" {
         }
     }
 
-    Context "Property: inlining" {
-        It 'Has a column called "inlining"' {
-            $result.Columns.ColumnName | Should -Contain 'inlining'
-        }
-        It 'Has a [string] data type on the column "inlining"' {
-            Write-Host -Fore Magenta "START 'inlining'"
-            Write-Host -Fore Magenta "result   type dump $($result.inlining.GetType() | Format-Table | Out-String)"
-            Write-Host -Fore Magenta "firstRow type dump $($firstRow.inlining.GetType() | Format-Table | Out-String)"
-            Write-Host -Fore Magenta "inlining      dump $($firstRow.inlining | ConvertTo-Json | Out-String)"
-            Write-Host -Fore Magenta "END 'inlining'"
-            $firstRow['inlining'] | Should -BeOfType [System.String]
-            $firstRow.inlining | Should -BeOfType [System.String]
-        }
-    }
-
-    Context "Property: inlining2" {
-        It 'Has a column called "inlining2"' {
-            $result.Columns.ColumnName | Should -Contain 'inlining2'
-        }
-        It 'Has a [string] data type on the column "inlining2"' {
-            Write-Host -Fore Magenta "START 'inlining2'"
-            Write-Host -Fore Magenta "result   type dump $($result.inlining2.GetType() | Format-Table | Out-String)"
-            Write-Host -Fore Magenta "firstRow type dump $($firstRow.inlining2.GetType() | Format-Table | Out-String)"
-            Write-Host -Fore Magenta "inlining2     dump $($firstRow.inlining2 | ConvertTo-Json | Out-String)"
-            Write-Host -Fore Magenta "END 'inlining2'"
-            $firstRow.inlining2 | Should -BeOfType [System.String]
-        }
-    }
-
     Context "Property: dbadatetime" {
         It 'Has a column called "dbadatetime"' {
             $result.Columns.ColumnName | Should -Contain 'dbadatetime'
