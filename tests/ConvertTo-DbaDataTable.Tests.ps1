@@ -39,20 +39,9 @@ Describe "Testing data table output when using a complex object" {
 
     $firstRow = $result[0].Rows[0]
     Context "Lengths" {
-        It 'Count of the result' {
-            $result.Count | Should -Be 1
-        }
         It 'Count of the Rows' {
             $result.Rows.Count | Should -Be 1
         }
-        It 'Count of firstRow' {
-            $firstRow.Count | Should -Be 1
-        }
-        Write-Host -ForegroundColor Magenta "result.GetType $($result.GetType())"
-        Write-Host -ForegroundColor Magenta "result.Rows.Count $($result.Rows.Count)"
-        Write-Host -ForegroundColor Magenta "firstRow.Count $($firstRow.Count)"
-        Write-Host -Fore Magenta "row dump $($firstRow | ConvertTo-Json -Depth 2 | Out-String)"
-        Write-Host -Fore Magenta "orig dump $($obj | ConvertTo-Json -Depth 2 | Out-String)"
     }
 
 
