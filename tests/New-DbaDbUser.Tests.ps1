@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'IncludeSystem', 'Login', 'Username', 'Password', 'DefaultSchema', 'ExternalProvider', 'Force', 'EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'IncludeSystem', 'Username', 'Login', 'SecurePassword', 'ExternalProvider', 'DefaultSchema', 'Force', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
@@ -37,7 +37,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Tries to create the user with an invalid default schema" {
             $results = New-DbaDbUser -SqlInstance $script:instance2 -Database $dbname -Login $userName -DefaultSchema invalidSchemaName -WarningVariable warningMessage
             $results | Should -BeNullOrEmpty
-            $warningMessage | Should -BeLike "*Invalid DefaultSchema*"
+            $warningMessage | Should -BeLike "*Schema [invalidSchemaName] does not exist in database*"
         }
     }
     Context "Should create the user with login" {
