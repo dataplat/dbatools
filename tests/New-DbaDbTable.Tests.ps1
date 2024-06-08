@@ -21,6 +21,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $tablename2 = "dbatoolssci2_$(Get-Random)"
         $tablename3 = "dbatoolssci2_$(Get-Random)"
         $tablename4 = "dbatoolssci2_$(Get-Random)"
+        $tablename5 = "dbatoolssci2_$(Get-Random)"
     }
     AfterAll {
         $null = Invoke-DbaQuery -SqlInstance $script:instance1 -Database $dbname -Query "drop table $tablename, $tablename2"
@@ -100,6 +101,22 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
         It "Creates the table" {
             { $null = New-DbaDbTable -SqlInstance $script:instance1 -Database $dbname -Name $tablename4 -ColumnMap $map -EnableException } | Should Not Throw
+        }
+    }
+    Context "Should create the table with a nvarcharmax column" {
+        BeforeEach {
+            $map = @{
+                Name     = 'test'
+                Type     = 'nvarchar'
+                Nullable = $true
+            }
+        }
+        It "Creates the table" {
+            (New-DbaDbTable -SqlInstance $script:instance1 -Database $dbname -Name $tablename5 -ColumnMap $map).Name | Should -Contain $tablename5
+        }
+        It "Has the correct column datatype" {
+            $table = Get-DbaDbTable -SqlInstance $script:instance1 -Database $dbname -Table $tablename5
+            $table.Columns['test'].DataType.SqlDataType | Should -Be "NVarCharMax"
         }
     }
     Context "Should create the schema if it doesn't exist" {

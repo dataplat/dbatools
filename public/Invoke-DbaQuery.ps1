@@ -134,8 +134,8 @@ function Invoke-DbaQuery {
         >>     somedate = '2021-07-15T02:03:00'
         >> }
         >> $inparamAsDataTable = ConvertTo-DbaDataTable -InputObject $inparam
-        PS C:\> New-DbaSqlParameter -SqlDbType structured -Value $inparamAsDataTable -TypeName 'dbatools_tabletype'
-        PS C:\> Invoke-DbaQuery -SqlInstance localhost -Database master -CommandType StoredProcedure -Query my_proc -SqlParameter $inparamAsDataTable
+        PS C:\> $inparamAsSQLParameter = New-DbaSqlParameter -SqlDbType structured -Value $inparamAsDataTable -TypeName 'dbatools_tabletype'
+        PS C:\> Invoke-DbaQuery -SqlInstance localhost -Database master -CommandType StoredProcedure -Query my_proc -SqlParameter $inparamAsSQLParameter
 
         Creates an TVP input parameter and uses it to invoke a stored procedure.
 

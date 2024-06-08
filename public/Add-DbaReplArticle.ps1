@@ -68,12 +68,12 @@ function Add-DbaReplArticle {
 
     .EXAMPLE
         PS C:\> $article = @{
-                    SqlInstance           = "mssql1"
-                    Database              = "pubs"
-                    Publication           = "testPub"
-                    Name                  = "publishers"
-                    Filter                = "city = 'seattle'"
-                }
+        >> SqlInstance           = "mssql1"
+        >> Database              = "pubs"
+        >> Publication           = "testPub"
+        >> Name                  = "publishers"
+        >> Filter                = "city = 'seattle'"
+        >> }
         PS C:\> Add-DbaReplArticle @article -EnableException
 
         Adds the publishers table to the TestPub publication from mssql1.Pubs with a horizontal filter of only rows where city = 'seattle.
@@ -81,12 +81,12 @@ function Add-DbaReplArticle {
     .EXAMPLE
         PS C:\> $cso = New-DbaReplCreationScriptOptions -Options NonClusteredIndexes, Statistics
         PS C:\> $article = @{
-                    SqlInstance           = 'mssql1'
-                    Database              = 'pubs'
-                    Publication           = 'testPub'
-                    Name                  = 'stores'
-                    CreationScriptOptions = $cso
-                }
+        >> SqlInstance           = 'mssql1'
+        >> Database              = 'pubs'
+        >> Publication           = 'testPub'
+        >> Name                  = 'stores'
+        >> CreationScriptOptions = $cso
+        >> }
         PS C:\> Add-DbaReplArticle @article -EnableException
 
         Adds the stores table to the testPub publication from mssql1.pubs with the NonClusteredIndexes and Statistics options set
@@ -112,11 +112,11 @@ function Add-DbaReplArticle {
 
         # Check that $CreationScriptOptions is a valid object
         if ($CreationScriptOptions -and ($CreationScriptOptions -isnot [Microsoft.SqlServer.Replication.CreationScriptOptions])) {
-            Stop-Function -Message "CreationScriptOptions should be the right type. Use New-DbaReplCreationScriptOptions to create the object" -ErrorRecord $_ -Target $instance -Continue
+            Stop-Function -Message "CreationScriptOptions should be the right type. Use New-DbaReplCreationScriptOptions to create the object" -Target $instance -Continue
         }
 
         if ($Filter -like 'WHERE*') {
-            Stop-Function -Message "Filter should not include the word 'WHERE'" -ErrorRecord $_ -Target $instance -Continue
+            Stop-Function -Message "Filter should not include the word 'WHERE'" -Target $instance -Continue
         }
 
         foreach ($instance in $SqlInstance) {
@@ -132,7 +132,7 @@ function Add-DbaReplArticle {
 
                     $pub = Get-DbaReplPublication -SqlInstance $instance -SqlCredential $SqlCredential -Name $Publication -EnableException:$EnableException
                     if (-not $pub) {
-                        Stop-Function -Message "Publication $Publication does not exist on $instance" -ErrorRecord $_ -Target $instance -Continue
+                        Stop-Function -Message "Publication $Publication does not exist on $instance" -Target $instance -Continue
                     }
                 }
             } catch {
@@ -180,7 +180,7 @@ function Add-DbaReplArticle {
                     if (-not ($article.IsExistingObject)) {
                         $article.Create()
                     } else {
-                        Stop-Function -Message "Article already exists in $Publication on $instance" -ErrorRecord $_ -Target $instance -Continue
+                        Stop-Function -Message "Article already exists in $Publication on $instance" -Target $instance -Continue
                     }
 
                     if ($pub.Type -in ('Transactional', 'Snapshot')) {

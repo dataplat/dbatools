@@ -27,6 +27,28 @@ Use your best judgement. If it will possibly make others uncomfortable, do not p
 
 If you believe someone is violating the code of conduct, we ask that you report it by contacting [Chrissy LeMaire](https://twitter.com/cl) or [Shawn Melton](https://twitter.com/wsmelton).
 
+# Standard Enforcement
+
+All reports of unacceptable behavior will be reviewed and investigated promptly and fairly. The Data Platform Community Organization and the dbatools team are committed to ensuring enforcement is consistent and transparent.
+
+### Enforcement Process:
+1. **Report Submission:** Reports can be submitted to [Chrissy LeMaire](https://twitter.com/cl) or [Shawn Melton](https://twitter.com/wsmelton). Reports should include details of the incident, including dates, times, and any witnesses, if available.
+
+2. **Review and Investigation:** Upon receiving a report, an initial review will be conducted to determine its validity. If deemed valid, a thorough investigation will follow, maintaining the confidentiality of the reporter.
+
+3. **Decision and Action:** Based on the investigation findings, appropriate actions will be taken. This may range from a warning to the offender to expulsion from the community or event, depending on the severity of the behavior.
+
+4. **Notification:** The reporter will be informed of the outcome of the investigation and any actions taken, while respecting the privacy of all parties involved.
+
+5. **Appeal Process:** The accused party has the right to appeal the decision by providing additional information or context. Appeals will be reviewed by a separate committee to ensure impartiality.
+
+### Consequences:
+- **Warning:** For minor violations, a private warning may be issued to the offender.
+- **Temporary Ban:** For repeated or more severe violations, a temporary ban from the community or event may be imposed.
+- **Permanent Ban:** For the most severe violations, a permanent ban from the community or all future events may be enforced.
+
+The Data Platform Community Organization and the dbatools team reserve the right to take any other actions deemed necessary to uphold the principles of the Code of Conduct.
+
 # Credit
 
 Portions of this Code of Conduct are based on the [example anti-harassment policy](http://geekfeminism.wikia.com/wiki/Conference_anti-harassment/Policy) from the Geek Feminism wiki, created by the Ada Initiative and other volunteers, under a Creative Commons Zero license.

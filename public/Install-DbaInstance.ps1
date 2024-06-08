@@ -304,6 +304,7 @@ function Install-DbaInstance {
         [PSCredential]$FTCredential,
         [PSCredential]$PBEngineCredential,
         [string]$SaveConfiguration,
+        [Alias('InstantFileInitialization', 'IFI')]
         [switch]$PerformVolumeMaintenanceTasks,
         [switch]$Restart,
         [switch]$NoPendingRenameCheck = (Get-DbatoolsConfigValue -Name 'OS.PendingRename' -Fallback $false),
@@ -356,6 +357,9 @@ function Install-DbaInstance {
                         } else {
                             if ($origVal -is [int]) {
                                 $origVal = "$origVal"
+                            } elseif ($origVal -match '[^\\]\\$') {
+                                # In case a value ends with a single backslash, add a second backslash to prevent escaping the following double quotation mark.
+                                $origVal = "$origVal\"
                             }
                             if ($origVal -ne $origVal.Trim('"')) {
                                 $output += "$sectionKey=$origVal"
@@ -423,7 +427,8 @@ function Install-DbaInstance {
             foreach ($fd in $featureDef) {
                 if (($fd.MinimumVersion -and $canonicVersion -lt [version]$fd.MinimumVersion) -or ($fd.MaximumVersion -and $canonicVersion -gt [version]$fd.MaximumVersion)) {
                     # exclude Default, All, and Tools, as they are expected to have SSMS components in some cases
-                    if ($f -notin 'Default', 'All', 'Tools') {
+                    # exclude MachineLearning, as not all components are needed based on version
+                    if ($f -notin 'Default', 'All', 'Tools', 'MachineLearning') {
                         Stop-Function -Message "Feature $f($($fd.Feature)) is not supported on SQL$Version"
                         return
                     }
@@ -696,6 +701,10 @@ function Install-DbaInstance {
                 if ($cores) {
                     $configNode.SQLTEMPDBFILECOUNT = $cores
                 }
+            }
+            if ($canonicVersion -ge '13.0' -and $PerformVolumeMaintenanceTasks) {
+                $configNode.SQLSVCINSTANTFILEINIT = 'True'
+                $PerformVolumeMaintenanceTasks = $false
             }
             if ($canonicVersion -ge '16.0') {
                 $null = $configNode.Remove('X86')

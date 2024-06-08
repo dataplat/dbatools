@@ -85,12 +85,12 @@ function New-DbaLogShippingPrimarySecondary {
 
     # Check if the database is present on the source sql server
     if ($serverPrimary.Databases.Name -notcontains $PrimaryDatabase) {
-        Stop-Function -Message "Database $PrimaryDatabase is not available on instance $SqlInstance" -ErrorRecord $_ -Target $SqlInstance -Continue
+        Stop-Function -Message "Database $PrimaryDatabase is not available on instance $SqlInstance" -Target $SqlInstance -Continue
     }
 
     # Check if the database is present on the destination sql server
     if ($serverSecondary.Databases.Name -notcontains $SecondaryDatabase) {
-        Stop-Function -Message "Database $SecondaryDatabase is not available on instance $SecondaryServer" -ErrorRecord $_ -Target $SecondaryServer -Continue
+        Stop-Function -Message "Database $SecondaryDatabase is not available on instance $SecondaryServer" -Target $SecondaryServer -Continue
     }
 
     $Query = "SELECT primary_database FROM msdb.dbo.log_shipping_primary_databases WHERE primary_database = '$PrimaryDatabase'"

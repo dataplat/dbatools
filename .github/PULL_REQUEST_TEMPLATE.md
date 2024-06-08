@@ -1,11 +1,4 @@
 <!-- Below information IS REQUIRED with every PR -->
-## Please read -- recent changes to our repo
-On November 10, 2022, [we removed some bloat from our repository (for the second and final time)](https://github.com/dataplat/dbatools/issues/8542). This change requires that all contributors reclone or refork their repo.
-
-PRs from repos that have not been recently reforked or recloned will be closed and @potatoqualitee will cherry-pick your commits and open a new PR with your changes.
-
- - [ ] Please confirm you have the smaller repo (85MB .git directory vs 275MB or 110MB or 185MB .git directory)
-
 ## Type of Change
 <!-- What type of change does your code introduce -->
  - [ ] Bug fix (non-breaking change, fixes #<!--issue number--> )

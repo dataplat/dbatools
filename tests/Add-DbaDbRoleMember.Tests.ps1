@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tags "UnitTests" {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Role', 'User', 'InputObject', 'EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Role', 'Member', 'InputObject', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
@@ -39,7 +39,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Context "Functionality" {
         It 'Adds User to Role' {
-            Add-DbaDbRoleMember -SqlInstance $script:instance2 -Role $role -User $user1 -Database $dbname -confirm:$false
+            Add-DbaDbRoleMember -SqlInstance $script:instance2 -Role $role -Member $user1 -Database $dbname -confirm:$false
             $roleDBAfter = Get-DbaDbRoleMember -SqlInstance $server -Database $dbname -Role $role
 
             $roleDBAfter.Role | Should Be $role
@@ -49,7 +49,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
         It 'Adds User to Multiple Roles' {
             $roleDB = Get-DbaDbRoleMember -SqlInstance $server -Database msdb -Role db_datareader, SQLAgentReaderRole
-            Add-DbaDbRoleMember -SqlInstance $script:instance2 -Role db_datareader, SQLAgentReaderRole -User $user1 -Database msdb -confirm:$false
+            Add-DbaDbRoleMember -SqlInstance $script:instance2 -Role db_datareader, SQLAgentReaderRole -Member $user1 -Database msdb -confirm:$false
 
             $roleDBAfter = Get-DbaDbRoleMember -SqlInstance $server -Database msdb -Role db_datareader, SQLAgentReaderRole
             $roleDBAfter.Count | Should BeGreaterThan $roleDB.Count
@@ -69,10 +69,17 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It 'Skip adding user to role if already a member' {
-            $messages = Add-DbaDbRoleMember -SqlInstance $script:instance2 -Role $role -User $user1 -Database $dbname -confirm:$false -Verbose 4>&1
+            $messages = Add-DbaDbRoleMember -SqlInstance $script:instance2 -Role $role -Member $user1 -Database $dbname -confirm:$false -Verbose 4>&1
             $messageCount = ($messages -match 'Adding user').Count
 
             $messageCount | Should Be 0
+        }
+
+        It 'Adds Role to Role' {
+            Add-DbaDbRoleMember -SqlInstance $script:instance2 -Role db_datawriter -Member $role -Database $dbname -confirm:$false
+            $roleDBAfter = Get-DbaDbRoleMember -SqlInstance $server -Database $dbname -Role db_datawriter
+
+            $roleDBAfter.MemberRole | Should Contain $role
         }
     }
 }

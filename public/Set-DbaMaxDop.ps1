@@ -136,7 +136,7 @@ function Set-DbaMaxDop {
             }
 
             if (!(Test-SqlSa -SqlInstance $server -SqlCredential $SqlCredential)) {
-                Stop-Function -Message "Not a sysadmin on $instance. Skipping." -Category PermissionDenied -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Not a sysadmin on $instance. Skipping." -Category PermissionDenied -Target $instance -Continue
             }
 
             if ($server.versionMajor -ge 13) {

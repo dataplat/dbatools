@@ -650,8 +650,9 @@ function Restore-DbaDatabase {
                     Write-Message -Message "$Database does not exist on $RestoreInstance" -level Warning
                     continue
                 }
-                if ($RestoreInstance.Databases[$Database].Status -ne "Restoring") {
-                    Write-Message -Message "$Database on $RestoreInstance is not in a Restoring State" -Level Warning
+
+                if (@("Restoring", "Normal, Standby") -notcontains $RestoreInstance.Databases[$Database].Status) {
+                    Write-Message -Message "$Database on $RestoreInstance state [$($RestoreInstance.Databases[$Database].Status)] is not a valid state. Valid state is Restoring or Standby" -Level Warning
                     continue
                 }
                 $RestoreComplete = $true
@@ -764,7 +765,7 @@ function Restore-DbaDatabase {
             Write-Message -Message "$DbVerfied passed testing" -Level Verbose
             if ((@($FilteredBackupHistory | Where-Object { $_.IsVerified -eq $True })).count -lt $FilteredBackupHistory.count) {
                 $DbUnVerified = ($FilteredBackupHistory | Where-Object { $_.IsVerified -eq $False } | Sort-Object -Property Database -Unique).Database -join ','
-                Write-Message -Level Warning -Message "Database $DbUnverified failed testing,  skipping"
+                Stop-Function -Message "Database $DbUnverified unable to be restored, see warnings for details"
             }
             If ($PSCmdlet.ParameterSetName -eq "RestorePage") {
                 if (($FilteredBackupHistory.Database | Sort-Object -Unique | Measure-Object).count -ne 1) {
@@ -807,7 +808,6 @@ function Restore-DbaDatabase {
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue -Target $RestoreInstance
             }
-
             if ($PSCmdlet.ParameterSetName -eq "RestorePage") {
                 if ($RestoreInstance.Edition -like '*Enterprise*') {
                     Write-Message -Message "Taking Tail log backup for page restore for Enterprise" -Level Verbose

@@ -44,12 +44,6 @@ function Get-DbaLogin {
     .PARAMETER MustChangePassword
         A Switch to return Logins that need to change password.
 
-    .PARAMETER SqlLogins
-        Deprecated. Please use -Type SQL
-
-    .PARAMETER WindowsLogins
-        Deprecated. Please use -Type Windows.
-
     .PARAMETER HasAccess
         A Switch to return Logins that have access to the instance of SQL Server.
 
@@ -173,12 +167,6 @@ function Get-DbaLogin {
         [switch]$EnableException
     )
     begin {
-        if ($SQLLogins) {
-            $Type = "SQL"
-        }
-        if ($WindowsLogins) {
-            $Type = "Windows"
-        }
 
         $loginTimeSql = "SELECT login_name, MAX(login_time) AS login_time FROM sys.dm_exec_sessions GROUP BY login_name"
         $loginProperty = "SELECT

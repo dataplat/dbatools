@@ -190,7 +190,7 @@ function Install-DbaWhoIsActive {
                             Status       = $status
                         }
                     } else {
-                        Stop-Function -Message "Failed to find database $Database on $instance or $Database is not writeable." -ErrorRecord $_ -Continue -Target $instance
+                        Stop-Function -Message "Failed to find database $Database on $instance or $Database is not writeable." -Continue -Target $instance
                     }
 
                 } catch {

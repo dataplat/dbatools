@@ -7,7 +7,7 @@ function Install-DbaDarlingData {
         Downloads, extracts and installs Erik Darling's stored procedures
 
         DarlingData links:
-        https://www.erikdarlingdata.com
+        https://www.erikdarling.com
         https://github.com/erikdarlingdata/DarlingData
 
     .PARAMETER SqlInstance
@@ -104,7 +104,7 @@ function Install-DbaDarlingData {
         [object]$Database = "master",
         [ValidateSet('main', 'dev')]
         [string]$Branch = "main",
-        [ValidateSet('All', 'Human', 'Pressure', 'Quickie')]
+        [ValidateSet('All', 'Human', 'Pressure', 'Quickie', 'HumanEvents', 'PressureDetector', 'QuickieStore', 'HumanEventsBlockViewer', 'LogHunter', 'HealthParser')]
         [string[]]$Procedure = "All",
         [string]$LocalFile,
         [switch]$Force,
@@ -149,11 +149,31 @@ function Install-DbaDarlingData {
                 $allprocedures_query = "SELECT name FROM sys.procedures WHERE is_ms_shipped = 0"
                 $allprocedures = ($server.Query($allprocedures_query, $Database)).Name
 
-                # We only install specific scripts that as located in different subdirectories and exclude the example
-                $sqlScripts = @( )
-                $sqlScripts += Get-ChildItem $localCachedCopy -Filter "sp_HumanEvents.sql" -Recurse
-                $sqlScripts += Get-ChildItem $localCachedCopy -Filter "sp_PressureDetector.sql" -Recurse
-                $sqlScripts += Get-ChildItem $localCachedCopy -Filter "sp_QuickieStore.sql" -Recurse
+                if ($Procedure -contains "All") {
+                    # We install all scripts
+                    $sqlScripts = Get-ChildItem $localCachedCopy -Filter "DarlingData.sql" -Recurse
+                } else {
+                    # We only install specific scripts that as located in different subdirectories and exclude the example
+                    $sqlScripts = @( )
+                    if ($Procedure -contains "Human" -or $Procedure -contains "HumanEvents") {
+                        $sqlScripts += Get-ChildItem $localCachedCopy -Filter "sp_HumanEvents.sql" -Recurse
+                    }
+                    if ($Procedure -contains "Pressure" -or $Procedure -contains "PressureDetector") {
+                        $sqlScripts += Get-ChildItem $localCachedCopy -Filter "sp_PressureDetector.sql" -Recurse
+                    }
+                    if ($Procedure -contains "Quickie" -or $Procedure -contains "QuickieStore") {
+                        $sqlScripts += Get-ChildItem $localCachedCopy -Filter "sp_QuickieStore.sql" -Recurse
+                    }
+                    if ($Procedure -contains "HumanEventsBlockViewer") {
+                        $sqlScripts += Get-ChildItem $localCachedCopy -Filter "sp_HumanEventsBlockViewer.sql" -Recurse
+                    }
+                    if ($Procedure -contains "LogHunter") {
+                        $sqlScripts += Get-ChildItem $localCachedCopy -Filter "sp_LogHunter.sql" -Recurse
+                    }
+                    if ($Procedure -contains "HealthParser") {
+                        $sqlScripts += Get-ChildItem $localCachedCopy -Filter "sp_HealthParser.sql" -Recurse
+                    }
+                }
 
                 foreach ($script in $sqlScripts) {
                     $sql = Get-Content $script.FullName -Raw

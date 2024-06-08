@@ -171,7 +171,7 @@ function New-DbaAgentJobStep {
         [ValidateSet('QuitWithSuccess', 'QuitWithFailure', 'GoToNextStep', 'GoToStep')]
         [string]$OnFailAction = 'QuitWithFailure',
         [int]$OnFailStepId = 0,
-        [object]$Database,
+        [string]$Database,
         [string]$DatabaseUser,
         [int]$RetryAttempts,
         [int]$RetryInterval,
@@ -341,14 +341,14 @@ function New-DbaAgentJobStep {
                         }
                     }
 
-                    if ($DatabaseUser -and $DatabaseName) {
+                    if ($DatabaseUser -and $Database) {
                         # Check if the username is present in the database
-                        if ($Server.Databases[$DatabaseName].Users.Name -contains $DatabaseUser) {
+                        if ($Server.Databases[$Database].Users.Name -contains $DatabaseUser) {
 
                             Write-Message -Message "Setting job step database username to $DatabaseUser" -Level Verbose
                             $jobStep.DatabaseUserName = $DatabaseUser
                         } else {
-                            Stop-Function -Message "The database user is not present in the database $DatabaseName on instance $instance." -Target $instance -Continue
+                            Stop-Function -Message "The database user is not present in the database $Database on instance $instance." -Target $instance -Continue
                         }
                     }
 

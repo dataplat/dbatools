@@ -327,18 +327,6 @@ function Connect-DbaInstance {
         [switch]$DisableException
     )
     begin {
-        function Test-Azure {
-            Param (
-                [DbaInstanceParameter]$SqlInstance
-            )
-            if ($SqlInstance.ComputerName -match $AzureDomain -or $instance.InputObject.ComputerName -match $AzureDomain) {
-                Write-Message -Level Debug -Message "Test for Azure is positive"
-                return $true
-            } else {
-                Write-Message -Level Debug -Message "Test for Azure is negative"
-                return $false
-            }
-        }
         function Invoke-TEPPCacheUpdate {
             [CmdletBinding()]
             param (
@@ -438,6 +426,8 @@ function Connect-DbaInstance {
 
         Write-Message -Level Debug -Message "Starting process block"
         foreach ($instance in $SqlInstance) {
+            Write-Message -Level Verbose -Message "Starting loop for '$instance': ComputerName = '$($instance.ComputerName)', InstanceName = '$($instance.InstanceName)', IsLocalHost = '$($instance.IsLocalHost)', Type = '$($instance.Type)'"
+
             if ($tryconnstring) {
                 $azureserver = $instance.InputObject
                 if ($Database) {
@@ -448,13 +438,13 @@ function Connect-DbaInstance {
             }
 
             Write-Message -Level Debug -Message "Immediately checking for Azure"
-            if ((Test-Azure -SqlInstance $instance)) {
+            if ($instance.ComputerName -match $AzureDomain -or $instance.InputObject.ComputerName -match $AzureDomain) {
                 Write-Message -Level Verbose -Message "Azure detected"
-                $IsAzure = $true
+                $isAzure = $true
             } else {
-                $IsAzure = $false
+                $isAzure = $false
             }
-            Write-Message -Level Debug -Message "Starting loop for '$instance': ComputerName = '$($instance.ComputerName)', InstanceName = '$($instance.InstanceName)', IsLocalHost = '$($instance.IsLocalHost)', Type = '$($instance.Type)'"
+
             <#
             Best practice:
             * Create a smo server object by submitting the name of the instance as a string to SqlInstance and additional parameters to configure the connection
@@ -541,25 +531,30 @@ function Connect-DbaInstance {
             if ($instance.Type -like 'Server') {
                 Write-Message -Level Verbose -Message "Server object passed in, will do some checks and then return the original object"
                 $inputObjectType = 'Server'
+                $isNewConnection = $false
                 $inputObject = $instance.InputObject
             } elseif ($instance.Type -like 'SqlConnection') {
                 Write-Message -Level Verbose -Message "SqlConnection object passed in, will build server object from instance.InputObject, do some checks and then return the server object"
                 $inputObjectType = 'SqlConnection'
+                $isNewConnection = $false
                 $inputObject = $instance.InputObject
             } elseif ($instance.Type -like 'RegisteredServer') {
                 Write-Message -Level Verbose -Message "RegisteredServer object passed in, will build empty server object, set connection string from instance.InputObject.ConnectionString, do some checks and then return the server object"
                 $inputObjectType = 'RegisteredServer'
+                $isNewConnection = $true
                 $inputObject = $instance.InputObject
                 $serverName = $instance.FullSmoName
                 $connectionString = $instance.InputObject.ConnectionString
             } elseif ($instance.IsConnectionString) {
                 Write-Message -Level Verbose -Message "Connection string is passed in, will build empty server object, set connection string from instance.InputObject, do some checks and then return the server object"
                 $inputObjectType = 'ConnectionString'
+                $isNewConnection = $true
                 $serverName = $instance.FullSmoName
                 $connectionString = $instance.InputObject | Convert-ConnectionString
             } else {
                 Write-Message -Level Verbose -Message "String is passed in, will build server object from instance object and other parameters, do some checks and then return the server object"
                 $inputObjectType = 'String'
+                $isNewConnection = $true
                 $serverName = $instance.FullSmoName
             }
 
@@ -595,9 +590,17 @@ function Connect-DbaInstance {
                 # Currently only if we have a different Database or have to switch to a NonPooledConnection or using a specific StatementTimeout or using ApplicationIntent
                 # We do not test for SqlCredential as this would change the behavior compared to the legacy code path
                 $copyContext = $false
-                if ($Database -and $inputObject.ConnectionContext.CurrentDatabase -ne $Database) {
-                    Write-Message -Level Verbose -Message "Database provided. Does not match ConnectionContext.CurrentDatabase, copying ConnectionContext and setting the CurrentDatabase"
-                    $copyContext = $true
+                if ($Database) {
+                    Write-Message -Level Debug -Message "Database [$Database] provided."
+                    if (-not $inputObject.ConnectionContext.CurrentDatabase) {
+                        Write-Message -Level Debug -Message "ConnectionContext.CurrentDatabase is empty, so connection will be opened to get the value"
+                        $inputObject.ConnectionContext.Connect()
+                        Write-Message -Level Debug -Message "ConnectionContext.CurrentDatabase is now [$($inputObject.ConnectionContext.CurrentDatabase)]"
+                    }
+                    if ($inputObject.ConnectionContext.CurrentDatabase -ne $Database) {
+                        Write-Message -Level Verbose -Message "Database [$Database] provided. Does not match ConnectionContext.CurrentDatabase [$($inputObject.ConnectionContext.CurrentDatabase)], copying ConnectionContext and setting the CurrentDatabase"
+                        $copyContext = $true
+                    }
                 }
                 if ($ApplicationIntent -and $inputObject.ConnectionContext.ApplicationIntent -ne $ApplicationIntent) {
                     Write-Message -Level Verbose -Message "ApplicationIntent provided. Does not match ConnectionContext.ApplicationIntent, copying ConnectionContext and setting the ApplicationIntent"
@@ -616,6 +619,7 @@ function Connect-DbaInstance {
                     $copyContext = $true
                 }
                 if ($copyContext) {
+                    $isNewConnection = $true
                     $connContext = $inputObject.ConnectionContext.Copy()
                     if ($ApplicationIntent) {
                         $connContext.ApplicationIntent = $ApplicationIntent
@@ -678,7 +682,7 @@ function Connect-DbaInstance {
                 $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $serverConnection
             } elseif ($inputObjectType -eq 'String') {
                 # Identify authentication method
-                if (Test-Azure -SqlInstance $instance) {
+                if ($isAzure) {
                     $authType = 'azure '
                 } else {
                     $authType = 'local '
@@ -934,11 +938,8 @@ function Connect-DbaInstance {
                 $server.ConnectionContext.StatementTimeout = $StatementTimeout
             }
 
-            # we skip showing the masked string for DAC to prevent DAC from making a call to the server
-            if (-not $DedicatedAdminConnection) {
-                $maskedConnString = Hide-ConnectionString $server.ConnectionContext.ConnectionString
-                Write-Message -Level Debug -Message "The masked server.ConnectionContext.ConnectionString is $maskedConnString"
-            }
+            $maskedConnString = Hide-ConnectionString $server.ConnectionContext.ConnectionString
+            Write-Message -Level Debug -Message "The masked server.ConnectionContext.ConnectionString is $maskedConnString"
 
             # It doesn't matter which input we have, we pass this line and have a server SMO in $server to work with
             # It might be a brand new one or an already used one.
@@ -948,22 +949,26 @@ function Connect-DbaInstance {
             # But ConnectionContext.IsOpen does not tell the truth if the instance was just shut down
             # And we don't use $server.ConnectionContext.Connect() as this would create a non pooled connection
             # Instead we run a real T-SQL command and just SELECT something to be sure we have a valid connection and let the SMO handle the connection
-            if (-not $DedicatedAdminConnection) {
-                try {
-                    Write-Message -Level Debug -Message "We connect to the instance by running SELECT 'dbatools is opening a new connection'"
-                    $null = $server.ConnectionContext.ExecuteWithResults("SELECT 'dbatools is opening a new connection'")
-                    Write-Message -Level Debug -Message "We have a connected server object"
-                } catch {
-                    Stop-Function -Target $instance -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Continue
-                }
+            try {
+                Write-Message -Level Debug -Message "We connect to the instance by running SELECT 'dbatools is opening a new connection'"
+                $null = $server.ConnectionContext.ExecuteWithResults("SELECT 'dbatools is opening a new connection'")
+                Write-Message -Level Debug -Message "We have a connected server object"
+            } catch {
+                Stop-Function -Target $instance -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Continue
             }
 
             if ($AzureUnsupported -and $server.DatabaseEngineType -eq "SqlAzureDatabase") {
+                if ($isNewConnection) {
+                    $server.ConnectionContext.Disconnect()
+                }
                 Stop-Function -Target $instance -Message "Azure SQL Database not supported" -Continue
             }
 
             if ($MinimumVersion -and $server.VersionMajor) {
                 if ($server.VersionMajor -lt $MinimumVersion) {
+                    if ($isNewConnection) {
+                        $server.ConnectionContext.Disconnect()
+                    }
                     Stop-Function -Target $instance -Message "SQL Server version $MinimumVersion required - $server not supported." -Continue
                 }
             }
@@ -994,34 +999,27 @@ function Connect-DbaInstance {
                         Write-Message -Level Debug -Message "No value found for ComputerName, so will use the default"
                     }
                 }
-
-
-                if ($DedicatedAdminConnection) {
-                    $computerName = $instance.ComputerName
-                } else {
-                    if (-not $computerName) {
-                        if ($server.DatabaseEngineType -eq "SqlAzureDatabase") {
-                            Write-Message -Level Debug -Message "We are on Azure, so server.ComputerName will be set to instance.ComputerName"
-                            $computerName = $instance.ComputerName
-                        } elseif ($server.HostPlatform -eq 'Linux') {
-                            Write-Message -Level Debug -Message "We are on Linux what is often on docker and the internal name is not useful, so server.ComputerName will be set to instance.ComputerName"
-                            $computerName = $instance.ComputerName
-                        } elseif ($server.NetName) {
-                            Write-Message -Level Debug -Message "We will set server.ComputerName to server.NetName"
-                            $computerName = $server.NetName
-                        } else {
-                            Write-Message -Level Debug -Message "We will set server.ComputerName to instance.ComputerName as server.NetName is empty"
-                            $computerName = $instance.ComputerName
-                        }
-                        Write-Message -Level Debug -Message "ComputerName will be set to $computerName"
+                if (-not $computerName) {
+                    if ($server.DatabaseEngineType -eq "SqlAzureDatabase") {
+                        Write-Message -Level Debug -Message "We are on Azure, so server.ComputerName will be set to instance.ComputerName"
+                        $computerName = $instance.ComputerName
+                    } elseif ($server.HostPlatform -eq 'Linux') {
+                        Write-Message -Level Debug -Message "We are on Linux what is often on docker and the internal name is not useful, so server.ComputerName will be set to instance.ComputerName"
+                        $computerName = $instance.ComputerName
+                    } elseif ($server.NetName) {
+                        Write-Message -Level Debug -Message "We will set server.ComputerName to server.NetName"
+                        $computerName = $server.NetName
+                    } else {
+                        Write-Message -Level Debug -Message "We will set server.ComputerName to instance.ComputerName as server.NetName is empty"
+                        $computerName = $instance.ComputerName
                     }
+                    Write-Message -Level Debug -Message "ComputerName will be set to $computerName"
                 }
                 Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $computerName -Force
             }
 
-            if (-not $server.IsAzure -and -not $DedicatedAdminConnection) {
-                # so many things in this block make DAC complain, skip it
-                Add-Member -InputObject $server -NotePropertyName IsAzure -NotePropertyValue (Test-Azure -SqlInstance $instance) -Force
+            if (-not $server.IsAzure) {
+                Add-Member -InputObject $server -NotePropertyName IsAzure -NotePropertyValue $isAzure -Force
                 Add-Member -InputObject $server -NotePropertyName DbaInstanceName -NotePropertyValue $instance.InstanceName -Force
                 Add-Member -InputObject $server -NotePropertyName NetPort -NotePropertyValue $instance.Port -Force
                 Add-Member -InputObject $server -NotePropertyName ConnectedAs -NotePropertyValue $server.ConnectionContext.TrueLogin -Force
@@ -1029,65 +1027,60 @@ function Connect-DbaInstance {
             }
 
             Write-Message -Level Debug -Message "We return the server object"
-            if ($DedicatedAdminConnection) {
-                # return DAC connections sooner rather than later because they serve
-                # a different purpose but also, otherwise, there are complaints in the event log
-                Add-Member -InputObject $server -NotePropertyName IsAzure -NotePropertyValue $false -Force
-                return $server
-            } else {
-                $server
-            }
+            $server
 
-            # Register the connected instance, so that the TEPP updater knows it's been connected to and starts building the cache
-            [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::SetInstance($instance.FullSmoName.ToLowerInvariant(), $server.ConnectionContext.Copy(), ($server.ConnectionContext.FixedServerRoles -match "SysAdmin"))
+            if ($isNewConnection -and -not $DedicatedAdminConnection) {
+                # Register the connected instance, so that the TEPP updater knows it's been connected to and starts building the cache
+                [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::SetInstance($instance.FullSmoName.ToLowerInvariant(), $server.ConnectionContext.Copy(), ($server.ConnectionContext.FixedServerRoles -match "SysAdmin"))
 
-            # Update cache for instance names
-            if ([Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] -notcontains $instance.FullSmoName.ToLowerInvariant()) {
-                [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] += $instance.FullSmoName.ToLowerInvariant()
-            }
-
-            # Update lots of registered stuff
-            # Default for [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled is $true, so will not run by default
-            # Must be explicitly activated with [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled = $false to run
-            if (-not [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled) {
-                # Variable $FullSmoName is used inside the script blocks, so we have to set
-                $FullSmoName = $instance.FullSmoName.ToLowerInvariant()
-                Write-Message -Level Debug -Message "Will run Invoke-TEPPCacheUpdate for FullSmoName = $FullSmoName"
-                foreach ($scriptBlock in ([Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsFast)) {
-                    Invoke-TEPPCacheUpdate -ScriptBlock $scriptBlock
+                # Update cache for instance names
+                if ([Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] -notcontains $instance.FullSmoName.ToLowerInvariant()) {
+                    [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] += $instance.FullSmoName.ToLowerInvariant()
                 }
-            }
 
-            # By default, SMO initializes several properties. We push it to the limit and gather a bit more
-            # this slows down the connect a smidge but drastically improves overall performance
-            # especially when dealing with a multitude of servers
-            if ($loadedSmoVersion -ge 11 -and -not $isAzure) {
-                try {
-                    Write-Message -Level Debug -Message "SetDefaultInitFields will be used"
-                    $initFieldsDb = New-Object System.Collections.Specialized.StringCollection
-                    $initFieldsLogin = New-Object System.Collections.Specialized.StringCollection
-                    $initFieldsJob = New-Object System.Collections.Specialized.StringCollection
-                    if ($server.VersionMajor -eq 8) {
-                        # 2000
-                        [void]$initFieldsDb.AddRange($Fields2000_Db)
-                        [void]$initFieldsLogin.AddRange($Fields2000_Login)
-                    } elseif ($server.VersionMajor -eq 9 -or $server.VersionMajor -eq 10) {
-                        # 2005 and 2008
-                        [void]$initFieldsDb.AddRange($Fields200x_Db)
-                        [void]$initFieldsLogin.AddRange($Fields200x_Login)
-                    } else {
-                        # 2012 and above
-                        [void]$initFieldsDb.AddRange($Fields201x_Db)
-                        [void]$initFieldsLogin.AddRange($Fields201x_Login)
+                # Update lots of registered stuff
+                # Default for [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled is $true, so will not run by default
+                # Must be explicitly activated with [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled = $false to run
+                if (-not [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled) {
+                    # Variable $FullSmoName is used inside the script blocks, so we have to set
+                    $FullSmoName = $instance.FullSmoName.ToLowerInvariant()
+                    Write-Message -Level Debug -Message "Will run Invoke-TEPPCacheUpdate for FullSmoName = $FullSmoName"
+                    foreach ($scriptBlock in ([Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsFast)) {
+                        Invoke-TEPPCacheUpdate -ScriptBlock $scriptBlock
                     }
-                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], $initFieldsDb)
-                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], $initFieldsLogin)
-                    #see 7753
-                    [void]$initFieldsJob.AddRange($Fields_Job)
-                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Agent.Job], $initFieldsJob)
-                } catch {
-                    Write-Message -Level Debug -Message "SetDefaultInitFields failed with $_"
-                    # perhaps a DLL issue, continue going
+                }
+
+                # By default, SMO initializes several properties. We push it to the limit and gather a bit more
+                # this slows down the connect a smidge but drastically improves overall performance
+                # especially when dealing with a multitude of servers
+                if ($loadedSmoVersion -ge 11 -and -not $isAzure) {
+                    try {
+                        Write-Message -Level Debug -Message "SetDefaultInitFields will be used"
+                        $initFieldsDb = New-Object System.Collections.Specialized.StringCollection
+                        $initFieldsLogin = New-Object System.Collections.Specialized.StringCollection
+                        $initFieldsJob = New-Object System.Collections.Specialized.StringCollection
+                        if ($server.VersionMajor -eq 8) {
+                            # 2000
+                            [void]$initFieldsDb.AddRange($Fields2000_Db)
+                            [void]$initFieldsLogin.AddRange($Fields2000_Login)
+                        } elseif ($server.VersionMajor -eq 9 -or $server.VersionMajor -eq 10) {
+                            # 2005 and 2008
+                            [void]$initFieldsDb.AddRange($Fields200x_Db)
+                            [void]$initFieldsLogin.AddRange($Fields200x_Login)
+                        } else {
+                            # 2012 and above
+                            [void]$initFieldsDb.AddRange($Fields201x_Db)
+                            [void]$initFieldsLogin.AddRange($Fields201x_Login)
+                        }
+                        $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], $initFieldsDb)
+                        $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], $initFieldsLogin)
+                        #see 7753
+                        [void]$initFieldsJob.AddRange($Fields_Job)
+                        $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Agent.Job], $initFieldsJob)
+                    } catch {
+                        Write-Message -Level Debug -Message "SetDefaultInitFields failed with $_"
+                        # perhaps a DLL issue, continue going
+                    }
                 }
             }
 

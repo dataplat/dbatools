@@ -166,6 +166,13 @@ function ConvertTo-DbaDataTable {
                     }
                 }
                 $specialType = 'Size'
+            } elseif ($type -eq 'Dataplat.Dbatools.Utility.DbaDateTime[]') {
+                if (-not ($null -eq $value)) {
+                    $special = $true
+                    $value = $value
+                    $type = 'System.String'
+                    $specialType = 'String'
+                }
             } elseif (-not ($type -in $types)) {
                 # All types which are not found in the array will be converted into strings.
                 # In this way we don't ignore it completely and it will be clear in the end why it looks as it does.
@@ -199,7 +206,7 @@ function ConvertTo-DbaDataTable {
             [CmdletBinding()]
             param (
                 $Value,
-                [ValidateSet('Timespan', 'Size')]
+                [ValidateSet('Timespan', 'Size', 'DateTime', 'String')]
                 [string]$Type,
                 [string]$SizeType,
                 [string]$TimeSpanType
@@ -216,6 +223,12 @@ function ConvertTo-DbaDataTable {
                     } else {
                         $Value.$TimeSpanType
                     }
+                }
+                'DateTime' {
+                    return [System.DateTime]$Value.DateTime
+                }
+                'String' {
+                    return ($Value | Foreach-Object { $_.ToString() }) -join ', '
                 }
             }
         }

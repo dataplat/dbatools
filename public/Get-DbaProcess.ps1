@@ -113,11 +113,15 @@ function Get-DbaProcess {
                 c.encrypt_option AS EncryptOption,
                 c.auth_scheme AS AuthScheme,
                 c.net_packet_size AS NetPacketSize,
-                c.client_net_address AS ClientNetAddress
+                c.client_net_address AS ClientNetAddress,
+                e.name AS EndpointName,
+                e.is_admin_endpoint AS IsDac
             FROM sys.dm_exec_connections c
             JOIN sys.dm_exec_sessions s
                 on c.session_id = s.session_id
-            CROSS APPLY sys.dm_exec_sql_text(c.most_recent_sql_handle) t"
+            JOIN sys.endpoints e
+                ON c.endpoint_id = e.endpoint_id
+            OUTER APPLY sys.dm_exec_sql_text(c.most_recent_sql_handle) t"
 
             if ($server.VersionMajor -gt 8) {
                 $results = $server.Query($sql)
@@ -195,8 +199,10 @@ function Get-DbaProcess {
                 Add-Member -Force -InputObject $session -MemberType NoteProperty -Name NetPacketSize -value $row.NetPacketSize
                 Add-Member -Force -InputObject $session -MemberType NoteProperty -Name ClientNetAddress -value $row.ClientNetAddress
                 Add-Member -Force -InputObject $session -MemberType NoteProperty -Name LastQuery -value $row.Query
+                Add-Member -Force -InputObject $session -MemberType NoteProperty -Name EndpointName -value $row.EndpointName
+                Add-Member -Force -InputObject $session -MemberType NoteProperty -Name IsDac -value $row.IsDac
 
-                Select-DefaultView -InputObject $session -Property ComputerName, InstanceName, SqlInstance, Spid, Login, LoginTime, Host, Database, BlockingSpid, Program, Status, Command, Cpu, MemUsage, LastRequestStartTime, LastRequestEndTime, MinutesAsleep, ClientNetAddress, NetTransport, EncryptOption, AuthScheme, NetPacketSize, ClientVersion, HostProcessId, IsSystem, LastQuery
+                Select-DefaultView -InputObject $session -Property ComputerName, InstanceName, SqlInstance, Spid, Login, LoginTime, Host, Database, BlockingSpid, Program, Status, Command, Cpu, MemUsage, LastRequestStartTime, LastRequestEndTime, MinutesAsleep, ClientNetAddress, NetTransport, EncryptOption, AuthScheme, NetPacketSize, ClientVersion, HostProcessId, IsSystem, EndpointName, IsDac, LastQuery
             }
         }
     }

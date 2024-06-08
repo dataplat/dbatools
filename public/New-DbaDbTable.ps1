@@ -373,28 +373,6 @@ function New-DbaDbTable {
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
-    begin {
-        function Get-SqlType {
-            param([string]$TypeName)
-            switch ($TypeName) {
-                'Boolean' { [Data.SqlDbType]::Bit }
-                'Byte[]' { [Data.SqlDbType]::VarBinary }
-                'Byte' { [Data.SQLDbType]::VarBinary }
-                'Datetime' { [Data.SQLDbType]::DateTime }
-                'Decimal' { [Data.SqlDbType]::Decimal }
-                'Double' { [Data.SqlDbType]::Float }
-                'Guid' { [Data.SqlDbType]::UniqueIdentifier }
-                'Int16' { [Data.SQLDbType]::SmallInt }
-                'Int32' { [Data.SQLDbType]::Int }
-                'Int64' { [Data.SqlDbType]::BigInt }
-                'UInt16' { [Data.SQLDbType]::SmallInt }
-                'UInt32' { [Data.SQLDbType]::Int }
-                'UInt64' { [Data.SqlDbType]::BigInt }
-                'Single' { [Data.SqlDbType]::Decimal }
-                default { [Data.SqlDbType]::VarChar }
-            }
-        }
-    }
     process {
         if ((Test-Bound -ParameterName SqlInstance)) {
             if ((Test-Bound -Not -ParameterName Database) -or (Test-Bound -Not -ParameterName Name)) {
@@ -429,11 +407,11 @@ function New-DbaDbTable {
 
                     foreach ($column in $ColumnMap) {
                         $sqlDbType = [Microsoft.SqlServer.Management.Smo.SqlDataType]$($column.Type)
-                        if ($sqlDbType -eq 'VarBinary' -or $sqlDbType -in @('VarChar', 'NVarChar', 'Char', 'NChar')) {
+                        if ($sqlDbType -in @('VarBinary', 'VarChar', 'NVarChar', 'Char', 'NChar')) {
                             if ($column.MaxLength -gt 0) {
                                 $dataType = New-Object Microsoft.SqlServer.Management.Smo.DataType $sqlDbType, $column.MaxLength
                             } else {
-                                $sqlDbType = [Microsoft.SqlServer.Management.Smo.SqlDataType]"$(Get-SqlType $column.DataType.Name)Max"
+                                $sqlDbType = [Microsoft.SqlServer.Management.Smo.SqlDataType]"$($column.Type)Max"
                                 $dataType = New-Object Microsoft.SqlServer.Management.Smo.DataType $sqlDbType
                             }
                         } elseif ($sqlDbType -eq 'Decimal') {
@@ -442,7 +420,6 @@ function New-DbaDbTable {
                             } elseif ($column.Precision -gt 0) {
                                 $dataType = New-Object Microsoft.SqlServer.Management.Smo.DataType $sqlDbType, $column.Precision, $column.Scale
                             } else {
-                                $sqlDbType = [Microsoft.SqlServer.Management.Smo.SqlDataType]"$(Get-SqlType $column.DataType.Name)Max"
                                 $dataType = New-Object Microsoft.SqlServer.Management.Smo.DataType $sqlDbType
                             }
                         } else {
