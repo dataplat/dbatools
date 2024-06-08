@@ -27,21 +27,42 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $user2 = "dbatoolsci_exportdbauser_user2"
             $table = "dbatoolsci_exportdbauser_table"
             $role = "dbatoolsci_exportdbauser_role"
+
+            # For Dependencies elimination test
+            $login01 = "dbatoolsci_exportdbauser_login01"
+            $login02 = "dbatoolsci_exportdbauser_login02"
+            $user01 = "dbatoolsci_exportdbauser_user01"
+            $user02 = "dbatoolsci_exportdbauser_user02"
+            $role01 = "dbatoolsci_exportdbauser_role01"
+            $role02 = "dbatoolsci_exportdbauser_role02"
+            $role03 = "dbatoolsci_exportdbauser_role03"
+
             $server = Connect-DbaInstance -SqlInstance $script:instance1
             $null = $server.Query("CREATE DATABASE [$dbname]")
 
             $securePassword = $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force)
             $null = New-DbaLogin -SqlInstance $script:instance1 -Login $login -Password $securePassword
             $null = New-DbaLogin -SqlInstance $script:instance1 -Login $login2 -Password $securePassword
+            $null = New-DbaLogin -SqlInstance $script:instance1 -Login $login01 -Password $securePassword
+            $null = New-DbaLogin -SqlInstance $script:instance1 -Login $login02 -Password $securePassword
 
             $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname
             $null = $db.Query("CREATE USER [$user] FOR LOGIN [$login]")
             $null = $db.Query("CREATE USER [$user2] FOR LOGIN [$login2]")
+            $null = $db.Query("CREATE USER [$user01] FOR LOGIN [$login01]")
+            $null = $db.Query("CREATE USER [$user02] FOR LOGIN [$login02]")
             $null = $db.Query("CREATE ROLE [$role]")
+            $null = $db.Query("CREATE ROLE [$role01]")
+            $null = $db.Query("CREATE ROLE [$role02]")
+            $null = $db.Query("CREATE ROLE [$role03]")
 
             $null = $db.Query("CREATE TABLE $table (C1 INT);")
             $null = $db.Query("GRANT SELECT ON OBJECT::$table TO [$user];")
             $null = $db.Query("EXEC sp_addrolemember '$role', '$user';")
+            $null = $db.Query("EXEC sp_addrolemember '$role01', '$user01';")
+            $null = $db.Query("EXEC sp_addrolemember '$role02', '$user01';")
+            $null = $db.Query("EXEC sp_addrolemember '$role02', '$user02';")
+            $null = $db.Query("EXEC sp_addrolemember '$role03', '$user02';")
             $null = $db.Query("GRANT SELECT ON OBJECT::$table TO [$user2];")
         } catch { } # No idea why appveyor can't handle this
     }
@@ -99,14 +120,45 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Check if one output file per user was created" {
         $null = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -Path $outputPath
-        It "Exports two files to the path" {
-            (Get-ChildItem $outputPath).Count | Should Be 2
+        It "Exports files to the path" {
+            $userCount = (Get-DbaDbUser -SqlInstance $script:instance1 -Database $dbname | Where-Object { $_.Name -notin @("dbo", "guest", "sys", "INFORMATION_SCHEMA") } | Measure-Object).Count
+            (Get-ChildItem $outputPath).Count | Should Be $userCount
         }
         It "Exported file name contains username '$user'" {
             Get-ChildItem $outputPath | Where-Object Name -like ('*' + $User + '*') | Should BeTrue
         }
         It "Exported file name contains username '$user2'" {
             Get-ChildItem $outputPath | Where-Object Name -like ('*' + $User2 + '*') | Should BeTrue
+        }
+    }
+
+    Context "Check if the output scripts were self-contained" {
+        # Clean up the output folder
+        Remove-Item -Path $outputPath -Recurse -ErrorAction SilentlyContinue
+        $null = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -Path $outputPath
+
+        It "Contains the CREATE ROLE and ALTER ROLE statements for its own roles" {
+            Get-ChildItem $outputPath | Where-Object Name -like ('*' + $user01 + '*') | ForEach-Object {
+                $content = Get-Content -Path $_.FullName -Raw
+                $content | Should BeLike "*CREATE ROLE [[]$role01]*"
+                $content | Should BeLike "*CREATE ROLE [[]$role02]*"
+                $content | Should Not BeLike "*CREATE ROLE [[]$role03]*"
+
+                $content | Should BeLike "*ALTER ROLE [[]$role01] ADD MEMBER [[]$user01]*"
+                $content | Should BeLike "*ALTER ROLE [[]$role02] ADD MEMBER [[]$user01]*"
+                $content | Should Not BeLike "*ALTER ROLE [[]$role03]*"
+            }
+
+            Get-ChildItem $outputPath | Where-Object Name -like ('*' + $user02 + '*') | ForEach-Object {
+                $content = Get-Content -Path $_.FullName -Raw
+                $content | Should BeLike "*CREATE ROLE [[]$role02]*"
+                $content | Should BeLike "*CREATE ROLE [[]$role03]*"
+                $content | Should Not BeLike "*CREATE ROLE [[]$role01]*"
+
+                $content | Should BeLike "*ALTER ROLE [[]$role02] ADD MEMBER [[]$user02]*"
+                $content | Should BeLike "*ALTER ROLE [[]$role03] ADD MEMBER [[]$user02]*"
+                $content | Should Not BeLike "*ALTER ROLE [[]$role01]*"
+            }
         }
     }
 }
