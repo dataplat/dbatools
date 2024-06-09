@@ -228,7 +228,7 @@ function ConvertTo-DbaDataTable {
                     return [System.DateTime]$Value.DateTime
                 }
                 'String' {
-                    return ($Value | Foreach-Object { $_.ToString() }) -join ', '
+                    return ($Value | Foreach-Object { $_.ToString() }) -Join ', '
                 }
             }
         }

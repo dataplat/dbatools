@@ -62,6 +62,7 @@ function Get-DbaHelp {
         $availability = 'Windows, Linux, macOS'
 
         function Get-DbaDocsMD($doc_to_render) {
+
             $rtn = New-Object -TypeName "System.Collections.ArrayList"
             $null = $rtn.Add("# $($doc_to_render.CommandName)" )
             if ($doc_to_render.Author -or $doc_to_render.Availability) {
@@ -81,11 +82,16 @@ function Get-DbaHelp {
                 $null = $rtn.Add('*Aliases : ' + $doc_to_render.Alias + '*')
                 $null = $rtn.Add('')
             }
+            $null = $rtn.Add('Want to see the source code for this command? Check out [' + $doc_to_render.CommandName + '](https://github.com/dataplat/dbatools/blob/master/public/' + $doc_to_render.CommandName + '.ps1) on GitHub.')
+            $null = $rtn.Add("<br>")
+            $null = $rtn.Add('Want to see the Bill Of Health for this command? Check out [' + $doc_to_render.CommandName + '](https://dataplat.github.io/boh#' + $doc_to_render.CommandName + ').')
             $null = $rtn.Add('## Synopsis')
-            $null = $rtn.Add($doc_to_render.Synopsis)
+            $null = $rtn.Add($doc_to_render.Synopsis.Replace("`n", "  `n"))
             $null = $rtn.Add('')
             $null = $rtn.Add('## Description')
-            $null = $rtn.Add($doc_to_render.Description)
+            if ($doc_to_render.Description) {
+                $null = $rtn.Add($doc_to_render.Description.Replace("`n", "  `n"))
+            }
             $null = $rtn.Add('')
             if ($doc_to_render.Syntax) {
                 $null = $rtn.Add('## Syntax')
@@ -102,7 +108,15 @@ function Get-DbaHelp {
                         if ($x -eq 0) {
                             $null = $rtn.Add($val)
                         } else {
-                            $null = $rtn.Add('    [' + $val.replace("`n", '').replace("`n", ''))
+                            $xx = 0
+                            foreach ($subparam in ($val -split ' -')) {
+                                if ($xx -eq 0) {
+                                    $null = $rtn.Add('    [' + $subparam.replace("`n", '').replace("`n", ''))
+                                } else {
+                                    $null = $rtn.Add('    -' + $subparam.replace("`n", '').replace("`n", ''))
+                                }
+                                $xx += 1
+                            }
                         }
                         $x += 1
                     }
@@ -133,7 +147,7 @@ function Get-DbaHelp {
                         $inside = 0
                         $null = $rtn.Add('```')
                     }
-                    $null = $rtn.Add("$row<br>")
+                    $null = $rtn.Add("$($row.Replace("`n", "  `n"))<br>")
                 }
             }
             if ($inside -eq 1) {
@@ -155,7 +169,7 @@ function Get-DbaHelp {
                         $null = $rtn.Add('### Required Parameters')
                     }
                     $null = $rtn.Add('##### -' + $el[0])
-                    $null = $rtn.Add($el[1] + '<br>')
+                    $null = $rtn.Add($el[1].Replace("`r", "").Replace("`n", "  `n") + ' <br>')
                     $null = $rtn.Add('')
                     $null = $rtn.Add('|  |  |')
                     $null = $rtn.Add('| - | - |')
@@ -182,7 +196,7 @@ function Get-DbaHelp {
                     }
 
                     $null = $rtn.Add('##### -' + $el[0])
-                    $null = $rtn.Add($el[1] + '<br>')
+                    $null = $rtn.Add($el[1].Replace("`r", "").Replace("`n", "  `n") + '<br>')
                     $null = $rtn.Add('')
                     $null = $rtn.Add('|  |  |')
                     $null = $rtn.Add('| - | - |')
@@ -196,11 +210,9 @@ function Get-DbaHelp {
                     $null = $rtn.Add('')
                 }
             }
+
             $null = $rtn.Add('')
             $null = $rtn.Add("`n" + '&nbsp;' + "`n")
-            $null = $rtn.Add('Want to see the source code for this command? Check out [' + $doc_to_render.CommandName + '](https://github.com/dataplat/dbatools/blob/master/public/' + $doc_to_render.CommandName + '.ps1) on GitHub.')
-            $null = $rtn.Add("<br>")
-            $null = $rtn.Add('Want to see the Bill Of Health for this command? Check out [' + $doc_to_render.CommandName + '](https://dataplat.github.io/boh#' + $doc_to_render.CommandName + ').')
             $null = $rtn.Add('')
 
             return $rtn
@@ -370,7 +382,7 @@ function Get-DbaHelp {
             [-ModuleExport] [-PassThru] [-AllowDelete] [<CommonParameters>]'
         }
         if ($OutputAs -eq "PSObject") {
-            [pscustomobject]$thebase
+            [PSCustomObject]$thebase
         } elseif ($OutputAs -eq "MDString") {
             Get-DbaDocsMD -doc_to_render $thebase
         }
