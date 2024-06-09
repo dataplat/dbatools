@@ -252,7 +252,7 @@ function Stop-Function {
         }
 
         # Extra insurance that it'll stop
-        Set-Variable -Name "__dbatools_interrupt_function_78Q9VPrM6999g6zo24Qn83m09XF56InEn4hFrA8Fwhu5xJrs6r" -Scope 1 -Value $true
+        Set-Variable -Name "__dbatools_interrupt_function_78Q9VPrM6999g6zo24Qn83m09XF56InEn4hFrA8Fwhu5xJrs6r" -Scope 1 -Value $true -WhatIf:$false
 
         throw $records[0]
     }
@@ -273,7 +273,7 @@ function Stop-Function {
             }
         } else {
             # Make sure the function knows it should be stopping
-            Set-Variable -Name "__dbatools_interrupt_function_78Q9VPrM6999g6zo24Qn83m09XF56InEn4hFrA8Fwhu5xJrs6r" -Scope 1 -Value $true
+            Set-Variable -Name "__dbatools_interrupt_function_78Q9VPrM6999g6zo24Qn83m09XF56InEn4hFrA8Fwhu5xJrs6r" -Scope 1 -Value $true -WhatIf:$false
 
             return
         }
