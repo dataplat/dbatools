@@ -103,7 +103,7 @@ function New-DbaDbUser {
     #>
 
     ### This command has more comments than other commands, because it should act as an example for other commands.
-    ### These extra lines start with "###" and should help new contributores to understand why we code the way we do.
+    ### These extra lines start with "###" and should help new contributors to understand why we code the way we do.
 
     ### All commands that change objects must use SupportsShouldProcess to support -WhatIf.
     ### All commands that add new objects (New-...) must use ConfirmImpact = "Medium".
@@ -125,7 +125,7 @@ function New-DbaDbUser {
         [switch]$IncludeSystem,
         ### The following parameters are specific to the objects that the command works with, in this case a database user.
         ### We start with the name of the object, in this case the name of the user that will be created.
-        ### Discussion: The SMO class is called "User", the SQL syntax to create the object uses "CREATE USER", the command is named "...User" - so the parameter should be renamed to User (with an alias for backwords compatility)
+        ### Discussion: The SMO class is called "User", the SQL syntax to create the object uses "CREATE USER", the command is named "...User" - so the parameter should be renamed to User (with an alias for backwords compatibility)
         ### For the default parameter set Login, the name of the user can be set to the mandatory parameter Login, in all other cases, we need the name of the user.
         [Parameter(ParameterSetName = "Login")]
         [Parameter(Mandatory, ParameterSetName = "NoLogin")]
@@ -136,7 +136,7 @@ function New-DbaDbUser {
         ### Now we add parameters to specify the individual attributes for the object. We start with parameters that are mandatory for parameter sets.
         [Parameter(Mandatory, ParameterSetName = "Login")]
         [string]$Login,
-        ### If we need to pass a password to the command, we always use the type securestring and name the parameter SecurePassword. Here we only use the alias for backwords compatility.
+        ### If we need to pass a password to the command, we always use the type securestring and name the parameter SecurePassword. Here we only use the alias for backwords compatibility.
         [Parameter(Mandatory, ParameterSetName = "ContainedSQLUser")]
         [Alias("Password")]
         [securestring]$SecurePassword,
@@ -154,7 +154,7 @@ function New-DbaDbUser {
     )
 
     begin {
-        ### To help analysing bugs in commands using parameter sets, we write the used parameter set to verbose output.
+        ### To help analyzing bugs in commands using parameter sets, we write the used parameter set to verbose output.
         Write-Message -Level Verbose -Message "Using parameter set $($PSCmdlet.ParameterSetName)."
 
         ### In case we don't use parameter sets, we check valid combinations of parameters here.
@@ -182,7 +182,7 @@ function New-DbaDbUser {
         }
         #>
 
-        ### To help analysing bugs, we write at least one line to verbose output per code path. This can also be used as a kind of comment.
+        ### To help analyzing bugs, we write at least one line to verbose output per code path. This can also be used as a kind of comment.
         ### Changing parameter values is only allowed in the begin block, so that every execution of the process block or the instance loop in the process block has the same set of parameter values.
         if ($Login -and -not $User) {
             Write-Message -Level Verbose -Message "No user name provided, so login name [$Login] will be used as user name."
@@ -263,7 +263,7 @@ function New-DbaDbUser {
             }
 
             foreach ($db in $databases) {
-                ### Where should be a verbose message at the start of each loop to help analysing issues.
+                ### Where should be a verbose message at the start of each loop to help analyzing issues.
                 Write-Message -Level Verbose -Message "Processing database $db on $server."
 
                 ### Run checks that need a database object. The same rules as for the instance checks apply.
