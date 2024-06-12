@@ -230,45 +230,23 @@ function New-DbaDbUser {
             ### Just found a big problem with -Target: If the target is an SMO (example: $db later in the code), the background runspace is constantly querying the instance.
             ### In the messages, all strings should be surrounded by "[]", but all SMO variables will get "[]" automaticaly by their .ToString() method.
             if ($Login -and -not $server.Logins[$Login]) {
-                Stop-Function -Message "Login [$Login] not found on $server" -Continue
+                Stop-Function -Message "Login [$Login] not found on instance $server" -Continue
             }
 
             ### As we need the database object(s) to be able to add a new users to it, we have to filter the databases of the instance based on the provided parameters.
-            ### We don't use Get-DbaDatabase here, because that command does way more than we need.
-            ### We generally avoid to use other commands as they add more load and prefer to use the SMO directly.
+            ### We use Get-DbaDatabase here, because that command does all we need.
+            ### We generally avoid to use other commands as they add more load and prefer to use the SMO directly. But in this case there is not much extra work.
             ### The following lines are always the same for all commands that work on a set of databases.
-            if ($Database) {
-                ### In case an explicit list of database names is provided, we test each database for existance and correct status.
-                ### Commands that need to change the database test for IsUpdateable, other commands test for IsAccessible.
-                $databases = @( )
-                foreach ($dbName in $Database) {
-                    $db = $server.Databases[$dbName]
-                    if (-not $db) {
-                        Stop-Function -Message "Database [$dbName] not found on $server" -Continue
-                    } elseif (-not $db.IsUpdateable) {
-                        Stop-Function -Message "Database $db on $server is not updatable" -Continue
-                    } else {
-                        $databases += $db
-                    }
-                }
-            } else {
-                ### Commands that need to change the database test for IsUpdateable, other commands test for IsAccessible.
-                $databases = $server.Databases | Where-Object IsUpdateable
-                if (-not $IncludeSystem) {
-                    $databases = $databases | Where-Object IsSystemObject -eq $false
-                }
-                if ($ExcludeDatabase) {
-                    $databases = $databases | Where-Object Name -notin $ExcludeDatabase
-                }
-            }
-
+            $databases = Get-DbaDatabase -SqlInstance $server -Database $Database -ExcludeDatabase $ExcludeDatabase -ExcludeSystem:$(-not $IncludeSystem)
+            ### Commands that need to change the database test for IsUpdateable, other commands test for IsAccessible.
+            $databases = $databases | Where-Object IsUpdateable
             foreach ($db in $databases) {
                 ### Where should be a verbose message at the start of each loop to help analyzing issues.
-                Write-Message -Level Verbose -Message "Processing database $db on $server."
+                Write-Message -Level Verbose -Message "Processing database $db on instance $server."
 
                 ### Run checks that need a database object. The same rules as for the instance checks apply.
                 if (-not $db.Schemas[$DefaultSchema]) {
-                    Stop-Function -Message "Schema [$DefaultSchema] does not exist in database $db on $server" -Continue
+                    Stop-Function -Message "Schema [$DefaultSchema] does not exist in database $db on instance $server" -Continue
                 }
 
                 ### As a last check, check for existance of the object that should be created.
@@ -283,7 +261,7 @@ function New-DbaDbUser {
                             }
                         }
                     } else {
-                        Stop-Function -Message "User [$User] already exists in database $db on $server and -Force was not specified" -Continue
+                        Stop-Function -Message "User [$User] already exists in database $db on instance $server and -Force was not specified" -Continue
                     }
                 }
 
