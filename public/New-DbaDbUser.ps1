@@ -17,17 +17,13 @@ function New-DbaDbUser {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Specifies the database(s) to process. Options for this list are auto-populated from the server.
-        If unspecified, all user databases will be processed.
+        Specifies one or more database(s) to process. If unspecified, all user databases will be processed.
 
     .PARAMETER ExcludeDatabase
-        Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
-        By default, system databases are excluded.
-        This switch will be ignored if -Database is used.
+        Specifies one or more database(s) to exclude from processing.
 
     .PARAMETER IncludeSystem
-        If this switch is enabled, the user will be added to system databases.
-        This switch will be ignored if -Database is used.
+        If this switch is enabled, also system databases will be processed.
 
     .PARAMETER User
         When specified, the user will have this name. If not specified but -Login is used, the user will have the same name as the login.
@@ -157,31 +153,6 @@ function New-DbaDbUser {
         ### To help analyzing bugs in commands using parameter sets, we write the used parameter set to verbose output.
         Write-Message -Level Verbose -Message "Using parameter set $($PSCmdlet.ParameterSetName)."
 
-        ### In case we don't use parameter sets, we check valid combinations of parameters here.
-        ### Option 1: Just write a warning message
-        ### Option 2: Use Stop-Function to stop the command.
-        ### Important for Option 2 to stop the command in case EnableException is $false:
-        ### * Add "return" to stop the execution of the begin block.
-        ### * Add "if (Test-FunctionInterrupt) { return }" to the process and the end block to stop the execution of the command.
-        ### Here we use Option 1 (Discussion: I would prefere this):
-        if ($Database -and $ExcludeDatabase) {
-            Write-Message -Level Warning -Message "-ExcludeDatabase will be ignored, because -Database is used."
-        }
-        if ($Database -and $IncludeSystem) {
-            Write-Message -Level Warning -Message "-IncludeSystem will be ignored, because -Database is used."
-        }
-        <#
-        ### Here we use Option 2:
-        if ($Database -and $ExcludeDatabase) {
-            Stop-Function -Message "-ExcludeDatabase is not allowed if -Database is used." -Category InvalidArgument
-            return
-        }
-        if ($Database -and $IncludeSystem) {
-            Stop-Function -Message "-IncludeSystem is not allowed if -Database is used." -Category InvalidArgument
-            return
-        }
-        #>
-
         ### To help analyzing bugs, we write at least one line to verbose output per code path. This can also be used as a kind of comment.
         ### Changing parameter values is only allowed in the begin block, so that every execution of the process block or the instance loop in the process block has the same set of parameter values.
         if ($Login -and -not $User) {
@@ -204,13 +175,6 @@ function New-DbaDbUser {
     }
 
     process {
-        <#
-        ### If Stop-Function is used in the begin block, the following lines are needed in both the process and the end block.
-        if (Test-FunctionInterrupt) {
-            return
-        }
-        #>
-
         ### Every process block starts with a loop through the parameter SqlInstance.
         ### Inside of the loop the current instance is named "instance".
         ### The first thing we do is to connect to the instance and save the returned server SMO in a variable called server.
