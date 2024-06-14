@@ -422,7 +422,7 @@ function New-DbaAgentSchedule {
             return
         }
         try {
-            $activeStartTimeOfDay = New-Object System.TimeSpan($StartTime.Substring(0, 2), $StartTime.Substring(2, 2), $StartTime.Substring(2, 2))
+            $activeStartTimeOfDay = New-Object System.TimeSpan($StartTime.Substring(0, 2), $StartTime.Substring(2, 2), $StartTime.Substring(4, 2))
         } catch {
             Stop-Function -Message "Start time $StartTime needs to be a valid time with format HHmmss." -Target $SqlInstance
             return
@@ -437,7 +437,7 @@ function New-DbaAgentSchedule {
             return
         }
         try {
-            $activeEndTimeOfDay = New-Object System.TimeSpan($EndTime.Substring(0, 2), $EndTime.Substring(2, 2), $EndTime.Substring(2, 2))
+            $activeEndTimeOfDay = New-Object System.TimeSpan($EndTime.Substring(0, 2), $EndTime.Substring(2, 2), $EndTime.Substring(4, 2))
         } catch {
             Stop-Function -Message "End time $EndTime needs to be a valid time with format HHmmss." -Target $SqlInstance
             return
