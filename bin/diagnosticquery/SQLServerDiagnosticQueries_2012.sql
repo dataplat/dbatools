@@ -1,7 +1,7 @@
 
 -- SQL Server 2012 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: June 3, 2024
+-- Last Modified: June 14, 2024
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -365,10 +365,10 @@ ORDER BY d.recovery_model_desc, d.[name] OPTION (RECOMPILE);
 -- Get SQL Server Agent jobs and Category information (Query 10) (SQL Server Agent Jobs)
 SELECT sj.name AS [Job Name], sj.[description] AS [Job Description], 
 sc.name AS [CategoryName], SUSER_SNAME(sj.owner_sid) AS [Job Owner],
-sj.date_created AS [Date Created], sj.[enabled] AS [Job Enabled], 
-sj.notify_email_operator_id, sj.notify_level_email, h.run_status,
+sj.date_created AS [Date Created], sj.[enabled] AS [Job Enabled], h.run_status,
+CONVERT(DATETIME, RTRIM(h.run_date) + ' ' + STUFF(STUFF(REPLACE(STR(RTRIM(h.run_time),6,0),' ','0'),3,0,':'),6,0,':')) AS [Last Start Date],
 RIGHT(STUFF(STUFF(REPLACE(STR(h.run_duration, 7, 0), ' ', '0'), 4, 0, ':'), 7, 0, ':'),8) AS [Last Duration - HHMMSS],
-CONVERT(DATETIME, RTRIM(h.run_date) + ' ' + STUFF(STUFF(REPLACE(STR(RTRIM(h.run_time),6,0),' ','0'),3,0,':'),6,0,':')) AS [Last Start Date]
+s.[name] AS [Schedule Name], s.[enabled] AS [Schedule Enabled], js.next_run_date, js.next_run_time
 FROM msdb.dbo.sysjobs AS sj WITH (NOLOCK)
 LEFT OUTER JOIN
     (SELECT job_id, instance_id = MAX(instance_id)
@@ -380,6 +380,12 @@ ON sj.category_id = sc.category_id
 LEFT OUTER JOIN msdb.dbo.sysjobhistory AS h WITH (NOLOCK)
 ON h.job_id = l.job_id
 AND h.instance_id = l.instance_id
+LEFT OUTER JOIN msdb.dbo.sysjobs_view AS jv WITH (NOLOCK)
+ON jv.job_id = sj.job_id
+LEFT OUTER JOIN msdb.dbo.sysjobschedules AS js WITH (NOLOCK)
+ON jv.job_id = js.job_id
+LEFT OUTER JOIN msdb.dbo.sysschedules AS s WITH (NOLOCK)
+ON s.schedule_id = js.schedule_id
 ORDER BY CONVERT(INT, h.run_duration) DESC, [Last Start Date] DESC OPTION (RECOMPILE);
 ------
 

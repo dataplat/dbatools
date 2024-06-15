@@ -76,28 +76,28 @@ function New-DbaAgentSchedule {
         FrequencyRecurrenceFactor is used only if FrequencyType is "Weekly", "Monthly" or "MonthlyRelative".
 
     .PARAMETER StartDate
-        The date on which execution of a job can begin.
+        The date on which execution of a job can begin. Must be a string in the format yyyyMMdd.
 
         If force is used the start date will be the current day
 
     .PARAMETER EndDate
-        The date on which execution of a job can stop.
+        The date on which execution of a job can stop. Must be a string in the format yyyyMMdd.
 
-        If force is used the end date will be '9999-12-31'
+        If force is used the end date will be '99991231'
 
     .PARAMETER StartTime
-        The time on any day to begin execution of a job. Format HHMMSS / 24 hour clock.
+        The time on any day to begin execution of a job. Must be a string in the format HHmmss / 24 hour clock.
         Example: '010000' for 01:00:00 AM.
         Example: '140000' for 02:00:00 PM.
 
-        If force is used the start time will be '00:00:00'
+        If force is used the start time will be '000000' for midnight.
 
     .PARAMETER EndTime
-        The time on any day to end execution of a job. Format HHMMSS / 24 hour clock.
+        The time on any day to end execution of a job. Must be a string in the format HHmmss / 24 hour clock.
         Example: '010000' for 01:00:00 AM.
         Example: '140000' for 02:00:00 PM.
 
-        If force is used the start time will be '23:59:59'
+        If force is used the end time will be '235959' for one second before midnight.
 
     .PARAMETER Owner
         Login to own the job, defaults to login running the command.
@@ -379,10 +379,6 @@ function New-DbaAgentSchedule {
             }
         }
 
-        # Setup the regex
-        $RegexDate = '(?<!\d)(?:(?:(?:1[6-9]|[2-9]\d)?\d{2})(?:(?:(?:0[13578]|1[02])31)|(?:(?:0[1,3-9]|1[0-2])(?:29|30)))|(?:(?:(?:(?:1[6-9]|[2-9]\d)?(?:0[48]|[2468][048]|[13579][26])|(?:(?:16|[2468][048]|[3579][26])00)))0229)|(?:(?:1[6-9]|[2-9]\d)?\d{2})(?:(?:0?[1-9])|(?:1[0-2]))(?:0?[1-9]|1\d|2[0-8]))(?!\d)'
-        $RegexTime = '^(?:(?:([01]?\d|2[0-3]))?([0-5]?\d))?([0-5]?\d)$'
-
         # Check the start date
         if (-not $StartDate -and $Force) {
             $StartDate = Get-Date -Format 'yyyyMMdd'
@@ -390,8 +386,11 @@ function New-DbaAgentSchedule {
         } elseif (-not $StartDate) {
             Stop-Function -Message "Please enter a start date or use -Force to use defaults." -Target $SqlInstance
             return
-        } elseif ($StartDate -notmatch $RegexDate) {
-            Stop-Function -Message "Start date $StartDate needs to be a valid date with format yyyyMMdd" -Target $SqlInstance
+        }
+        try {
+            $activeStartDate = New-Object System.DateTime($StartDate.Substring(0, 4), $StartDate.Substring(4, 2), $StartDate.Substring(6, 2))
+        } catch {
+            Stop-Function -Message "Start date $StartDate needs to be a valid date with format yyyyMMdd." -Target $SqlInstance
             return
         }
 
@@ -403,12 +402,14 @@ function New-DbaAgentSchedule {
             Stop-Function -Message "Please enter an end date or use -Force to use defaults." -Target $SqlInstance
             return
         }
-
-        elseif ($EndDate -notmatch $RegexDate) {
-            Stop-Function -Message "End date $EndDate needs to be a valid date with format yyyyMMdd" -Target $SqlInstance
+        try {
+            $activeEndDate = New-Object System.DateTime($EndDate.Substring(0, 4), $EndDate.Substring(4, 2), $EndDate.Substring(6, 2))
+        } catch {
+            Stop-Function -Message "End date $EndDate needs to be a valid date with format yyyyMMdd." -Target $SqlInstance
             return
-        } elseif ($EndDate -lt $StartDate) {
-            Stop-Function -Message "End date $EndDate cannot be before start date $StartDate" -Target $SqlInstance
+        }
+        if ($activeEndDate -lt $activeStartDate) {
+            Stop-Function -Message "End date $EndDate cannot be before start date $StartDate." -Target $SqlInstance
             return
         }
 
@@ -419,8 +420,11 @@ function New-DbaAgentSchedule {
         } elseif (-not $StartTime) {
             Stop-Function -Message "Please enter a start time or use -Force to use defaults." -Target $SqlInstance
             return
-        } elseif ($StartTime -notmatch $RegexTime) {
-            Stop-Function -Message "Start time $StartTime needs to match between '000000' and '235959'. Schedule $Schedule not set." -Target $SqlInstance
+        }
+        try {
+            $activeStartTimeOfDay = New-Object System.TimeSpan($StartTime.Substring(0, 2), $StartTime.Substring(2, 2), $StartTime.Substring(4, 2))
+        } catch {
+            Stop-Function -Message "Start time $StartTime needs to be a valid time with format HHmmss." -Target $SqlInstance
             return
         }
 
@@ -431,23 +435,12 @@ function New-DbaAgentSchedule {
         } elseif (-not $EndTime) {
             Stop-Function -Message "Please enter an end time or use -Force to use defaults." -Target $SqlInstance
             return
-        } elseif ($EndTime -notmatch $RegexTime) {
-            Stop-Function -Message "End time $EndTime needs to match between '000000' and '235959'. Schedule $Schedule not set." -Target $SqlInstance
+        }
+        try {
+            $activeEndTimeOfDay = New-Object System.TimeSpan($EndTime.Substring(0, 2), $EndTime.Substring(2, 2), $EndTime.Substring(4, 2))
+        } catch {
+            Stop-Function -Message "End time $EndTime needs to be a valid time with format HHmmss." -Target $SqlInstance
             return
-        }
-
-        #Format dates and times
-        if ($StartDate) {
-            $StartDate = $StartDate.Insert(6, '-').Insert(4, '-')
-        }
-        if ($EndDate) {
-            $EndDate = $EndDate.Insert(6, '-').Insert(4, '-')
-        }
-        if ($StartTime) {
-            $StartTime = $StartTime.Insert(4, ':').Insert(2, ':')
-        }
-        if ($EndTime) {
-            $EndTime = $EndTime.Insert(4, ':').Insert(2, ':')
         }
     }
 
@@ -507,25 +500,17 @@ function New-DbaAgentSchedule {
                         $jobschedule.FrequencyRecurrenceFactor = $FrequencyRecurrenceFactor
                     }
 
-                    if ($StartDate) {
-                        Write-Message -Message "Setting job schedule start date to $StartDate" -Level Verbose
-                        $jobschedule.ActiveStartDate = $StartDate
-                    }
+                    Write-Message -Message "Setting job schedule start date to $StartDate / $activeStartDate" -Level Verbose
+                    $jobschedule.ActiveStartDate = $activeStartDate
 
-                    if ($EndDate) {
-                        Write-Message -Message "Setting job schedule end date to $EndDate" -Level Verbose
-                        $jobschedule.ActiveEndDate = $EndDate
-                    }
+                    Write-Message -Message "Setting job schedule end date to $EndDate / $activeEndDate" -Level Verbose
+                    $jobschedule.ActiveEndDate = $activeEndDate
 
-                    if ($StartTime) {
-                        Write-Message -Message "Setting job schedule start time to $StartTime" -Level Verbose
-                        $jobschedule.ActiveStartTimeOfDay = $StartTime
-                    }
+                    Write-Message -Message "Setting job schedule start time to $StartTime / $activeStartTimeOfDay" -Level Verbose
+                    $jobschedule.ActiveStartTimeOfDay = $activeStartTimeOfDay
 
-                    if ($EndTime) {
-                        Write-Message -Message "Setting job schedule end time to $EndTime" -Level Verbose
-                        $jobschedule.ActiveEndTimeOfDay = $EndTime
-                    }
+                    Write-Message -Message "Setting job schedule end time to $EndTime / $activeEndTimeOfDay" -Level Verbose
+                    $jobschedule.ActiveEndTimeOfDay = $activeEndTimeOfDay
 
                     if ($Owner) {
                         $jobschedule.OwnerLoginName = $Owner
