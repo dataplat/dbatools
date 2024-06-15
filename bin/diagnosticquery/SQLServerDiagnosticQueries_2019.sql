@@ -1,7 +1,7 @@
 
 -- SQL Server 2019 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: June 3, 2024
+-- Last Modified: June 14, 2024
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -100,7 +100,8 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 15.0.4345.5		CU24								12/14/2023		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2019/cumulativeupdate24	
 -- 15.0.4355.3		CU25								2/15/2024		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2019/cumulativeupdate25
 -- 15.0.4360.2		CU25 + GDR							4/9/2024		https://support.microsoft.com/en-us/topic/kb5036335-description-of-the-security-update-for-sql-server-2019-cu25-april-9-2024-eb3571d0-62ee-445e-9681-5715caf9bbc2
--- 15.0.4365.2		CU26								4/11/2024		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2019/cumulativeupdate26	
+-- 15.0.4365.2		CU26								4/11/2024		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2019/cumulativeupdate26
+-- 15.0.4375.4		CU27								6/13/2024		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2019/cumulativeupdate27
 
 -- How to determine the version, edition and update level of SQL Server and its components 
 -- https://bit.ly/2oAjKgW	
@@ -328,10 +329,10 @@ ORDER BY d.recovery_model_desc, d.[name] OPTION (RECOMPILE);
 -- Get SQL Server Agent jobs and Category information (Query 9) (SQL Server Agent Jobs)
 SELECT sj.name AS [Job Name], sj.[description] AS [Job Description], 
 sc.name AS [CategoryName], SUSER_SNAME(sj.owner_sid) AS [Job Owner],
-sj.date_created AS [Date Created], sj.[enabled] AS [Job Enabled], 
-sj.notify_email_operator_id, sj.notify_level_email, h.run_status,
+sj.date_created AS [Date Created], sj.[enabled] AS [Job Enabled], h.run_status,
+CONVERT(DATETIME, RTRIM(h.run_date) + ' ' + STUFF(STUFF(REPLACE(STR(RTRIM(h.run_time),6,0),' ','0'),3,0,':'),6,0,':')) AS [Last Start Date],
 RIGHT(STUFF(STUFF(REPLACE(STR(h.run_duration, 7, 0), ' ', '0'), 4, 0, ':'), 7, 0, ':'),8) AS [Last Duration - HHMMSS],
-CONVERT(DATETIME, RTRIM(h.run_date) + ' ' + STUFF(STUFF(REPLACE(STR(RTRIM(h.run_time),6,0),' ','0'),3,0,':'),6,0,':')) AS [Last Start Date]
+s.[name] AS [Schedule Name], s.[enabled] AS [Schedule Enabled], js.next_run_date, js.next_run_time
 FROM msdb.dbo.sysjobs AS sj WITH (NOLOCK)
 LEFT OUTER JOIN
     (SELECT job_id, instance_id = MAX(instance_id)
@@ -343,6 +344,12 @@ ON sj.category_id = sc.category_id
 LEFT OUTER JOIN msdb.dbo.sysjobhistory AS h WITH (NOLOCK)
 ON h.job_id = l.job_id
 AND h.instance_id = l.instance_id
+LEFT OUTER JOIN msdb.dbo.sysjobs_view AS jv WITH (NOLOCK)
+ON jv.job_id = sj.job_id
+LEFT OUTER JOIN msdb.dbo.sysjobschedules AS js WITH (NOLOCK)
+ON jv.job_id = js.job_id
+LEFT OUTER JOIN msdb.dbo.sysschedules AS s WITH (NOLOCK)
+ON s.schedule_id = js.schedule_id
 ORDER BY CONVERT(INT, h.run_duration) DESC, [Last Start Date] DESC OPTION (RECOMPILE);
 ------
 
