@@ -102,8 +102,7 @@ function New-DbaDbUser {
     ### These extra lines start with "###" and should help new contributors to understand why we code the way we do.
 
     ### All commands that change objects must use SupportsShouldProcess to support -WhatIf.
-    ### All commands that add new objects (New-...) must use ConfirmImpact = "Medium".
-    ### All commands that change existing objects (Set-...) must use ConfirmImpact = "???".
+    ### All commands that add or change objects (New-... or Set-...) must use ConfirmImpact = "Medium".
     ### All commands that drop existing objects (Remove-...) must use ConfirmImpact = "High".
     ### For most of the commands, we try to not use parameter sets and try to check valid parameter combinations inside of the command to be able to give the user a "nice" feedback.
     ### But this is an example of a command that uses parameter sets, which gives better help output.
@@ -121,7 +120,6 @@ function New-DbaDbUser {
         [switch]$IncludeSystem,
         ### The following parameters are specific to the objects that the command works with, in this case a database user.
         ### We start with the name of the object, in this case the name of the user that will be created.
-        ### Discussion: The SMO class is called "User", the SQL syntax to create the object uses "CREATE USER", the command is named "...User" - so the parameter should be renamed to User (with an alias for backwords compatibility)
         ### For the default parameter set Login, the name of the user can be set to the mandatory parameter Login, in all other cases, we need the name of the user.
         [Parameter(ParameterSetName = "Login")]
         [Parameter(Mandatory, ParameterSetName = "NoLogin")]
@@ -190,8 +188,6 @@ function New-DbaDbUser {
             ### Run checks as early as possible.
             ### After connecting to the instance, run checks that need a connected instance.
             ### As the check might be successful on the next instance in the loop, use -Continue.
-            ### Discussion: What is the correct -Target that we want to use. In this case it might also be $server or $Login. Or we just not use it anymore - because: Have we ever used the data?
-            ### Just found a big problem with -Target: If the target is an SMO (example: $db later in the code), the background runspace is constantly querying the instance.
             ### In the messages, all strings should be surrounded by "[]", but all SMO variables will get "[]" automaticaly by their .ToString() method.
             if ($Login -and -not $server.Logins[$Login]) {
                 Stop-Function -Message "Login [$Login] not found on instance $server" -Continue
