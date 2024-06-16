@@ -62,6 +62,6 @@ function Get-DbatoolsError {
             $First = $global:error.Count
         }
 
-        $global:error | Where-Object ScriptStackTrace -match dbatools | Select-Object -First $First -Last $Last -Skip $Skip -Property CategoryInfo, ErrorDetails, Exception, FullyQualifiedErrorId, InvocationInfo, PipelineIterationInfo, PSMessageDetails, ScriptStackTrace, TargetObject
+        $global:error | Where-Object FullyQualifiedErrorId -match dbatools | Select-Object -First $First -Last $Last -Skip $Skip -Property CategoryInfo, ErrorDetails, Exception, FullyQualifiedErrorId, InvocationInfo, PipelineIterationInfo, PSMessageDetails, ScriptStackTrace, TargetObject
     }
 }
