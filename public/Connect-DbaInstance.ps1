@@ -638,7 +638,6 @@ function Connect-DbaInstance {
                     }
                     if ($Database) {
                         # Save StatementTimeout because it might be reset on GetDatabaseConnection
-                        Write-Message -Level Warning -Message "GetDatabaseConnection was used to change surrent database (dbChanged = $dbChanged)"
                         $savedStatementTimeout = $connContext.StatementTimeout
                         $connContext = $connContext.GetDatabaseConnection($Database)
                         $connContext.StatementTimeout = $savedStatementTimeout
