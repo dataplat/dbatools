@@ -142,6 +142,8 @@ function Connect-DbaInstance {
 
         Note that the token is valid for only one hour and cannot be renewed automatically.
 
+        Note that the returned SMO is not a fully functional SMO. It can only be used in a limited list of commands like Invoke-DbaQuery or Write-DbaDbTableData.
+
     .PARAMETER DedicatedAdminConnection
         Connects using "ADMIN:" to create a dedicated admin connection (DAC) as a non-pooled connection.
         If the instance is on a remote server, the remote access has to be enabled via "Set-DbaSpConfigure -Name RemoteDacConnectionsEnabled -Value $true" or "sp_configure 'remote admin connections', 1".
