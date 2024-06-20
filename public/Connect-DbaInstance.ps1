@@ -636,7 +636,7 @@ function Connect-DbaInstance {
                         $connContext.ServerInstance = 'ADMIN:' + $connContext.ServerInstance
                         $connContext.NonPooledConnection = $true
                     }
-                    if ($Databsse) {
+                    if ($Database) {
                         # Save StatementTimeout because it might be reset on GetDatabaseConnection
                         Write-Message -Level Warning -Message "GetDatabaseConnection was used to change surrent database (dbChanged = $dbChanged)"
                         $savedStatementTimeout = $connContext.StatementTimeout
