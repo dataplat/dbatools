@@ -592,6 +592,7 @@ function Connect-DbaInstance {
                 # Currently only if we have a different Database or have to switch to a NonPooledConnection or using a specific StatementTimeout or using ApplicationIntent
                 # We do not test for SqlCredential as this would change the behavior compared to the legacy code path
                 $copyContext = $false
+                $dbChanged = $false
                 if ($Database) {
                     Write-Message -Level Debug -Message "Database [$Database] provided."
                     if (-not $inputObject.ConnectionContext.CurrentDatabase) {
@@ -602,6 +603,7 @@ function Connect-DbaInstance {
                     if ($inputObject.ConnectionContext.CurrentDatabase -ne $Database) {
                         Write-Message -Level Verbose -Message "Database [$Database] provided. Does not match ConnectionContext.CurrentDatabase [$($inputObject.ConnectionContext.CurrentDatabase)], copying ConnectionContext and setting the CurrentDatabase"
                         $copyContext = $true
+                        $dbChanged = $true
                     }
                 }
                 if ($ApplicationIntent -and $inputObject.ConnectionContext.ApplicationIntent -ne $ApplicationIntent) {
@@ -636,7 +638,7 @@ function Connect-DbaInstance {
                         $connContext.ServerInstance = 'ADMIN:' + $connContext.ServerInstance
                         $connContext.NonPooledConnection = $true
                     }
-                    if ($Database) {
+                    if ($dbChanged) {
                         # Save StatementTimeout because it might be reset on GetDatabaseConnection
                         $savedStatementTimeout = $connContext.StatementTimeout
                         $connContext = $connContext.GetDatabaseConnection($Database)
