@@ -21,8 +21,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $dbname = "dbatoolsci_history_$random"
         $dbnameForked = "dbatoolsci_history_forked_$random"
         $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname, $dbnameForked | Remove-DbaDatabase -Confirm:$false
-        $server.Databases['master'].ExecuteNonQuery("CREATE DATABASE $dbname")
-        $server.Databases['master'].ExecuteNonQuery("CREATE DATABASE $dbnameForked")
+        $server.Databases['master'].ExecuteNonQuery("CREATE DATABASE $dbname; ALTER DATABASE $dbname SET SET RECOVERY FULL")
+        $server.Databases['master'].ExecuteNonQuery("CREATE DATABASE $dbnameForked; ALTER DATABASE $dbnameForked SET SET RECOVERY FULL")
         $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname
         $db | Backup-DbaDatabase -Type Full -BackupDirectory $backupDirectory
         $db | Backup-DbaDatabase -Type Differential -BackupDirectory $backupDirectory
