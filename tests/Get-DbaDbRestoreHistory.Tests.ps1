@@ -16,10 +16,6 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     BeforeAll {
-        $DestBackupDir = 'C:\Temp\backups'
-        if (-Not(Test-Path $DestBackupDir)) {
-            New-Item -Type Container -Path $DestBackupDir
-        }
         $random = Get-Random
         $dbname1 = "dbatoolsci_restorehistory1_$random"
         $dbname2 = "dbatoolsci_restorehistory2_$random"
@@ -36,8 +32,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     AfterAll {
         $null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname1, $dbname2 | Remove-DbaDatabase -Confirm:$false
-        Remove-Item -Path $fullBackup.BackupPath -Force
-        Remove-Item -Path $logBackup.BackupPath -Force
     }
     Context "Preparation" {
         It "Should have prepared" {

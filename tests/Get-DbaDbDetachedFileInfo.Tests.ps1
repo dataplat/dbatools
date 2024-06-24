@@ -16,6 +16,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $versionName = $server.GetSqlServerVersionName()
         $random = Get-Random
         $dbname = "dbatoolsci_detatch_$random"
         $server.Query("CREATE DATABASE $dbname")
@@ -39,7 +40,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results.name | Should Be $dbname
         }
         It "Should be 2016" {
-            $results.version | Should Be 'SQL Server 2016'
+            $results.version | Should Be $versionName
         }
         It "Should have Data files" {
             $results.DataFiles | Should Not Be $null
