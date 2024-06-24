@@ -18,13 +18,19 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $instance3 = Connect-DbaInstance -SqlInstance $script:instance3
         $instance3.Query("CREATE DATABASE dbclrassembly")
         $instance3.Query("EXEC sp_configure 'CLR ENABLED' , '1'")
+        if ($instance3.VersionMajor -ge 14) {
+            $instance3.Query("EXEC sp_configure 'SHOW ADVANCED OPTIONS', '1'")
+            $instance3.Query("EXEC sp_configure 'CLR STRICT SECURITY' , '0'")
+        }
         $instance3.Query("RECONFIGURE")
 
         $instance2 = Connect-DbaInstance -SqlInstance $script:instance2
         $instance2.Query("CREATE DATABASE dbclrassembly")
         $instance2.Query("EXEC sp_configure 'CLR ENABLED' , '1'")
-        $instance2.Query("EXEC sp_configure 'SHOW ADVANCED OPTIONS', '1'")
-        $instance2.Query("EXEC sp_configure 'CLR STRICT SECURITY' , '0'")
+        if ($instance2.VersionMajor -ge 14) {
+            $instance2.Query("EXEC sp_configure 'SHOW ADVANCED OPTIONS', '1'")
+            $instance2.Query("EXEC sp_configure 'CLR STRICT SECURITY' , '0'")
+        }
         $instance2.Query("RECONFIGURE")
 
         $instance2DB = Get-DbaDatabase -SqlInstance $script:instance2 -Database dbclrassembly
