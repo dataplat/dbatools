@@ -95,10 +95,11 @@ Describe "$CommandName Integration Tests for Async" -Tags "IntegrationTests" {
         }
     }
 
+    # TODO: I think I need some background on this. Was the intention to create the key or not to creeate the key?
     Context "Command does not work but warns" {
         # this works on docker, not sure what's up
-        It -Skip "should warn that it cant create an encryption key" {
-            $null = $db | New-DbaDbEncryptionKey -Force -Type AsymmetricKey -EncryptorName $masterasym.Name -WarningVariable warn
+        It "should warn that it cant create an encryption key" {
+            ($null = $db | New-DbaDbEncryptionKey -Force -Type AsymmetricKey -EncryptorName $masterasym.Name -WarningVariable warn) *> $null
             $warn | Should -Match "n order to encrypt the database encryption key with an as"
         }
     }

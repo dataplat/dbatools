@@ -169,7 +169,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "Invalid type for -Since" {
-            $results = Get-DbaDbBackupHistory -SqlInstance $script:instance1 -Database $dbname -Since "-" -WarningVariable warning
+            # "*> $null" to suppress warning in pester output
+            ($results = Get-DbaDbBackupHistory -SqlInstance $script:instance1 -Database $dbname -Since "-" -WarningVariable warning) *> $null
             $results | Should -BeNullOrEmpty
             $warning | Should -BeLike "*-Since must be either a DateTime or TimeSpan object*"
         }
