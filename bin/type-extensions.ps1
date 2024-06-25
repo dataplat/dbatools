@@ -3,44 +3,25 @@ if (-not ([Dataplat.Dbatools.dbaSystem.SystemHost]::ModuleImported)) {
     # Implement query accelerator for the server object
     Update-TypeData -TypeName Microsoft.SqlServer.Management.Smo.Server -MemberName Query -MemberType ScriptMethod -Value {
         param (
-            [string]$Query,
-            [string]$Database,
-            [bool]$AllTables
+            $Query,
+
+            $Database = "master",
+
+            $AllTables = $false
         )
 
-        $sqlConnection = $this.ConnectionContext.SqlConnectionObject
-        if ($sqlConnection.State -ne 'Open') {
-            $sqlConnection.Open()
-        }
-        if ($Database -and $Database -ne $sqlConnection.Database) {
-            $sqlConnection.ChangeDatabase($Database)
-        }
-        $sqlCommand = New-Object Microsoft.Data.SqlClient.SqlCommand($Query, $sqlConnection)
-        $sqlDataAdapter = New-Object Microsoft.Data.SqlClient.SqlDataAdapter($sqlCommand)
-        $dataSet = New-Object System.Data.DataSet
-        [void]$sqlDataAdapter.Fill($dataSet)
-        if ($AllTables) {
-            $dataSet.Tables
-        } else {
-            $dataSet.Tables[0]
-        }
+        if ($AllTables) { ($this.Databases[$Database].ExecuteWithResults($Query)).Tables }
+        else { ($this.Databases[$Database].ExecuteWithResults($Query)).Tables[0] }
     } -ErrorAction Ignore
 
     Update-TypeData -TypeName Microsoft.SqlServer.Management.Smo.Server -MemberName Invoke -MemberType ScriptMethod -Value {
         param (
-            [string]$Command,
-            [string]$Database
+            $Command,
+
+            $Database = "master"
         )
 
-        $sqlConnection = $this.ConnectionContext.SqlConnectionObject
-        if ($sqlConnection.State -ne 'Open') {
-            $sqlConnection.Open()
-        }
-        if ($Database -and $Database -ne $sqlConnection.Database) {
-            $sqlConnection.ChangeDatabase($Database)
-        }
-        $sqlCommand = New-Object Microsoft.Data.SqlClient.SqlCommand($Query, $sqlConnection)
-        $sqlCommand.ExecuteNonQuery()
+        $this.Databases[$Database].ExecuteNonQuery($Command)
     } -ErrorAction Ignore
 
     Update-TypeData -TypeName Microsoft.SqlServer.Management.Smo.Database -MemberName Query -MemberType ScriptMethod -Value {
