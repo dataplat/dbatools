@@ -41,21 +41,26 @@ param (
     [bool]$AllTables
 )
 
-$sqlConnection = $this.ConnectionContext.SqlConnectionObject
-if ($sqlConnection.State -ne 'Open') {
-    $sqlConnection.Open()
-}
-if ($Database -and $Database -ne $sqlConnection.Database) {
-    $sqlConnection.ChangeDatabase($Database)
-}
-$sqlCommand = New-Object Microsoft.Data.SqlClient.SqlCommand($Query, $sqlConnection)
-$sqlDataAdapter = New-Object Microsoft.Data.SqlClient.SqlDataAdapter($sqlCommand)
-$dataSet = New-Object System.Data.DataSet
-[void]$sqlDataAdapter.Fill($dataSet)
-if ($AllTables) {
-    $dataSet.Tables
-} else {
-    $dataSet.Tables[0]
+try {
+    if ($Database) {
+        $dataSet = $this.Databases[$Database].ExecuteWithResults($Query)
+    } else {
+        $dataSet = $this.ConnectionContext.ExecuteWithResults($Query)
+    }
+    if ($AllTables) {
+        $dataSet.Tables
+    } else {
+        $dataSet.Tables[0]
+    }
+} catch {
+    $message = ''
+    $innerException = $_.Exception.InnerException
+    while ($innerException.InnerException) {
+        $message += $innerException.Message
+        $innerException = $innerException.InnerException
+    }
+    $message += $innerException.Message
+    throw $message
 }
 </Script>
 </ScriptMethod>
@@ -63,19 +68,26 @@ if ($AllTables) {
 <Name>Invoke</Name>
 <Script>
 param (
-    [string]$Command,
-    [string]$Database
+    $Command,
+    $Database
 )
 
-$sqlConnection = $this.ConnectionContext.SqlConnectionObject
-if ($sqlConnection.State -ne 'Open') {
-    $sqlConnection.Open()
+if (-not $Database) {
+    if ($this.ConnectionContext.DatabaseEngineType -eq "SqlAzureDatabase") {
+        $Database = $this.ConnectionContext.ExecuteScalar("select db_name()")
+        if (-not $Database) {
+            $Database = $this.ConnectionContext.SqlConnectionObject.Database
+        }
+
+        if (-not $Database) {
+            $Database = $this.ConnectionContext.DatabaseName
+        }
+    }
+    if (-not $Database) {
+        $Database = "master"
+    }
 }
-if ($Database -and $Database -ne $sqlConnection.Database) {
-    $sqlConnection.ChangeDatabase($Database)
-}
-$sqlCommand = New-Object Microsoft.Data.SqlClient.SqlCommand($Query, $sqlConnection)
-$sqlCommand.ExecuteNonQuery()
+$this.Databases[$Database].ExecuteNonQuery($Command)
 </Script>
 </ScriptMethod>
 </Members>
