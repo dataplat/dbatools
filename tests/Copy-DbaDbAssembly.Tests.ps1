@@ -38,26 +38,11 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
 
         $hash = $instance2DB.Query("SELECT HASHBYTES('SHA2_512', content) AS SHA2_512 FROM sys.assembly_files WHERE name = 'resolveDNS'")
         $hexStr = "0x$(($hash.SHA2_512 | ForEach-Object ToString X2) -join '')"
-        $instance3.Query("
-            DECLARE
-                @hash           VARBINARY(64)   = $hexStr
-            ,   @assemblyName   NVARCHAR(4000)  = 'resolveDNS';
-
-            EXEC sys.sp_add_trusted_assembly
-                @hash           = @hash
-            ,   @description    = @assemblyName")
+        $instance3.Query("DECLARE @hash VARBINARY(64) = $hexStr, @assemblyName NVARCHAR(4000) = 'resolveDNS'; EXEC sys.sp_add_trusted_assembly @hash = @hash, @description = @assemblyName")
     }
     AfterAll {
         Get-DbaDatabase -SqlInstance $script:instance2, $script:instance3 -Database dbclrassembly | Remove-DbaDatabase -Confirm:$false
-        $instance3.Query("
-            DECLARE
-                @hash           VARBINARY(64)   = $hexStr
-            ,   @assemblyName   NVARCHAR(4000)  = 'resolveDNS';
-
-            IF EXISTS (SELECT 1 FROM sys.trusted_assemblies WHERE description = @assemblyName)
-            BEGIN
-                EXEC sys.sp_drop_trusted_assembly @hash = @hash;
-            END")
+        $instance3.Query("DECLARE @hash VARBINARY(64) = $hexStr, @assemblyName NVARCHAR(4000) = 'resolveDNS'; IF EXISTS (SELECT 1 FROM sys.trusted_assemblies WHERE description = @assemblyName) EXEC sys.sp_drop_trusted_assembly @hash = @hash;")
     }
 
     It "copies the sample database assembly" {
