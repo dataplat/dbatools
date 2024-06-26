@@ -15,21 +15,24 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance1
-        $backupDirectory = $server.BackupDirectory
+        $DestBackupDir = 'C:\Temp\backups'
+        if (-Not (Test-Path $DestBackupDir)) {
+            New-Item -ItemType Container -Path $DestBackupDir
+        }
         $random = Get-Random
         $dbname = "dbatoolsci_history_$random"
         $dbnameForked = "dbatoolsci_history_forked_$random"
         $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname, $dbnameForked | Remove-DbaDatabase -Confirm:$false
-        $server.Databases['master'].ExecuteNonQuery("CREATE DATABASE $dbname; ALTER DATABASE $dbname SET RECOVERY FULL")
-        $server.Databases['master'].ExecuteNonQuery("CREATE DATABASE $dbnameForked; ALTER DATABASE $dbnameForked SET RECOVERY FULL")
+        $null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $dbname -DestinationFilePrefix $dbname
+        $server = Connect-DbaInstance -SqlInstance $script:instance1
+        $server.Databases['master'].ExecuteNonQuery("CREATE DATABASE $dbnameForked; ALTER DATABASE $dbnameForked SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
         $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname
-        $db | Backup-DbaDatabase -Type Full -BackupDirectory $backupDirectory
-        $db | Backup-DbaDatabase -Type Differential -BackupDirectory $backupDirectory
-        $db | Backup-DbaDatabase -Type Log -BackupDirectory $backupDirectory
-        $db | Backup-DbaDatabase -Type Log -BackupDirectory $backupDirectory
-        $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database master | Backup-DbaDatabase -Type Full -BackupDirectory $backupDirectory
-        $db | Backup-DbaDatabase -Type Full -BackupDirectory $backupDirectory -BackupFileName CopyOnly.bak -CopyOnly
+        $db | Backup-DbaDatabase -Type Full -BackupDirectory $DestBackupDir
+        $db | Backup-DbaDatabase -Type Differential -BackupDirectory $DestBackupDir
+        $db | Backup-DbaDatabase -Type Log -BackupDirectory $DestBackupDir
+        $db | Backup-DbaDatabase -Type Log -BackupDirectory $DestBackupDir
+        $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database master | Backup-DbaDatabase -Type Full -BackupDirectory $DestBackupDir
+        $db | Backup-DbaDatabase -Type Full -BackupDirectory $DestBackupDir -BackupFileName CopyOnly.bak -CopyOnly
     }
 
     AfterAll {
@@ -116,15 +119,15 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $database = $server.Databases[$dbname]
 
             $database.ExecuteNonQuery("CREATE TABLE dbo.test (x char(1000) default 'x')")
-            $null = Backup-DbaDatabase -SqlInstance $server -Database $dbname -Type Full -BackupDirectory $backupDirectory
+            $null = Backup-DbaDatabase -SqlInstance $server -Database $dbname -Type Full -BackupDirectory $DestBackupDir
             1 .. 100 | ForEach-Object -Process { $database.ExecuteNonQuery("INSERT INTO dbo.test DEFAULT VALUES") }
-            $null = Backup-DbaDatabase -SqlInstance $server -Database $dbname -Type Full -BackupDirectory $backupDirectory
+            $null = Backup-DbaDatabase -SqlInstance $server -Database $dbname -Type Full -BackupDirectory $DestBackupDir
             1 .. 1000 | ForEach-Object -Process { $database.ExecuteNonQuery("INSERT INTO dbo.test DEFAULT VALUES") }
-            $null = Backup-DbaDatabase -SqlInstance $server -Database $dbname -Type Full -BackupDirectory $backupDirectory
+            $null = Backup-DbaDatabase -SqlInstance $server -Database $dbname -Type Full -BackupDirectory $DestBackupDir
             1 .. 1000 | ForEach-Object -Process { $database.ExecuteNonQuery("INSERT INTO dbo.test DEFAULT VALUES") }
-            $null = Backup-DbaDatabase -SqlInstance $server -Database $dbname -Type Full -BackupDirectory $backupDirectory
+            $null = Backup-DbaDatabase -SqlInstance $server -Database $dbname -Type Full -BackupDirectory $DestBackupDir
             1 .. 1000 | ForEach-Object -Process { $database.ExecuteNonQuery("INSERT INTO dbo.test DEFAULT VALUES") }
-            $null = Backup-DbaDatabase -SqlInstance $server -Database $dbname -Type Full -BackupDirectory $backupDirectory
+            $null = Backup-DbaDatabase -SqlInstance $server -Database $dbname -Type Full -BackupDirectory $DestBackupDir
 
             $interResults = Get-DbaDbBackupHistory -SqlInstance $server -Database $dbname | Sort-Object -Property End
             # create a fork restoring from the second backup sorted by date
@@ -134,7 +137,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             #If we're too fast Sort-Object -Property End doesn't always work, as we want $allHistory[0] to be the last backup indeed
             Start-Sleep -Seconds 1
 
-            $null = Backup-DbaDatabase -SqlInstance $server -Database $dbname -Type Full -BackupDirectory $backupDirectory
+            $null = Backup-DbaDatabase -SqlInstance $server -Database $dbname -Type Full -BackupDirectory $DestBackupDir
 
             $allHistory = Get-DbaDbBackupHistory -SqlInstance $server -Database $dbname | Sort-Object -Property End -Descending
             $lastFull = Get-DbaDbBackupHistory -SqlInstance $server -Database $dbname -LastFull
@@ -169,7 +172,6 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "Invalid type for -Since" {
-            # "*> $null" to suppress warning in pester output
             ($results = Get-DbaDbBackupHistory -SqlInstance $script:instance1 -Database $dbname -Since "-" -WarningVariable warning) *> $null
             $results | Should -BeNullOrEmpty
             $warning | Should -BeLike "*-Since must be either a DateTime or TimeSpan object*"
