@@ -36,32 +36,28 @@ $this.ExecuteNonQuery($Command)
 <Name>Query</Name>
 <Script>
 param (
-    [string]$Query,
-    [string]$Database,
-    [bool]$AllTables
+    $Query,
+    $Database,
+    $AllTables = $false
 )
 
-try {
-    if ($Database) {
-        $dataSet = $this.Databases[$Database].ExecuteWithResults($Query)
-    } else {
-        $dataSet = $this.ConnectionContext.ExecuteWithResults($Query)
+if (-not $Database) {
+    if ($this.ConnectionContext.DatabaseEngineType -eq "SqlAzureDatabase") {
+        $Database = $this.ConnectionContext.ExecuteScalar("select db_name()")
+        if (-not $Database) {
+            $Database = $this.ConnectionContext.SqlConnectionObject.Database
+        }
+
+        if (-not $Database) {
+            $Database = $this.ConnectionContext.DatabaseName
+        }
     }
-    if ($AllTables) {
-        $dataSet.Tables
-    } else {
-        $dataSet.Tables[0]
+    if (-not $Database) {
+        $Database = "master"
     }
-} catch {
-    $message = ''
-    $innerException = $_.Exception.InnerException
-    while ($innerException.InnerException) {
-        $message += $innerException.Message
-        $innerException = $innerException.InnerException
-    }
-    $message += $innerException.Message
-    throw $message
 }
+if ($AllTables) { ($this.Databases[$Database].ExecuteWithResults($Query)).Tables }
+else { ($this.Databases[$Database].ExecuteWithResults($Query)).Tables[0] }
 </Script>
 </ScriptMethod>
 <ScriptMethod>
