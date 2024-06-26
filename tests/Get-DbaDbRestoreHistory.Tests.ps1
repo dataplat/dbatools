@@ -32,6 +32,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     AfterAll {
         $null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname1, $dbname2 | Remove-DbaDatabase -Confirm:$false
+        Remove-Item -Path $fullBackup.BackupPath -Force
+        Remove-Item -Path $logBackup.BackupPath -Force
     }
     Context "Preparation" {
         It "Should have prepared" {
