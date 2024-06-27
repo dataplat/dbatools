@@ -24,7 +24,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results | Should Not Be $null
         }
         Foreach ($row in $results) {
-            It "Should return correct compatiblity level for $($row.database)" {
+            It "Should return correct compatibility level for $($row.database)" {
                 $row.Compatibility | Should Be $compatibilityLevel
                 $row.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $script:instance1 -Database $row.Database).Id
             }
@@ -36,7 +36,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Gets results" {
             $results | Should Not Be $null
         }
-        It "Should return correct compatiblity level for $($results.database)" {
+        It "Should return correct compatibility level for $($results.database)" {
             $results.Compatibility | Should Be $compatibilityLevel
             $results.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $script:instance1 -Database master).Id
         }

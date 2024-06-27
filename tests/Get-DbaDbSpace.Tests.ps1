@@ -26,14 +26,15 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Gets DbSpace" {
         $results = Get-DbaDbSpace -SqlInstance $script:instance2 | Where-Object { $_.Database -eq "$dbname" }
         It "Gets results" {
-            $results | Should Not Be $null
+            $results | Should -Not -BeNullOrEmpty
         }
         foreach ($row in $results) {
             It "Should retreive space for $dbname" {
-                $row.Database | Should Be $dbname
+                $row.Database | Should -Be $dbname
+                $row.UsedSpace | Should -Not -BeNullOrEmpty
             }
             It "Should have a physical path for $dbname" {
-                $row.physicalname | Should Not Be $null
+                $row.physicalname | Should -Not -BeNullOrEmpty
             }
         }
     }
@@ -45,17 +46,18 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
         Foreach ($row in $results) {
             It "Should retreive space for $dbname" {
-                $row.Database | Should Be $dbname
+                $row.Database | Should -Be $dbname
+                $row.UsedSpace | Should -Not -BeNullOrEmpty
             }
             It "Should have a physical path for $dbname" {
-                $row.physicalname | Should Not Be $null
+                $row.physicalname | Should -Not -BeNullOrEmpty
             }
         }
     }
     Context "Gets no DbSpace for specific database when using -ExcludeDatabase" {
         $results = Get-DbaDbSpace -SqlInstance $script:instance2 -ExcludeDatabase $dbname
         It "Gets no results" {
-            $results.database | Should Not Contain $dbname
+            $results.database | Should -Not -Contain $dbname
         }
     }
 }

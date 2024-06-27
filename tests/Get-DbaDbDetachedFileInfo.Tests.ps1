@@ -39,7 +39,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Should be created database" {
             $results.name | Should Be $dbname
         }
-        It "Should be 2016" {
+        It "Should be the correct version" {
             $results.version | Should Be $versionName
         }
         It "Should have Data files" {
