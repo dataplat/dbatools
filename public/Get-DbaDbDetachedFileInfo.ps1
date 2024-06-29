@@ -86,8 +86,12 @@ function Get-DbaDbDetachedFileInfo {
                 Stop-Function -Message "$servername cannot read the file $filepath. Is the database detached?" -Continue
             }
 
+            # Source: https://sqlserverbuilds.blogspot.com/2014/01/sql-server-internal-database-versions.html
             switch ($exactdbversion) {
+                957 { $dbversion = "SQL Server 2022" }
+                904 { $dbversion = "SQL Server 2019" }
                 869 { $dbversion = "SQL Server 2017" }
+                868 { $dbversion = "SQL Server 2017" }
                 852 { $dbversion = "SQL Server 2016" }
                 782 { $dbversion = "SQL Server 2014" }
                 706 { $dbversion = "SQL Server 2012" }
