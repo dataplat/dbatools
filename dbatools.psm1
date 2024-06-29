@@ -1069,9 +1069,6 @@ if ($option.LoadTypes -or
     Write-ImportTime -Text "Updating type data"
 }
 
-Import-Command -Path "$script:PSModuleRoot/bin/type-extensions.ps1"
-Write-ImportTime -Text "Loading type extensions"
-
 $loadedModuleNames = (Get-Module sqlserver, sqlps -ErrorAction Ignore).Name
 if ($loadedModuleNames -contains 'sqlserver' -or $loadedModuleNames -contains 'sqlps') {
     if (Get-DbatoolsConfigValue -FullName Import.SqlpsCheck) {
