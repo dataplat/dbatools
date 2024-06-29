@@ -1,13 +1,13 @@
 function New-DbaDbUser {
     <#
     .SYNOPSIS
-        Creates a new user for the specified database.
+        Creates a new user for the specified database(s).
 
     .DESCRIPTION
-        Creates a new user for a specified database with provided specifications.
+        Creates a new user for the specified database(s) with provided specifications.
 
     .PARAMETER SqlInstance
-        The target SQL Server instance or instances. Defaults to the default instance on localhost.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -17,29 +17,30 @@ function New-DbaDbUser {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all user databases will be processed.
+        Specifies one or more database(s) to process. If unspecified, all user databases will be processed.
 
     .PARAMETER ExcludeDatabase
-        Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server. By default, system databases are excluded.
+        Specifies one or more database(s) to exclude from processing.
 
     .PARAMETER IncludeSystem
-        If this switch is enabled, the user will be added to system databases. This switch will be ignored if -Database is used.
+        If this switch is enabled, also system databases will be processed.
+
+    .PARAMETER User
+        When specified, the user will have this name. If not specified but -Login is used, the user will have the same name as the login.
 
     .PARAMETER Login
-        When specified, the user will be associated to this SQL login and have the same name as the Login.
-
-    .PARAMETER Username
-        When specified, the user will have this name.
+        When specified, the user will be associated to this SQL login.
 
     .PARAMETER Password
-        When specified, the user will be created as a contained user. Standalone databases partial containment should be turned on to succeed. By default, in Azure SQL databases this is turned on.
+        When specified, the user will be created as a contained user.
+        Standalone databases partial containment should be turned on to succeed. By default, in Azure SQL databases this is turned on.
+
+    .PARAMETER ExternalProvider
+        When specified, the user will be created for Azure AD Authentication.
+        Equivalent to T-SQL: 'CREATE USER [claudio@********.onmicrosoft.com] FROM EXTERNAL PROVIDER`
 
     .PARAMETER DefaultSchema
         The default database schema for the user. If not specified this value will default to dbo.
-
-    .PARAMETER ExternalProvider
-        Specifies that the user is for Azure AD Authentication.
-        Equivalent to T-SQL: 'CREATE USER [claudio@********.onmicrosoft.com] FROM EXTERNAL PROVIDER`
 
     .PARAMETER Force
         If user exists, drop and recreate.
@@ -69,165 +70,188 @@ function New-DbaDbUser {
     .EXAMPLE
         PS C:\> New-DbaDbUser -SqlInstance sqlserver2014 -Database DB1 -Login user1
 
-        Creates a new sql user with login named user1 in the specified database.
+        Creates a new sql user named user1 for the login user1 in the database DB1.
 
     .EXAMPLE
-        PS C:\> New-DbaDbUser -SqlInstance sqlserver2014 -Database DB1 -Username user1
+        PS C:\> New-DbaDbUser -SqlInstance sqlserver2014 -Database DB1 -User user1
 
-        Creates a new sql user without login named user1 in the specified database.
-
-    .EXAMPLE
-        PS C:\> New-DbaDbUser -SqlInstance sqlserver2014 -Database DB1 -Login Login1 -Username user1
-
-        Creates a new sql user named user1 mapped to Login1 in the specified database.
+        Creates a new sql user named user1 without login in the database DB1.
 
     .EXAMPLE
-        PS C:\> New-DbaDbUser -SqlInstance sqlserver2014 -Database DB1 -Login Login1 -Username user1 -DefaultSchema schema1
+        PS C:\> New-DbaDbUser -SqlInstance sqlserver2014 -Database DB1 -User user1 -Login login1
 
-        Creates a new sql user named user1 mapped to Login1 in the specified database and specifies the default schema to be schema1.
-
-    .EXAMPLE
-        PS C:\> New-DbaDbUser -SqlInstance sqlserver2014 -Database DB1 -Username "claudio@********.onmicrosoft.com" -ExternalProvider
-
-        Creates a new sql user named 'claudio@********.onmicrosoft.com' mapped to Azure Active Directory (AAD) in the specified database.
+        Creates a new sql user named user1 for the login login1 in the database DB1.
 
     .EXAMPLE
-        PS C:\> New-DbaDbUser -SqlInstance sqlserver2014 -Database DB1 -Username user1 -Password (ConvertTo-SecureString -String "DBATools" -AsPlainText)
+        PS C:\> New-DbaDbUser -SqlInstance sqlserver2014 -Database DB1 -User user1 -Login Login1 -DefaultSchema schema1
 
-        Creates a new cointained sql user named user1 in the database given database with the password specified.
+        Creates a new sql user named user1 for the login login1 in the database DB1 and specifies the default schema to be schema1.
+
+    .EXAMPLE
+        PS C:\> New-DbaDbUser -SqlInstance sqlserver2014 -Database DB1 -User "claudio@********.onmicrosoft.com" -ExternalProvider
+
+        Creates a new sql user named 'claudio@********.onmicrosoft.com' mapped to Azure Active Directory (AAD) in the database DB1.
+
+    .EXAMPLE
+        PS C:\> New-DbaDbUser -SqlInstance sqlserver2014 -Database DB1 -Username user1 -Password (ConvertTo-SecureString -String "DBATools" -AsPlainText -Force)
+
+        Creates a new contained sql user named user1 in the database DB1 with the password specified.
     #>
+
+    ### This command has more comments than other commands, because it should act as an example for other commands.
+    ### These extra lines start with "###" and should help new contributors to understand why we code the way we do.
+
+    ### All commands that change objects must use SupportsShouldProcess to support -WhatIf.
+    ### All commands that add or change objects (New-... or Set-...) must use ConfirmImpact = "Medium".
+    ### All commands that drop existing objects (Remove-...) must use ConfirmImpact = "High".
+    ### For most of the commands, we try to not use parameter sets and try to check valid parameter combinations inside of the command to be able to give the user a "nice" feedback.
+    ### But this is an example of a command that uses parameter sets, which gives better help output.
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param(
-        [parameter(Mandatory, Position = 1)]
+        ### All commands that need a connection to an instance use the following two parameters in the way we define here.
+        ### This supports parameter by position for the parameter SqlInstance and makes this a mandatory parameter.
+        ### Exception: Some commands allow pipeline input, in this case the parameter is not mandatory.
+        [Parameter(Mandatory, Position = 1)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
+        ### All commands that need to work with databases or database objects use the following three parameters.
         [string[]]$Database,
         [string[]]$ExcludeDatabase,
-        [switch]$IncludeSystem = $False,
+        [switch]$IncludeSystem,
+        ### The following parameters are specific to the objects that the command works with, in this case a database user.
+        ### We start with the name of the object, in this case the name of the user that will be created.
+        ### For the default parameter set Login, the name of the user can be set to the mandatory parameter Login, in all other cases, we need the name of the user.
+        [Parameter(ParameterSetName = "Login")]
+        [Parameter(Mandatory, ParameterSetName = "NoLogin")]
+        [Parameter(Mandatory, ParameterSetName = "ContainedSQLUser")]
+        [Parameter(Mandatory, ParameterSetName = "ContainedAADUser")]
+        [Alias("Username")]
+        [string]$User,
+        ### Now we add parameters to specify the individual attributes for the object. We start with parameters that are mandatory for parameter sets.
         [Parameter(Mandatory, ParameterSetName = "Login")]
         [string]$Login,
-        [Parameter(ParameterSetName = "Login", Mandatory = $False)]
-        [Parameter(Mandatory, ParameterSetName = "NoLogin")]
-        [Parameter(ParameterSetName = "ContainedSQLUser", Mandatory = $True)]
-        [Parameter(ParameterSetName = "ContainedAADUser", Mandatory = $True)]
-        [string]$Username,
-        [string]$DefaultSchema = 'dbo',
-        [Parameter(ParameterSetName = "ContainedSQLUser", Mandatory = $True)]
-        [securestring]$Password,
-        [Parameter(ParameterSetName = "ContainedAADUser", Mandatory = $True)]
+        ### If we need to pass a password to the command, we always use the type securestring and name the parameter SecurePassword. Here we only use the alias for backwords compatibility.
+        [Parameter(Mandatory, ParameterSetName = "ContainedSQLUser")]
+        [Alias("Password")]
+        [securestring]$SecurePassword,
+        [Parameter(Mandatory, ParameterSetName = "ContainedAADUser")]
         [switch]$ExternalProvider,
+        ### Now we add parameters to specify the individual attributes for the object that are not specific for a parameter set.
+        ### As we want to use the schema dbo in most cases, we use default values in those cases.
+        [string]$DefaultSchema = 'dbo',
+        ### All commands that create new objects have a switch parameter Force to drop and re-create the object in case it already exists.
+        ### Sometimes, this parameter also changes the ConfirmPreference to "none". This way, -WhatIf and -Force cannot be used together. So this has to be removed everywhere.
+        ### This parameter is always the second last parameter.
         [switch]$Force,
+        ### All public commands have a switch parameter called EnableException as the last parameter. This changes the behavior of Stop-Function inside of the command.
         [switch]$EnableException
     )
 
     begin {
-        $connParam = @{ }
-        if ($SqlCredential) { $connParam.SqlCredential = $SqlCredential }
+        ### To help analyzing bugs in commands using parameter sets, we write the used parameter set to verbose output.
+        Write-Message -Level Verbose -Message "Using parameter set $($PSCmdlet.ParameterSetName)."
 
-        if ($Force) { $ConfirmPreference = 'none' }
-
-        # When user is created from login and no user name is provided then login name will be used as the user name
-        if ($Login -and -not($Username)) {
-            $Username = $Login
+        ### To help analyzing bugs, we write at least one line to verbose output per code path. This can also be used as a kind of comment.
+        ### Changing parameter values is only allowed in the begin block, so that every execution of the process block or the instance loop in the process block has the same set of parameter values.
+        if ($Login -and -not $User) {
+            Write-Message -Level Verbose -Message "No user name provided, so login name [$Login] will be used as user name."
+            $User = $Login
         }
 
-        #Set appropriate user type
-        #Removed SQLLogin  user type. This is deprecated and the alternate is to map to SqlUser. Reference https://learn.microsoft.com/en-us/dotnet/api/microsoft.sqlserver.management.smo.usertype?view=sql-smo-160
+        # Set appropriate user type based on provided parameters.
+        # See https://learn.microsoft.com/en-us/dotnet/api/microsoft.sqlserver.management.smo.usertype for details.
         if ($ExternalProvider) {
-            Write-Message -Level Verbose -Message "Using UserType: External"
+            Write-Message -Level Verbose -Message "Using UserType [External]."
             $userType = [Microsoft.SqlServer.Management.Smo.UserType]::External
-        } elseif ($Password -or $Login) {
-            Write-Message -Level Verbose -Message "Using UserType: SqlUser"
+        } elseif ($SecurePassword -or $Login) {
+            Write-Message -Level Verbose -Message "Using UserType [SqlUser]."
             $userType = [Microsoft.SqlServer.Management.Smo.UserType]::SqlUser
         } else {
-            Write-Message -Level Verbose -Message "Using UserType: NoLogin"
+            Write-Message -Level Verbose -Message "Using UserType [NoLogin]."
             $userType = [Microsoft.SqlServer.Management.Smo.UserType]::NoLogin
         }
     }
 
     process {
-
+        ### Every process block starts with a loop through the parameter SqlInstance.
+        ### Inside of the loop the current instance is named "instance".
+        ### The first thing we do is to connect to the instance and save the returned server SMO in a variable called server.
+        ### If this fails, we notify the user and continue with the next instance.
+        ### The next six lines are (nearly) always the same for every command that connects to one or more instances.
         foreach ($instance in $SqlInstance) {
-            #prepare parameter values
-            $connParam.SqlInstance = $instance
-            $getDbParam = $connParam.Clone()
-            $getDbParam.OnlyAccessible = $True
-            if ($Database) {
-                $getDbParam.Database = $Database
-            }
-            if (-not $IncludeSystem) {
-                $getDbParam.ExcludeSystem = $True
-            }
-            if ($ExcludeDatabase) {
-                $getDbParam.ExcludeDatabase = $ExcludeDatabase
+            try {
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            } catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            # Is the login exist?
-            if ($Login -and (-not(Get-DbaLogin @connParam -Login $Login))) {
-                Stop-Function -Message "Invalid Login: [$Login] is not found on [$instance], skipping." -Target $instance -Continue -EnableException $False
+            ### Run checks as early as possible.
+            ### After connecting to the instance, run checks that need a connected instance.
+            ### As the check might be successful on the next instance in the loop, use -Continue.
+            ### In the messages, all strings should be surrounded by "[]", but all SMO variables will get "[]" automaticaly by their .ToString() method.
+            if ($Login -and -not $server.Logins[$Login]) {
+                Stop-Function -Message "Login [$Login] not found on instance $server" -Continue
             }
 
-            $databases = Get-DbaDatabase @getDbParam
-            $getValidSchema = Get-DbaDbSchema -InputObject $databases -Schema $DefaultSchema -IncludeSystemSchemas
+            ### As we need the database object(s) to be able to add a new users to it, we have to filter the databases of the instance based on the provided parameters.
+            ### We use Get-DbaDatabase here, because that command does all we need.
+            ### We generally avoid to use other commands as they add more load and prefer to use the SMO directly. But in this case there is not much extra work.
+            ### The following lines are always the same for all commands that work on a set of databases.
+            $databases = Get-DbaDatabase -SqlInstance $server -Database $Database -ExcludeDatabase $ExcludeDatabase -ExcludeSystem:$(-not $IncludeSystem)
+            ### Commands that need to change the database test for IsUpdateable, other commands test for IsAccessible.
+            $databases = $databases | Where-Object IsUpdateable
+            foreach ($db in $databases) {
+                ### Where should be a verbose message at the start of each loop to help analyzing issues.
+                Write-Message -Level Verbose -Message "Processing database $db on instance $server."
 
-            #This block is required so that correct error message can be returned to the user when incorrect database name is given or the database doesn't exists in the server.
-            if (-not $Database) {
-                $Database = $databases.Name
-            }
-
-            foreach ($db in $Database) {
-                $dbSmo = $databases | Where-Object Name -eq $db
-
-                #Check if the database exists and online
-                if (-not($dbSmo)) {
-                    Stop-Function -Message "Invalid Database: [$db] is not found in the instance [$instance], skipping." -Continue -EnableException $False
+                ### Run checks that need a database object. The same rules as for the instance checks apply.
+                if (-not $db.Schemas[$DefaultSchema]) {
+                    Stop-Function -Message "Schema [$DefaultSchema] does not exist in database $db on instance $server" -Continue
                 }
-                #prepare user query param
-                $userParam = $connParam.Clone()
-                $userParam.Database = $dbSmo.name
-                $userParam.User = $Username
-                $userParam.EnableException = $True
 
-                #check if the schema exists
-                if ($dbSmo.Name -in ($getValidSchema).Parent.Name) {
-                    if ($Pscmdlet.ShouldProcess($dbSmo, "Creating user $Username")) {
-                        Write-Message -Level Verbose -Message "Add user [$Username] to database [$dbSmo] on [$instance]"
-
-                        #smo param builder
-                        $smoUser = New-Object Microsoft.SqlServer.Management.Smo.User
-                        $smoUser.Parent = $dbSmo
-                        $smoUser.Name = $Username
-                        if ($Login) { $smoUser.Login = $Login }
-                        $smoUser.UserType = $userType
-                        $smoUser.DefaultSchema = $DefaultSchema
-
-                        #Check if the user exists already
-                        $userExists = Get-DbaDbUser @userParam
-                        if ($userExists -and -not($Force)) {
-                            Stop-Function -Message "User [$Username] already exists in the database $dbSmo on [$instance] and -Force was not specified, skipping." -Target $Username -Continue -EnableException $False
-                        } elseif ($userExists -and $Force) {
+                ### As a last check, check for existance of the object that should be created.
+                ### Depending on the usage of -Force, drop the object or continue with the next database.
+                if ($db.Users[$User]) {
+                    if ($Force) {
+                        if ($Pscmdlet.ShouldProcess("User [$User] in database $db on instance $server", "Dropping user")) {
                             try {
-                                Write-Message -Level Verbose -Message "FORCE is used, user [$Username] will be dropped in the database $dbSmo on [$instance]"
-                                $null = Remove-DbaDbUser @userParam -Force
+                                $db.Users[$User].Drop()
                             } catch {
-                                Stop-Function -Message "Could not remove existing user [$Username] in the database $dbSmo on [$instance], skipping." -Target $User -ErrorRecord $_ -Continue
+                                Stop-Function -Message "Dropping user [$User] in database $db on instance $server failed" -ErrorRecord $_ -Continue
                             }
                         }
+                    } else {
+                        Stop-Function -Message "User [$User] already exists in database $db on instance $server and -Force was not specified" -Continue
+                    }
+                }
 
-                        #Create the user
-                        try {
-                            if ($Password) {
-                                $smoUser.Create($Password)
-                            } else { $smoUser.Create() }
-                            #Verfiy the user creation
-                            Get-DbaDbUser @userParam
-                        } catch {
-                            Stop-Function -Message "Failed to add user [$Username] in $dbSmo to [$instance]" -Category InvalidOperation -ErrorRecord $_ -Target $instance -Continue
+                if ($Pscmdlet.ShouldProcess("User [$User] in database $db on instance $server", "Creating user")) {
+                    try {
+                        $newUser = New-Object Microsoft.SqlServer.Management.Smo.User
+                        $newUser.Parent = $db
+                        $newUser.Name = $User
+                        if ($Login) {
+                            $newUser.Login = $Login
+                        }
+                        $newUser.UserType = $userType
+                        $newUser.DefaultSchema = $DefaultSchema
+                        if ($SecurePassword) {
+                            $newUser.Create($SecurePassword)
+                        } else {
+                            $newUser.Create()
                         }
 
+                        ### Add the common dbatools properties to the new object
+                        Add-Member -Force -InputObject $newUser -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
+                        Add-Member -Force -InputObject $newUser -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+                        Add-Member -Force -InputObject $newUser -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+                        Add-Member -Force -InputObject $newUser -MemberType NoteProperty -Name Database -value $db.Name
+
+                        ### Output the new object
+                        Select-DefaultView -InputObject $newUser -Property ComputerName, InstanceName, SqlInstance, Database, Name, LoginType, Login, AuthenticationType, DefaultSchema
+                    } catch {
+                        Stop-Function -Message "Creating user [$User] in database $db on instance $server failed" -ErrorRecord $_ -Continue
                     }
-                } else {
-                    Stop-Function -Message "Invalid DefaultSchema: [$DefaultSchema] is not found in the database $dbSmo on [$instance], skipping." -Continue -EnableException $False
                 }
             }
         }
