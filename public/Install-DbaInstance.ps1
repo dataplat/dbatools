@@ -249,6 +249,12 @@ function Install-DbaInstance {
         Perform volume maintenance tasks permission is granted. MyDomain\SvcSqlServer is used as a service account for SqlServer.
 
     .Example
+        PS C:\> $svcAcc = [PSCredential]::new("MyDomain\SvcSqlServer$", [SecureString]::new())
+        PS C:\> Install-DbaInstance -Version 2016 -InstancePath D:\Root -DataPath E: -LogPath L: -PerformVolumeMaintenanceTasks -EngineCredential $svcAcc
+
+        The same as the last example except MyDomain\SvcSqlServer is now a Managed Service Account (MSA).
+
+    .Example
         PS C:\> $config = @{
         >> AGTSVCSTARTUPTYPE = "Manual"
         >> BROWSERSVCSTARTUPTYPE = "Manual"
