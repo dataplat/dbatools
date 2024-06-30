@@ -34,6 +34,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
     AfterAll {
         $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database "dbatoolsci_MoveDbFile", "dbatoolsci_MoveDbFile_2DataFiles" -Confirm:$false
+        Get-Item -Path "$physicalPathFolder\moveFile" | Remove-Item -Recurse
+        Get-Item -Path "$physicalPathFolder\New" | Remove-Item -Recurse
+        Get-Item -Path "$physicalPathFolder\dbatoolsci_MoveDbFile.mdf" | Remove-Item
     }
 
     Context "Should output current database structure" {

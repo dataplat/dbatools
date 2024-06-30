@@ -14,7 +14,15 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
 }
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    It "warns if SQL instance edition is not supported" {
+    BeforeAll {
+        $server = Connect-DbaInstance -SqlInstance $script:instance1
+        $skip = $false
+        if ($server.Edition -notmatch 'Express') {
+            $skip = $true
+        }
+    }
+
+    It -Skip:$skip "warns if SQL instance edition is not supported" {
         $null = Test-DbaDbLogShipStatus -SqlInstance $script:instance1 -WarningAction SilentlyContinue -WarningVariable editionwarn
         $editionwarn -match "Express" | Should Be $true
     }
