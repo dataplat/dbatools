@@ -34,7 +34,7 @@ if (-not $env:appveyor) {
                 }
             }
 
-            $results = Copy-DbaBackupDevice -Source $script:instance1 -Destination $script:instance2 -WarningVariable warn -WarningAction SilentlyContinue *> $null
+            $results = Copy-DbaBackupDevice -Source $script:instance1 -Destination $script:instance2 -WarningVariable warn -WarningAction SilentlyContinue 3> $null
             if ($warn) {
                 It "warns if it has a problem moving (issue for local to local)" {
                     $warn | Should -Match "backup device to destination"

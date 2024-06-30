@@ -32,13 +32,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
         It "should not accept non-SMO objects" {
             $null = Get-DbaDbTable -SqlInstance $script:instance2 -Database msdb | Select-Object -First 1 | Export-DbaScript -Passthru -BatchSeparator "MakeItSo"
-            $null = [pscustomobject]@{ Invalid = $true } | Export-DbaScript -WarningVariable invalid -WarningAction Continue *> $null
+            $null = [pscustomobject]@{ Invalid = $true } | Export-DbaScript -WarningVariable invalid -WarningAction Continue 3> $null
             $invalid | Should -Match "not a SQL Management Object"
         }
 
         It "should not accept non-SMO objects" {
             $null = Get-DbaDbTable -SqlInstance $script:instance2 -Database msdb | Select-Object -First 1 | Export-DbaScript -Passthru -BatchSeparator "MakeItSo"
-            $null = [pscustomobject]@{ Invalid = $true } | Export-DbaScript -WarningVariable invalid -WarningAction Continue *> $null
+            $null = [pscustomobject]@{ Invalid = $true } | Export-DbaScript -WarningVariable invalid -WarningAction Continue 3> $null
             $invalid | Should -Match "not a SQL Management Object"
         }
         It "should not append when using NoPrefix (#7455)" {

@@ -245,7 +245,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Test Backup-DbaDatabase can take pipe input" {
-        $results = Get-DbaDatabase -SqlInstance $script:instance1 -Database master | Backup-DbaDatabase -confirm:$false -WarningVariable warnvar *> $null
+        $results = Get-DbaDatabase -SqlInstance $script:instance1 -Database master | Backup-DbaDatabase -confirm:$false -WarningVariable warnvar 3> $null
         It "Should not warn" {
             $warnvar | Should -BeNullOrEmpty
         }

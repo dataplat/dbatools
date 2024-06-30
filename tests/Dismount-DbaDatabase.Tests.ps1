@@ -84,7 +84,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "Skips detachment if database is snapshotted" {
-            $result = Dismount-DbaDatabase -SqlInstance $script:instance3 -Database $db2 -Force -WarningAction SilentlyContinue -WarningVariable warn *> $null
+            $result = Dismount-DbaDatabase -SqlInstance $script:instance3 -Database $db2 -Force -WarningAction SilentlyContinue -WarningVariable warn 3> $null
             $result | Should Be $null
             $warn -match "snapshot" | Should Be $true
             $result = Get-DbaDatabase -SqlInstance $script:instance3 -Database $db2

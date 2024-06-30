@@ -267,7 +267,7 @@ Describe "Testing input parameters" {
         }
 
         It "Suppresses warning messages when Silent is used" {
-            $null = ConvertTo-DbaDataTable -InputObject (returnnull) -IgnoreNull -EnableException -WarningVariable warn -WarningAction SilentlyContinue *> $null
+            $null = ConvertTo-DbaDataTable -InputObject (returnnull) -IgnoreNull -EnableException -WarningVariable warn -WarningAction SilentlyContinue 3> $null
             $warn | Should -BeNullOrEmpty
         }
     }

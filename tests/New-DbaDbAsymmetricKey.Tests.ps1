@@ -36,7 +36,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Context "Handles pre-existing key" {
         $keyname = 'test1'
-        ($key = New-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Name $keyname -Database master -WarningVariable warnvar) *> $null
+        $key = New-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Name $keyname -Database master -WarningVariable warnvar 3> $null
         $null = Remove-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Name $keyname -Database master -confirm:$false
         It "Should Warn that they key $keyname already exists" {
             $Warnvar | Should -BeLike '*already exists in master on*'
@@ -125,7 +125,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $dbuser = 'keyowner'
         $database = 'enctest'
         $path = "$($script:appveyorlabrepo)\keytests\keypair.bad"
-        ($key = New-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Database $database -Name $keyname -Owner keyowner -WarningVariable warnvar -KeySourceType File -KeySource $path) *> $null
+        $key = New-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Database $database -Name $keyname -Owner keyowner -WarningVariable warnvar -KeySourceType File -KeySource $path 3> $null
         $results = Get-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Name $keyname -Database $database
         It "Should not Create new key in $database called $keyname" {
             $warnvar | Should -Not -BeNullOrEmpty

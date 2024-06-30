@@ -66,7 +66,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "ensure command works" {
 
         It "Check the validation for a linked server" {
-            $results = Get-DbaLinkedServerLogin -SqlInstance $instance2 -LocalLogin $localLogin1Name -WarningVariable warnings *> $null
+            $results = Get-DbaLinkedServerLogin -SqlInstance $instance2 -LocalLogin $localLogin1Name -WarningVariable warnings 3> $null
             $warnings | Should -BeLike "*LinkedServer is required*"
             $results | Should -BeNullOrEmpty
         }

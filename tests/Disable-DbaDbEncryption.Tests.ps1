@@ -51,7 +51,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "should disable encryption on a database with piping" {
             # Give it time to finish encrypting or it'll error
             Start-Sleep 10
-            $results = $db | Disable-DbaDbEncryption -NoEncryptionKeyDrop -WarningVariable warn *> $null
+            $results = $db | Disable-DbaDbEncryption -NoEncryptionKeyDrop -WarningVariable warn 3> $null
             $warn | Should -Be $null
             $results.EncryptionEnabled | Should -Be $false
         }
@@ -59,7 +59,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $null = $db | Enable-DbaDbEncryption -EncryptorName $mastercert.Name -Force
             # Give it time to finish encrypting or it'll error
             Start-Sleep 10
-            $results = Disable-DbaDbEncryption -SqlInstance $script:instance2 -Database $db.Name -WarningVariable warn *> $null
+            $results = Disable-DbaDbEncryption -SqlInstance $script:instance2 -Database $db.Name -WarningVariable warn 3> $null
             $warn | Should -Be $null
             $results.EncryptionEnabled | Should -Be $false
         }
