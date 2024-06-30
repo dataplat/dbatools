@@ -128,7 +128,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It -Skip:(-not $cryptoProvider) "check warning message if crypto provider is not configured/enabled on destination" {
             Remove-DbaCredential -SqlInstance $instance3 -Credential dbatoolsci_thor_crypto -Confirm:$false
             $instance3.Query("ALTER CRYPTOGRAPHIC PROVIDER $cryptoProvider DISABLE")
-            $results = Copy-DbaCredential -Source $instance2 -Destination $instance3 -Name dbatoolsci_thor_crypto -WarningVariable warnings
+            $results = Copy-DbaCredential -Source $instance2 -Destination $instance3 -Name dbatoolsci_thor_crypto
             $instance3.Query("ALTER CRYPTOGRAPHIC PROVIDER $cryptoProvider ENABLE")
             $results.Status | Should Be Failed
             $results.Notes | Should -Match "The cryptographic provider $cryptoProvider needs to be configured and enabled on"

@@ -112,7 +112,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Should warn if the destinaton table doesn't exist" {
-            $result = Copy-DbaDbTableData -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example -DestinationTable dbatoolsci_doesntexist -WarningVariable tablewarning
+            $result = Copy-DbaDbTableData -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example -DestinationTable dbatoolsci_doesntexist -WarningVariable tablewarning *> $null
             $result | Should -Be $null
             $tablewarning | Should -Match Auto
         }
@@ -123,7 +123,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Should warn if the source database doesn't exist" {
-            $result = Copy-DbaDbTableData -SqlInstance $script:instance2 -Database tempdb_invalid -Table dbatoolsci_example -DestinationTable dbatoolsci_doesntexist -WarningVariable tablewarning
+            $result = Copy-DbaDbTableData -SqlInstance $script:instance2 -Database tempdb_invalid -Table dbatoolsci_example -DestinationTable dbatoolsci_doesntexist -WarningVariable tablewarning *> $null
             $result | Should -Be $null
             $tablewarning | Should -Match "cannot open database"
         }

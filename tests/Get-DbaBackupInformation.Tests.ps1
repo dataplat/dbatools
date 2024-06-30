@@ -130,9 +130,9 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Should be 0 log backups" {
             ($resultsSanLog | Where-Object {$_.Type -eq 'Transaction Log'}).count | Should be 0
         }
-        $ResultsSanLog = Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $DestBackupDirOla -IgnoreLogBackup -WarningVariable warnvar -WarningAction SilentlyContinue
+        $ResultsSanLog = Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $DestBackupDirOla -IgnoreLogBackup -WarningVariable warnvar -WarningAction SilentlyContinue *> $null
         It "Should Warn if IgnoreLogBackup without MaintenanceSolution" {
-            ($WarnVar -match "IgnoreLogBackup can only by used with MaintenanceSolution. Will not be used") | Should Be $True
+            $warnVar | Should -Match "IgnoreLogBackup can only by used with MaintenanceSolution. Will not be used"
         }
         It "Should ignore IgnoreLogBackup and return 3 backups" {
             $resultsSanLog.count | Should Be 3

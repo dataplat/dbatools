@@ -114,13 +114,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     It "Should warn and return nothing if Source and Destination are same" {
-        $result = Copy-DbaDbViewData -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_example -Truncate -WarningVariable tablewarning
+        $result = Copy-DbaDbViewData -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_example -Truncate -WarningVariable tablewarning *> $null
         $result | Should -Be $null
         $tablewarning | Should -match "Cannot copy dbatoolsci_view_example into itself"
     }
 
     It "Should warn if the destination table doesn't exist" {
-        $result = Copy-DbaDbViewData -SqlInstance $script:instance1 -Database tempdb -View tempdb.dbo.dbatoolsci_view_example -DestinationTable dbatoolsci_view_does_not_exist -WarningVariable tablewarning
+        $result = Copy-DbaDbViewData -SqlInstance $script:instance1 -Database tempdb -View tempdb.dbo.dbatoolsci_view_example -DestinationTable dbatoolsci_view_does_not_exist -WarningVariable tablewarning *> $null
         $result | Should -Be $null
         $tablewarning | Should -match Auto
     }
@@ -131,7 +131,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     It "Should warn if the source database doesn't exist" {
-        $result = Copy-DbaDbViewData -SqlInstance $script:instance2 -Database tempdb_invalid -View dbatoolsci_view_example -DestinationTable dbatoolsci_doesntexist -WarningVariable tablewarning
+        $result = Copy-DbaDbViewData -SqlInstance $script:instance2 -Database tempdb_invalid -View dbatoolsci_view_example -DestinationTable dbatoolsci_doesntexist -WarningVariable tablewarning *> $null
         $result | Should -Be $null
         $tablewarning | Should -match "Failure"
     }

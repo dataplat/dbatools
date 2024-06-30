@@ -18,28 +18,28 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
         It "should export some text matching create table" {
             $results = Get-DbaDbTable -SqlInstance $script:instance2 -Database msdb | Select-Object -First 1 | Export-DbaScript -Passthru
-            $results -match "CREATE TABLE"
+            $results | Should -Match "CREATE TABLE"
         }
         It "should include BatchSeparator based on the Formatting.BatchSeparator configuration" {
             $results = Get-DbaDbTable -SqlInstance $script:instance2 -Database msdb | Select-Object -First 1 | Export-DbaScript -Passthru
-            $results -match "(Get-DbatoolsConfigValue -FullName 'Formatting.BatchSeparator')"
+            $results | Should -Match "(Get-DbatoolsConfigValue -FullName 'Formatting.BatchSeparator')"
         }
 
         It "should include the defined BatchSeparator" {
             $results = Get-DbaDbTable -SqlInstance $script:instance2 -Database msdb | Select-Object -First 1 | Export-DbaScript -Passthru -BatchSeparator "MakeItSo"
-            $results -match "MakeItSo"
+            $results | Should -Match "MakeItSo"
         }
 
         It "should not accept non-SMO objects" {
             $null = Get-DbaDbTable -SqlInstance $script:instance2 -Database msdb | Select-Object -First 1 | Export-DbaScript -Passthru -BatchSeparator "MakeItSo"
-            $null = [pscustomobject]@{ Invalid = $true } | Export-DbaScript -WarningVariable invalid -WarningAction Continue
-            $invalid -match "not a SQL Management Object"
+            $null = [pscustomobject]@{ Invalid = $true } | Export-DbaScript -WarningVariable invalid -WarningAction Continue *> $null
+            $invalid | Should -Match "not a SQL Management Object"
         }
 
         It "should not accept non-SMO objects" {
             $null = Get-DbaDbTable -SqlInstance $script:instance2 -Database msdb | Select-Object -First 1 | Export-DbaScript -Passthru -BatchSeparator "MakeItSo"
-            $null = [pscustomobject]@{ Invalid = $true } | Export-DbaScript -WarningVariable invalid -WarningAction Continue
-            $invalid -match "not a SQL Management Object"
+            $null = [pscustomobject]@{ Invalid = $true } | Export-DbaScript -WarningVariable invalid -WarningAction Continue *> $null
+            $invalid | Should -Match "not a SQL Management Object"
         }
         It "should not append when using NoPrefix (#7455)" {
             if (-not (Test-Path C:\temp)) { $null = mkdir C:\temp }

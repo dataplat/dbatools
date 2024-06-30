@@ -50,7 +50,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "No database found to backup should raise warning and null output" {
-        $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $DestBackupDir -Database AliceDoesntDBHereAnyMore -WarningVariable warnvar
+        $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $DestBackupDir -Database AliceDoesntDBHereAnyMore
         It "Should not return object" {
             $results | Should -Be $null
         }
@@ -116,10 +116,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $warnvar | Should -BeLike "*$MissingPath*"
         }
         # $MissingPathTrailing has a trailing slash but we normalize the path before doing the actual backup
-        $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupDirectory $MissingPathTrailing -WarningVariable warnvar -BuildPath
+        $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupDirectory $MissingPathTrailing -BuildPath
         It "Should have backed up to $MissingPath" {
             $results.BackupFolder | Should -Be "$MissingPath"
-
             $results.Path | Should -Not -BeLike '*\\*'
         }
     }
@@ -246,9 +245,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Test Backup-DbaDatabase can take pipe input" {
-        $results = Get-DbaDatabase -SqlInstance $script:instance1 -Database master | Backup-DbaDatabase -confirm:$false -WarningVariable warnvar
+        $results = Get-DbaDatabase -SqlInstance $script:instance1 -Database master | Backup-DbaDatabase -confirm:$false -WarningVariable warnvar *> $null
         It "Should not warn" {
-            '' -eq $warnvar | Should -Be $True
+            $warnvar | Should -BeNullOrEmpty
         }
         It "Should Complete Successfully" {
             $results.BackupComplete | Should -Be $true

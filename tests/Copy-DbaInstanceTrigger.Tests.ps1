@@ -35,7 +35,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             }
         }
 
-        $results = Copy-DbaInstanceTrigger -Source $script:instance1 -Destination $script:instance2 -WarningVariable warn -WarningAction SilentlyContinue # -ServerTrigger $triggername
+        $results = Copy-DbaInstanceTrigger -Source $script:instance1 -Destination $script:instance2 -WarningAction SilentlyContinue
 
         It "should report success" {
             $results.Status | Should Be "Successful"
