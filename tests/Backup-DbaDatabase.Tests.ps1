@@ -50,7 +50,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "No database found to backup should raise warning and null output" {
-        $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $DestBackupDir -Database AliceDoesntDBHereAnyMore
+        $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $DestBackupDir -Database AliceDoesntDBHereAnyMore -WarningVariable warnvar 3> $null
         It "Should not return object" {
             $results | Should -Be $null
         }
