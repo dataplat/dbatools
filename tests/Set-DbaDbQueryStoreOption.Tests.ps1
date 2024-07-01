@@ -41,11 +41,9 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                     $result.MaxStorageSizeInMB | Should BeGreaterThan 1
                 }
 
-                $newnumber = $result.DataFlushIntervalInSeconds + 1
-
                 It "should change the specified param to the new value" {
-                    $results = Set-DbaDbQueryStoreOption -SqlInstance $instance -Database dbatoolsciqs -FlushInterval $newnumber -State ReadWrite
-                    $results.DataFlushIntervalInSeconds | Should Be $newnumber
+                    $results = Set-DbaDbQueryStoreOption -SqlInstance $instance -Database dbatoolsciqs -FlushInterval 901 -State ReadWrite
+                    $results.DataFlushIntervalInSeconds | Should Be 901
                 }
 
                 It "should only get one database" {
