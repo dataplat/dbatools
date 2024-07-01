@@ -195,9 +195,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "clones when using parameter StatementTimeout" {
-            $serverClone = Connect-DbaInstance -SqlInstance $server -StatementTimeout 0
+            $serverClone = Connect-DbaInstance -SqlInstance $server -StatementTimeout 123
             $server.ConnectionContext.StatementTimeout | Should -Be (Get-DbatoolsConfigValue -FullName 'sql.execution.timeout')
-            $serverClone.ConnectionContext.StatementTimeout | Should -Be 0
+            $serverClone.ConnectionContext.StatementTimeout | Should -Be 123
         }
 
         It "clones when using parameter DedicatedAdminConnection" {
