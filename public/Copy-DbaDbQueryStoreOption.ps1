@@ -104,12 +104,6 @@ function Copy-DbaDbQueryStoreOption {
 
         $sourceDB = Get-DbaDatabase -SqlInstance $sourceServer -Database $SourceDatabase
 
-        if ($sourceServer.VersionMajor -eq 14) {
-            $QueryStoreOptions = $sourceDB.Query("SELECT max_plans_per_query AS MaxPlansPerQuery, wait_stats_capture_mode_desc AS WaitStatsCaptureMode FROM sys.database_query_store_options;", $sourceDB.Name)
-        } elseif ($sourceServer.VersionMajor -ge 15) {
-            $QueryStoreOptions = $sourceDB.Query("SELECT max_plans_per_query AS MaxPlansPerQuery, wait_stats_capture_mode_desc AS WaitStatsCaptureMode, capture_policy_execution_count AS CustomCapturePolicyExecutionCount, capture_policy_stale_threshold_hours AS CustomCapturePolicyStaleThresholdHours, capture_policy_total_compile_cpu_time_ms AS CustomCapturePolicyTotalCompileCPUTimeMS, capture_policy_total_execution_cpu_time_ms AS CustomCapturePolicyTotalExecutionCPUTimeMS FROM sys.database_query_store_options;", $sourceDB.Name)
-        }
-
         foreach ($destinstance in $Destination) {
 
             if (!$DestinationDatabase -and !$Exclude -and !$AllDatabases) {
@@ -152,6 +146,7 @@ function Copy-DbaDbQueryStoreOption {
                     DestinationDatabaseID = $destDB.ID
                     Type                  = "QueryStore Configuration"
                     Status                = $null
+                    Notes                 = $null
                     DateTime              = [Dataplat.Dbatools.Utility.DbaDateTime](Get-Date)
                 }
 
@@ -191,8 +186,8 @@ function Copy-DbaDbQueryStoreOption {
                                 CaptureMode          = $SourceQSConfig.QueryCaptureMode
                                 CleanupMode          = $SourceQSConfig.SizeBasedCleanupMode
                                 StaleQueryThreshold  = $SourceQSConfig.StaleQueryThresholdInDays
-                                MaxPlansPerQuery     = $QueryStoreOptions.MaxPlansPerQuery
-                                WaitStatsCaptureMode = $QueryStoreOptions.WaitStatsCaptureMode
+                                MaxPlansPerQuery     = $SourceQSConfig.MaxPlansPerQuery
+                                WaitStatsCaptureMode = $SourceQSConfig.WaitStatsCaptureMode
                             }
                         } elseif ($sourceServer.VersionMajor -ge 15) {
                             $setDbaDbQueryStoreOptionParameters = @{
@@ -206,12 +201,12 @@ function Copy-DbaDbQueryStoreOption {
                                 CaptureMode                                = $SourceQSConfig.QueryCaptureMode
                                 CleanupMode                                = $SourceQSConfig.SizeBasedCleanupMode
                                 StaleQueryThreshold                        = $SourceQSConfig.StaleQueryThresholdInDays
-                                MaxPlansPerQuery                           = $QueryStoreOptions.MaxPlansPerQuery
-                                WaitStatsCaptureMode                       = $QueryStoreOptions.WaitStatsCaptureMode
-                                CustomCapturePolicyExecutionCount          = $QueryStoreOptions.CustomCapturePolicyExecutionCount
-                                CustomCapturePolicyTotalCompileCPUTimeMS   = $QueryStoreOptions.CustomCapturePolicyTotalCompileCPUTimeMS
-                                CustomCapturePolicyTotalExecutionCPUTimeMS = $QueryStoreOptions.CustomCapturePolicyTotalExecutionCPUTimeMS
-                                CustomCapturePolicyStaleThresholdHours     = $QueryStoreOptions.CustomCapturePolicyStaleThresholdHours
+                                MaxPlansPerQuery                           = $SourceQSConfig.MaxPlansPerQuery
+                                WaitStatsCaptureMode                       = $SourceQSConfig.WaitStatsCaptureMode
+                                CustomCapturePolicyExecutionCount          = $SourceQSConfig.CustomCapturePolicyExecutionCount
+                                CustomCapturePolicyTotalCompileCPUTimeMS   = $SourceQSConfig.CustomCapturePolicyTotalCompileCPUTimeMS
+                                CustomCapturePolicyTotalExecutionCPUTimeMS = $SourceQSConfig.CustomCapturePolicyTotalExecutionCPUTimeMS
+                                CustomCapturePolicyStaleThresholdHours     = $SourceQSConfig.CustomCapturePolicyStaleThresholdHours
                             }
                         }
 
