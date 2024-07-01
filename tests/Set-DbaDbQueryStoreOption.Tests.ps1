@@ -24,7 +24,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Get some client protocols" {
         foreach ($instance in ($script:instance1, $script:instance2)) {
             $server = Connect-DbaInstance -SqlInstance $instance
-            $results = Get-DbaDbQueryStoreOption -SqlInstance $instance -WarningVariable warning  3>&1
+            $results = Get-DbaDbQueryStoreOption -SqlInstance $server -WarningVariable warning 3>&1
 
             if ($server.VersionMajor -lt 13) {
                 It "should warn" {
@@ -33,7 +33,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             } else {
                 It "should return some valid results" {
                     $result = $results | Where-Object Database -eq dbatoolsciqs
-                    $result.ActualState | Should Be 'Off'
+                    if ($server.VersionMajor -lt 16) {
+                        $result.ActualState | Should Be 'Off'
+                    } else {
+                        $result.ActualState | Should Be 'ReadWrite'
+                    }
                     $result.MaxStorageSizeInMB | Should BeGreaterThan 1
                 }
 
