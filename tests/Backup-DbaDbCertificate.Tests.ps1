@@ -43,7 +43,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         It "warns the caller if the cert cannot be found" {
             $invalidDBCertName = "dbatoolscli_invalidCertName"
             $invalidDBCertName2 = "dbatoolscli_invalidCertName2"
-            $results = Backup-DbaDbCertificate -SqlInstance $script:instance1 -Certificate $invalidDBCertName, $invalidDBCertName2, $cert2.Name -Database $db1Name -EncryptionPassword $pw -DecryptionPassword $pw -WarningVariable warnVariable
+            $results = Backup-DbaDbCertificate -SqlInstance $script:instance1 -Certificate $invalidDBCertName, $invalidDBCertName2, $cert2.Name -Database $db1Name -EncryptionPassword $pw -DecryptionPassword $pw -WarningVariable warnVariable 3> $null
             $null = Get-ChildItem -Path $results.Path -ErrorAction Ignore | Remove-Item -Confirm:$false -ErrorAction Ignore
             #$results.Certificate | Should -Be $cert2.Name
             $warnVariable | Should -BeLike "*Database certificate(s) * not found*"

@@ -16,10 +16,6 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     BeforeAll {
-        $DestBackupDir = 'C:\Temp\backups'
-        if (-Not(Test-Path $DestBackupDir)) {
-            New-Item -Type Container -Path $DestBackupDir
-        }
         $random = Get-Random
         $dbname1 = "dbatoolsci_restorehistory1_$random"
         $dbname2 = "dbatoolsci_restorehistory2_$random"

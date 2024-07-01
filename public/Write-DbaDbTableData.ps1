@@ -468,6 +468,7 @@ function Write-DbaDbTableData {
         }
         #endregion Connect to server
 
+        #region Resolve Full Qualified Table Name
         if ($server.ServerType -ne 'SqlAzureDatabase') {
             <#
                 Skip adding database name to Fully Qualified Tablename for Azure SQL DB
@@ -502,47 +503,30 @@ function Write-DbaDbTableData {
         Write-Message -Level SomewhatVerbose -Message "FQTN processed: $fqtn"
         #endregion Resolve Full Qualified Table Name
 
-
-        #region Get database
-        # we used to do a try catch on $server.Databases if $server.ServerType -eq 'SqlAzureDatabase' here
-        # but it seems this was fixed in the newest SMO
-        try {
-            # This works for both onprem and azure -- using a hash only works for onprem
-            $databaseObject = $server.Databases | Where-Object Name -eq $databaseName
-            #endregion Get database
-
-            #region Prepare database and bulk operations
-            if ($null -eq $databaseObject) {
-                Stop-Function -Message "Database $databaseName does not exist." -Target $SqlInstance
-                return
+        #region Test if table exists
+        if ($tableName.StartsWith('#')) {
+            try {
+                Write-Message -Level Verbose -Message "The table $tableName should be in tempdb and we try to find it."
+                $null = $server.ConnectionContext.ExecuteScalar("SELECT TOP(1) 1 FROM [$tableName]")
+                $tableExists = $true
+            } catch {
+                $tableExists = $false
             }
-
-            $databaseObject.Tables.Refresh()
-            if ($schemaName -notin $databaseObject.Schemas.Name) {
-                Stop-Function -Message "Schema $schemaName does not exist."
-                return
+        } else {
+            # We don't use SMO here because it does not work for Azure SQL Database connected with AccessToken.
+            try {
+                $null = $server.ConnectionContext.ExecuteScalar("SELECT TOP(1) 1 FROM $fqtn")
+                $tableExists = $true
+            } catch {
+                $tableExists = $false
             }
-
-            if ($tableName.StartsWith('#')) {
-                try {
-                    Write-Message -Level Verbose -Message "The table $tableName should be in tempdb and we try to find it."
-                    $null = $databaseObject.Query("SELECT TOP(1) 1 FROM [$tableName]")
-                    $tableExists = $true
-                } catch {
-                    $tableExists = $false
-                }
-            } else {
-                $targetTable = $databaseObject.Tables | Where-Object { $_.Name -eq $tableName -and $_.Schema -eq $schemaName }
-                $tableExists = $targetTable.Count -eq 1
-            }
-        } catch {
-            Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
         }
 
         if ((-not $tableExists) -and (-not $AutoCreateTable)) {
             Stop-Function -Message "Table does not exist and automatic creation of the table has not been selected. Specify the '-AutoCreateTable'-parameter to generate a suitable table."
             return
         }
+        #endregion Test if table exists
 
         $bulkCopyOptions = 0
         $options = "TableLock", "CheckConstraints", "FireTriggers", "KeepIdentity", "KeepNulls", "Default"

@@ -182,9 +182,8 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "Should warn if trying to rename and prefix" {
-            $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -SharedPath $NetworkPath -NewName $newname -prefix pre -WarningVariable warnvar
+            $null = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -SharedPath $NetworkPath -NewName $newname -prefix pre -WarningVariable warnvar 3> $null
             $warnvar | Should -BeLike "*NewName and Prefix are exclusive options, cannot specify both"
-
         }
 
         It "Should prefix databasename and files" {
@@ -219,9 +218,8 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
 
         $null = Restore-DbaDatabase -SqlInstance $script:instance2 -path $script:appveyorlabrepo\RestoreTimeClean2016 -useDestinationDefaultDirectories
         It "Should warn and exit if newname and >1 db specified" {
-            $prefix = "copy$(Get-Random)"
-            $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb, RestoreTimeClean -DetachAttach -Reattach -NewName warn -WarningVariable warnvar
-            $Warnvar | Should -BeLike "*Cannot use NewName when copying multiple databases"
+            $null = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb, RestoreTimeClean -DetachAttach -Reattach -NewName warn -WarningVariable warnvar 3> $null
+            $warnvar | Should -BeLike "*Cannot use NewName when copying multiple databases"
         }
     }
 

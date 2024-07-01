@@ -24,7 +24,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $tPassword = ConvertTo-SecureString "ThisIsThePassword1" -AsPlainText -Force
         New-DbaDbMasterKey -SqlInstance $script:instance2 -Database $database -SecurePassword $tPassword -confirm:$false
         New-DbaDbUser -SqlInstance $script:instance2 -Database $database -UserName $dbuser
-        $key = New-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Database $database -Name $keyname -Owner keyowner -Algorithm $algorithm -WarningVariable warnvar
+        $null = New-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Database $database -Name $keyname -Owner keyowner -Algorithm $algorithm -WarningVariable warnvar
         $results = Get-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Name $keyname -Database $database
         It "Should Create new key in $database called $keyname" {
             $warnvar | Should -BeNullOrEmpty
@@ -42,7 +42,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $pipeResults | Should -HaveCount 1
         }
 
-        $key2 = New-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Database $database -Name $keyname2 -Owner keyowner -Algorithm $algorithm -WarningVariable warnvar
+        $null = New-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Database $database -Name $keyname2 -Owner keyowner -Algorithm $algorithm -WarningVariable warnvar
         $multiResults = Get-DbaDatabase -SqlInstance $script:instance2 -Database $database | Get-DbaDbAsymmetricKey
         It "Should return 2 keys" {
             $multiResults | Should -HaveCount 2

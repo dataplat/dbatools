@@ -42,6 +42,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             EmailAddress   = $email_address
             DisplayName    = $display_name
             ReplyToAddress = $replyto_address
+            # MailServer is not set, because we don't want to configure the mail server on the instance.
+            # MailServer     = $mailserver_name
         }
         $results = New-DbaDbMailAccount @splat
 
@@ -54,12 +56,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Should have Description of 'Mail account for email alerts' " {
             $results.Description | Should Be 'Mail account for email alerts'
         }
-        It "Should have EmailAddress of 'dbatoolssci@dbatools.net' " {
-            $results.EmailAddress | Should Be 'dbatoolssci@dbatools.net'
+        # TODO: If we set the variables then we should use them, don't we?
+        It "Should have EmailAddress of '$email_address' " {
+            $results.EmailAddress | Should Be $email_address
         }
         It "Should have ReplyToAddress of 'no-reply@dbatools.net' " {
             $results.ReplyToAddress | Should Be 'no-reply@dbatools.net'
         }
+        # Skipped, because we have not set the MailServer, because we don't want to configure the mail server on the instance.
         It -Skip "Should have MailServer of '[smtp.dbatools.io]' " {
             $results.MailServers | Should Be '[smtp.dbatools.io]'
         }
@@ -81,6 +85,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Should have ReplyToAddress of 'no-reply@dbatools.net' " {
             $results.ReplyToAddress | Should Be 'no-reply@dbatools.net'
         }
+        # Skipped, because we have not set the MailServer, because we don't want to configure the mail server on the instance.
         It -Skip "Should have MailServer of '[smtp.dbatools.io]' " {
             $results.MailServers | Should Be '[smtp.dbatools.io]'
         }

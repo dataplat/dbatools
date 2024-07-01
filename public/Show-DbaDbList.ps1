@@ -26,11 +26,9 @@ function Show-DbaDbList {
         Specify a database to have selected when the window appears.
 
     .PARAMETER EnableException
-        By default in most of our commands, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-
-        This command, however, gifts you  with "sea of red" exceptions, by default, because it is useful for advanced scripting.
-
-        Using this switch turns our "nice by default" feature on which makes errors into pretty warnings.
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
         Tags: Database, FileSystem

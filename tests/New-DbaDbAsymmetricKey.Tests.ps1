@@ -36,7 +36,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Context "Handles pre-existing key" {
         $keyname = 'test1'
-        $key = New-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Name $keyname -Database master -WarningVariable warnvar
+        $key = New-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Name $keyname -Database master -WarningVariable warnvar 3> $null
         $null = Remove-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Name $keyname -Database master -confirm:$false
         It "Should Warn that they key $keyname already exists" {
             $Warnvar | Should -BeLike '*already exists in master on*'
@@ -98,14 +98,20 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $null = Remove-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Name $keyname -Database $database -confirm:$false
     }
 
-    Context "Create new key in $database Loaded from a keyfile" {
+    Context "Create new key loaded from a keyfile" {
+        $skip = $false
         $keyname = 'filekey'
         $dbuser = 'keyowner'
         $database = 'enctest'
         $path = "$($script:appveyorlabrepo)\keytests\keypair.snk"
-        $key = New-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Database $database -Name $keyname -Owner keyowner -WarningVariable warnvar -KeySourceType File -KeySource $path
-        $results = Get-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Name $keyname -Database $database
-        It "Should Create new key in master called $keyname" {
+        if (Test-Path -Path $path) {
+            $key = New-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Database $database -Name $keyname -Owner keyowner -WarningVariable warnvar -KeySourceType File -KeySource $path
+            $results = Get-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Name $keyname -Database $database
+        } else {
+            Write-Warning -Message "No keypair found in path [$path], skipping tests."
+            $skip = $true
+        }
+        It -Skip:$skip "Should Create new key in master called $keyname" {
             $warnvar | Should -BeNullOrEmpty
             $results.database | Should -Be $database
             $results.name | Should -Be $keyname
@@ -119,7 +125,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $dbuser = 'keyowner'
         $database = 'enctest'
         $path = "$($script:appveyorlabrepo)\keytests\keypair.bad"
-        $key = New-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Database $database -Name $keyname -Owner keyowner -WarningVariable warnvar -KeySourceType File -KeySource $path
+        $key = New-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Database $database -Name $keyname -Owner keyowner -WarningVariable warnvar -KeySourceType File -KeySource $path 3> $null
         $results = Get-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Name $keyname -Database $database
         It "Should not Create new key in $database called $keyname" {
             $warnvar | Should -Not -BeNullOrEmpty
