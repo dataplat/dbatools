@@ -14,14 +14,18 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+    BeforeAll {
+        $server = Connect-DbaInstance -SqlInstance $script:instance1
+        $compatibilityLevel = $server.Databases['master'].CompatibilityLevel
+    }
     Context "Gets compatibility for multiple databases" {
         $results = Get-DbaDbCompatibility -SqlInstance $script:instance1
         It "Gets results" {
             $results | Should Not Be $null
         }
         Foreach ($row in $results) {
-            It "Should return Compatiblity level of Version100 for $($row.database)" {
-                $row.Compatibility | Should Be "Version100"
+            It "Should return correct compatibility level for $($row.database)" {
+                $row.Compatibility | Should Be $compatibilityLevel
                 $row.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $script:instance1 -Database $row.Database).Id
             }
         }
@@ -32,8 +36,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Gets results" {
             $results | Should Not Be $null
         }
-        It "Should return Compatiblity level of Version100 for $($results.database)" {
-            $results.Compatibility | Should Be "Version100"
+        It "Should return correct compatibility level for $($results.database)" {
+            $results.Compatibility | Should Be $compatibilityLevel
             $results.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $script:instance1 -Database master).Id
         }
     }

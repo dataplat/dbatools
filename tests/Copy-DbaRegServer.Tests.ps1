@@ -44,7 +44,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $groupstore.Drop()
         }
 
-        $results = Copy-DbaRegServer -Source $script:instance2 -Destination $script:instance1 -WarningVariable warn -WarningAction SilentlyContinue -CMSGroup $group
+        $results = Copy-DbaRegServer -Source $script:instance2 -Destination $script:instance1 -WarningAction SilentlyContinue -CMSGroup $group
 
         It "should report success" {
             $results.Status | Should Be "Successful", "Successful"

@@ -53,7 +53,7 @@ exec sp_addrolemember 'userrole','bob';
 
         $null = New-DbaDatabase -SqlInstance $script:instance1 -Name $dbName -Collation $dbCollation
 
-        $results = Get-DbaUserPermission -SqlInstance $script:instance1 -Database $dbName -WarningVariable warnvar
+        $results = Get-DbaUserPermission -SqlInstance $script:instance1 -Database $dbName -WarningVariable warnvar 3> $null
         It "Should not warn about collation conflict" {
             $warnvar | Should -Be $null
         }

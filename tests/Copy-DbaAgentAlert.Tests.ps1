@@ -63,7 +63,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
 
     It "Skips alerts where destination is missing the operator" {
-        $results = Copy-DbaAgentAlert -Source $script:instance2 -Destination $script:instance3 -Alert $alert2 -WarningVariable warningInfo -WarningAction SilentlyContinue
+        $results = Copy-DbaAgentAlert -Source $script:instance2 -Destination $script:instance3 -Alert $alert2 -WarningAction SilentlyContinue
         $results.Status -eq 'Skipped', 'Skipped'
     }
 

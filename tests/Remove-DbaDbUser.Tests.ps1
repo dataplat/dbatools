@@ -19,7 +19,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $server = Connect-DbaInstance -SqlInstance $script:instance1
             $db = Get-DbaDatabase $server -Database tempdb
             $securePassword = ConvertTo-SecureString "password" -AsPlainText -Force
-            $loginTest = New-DbaLogin $server -Login dbatoolsci_remove_dba_db_user -Password $securePassword
+            $loginTest = New-DbaLogin $server -Login dbatoolsci_remove_dba_db_user -Password $securePassword -Force
         }
         BeforeEach {
             $user = New-Object Microsoft.SqlServer.Management.SMO.User($db, $loginTest.Name)
