@@ -27,18 +27,18 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
         $results = Get-DbaFile -SqlInstance $script:instance2
         It "Should find the new database file" {
-            ($results.Filename -match 'dbatoolsci').Count -gt 0 | Should Be $true
+            ($results.Filename -match 'dbatoolsci').Count | Should -BeGreaterThan 0
         }
 
         $results = Get-DbaFile -SqlInstance $script:instance2 -Path (Get-DbaDefaultPath -SqlInstance $script:instance2).Log
         It "Should find the new database log file" {
-            ($results.Filename -like '*dbatoolsci*ldf').Count -gt 0 | Should Be $true
+            ($results.Filename -like '*dbatoolsci*ldf').Count | Should -BeGreaterThan 0
         }
 
         $masterpath = $server.MasterDBPath
         $results = Get-DbaFile -SqlInstance $script:instance2 -Path $masterpath
         It "Should find the master database file" {
-            $results.Filename -match 'master.mdf' | Should Be $true
+            ($results.Filename -match 'master.mdf').Count | Should -BeGreaterThan 0
         }
     }
 }

@@ -14,10 +14,15 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+    BeforeAll {
+        $database = 'RemAsy'
+        $null = New-DbaDatabase -SqlInstance $script:instance2 -Name $database
+    }
+    AfterAll {
+        Remove-DbaDatabase -SqlInstance $script:instance2 -Database $database -Confirm:$false
+    }
     Context "Remove a certificate" {
         $keyname = 'test1'
-        $database = 'RemAsy'
-        New-DbaDatabase -SqlInstance $script:instance2 -Name $database
         $tPassword = ConvertTo-SecureString "ThisIsThePassword1" -AsPlainText -Force
         New-DbaDbMasterKey -SqlInstance $script:instance2 -Database $database -SecurePassword $tPassword -confirm:$false
         $key = New-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Name $keyname -database $database

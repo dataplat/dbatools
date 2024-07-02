@@ -18,7 +18,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     Context "gets connected objects" {
         It "returns some results" {
             $results = Get-DbaConnectedInstance
-            $results.Count | Should -BeGreaterThan 0
+            $results | Should -Not -BeNullOrEmpty
         }
     }
 }

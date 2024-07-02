@@ -15,28 +15,30 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Should Measure Disk Space Required " {
+        $server1 = Connect-DbaInstance -SqlInstance $script:instance1
+        $server2 = Connect-DbaInstance -SqlInstance $script:instance2
         $Options = @{
-            Source              = $($script:instance1)
-            Destination         = $($script:instance2)
-            Database            = "Master"
+            Source              = $script:instance1
+            Destination         = $script:instance2
+            Database            = "master"
             DestinationDatabase = "Dbatoolsci_DestinationDB"
         }
         $results = Measure-DbaDiskSpaceRequirement @Options
         It "Should have information" {
-            $results | Should Not Be $Null
+            $results | Should -Not -BeNullOrEmpty
         }
         foreach ($r in $results) {
             It "Should be sourced from Master" {
-                $r.SourceDatabase | Should Be "Master"
+                $r.SourceDatabase | Should -Be $Options.Database
             }
             It "Should be sourced from the instance $($script:instance1)" {
-                $r.SourceSqlInstance | Should Be "$env:COMPUTERNAME\SQL2008R2SP2"
+                $r.SourceSqlInstance | Should -Be $server1.SqlInstance
             }
             It "Should be destined for Dbatoolsci_DestinationDB" {
-                $r.DestinationDatabase | Should Be "Dbatoolsci_DestinationDB"
+                $r.DestinationDatabase | Should -Be $Options.DestinationDatabase
             }
             It "Should be destined for the instance $($script:instance2)" {
-                $r.DestinationSqlInstance | Should Be "$env:COMPUTERNAME\SQL2016"
+                $r.DestinationSqlInstance | Should -Be $server2.SqlInstance
             }
             It "Should be have files on source" {
                 $r.FileLocation | Should Be "Only on Source"

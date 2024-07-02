@@ -99,7 +99,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Shrinks just the data file(s) when FileType is Data and uses the StepSize" {
-            $result = Invoke-DbaDbShrink $server -Database $db.Name -FileType Data -StepSize 2MB -Verbose
+            $result = Invoke-DbaDbShrink $server -Database $db.Name -FileType Data -StepSize 2MB
             $result.Database | Should -Be $db.Name
             $result.File | Should -Be $db.Name
             $result.Success | Should -Be $true

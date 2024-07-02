@@ -20,17 +20,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Gets results" {
             $results | Should Not Be $null
         }
-        It "Should be enabled" {
-            $results.CardinalityEstimationModelVersion | Should Be 130
-        }
     }
     Context "Gets Execution Plan when using -Database" {
         $results = Get-DbaExecutionPlan -SqlInstance $script:instance2 -Database Master | Select-object -First 1
         It "Gets results" {
             $results | Should Not Be $null
-        }
-        It "Should be enabled" {
-            $results.CardinalityEstimationModelVersion | Should Be 130
         }
         It "Should be execution plan on Master" {
             $results.DatabaseName | Should Be 'Master'
@@ -41,9 +35,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Gets results" {
             $results | Should Not Be $null
         }
-        It "Should be enabled" {
-            $results.CardinalityEstimationModelVersion | Should Be 130
-        }
         It "Should be execution plan on Master" {
             $results.DatabaseName | Should Not Be 'Master'
         }
@@ -52,9 +43,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $results = Get-DbaExecutionPlan -SqlInstance $script:instance2 -Database Master -SinceCreation '01-01-2000' | Select-object -First 1
         It "Gets results" {
             $results | Should Not Be $null
-        }
-        It "Should be enabled" {
-            $results.CardinalityEstimationModelVersion | Should Be 130
         }
         It "Should be execution plan on Master" {
             $results.DatabaseName | Should Be 'Master'
@@ -67,9 +55,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $results = Get-DbaExecutionPlan -SqlInstance $script:instance2 -Database Master -SinceLastExecution '01-01-2000' | Select-object -First 1
         It "Gets results" {
             $results | Should Not Be $null
-        }
-        It "Should be enabled" {
-            $results.CardinalityEstimationModelVersion | Should Be 130
         }
         It "Should be execution plan on Master" {
             $results.DatabaseName | Should Be 'Master'

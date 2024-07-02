@@ -98,6 +98,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             foreach ($result in $results) {
                 $result.SnapshotOf -in @($db4) | Should Be $true
             }
+            Start-Sleep -Seconds 2
             $results = New-DbaDbSnapshot -SqlInstance $script:instance2 -EnableException -Database $db4
             $results | Should Not Be $null
             foreach ($result in $results) {

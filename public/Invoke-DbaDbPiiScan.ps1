@@ -413,6 +413,7 @@ function Invoke-DbaDbPiiScan {
 
                 } # End for each table
             } # End for each database
+            Write-Progress -Id $progressId -Activity $progressActivity -Completed
         } # End for each instance
 
         $piiScanResults

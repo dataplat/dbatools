@@ -15,14 +15,10 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeEach {
-        if ($Env:appveyor) {
-            Get-DbaAgentAlert -SqlInstance $script:instance2, $script:instance3 | Remove-DbaAgentAlert -Confirm:$false
-        }
+        Get-DbaAgentAlert -SqlInstance $script:instance2, $script:instance3 -Alert "Test Alert", "Another Alert" | Remove-DbaAgentAlert -Confirm:$false
     }
     AfterAll {
-        if ($Env:appveyor) {
-            Get-DbaAgentAlert -SqlInstance $script:instance2, $script:instance3 | Remove-DbaAgentAlert -Confirm:$false
-        }
+        Get-DbaAgentAlert -SqlInstance $script:instance2, $script:instance3 -Alert "Test Alert", "Another Alert" | Remove-DbaAgentAlert -Confirm:$false
     }
     Context 'Creating a new SQL Server Agent alert' {
         $parms = @{
@@ -55,7 +51,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 DelayBetweenResponses = 60
                 NotifyMethod          = "NotifyEmail"
                 NotificationMessage   = "Test Notification"
-                MessageId             = 825
+                MessageId             = 826
                 EnableException       = $true
             }
 
@@ -65,7 +61,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $alert.Name | Should -Be "Another Alert"
             $alert.DelayBetweenResponses | Should -Be 60
             $alert.IsEnabled | Should -Be $true
-            $alert.MessageId | Should -Be 825
+            $alert.MessageId | Should -Be 826
             $alert.Severity | Should -Be 0
 
             Get-DbaAgentAlert -SqlInstance $script:instance3 -Alert $parms.Alert | Should -Not -BeNullOrEmpty

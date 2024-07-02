@@ -22,7 +22,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         AfterAll {
             $null = Remove-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_testjob, dbatoolsci_testjob_disabled -Confirm:$false
         }
-        $results = Get-DbaAgentJob -SqlInstance $script:instance2 | Where-Object { $_.Name -match "dbatoolsci" }
+        $results = Get-DbaAgentJob -SqlInstance $script:instance2 | Where-Object { $_.Name -match "dbatoolsci_testjob" }
         It "Should get 2 dbatoolsci jobs" {
             $results.count | Should Be 2
         }
@@ -40,7 +40,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         AfterAll {
             $null = Remove-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_testjob, dbatoolsci_testjob_disabled -Confirm:$false
         }
-        $results = Get-DbaAgentJob -SqlInstance $script:instance2 -ExcludeDisabledJobs | Where-Object { $_.Name -match "dbatoolsci" }
+        $results = Get-DbaAgentJob -SqlInstance $script:instance2 -ExcludeDisabledJobs | Where-Object { $_.Name -match "dbatoolsci_testjob" }
         It "Should return only enabled jobs" {
             $results.enabled -contains $False | Should Be $False
         }
@@ -53,7 +53,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         AfterAll {
             $null = Remove-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_testjob, dbatoolsci_testjob_disabled -Confirm:$false
         }
-        $results = Get-DbaAgentJob -SqlInstance $script:instance2 -ExcludeJob dbatoolsci_testjob | Where-Object { $_.Name -match "dbatoolsci" }
+        $results = Get-DbaAgentJob -SqlInstance $script:instance2 -ExcludeJob dbatoolsci_testjob | Where-Object { $_.Name -match "dbatoolsci_testjob" }
         It "Should not return excluded job" {
             $results.name -contains "dbatoolsci_testjob" | Should Be $False
         }
@@ -71,7 +71,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
             $null = Remove-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_testjob_cat1, dbatoolsci_testjob_cat2 -Confirm:$false
         }
-        $results = Get-DbaAgentJob -SqlInstance $script:instance2 -ExcludeCategory 'Cat2' | Where-Object { $_.Name -match "dbatoolsci" }
+        $results = Get-DbaAgentJob -SqlInstance $script:instance2 -ExcludeCategory 'Cat2' | Where-Object { $_.Name -match "dbatoolsci_testjob" }
         It "Should not return excluded job" {
             $results.name -contains "dbatoolsci_testjob_cat2" | Should Be $False
         }
