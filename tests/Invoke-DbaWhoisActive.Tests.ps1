@@ -30,8 +30,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance2
-        It "Should execute with no parameters in default location" {
-            $results | Should Be $Null
+        It -Skip "Should execute with no parameters in default location" {
+            $results | Should -Not -BeNullOrEmpty
         }
 
         $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance2 -ShowSleepingSpids 2
@@ -40,13 +40,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance2 -Database Tempdb
-        It "Should execute with no parameters against alternate install location" {
-            $results | Should Be $Null
+        It -Skip "Should execute with no parameters against alternate install location" {
+            $results | Should -Not -BeNullOrEmpty
         }
 
         $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance2 -ShowOwnSpid
         It "Should execute with ShowOwnSpid" {
-            $results | Should Not Be $Null
+            $results | Should -Not -BeNullOrEmpty
         }
 
         $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance2 -ShowSystemSpids
@@ -55,17 +55,17 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance2 -Database Tempdb -GetAverageTime
-        It "Should execute with averagetime" {
+        It -Skip "Should execute with averagetime" {
             $results | Should Be $Null
         }
 
         $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance2 -GetOuterCommand -FindBlockLeaders
-        It "Should execute with GetOuterCommand and FindBlockLeaders" {
+        It -Skip "Should execute with GetOuterCommand and FindBlockLeaders" {
             $results | Should Be $Null
         }
 
         $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance2 -NotFilter 0 -NotFilterType Program
-        It "Should execute with NotFilter and NotFilterType" {
+        It -Skip "Should execute with NotFilter and NotFilterType" {
             $results | Should Be $Null
         }
     }

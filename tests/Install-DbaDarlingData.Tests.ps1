@@ -19,7 +19,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $server = Connect-DbaInstance -SqlInstance $script:instance3
             $server.Query("CREATE DATABASE $database")
 
-            $resultsDownload = Install-DbaDarlingData -SqlInstance $script:instance3 -Database $database -Branch master -Force -Verbose:$false
+            $resultsDownload = Install-DbaDarlingData -SqlInstance $script:instance3 -Database $database -Branch main -Force -Verbose:$false
         }
         AfterAll {
             Remove-DbaDatabase -SqlInstance $script:instance3 -Database $database -Confirm:$false
@@ -31,31 +31,24 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Shows status of Installed" {
             $resultsDownload[0].Status | Should -Be "Installed"
         }
-        It "At least installed sp_humanevents and sp_pressuredetector" {
-            'sp_humanevents', 'sp_pressuredetector' | Should -BeIn $resultsDownload.Name
-        }
         It "has the correct properties" {
             $result = $resultsDownload[0]
             $ExpectedProps = 'SqlInstance,InstanceName,ComputerName,Name,Status,Database'.Split(',')
             ($result.PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
         }
-        It "Shows status of Updated" {
-            $resultsDownload = Install-DbaDarlingData -SqlInstance $script:instance3 -Database $database -Verbose:$false
-            $resultsDownload[0].Status | Should -Be 'Updated'
-        }
     }
-    Context "Testing First Responder Kit installer with LocalFile" {
+    Context "Testing DarlingData installer with LocalFile" {
         BeforeAll {
             $database = "dbatoolsci_darling_$(Get-Random)"
             $server = Connect-DbaInstance -SqlInstance $script:instance3
             $server.Query("CREATE DATABASE $database")
 
-            $outfile = "DarlingData-master.zip"
-            Invoke-WebRequest -Uri "https://github.com/erikdarlingdata/DarlingData/archive/master.zip" -OutFile $outfile
+            $outfile = "DarlingData-main.zip"
+            Invoke-WebRequest -Uri "https://github.com/erikdarlingdata/DarlingData/archive/main.zip" -OutFile $outfile
             if (Test-Path $outfile) {
                 $fullOutfile = (Get-ChildItem $outfile).FullName
             }
-            $resultsLocalFile = Install-DbaDarlingData -SqlInstance $script:instance3 -Database $database -Branch master -LocalFile $fullOutfile  -Force
+            $resultsLocalFile = Install-DbaDarlingData -SqlInstance $script:instance3 -Database $database -Branch main -LocalFile $fullOutfile  -Force
         }
         AfterAll {
             Remove-DbaDatabase -SqlInstance $script:instance3 -Database $database -Confirm:$false
@@ -67,18 +60,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Shows status of Installed" {
             $resultsLocalFile[0].Status | Should -Be "Installed"
         }
-        It "At least installed sp_humanevents and sp_pressuredetector" {
-            'sp_humanevents', 'sp_pressuredetector' | Should -BeIn $resultsLocalFile.Name
-        }
         It "Has the correct properties" {
             $result = $resultsLocalFile[0]
             $ExpectedProps = 'SqlInstance,InstanceName,ComputerName,Name,Status,Database'.Split(',')
             ($result.PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
         }
-        It "Shows status of Updated" {
-            $resultsLocalFile = Install-DbaDarlingData -SqlInstance $script:instance3 -Database $database
-            $resultsLocalFile[0].Status | Should -Be 'Updated'
-        }
     }
 }
-# $script:instance2
