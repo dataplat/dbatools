@@ -121,7 +121,7 @@ function Get-DbaDbUser {
                     Write-Message -Message "No users exist in the $db database on $instance" -Target $db -Level Verbose
                     continue
                 }
-                if (Test-Bound -ParameterName ExcludeSystemUser) {
+                if ($ExcludeSystemUser) {
                     $users = $users | Where-Object { $_.IsSystemObject -eq $false }
                 }
                 if (Test-Bound -ParameterName User) {
