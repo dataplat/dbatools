@@ -34,7 +34,7 @@ $TestsRunGroups = @{
         # fails on newer version of SMO
         'Get-DbaUserPermission',
         'Invoke-DbaBalanceDataFiles',
-        #'Invoke-DbaWhoisActive',
+        'Invoke-DbaWhoisActive',
         'Install-DbaDarlingData',
         # impossible to do within one server
         # "the partner server name must be distinct"
