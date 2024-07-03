@@ -409,6 +409,7 @@ function New-DbaAvailabilityGroup {
                     $second = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SecondarySqlCredential
                     $secondaries += $second
                 } catch {
+                    Write-Progress -Activity "Adding new availability group" -Completed
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
 
@@ -430,12 +431,14 @@ function New-DbaAvailabilityGroup {
         }
 
         if ($requirementsFailed) {
+            Write-Progress -Activity "Adding new availability group" -Completed
             Stop-Function -Message "Prerequisites are not completly met, so stopping here. See warning messages for details."
             return
         }
 
         # Don't reuse $server here, it fails
         if (Get-DbaAvailabilityGroup -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name) {
+            Write-Progress -Activity "Adding new availability group" -Completed
             Stop-Function -Message "Availability group named $Name already exists on $Primary"
             return
         }
@@ -443,6 +446,7 @@ function New-DbaAvailabilityGroup {
         if ($Certificate) {
             $cert = Get-DbaDbCertificate -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Certificate $Certificate
             if (-not $cert) {
+                Write-Progress -Activity "Adding new availability group" -Completed
                 Stop-Function -Message "Certificate $Certificate does not exist on $Primary" -Target $Primary
                 return
             }
@@ -450,12 +454,14 @@ function New-DbaAvailabilityGroup {
 
         if (($SharedPath)) {
             if (-not (Test-DbaPath -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Path $SharedPath)) {
+                Write-Progress -Activity "Adding new availability group" -Completed
                 Stop-Function -Continue -Message "Cannot access $SharedPath from $Primary"
                 return
             }
         }
 
         if ($Database -and -not $UseLastBackup -and -not $SharedPath -and $Secondary -and $SeedingMode -ne 'Automatic') {
+            Write-Progress -Activity "Adding new availability group" -Completed
             Stop-Function -Continue -Message "You must specify a SharedPath when adding databases to a manually seeded availability group"
             return
         }
@@ -463,17 +469,20 @@ function New-DbaAvailabilityGroup {
         if ($server.HostPlatform -eq "Linux") {
             # New to SQL Server 2017 (14.x) is the introduction of a cluster type for AGs. For Linux, there are two valid values: External and None.
             if ($ClusterType -notin "External", "None") {
+                Write-Progress -Activity "Adding new availability group" -Completed
                 Stop-Function -Continue -Message "Linux only supports ClusterType of External or None"
                 return
             }
             # Microsoft Distributed Transaction Coordinator (DTC) is not supported under Linux in SQL Server 2017
             if ($DtcSupport) {
+                Write-Progress -Activity "Adding new availability group" -Completed
                 Stop-Function -Continue -Message "Microsoft Distributed Transaction Coordinator (DTC) is not supported under Linux"
                 return
             }
         }
 
         if ($ClusterType -eq "None" -and $server.VersionMajor -lt 14) {
+            Write-Progress -Activity "Adding new availability group" -Completed
             Stop-Function -Message "ClusterType of None only supported in SQL Server 2017 and above"
             return
         }
@@ -485,17 +494,20 @@ function New-DbaAvailabilityGroup {
 
         foreach ($primarydb in $dbs) {
             if ($primarydb.MirroringStatus -ne "None") {
+                Write-Progress -Activity "Adding new availability group" -Completed
                 Stop-Function -Message "Cannot setup mirroring on database ($($primarydb.Name)) due to its current mirroring state: $($primarydb.MirroringStatus)"
                 return
             }
 
             if ($primarydb.Status -ne "Normal") {
+                Write-Progress -Activity "Adding new availability group" -Completed
                 Stop-Function -Message "Cannot setup mirroring on database ($($primarydb.Name)) due to its current state: $($primarydb.Status)"
                 return
             }
 
             if ($primarydb.RecoveryModel -ne "Full") {
                 if ((Test-Bound -ParameterName UseLastBackup)) {
+                    Write-Progress -Activity "Adding new availability group" -Completed
                     Stop-Function -Message "$($primarydb.Name) not set to full recovery. UseLastBackup cannot be used."
                     return
                 } else {
@@ -531,6 +543,7 @@ function New-DbaAvailabilityGroup {
 
                 if ($PassThru) {
                     $defaults = 'LocalReplicaRole', 'Name as AvailabilityGroup', 'PrimaryReplicaServerName as PrimaryReplica', 'AutomatedBackupPreference', 'AvailabilityReplicas', 'AvailabilityDatabases', 'AvailabilityGroupListeners'
+                    Write-Progress -Activity "Adding new availability group" -Completed
                     return (Select-DefaultView -InputObject $ag -Property $defaults)
                 }
 
@@ -562,6 +575,7 @@ function New-DbaAvailabilityGroup {
                 if (-not $msg) {
                     $msg = $_
                 }
+                Write-Progress -Activity "Adding new availability group" -Completed
                 Stop-Function -Message $msg -ErrorRecord $_ -Target $Primary
                 return
             }
@@ -581,6 +595,7 @@ function New-DbaAvailabilityGroup {
 
                     $null = Add-DbaAgReplica @replicaparams -EnableException -SqlInstance $second
                 } catch {
+                    Write-Progress -Activity "Adding new availability group" -Completed
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $second -Continue
                 }
             }
@@ -594,6 +609,7 @@ function New-DbaAvailabilityGroup {
             if (-not $msg) {
                 $msg = $_
             }
+            Write-Progress -Activity "Adding new availability group" -Completed
             Stop-Function -Message $msg -ErrorRecord $_ -Target $Primary
             return
         }
@@ -624,6 +640,7 @@ function New-DbaAvailabilityGroup {
                     # join replicas to ag
                     Join-DbaAvailabilityGroup -SqlInstance $second -InputObject $ag -EnableException
                 } catch {
+                    Write-Progress -Activity "Adding new availability group" -Completed
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $second -Continue
                 }
                 $second.AvailabilityGroups.Refresh()
@@ -659,6 +676,7 @@ function New-DbaAvailabilityGroup {
                         $null = Grant-DbaAgPermission -SqlInstance $second -Type AvailabilityGroup -AvailabilityGroup $Name -Permission CreateAnyDatabase -EnableException
                     }
                 } catch {
+                    Write-Progress -Activity "Adding new availability group" -Completed
                     Stop-Function -Message "Failure" -ErrorRecord $_
                 }
             }
@@ -672,6 +690,7 @@ function New-DbaAvailabilityGroup {
                     try {
                         Get-DbaDatabase -SqlInstance $secondaries -Database $Database -EnableException | Remove-DbaDatabase -EnableException
                     } catch {
+                        Write-Progress -Activity "Adding new availability group" -Completed
                         Stop-Function -Message "Failed to remove databases from secondary replicas." -ErrorRecord $_
                     }
                 }
@@ -689,6 +708,7 @@ function New-DbaAvailabilityGroup {
                 try {
                     $null = Add-DbaAgDatabase @addDatabaseParams
                 } catch {
+                    Write-Progress -Activity "Adding new availability group" -Completed
                     Stop-Function -Message "Failed to add databases to Availability Group." -ErrorRecord $_
                 }
             }
