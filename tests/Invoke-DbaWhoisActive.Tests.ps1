@@ -16,12 +16,12 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $testzippath = "$script:appveyorlabrepo\CommunitySoftware\sp_whoisactive-12.00.zip"
-        $resultInstallMaster = Install-DbaWhoIsActive -SqlInstance $script:instance2 -LocalFile $testzippath -Database master -WarningVariable warnInstallMaster
-        $resultInstallTempdb = Install-DbaWhoIsActive -SqlInstance $script:instance2 -LocalFile $testzippath -Database tempdb -WarningVariable warnInstallTempdb
+        $resultInstallMaster = Install-DbaWhoIsActive -SqlInstance $script:instance3 -LocalFile $testzippath -Database master -WarningVariable warnInstallMaster
+        $resultInstallTempdb = Install-DbaWhoIsActive -SqlInstance $script:instance3 -LocalFile $testzippath -Database tempdb -WarningVariable warnInstallTempdb
     }
     AfterAll {
-        Invoke-DbaQuery -SqlInstance $script:instance2 -Database master -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
-        Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
+        Invoke-DbaQuery -SqlInstance $script:instance3 -Database master -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
+        Invoke-DbaQuery -SqlInstance $script:instance3 -Database tempdb -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
     }
     Context "Should have SPWhoisActive installed correctly" {
         It "Should be installed to master" {
@@ -34,7 +34,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Should Execute SPWhoisActive" {
-        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance2 -Help -WarningVariable warn
+        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance3 -Help -WarningVariable warn
         It "Should execute and not warn" {
             $warn | Should -BeNullOrEmpty
         }
@@ -43,42 +43,42 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results | Should -Not -BeNullOrEmpty
         }
 
-        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance2
+        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance3
         It -Skip "Should execute with no parameters in default location" {
             $results | Should -Not -BeNullOrEmpty
         }
 
-        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance2 -ShowSleepingSpids 2
+        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance3 -ShowSleepingSpids 2
         It "Should execute with ShowSleepingSpids" {
             $results | Should -Not -BeNullOrEmpty
         }
 
-        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance2 -Database Tempdb
+        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance3 -Database Tempdb
         It -Skip "Should execute with no parameters against alternate install location" {
             $results | Should -Not -BeNullOrEmpty
         }
 
-        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance2 -ShowOwnSpid
+        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance3 -ShowOwnSpid
         It "Should execute with ShowOwnSpid" {
             $results | Should -Not -BeNullOrEmpty
         }
 
-        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance2 -ShowSystemSpids
+        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance3 -ShowSystemSpids
         It "Should execute with ShowSystemSpids" {
             $results | Should Not Be $Null
         }
 
-        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance2 -Database Tempdb -GetAverageTime
+        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance3 -Database Tempdb -GetAverageTime
         It -Skip "Should execute with averagetime" {
             $results | Should Be $Null
         }
 
-        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance2 -GetOuterCommand -FindBlockLeaders
+        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance3 -GetOuterCommand -FindBlockLeaders
         It -Skip "Should execute with GetOuterCommand and FindBlockLeaders" {
             $results | Should Be $Null
         }
 
-        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance2 -NotFilter 0 -NotFilterType Program
+        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance3 -NotFilter 0 -NotFilterType Program
         It -Skip "Should execute with NotFilter and NotFilterType" {
             $results | Should Be $Null
         }
