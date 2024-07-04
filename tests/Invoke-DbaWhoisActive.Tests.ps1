@@ -16,8 +16,8 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $testzippath = "$script:appveyorlabrepo\CommunitySoftware\sp_whoisactive-12.00.zip"
-        $resultInstallMaster = Install-DbaWhoIsActive -SqlInstance $script:instance2 -LocalFile $testzippath -Database master -WarningAction warnInstallMaster
-        $resultInstallTempdb = Install-DbaWhoIsActive -SqlInstance $script:instance2 -LocalFile $testzippath -Database tempdb -WarningAction warnInstallTempdb
+        $resultInstallMaster = Install-DbaWhoIsActive -SqlInstance $script:instance2 -LocalFile $testzippath -Database master -WarningVariable warnInstallMaster
+        $resultInstallTempdb = Install-DbaWhoIsActive -SqlInstance $script:instance2 -LocalFile $testzippath -Database tempdb -WarningVariable warnInstallTempdb
     }
     AfterAll {
         Invoke-DbaQuery -SqlInstance $script:instance2 -Database master -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
