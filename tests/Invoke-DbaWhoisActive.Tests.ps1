@@ -16,7 +16,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $testzippath = "$script:appveyorlabrepo\CommunitySoftware\sp_whoisactive-12.00.zip"
-        $null = Install-DbaWhoIsActive -SqlInstance $script:instance2 -LocalFile $testzippath -Database Master
+        $null = Install-DbaWhoIsActive -SqlInstance $script:instance2 -LocalFile $testzippath -Database master
         $null = Install-DbaWhoIsActive -SqlInstance $script:instance2 -LocalFile $testzippath -Database tempdb
     }
     AfterAll {
@@ -24,9 +24,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         Invoke-DbaQuery -SqlInstance $script:instance2 -Database Tempdb -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
     }
     Context "Should Execute SPWhoisActive" {
-        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance2 -Help
+        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance2 -Help -WarningVariable warn
+        It "Should execute and not warn" {
+            $warn | Should -BeNullOrEmpty
+        }
+
         It "Should execute and return Help" {
-            $results | Should Not Be $null
+            $results | Should -Not -BeNullOrEmpty
         }
 
         $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance2
