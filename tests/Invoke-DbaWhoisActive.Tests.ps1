@@ -16,12 +16,22 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $testzippath = "$script:appveyorlabrepo\CommunitySoftware\sp_whoisactive-12.00.zip"
-        $null = Install-DbaWhoIsActive -SqlInstance $script:instance2 -LocalFile $testzippath -Database master
-        $null = Install-DbaWhoIsActive -SqlInstance $script:instance2 -LocalFile $testzippath -Database tempdb
+        $resultInstallMaster = Install-DbaWhoIsActive -SqlInstance $script:instance2 -LocalFile $testzippath -Database master -WarningAction warnInstallMaster
+        $resultInstallTempdb = Install-DbaWhoIsActive -SqlInstance $script:instance2 -LocalFile $testzippath -Database tempdb -WarningAction warnInstallTempdb
     }
     AfterAll {
-        Invoke-DbaQuery -SqlInstance $script:instance2 -Database Master -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
-        Invoke-DbaQuery -SqlInstance $script:instance2 -Database Tempdb -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
+        Invoke-DbaQuery -SqlInstance $script:instance2 -Database master -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
+        Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
+    }
+    Context "Should have SPWhoisActive installed correctly" {
+        It "Should be installed to master" {
+            $resultInstallMaster.Name | Should -Be 'sp_WhoisActive'
+            $warnInstallMaster | Should -BeNullOrEmpty
+        }
+        It "Should be installed to tempdb" {
+            $resultInstallTempdb.Name | Should -Be 'sp_WhoisActive'
+            $warnInstallTempdb | Should -BeNullOrEmpty
+        }
     }
     Context "Should Execute SPWhoisActive" {
         $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance2 -Help -WarningVariable warn
