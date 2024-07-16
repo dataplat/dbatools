@@ -21,7 +21,7 @@ Describe "Get-DbaManagementObject Integration Test" -Tag "IntegrationTests" {
     $results = Get-DbaManagementObject -ComputerName $env:COMPUTERNAME
 
     It "returns results" {
-        $results.Count -gt 0 | Should Be $true
+        $results | Should -Not -BeNullOrEmpty
     }
     It "has the correct properties" {
         $result = $results[0]

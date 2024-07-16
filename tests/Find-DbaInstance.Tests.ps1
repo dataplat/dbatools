@@ -23,11 +23,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "Command finds SQL Server instances" {
         BeforeAll {
-            if ($env:APPVEYOR) {
-                $results = Find-DbaInstance -ComputerName $script:instance3 -ScanType Browser, SqlConnect | Select-Object -First 1
-            } else {
-                $results = Find-DbaInstance -ComputerName $TestServer -ScanType Browser, SqlConnect | Select-Object -First 1
-            }
+            $results = Find-DbaInstance -ComputerName $script:instance3 -ScanType Browser, SqlConnect | Select-Object -First 1
         }
         It "Returns an object type of [Dataplat.Dbatools.Discovery.DbaInstanceReport]" {
             $results | Should -BeOfType [Dataplat.Dbatools.Discovery.DbaInstanceReport]
@@ -35,8 +31,10 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "FullName is populated" {
             $results.FullName | Should -Not -BeNullOrEmpty
         }
-        It "TcpConnected is true" {
-            $results.TcpConnected | Should -Be $true
+        if (([DbaInstanceParameter]$script:instance3).IsLocalHost -eq $false) {
+            It "TcpConnected is true" {
+                $results.TcpConnected | Should -Be $true
+            }
         }
         It "successfully connects" {
             $results.SqlConnected | Should -Be $true

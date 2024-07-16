@@ -18,7 +18,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $results = Get-DbaLatchStatistic -SqlInstance $script:instance2 -Threshold 100
 
         It "returns results" {
-            $results.Count -gt 0 | Should Be $true
+            $results | Should -Not -BeNullOrEmpty
         }
 
         foreach ($result in $results) {

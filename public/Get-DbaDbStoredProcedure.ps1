@@ -144,6 +144,8 @@ function Get-DbaDbStoredProcedure {
             $InputObject = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
         }
 
+        $ExcludeSystemSpIsBound = Test-Bound -ParameterName ExcludeSystemSp
+
         foreach ($db in $InputObject) {
             if (!$db.IsAccessible) {
                 Write-Message -Level Warning -Message "Database $db is not accessible. Skipping."
@@ -182,7 +184,7 @@ function Get-DbaDbStoredProcedure {
             }
 
             foreach ($proc in $procs) {
-                if ( (Test-Bound -ParameterName ExcludeSystemSp) -and $proc.IsSystemObject ) {
+                if ($ExcludeSystemSpIsBound -and $proc.IsSystemObject ) {
                     continue
                 }
 

@@ -32,19 +32,19 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
         It "Returns an object with the expected properties" {
             $result = $results[0]
-            $ExpectedProps = 'SqlInstance,InstanceName,ComputerName,Database,Status'.Split(',')
+            $ExpectedProps = 'SqlInstance,InstanceName,ComputerName,Database,Status,DashboardPath'.Split(',')
             ($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
         }
         It "Installed tables" {
-            $tableCount = (Get-DbaDbTable -SqlInstance $script:instance2 -Database $Database | Where-Object {($PSItem.Name -like "sql_perf_mon_*") -or ($PSItem.Name -like "logger_*")}).Count
+            $tableCount = (Get-DbaDbTable -SqlInstance $script:instance2 -Database $Database | Where-Object { $PSItem.Name -like "sqlwatch_*" }).Count
             $tableCount | Should -BeGreaterThan 0
         }
         It "Installed views" {
-            $viewCount = (Get-DbaDbView -SqlInstance $script:instance2 -Database $Database | Where-Object {$PSItem.Name -like "vw_sql_perf_mon_*" }).Count
+            $viewCount = (Get-DbaDbView -SqlInstance $script:instance2 -Database $Database | Where-Object { $PSItem.Name -like "vw_sqlwatch_*" }).Count
             $viewCount | Should -BeGreaterThan 0
         }
         It "Installed stored procedures" {
-            $sprocCount = (Get-DbaDbStoredProcedure -SqlInstance $script:instance2 -Database $Database | Where-Object {($PSItem.Name -like "sp_sql_perf_mon_*") -or ($PSItem.Name -like "usp_logger_*")}).Count
+            $sprocCount = (Get-DbaDbStoredProcedure -SqlInstance $script:instance2 -Database $Database | Where-Object { $PSItem.Name -like "usp_sqlwatch_*" }).Count
             $sprocCount | Should -BeGreaterThan 0
         }
         It "Installed SQL Agent jobs" {
