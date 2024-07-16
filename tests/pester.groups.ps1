@@ -34,7 +34,7 @@ $TestsRunGroups = @{
         # fails on newer version of SMO
         'Get-DbaUserPermission',
         'Invoke-DbaBalanceDataFiles',
-        'Invoke-DbaWhoisActive',
+        'Invoke-DbaWhoisActive',  # Works locally aganint a SQL Server 2022 instance without problems.
         'Install-DbaDarlingData',
         # impossible to do within one server
         # "the partner server name must be distinct"

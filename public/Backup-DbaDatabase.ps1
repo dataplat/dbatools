@@ -396,6 +396,7 @@ function Backup-DbaDatabase {
 
             if (Test-Bound 'EncryptionAlgorithm') {
                 if (!((Test-Bound 'EncryptionCertificate') -xor (Test-Bound 'EncryptionKey'))) {
+                    Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
                     Stop-Function -Message 'EncryptionCertifcate and EncryptionKey are mutually exclusive, only provide on of them'
                     return
                 } else {
@@ -403,6 +404,7 @@ function Backup-DbaDatabase {
                     if (Test-Bound 'EncryptionCertificate') {
                         $tCertCheck = Get-DbaDbCertificate -SqlInstance $server -Database master -Certificate $EncryptionCertificate
                         if ($null -eq $tCertCheck) {
+                            Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
                             Stop-Function -Message "Certificate $EncryptionCertificate does not exist on $server so cannot be used for backups"
                             return
                         } else {
@@ -415,6 +417,7 @@ function Backup-DbaDatabase {
                         # Should not end up here until Key encryption in implemented
                         $tKeyCheck = Get-DbaDbAsymmetricKey -SqlInstance $server -Database master -Name $EncrytptionKey
                         if ($null -eq $tKeyCheck) {
+                            Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
                             Stop-Function -Message "AsymmetricKey $Encryptionkey does not exist on $server so cannot be used for backups"
                             return
                         } else {
@@ -441,13 +444,14 @@ function Backup-DbaDatabase {
             }
 
             if (($MaxTransferSize % 64kb) -ne 0 -or $MaxTransferSize -gt 4mb) {
+                Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
                 Stop-Function -Message "MaxTransferSize value must be a multiple of 64kb and no greater than 4MB"
                 return
             }
 
             if ($BlockSize) {
                 if ($BlockSize -notin (0.5kb, 1kb, 2kb, 4kb, 8kb, 16kb, 32kb, 64kb)) {
-
+                    Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
                     Stop-Function -Message "Block size must be one of 0.5kb,1kb,2kb,4kb,8kb,16kb,32kb,64kb"
                     return
                 }
@@ -469,6 +473,7 @@ function Backup-DbaDatabase {
                         if (Get-DbaCredential -SqlInstance $server -Name $credentialName) {
                             Write-Message -Message "Found a SAS backup credential" -Level Verbose
                         } else {
+                            Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
                             Stop-Function -Message "You must provide the credential name for the Azure Storage Account"
                             return
                         }
@@ -488,14 +493,17 @@ function Backup-DbaDatabase {
             }
 
             if ($dbName -eq "tempdb") {
+                Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
                 Stop-Function -Message "Backing up tempdb not supported" -Continue
             }
 
             if ('Normal' -notin ($db.Status -split ',')) {
+                Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
                 Stop-Function -Message "Database status not Normal. $dbName skipped." -Continue
             }
 
             if ($db.DatabaseSnapshotBaseName) {
+                Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
                 Stop-Function -Message "Backing up snapshots not supported. $dbName skipped." -Continue
             }
 
@@ -511,6 +519,7 @@ function Backup-DbaDatabase {
             if ($dbRecovery -eq 'Simple' -and $Type -eq 'Log') {
                 $failreason = "$db is in simple recovery mode, cannot take log backup"
                 $failures += $failreason
+                Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
                 Stop-Function -Message "$failreason" -Continue -Target $db
             }
 
@@ -520,6 +529,7 @@ function Backup-DbaDatabase {
             if ($Type -notin @("Database", "Full") -and $lastfull -eq 1) {
                 $failreason = "$db does not have an existing full backup, cannot take log or differentialbackup"
                 $failures += $failreason
+                Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
                 Stop-Function -Message "$failreason" -Continue -Target $db
             }
 
@@ -562,6 +572,7 @@ function Backup-DbaDatabase {
                             $backup.CompressionOption = [Microsoft.SqlServer.Management.Smo.BackupCompressionOptions]::Off
                         }
                     } elseif ($server.Edition -like 'Express*' -or ($server.VersionMajor -eq 10 -and $server.VersionMinor -eq 0 -and $server.Edition -notlike '*enterprise*') -or $server.VersionMajor -lt 10) {
+                        Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
                         Stop-Function -Message "Compression is not supported with this version/edition of Sql Server" -Continue -Target $db
                     } else {
                         Write-Message -Level Verbose -Message "Compression enabled"
@@ -758,7 +769,7 @@ function Backup-DbaDatabase {
                         if ($OutputScriptOnly -ne $True) {
                             $backup.SqlBackup($server)
                             $script = $backup.Script($server)
-                            Write-Progress -Id $ProgressId -Activity "Backing up database $dbName to $backupfile" -Status "Complete" -Completed
+                            Write-Progress -Id $ProgressId -Activity "Backing up database $dbName to $backupfile" -Completed
                             $BackupComplete = $true
                             if ($server.VersionMajor -eq '8') {
                                 $HeaderInfo = Get-BackupAncientHistory -SqlInstance $server -Database $dbName
@@ -826,13 +837,15 @@ function Backup-DbaDatabase {
                             $HeaderInfo | Add-Member -Type NoteProperty -Name Verified -Value $Verified
                         } else {
                             $backup.Script($server)
+                            Write-Progress -Id $ProgressId -Activity "Backing up database $dbName to $backupfile" -Completed
                         }
                     }
                 } catch {
                     if ($NoRecovery -and ($_.Exception.InnerException.InnerException.InnerException -like '*cannot be opened. It is in the middle of a restore.')) {
-                        Write-Message -Message "Exception thrown by db going into restoring mode due to recovery" -Leve Verbose
+                        Write-Message -Message "Exception thrown by db going into restoring mode due to recovery" -Level Verbose
                     } else {
-                        Write-Progress -Id $ProgressId -Activity "Backup" -Status "Failed" -Completed
+                        Write-Progress -Id $ProgressId -Activity "Backup" -Completed
+                        Write-Progress -Id $topProgressId -Activity "Backup" -Completed
                         Stop-Function -message "Backup of [$dbName] failed" -ErrorRecord $_ -Target $dbName -Continue
                         $BackupComplete = $false
                     }

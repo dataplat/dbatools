@@ -49,7 +49,7 @@ function Get-DbaExternalProcess {
         foreach ($computer in $ComputerName) {
             try {
                 $sqlpid = (Get-DbaCmObject -ComputerName $computer -Credential $Credential -ClassName win32_process | Where-Object ProcessName -eq "sqlservr.exe").ProcessId
-                $processes = Get-DbaCmObject -ComputerName $computer -Credential $Credential -ClassName win32_process | Where-Object ParentProcessId -eq $sqlpid
+                $processes = Get-DbaCmObject -ComputerName $computer -Credential $Credential -ClassName win32_process | Where-Object ParentProcessId -in $sqlpid
 
                 foreach ($process in $processes) {
                     [PSCustomObject]@{

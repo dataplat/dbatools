@@ -27,7 +27,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
         AfterAll {
             $null = $masterkey | Remove-DbaDbMasterKey -Confirm:$false
-            $null = Remove-Item -Path $backup.ExportPath -ErrorAction SilentlyContinue -Confirm:$false
+            $null = Remove-Item -Path $backup.ExportPath, $backup.ExportKey -ErrorAction SilentlyContinue -Confirm:$false
         }
 
         It "restores the db cert when passing in a .cer file" {

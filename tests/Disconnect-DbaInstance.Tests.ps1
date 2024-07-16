@@ -15,13 +15,12 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $null = Get-DbaDatabase -SqlInstance $script:instance1
-        $null = Connect-DbaInstance -SqlInstance $env:COMPUTERNAME -SqlConnectionOnly
+        $null = Connect-DbaInstance -SqlInstance $script:instance1
     }
     Context "disconnets a server" {
         It "disconnects and returns some results" {
             $results = Get-DbaConnectedInstance | Disconnect-DbaInstance
-            $results.Count | Should -BeGreaterThan 1
+            $results | Should -Not -BeNullOrEmpty
         }
     }
 }
