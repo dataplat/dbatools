@@ -25,7 +25,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
         Foreach ($row in $results) {
             It "Should return correct compatibility level for $($row.database)" {
-                $row.Compatibility | Should Be $compatibilityLevel
+                # Only test system databases as there might be leftover databases from other tests
+                if ($row.DatabaseId -le 4) {
+                    $row.Compatibility | Should Be $compatibilityLevel
+                }
                 $row.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $script:instance1 -Database $row.Database).Id
             }
         }
