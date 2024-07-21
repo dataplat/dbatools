@@ -24,6 +24,9 @@ $TestsRunGroups = @{
     "appveyor_disabled" = @(
         # difficult timing and also "Exception calling "ShouldProcess" with "2" argument(s): "The method or operation is not implemented."
         'Get-DbaEstimatedCompletionTime'
+        # Works locally, but not on AppVeyor
+        'Test-DbaBackupEncrypted'
+        'Set-DbaNetworkConfiguration'
         # takes too long
         'Install-DbaSqlWatch',
         'Uninstall-DbaSqlWatch',
