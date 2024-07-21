@@ -16,19 +16,18 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Returns output for single database" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
             $random = Get-Random
             $db = "dbatoolsci_measurethruput$random"
-            $server.Query("CREATE DATABASE $db")
-            $null = Get-DbaDatabase -SqlInstance $server -Database $db | Backup-DbaDatabase
+            $null = New-DbaDatabase -SqlInstance $script:instance2 -Database $db | Backup-DbaDatabase
         }
         AfterAll {
-            $null = Get-DbaDatabase -SqlInstance $server -Database $db | Remove-DbaDatabase -Confirm:$false
+            $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database $db
         }
 
-        $results = Measure-DbaBackupThroughput -SqlInstance $server -Database $db
-        It "Should return just one backup" {
-            $results.Database.Count -eq 1 | Should Be $true
+        $results = Measure-DbaBackupThroughput -SqlInstance $script:instance2 -Database $db
+        It "Should return results" {
+            $results.Database | Should -Be $db
+            $results.BackupCount | Should -Be 1
         }
     }
 }
