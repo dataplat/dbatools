@@ -98,9 +98,9 @@ function Test-DbaDbRecoveryModel {
                             WHEN d.recovery_model = 1 AND drs.last_log_backup_lsn IS NOT NULL THEN 1
                             ELSE 0
                            END AS IsReallyInFullRecoveryModel
-                  FROM sys.databases AS D
+                  FROM sys.databases AS d
                     INNER JOIN sys.database_recovery_status AS drs
-                       ON D.database_id = drs.database_id
+                       ON d.database_id = drs.database_id
                   WHERE d.recovery_model = $recoveryCode"
 
         if ($Database) {
