@@ -45,7 +45,7 @@ $TestsRunGroups = @{
         'Remove-DbaAvailabilityGroup',
         'Set-DbaAgReplica',
         'Read-DbaAuditFile',
-        #'Sync-DbaLoginPermission',
+        'Sync-DbaLoginPermission',
         'Read-DbaXEFile',
         'Stop-DbaXESession',
         'Test-DbaTempDbConfig',
