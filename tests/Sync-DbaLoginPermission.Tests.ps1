@@ -49,7 +49,7 @@ CREATE LOGIN [$DBUserName]
             #Creates the user on
             Invoke-DbaQuery -SqlInstance $script:instance3 -Query $CreateTestLogin
             $results = Sync-DbaLoginPermission -Source $script:instance2 -Destination $script:instance3 -Login $DBUserName -ExcludeLogin 'NotaLogin' -Warningvariable $warn
-            $results | Should -be $null
+            $results.Status | Should -Be 'Successful'
             $warn | Should -be $null
         }
 
