@@ -25,10 +25,6 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         if ($alldbs) {
             $alldbs | Remove-DbaDatabase
         }
-        Get-DbaDbCertificate -SqlInstance $script:instance2 -Database master -Certificate master | Remove-DbaDbCertificate
-        Get-DbaDbMasterKey -SqlInstance $script:instance2 -Database master | Remove-DbaDbMasterKey
-        Get-ChildItem -Path $BackupPath -Filter *.cer | Remove-Item
-        Get-ChildItem -Path $BackupPath -Filter *.pvk | Remove-Item
     }
 
     Context "Command actually works" {
