@@ -23,7 +23,6 @@ $TestsRunGroups = @{
     # do not run on appveyor
     "appveyor_disabled" = @(
         # Works locally, but not on AppVeyor
-        'Set-DbaNetworkConfiguration'
         'Start-DbaXESession'
         # takes too long
         'Install-DbaSqlWatch',
