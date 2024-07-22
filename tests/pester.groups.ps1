@@ -27,6 +27,7 @@ $TestsRunGroups = @{
         # Works locally, but not on AppVeyor
         'Test-DbaBackupEncrypted'
         'Set-DbaNetworkConfiguration'
+        'Start-DbaXESession'
         # takes too long
         'Install-DbaSqlWatch',
         'Uninstall-DbaSqlWatch',
