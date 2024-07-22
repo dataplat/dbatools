@@ -912,6 +912,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Should have stoped at mark" {
             $sqlOut.ms | Should -Be 8764
         }
+        $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database StopAt2
     }
 
     Context "Test restoring with StopAt and StopAfterDate" {
@@ -921,6 +922,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Should have stoped at mark" {
             $sqlOut.ms | Should -Be 29876
         }
+        $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database StopAt2
     }
 
     Context "Warn if OutputScriptOnly and VerifyOnly specified together #6987" {
@@ -928,6 +930,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Should return a warning" {
             $warnvar | Should -BeLike '*The switches OutputScriptOnly and VerifyOnly cannot both be specified at the same time, stopping'
         }
+        $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database StopAt2
     }
     if ($env:azurepasswd) {
         Context "Restores From Azure using SAS" {
