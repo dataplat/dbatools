@@ -52,8 +52,6 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         # Drop created objects
         $conn.ExecuteNonQuery("IF EXISTS(SELECT * FROM sys.server_event_sessions WHERE name = 'dbatoolsci_session_invalid') DROP EVENT SESSION [dbatoolsci_session_invalid] ON SERVER;")
         $conn.ExecuteNonQuery("IF EXISTS(SELECT * FROM sys.server_event_sessions WHERE name = 'dbatoolsci_session_valid') DROP EVENT SESSION [dbatoolsci_session_valid] ON SERVER;")
-        Get-DbaAgentJob -SqlInstance $script:instance2 -Job "XE Session START - dbatoolsci_session_valid", "XE Session STOP - dbatoolsci_session_valid" | Remove-DbaAgentJob
-        Get-DbaAgentSchedule -SqlInstance $script:instance2 -Schedule "XE Session START - dbatoolsci_session_valid", "XE Session STOP - dbatoolsci_session_valid" | Remove-DbaAgentSchedule
     }
 
     Context "Verifying command works" {
