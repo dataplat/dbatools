@@ -95,7 +95,7 @@ function Get-DbaLatchStatistic {
                        [latch_class],
                        [wait_time_ms] / 1000.0 AS [WaitS],
                        [waiting_requests_count] AS [WaitCount],
-                       Case WHEN SUM ([wait_time_ms]) OVER() = 0 THEN NULL ELSE 100.0 * [wait_time_ms] / SUM ([wait_time_ms]) OVER() END AS [Percentage],
+                       CASE WHEN SUM([wait_time_ms]) OVER() > 0 THEN 100.0 * [wait_time_ms] / SUM([wait_time_ms]) OVER() END AS [Percentage],
                        ROW_NUMBER() OVER(ORDER BY [wait_time_ms] DESC) AS [RowNum]
                    FROM sys.dm_os_latch_stats
                    WHERE [latch_class] NOT IN (N'BUFFER')
@@ -105,7 +105,7 @@ function Get-DbaLatchStatistic {
                    CAST (MAX ([W1].[WaitS]) AS DECIMAL(14, 2)) AS [WaitSeconds],
                    MAX ([W1].[WaitCount]) AS [WaitCount],
                    CAST (MAX ([W1].[Percentage]) AS DECIMAL(14, 2)) AS [Percentage],
-                   CAST ((MAX ([W1].[WaitS]) / MAX ([W1].[WaitCount])) AS DECIMAL (14, 4)) AS [AvgWaitSeconds],
+                   CAST (CASE WHEN MAX([W1].[WaitCount]) > 0 THEN MAX([W1].[WaitS]) / MAX([W1].[WaitCount]) END AS DECIMAL (14, 4)) AS [AvgWaitSeconds],
                    CAST ('https://www.sqlskills.com/help/latches/' + MAX ([W1].[latch_class]) as XML) AS [URL]
                FROM [Latches] AS [W1]
                INNER JOIN [Latches] AS [W2]

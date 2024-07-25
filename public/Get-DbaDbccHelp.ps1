@@ -47,12 +47,12 @@ function Get-DbaDbccHelp {
     .EXAMPLE
         PS C:\> Get-DbaDbccHelp -SqlInstance SQLInstance -Statement FREESYSTEMCACHE -Verbose | Format-List
 
-        Runs the command DBCC HELP(FREESYSTEMCACHE) WITH NO_INFOMSGS against the SQL Server instance SQLInstance
+        Runs the command DBCC HELP(FREESYSTEMCACHE) WITH NO_INFOMSGS against the SQLInstance SQL Server instance.
 
     .EXAMPLE
-        PS C:\> Get-DbaDbccHelp -SqlInstance LensmanSB -Statement WritePage -IncludeUndocumented | Format-List
+        PS C:\> Get-DbaDbccHelp -SqlInstance SQLInstance -Statement WritePage -IncludeUndocumented | Format-List
 
-        Sets TraeFlag 2588 on for session and then runs the command DBCC HELP(WritePage) WITH NO_INFOMSGS against the SQL Server instance SQLInstance
+        Sets Trace Flag 2588 on for the session and then runs the command DBCC HELP(WritePage) WITH NO_INFOMSGS against the SQLInstance SQL Server instance.
 
     #>
     [CmdletBinding()]
