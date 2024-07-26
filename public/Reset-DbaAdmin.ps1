@@ -311,7 +311,6 @@ function Reset-DbaAdmin {
                     }
                 } catch {
                     Stop-Service -InputObject $sqlservice -Force -ErrorAction SilentlyContinue
-
                     if ($isClustered) {
                         $clusterResource | Where-Object Name -EQ "SQL Server" | ForEach-Object { $_.BringOnline(60) }
                         $clusterResource | Where-Object Name -NE "SQL Server" | ForEach-Object { $_.BringOnline(60) }
@@ -332,7 +331,7 @@ function Reset-DbaAdmin {
                         Start-Sleep 3
                         $null = Invoke-ResetSqlCmd -instance $instance -Sql "SELECT 1" -EnableException
                     } catch {
-                        Stop-Service Input-Object $sqlservice -Force -ErrorAction SilentlyContinue
+                        Stop-Service -InputObject $sqlservice -Force -ErrorAction SilentlyContinue
                         if ($isClustered) {
                             $clusterResource | Where-Object { $_.Name -eq "SQL Server" } | ForEach-Object { $_.BringOnline(60) }
                             $clusterResource | Where-Object { $_.Name -ne "SQL Server" } | ForEach-Object { $_.BringOnline(60) }
