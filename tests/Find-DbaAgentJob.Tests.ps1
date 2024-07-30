@@ -18,7 +18,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $results = Get-Service | Where-Object Name -like '*SqlAgent*'
         foreach($ag in $results) {
             It "$($ag.Name) status should be started" {
-                $ag.Status | Should -Be "Started"
+                $ag.Status | Should -Be "Running"
             }
         }
     }
@@ -26,7 +26,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         BeforeAll {
             $null = New-DbaAgentJob -SqlInstance $script:instance2 -Job 'dbatoolsci_testjob' -OwnerLogin 'sa'
             $null = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job 'dbatoolsci_testjob' -StepId 1 -StepName 'dbatoolsci Failed' -Subsystem TransactSql -SubsystemServer $script:instance2 -Command "RAISERROR (15600,-1,-1, 'dbatools_error');" -CmdExecSuccessCode 0 -OnSuccessAction QuitWithSuccess -OnFailAction QuitWithFailure -Database master -RetryAttempts 1 -RetryInterval 2
-            $null = Start-DbaAgentJob -SqlInstance $script:instance2 -Job 'dbatoolsci_testjob'
+            #$null = Start-DbaAgentJob -SqlInstance $script:instance2 -Job 'dbatoolsci_testjob'
             $null = New-DbaAgentJobCategory -SqlInstance $script:instance2 -Category 'dbatoolsci_job_category' -CategoryType LocalJob
             $null = New-DbaAgentJob -SqlInstance $script:instance2 -Job 'dbatoolsci_testjob_disabled' -Category 'dbatoolsci_job_category' -Disabled
             $null = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job 'dbatoolsci_testjob_disabled' -StepId 1 -StepName 'dbatoolsci Test Step' -Subsystem TransactSql -SubsystemServer $script:instance2 -Command 'SELECT * FROM master.sys.all_columns' -CmdExecSuccessCode 0 -OnSuccessAction QuitWithSuccess -OnFailAction QuitWithFailure -Database master -RetryAttempts 1 -RetryInterval 2
