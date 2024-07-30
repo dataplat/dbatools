@@ -14,21 +14,21 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    #Context "Make sure Agent is running" {
-    #    $results = Get-Service | Where-Object Name -like '*SqlAgent*'
-    #    foreach($ag in $results) {
-    #        It "$($ag.Name) status should be started" {
-    #            $ag.Status | Should -Be "Running"
-    #        }
-    #    }
-    #}
+    
     Context "Command finds jobs using all parameters" {
         BeforeAll {
+            #subsystemServer needs the real underlying name, and it doesn't work if targeting something like localhost\namedinstance
+            # the typical error would be WARNING: [17:19:26][New-DbaAgentJobStep] Something went wrong creating the job step | The specified '@server' is
+            #invalid (valid values are returned by sp_helpserver).
+            $srvName = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "select @@servername as sn" -as PSObject
             $null = New-DbaAgentJob -SqlInstance $script:instance2 -Job 'dbatoolsci_testjob' -OwnerLogin 'sa'
-            $null = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job 'dbatoolsci_testjob' -StepId 1 -StepName 'dbatoolsci Failed' -Subsystem TransactSql -SubsystemServer $script:instance2 -Command "RAISERROR (15600,-1,-1, 'dbatools_error');" -CmdExecSuccessCode 0 -OnSuccessAction QuitWithSuccess -OnFailAction QuitWithFailure -Database master -RetryAttempts 1 -RetryInterval 2
+            $null = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job 'dbatoolsci_testjob' -StepId 1 -StepName 'dbatoolsci Failed' -Subsystem TransactSql -SubsystemServer $srvName.sn -Command "RAISERROR (15600,-1,-1, 'dbatools_error');" -CmdExecSuccessCode 0 -OnSuccessAction QuitWithSuccess -OnFailAction QuitWithFailure -Database master -RetryAttempts 1 -RetryInterval 2
+            $null = Start-DbaAgentJob -SqlInstance $script:instance2 -Job 'dbatoolsci_testjob'
+            $null = New-DbaAgentJob -SqlInstance $script:instance2 -Job 'dbatoolsci_testjob' -OwnerLogin 'sa'
+            $null = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job 'dbatoolsci_testjob' -StepId 1 -StepName 'dbatoolsci Failed' -Subsystem TransactSql -SubsystemServer $srvName.sn -Command "RAISERROR (15600,-1,-1, 'dbatools_error');" -CmdExecSuccessCode 0 -OnSuccessAction QuitWithSuccess -OnFailAction QuitWithFailure -Database master -RetryAttempts 1 -RetryInterval 2
             $null = New-DbaAgentJobCategory -SqlInstance $script:instance2 -Category 'dbatoolsci_job_category' -CategoryType LocalJob
             $null = New-DbaAgentJob -SqlInstance $script:instance2 -Job 'dbatoolsci_testjob_disabled' -Category 'dbatoolsci_job_category' -Disabled
-            $null = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job 'dbatoolsci_testjob_disabled' -StepId 1 -StepName 'dbatoolsci Test Step' -Subsystem TransactSql -SubsystemServer $script:instance2 -Command 'SELECT * FROM master.sys.all_columns' -CmdExecSuccessCode 0 -OnSuccessAction QuitWithSuccess -OnFailAction QuitWithFailure -Database master -RetryAttempts 1 -RetryInterval 2
+            $null = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job 'dbatoolsci_testjob_disabled' -StepId 1 -StepName 'dbatoolsci Test Step' -Subsystem TransactSql -SubsystemServer $srvName.sn -Command 'SELECT * FROM master.sys.all_columns' -CmdExecSuccessCode 0 -OnSuccessAction QuitWithSuccess -OnFailAction QuitWithFailure -Database master -RetryAttempts 1 -RetryInterval 2
         }
         AfterAll {
             $null = Remove-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_testjob, dbatoolsci_testjob_disabled -Confirm:$false
@@ -79,8 +79,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Should find jobs that are owned by sa" {
             $results | Should not be null
         }
-        $null = Start-DbaAgentJob -SqlInstance $script:instance2 -Job 'dbatoolsci_testjob'
-        Start-Sleep 5
+        
+        
         $results = Find-DbaAgentJob -SqlInstance $script:instance2 -IsFailed -Since '2016-07-01 10:47:00'
         It "Should find jobs that have been failed since July of 2016" {
             $results | Should not be null
