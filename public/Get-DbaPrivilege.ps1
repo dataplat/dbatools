@@ -156,7 +156,7 @@ function Get-DbaPrivilege {
                 }
 
                 Write-Message -Level Verbose -Message "Getting Logon as a service Privileges on $computer"
-                $losEntries = $secPol | Where-Object {$_ -like "SeServiceLogonRight*"}
+                $losEntries = $secPol | Where-Object { $_ -like "SeServiceLogonRight*" }
 
                 $los = if ($null -ne $losEntries) {
                     $losEntries.Substring(22).split(",") | ForEach-Object {
