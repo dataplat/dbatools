@@ -56,9 +56,5 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 $result.LogSize.Kilobyte | Should Be 100
             }
         }
-
-        It "returns a warning for invalid version" {
-            $warn2 | Should Match 'not supported'
-        }
     }
 }

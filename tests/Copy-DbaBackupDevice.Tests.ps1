@@ -32,6 +32,7 @@ if (-not $env:appveyor) {
                 } catch {
                     # don't care
                 }
+                Get-ChildItem -Path $backupfilename | Remove-Item
             }
 
             $results = Copy-DbaBackupDevice -Source $script:instance1 -Destination $script:instance2 -WarningVariable warn -WarningAction SilentlyContinue 3> $null

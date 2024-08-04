@@ -206,6 +206,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $results[0].DestinationDatabase | Should -Be $newname
             $files = Get-DbaDbFile -Sqlinstance $script:instance3 -Database $newname
             ($files.PhysicalName -like "*$newname*").count | Should -Be $files.count
+            $null = Remove-DbaDatabase -SqlInstance $script:instance3 -Database $newname
         }
 
         It "Should prefix databasename and files" {
@@ -214,12 +215,14 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $results[0].DestinationDatabase | Should -Be "$prefix$backuprestoredb"
             $files = Get-DbaDbFile -Sqlinstance $script:instance3 -Database "$prefix$backuprestoredb"
             ($files.PhysicalName -like "*$prefix$backuprestoredb*").count | Should -Be $files.count
+            $null = Remove-DbaDatabase -SqlInstance $script:instance3 -Database "$prefix$backuprestoredb"
         }
 
         $null = Restore-DbaDatabase -SqlInstance $script:instance2 -path $script:appveyorlabrepo\RestoreTimeClean2016 -useDestinationDefaultDirectories
         It "Should warn and exit if newname and >1 db specified" {
             $null = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb, RestoreTimeClean -DetachAttach -Reattach -NewName warn -WarningVariable warnvar 3> $null
             $warnvar | Should -BeLike "*Cannot use NewName when copying multiple databases"
+            $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database RestoreTimeClean
         }
     }
 

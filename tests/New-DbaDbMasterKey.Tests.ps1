@@ -33,6 +33,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $mastercert = New-DbaDbCertificate -SqlInstance $script:instance1
         }
         $db = New-DbaDatabase -SqlInstance $script:instance1
+        $db1 = New-DbaDatabase -SqlInstance $script:instance1
     }
 
     AfterAll {
@@ -58,7 +59,6 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results.IsEncryptedByServer | Should -Be $true
         }
         It "should create master key on a database" {
-            $db1 = New-DbaDatabase -SqlInstance $script:instance1
             $results = New-DbaDbMasterKey -SqlInstance $script:instance1 -Database $db1.Name -SecurePassword $passwd
             $results.IsEncryptedByServer | Should -Be $true
         }

@@ -21,15 +21,16 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $destjobs = Get-DbaAgentJob -SqlInstance $script:instance3
     }
     AfterAll {
-        $null = Remove-DbaAgentJob -SqlInstance $script:instance2, $script:instance3 -Job dbatoolsci_copyjob, dbatoolsci_copyjob_disabled -Confirm:$false
+        $null = Remove-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_copyjob, dbatoolsci_copyjob_disabled -Confirm:$false
+        $null = Remove-DbaAgentJob -SqlInstance $script:instance3 -Job dbatoolsci_copyjob, dbatoolsci_copyjob_disabled -Confirm:$false
     }
 
     Context "Command copies jobs properly" {
         $results = Copy-DbaAgentJob -Source $script:instance2 -Destination $script:instance3 -Job dbatoolsci_copyjob
 
         It "returns one success" {
-            $results.Name -eq "dbatoolsci_copyjob"
-            $results.Status -eq "Successful"
+            $results.Name | Should -Be "dbatoolsci_copyjob"
+            $results.Status | Should -Be "Successful"
         }
 
         It "did not copy dbatoolsci_copyjob_disabled" {
@@ -38,7 +39,9 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
 
         It "disables jobs when requested" {
             (Get-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_copyjob_disabled).Enabled
-            $results = Copy-DbaAgentJob -Source $script:instance2 -Destination $script:instance3 -Job dbatoolsci_copyjob_disabled -DisableOnSource -DisableOnDestination
+            $results = Copy-DbaAgentJob -Source $script:instance2 -Destination $script:instance3 -Job dbatoolsci_copyjob_disabled -DisableOnSource -DisableOnDestination -Force
+            $results.Name | Should -Be "dbatoolsci_copyjob_disabled"
+            $results.Status | Should -Be "Successful"
             (Get-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_copyjob_disabled).Enabled | Should -Be $false
             (Get-DbaAgentJob -SqlInstance $script:instance3 -Job dbatoolsci_copyjob_disabled).Enabled | Should -Be $false
         }

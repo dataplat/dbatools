@@ -22,7 +22,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $db.Query("DBCC CHECKDB")
     }
     AfterAll {
-        $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -confirm:$false
     }
     Context "Command actually works" {
         $results = Get-DbaLastGoodCheckDb -SqlInstance $script:instance1 -Database master

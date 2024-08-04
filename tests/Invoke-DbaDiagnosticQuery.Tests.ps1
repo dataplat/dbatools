@@ -62,11 +62,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             @($results | Where-Object {$_.Database -eq $Database2}).Count | Should -Be 0
         }
         It "Correctly excludes queries when QueryName and ExcludeQuery parameters are used" {
-            $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -QueryName 'Version Info', 'Core Counts', 'Server Properties' -ExcludeQuery 'Core Counts' -WhatIf
+            $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -QueryName 'Version Info', 'Core Counts', 'Server Properties' -ExcludeQuery 'Core Counts'
             @($results).Count | Should be 2
         }
         It "Correctly excludes queries when only ExcludeQuery parameter is used" {
-            $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -ExcludeQuery "Missing Index Warnings", "Buffer Usage" -whatif
+            $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -ExcludeQuery "Missing Index Warnings", "Buffer Usage"
             @($results).Count | Should -BeGreaterThan 0
             @($results | Where-Object Name -eq "Missing Index Warnings").Count | Should be 0
             @($results | Where-Object Name -eq "Buffer Usage").Count | Should be 0
