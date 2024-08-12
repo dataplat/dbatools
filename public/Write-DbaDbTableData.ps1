@@ -50,6 +50,10 @@ function Write-DbaDbTableData {
     .PARAMETER AutoCreateTable
         If this switch is enabled, the table will be created if it does not already exist. The table will be created with sub-optimal data types such as nvarchar(max).
 
+    .PARAMETER AutoCreateTableIdentity
+        If this switch is enabled in addition to AutoCreateTable, an identity column will be added to the automatically created table.
+        The column will be named 'Id' and will not be set as the primary key.
+
     .PARAMETER NoTableLock
         If this switch is enabled, a table lock (TABLOCK) will not be placed on the destination table. By default, this operation will lock the destination table while running.
 
@@ -194,6 +198,7 @@ function Write-DbaDbTableData {
         [ValidateNotNull()]
         [int]$NotifyAfter = 5000,
         [switch]$AutoCreateTable,
+        [switch]$AutoCreateTableIdentity,
         [switch]$NoTableLock,
         [switch]$CheckConstraints,
         [switch]$FireTriggers,
@@ -320,6 +325,9 @@ function Write-DbaDbTableData {
 
             .PARAMETER UseDynamicStringLength
                 Automatically inherits from parent.
+
+            .PARAMETER AutoCreateTableIdentity
+                Automatically inherits from parent.
         #>
             [CmdletBinding(SupportsShouldProcess)]
             param (
@@ -329,6 +337,7 @@ function Write-DbaDbTableData {
                 $Fqtn = $fqtn,
                 $Server = $server,
                 $DatabaseName = $databaseName,
+                [switch]$AutoCreateTableIdentity,
                 [switch]$EnableException
             )
 
@@ -378,7 +387,11 @@ function Write-DbaDbTableData {
                 $sqlDataTypes += "[$sqlColumnName] $sqlDataType"
             }
 
-            $sql = "BEGIN CREATE TABLE $fqtn ($($sqlDataTypes -join ' NULL,')) END"
+            if ($AutoCreateTableIdentity) {
+                $sql = "BEGIN CREATE TABLE $fqtn ([Id] INT IDENTITY(1,1), $($sqlDataTypes -join ' NULL,')) END"
+            } else {
+                $sql = "BEGIN CREATE TABLE $fqtn ($($sqlDataTypes -join ' NULL,')) END"
+            }
 
             Write-Message -Level Debug -Message $sql
 
