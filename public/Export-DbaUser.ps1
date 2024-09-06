@@ -267,7 +267,7 @@ function Export-DbaUser {
                     }
                 }
 
-                if ($Passthru){
+                if ($Passthru) {
                     $progressMessage = "Generating script for user $dbuser"
                 } else {
                     $progressMessage = "Generating script ($FilePath) for user $dbuser"
