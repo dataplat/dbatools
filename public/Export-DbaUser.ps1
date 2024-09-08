@@ -252,6 +252,9 @@ function Export-DbaUser {
 
             $stepCounter = 0
             foreach ($dbuser in $users) {
+                # Clear output for each user
+                $outsql = @()
+                $sql = ""
 
                 if ($GenerateFilePerUser) {
                     if ($null -eq $usersProcessed[$dbuser.Name]) {
@@ -264,7 +267,12 @@ function Export-DbaUser {
                     }
                 }
 
-                Write-ProgressHelper -TotalSteps $users.Count -Activity "Exporting from $($db.Name)" -StepNumber ($stepCounter++) -Message "Generating script ($FilePath) for user $dbuser"
+                if ($Passthru) {
+                    $progressMessage = "Generating script for user $dbuser"
+                } else {
+                    $progressMessage = "Generating script ($FilePath) for user $dbuser"
+                }
+                Write-ProgressHelper -TotalSteps $users.Count -Activity "Exporting from $($db.Name)" -StepNumber ($stepCounter++) -Message $progressMessage
 
                 #setting database
                 if (((Test-Bound ScriptingOptionsObject) -and $ScriptingOptionsObject.IncludeDatabaseContext) -or - (Test-Bound ScriptingOptionsObject -Not)) {
@@ -366,7 +374,7 @@ function Export-DbaUser {
                             $withGrant = " WITH GRANT OPTION"
                             $grantDatabasePermission = 'GRANT'
                         } else {
-                            $withGrant = " "
+                            $withGrant = ""
                             $grantDatabasePermission = $databasePermission.PermissionState.ToString().ToUpper()
                         }
                         if ($Template) {
@@ -526,7 +534,7 @@ function Export-DbaUser {
                             $withGrant = " WITH GRANT OPTION"
                             $grantObjectPermission = 'GRANT'
                         } else {
-                            $withGrant = " "
+                            $withGrant = ""
                             $grantObjectPermission = $objectPermission.PermissionState.ToString().ToUpper()
                         }
                         if ($Template) {
@@ -573,9 +581,6 @@ function Export-DbaUser {
                             $sql | Out-File -Encoding:$Encoding -FilePath $FilePath -Append
                         }
                     }
-                    # Clear variables for next user
-                    $outsql = @()
-                    $sql = ""
                 } else {
                     $sql
                 }
