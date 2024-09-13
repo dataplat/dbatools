@@ -1,6 +1,5 @@
 function Get-DbaHelpIndex {
     <#
-    test
     .SYNOPSIS
         Returns size, row and configuration information for indexes in databases.
 
