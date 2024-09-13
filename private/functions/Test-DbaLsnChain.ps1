@@ -96,11 +96,13 @@ function Test-DbaLsnChain {
 
 
         #Check T-log LSNs form a chain.
-        $TranLogBackups = $TestHistory | Where-Object { $_.$TypeName -in ('Transaction Log', 'Log') -and (($_.DatabaseBackupLSN -eq $FullDBAnchor.CheckPointLSN) -or ($_.FirstLSN -gt $FullDBAnchor.CheckPointLSN))} | Sort-Object -Property LastLSN, FirstLsn
+        $TranLogBackups = $TestHistory | Where-Object { $_.$TypeName -in ('Transaction Log', 'Log') -and (($_.DatabaseBackupLSN.ToString() -eq $FullDBAnchor.CheckPointLSN) -or (($_.DatabaseBackupLSN.ToString() -ne $FullDBAnchor.CheckPointLSN) -and ($TranLogBackups[$i].FirstLSN -gt $FullDBAnchor.CheckPointLSN)))
+        } | Sort-Object -Property LastLSN, FirstLsn
+
         for ($i = 0; $i -lt ($TranLogBackups.count)) {
             Write-Message -Level Debug -Message "looping t logs"
             if ($i -eq 0) {
-                if ($TranLogBackups[$i].FirstLSN -gt $TlogAnchor.LastLSN) {
+                if ($TranLogBackups[$i].FirstLSN.ToString() -gt $TlogAnchor.LastLSN) {
                     Write-Message -Level Warning -Message "Break in LSN Chain between $($TlogAnchor.FullName) and $($TranLogBackups[($i)].FullName) "
                     Write-Message -Level Verbose -Message "Anchor $($TlogAnchor.LastLSN) - FirstLSN $($TranLogBackups[$i].FirstLSN)"
                     return $false
