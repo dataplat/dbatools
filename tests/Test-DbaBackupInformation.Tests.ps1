@@ -58,10 +58,6 @@ Describe "$commandname Integration Tests" -Tag 'IntegrationTests' {
             It "Should pass as all systems Green" {
                 $output = $BackupHistory | Test-DbaBackupInformation -SqlInstance NotExist -WarningVariable warnvar -WarningAction SilentlyContinue
                 ($output.Count) -gt 0 | Should be $true
-                    foreach ($o in $output)
-                    {
-                        Write-Host $o.FullName, $o.IsVerified
-                    }
                 "False" -in ($Output.IsVerified) | Should be $False
                 ($null -ne $WarnVar) | Should be $True
             }
