@@ -404,7 +404,7 @@ function Get-DbaHelpIndex {
                                 name AS IndexName ,
                                 STUFF((SELECT   N', ' + ColumnName
                                     FROM     cteIndex ci2
-                                    WHERE    ci2.name = ci.name
+                                    WHERE    ci2.name = ci.name AND ci2.object_id=ci.object_id
                                                 AND ci2.is_included_column = 0
                                     GROUP BY ci2.index_column_id ,
                                                 ci2.ColumnName
@@ -414,7 +414,7 @@ function Get-DbaHelpIndex {
                                     2, N'') AS KeyColumns ,
                                 ISNULL(STUFF((SELECT    N',  ' + ColumnName
                                             FROM      cteIndex ci3
-                                            WHERE     ci3.name = ci.name
+                                            WHERE     ci3.name = ci.name AND ci3.object_id=ci.object_id
                                                         AND ci3.is_included_column = 1
                                             GROUP BY  ci3.index_column_id ,
                                                         ci3.ColumnName
@@ -801,7 +801,7 @@ function Get-DbaHelpIndex {
                                 name AS IndexName ,
                                 STUFF((SELECT   N', ' + ColumnName
                                     FROM     cteIndex ci2
-                                    WHERE    ci2.name = ci.name
+                                    WHERE    ci2.name = ci.name and ci2.object_id=ci.object_id
                                                 AND ci2.is_included_column = 0
                                     GROUP BY ci2.index_column_id ,
                                                 ci2.ColumnName
@@ -811,7 +811,7 @@ function Get-DbaHelpIndex {
                                     2, N'') AS KeyColumns ,
                                 ISNULL(STUFF((SELECT    N',  ' + ColumnName
                                             FROM      cteIndex ci3
-                                            WHERE     ci3.name = ci.name
+                                            WHERE     ci3.name = ci.name and ci3.object_id=ci.object_id
                                                         AND ci3.is_included_column = 1
                                             GROUP BY  ci3.index_column_id ,
                                                         ci3.ColumnName
