@@ -1,7 +1,7 @@
 
 -- SQL Server 2016 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: July 9, 2024
+-- Last Modified: September 4, 2024
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -2004,8 +2004,7 @@ SELECT es.session_id, DB_NAME(es.database_id) AS [Database Name],
 FROM sys.dm_exec_sessions AS es WITH (NOLOCK)
 CROSS APPLY sys.dm_exec_input_buffer(es.session_id, NULL) AS ib
 WHERE es.database_id = DB_ID()
-AND es.session_id > 50
-AND es.session_id <> @@SPID OPTION (RECOMPILE);
+AND es.is_user_process = 1 OPTION (RECOMPILE);
 ------
 
 -- Gives you input buffer information from all non-system sessions for the current database

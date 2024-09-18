@@ -1,7 +1,7 @@
 
 -- SQL Server 2017 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: July 10, 2024
+-- Last Modified: September 11, 2024
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -107,6 +107,7 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 14.0.3460.9		CU31 + GDR							2/14/2023		https://support.microsoft.com/en-us/topic/kb5021126-description-of-the-security-update-for-sql-server-2017-cu31-february-14-2023-2867280f-e66f-4598-a2f1-3d301e367683
 -- 14.0.3465.1		CU31 + GDR						   10/10/2023		https://support.microsoft.com/en-us/topic/kb5029376-description-of-the-security-update-for-sql-server-2017-cu31-october-10-2023-ce23ddf7-b79e-4ba7-ba9d-2679f23a1ad8
 -- 14.0.3471.2		CU31 + GDR							7/9/2024		https://support.microsoft.com/en-us/topic/kb5040940-description-of-the-security-update-for-sql-server-2017-cu31-july-9-2024-bff7ab26-e882-4419-aebb-30356125f5c9
+-- 14.0.3475.1		CU31 + GDR							9/10/2024		https://support.microsoft.com/en-us/topic/kb5042215-description-of-the-security-update-for-sql-server-2017-cu31-september-10-2024-55bba26f-548d-466c-9c48-edfb51a53a8a
 
 -- How to determine the version, edition and update level of SQL Server and its components 
 -- https://bit.ly/2oAjKgW	
@@ -2063,8 +2064,7 @@ SELECT es.session_id, DB_NAME(es.database_id) AS [Database Name],
 FROM sys.dm_exec_sessions AS es WITH (NOLOCK)
 CROSS APPLY sys.dm_exec_input_buffer(es.session_id, NULL) AS ib
 WHERE es.database_id = DB_ID()
-AND es.session_id > 50
-AND es.session_id <> @@SPID OPTION (RECOMPILE);
+AND es.is_user_process = 1 OPTION (RECOMPILE);
 ------
 
 -- Gives you input buffer information from all non-system sessions for the current database

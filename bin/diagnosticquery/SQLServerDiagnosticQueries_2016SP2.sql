@@ -1,7 +1,7 @@
 
 -- SQL Server 2016 SP2 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: July 9, 2024
+-- Last Modified: September 11, 2024
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -85,13 +85,23 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 13.0.5865.1		SP2 CU15 + Security Update	1/12/2021		https://support.microsoft.com/en-us/help/4583461/kb4583461-security-update-for-sql-server-2016-sp2-cu15	
 -- 13.0.5882.1		SP2 CU16					2/11/2021		https://support.microsoft.com/en-us/office/kb5000645-cumulative-update-16-for-sql-server-2016-sp2-a3997fa9-ec49-4df0-bcc3-12dd58b78265
 -- 13.0.5888.11		SP2 CU17					3/29/2021		https://support.microsoft.com/en-us/topic/kb5001092-cumulative-update-17-for-sql-server-2016-sp2-5876a4d6-59ac-484a-93dc-4be456cd87d1
+
+-- SP3 Builds
 -- 13.0.6300.2		SP3 RTM						9/15/2021		https://support.microsoft.com/en-us/topic/kb5003279-sql-server-2016-service-pack-3-release-information-46ab9543-5cf9-464d-bd63-796279591c31
 -- 13.0.6404.1		SP3 Hotfix					10/28/2021		https://support.microsoft.com/en-us/topic/kb5006943-on-demand-hotfix-update-package-for-sql-server-2016-sp3-94de2975-cd7d-47ed-b003-5d7daf4e2caf
 -- 13.0.6419.1		SP3 + GDR					6/14/2022		https://support.microsoft.com/en-us/topic/kb5014355-description-of-the-security-update-for-sql-server-2016-sp3-gdr-june-14-2022-bb5097a0-f8f1-4d2c-bfe1-af069ca3cc59
+-- 13.0.6430.49		SP3 + GDR					3/2/2023		https://support.microsoft.com/en-us/topic/kb5021129-description-of-the-security-update-for-sql-server-2016-sp3-gdr-february-14-2023-1a592815-9dc4-434b-9fb2-119339251317
+-- 13.0.6435.1		SP3 + GDR					10/10/2023		https://support.microsoft.com/en-us/topic/kb5029186-description-of-the-security-update-for-sql-server-2016-sp3-gdr-october-10-2023-618b034a-d575-48e0-804a-7b481ba2e600
+-- 13.0.6441.1		SP3 + GDR					7/9/2024		https://support.microsoft.com/en-us/topic/kb5040946-description-of-the-security-update-for-sql-server-2016-sp3-gdr-july-9-2024-e943f6a8-7a97-41b4-804c-c52ca775f5dd
+-- 13.0.6445.1		SP3 + GDR					9/10/2024		https://support.microsoft.com/en-us/topic/kb5042207-description-of-the-security-update-for-sql-server-2016-sp3-gdr-september-10-2024-e27a41df-009d-4a50-85e7-dc8f06b9a5a5	
+
+-- Azure Connect Pack Builds
+-- 13.0.7000.253	Azure Connect Pack			5/19/2022		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2016/servicepack3-azureconnect	
 -- 13.0.7016.1		Azure Connect Pack + GDR	6/14/2022		https://support.microsoft.com/en-us/topic/kb5015371-description-of-the-security-update-for-sql-server-2016-sp3-azure-connect-feature-pack-june-14-2022-d809657e-15a9-48fe-bd19-a8864ac5d3a4
 -- 13.0.7024.30		Azure Connect Pack + GDR	2/14/2023		https://support.microsoft.com/en-us/topic/kb5021128-description-of-the-security-update-for-sql-server-2016-sp3-azure-connect-feature-pack-february-14-2023-89e54794-460a-41bd-981f-998290e7d46e
 -- 13.0.7029.3		Azure Connect Pack + GDR	10/10/2023		https://support.microsoft.com/en-us/topic/kb5029187-description-of-the-security-update-for-sql-server-2016-sp3-azure-connect-feature-pack-october-10-2023-e5541468-f243-4000-872c-ac782cfad99f
--- 13.0.7037.1		Azure Connect Pack + GDR	7/9/2024		https://support.microsoft.com/en-us/topic/kb5040944-description-of-the-security-update-for-sql-server-2016-sp3-azure-connect-feature-pack-july-9-2024-72b636c9-0619-4c44-b263-f3d7478bcd75	
+-- 13.0.7037.1		Azure Connect Pack + GDR	7/9/2024		https://support.microsoft.com/en-us/topic/kb5040944-description-of-the-security-update-for-sql-server-2016-sp3-azure-connect-feature-pack-july-9-2024-72b636c9-0619-4c44-b263-f3d7478bcd75
+-- 13.0.7040.1		Azure Connect Pack + GDR	9/10/2024		https://support.microsoft.com/en-us/topic/kb5042207-description-of-the-security-update-for-sql-server-2016-sp3-gdr-september-10-2024-e27a41df-009d-4a50-85e7-dc8f06b9a5a5	
 
 -- How to determine the version, edition and update level of SQL Server and its components 
 -- https://bit.ly/2oAjKgW														
@@ -2027,8 +2037,7 @@ SELECT es.session_id, DB_NAME(es.database_id) AS [Database Name],
 FROM sys.dm_exec_sessions AS es WITH (NOLOCK)
 CROSS APPLY sys.dm_exec_input_buffer(es.session_id, NULL) AS ib
 WHERE es.database_id = DB_ID()
-AND es.session_id > 50
-AND es.session_id <> @@SPID OPTION (RECOMPILE);
+AND es.is_user_process = 1 OPTION (RECOMPILE);
 ------
 
 -- Gives you input buffer information from all non-system sessions for the current database
