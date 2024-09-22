@@ -412,7 +412,7 @@ function Get-DbaHelpIndex {
                                 FOR   XML PATH(N'') ,
                                         TYPE).value(N'.[1]', N'nvarchar(1000)'), 1,
                                     2, N'') AS KeyColumns ,
-                                ISNULL(STUFF((SELECT    N',  ' + ColumnName
+                                ISNULL(STUFF((SELECT    N', ' + ColumnName
                                             FROM      cteIndex ci3
                                             WHERE     ci3.name = ci.name AND ci3.object_id=ci.object_id
                                                         AND ci3.is_included_column = 1
@@ -809,7 +809,7 @@ function Get-DbaHelpIndex {
                                 FOR   XML PATH(N'') ,
                                         TYPE).value(N'.[1]', N'nvarchar(1000)'), 1,
                                     2, N'') AS KeyColumns ,
-                                ISNULL(STUFF((SELECT    N',  ' + ColumnName
+                                ISNULL(STUFF((SELECT    N', ' + ColumnName
                                             FROM      cteIndex ci3
                                             WHERE     ci3.name = ci.name and ci3.object_id=ci.object_id
                                                         AND ci3.is_included_column = 1
