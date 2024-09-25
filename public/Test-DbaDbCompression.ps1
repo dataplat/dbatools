@@ -519,7 +519,7 @@ AS (
         ,CASE
             WHEN [RowCounts] = 0
                 THEN '?'
-            ELSE 
+            ELSE
                 CASE
                     WHEN [RowEstimatePercentOriginal] >= 100
                         AND [PageEstimatePercentOriginal] >= 100
