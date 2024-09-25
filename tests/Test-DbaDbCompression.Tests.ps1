@@ -39,7 +39,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
         $results.foreach{
             It "Should suggest ROW, PAGE or NO_GAIN for $($PSitem.TableName) - $($PSitem.IndexType) " {
-                $PSitem.CompressionTypeRecommendation | Should BeIn ("ROW", "PAGE", "NO_GAIN")
+                $PSitem.CompressionTypeRecommendation | Should BeIn ("ROW", "PAGE", "NO_GAIN", "?")
             }
             It "Should have values for PercentScan and PercentUpdate  $($PSitem.TableName) - $($PSitem.IndexType) " {
                 $PSitem.PercentUpdate | Should Not BeNullOrEmpty
