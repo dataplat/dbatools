@@ -6,7 +6,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         It "Should only contain our specific parameters" {
             [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-            [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'ExcludeSystemView', 'View', 'InputObject', 'EnableException'
+            [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'ExcludeSystemView', 'View', 'Schema', 'InputObject', 'EnableException'
             Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
@@ -16,7 +16,9 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $viewName = ("dbatoolsci_{0}" -f $(Get-Random))
+        $viewNameWithSchema = ("dbatoolsci_{0}" -f $(Get-Random))
         $server.Query("CREATE VIEW $viewName AS (SELECT 1 as col1)", 'tempdb')
+        $server.Query("CREATE schema [someschema];CREATE VIEW [someschema].$viewName AS (SELECT 1 as col1)", 'tempdb')
     }
     AfterAll {
         $null = $server.Query("DROP VIEW $viewName", 'tempdb')
@@ -57,6 +59,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Should allow piping from Get-DbaDatabase" {
             $results = Get-DbaDatabase -SqlInstance $script:instance2 -Database tempdb | Get-DbaDbView
             ($results | Where-Object Name -eq $viewName).Name | Should -Be $viewName
+        }
+    }
+    
+    Context "Schema parameter (see #9445)" {
+        It "Should return just one view with schema 'someschema'" {
+            $results = $script:instance2 | Get-DbaDbView -Database tempdb -Schema 'someschema'
+            ($results | Where-Object Name -eq $viewNameWithSchema).Name | Should -Be $viewNameWithSchema
+            ($results | Where-Object Schema -ne 'someschema').Count | Should -Be 0
         }
     }
 }

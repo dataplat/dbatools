@@ -28,6 +28,9 @@ function Get-DbaDbView {
     .PARAMETER View
         The view(s) to include - all views are selected if not populated
 
+    .PARAMETER Schema
+        Only return views from the specified schema
+
     .PARAMETER InputObject
         Enables piping from Get-DbaDatabase
 
@@ -92,6 +95,7 @@ function Get-DbaDbView {
         [object[]]$ExcludeDatabase,
         [switch]$ExcludeSystemView,
         [string[]]$View,
+        [string[]]$Schema,
         [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
@@ -167,6 +171,11 @@ function Get-DbaDbView {
                 Write-Message -Message "No views exist in the $db database on $($db.Parent.DomainInstanceName)" -Target $db -Level Verbose
                 continue
             }
+
+            if ($Schema) {
+                $views = $views | Where-Object Schema -in $Schema
+            }
+
             if (Test-Bound -ParameterName ExcludeSystemView) {
                 $views = $views | Where-Object { -not $_.IsSystemObject }
             }
