@@ -18,10 +18,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $viewName = ("dbatoolsci_{0}" -f $(Get-Random))
         $viewNameWithSchema = ("dbatoolsci_{0}" -f $(Get-Random))
         $server.Query("CREATE VIEW $viewName AS (SELECT 1 as col1)", 'tempdb')
-        $server.Query("CREATE schema [someschema];CREATE VIEW [someschema].$viewName AS (SELECT 1 as col1)", 'tempdb')
+        $server.Query("CREATE SCHEMA [someschema]", 'tempdb')
+        $server.Query("CREATE VIEW [someschema].$viewNameWithSchema AS (SELECT 1 as col1)", 'tempdb')
     }
     AfterAll {
         $null = $server.Query("DROP VIEW $viewName", 'tempdb')
+        $null = $server.Query("DROP SCHEMA [someschema]", 'tempdb')
     }
 
     Context "Command actually works" {
