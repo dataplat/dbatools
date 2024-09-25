@@ -23,6 +23,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
     AfterAll {
         $null = $server.Query("DROP VIEW $viewName", 'tempdb')
+        $null = $server.Query("DROP VIEW $viewNameWithSchema", 'tempdb')
         $null = $server.Query("DROP SCHEMA [someschema]", 'tempdb')
     }
 
