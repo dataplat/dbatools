@@ -215,7 +215,6 @@ function Test-DbaDbCompression {
                         sys.schemas s ON t.schema_id = s.schema_id
                     WHERE objectproperty(t.object_id, 'IsUserTable') = 1
                         AND p.data_compression_desc = 'NONE'
-                        AND p.rows > 0
                         $sqlSchemaWhere
                         $sqlTableWhere
                     GROUP BY
@@ -303,14 +302,15 @@ CREATE TABLE ##TestDbaCompression (
     ,[Partition] INT
     ,[IndexID] INT
     ,[IndexType] VARCHAR(25)
+    ,[RowCounts] BIGINT
     ,[PercentScan] SMALLINT
     ,[PercentUpdate] SMALLINT
     ,[RowEstimatePercentOriginal] BIGINT
     ,[PageEstimatePercentOriginal] BIGINT
     ,[CompressionTypeRecommendation] VARCHAR(7)
-    ,SizeCurrent BIGINT
-    ,SizeRequested BIGINT
-    ,PercentCompression NUMERIC(10, 2)
+    ,[SizeCurrent] BIGINT
+    ,[SizeRequested] BIGINT
+    ,[PercentCompression] NUMERIC(10, 2)
     );
 
 CREATE TABLE ##tmpEstimateRow (
@@ -343,6 +343,7 @@ INSERT INTO ##TestDbaCompression (
     ,[Partition]
     ,[IndexID]
     ,[IndexType]
+    ,[RowCounts]
     ,[PercentScan]
     ,[PercentUpdate]
     )
@@ -353,6 +354,7 @@ INSERT INTO ##TestDbaCompression (
     ,p.partition_number AS [Partition]
     ,x.Index_ID AS [IndexID]
     ,x.type_desc AS [IndexType]
+    ,p.rows AS [RowCounts]
     ,NULL AS [PercentScan]
     ,NULL AS [PercentUpdate]
 FROM sys.tables t
@@ -362,7 +364,6 @@ INNER JOIN sys.partitions p ON x.object_id = p.object_id
     AND x.Index_ID = p.Index_ID
 WHERE OBJECTPROPERTY(t.object_id, 'IsUserTable') = 1
     AND p.data_compression_desc = 'NONE'
-    AND p.rows > 0
     $sqlSchemaWhere
     $sqlTableWhere
 ORDER BY [TableName] ASC;
@@ -516,27 +517,32 @@ AS (
         ,[Schema]
         ,IndexID
         ,CASE
-            WHEN [RowEstimatePercentOriginal] >= 100
-                AND [PageEstimatePercentOriginal] >= 100
-                THEN 'NO_GAIN'
-            WHEN [PercentUpdate] >= 10
-                THEN 'ROW'
-            WHEN [PercentScan] <= 1
-                AND [PercentUpdate] <= 1
-                AND [RowEstimatePercentOriginal] < [PageEstimatePercentOriginal]
-                THEN 'ROW'
-            WHEN [PercentScan] <= 1
-                AND [PercentUpdate] <= 1
-                AND [RowEstimatePercentOriginal] > [PageEstimatePercentOriginal]
-                THEN 'PAGE'
-            WHEN [PercentScan] >= 60
-                AND [PercentUpdate] <= 5
-                THEN 'PAGE'
-            WHEN [PercentScan] <= 35
-                AND [PercentUpdate] <= 5
+            WHEN [RowCounts] = 0
                 THEN '?'
-            ELSE 'ROW'
-            END
+            ELSE 
+                CASE
+                    WHEN [RowEstimatePercentOriginal] >= 100
+                        AND [PageEstimatePercentOriginal] >= 100
+                        THEN 'NO_GAIN'
+                    WHEN [PercentUpdate] >= 10
+                        THEN 'ROW'
+                    WHEN [PercentScan] <= 1
+                        AND [PercentUpdate] <= 1
+                        AND [RowEstimatePercentOriginal] < [PageEstimatePercentOriginal]
+                        THEN 'ROW'
+                    WHEN [PercentScan] <= 1
+                        AND [PercentUpdate] <= 1
+                        AND [RowEstimatePercentOriginal] > [PageEstimatePercentOriginal]
+                        THEN 'PAGE'
+                    WHEN [PercentScan] >= 60
+                        AND [PercentUpdate] <= 5
+                        THEN 'PAGE'
+                    WHEN [PercentScan] <= 35
+                        AND [PercentUpdate] <= 5
+                        THEN '?'
+                    ELSE 'ROW'
+                END
+        END
     FROM ##TestDbaCompression
     )
 UPDATE ##TestDbaCompression

@@ -20,11 +20,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $null = $server.Query("Create Database [$dbname]")
         $null = $server.Query("Create Schema test", $dbname)
-        $null = $server.Query(" select * into syscols from sys.all_columns
-                                select * into test.sysallparams from sys.all_parameters
-                                create clustered index CL_sysallparams on test.sysallparams (object_id)
-                                create nonclustered index NC_syscols on syscols (precision) include (collation_name)
-                                update test.sysallparams set is_xml_document = 1 where name = '@dbname'
+        $null = $server.Query(" select * into syscols from sys.all_columns;
+                                select 1 as col into testtable where 1=0;
+                                select * into test.sysallparams from sys.all_parameters;
+                                create clustered index CL_sysallparams on test.sysallparams (object_id);
+                                create nonclustered index NC_syscols on syscols (precision) include (collation_name);
+                                update test.sysallparams set is_xml_document = 1 where name = '@dbname';
                                 ", $dbname)
     }
     AfterAll {
@@ -79,6 +80,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $results = Test-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname -ResultSize $resultCount -Rank TotalPages -FilterBy Partition
         It "Should get only $resultCount results" {
             $results.Count | Should Be $resultCount
+        }
+    }
+    Context "Returns result for empty table (see #9469)" {
+        $table = 'testtable'
+        $results = Test-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname -Table $table
+        It "Should get results for table:$table" {
+            $results | Should Not Be $null
+            $results[0].CompressionTypeRecommendation | Should Be '?'
         }
     }
 }
