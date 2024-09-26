@@ -683,7 +683,6 @@ function Import-DbaCsv {
                             # we can get default columns, all strings. This "fills" the $reader.Columns list, that we use later
                             $null = $reader.GetFieldHeaders()
                             # we get the table definition
-                            Write-Host -fore magenta "ddd $Database $table $schema"
                             # we do not use $server because the connection is active here
                             $tableDef = Get-DbaDbTable $instance -SqlCredential $SqlCredential -Database $Database -Table $table -Schema $schema
 
