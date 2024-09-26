@@ -687,7 +687,7 @@ function Import-DbaCsv {
                             $tableDef = Get-DbaDbTable $instance -SqlCredential $SqlCredential -Database $Database -Table $table -Schema $schema
 
                             if ($tableDef.Count -ne 1) {
-                                Stop-Function -Message "Could not create $schema" -ErrorRecord $_
+                                Stop-Function -Message "Could not fetch table definition for table $table in schema $schema" -ErrorRecord $_
                             }
                             $tableDef = $tableDef[0]
                             foreach ($bcMapping in $bulkcopy.ColumnMappings) {
