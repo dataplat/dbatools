@@ -379,6 +379,41 @@ function Import-DbaCsv {
             Write-Message -Level Verbose -Message "Consider creating the table first using best practices if the data will be used in production."
         }
 
+
+
+
+        function ConvertTo-CSharpType {
+            param (
+                [Microsoft.SqlServer.Management.Smo.DataType]$smoDataType
+            )
+
+            switch ($smoDataType.SqlDataType) {
+                'BigInt' { return [System.Int64] }
+                'Binary' { return [System.Byte[]] }
+                'VarBinary' { return [System.Byte[]] }
+                'Bit' { return [System.Boolean] }
+                'Char' { return [System.String] }
+                'VarChar' { return [System.String] }
+                'NChar' { return [System.String] }
+                'NVarChar' { return [System.String] }
+                'DateTime' { return [System.DateTime] }
+                'SmallDateTime' { return [System.DateTime] }
+                'Date' { return [System.DateTime] }
+                'Time' { return [System.DateTime] }
+                'DateTime2' { return [System.DateTime] }
+                'Decimal' { return [System.Decimal] }
+                'Money' { return [System.Decimal] }
+                'SmallMoney' { return [System.Decimal] }
+                'Float' { return [System.Double] }
+                'Int' { return [System.Int32] }
+                'Real' { return [System.Single] }
+                'UniqueIdentifier' { return [System.Guid] }
+                'SmallInt' { return [System.Int16] }
+                'TinyInt' { return [System.Byte] }
+                'Xml' { return [System.String] }
+                default { throw "Unsupported SMO DataType: $($smoDataType.SqlDataType)" }
+            }
+        }
         Write-Message -Level Verbose -Message "Started at $(Get-Date)"
     }
     process {
@@ -436,7 +471,7 @@ function Import-DbaCsv {
                 }
             }
 
-            # Use dbo as schema name if not specified in parms, or as first string before a period in filename
+            # Use dbo as schema name if not specified in params, or as first string before a period in filename
             if (-not ($PSBoundParameters.Schema)) {
                 if ($UseFileNameForSchema) {
                     if ($filename.IndexOf('.') -eq -1) {
@@ -501,6 +536,13 @@ function Import-DbaCsv {
                 $sql2 = "select count(*) from [$Database].sys.views where name = '$table' and schema_id=schema_id('$schema')"
                 $sqlcmd2 = New-Object Microsoft.Data.SqlClient.SqlCommand($sql2, $sqlconn, $transaction)
 
+
+                # this variable enables the machinery that needs to build a precise mapping from the table definition
+                # to the type of the columns BulkCopy needs. Lumen has support for it, but since it's a tad bit expensive
+                # we opt-in only if the table already exists but not when we create the default table (which is basic, and it's all nvarchar(max)s columns)
+                $shouldMapCorrectTypes = $false
+
+
                 # Create the table if required. Remember, this will occur within a transaction, so if the script fails, the
                 # new table will no longer exist.
                 if (($sqlcmd.ExecuteScalar()) -eq 0 -and ($sqlcmd2.ExecuteScalar()) -eq 0) {
@@ -516,6 +558,7 @@ function Import-DbaCsv {
                         }
                     }
                 } else {
+                    $shouldMapCorrectTypes = $true
                     Write-Message -Level Verbose -Message "Table exists"
                 }
 
@@ -636,6 +679,42 @@ function Import-DbaCsv {
                             $BufferSize,
                             $NullValue
                         )
+                        if ($FirstRowHeader -and $shouldMapCorrectTypes) {
+                            # we can get default columns, all strings. This "fills" the $reader.Columns list, that we use later
+                            $null = $reader.GetFieldHeaders()
+                            # we get the table definition
+                            Write-Host -fore magenta "ddd $Database $table $schema"
+                            # we do not use $server because the connection is active here
+                            $tableDef = Get-DbaDbTable $instance -SqlCredential $SqlCredential -Database $Database -Table $table -Schema $schema
+
+                            if ($tableDef.Count -ne 1) {
+                                Stop-Function -Message "Could not create $schema" -ErrorRecord $_
+                            }
+                            $tableDef = $tableDef[0]
+                            foreach ($bcMapping in $bulkcopy.ColumnMappings) {
+                                # loop over mappings, we need to be careful and assign the correct type
+                                $colNameFromSql = $bcMapping.DestinationColumn
+                                $colNameFromCsv = $bcMapping.SourceColumn
+                                foreach ($sqlCol in $tableDef.Columns) {
+                                    if ($sqlCol.Name -eq $colNameFromSql) {
+                                        # now we know the column, we need to get the type, let's be extra-obvious here
+                                        $colTypeFromSql = $sqlCol.DataType
+                                        # and now we translate to C# type
+                                        $colTypeCSharp = ConvertTo-CSharpType -smoDataType $colTypeFromSql
+                                        # and now we assign the type to the LumenCsv column
+                                        foreach ($csvCol in $reader.Columns) {
+                                            if ($csvCol.Name -eq $colNameFromCsv) {
+                                                $csvCol.Type = $colTypeCSharp
+                                                Write-Message -Level Verbose -Message "Mapped $colNameFromCsv to $colNameFromSql as $colTypeCSharp"
+                                                break
+                                            }
+                                        }
+                                        break
+                                    }
+
+                                }
+                            }
+                        }
 
                         if ($PSBoundParameters.MaxQuotedFieldLength) {
                             $reader.MaxQuotedFieldLength = $MaxQuotedFieldLength
@@ -675,7 +754,6 @@ function Import-DbaCsv {
                         $completed = $true
                     } catch {
                         $completed = $false
-
                         Stop-Function -Continue -Message "Failure" -ErrorRecord $_
                     } finally {
                         try {
