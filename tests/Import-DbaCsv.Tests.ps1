@@ -125,18 +125,19 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
         It "works with tables which have non-varchar types (guid, bit)" {
             # See #9433
+            $filePath = '.\foo.csv'
             $server = Connect-DbaInstance $script:instance1 -Database tempdb
             Invoke-DbaQuery -SqlInstance $server -Query 'CREATE TABLE WithGuidsAndBits (one_guid UNIQUEIDENTIFIER, one_bit BIT)'
             $row = [pscustomobject]@{
                 one_guid = (New-Guid).Guid
                 one_bit  = 1
             }
-            $row | Export-Csv ./foo.csv
-            $result = Import-DbaCsv -Path ./foo.csv -SqlInstance $server -Database tempdb -Table 'WithGuidsAndBits'
+            $row | Export-Csv $filePath
+            $result = Import-DbaCsv -Path $filePath -SqlInstance $server -Database tempdb -Table 'WithGuidsAndBits'
             Invoke-DbaQuery -SqlInstance $server -Query 'DROP TABLE WithGuidsAndBits'
 
             $result.RowsCopied | Should -Be 1
-            Remove-Item ./foo.csv
+            Remove-Item $filePath
         }
     }
 }
