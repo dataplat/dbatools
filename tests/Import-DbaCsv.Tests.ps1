@@ -131,11 +131,10 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 one_guid = (New-Guid).Guid
                 one_bit  = 1
             }
-            $row | Export-Csv ./foo.csv 
+            $row | Export-Csv ./foo.csv
             $result = Import-DbaCsv -Path ./foo.csv -SqlInstance $server -Database tempdb -Table 'WithGuidsAndBits'
             Invoke-DbaQuery -SqlInstance $server -Query 'DROP TABLE WithGuidsAndBits'
 
-            $result | Should -Not -BeNullOrEmpty
             $result.RowsCopied | Should -Be 1
             Remove-Item ./foo.csv
         }
