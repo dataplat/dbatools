@@ -132,7 +132,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 one_guid = (New-Guid).Guid
                 one_bit  = 1
             }
-            $row | Export-Csv $filePath
+            $row | Export-Csv -Path $filePath -NoTypeInformation
             $result = Import-DbaCsv -Path $filePath -SqlInstance $server -Database tempdb -Table 'WithGuidsAndBits'
             Invoke-DbaQuery -SqlInstance $server -Query 'DROP TABLE WithGuidsAndBits'
 
