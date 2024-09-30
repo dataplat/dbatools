@@ -730,7 +730,7 @@ function Import-DbaCsv {
                                 # we do not use $server because the connection is active here
                                 $tableDef = Get-TableDefinitionFromInfoSchema -table $table -schema $schema -sqlconn $sqlconn
                                 if ($tableDef.Length -eq 0) {
-                                    Stop-Function -Message "Could not fetch table definition for table $table in schema $schema" -ErrorRecord $_
+                                    Stop-Function -Message "Could not fetch table definition for table $table in schema $schema"
                                 }
                                 foreach ($bcMapping in $bulkcopy.ColumnMappings) {
                                     # loop over mappings, we need to be careful and assign the correct type
@@ -759,7 +759,7 @@ function Import-DbaCsv {
                                 # start by getting the table definition
                                 $tableDef = Get-TableDefinitionFromInfoSchema -table $table -schema $schema -sqlconn $sqlconn
                                 if ($tableDef.Length -eq 0) {
-                                    Stop-Function -Message "Could not fetch table definition for table $table in schema $schema" -ErrorRecord $_
+                                    Stop-Function -Message "Could not fetch table definition for table $table in schema $schema"
                                 }
                                 if ($bulkcopy.ColumnMappings.Count -eq 0) {
                                     # if we land here, we aren't (probably ? ) forcing any mappings, but we kinda need them for later
@@ -830,7 +830,6 @@ function Import-DbaCsv {
                         $bulkCopy.Add_SqlRowsCopied( {
                                 $script:totalRowsCopied += (Get-AdjustedTotalRowsCopied -ReportedRowsCopied $args[1].RowsCopied -PreviousRowsCopied $script:prevRowsCopied).NewRowCountAdded
 
-                                #Write-Message -Level Verbose -FunctionName "Import-DbaCsv" -Message " The bulk copy library reported RowsCopied = $($args[1].RowsCopied). The previous RowsCopied = $($script:prevRowsCopied). The adjusted total rows copied = $($script:totalRowsCopied)"
                                 Write-Message -Level Verbose -FunctionName "Import-DbaCsv" -Message " Total rows copied = $($script:totalRowsCopied)"
                                 # progress is written by the ProgressStream callback
                                 # save the previous count of rows copied to be used on the next event notification
