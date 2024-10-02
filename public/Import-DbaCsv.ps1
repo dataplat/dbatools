@@ -746,7 +746,7 @@ function Import-DbaCsv {
                                             # now we know the column, we need to get the type, let's be extra-obvious here
                                             $colTypeFromSql = $sqlCol.DataType
                                             # and now we translate to C# type
-                                            $colTypeCSharp = ConvertTo-CSharpType -DataType $colTypeFromSql
+                                            $colTypeCSharp = ConvertTo-DotnetType -DataType $colTypeFromSql
                                             # and now we assign the type to the LumenCsv column
                                             foreach ($csvCol in $reader.Columns) {
                                                 if ($csvCol.Name -eq $colNameFromCsv) {
@@ -796,7 +796,7 @@ function Import-DbaCsv {
                                         if ($sqlColComparison -eq $colNameFromSql) {
                                             $colTypeFromSql = $sqlCol.DataType
                                             # and now we translate to C# type
-                                            $colTypeCSharp = ConvertTo-CSharpType -DataType $colTypeFromSql
+                                            $colTypeCSharp = ConvertTo-DotnetType -DataType $colTypeFromSql
                                             # assign it to the column
                                             $newcol.Type = $colTypeCSharp
                                             # and adding to the column collection
