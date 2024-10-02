@@ -436,15 +436,20 @@ function Import-DbaCsv {
             $null = $sqlcmd.Parameters.AddWithValue('table', $table)
 
             $result = @()
-            $reader = $sqlcmd.ExecuteReader()
-            foreach ($dataRow in $reader) {
-                $result += [PSCustomObject]@{
-                    Name     = $dataRow[0]
-                    DataType = $dataRow[1]
-                    Index    = $dataRow[2]
+            try {
+                $reader = $sqlcmd.ExecuteReader()
+                foreach ($dataRow in $reader) {
+                    $result += [PSCustomObject]@{
+                        Name     = $dataRow[0]
+                        DataType = $dataRow[1]
+                        Index    = $dataRow[2]
+                    }
                 }
+                $reader.Close()
+            } catch {
+                # callers report back the error if $result is empty
             }
-            $reader.Close()
+
             return $result
         }
 
