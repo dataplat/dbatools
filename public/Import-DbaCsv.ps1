@@ -390,7 +390,7 @@ function Import-DbaCsv {
 
 
 
-        function ConvertTo-CSharpType {
+        function ConvertTo-DotnetType {
             param (
                 [string]$DataType
             )
