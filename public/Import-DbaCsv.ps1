@@ -249,7 +249,17 @@ function Import-DbaCsv {
         >> }
         PS C:\> Import-DbaCsv -Path c:\temp\supersmall.csv -SqlInstance sql2016 -Database tempdb -ColumnMap $columns
 
-        The CSV column 'Text' is inserted into SQL column 'FirstName' and CSV column Number is inserted into the SQL Column 'PhoneNumber'. All other columns are ignored and therefore null or default values.
+        The CSV field 'Text' is inserted into SQL column 'FirstName' and CSV field Number is inserted into the SQL Column 'PhoneNumber'. All other columns are ignored and therefore null or default values.
+
+    .EXAMPLE
+        PS C:\> $columns = @{
+        >> 0 = 'FirstName'
+        >> 1 = 'PhoneNumber'
+        >> }
+        PS C:\> Import-DbaCsv -Path c:\temp\supersmall.csv -SqlInstance sql2016 -Database tempdb -NoHeaderRow -ColumnMap $columns
+
+        If the CSV has no headers, passing a ColumnMap works when you have as the key the ordinal of the column (0-based).
+        In this example the first CSV field is inserted into SQL column 'FirstName' and the second CSV field is inserted into the SQL Column 'PhoneNumber'.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
@@ -356,7 +366,6 @@ function Import-DbaCsv {
                 $reader.Dispose()
             }
 
-            # Get SQL datatypes by best guess on first data row
             $sqldatatypes = @();
 
             foreach ($column in $Columns) {
@@ -374,9 +383,74 @@ function Import-DbaCsv {
             }
 
             Write-Message -Level Verbose -Message "Successfully created table $schema.$table with the following column definitions:`n $($sqldatatypes -join "`n ")"
-            # Write-Message -Level Warning -Message "All columns are created using a best guess, and use their maximum datatype."
             Write-Message -Level Verbose -Message "This is inefficient but allows the script to import without issues."
             Write-Message -Level Verbose -Message "Consider creating the table first using best practices if the data will be used in production."
+        }
+
+
+
+
+        function ConvertTo-DotnetType {
+            param (
+                [string]$DataType
+            )
+
+            switch ($DataType) {
+                'BigInt' { return [System.Int64] }
+                'Binary' { return [System.Byte[]] }
+                'VarBinary' { return [System.Byte[]] }
+                'Bit' { return [System.Boolean] }
+                'Char' { return [System.String] }
+                'VarChar' { return [System.String] }
+                'NChar' { return [System.String] }
+                'NVarChar' { return [System.String] }
+                'DateTime' { return [System.DateTime] }
+                'SmallDateTime' { return [System.DateTime] }
+                'Date' { return [System.DateTime] }
+                'Time' { return [System.DateTime] }
+                'DateTime2' { return [System.DateTime] }
+                'Decimal' { return [System.Decimal] }
+                'Money' { return [System.Decimal] }
+                'SmallMoney' { return [System.Decimal] }
+                'Float' { return [System.Double] }
+                'Int' { return [System.Int32] }
+                'Real' { return [System.Single] }
+                'UniqueIdentifier' { return [System.Guid] }
+                'SmallInt' { return [System.Int16] }
+                'TinyInt' { return [System.Byte] }
+                'Xml' { return [System.String] }
+                default { throw "Unsupported SMO DataType: $($DataType)" }
+            }
+        }
+
+        function Get-TableDefinitionFromInfoSchema {
+            param (
+                [string]$table,
+                [string]$schema,
+                $sqlconn
+            )
+
+            $query = "SELECT c.COLUMN_NAME, c.DATA_TYPE, c.ORDINAL_POSITION - 1 FROM INFORMATION_SCHEMA.COLUMNS AS c WHERE TABLE_SCHEMA = @schema AND TABLE_NAME = @table;"
+            $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($query, $sqlconn, $transaction)
+            $null = $sqlcmd.Parameters.AddWithValue('schema', $schema)
+            $null = $sqlcmd.Parameters.AddWithValue('table', $table)
+
+            $result = @()
+            try {
+                $reader = $sqlcmd.ExecuteReader()
+                foreach ($dataRow in $reader) {
+                    $result += [PSCustomObject]@{
+                        Name     = $dataRow[0]
+                        DataType = $dataRow[1]
+                        Index    = $dataRow[2]
+                    }
+                }
+                $reader.Close()
+            } catch {
+                # callers report back the error if $result is empty
+            }
+
+            return $result
         }
 
         Write-Message -Level Verbose -Message "Started at $(Get-Date)"
@@ -436,7 +510,7 @@ function Import-DbaCsv {
                 }
             }
 
-            # Use dbo as schema name if not specified in parms, or as first string before a period in filename
+            # Use dbo as schema name if not specified in params, or as first string before a period in filename
             if (-not ($PSBoundParameters.Schema)) {
                 if ($UseFileNameForSchema) {
                     if ($filename.IndexOf('.') -eq -1) {
@@ -474,9 +548,9 @@ function Import-DbaCsv {
                 }
 
                 # Ensure Schema exists
-                $sql = "select count(*) from [$Database].sys.schemas where name='$schema'"
+                $sql = "select count(*) from sys.schemas where name = @schema"
                 $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
-
+                $null = $sqlcmd.Parameters.AddWithValue('schema', $schema)
                 # If Schema doesn't exist create it
                 # Defaulting to dbo.
                 if (($sqlcmd.ExecuteScalar()) -eq 0) {
@@ -495,11 +569,21 @@ function Import-DbaCsv {
                 }
 
                 # Ensure table or view exists
-                $sql = "select count(*) from [$Database].sys.tables where name = '$table' and schema_id=schema_id('$schema')"
+                $sql = "select count(*) from sys.tables where name = @table and schema_id = schema_id(@schema)"
                 $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
+                $null = $sqlcmd.Parameters.AddWithValue('schema', $schema)
+                $null = $sqlcmd.Parameters.AddWithValue('table', $table)
 
-                $sql2 = "select count(*) from [$Database].sys.views where name = '$table' and schema_id=schema_id('$schema')"
+                $sql2 = "select count(*) from sys.views where name = @table and schema_id=schema_id(@schema)"
                 $sqlcmd2 = New-Object Microsoft.Data.SqlClient.SqlCommand($sql2, $sqlconn, $transaction)
+                $null = $sqlcmd2.Parameters.AddWithValue('schema', $schema)
+                $null = $sqlcmd2.Parameters.AddWithValue('table', $table)
+
+                # this variable enables the machinery that needs to build a precise mapping from the table definition
+                # to the type of the columns BulkCopy needs. Lumen has support for it, but since it's a tad bit expensive
+                # we opt-in only if the table already exists but not when we create the default table (which is basic, and it's all nvarchar(max)s columns)
+                $shouldMapCorrectTypes = $false
+
 
                 # Create the table if required. Remember, this will occur within a transaction, so if the script fails, the
                 # new table will no longer exist.
@@ -516,6 +600,7 @@ function Import-DbaCsv {
                         }
                     }
                 } else {
+                    $shouldMapCorrectTypes = $true
                     Write-Message -Level Verbose -Message "Table exists"
                 }
 
@@ -588,7 +673,8 @@ function Import-DbaCsv {
 
                         if ($ColumnMap) {
                             foreach ($columnname in $ColumnMap) {
-                                foreach ($key in $columnname.Keys) {
+                                foreach ($key in $columnname.Keys | Sort-Object) {
+                                    #sort added in case of column maps done by ordinal
                                     $null = $bulkcopy.ColumnMappings.Add($key, $columnname[$key])
                                 }
                             }
@@ -599,6 +685,8 @@ function Import-DbaCsv {
                                 $null = $bulkcopy.ColumnMappings.Add($columnname, $columnname)
                             }
                         }
+
+
                     } catch {
                         Stop-Function -Continue -Message "Failure" -ErrorRecord $_
                     }
@@ -637,6 +725,90 @@ function Import-DbaCsv {
                             $NullValue
                         )
 
+                        if ($shouldMapCorrectTypes) {
+
+                            if ($FirstRowHeader) {
+
+                                # we can get default columns, all strings. This "fills" the $reader.Columns list, that we use later
+                                $null = $reader.GetFieldHeaders()
+                                # we get the table definition
+                                # we do not use $server because the connection is active here
+                                $tableDef = Get-TableDefinitionFromInfoSchema -table $table -schema $schema -sqlconn $sqlconn
+                                if ($tableDef.Length -eq 0) {
+                                    Stop-Function -Message "Could not fetch table definition for table $table in schema $schema"
+                                }
+                                foreach ($bcMapping in $bulkcopy.ColumnMappings) {
+                                    # loop over mappings, we need to be careful and assign the correct type
+                                    $colNameFromSql = $bcMapping.DestinationColumn
+                                    $colNameFromCsv = $bcMapping.SourceColumn
+                                    foreach ($sqlCol in $tableDef) {
+                                        if ($sqlCol.Name -eq $colNameFromSql) {
+                                            # now we know the column, we need to get the type, let's be extra-obvious here
+                                            $colTypeFromSql = $sqlCol.DataType
+                                            # and now we translate to C# type
+                                            $colTypeCSharp = ConvertTo-DotnetType -DataType $colTypeFromSql
+                                            # and now we assign the type to the LumenCsv column
+                                            foreach ($csvCol in $reader.Columns) {
+                                                if ($csvCol.Name -eq $colNameFromCsv) {
+                                                    $csvCol.Type = $colTypeCSharp
+                                                    Write-Message -Level Verbose -Message "Mapped $colNameFromCsv --> $colNameFromSql ($colTypeCSharp --> $colTypeFromSql)"
+                                                    break
+                                                }
+                                            }
+                                            break
+                                        }
+                                    }
+                                }
+                            } else {
+                                # we need to resort to ordinals
+                                # start by getting the table definition
+                                $tableDef = Get-TableDefinitionFromInfoSchema -table $table -schema $schema -sqlconn $sqlconn
+                                if ($tableDef.Length -eq 0) {
+                                    Stop-Function -Message "Could not fetch table definition for table $table in schema $schema"
+                                }
+                                if ($bulkcopy.ColumnMappings.Count -eq 0) {
+                                    # if we land here, we aren't (probably ? ) forcing any mappings, but we kinda need them for later
+                                    foreach ($dataRow in $tableDef) {
+                                        $null = $bulkcopy.ColumnMappings.Add($dataRow.Index, $dataRow.Index)
+                                    }
+                                }
+                                # ok we got the mappings sorted
+
+                                # we must build Lumen's columns by hand here, we can't use GetFieldHeaders()
+                                $reader.Columns = New-Object System.Collections.Generic.List[LumenWorks.Framework.IO.Csv.Column]
+
+                                foreach ($bcMapping in $bulkcopy.ColumnMappings) {
+                                    # loop over mappings, we need to be careful and assign the correct type, and we're in the "natural" order of the CSV fields
+                                    $colNameFromSql = $bcMapping.DestinationOrdinal
+                                    $colNameFromCsv = $bcMapping.SourceOrdinal
+                                    $newcol = New-Object LumenWorks.Framework.IO.Csv.Column
+                                    $newcol.Name = "c$(Get-Random)" # need to assign a name, it's required for Lumen even if we're mapping just by ordinal
+                                    foreach ($sqlCol in $tableDef) {
+                                        if ($bcMapping.DestinationOrdinal -eq -1) {
+                                            # we can map by name
+                                            $colNameFromSql = $bcMapping.DestinationColumn
+                                            $sqlColComparison = $sqlCol.Name
+                                        } else {
+                                            # we fallback to mapping by index
+                                            $colNameFromSql = $bcMapping.DestinationOrdinal
+                                            $sqlColComparison = $sqlCol.Index
+                                        }
+                                        if ($sqlColComparison -eq $colNameFromSql) {
+                                            $colTypeFromSql = $sqlCol.DataType
+                                            # and now we translate to C# type
+                                            $colTypeCSharp = ConvertTo-DotnetType -DataType $colTypeFromSql
+                                            # assign it to the column
+                                            $newcol.Type = $colTypeCSharp
+                                            # and adding to the column collection
+                                            $null = $reader.Columns.Add($newcol)
+                                            Write-Message -Level Verbose -Message "Mapped $colNameFromSql --> $colNameFromCsv ($colTypeCSharp --> $colTypeFromSql)"
+                                            break
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         if ($PSBoundParameters.MaxQuotedFieldLength) {
                             $reader.MaxQuotedFieldLength = $MaxQuotedFieldLength
                         }
@@ -663,8 +835,7 @@ function Import-DbaCsv {
                         $bulkCopy.Add_SqlRowsCopied( {
                                 $script:totalRowsCopied += (Get-AdjustedTotalRowsCopied -ReportedRowsCopied $args[1].RowsCopied -PreviousRowsCopied $script:prevRowsCopied).NewRowCountAdded
 
-                                $tstamp = $(Get-Date -Format 'yyyyMMddHHmmss')
-                                Write-Message -Level Verbose -Message "[$tstamp] The bulk copy library reported RowsCopied = $($args[1].RowsCopied). The previous RowsCopied = $($script:prevRowsCopied). The adjusted total rows copied = $($script:totalRowsCopied)"
+                                Write-Message -Level Verbose -FunctionName "Import-DbaCsv" -Message " Total rows copied = $($script:totalRowsCopied)"
                                 # progress is written by the ProgressStream callback
                                 # save the previous count of rows copied to be used on the next event notification
                                 $script:prevRowsCopied = $args[1].RowsCopied
@@ -675,7 +846,6 @@ function Import-DbaCsv {
                         $completed = $true
                     } catch {
                         $completed = $false
-
                         Stop-Function -Continue -Message "Failure" -ErrorRecord $_
                     } finally {
                         try {
@@ -751,9 +921,9 @@ function Import-DbaCsv {
     end {
         # Close everything just in case & ignore errors
         try {
-            $null = $sqlconn.close(); $null = $sqlconn.Dispose();
-            $null = $bulkCopy.close(); $bulkcopy.dispose();
-            $null = $reader.close(); $null = $reader.dispose()
+            $null = $sqlconn.Close(); $null = $sqlconn.Dispose();
+            $null = $bulkCopy.Close(); $bulkcopy.Dispose();
+            $null = $reader.Close(); $null = $reader.Dispose()
         } catch {
             #here to avoid an empty catch
             $null = 1
