@@ -34,12 +34,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $db = Get-DbaDatabase -SqlInstance $server -Database $dbname
 
         # Create the tables
-        $db.Query("CREATE TABLE table1 (ID1 INT IDENTITY PRIMARY KEY, Name1 varchar(100))")
-        $db.Query("CREATE TABLE table2 (ID1 INT IDENTITY PRIMARY KEY, Name2 varchar(100))")
+        $db.Query("CREATE TABLE table1 (ID1 INT IDENTITY PRIMARY KEY, Name1 char(100))")
+        $db.Query("CREATE TABLE table2 (ID1 INT IDENTITY PRIMARY KEY, Name2 char(100))")
 
         # Generate the values
         $sqlvalues = New-Object System.Collections.ArrayList
-        1 .. 1000 | ForEach-Object { $null = $sqlvalues.Add("('some value to test the balance command $_')") }
+        1 .. 1000 | ForEach-Object { $null = $sqlvalues.Add("('some value')") }
 
         $db.Query("insert into table1 (Name1) Values $($sqlvalues -join ',')")
         $db.Query("insert into table1 (Name1) Values $($sqlvalues -join ',')")

@@ -17,6 +17,9 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         Get-DbaEndpoint -SqlInstance $script:instance2 -Endpoint 'TSQL Default TCP' | Start-DbaEndpoint
     }
+    AfterAll {
+        Get-DbaEndpoint -SqlInstance $script:instance2 -Endpoint 'TSQL Default TCP' | Start-DbaEndpoint
+    }
 
     It "stops the endpoint" {
         $endpoint = Get-DbaEndpoint -SqlInstance $script:instance2 -Endpoint 'TSQL Default TCP'

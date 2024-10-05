@@ -15,13 +15,11 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $dbs = $testlastbackup, "dbatoolsci_lildb", "dbatoolsci_testrestore", "dbatoolsci_singlerestore"
-        $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbs | Remove-DbaDatabase -Confirm:$false
-        $server = Connect-DbaInstance -SqlInstance $script:instance1
         $random = Get-Random
         $testlastbackup = "dbatoolsci_testlastbackup$random"
         $dbs = $testlastbackup, "dbatoolsci_lildb", "dbatoolsci_testrestore", "dbatoolsci_singlerestore"
 
+        $server = Connect-DbaInstance -SqlInstance $script:instance1
         foreach ($db in $dbs) {
             $server.Query("CREATE DATABASE $db")
             $server.Query("ALTER DATABASE $db SET RECOVERY FULL WITH NO_WAIT")
@@ -32,7 +30,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
     AfterAll {
         # these for sure
-        Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbs, "bigtestrest", "smalltestrest" | Remove-DbaDatabase -Confirm:$false
+        $dbs += "bigtestrest", "smalltestrest"
+        Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbs | Remove-DbaDatabase -Confirm:$false
         # those just in case test-dbalastbackup didn't cooperate
         Get-DbaDatabase -SqlInstance $script:instance1 | Where-Object Name -like 'dbatools-testrestore-dbatoolsci_*' | Remove-DbaDatabase -Confirm:$false
         # see "Restores using a specific path"
