@@ -53,16 +53,28 @@ function Update-DbaBuildReference {
                 $EnableException
             )
             $url = Get-DbatoolsConfigValue -Name 'assets.sqlbuildreference'
+            $proxyUrl = Get-DbatoolsConfigValue -FullName network.proxy.url
+            $proxyUsername = Get-DbatoolsConfigValue -FullName network.proxy.username
+            $proxySecurePassword = Get-DbatoolsConfigValue -FullName network.proxy.securepassword
+            if ($proxyUsername) {
+                $proxyCredential = New-Object System.Management.Automation.PSCredential ($proxyUsername, $proxySecurePassword)
+            }
+
             try {
                 $webContent = Invoke-TlsWebRequest $url -UseBasicParsing -ErrorAction Stop
             } catch {
                 try {
-                    Write-Message -Level Verbose -Message "Probably using a proxy for internet access, trying default proxy settings"
-                    (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
-                    $webContent = Invoke-TlsWebRequest $url -UseBasicParsing -ErrorAction Stop
+                    Write-Message -Level Verbose -Message "Probably using a proxy for internet access, trying dbatools proxy settings"
+                    $webContent = Invoke-TlsWebRequest $url -Proxy:$proxyUrl -ProxyCredential:$proxyCredential -UseBasicParsing -ErrorAction Stop
                 } catch {
-                    Write-Message -Level Warning -Message "Couldn't download updated index from $url"
-                    return
+                    try {
+                        Write-Message -Level Verbose -Message "Probably using a proxy for internet access, trying default proxy settings"
+                        (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
+                        $webContent = Invoke-TlsWebRequest $url -UseBasicParsing -ErrorAction Stop
+                    } catch {
+                        Write-Message -Level Warning -Message "Couldn't download updated index from $url"
+                        return
+                    }
                 }
             }
             return $webContent.Content
