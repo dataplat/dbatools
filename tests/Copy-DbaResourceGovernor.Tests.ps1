@@ -56,7 +56,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2 -Query $sql
     }
     AfterAll {
-        Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 |  Stop-DbaProcess -WarningAction SilentlyContinue
+        Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' |  Stop-DbaProcess -WarningAction SilentlyContinue
         Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2, $script:instance3 -Query "ALTER RESOURCE GOVERNOR WITH (CLASSIFIER_FUNCTION = NULL); ALTER RESOURCE GOVERNOR RECONFIGURE"
         Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2, $script:instance3 -Query "DROP FUNCTION [dbo].[dbatoolsci_fnRG];ALTER RESOURCE GOVERNOR RECONFIGURE"
         Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2, $script:instance3 -Query "DROP WORKLOAD GROUP [dbatoolsci_prodprocessing];ALTER RESOURCE GOVERNOR RECONFIGURE"
@@ -68,6 +68,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     Context "Command works" {
         It "copies the resource governor successfully" {
             $results = Copy-DbaResourceGovernor -Source $script:instance2 -Destination $script:instance3 -Force -WarningAction SilentlyContinue
+            $results.Status | Select-Object -Unique | Should -Be 'Successful'
             $results.Status.Count | Should -BeGreaterThan 3
             $results.Name | Should -Contain 'dbatoolsci_prod'
         }

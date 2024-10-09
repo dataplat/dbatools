@@ -30,7 +30,7 @@ $TestsRunGroups = @{
         'Get-DbaCpuRingBuffer',
         'Get-DbaLatchStatistic',
         # times out
-        'Copy-DbaResourceGovernor',
+        #'Copy-DbaResourceGovernor',
         # fails on newer version of SMO
         'Get-DbaUserPermission',
         'Invoke-DbaBalanceDataFiles',
