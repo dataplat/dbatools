@@ -75,7 +75,7 @@ function Invoke-DbaDbDbccCleanTable {
     .EXAMPLE
         PS C:\> 'Sql1','Sql2/sqlexpress' | Invoke-DbaDbDbccCleanTable -Object 'dbo.SomeTable' -BatchSize 5000
 
-        Runs the command DBCC CLEANTABLE('DatabaseName', 'dbo.SomeTable', 5000) against all databses on Sql1 and Sql2/sqlexpress
+        Runs the command DBCC CLEANTABLE('DatabaseName', 'dbo.SomeTable', 5000) against all databases on Sql1 and Sql2/sqlexpress
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
