@@ -153,9 +153,8 @@ function Copy-DbaResourceGovernor {
                                 }
 
                                 Write-Message -Level Verbose -Message "Creating function."
-                                $scriptingOptionsObject = New-DbaScriptingOption
-                                $scriptingOptionsObject.IncludeHeaders = $false
-                                $destServer.Query($sourceClassifierFunction.Script($scriptingOptionsObject))
+                                $script = $sourceClassifierFunction.Script() | Where-Object { $_ -notmatch '^SET QUOTED_IDENTIFIER' -and $_ -notmatch '^SET ANSI_NULLS' }
+                                $destServer.Query($script)
 
                                 $sql = "ALTER RESOURCE GOVERNOR WITH (CLASSIFIER_FUNCTION = $fullyQualifiedFunctionName);"
                                 Write-Message -Level Debug -Message $sql
@@ -193,7 +192,8 @@ function Copy-DbaResourceGovernor {
                                     $destClassifierFunction.Drop()
 
                                     Write-Message -Level Verbose -Message "Re-creating the Resource Governor classifier function."
-                                    $destServer.Query($sourceClassifierFunction.Script())
+                                    $script = $sourceClassifierFunction.Script() | Where-Object { $_ -notmatch '^SET QUOTED_IDENTIFIER' -and $_ -notmatch '^SET ANSI_NULLS' }
+                                    $destServer.Query($script)
 
                                     $sql = "ALTER RESOURCE GOVERNOR WITH (CLASSIFIER_FUNCTION = $fullyQualifiedFunctionName);"
                                     Write-Message -Level Debug -Message $sql
