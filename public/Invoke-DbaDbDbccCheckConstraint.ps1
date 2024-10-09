@@ -94,7 +94,7 @@ function Invoke-DbaDbDbccCheckConstraint {
     .EXAMPLE
         PS C:\> 'Sql1','Sql2/sqlexpress' | Invoke-DbaDbDbccCheckConstraint -WhatIf
 
-        Displays what will happen if command DBCC CHECKCONSTRAINTS is called against all databses on Sql1 and Sql2/sqlexpress
+        Displays what will happen if command DBCC CHECKCONSTRAINTS is called against all databases on Sql1 and Sql2/sqlexpress.
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
