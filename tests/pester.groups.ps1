@@ -29,8 +29,6 @@ $TestsRunGroups = @{
         # Non-useful info from newly started sql servers
         'Get-DbaCpuRingBuffer',
         'Get-DbaLatchStatistic',
-        # times out
-        #'Copy-DbaResourceGovernor',
         # fails on newer version of SMO
         'Get-DbaUserPermission',
         'Invoke-DbaBalanceDataFiles',
