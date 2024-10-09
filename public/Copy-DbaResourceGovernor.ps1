@@ -153,7 +153,9 @@ function Copy-DbaResourceGovernor {
                                 }
 
                                 Write-Message -Level Verbose -Message "Creating function."
-                                $destServer.Query($sourceClassifierFunction.Script())
+                                $scriptingOptionsObject = New-DbaScriptingOption
+                                $scriptingOptionsObject.IncludeHeaders = $false
+                                $destServer.Query($sourceClassifierFunction.Script($scriptingOptionsObject))
 
                                 $sql = "ALTER RESOURCE GOVERNOR WITH (CLASSIFIER_FUNCTION = $fullyQualifiedFunctionName);"
                                 Write-Message -Level Debug -Message $sql
