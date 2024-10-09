@@ -90,7 +90,7 @@ function Invoke-DbaDbDbccUpdateUsage {
     .EXAMPLE
         PS C:\> 'Sql1','Sql2/sqlexpress' | Invoke-DbaDbDbccUpdateUsage -WhatIf
 
-        Displays what will happen if command DBCC UPDATEUSAGE is called against all databses on Sql1 and Sql2/sqlexpress
+        Displays what will happen if command DBCC UPDATEUSAGE is called against all databases on Sql1 and Sql2/sqlexpress.
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
