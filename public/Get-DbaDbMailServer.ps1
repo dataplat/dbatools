@@ -97,7 +97,9 @@ function Get-DbaDbMailServer {
                     $servers | Add-Member -Force -MemberType NoteProperty -Name ComputerName -value $mailserver.ComputerName
                     $servers | Add-Member -Force -MemberType NoteProperty -Name InstanceName -value $mailserver.InstanceName
                     $servers | Add-Member -Force -MemberType NoteProperty -Name SqlInstance -value $mailserver.SqlInstance
-                    $servers | Add-Member -Force -MemberType NoteProperty -Name Account -value $servers[0].Parent.Name
+                    $servers | ForEach-Object {
+                       $_ | Add-Member -Force -MemberType NoteProperty -Name Account -value $_.Parent.Name
+                    }
                     $servers | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Account, Name, Port, EnableSsl, ServerType, UserName, UseDefaultCredentials, NoCredentialChange
                 }
             } catch {
