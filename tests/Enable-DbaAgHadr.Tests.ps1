@@ -15,15 +15,7 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $current = Get-DbaAgHadr -SqlInstance $script:instance3 # for appveyor $script:instance2
-        if ($current.IsHadrEnabled) {
-            Disable-DbaAgHadr -SqlInstance $script:instance3 -Confirm:$false -WarningAction SilentlyContinue -Force
-        }
-    }
-    AfterAll {
-        if (-not $current.IsHadrEnabled) {
-            Disable-DbaAgHadr -SqlInstance $script:instance3 -Confirm:$false -WarningAction SilentlyContinue -Force
-        }
+        Disable-DbaAgHadr -SqlInstance $script:instance3 -Confirm:$false -Force
     }
 
     $results = Enable-DbaAgHadr -SqlInstance $script:instance3 -Confirm:$false -Force

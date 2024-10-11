@@ -13,11 +13,13 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
     }
 }
 
+# $script:instance3 is used for Availability Group tests and needs Hadr service setting enabled
+
 Describe "$CommandName Integration Test" -Tag "IntegrationTests" {
-    $results = Get-DbaAgHadr -SqlInstance $script:instance2
+    $results = Get-DbaAgHadr -SqlInstance $script:instance3
     Context "Validate output" {
         It "returns the correct properties" {
-            $results.IsHadrEnabled | Should -Not -Be $null
+            $results.IsHadrEnabled | Should -Be $true
         }
     }
 }
