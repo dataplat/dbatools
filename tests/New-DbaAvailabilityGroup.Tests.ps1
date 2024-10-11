@@ -24,7 +24,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $result = Remove-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup $agname
     }
     AfterAll {
-        $null = Remove-DbaDatabase -SqlInstance $script:instance3 -Database $dbname
+        $null = Remove-DbaDatabase -SqlInstance $script:instance3 -Database $dbname -Confirm:$false
     }
     Context "adds an ag" {
         It "returns an ag with a db named" {

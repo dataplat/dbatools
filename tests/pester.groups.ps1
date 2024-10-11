@@ -41,7 +41,6 @@ $TestsRunGroups = @{
         'Invoke-DbaDbMirroring',
         # previous tests that were failing on older versions too
         'Remove-DbaAvailabilityGroup',
-        #'Set-DbaAgReplica',
         'Read-DbaAuditFile',
         'Sync-DbaLoginPermission',
         'Read-DbaXEFile',
@@ -60,7 +59,6 @@ $TestsRunGroups = @{
         'Test-DbaManagementObject',
         'Export-DbaDacPackage',
         'New-DbaDbTransfer',
-        #'Remove-DbaAgDatabase',
         'Get-DbaDbSynonym',
         'Get-DbaDbVirtualLogFile',
         'Get-DbaFile',
