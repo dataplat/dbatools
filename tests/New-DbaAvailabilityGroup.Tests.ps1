@@ -28,13 +28,13 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
     Context "adds an ag" {
         It "returns an ag with a db named" {
-            $results = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Database $dbname -Certificate dbatoolsci_AGCert -Confirm:$false
+            $results = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Database $dbname -Confirm:$false -Certificate dbatoolsci_AGCert
             $results.AvailabilityDatabases.Name | Should -Be $dbname
             $results.AvailabilityDatabases.Count | Should -Be 1 -Because "There should be only the named database in the group"
         }
         It "returns an ag with no database if one was not named" {
-            $results = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Certificate dbatoolsci_AGCert -Confirm:$false
+            $results = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Confirm:$false -Certificate dbatoolsci_AGCert
             $results.AvailabilityDatabases.Count | Should -Be 0 -Because "No database was named"
         }
     }
-}
+} #$script:instance2 for appveyor
