@@ -16,11 +16,11 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     BeforeAll {
         $random = Get-Random
-        $instance1 = Connect-DbaInstance -SqlInstance $script:instance1
-        $instance2 = Connect-DbaInstance -SqlInstance $script:instance2
-        $null = Get-DbaProcess -SqlInstance $instance1, $instance2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false
+        $server1 = Connect-DbaInstance -SqlInstance $script:instance1
+        $server2 = Connect-DbaInstance -SqlInstance $script:instance2
+        $null = Get-DbaProcess -SqlInstance $server1, $server2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false
         $newDbName = "dbatoolsci_newdb_$random"
-        $newDbs = New-DbaDatabase -SqlInstance $instance1, $instance2 -Name $newDbName
+        $newDbs = New-DbaDatabase -SqlInstance $server1, $server2 -Name $newDbName
 
         $schemaName = "TestSchema"
         $schemaName2 = "TestSchema2"
@@ -29,10 +29,10 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $userName2 = "user2_$random"
         $password = 'MyV3ry$ecur3P@ssw0rd'
         $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
-        $logins = New-DbaLogin -SqlInstance $instance1, $instance2 -Login $userName, $userName2 -Password $securePassword -Force
+        $logins = New-DbaLogin -SqlInstance $server1, $server2 -Login $userName, $userName2 -Password $securePassword -Force
 
-        $null = New-DbaDbUser -SqlInstance $instance1, $instance2 -Database $newDbName -Login $userName
-        $null = New-DbaDbUser -SqlInstance $instance1, $instance2 -Database $newDbName -Login $userName2
+        $null = New-DbaDbUser -SqlInstance $server1, $server2 -Database $newDbName -Login $userName
+        $null = New-DbaDbUser -SqlInstance $server1, $server2 -Database $newDbName -Login $userName2
 
         $newDbs[0].Query("CREATE SCHEMA $schemaName AUTHORIZATION [$userName]")
         $newDbs[0].Schemas.Refresh()
@@ -48,7 +48,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "commands work as expected" {
 
         It "get all schemas from all databases including system dbs and schemas" {
-            $schemas = Get-DbaDbSchema -SqlInstance $instance1 -IncludeSystemDatabases -IncludeSystemSchemas
+            $schemas = Get-DbaDbSchema -SqlInstance $server1 -IncludeSystemDatabases -IncludeSystemSchemas
             $schemas.Count | Should -BeGreaterThan 1
             $schemas.Parent.Name | Should -Contain master
             $schemas.Parent.Name | Should -Contain msdb
@@ -59,7 +59,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "get all schemas from user databases including system schemas" {
-            $schemas = Get-DbaDbSchema -SqlInstance $instance1 -IncludeSystemSchemas
+            $schemas = Get-DbaDbSchema -SqlInstance $server1 -IncludeSystemSchemas
             $schemas.Count | Should -BeGreaterThan 1
             $schemas.Parent.Name | Should -Not -Contain master
             $schemas.Parent.Name | Should -Not -Contain msdb
@@ -70,34 +70,34 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "get non-system schemas from a user database" {
-            $schemas = Get-DbaDbSchema -SqlInstance $instance1 -Schema $schemaName
+            $schemas = Get-DbaDbSchema -SqlInstance $server1 -Schema $schemaName
             $schemas.Name | Should -Contain $schemaName
             $schemas.Parent.Name | Should -Contain $newDbName
         }
 
         It "get a schema by name from a user database" {
-            $schemas = Get-DbaDbSchema -SqlInstance $instance1 -Database $newDbName -Schema $schemaName
+            $schemas = Get-DbaDbSchema -SqlInstance $server1 -Database $newDbName -Schema $schemaName
             $schemas.Count | Should -Be 1
             $schemas.Name | Should -Be $schemaName
             $schemas.DatabaseName | Should -Be $newDbName
             $schemas.DatabaseId | Should -Be $newDbs[0].Id
-            $schemas.ComputerName | Should -Be $instance1.ComputerName
+            $schemas.ComputerName | Should -Be $server1.ComputerName
         }
 
         It "get the dbo schema" {
-            $schemas = Get-DbaDbSchema -SqlInstance $instance1 -Database $newDbName -Schema dbo -IncludeSystemSchemas
+            $schemas = Get-DbaDbSchema -SqlInstance $server1 -Database $newDbName -Schema dbo -IncludeSystemSchemas
             $schemas.Count | Should -Be 1
             $schemas.Name | Should -Be dbo
         }
 
         It "get schemas by owner from a user database" {
-            $schemas = Get-DbaDbSchema -SqlInstance $instance1 -SchemaOwner $userName
+            $schemas = Get-DbaDbSchema -SqlInstance $server1 -SchemaOwner $userName
             $schemas.Count | Should -Be 1
             $schemas.Name | Should -Be $schemaName
             $schemas.Owner | Should -Be $userName
             $schemas.Parent.Name | Should -Be $newDbName
 
-            $schemas = Get-DbaDbSchema -SqlInstance $instance1, $instance2 -Database $newDbName -SchemaOwner $userName, $userName2
+            $schemas = Get-DbaDbSchema -SqlInstance $server1, $server2 -Database $newDbName -SchemaOwner $userName, $userName2
             $schemas.Count | Should -Be 2
             $schemas.Name | Should -Be $schemaName, $schemaName2
             $schemas.Owner | Should -Be $userName, $userName2
@@ -113,26 +113,26 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "get a schema and then change the owner" {
-            $schemas = Get-DbaDbSchema -SqlInstance $instance1 -Database $newDbName -Schema $schemaName
+            $schemas = Get-DbaDbSchema -SqlInstance $server1 -Database $newDbName -Schema $schemaName
             $schemas.Count | Should -Be 1
             $schemas.Owner | Should -Be $userName
 
             $schemas.Owner = $userName2
             $schemas.Alter()
 
-            $schemas = Get-DbaDbSchema -SqlInstance $instance1 -Database $newDbName -Schema $schemaName
+            $schemas = Get-DbaDbSchema -SqlInstance $server1 -Database $newDbName -Schema $schemaName
             $schemas.Count | Should -Be 1
             $schemas.Owner | Should -Be $userName2
         }
 
         It "get a schema and then drop it (assuming that it does not contain any objects)" {
-            $schemas = Get-DbaDbSchema -SqlInstance $instance2 -Database $newDbName -Schema $schemaName2
+            $schemas = Get-DbaDbSchema -SqlInstance $server2 -Database $newDbName -Schema $schemaName2
             $schemas.Count | Should -Be 1
             $schemas.Owner | Should -Be $userName2
 
             $schemas.Drop()
 
-            $schemas = Get-DbaDbSchema -SqlInstance $instance2 -Database $newDbName -Schema $schemaName2
+            $schemas = Get-DbaDbSchema -SqlInstance $server2 -Database $newDbName -Schema $schemaName2
             $schemas | Should -BeNullOrEmpty
         }
     }

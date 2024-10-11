@@ -21,35 +21,35 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $agentStep1 = New-DbaAgentJobStep -SqlInstance $script:instance1 -Job $job1Instance1 -StepName "Step 1" -OnFailAction QuitWithFailure -OnSuccessAction QuitWithSuccess
         $agentStep1 = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job $job1Instance2 -StepName "Step 1" -OnFailAction QuitWithFailure -OnSuccessAction QuitWithSuccess
 
-        $instance1 = Connect-DbaInstance -SqlInstance $script:instance1
-        $instance2 = Connect-DbaInstance -SqlInstance $script:instance2
+        $server1 = Connect-DbaInstance -SqlInstance $script:instance1
+        $server2 = Connect-DbaInstance -SqlInstance $script:instance2
 
         $login = "db$random"
         $plaintext = "BigOlPassword!"
         $password = ConvertTo-SecureString $plaintext -AsPlainText -Force
 
-        $null = Invoke-Command2 -ScriptBlock { net user $login $plaintext /add *>&1 } -ComputerName $instance2.ComputerName
+        $null = Invoke-Command2 -ScriptBlock { net user $login $plaintext /add *>&1 } -ComputerName $server2.ComputerName
 
-        $credential = New-DbaCredential -SqlInstance $script:instance2 -Name "dbatoolsci_$random" -Identity "$($instance2.ComputerName)\$login" -Password $password
+        $credential = New-DbaCredential -SqlInstance $script:instance2 -Name "dbatoolsci_$random" -Identity "$($server2.ComputerName)\$login" -Password $password
 
-        $agentProxyInstance2 = New-DbaAgentProxy -SqlInstance $instance2 -Name "dbatoolsci_proxy_1_$random" -ProxyCredential "dbatoolsci_$random" -Subsystem PowerShell
+        $agentProxyInstance2 = New-DbaAgentProxy -SqlInstance $server2 -Name "dbatoolsci_proxy_1_$random" -ProxyCredential "dbatoolsci_$random" -Subsystem PowerShell
 
         $newDbName = "dbatoolsci_newdb_$random"
-        $newDb = New-DbaDatabase -SqlInstance $instance2 -Name $newDbName
+        $newDb = New-DbaDatabase -SqlInstance $server2 -Name $newDbName
 
         $userName = "user_$random"
         $password = 'MyV3ry$ecur3P@ssw0rd'
         $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
-        $newDBLogin = New-DbaLogin -SqlInstance $instance2 -Login $userName -Password $securePassword -Force
-        $null = New-DbaDbUser -SqlInstance $instance2 -Database $newDbName -Login $userName
+        $newDBLogin = New-DbaLogin -SqlInstance $server2 -Login $userName -Password $securePassword -Force
+        $null = New-DbaDbUser -SqlInstance $server2 -Database $newDbName -Login $userName
     }
 
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $instance2 -Database "dbatoolsci_newdb_$random" -Confirm:$false
-        Remove-DbaLogin -SqlInstance $instance2 -Login "user_$random" -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $server2 -Database "dbatoolsci_newdb_$random" -Confirm:$false
+        Remove-DbaLogin -SqlInstance $server2 -Login "user_$random" -Confirm:$false
         Remove-DbaAgentJob -SqlInstance $script:instance1 -Job "dbatoolsci_job_1_$random" -Confirm:$false
         Remove-DbaAgentJob -SqlInstance $script:instance2 -Job "dbatoolsci_job_1_$random" -Confirm:$false
-        $null = Invoke-Command2 -ScriptBlock { net user $args /delete *>&1 } -ArgumentList $login -ComputerName $instance2.ComputerName
+        $null = Invoke-Command2 -ScriptBlock { net user $args /delete *>&1 } -ArgumentList $login -ComputerName $server2.ComputerName
         $credential.Drop()
         $agentProxyInstance2.Drop()
     }
@@ -66,12 +66,12 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "pipeline input of pre-connected servers" {
-            $jobSteps = $instance1, $instance2 | Set-DbaAgentJobStep -Job "dbatoolsci_job_1_$random" -StepName "Step 1" -NewName "Step 1 updated"
+            $jobSteps = $server1, $server2 | Set-DbaAgentJobStep -Job "dbatoolsci_job_1_$random" -StepName "Step 1" -NewName "Step 1 updated"
 
-            (Get-DbaAgentJob -SqlInstance $instance1 -Job "dbatoolsci_job_1_$random").JobSteps | Where-Object Id -eq 1 | Select-Object -ExpandProperty Name | Should -Be "Step 1 updated"
-            (Get-DbaAgentJob -SqlInstance $instance2 -Job "dbatoolsci_job_1_$random").JobSteps | Where-Object Id -eq 1 | Select-Object -ExpandProperty Name | Should -Be "Step 1 updated"
+            (Get-DbaAgentJob -SqlInstance $server1 -Job "dbatoolsci_job_1_$random").JobSteps | Where-Object Id -eq 1 | Select-Object -ExpandProperty Name | Should -Be "Step 1 updated"
+            (Get-DbaAgentJob -SqlInstance $server2 -Job "dbatoolsci_job_1_$random").JobSteps | Where-Object Id -eq 1 | Select-Object -ExpandProperty Name | Should -Be "Step 1 updated"
 
-            $jobSteps = $instance1, $instance2 | Set-DbaAgentJobStep -Job "dbatoolsci_job_1_$random" -StepName "Step 1 updated" -NewName "Step 1"
+            $jobSteps = $server1, $server2 | Set-DbaAgentJobStep -Job "dbatoolsci_job_1_$random" -StepName "Step 1 updated" -NewName "Step 1"
         }
 
         It "use the -Force to add a new step" {
@@ -202,7 +202,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 Job                = $job1Instance2
                 StepName           = "Step 5"
                 Subsystem          = "AnalysisCommand"
-                SubsystemServer    = $instance2.Name
+                SubsystemServer    = $server2.Name
                 Command            = "AnalysisCommand"
                 CmdExecSuccessCode = 3
                 OnSuccessAction    = "GoToStep"
@@ -224,7 +224,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $newJobStep = $results.JobSteps | Where-Object Id -eq 5
             $newJobStep.Name | Should -Be "Step 5"
             $newJobStep.Subsystem | Should -Be "AnalysisCommand"
-            $newJobStep.Server | Should -Be $instance2.Name
+            $newJobStep.Server | Should -Be $server2.Name
             $newJobStep.Command | Should -Be "AnalysisCommand"
             $newJobStep.DatabaseName | Should -Be $newDbName
             $newJobStep.RetryAttempts | Should -Be 4
@@ -244,7 +244,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 Job                = $job1Instance2
                 StepName           = "Step 6"
                 Subsystem          = "AnalysisQuery"
-                SubsystemServer    = $instance2.Name
+                SubsystemServer    = $server2.Name
                 Command            = "AnalysisQuery"
                 CmdExecSuccessCode = 4
                 OnSuccessAction    = "GoToStep"
@@ -266,7 +266,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $newJobStep = $results.JobSteps | Where-Object Id -eq 6
             $newJobStep.Name | Should -Be "Step 6"
             $newJobStep.Subsystem | Should -Be "AnalysisQuery"
-            $newJobStep.Server | Should -Be $instance2.Name
+            $newJobStep.Server | Should -Be $server2.Name
             $newJobStep.Command | Should -Be "AnalysisQuery"
             $newJobStep.DatabaseName | Should -Be $newDbName
             $newJobStep.RetryAttempts | Should -Be 5
@@ -286,7 +286,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 Job                = $job1Instance2
                 StepName           = "Step 7"
                 Subsystem          = "CmdExec"
-                SubsystemServer    = $instance2.Name
+                SubsystemServer    = $server2.Name
                 Command            = "CmdExec"
                 CmdExecSuccessCode = 5
                 OnSuccessAction    = "GoToStep"
@@ -307,7 +307,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $newJobStep = $results.JobSteps | Where-Object Id -eq 7
             $newJobStep.Name | Should -Be "Step 7"
             $newJobStep.Subsystem | Should -Be "CmdExec"
-            $newJobStep.Server | Should -Be $instance2.Name
+            $newJobStep.Server | Should -Be $server2.Name
             $newJobStep.Command | Should -Be "CmdExec"
             $newJobStep.RetryAttempts | Should -Be 6
             $newJobStep.RetryInterval | Should -Be 9

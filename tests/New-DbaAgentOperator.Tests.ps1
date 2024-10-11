@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $random = Get-Random
-        $instance2 = Connect-DbaInstance -SqlInstance $script:instance2
+        $server2 = Connect-DbaInstance -SqlInstance $script:instance2
         $email1 = "test1$($random)@test.com"
         $email2 = "test2$($random)@test.com"
         $email3 = "test3$($random)@test.com"
@@ -23,31 +23,31 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     AfterAll {
-        $null = Remove-DbaAgentOperator -SqlInstance $instance2 -Operator $email1 -Confirm:$false
-        $null = Remove-DbaAgentOperator -SqlInstance $instance2 -Operator $email2 -Confirm:$false
-        $null = Remove-DbaAgentOperator -SqlInstance $instance2 -Operator $email3 -Confirm:$false
-        $null = Remove-DbaAgentOperator -SqlInstance $instance2 -Operator $email4 -Confirm:$false
+        $null = Remove-DbaAgentOperator -SqlInstance $server2 -Operator $email1 -Confirm:$false
+        $null = Remove-DbaAgentOperator -SqlInstance $server2 -Operator $email2 -Confirm:$false
+        $null = Remove-DbaAgentOperator -SqlInstance $server2 -Operator $email3 -Confirm:$false
+        $null = Remove-DbaAgentOperator -SqlInstance $server2 -Operator $email4 -Confirm:$false
     }
 
     Context "New Agent Operator is added properly" {
 
         It "Should have the right name" {
-            $results = New-DbaAgentOperator -SqlInstance $instance2 -Operator $email1 -EmailAddress $email1 -PagerDay Everyday -Force
+            $results = New-DbaAgentOperator -SqlInstance $server2 -Operator $email1 -EmailAddress $email1 -PagerDay Everyday -Force
             $results.Name | Should Be $email1
         }
 
         It "Create an agent operator with only the defaults" {
-            $results = New-DbaAgentOperator -SqlInstance $instance2 -Operator $email2 -EmailAddress $email2
+            $results = New-DbaAgentOperator -SqlInstance $server2 -Operator $email2 -EmailAddress $email2
             $results.Name | Should Be $email2
         }
 
         It "Pipeline command" {
-            $results = $instance2 | New-DbaAgentOperator -Operator $email3 -EmailAddress $email3
+            $results = $server2 | New-DbaAgentOperator -Operator $email3 -EmailAddress $email3
             $results.Name | Should Be $email3
         }
 
         It "Creates an agent operator with all params" {
-            $results = New-DbaAgentOperator -SqlInstance $instance2 -Operator $email4 -EmailAddress $email4 -NetSendAddress dbauser1 -PagerAddress dbauser1@pager.dbatools.io -PagerDay Everyday -SaturdayStartTime 070000 -SaturdayEndTime 180000 -SundayStartTime 080000 -SundayEndTime 170000 -WeekdayStartTime 060000 -WeekdayEndTime 190000
+            $results = New-DbaAgentOperator -SqlInstance $server2 -Operator $email4 -EmailAddress $email4 -NetSendAddress dbauser1 -PagerAddress dbauser1@pager.dbatools.io -PagerDay Everyday -SaturdayStartTime 070000 -SaturdayEndTime 180000 -SundayStartTime 080000 -SundayEndTime 170000 -WeekdayStartTime 060000 -WeekdayEndTime 190000
             $results.Enabled | Should -Be $true
             $results.Name | Should Be $email4
             $results.EmailAddress | Should -Be $email4
