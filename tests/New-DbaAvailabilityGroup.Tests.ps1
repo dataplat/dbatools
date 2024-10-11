@@ -21,7 +21,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $null = New-DbaDatabase -SqlInstance $script:instance3 -Database $dbname | Backup-DbaDatabase
     }
     AfterEach {
-        $result = Remove-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup $agname
+        $result = Remove-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup $agname -Confirm:$false
     }
     AfterAll {
         $null = Remove-DbaDatabase -SqlInstance $script:instance3 -Database $dbname -Confirm:$false
