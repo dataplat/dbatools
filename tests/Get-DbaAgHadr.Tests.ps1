@@ -22,4 +22,4 @@ Describe "$CommandName Integration Test" -Tag "IntegrationTests" {
             $results.IsHadrEnabled | Should -Be $true
         }
     }
-}
+} #$script:instance2 for appveyor
