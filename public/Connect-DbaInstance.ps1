@@ -643,6 +643,9 @@ function Connect-DbaInstance {
                         $connContext.StatementTimeout = $savedStatementTimeout
                     }
                     $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $connContext
+                    if ($Database -and $server.ConnectionContext.CurrentDatabase -ne $Database) {
+                        Write-Message -Level Warning -Message "Changing connection context to database $Database was not successful. Current database is $($server.ConnectionContext.CurrentDatabase). Please open an issue on https://github.com/dataplat/dbatools/issues."
+                    }
                 } else {
                     $server = $inputObject
                 }
