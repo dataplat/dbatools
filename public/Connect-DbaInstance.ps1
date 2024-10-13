@@ -639,7 +639,7 @@ function Connect-DbaInstance {
                     if ($Database) {
                         # Save StatementTimeout because it might be reset on GetDatabaseConnection
                         $savedStatementTimeout = $connContext.StatementTimeout
-                        $connContext = $connContext.GetDatabaseConnection($Database)
+                        $connContext = $connContext.GetDatabaseConnection($Database, $false)
                         $connContext.StatementTimeout = $savedStatementTimeout
                     }
                     $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $connContext
