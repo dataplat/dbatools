@@ -28,6 +28,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     AfterAll {
         try {
             (Get-DbaCredential -SqlInstance $script:instance2 -Identity dbatoolsci_thor, dbatoolsci_thorsmomma -ErrorAction Stop -WarningAction SilentlyContinue).Drop()
+            (Get-DbaCredential -SqlInstance $script:instance2 -Name "https://mystorageaccount.blob.core.windows.net/mycontainer" -ErrorAction Stop -WarningAction SilentlyContinue).Drop()
         } catch { }
 
         foreach ($login in $logins) {
