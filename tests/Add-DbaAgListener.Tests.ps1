@@ -27,8 +27,8 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
     Context "creates a listener" {
         It "returns results with proper data" {
-            $results = $ag | Add-DbaAgListener -Name $listenerName -IPAddress 127.0.20.1 -Confirm:$false
-            $results.PortNumber | Should -Be 1433
+            $results = $ag | Add-DbaAgListener -Name $listenerName -IPAddress 127.0.20.1 -Port 14330 -Confirm:$false
+            $results.PortNumber | Should -Be 14330
         }
     }
 } #$script:instance2 for appveyor
