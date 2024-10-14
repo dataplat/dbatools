@@ -16,10 +16,10 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     BeforeAll {
         $random = Get-Random
-        $instance2 = Connect-DbaInstance -SqlInstance $script:instance2
-        $null = Get-DbaProcess -SqlInstance $instance2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false
+        $server2 = Connect-DbaInstance -SqlInstance $script:instance2
+        $null = Get-DbaProcess -SqlInstance $server2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false
         $newDbName = "dbatoolsci_newdb_$random"
-        $db = New-DbaDatabase -SqlInstance $instance2 -Name $newDbName
+        $db = New-DbaDatabase -SqlInstance $server2 -Name $newDbName
     }
 
     AfterAll {

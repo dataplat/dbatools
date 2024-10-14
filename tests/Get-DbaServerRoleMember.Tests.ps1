@@ -15,35 +15,35 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $instance = Connect-DbaInstance -SqlInstance $script:instance2
+        $server2 = Connect-DbaInstance -SqlInstance $script:instance2
 
         $password1 = ConvertTo-SecureString 'password1' -AsPlainText -Force
         $testLogin = 'getDbaInstanceRoleMemberLogin'
-        $null = New-DbaLogin -SqlInstance $instance -Login $testLogin -Password $password1
-        $null = Set-DbaLogin -SqlInstance $instance -Login $testLogin -AddRole 'dbcreator'
+        $null = New-DbaLogin -SqlInstance $server2 -Login $testLogin -Password $password1
+        $null = Set-DbaLogin -SqlInstance $server2 -Login $testLogin -AddRole 'dbcreator'
 
-        $instance1 = Connect-DbaInstance -SqlInstance $script:instance1
-        $null = New-DbaLogin -SqlInstance $instance1 -Login $testLogin -Password $password1
-        $null = Set-DbaLogin -SqlInstance $instance1 -Login $testLogin -AddRole 'dbcreator'
+        $server1 = Connect-DbaInstance -SqlInstance $script:instance1
+        $null = New-DbaLogin -SqlInstance $server1 -Login $testLogin -Password $password1
+        $null = Set-DbaLogin -SqlInstance $server1 -Login $testLogin -AddRole 'dbcreator'
     }
 
     Context "Functionality" {
         It 'Returns all role membership for server roles' {
-            $result = Get-DbaServerRoleMember -SqlInstance $instance
+            $result = Get-DbaServerRoleMember -SqlInstance $server2
 
             # should have at least $testLogin and a sysadmin
             $result.Count | Should -BeGreaterOrEqual 2
         }
 
         It 'Accepts a list of roles' {
-            $result = Get-DbaServerRoleMember -SqlInstance $instance -ServerRole 'sysadmin'
+            $result = Get-DbaServerRoleMember -SqlInstance $server2 -ServerRole 'sysadmin'
 
             $uniqueRoles = $result.Role | Select-Object -Unique
             $uniqueRoles | Should -Be 'sysadmin'
         }
 
         It 'Excludes roles' {
-            $result = Get-DbaServerRoleMember -SqlInstance $instance -ExcludeServerRole 'dbcreator'
+            $result = Get-DbaServerRoleMember -SqlInstance $server2 -ExcludeServerRole 'dbcreator'
 
             $uniqueRoles = $result.Role | Select-Object -Unique
             $uniqueRoles | Should -Not -Contain 'dbcreator'
@@ -51,13 +51,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It 'Excludes fixed roles' {
-            $result = Get-DbaServerRoleMember -SqlInstance $instance -ExcludeFixedRole
+            $result = Get-DbaServerRoleMember -SqlInstance $server2 -ExcludeFixedRole
             $uniqueRoles = $result.Role | Select-Object -Unique
             $uniqueRoles | Should -Not -Contain 'sysadmin'
         }
 
         It 'Filters by a specific login' {
-            $result = Get-DbaServerRoleMember -SqlInstance $instance -Login $testLogin
+            $result = Get-DbaServerRoleMember -SqlInstance $server2 -Login $testLogin
 
             $uniqueLogins = $result.Name | Select-Object -Unique
             $uniqueLogins.Count | Should -BeExactly 1
@@ -65,7 +65,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It 'Returns results for all instances' {
-            $result = Get-DbaServerRoleMember -SqlInstance $instance, $instance1 -Login $testLogin
+            $result = Get-DbaServerRoleMember -SqlInstance $server2, $server1 -Login $testLogin
 
             $uniqueInstances = $result.SqlInstance | Select-Object -Unique
             $uniqueInstances.Count | Should -BeExactly 2
@@ -73,7 +73,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     AfterAll {
-        Remove-DbaLogin -SqlInstance $instance -Login $testLogin -Force -Confirm:$false
-        Remove-DbaLogin -SqlInstance $instance1 -Login $testLogin -Force -Confirm:$false
+        Remove-DbaLogin -SqlInstance $server2 -Login $testLogin -Force -Confirm:$false
+        Remove-DbaLogin -SqlInstance $server1 -Login $testLogin -Force -Confirm:$false
     }
 }
