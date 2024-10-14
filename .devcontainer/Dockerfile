@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/mssql/server:2019-latest
+FROM mcr.microsoft.com/mssql/server:latest
 
 # Switch to root for installing packages
 USER root
@@ -6,7 +6,7 @@ USER root
 # Install dependencies, PowerShell, Python pip, Git, and cleanup in one go
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    powershell python3-pip git && \
+    powershell python3-pip git libsndfile1 && \
     python3 -m pip install aider-chat && \
     apt-get autoremove -y && \
     apt-get clean && \
