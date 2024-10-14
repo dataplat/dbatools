@@ -86,5 +86,8 @@
         "Viorel",
         "Wsfc",
         "wsmelton"
-    ]
+    ],
+    "files.exclude": {
+        "**/.aider.tags.cache.v3": true
+    }
 }
