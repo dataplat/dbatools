@@ -59,41 +59,46 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Context "Param validation" {
         It "Either -Table or -DeleteSql needs to be specified" {
-            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel
+            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -WarningAction SilentlyContinue -WarningVariable warn
             $result | Should -BeNullOrEmpty
+            $warn | Should -BeLike '*You must specify either -Table or -DeleteSql.*'
 
-            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -Table dbo.Test -DeleteSql "DELETE TOP (10) FROM dbo.Test" -Confirm:$false
+            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -Table dbo.Test -DeleteSql "DELETE TOP (10) FROM dbo.Test" -Confirm:$false -WarningAction SilentlyContinue -WarningVariable warn
             $result | Should -BeNullOrEmpty
+            $warn | Should -BeLike '*You must specify either -Table or -DeleteSql, but not both.*'
         }
 
         It "-BatchSize cannot be used when -DeleteSql is specified" {
-            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -DeleteSql "DELETE TOP (10) FROM dbo.Test" -BatchSize 10 -Confirm:$false
+            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -DeleteSql "DELETE TOP (10) FROM dbo.Test" -BatchSize 10 -Confirm:$false -WarningAction SilentlyContinue -WarningVariable warn
             $result | Should -BeNullOrEmpty
+            $warn | Should -BeLike '*When using -DeleteSql the -BatchSize param cannot be used.*'
         }
 
         It "Invalid -Table value is provided" {
-            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -Table InvalidTableName -Confirm:$false
+            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -Table InvalidTableName -Confirm:$false -WarningAction SilentlyContinue
             $result | Should -BeNullOrEmpty
         }
 
         It "Invalid -DeleteSql due to missing DELETE keyword (i.e. user has not passed in a DELETE statement)" {
-            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -DeleteSql "SELECT TOP (10) FROM dbo.Test" -Confirm:$false
+            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -DeleteSql "SELECT TOP (10) FROM dbo.Test" -Confirm:$false -WarningAction SilentlyContinue
             $result | Should -BeNullOrEmpty
         }
 
         It "Invalid -DeleteSql due to missing TOP (N) clause" {
-            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -DeleteSql "DELETE FROM dbo.Test" -Confirm:$false
+            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -DeleteSql "DELETE FROM dbo.Test" -Confirm:$false -WarningAction SilentlyContinue -WarningVariable warn
             $result | Should -BeNullOrEmpty
+            $warn | Should -BeLike '*To use the -DeleteSql param you must specify the TOP (N) clause in the DELETE statement.*'
         }
 
         It "Invalid SQL used to test the error handling and reporting" {
-            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -DeleteSql "DELETE TOP (10) FROM dbo.Test WHERE 1/0 = 1" -Confirm:$false
+            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -DeleteSql "DELETE TOP (10) FROM dbo.Test WHERE 1/0 = 1" -Confirm:$false -WarningAction SilentlyContinue
             $result | Should -BeNullOrEmpty
         }
 
         It "Either -LogBackupPath or -AzureBaseUrl needs to be specified, but not both" {
-            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -Table dbo.Test -LogBackupPath $logBackupPath -AzureBaseUrl https://dbatoolsaz.blob.core.windows.net/azbackups/
+            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -Table dbo.Test -LogBackupPath $logBackupPath -AzureBaseUrl https://dbatoolsaz.blob.core.windows.net/azbackups/ -WarningAction SilentlyContinue -WarningVariable warn
             $result | Should -BeNullOrEmpty
+            $warn | Should -BeLike '*You must specify either -LogBackupPath or -AzureBaseUrl, but not both.*'
         }
     }
 
@@ -141,10 +146,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Context "Functionality with bulk_logged recovery model" {
         BeforeEach {
-            $addRowsToBulkLoggedDb = Invoke-DbaQuery -SqlInstance $server -Database $dbnameBulkLoggedModel -Query $sqlAddRows
+            $addRowsToBulkLoggedDb = Invoke-DbaQuery -SqlInstance $script:instance2 -Database $dbnameBulkLoggedModel -Query $sqlAddRows
         }
 
         It 'Removes Data for a specified database' {
+            $server = Connect-DbaInstance -SqlInstance $script:instance2 -Database $dbnameBulkLoggedModel -NonPooledConnection
             $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameBulkLoggedModel -Table dbo.Test -BatchSize 10 -LogBackupPath $logBackupPath -Confirm:$false
             $result.TotalIterations | Should -Be 10
             $result.TotalRowsDeleted | Should -Be 100
@@ -181,7 +187,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Test with an invalid LogBackupPath location" {
-            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -Table dbo.Test -BatchSize 10 -LogBackupPath "C:\dbatools\$(Get-Random)" -Confirm:$false
+            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -Table dbo.Test -BatchSize 10 -LogBackupPath "C:\dbatools\$(Get-Random)" -Confirm:$false -WarningAction SilentlyContinue
             $result | Should -BeNullOrEmpty
         }
     }
