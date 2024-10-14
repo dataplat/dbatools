@@ -13,8 +13,10 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
     }
 }
 
+# $script:instance3 is used for Availability Group tests and needs Hadr service setting enabled
+
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
-    BeforeAll {
+    AfterAll {
         Enable-DbaAgHadr -SqlInstance $script:instance3 -Confirm:$false -Force
     }
 
