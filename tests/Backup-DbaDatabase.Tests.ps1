@@ -299,6 +299,7 @@ GO
         $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query $createdb -Database encrypted
         It "Should compress an encrypted db" {
             $results = Backup-DbaDatabase -SqlInstance $script:instance2 -Database encrypted -Compress
+            Invoke-Command2 -ComputerName $script:instance2 -ScriptBlock { Remove-Item -Path $args[0] } -ArgumentList $results.FullName
             $results.script | Should -BeLike '*D, COMPRESSION,*'
         }
         Remove-DbaDatabase -SqlInstance $script:instance2 -Database encrypted -confirm:$false
@@ -341,6 +342,7 @@ go
         New-DbaDbMasterKey -SqlInstance $script:instance2 -Database Master -SecurePassword $securePass -confirm:$false -ErrorAction SilentlyContinue
         $cert = New-DbaDbCertificate -SqlInstance $script:instance2 -Database master -Name BackupCertt -Subject BackupCertt
         $encBackupResults = Backup-DbaDatabase -SqlInstance $script:instance2 -Database master -EncryptionAlgorithm AES128 -EncryptionCertificate BackupCertt -BackupFileName 'encryptiontest.bak' -Description "Encrypted backup"
+        Invoke-Command2 -ComputerName $script:instance2 -ScriptBlock { Remove-Item -Path $args[0] } -ArgumentList $encBackupResults.FullName
         It "Should encrypt the backup" {
             $encBackupResults.EncryptorType | Should Be "CERTIFICATE"
             $encBackupResults.KeyAlgorithm | Should Be "aes_128"
