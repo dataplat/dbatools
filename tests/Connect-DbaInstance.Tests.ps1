@@ -206,6 +206,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $serverClone.ConnectionContext.ServerInstance | Should -Match '^ADMIN:'
             $serverClone | Disconnect-DbaInstance
         }
+
+        It "clones when using Backup-DabInstace" {
+            $server = Connect-DbaInstance -SqlInstance $script:instance1 -Database tempdb
+            $null = Backup-DbaDatabase -SqlInstance $server -Database msdb
+            $null = Backup-DbaDatabase -SqlInstance $server -Database msdb -WarningVariable warn
+            $warn | Should -BeNullOrEmpty
+        }
     }
 
     Context "multiple connections are properly made using strings" {
