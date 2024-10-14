@@ -16,6 +16,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Returns output for single database" {
         BeforeAll {
+            $null = Get-DbaProcess -SqlInstance $script:instance2 | Where-Object Program -Match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
             $random = Get-Random
             $db = "dbatoolsci_measurethruput$random"
             $null = New-DbaDatabase -SqlInstance $script:instance2 -Database $db | Backup-DbaDatabase
