@@ -115,7 +115,7 @@ function Mount-DbaDatabase {
                     }
 
                     $backupfile = $backuphistory.Path[0]
-                    $filepaths = (Read-DbaBackupHeader -SqlInstance $server -FileList -Path $backupfile).PhysicalName
+                    $filepaths = (Read-DbaBackupHeader -SqlInstance $server -FileList -Path $backupfile).PhysicalName | Select-Object -Unique
 
                     $FileStructure = New-Object System.Collections.Specialized.StringCollection
                     foreach ($file in $filepaths) {

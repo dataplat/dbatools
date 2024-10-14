@@ -1,7 +1,7 @@
 
 -- SQL Server 2019 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: July 9, 2024
+-- Last Modified: October 2, 2024
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -102,7 +102,10 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 15.0.4360.2		CU25 + GDR							4/9/2024		https://support.microsoft.com/en-us/topic/kb5036335-description-of-the-security-update-for-sql-server-2019-cu25-april-9-2024-eb3571d0-62ee-445e-9681-5715caf9bbc2
 -- 15.0.4365.2		CU26								4/11/2024		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2019/cumulativeupdate26
 -- 15.0.4375.4		CU27								6/13/2024		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2019/cumulativeupdate27
--- 15.0.8382.1		CU27 + GDR							7/9/2024		https://support.microsoft.com/en-us/topic/kb5040948-description-of-the-security-update-for-sql-server-2019-cu27-july-9-2024-6447dc00-9f1b-484c-9d3d-9e1f1b9f915c
+-- 15.0.4382.1		CU27 + GDR							7/9/2024		https://support.microsoft.com/en-us/topic/kb5040948-description-of-the-security-update-for-sql-server-2019-cu27-july-9-2024-6447dc00-9f1b-484c-9d3d-9e1f1b9f915c
+-- 15.0.4385.2		CU28								8/1/2024		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2019/cumulativeupdate28
+-- 15.0.4390.2		CU28 + GDR							9/10/2024		https://support.microsoft.com/en-us/topic/kb5042749-description-of-the-security-update-for-sql-server-2019-cu28-september-10-2024-17402ce5-07d3-4e30-9037-9ef997104f34
+
 
 -- How to determine the version, edition and update level of SQL Server and its components 
 -- https://bit.ly/2oAjKgW	
@@ -2173,8 +2176,7 @@ SELECT es.session_id, DB_NAME(es.database_id) AS [Database Name],
 FROM sys.dm_exec_sessions AS es WITH (NOLOCK)
 CROSS APPLY sys.dm_exec_input_buffer(es.session_id, NULL) AS ib
 WHERE es.database_id = DB_ID()
-AND es.session_id > 50
-AND es.session_id <> @@SPID OPTION (RECOMPILE);
+AND es.is_user_process = 1 OPTION (RECOMPILE);
 ------
 
 -- Gives you input buffer information from all non-system sessions for the current database

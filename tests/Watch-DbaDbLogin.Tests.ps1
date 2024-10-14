@@ -29,8 +29,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
         $script:instance1, $script:instance2 | Out-File $testFile
 
-        $instance1 = Connect-DbaInstance -SqlInstance $script:instance1
-        $instance2 = Connect-DbaInstance -SqlInstance $script:instance2
+        $server1 = Connect-DbaInstance -SqlInstance $script:instance1
+        $server2 = Connect-DbaInstance -SqlInstance $script:instance2
 
         $regServer1 = Add-DbaRegServer -SqlInstance $script:instance1 -ServerName $script:instance1 -Name "dbatoolsci_instance1_$random"
         $regServer2 = Add-DbaRegServer -SqlInstance $script:instance1 -ServerName $script:instance2 -Name "dbatoolsci_instance2_$random"
@@ -50,7 +50,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Pipeline of instances" {
-            $instance1, $instance2 | Watch-DbaDbLogin -SqlInstance $script:instance1 -Database $databaseName -Table $tableName2 -EnableException
+            $server1, $server2 | Watch-DbaDbLogin -SqlInstance $script:instance1 -Database $databaseName -Table $tableName2 -EnableException
             $result = Get-DbaDbTable -SqlInstance $script:instance1 -Database $databaseName -Table $tableName2 -IncludeSystemDBs
             $result.Name | Should Be $tableName2
             $result.Count | Should BeGreaterThan 0

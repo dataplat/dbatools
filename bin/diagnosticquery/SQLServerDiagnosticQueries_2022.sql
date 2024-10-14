@@ -1,7 +1,7 @@
 
 -- SQL Server 2022 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: July 24, 2024
+-- Last Modified: October 3, 2024
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -82,6 +82,8 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 16.0.4125.3		CU13								5/16/2024		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2022/cumulativeupdate13
 -- 16.0.4131.2		CU13 + GDR							7/9/2024		https://support.microsoft.com/en-us/topic/kb5040939-description-of-the-security-update-for-sql-server-2022-cu13-july-9-2024-16a61a81-926c-46a5-b6c0-edbca541f2f6
 -- 16.0.4135.4		CU14								7/23/2024		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2022/cumulativeupdate14
+-- 16.0.4140.3		CU14 + GDR							9/10/2024		https://support.microsoft.com/en-us/topic/kb5042578-description-of-the-security-update-for-sql-server-2022-cu14-september-10-2024-560e6e4c-1f49-4c18-9eb7-054e9fdee3c7	
+-- 16.0.4145.4		CU15								9/25/2024		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2022/cumulativeupdate15	
 
 -- What's new in SQL Server 2022 (16.x)
 -- https://bit.ly/3MJEjR1
@@ -2198,7 +2200,7 @@ ORDER BY total_worker_time DESC OPTION (RECOMPILE);
 
 
 -- Determine which scalar UDFs are in-lineable (Query 84) (Inlineable UDFs)
-SELECT OBJECT_NAME(m.object_id) AS [Function Name], is_inlineable, inline_type,
+SELECT OBJECT_NAME(m.object_id) AS [Function Name], m.is_inlineable, m.inline_type,
        efs.total_worker_time
 FROM sys.sql_modules AS m WITH (NOLOCK) 
 LEFT OUTER JOIN sys.dm_exec_function_stats AS efs WITH (NOLOCK)
@@ -2246,8 +2248,7 @@ SELECT es.session_id, DB_NAME(es.database_id) AS [Database Name],
 FROM sys.dm_exec_sessions AS es WITH (NOLOCK)
 CROSS APPLY sys.dm_exec_input_buffer(es.session_id, NULL) AS ib
 WHERE es.database_id = DB_ID()
-AND es.session_id > 50
-AND es.session_id <> @@SPID OPTION (RECOMPILE);
+AND es.is_user_process = 1 OPTION (RECOMPILE);
 ------
 
 -- Gives you input buffer information from all non-system sessions for the current database

@@ -29,19 +29,13 @@ $TestsRunGroups = @{
         # Non-useful info from newly started sql servers
         'Get-DbaCpuRingBuffer',
         'Get-DbaLatchStatistic',
-        # times out
-        'Copy-DbaResourceGovernor',
         # fails on newer version of SMO
         'Get-DbaUserPermission',
         'Invoke-DbaBalanceDataFiles',
         'Invoke-DbaWhoisActive',  # Works locally aganint a SQL Server 2022 instance without problems.
         'Install-DbaDarlingData',
-        # impossible to do within one server
-        # "the partner server name must be distinct"
-        'Invoke-DbaDbMirroring',
         # previous tests that were failing on older versions too
         'Remove-DbaAvailabilityGroup',
-        'Set-DbaAgReplica',
         'Read-DbaAuditFile',
         'Sync-DbaLoginPermission',
         'Read-DbaXEFile',
@@ -60,7 +54,6 @@ $TestsRunGroups = @{
         'Test-DbaManagementObject',
         'Export-DbaDacPackage',
         'New-DbaDbTransfer',
-        'Remove-DbaAgDatabase',
         'Get-DbaDbSynonym',
         'Get-DbaDbVirtualLogFile',
         'Get-DbaFile',

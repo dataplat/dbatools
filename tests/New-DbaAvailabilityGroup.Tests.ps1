@@ -15,24 +15,16 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $computername = ($script:instance3).Split("\")[0]
         $null = Get-DbaProcess -SqlInstance $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
-        $server = Connect-DbaInstance -SqlInstance $script:instance3
         $dbname = "dbatoolsci_addag_agroupdb"
-        $server.Query("create database $dbname")
         $agname = "dbatoolsci_addag_agroup"
-        $password = 'MyV3ry$ecur3P@ssw0rd'
-        $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
-        $null = New-DbaDbMasterKey -SqlInstance $script:instance3 -Database master -WarningAction SilentlyContinue -ErrorAction Ignore -EnableException:$false -SecurePassword $securePassword -Confirm:$false
-        $null = New-DbaDbCertificate -SqlInstance $script:instance3 -Database master -Name dbatoolsci_AGCert -Subject 'AG Certificate' -ErrorAction Ignore
-        $null = New-DbaEndpoint -SqlInstance $script:instance3 -Type DatabaseMirroring -Name dbatoolsci_AGEndpoint -Certificate dbatoolsci_AGCert | Start-DbaEndpoint
-        $backup = Get-DbaDatabase -SqlInstance $script:instance3 -Database $dbname | Backup-DbaDatabase
+        $null = New-DbaDatabase -SqlInstance $script:instance3 -Database $dbname | Backup-DbaDatabase
+    }
+    AfterEach {
+        $result = Remove-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup $agname -Confirm:$false
     }
     AfterAll {
-        $null = Remove-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $agname -Confirm:$false
-        $null = Remove-DbaEndpoint -SqlInstance $server -Endpoint dbatoolsci_AGEndpoint -Confirm:$false
-        $null = Get-DbaDbCertificate -SqlInstance $server -Certificate dbatoolsci_AGCert | Remove-DbaDbCertificate -Confirm:$false
-        $null = Remove-DbaDatabase -SqlInstance $server -Database $dbname -Confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $script:instance3 -Database $dbname -Confirm:$false
     }
     Context "adds an ag" {
         It "returns an ag with a db named" {

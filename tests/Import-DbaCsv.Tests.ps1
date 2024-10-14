@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     AfterAll {
-        Invoke-DbaQuery -SqlInstance $script:instance1, $script:instance2 -Database tempdb -Query "drop table SuperSmall"
+        Invoke-DbaQuery -SqlInstance $script:instance1, $script:instance2 -Database tempdb -Query "drop table SuperSmall; drop table CommaSeparatedWithHeader"
     }
 
     $path = "$script:appveyorlabrepo\csv\SuperSmall.csv"
@@ -95,6 +95,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $result.RowsCopied | Should -Be 1
             $result.Database | Should -Be tempdb
             $result.Table | Should -Be CommaSeparatedWithHeader
+            Invoke-DbaQuery -SqlInstance $server -Query 'DROP TABLE NoHeaderRow'
         }
 
         It "works with NoHeaderRow" {
@@ -109,6 +110,34 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $result | Should -Not -BeNullOrEmpty
             $result.RowsCopied | Should -Be 3
             $data[0].c1 | Should -Be 'firstcol'
+        }
+
+        It "works with tables which have non-varchar types (date)" {
+            # See #9433
+            $server = Connect-DbaInstance $script:instance1 -Database tempdb
+            Invoke-DbaQuery -SqlInstance $server -Query 'CREATE TABLE WithTypes ([date] DATE, col1 VARCHAR(50), col2 VARCHAR(50))'
+            $result = Import-DbaCsv -Path $CommaSeparatedWithHeader -SqlInstance $server -Database tempdb -Table 'WithTypes'
+            Invoke-DbaQuery -SqlInstance $server -Query 'DROP TABLE WithTypes'
+
+            $result | Should -Not -BeNullOrEmpty
+            $result.RowsCopied | Should -Be 1
+        }
+
+        It "works with tables which have non-varchar types (guid, bit)" {
+            # See #9433
+            $filePath = '.\foo.csv'
+            $server = Connect-DbaInstance $script:instance1 -Database tempdb
+            Invoke-DbaQuery -SqlInstance $server -Query 'CREATE TABLE WithGuidsAndBits (one_guid UNIQUEIDENTIFIER, one_bit BIT)'
+            $row = [pscustomobject]@{
+                one_guid = (New-Guid).Guid
+                one_bit  = 1
+            }
+            $row | Export-Csv -Path $filePath -NoTypeInformation
+            $result = Import-DbaCsv -Path $filePath -SqlInstance $server -Database tempdb -Table 'WithGuidsAndBits'
+            Invoke-DbaQuery -SqlInstance $server -Query 'DROP TABLE WithGuidsAndBits'
+
+            $result.RowsCopied | Should -Be 1
+            Remove-Item $filePath
         }
     }
 }

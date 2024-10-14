@@ -16,8 +16,8 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $random = Get-Random
-        $instance2 = Connect-DbaInstance -SqlInstance $script:instance2
-        $instance3 = Connect-DbaInstance -SqlInstance $script:instance3
+        $server2 = Connect-DbaInstance -SqlInstance $script:instance2
+        $server3 = Connect-DbaInstance -SqlInstance $script:instance3
 
         $securePassword = ConvertTo-SecureString -String 's3cur3P4ssw0rd?' -AsPlainText -Force
         $localLogin1Name = "dbatoolscli_localLogin1_$random"
@@ -27,11 +27,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $linkedServer1Name = "dbatoolscli_linkedServer1_$random"
         $linkedServer2Name = "dbatoolscli_linkedServer2_$random"
 
-        New-DbaLogin -SqlInstance $instance2 -Login $localLogin1Name, $localLogin2Name -SecurePassword $securePassword
-        New-DbaLogin -SqlInstance $instance3 -Login $remoteLoginName -SecurePassword $securePassword
+        New-DbaLogin -SqlInstance $server2 -Login $localLogin1Name, $localLogin2Name -SecurePassword $securePassword
+        New-DbaLogin -SqlInstance $server3 -Login $remoteLoginName -SecurePassword $securePassword
 
-        $linkedServer1 = New-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServer1Name -ServerProduct mssql -Provider sqlncli -DataSource $instance3
-        $linkedServer2 = New-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServer2Name -ServerProduct mssql -Provider sqlncli -DataSource $instance3
+        $linkedServer1 = New-DbaLinkedServer -SqlInstance $server2 -LinkedServer $linkedServer1Name -ServerProduct mssql -Provider sqlncli -DataSource $server3
+        $linkedServer2 = New-DbaLinkedServer -SqlInstance $server2 -LinkedServer $linkedServer2Name -ServerProduct mssql -Provider sqlncli -DataSource $server3
 
         $newLinkedServerLogin1 = New-Object Microsoft.SqlServer.Management.Smo.LinkedServerLogin
         $newLinkedServerLogin1.Parent = $linkedServer1
@@ -58,27 +58,27 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $newLinkedServerLogin3.Create()
     }
     AfterAll {
-        Remove-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServer1Name, $linkedServer2Name -Confirm:$false -Force
-        Remove-DbaLogin -SqlInstance $instance2 -Login $localLogin1Name, $localLogin2Name -Confirm:$false
-        Remove-DbaLogin -SqlInstance $instance3 -Login $remoteLoginName -Confirm:$false
+        Remove-DbaLinkedServer -SqlInstance $server2 -LinkedServer $linkedServer1Name, $linkedServer2Name -Confirm:$false -Force
+        Remove-DbaLogin -SqlInstance $server2 -Login $localLogin1Name, $localLogin2Name -Confirm:$false
+        Remove-DbaLogin -SqlInstance $server3 -Login $remoteLoginName -Confirm:$false
     }
 
     Context "ensure command works" {
 
         It "Check the validation for a linked server" {
-            $results = Get-DbaLinkedServerLogin -SqlInstance $instance2 -LocalLogin $localLogin1Name -WarningVariable warnings 3> $null
+            $results = Get-DbaLinkedServerLogin -SqlInstance $server2 -LocalLogin $localLogin1Name -WarningVariable warnings 3> $null
             $warnings | Should -BeLike "*LinkedServer is required*"
             $results | Should -BeNullOrEmpty
         }
 
         It "Get a linked server login" {
-            $results = Get-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin1Name
+            $results = Get-DbaLinkedServerLogin -SqlInstance $server2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin1Name
             $results | Should -Not -BeNullOrEmpty
             $results.Name | Should -Be $localLogin1Name
             $results.RemoteUser | Should -Be $remoteLoginName
             $results.Impersonate | Should -Be $false
 
-            $results = Get-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin1Name, $localLogin2Name
+            $results = Get-DbaLinkedServerLogin -SqlInstance $server2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin1Name, $localLogin2Name
             $results.length | Should -Be 2
             $results.Name | Should -Be $localLogin1Name, $localLogin2Name
             $results.RemoteUser | Should -Be $remoteLoginName, $remoteLoginName
@@ -86,14 +86,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Get a linked server login and exclude a login" {
-            $results = Get-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -ExcludeLocalLogin $localLogin1Name
+            $results = Get-DbaLinkedServerLogin -SqlInstance $server2 -LinkedServer $linkedServer1Name -ExcludeLocalLogin $localLogin1Name
             $results | Should -Not -BeNullOrEmpty
             $results.Name | Should -Contain $localLogin2Name
             $results.Name | Should -Not -Contain $localLogin1Name
         }
 
         It "Get a linked server login by passing in a server via pipeline" {
-            $results = $instance2 | Get-DbaLinkedServerLogin -LinkedServer $linkedServer1Name -LocalLogin $localLogin1Name
+            $results = $server2 | Get-DbaLinkedServerLogin -LinkedServer $linkedServer1Name -LocalLogin $localLogin1Name
             $results | Should -Not -BeNullOrEmpty
             $results.Name | Should -Be $localLogin1Name
         }
@@ -105,7 +105,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Get a linked server login from multiple linked servers" {
-            $results = Get-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name, $linkedServer2Name -LocalLogin $localLogin1Name
+            $results = Get-DbaLinkedServerLogin -SqlInstance $server2 -LinkedServer $linkedServer1Name, $linkedServer2Name -LocalLogin $localLogin1Name
             $results | Should -Not -BeNullOrEmpty
             $results.Name | Should -Be $localLogin1Name, $localLogin1Name
         }

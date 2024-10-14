@@ -859,6 +859,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Should backup and restore cleanly" {
             ($results | Where-Object { $_.RestoreComplete -eq $True }).count | Should Be $Results.count
         }
+        $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database StripeTest
     }
 
     Context "Don't try to create/test folders with OutputScriptOnly (Issue 4046)" {
@@ -891,7 +892,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
         Remove-DbaDbCertificate -SqlInstance $script:instance2 -Database Master -Certificate RestoreTestCert -Confirm:$false
         Remove-DbaDbMasterKey -SqlInstance $script:instance2 -Database Master -confirm:$false
-        Remove-DbaDatabase -SqlInstance $script:instance2 -Database EncRestTest -confirm:$false
+        Remove-DbaDatabase -SqlInstance $script:instance2 -Database EncRestTest, certEncRestTest -confirm:$false
     }
 
     Context "Test restoring with StopAt" {
@@ -901,6 +902,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Should have stoped at mark" {
             $sqlOut.ms | Should -Be 9876
         }
+        $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database StopAt2
     }
 
     Context "Test restoring with StopAtBefore" {
@@ -910,6 +912,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Should have stoped at mark" {
             $sqlOut.ms | Should -Be 8764
         }
+        $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database StopAt2
     }
 
     Context "Test restoring with StopAt and StopAfterDate" {
@@ -919,6 +922,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Should have stoped at mark" {
             $sqlOut.ms | Should -Be 29876
         }
+        $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database StopAt2
     }
 
     Context "Warn if OutputScriptOnly and VerifyOnly specified together #6987" {
@@ -926,6 +930,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Should return a warning" {
             $warnvar | Should -BeLike '*The switches OutputScriptOnly and VerifyOnly cannot both be specified at the same time, stopping'
         }
+        $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database StopAt2
     }
     if ($env:azurepasswd) {
         Context "Restores From Azure using SAS" {

@@ -64,9 +64,6 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $null = Invoke-DbaQuery -SqlInstance $server -Database $dbName -Query "GRANT CONTROL ON Schema::$schemaNameForTable2 TO $loginNameUser2"
 
         $table2 = New-DbaDbTable -SqlInstance $server -Database $dbName -Name $tableName2 -Schema $schemaNameForTable2 -ColumnMap $tableSpec2
-
-        # debugging errors seen only in AppVeyor
-        Write-Host "Get-DbaPermission: Server=$server, dbName=$dbName, loginDBO=$($loginDBO.Name), loginDBOwner=$($loginDBOwner.Name), loginUser1=$($loginUser1.Name), newUserDBOwner=$($newUserDBOwner.Name), newUser1=$($newUser1.Name), table1=$($table1.Name), loginUser2=$($loginUser2.Name), newUser2=$($newUser2.Name), table2=$($table2.Name), table2Schema=$($table2.Schema)"
     }
 
     AfterAll {
