@@ -20,7 +20,7 @@ if (-not $env:appveyor) {
             BeforeAll {
                 $server = Connect-DbaInstance -SqlInstance $script:instance1
                 $server.Query("DBCC STACKDUMP")
-                Start-Sleep -Seconds 5
+                $server.Query("DBCC STACKDUMP")
             }
 
             $results = Get-DbaDump -SqlInstance $script:instance1
