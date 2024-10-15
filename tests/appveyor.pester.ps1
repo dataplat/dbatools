@@ -114,27 +114,31 @@ function Get-CodecovReport($Results, $ModuleBase) {
     # things we wanna a report for (and later backfill if not tested)
     $allfiles = Get-ChildItem -File -Path "$ModuleBase\private\functions", "$ModuleBase\public" -Filter '*.ps1'
 
-    $missed = $results.CodeCoverage | Select-Object -ExpandProperty MissedCommands | Sort-Object -Property File, Line -Unique
-    $hits = $results.CodeCoverage | Select-Object -ExpandProperty HitCommands | Sort-Object -Property File, Line -Unique
     $LineCount = @{ }
-    $hits | ForEach-Object {
-        $filename = $_.File.Replace("$ModuleBase\", '').Replace('\', '/')
-        if ($filename -notin $report['coverage'].Keys) {
-            $report['coverage'][$filename] = @{ }
-            $LineCount[$filename] = (Get-Content $_.File -Raw | Measure-Object -Line).Lines
-        }
-        $report['coverage'][$filename][$_.Line] = 1
-    }
+    foreach ($result in $Results) {
+        $analyzed = $result.CodeCoverage.AnalyzedFiles
+        $missed = $result.CodeCoverage.MissedLines
+        $hit = $result.CodeCoverage.HitLines
 
-    $missed | ForEach-Object {
-        $filename = $_.File.Replace("$ModuleBase\", '').Replace('\', '/')
-        if ($filename -notin $report['coverage'].Keys) {
-            $report['coverage'][$filename] = @{ }
-            $LineCount[$filename] = (Get-Content $_.File | Measure-Object -Line).Lines
-        }
-        if ($_.Line -notin $report['coverage'][$filename].Keys) {
-            #miss only if not already covered
-            $report['coverage'][$filename][$_.Line] = 0
+        foreach ($file in $analyzed) {
+            $filename = $file.Replace("$ModuleBase\", '').Replace('\', '/')
+            if ($filename -notin $report['coverage'].Keys) {
+                $report['coverage'][$filename] = @{ }
+                $LineCount[$filename] = (Get-Content $file | Measure-Object -Line).Lines
+            }
+
+            $hitLines = $hit[$file]
+            $missedLines = $missed[$file]
+
+            foreach ($line in $hitLines) {
+                $report['coverage'][$filename][$line] = 1
+            }
+
+            foreach ($line in $missedLines) {
+                if ($line -notin $report['coverage'][$filename].Keys) {
+                    $report['coverage'][$filename][$line] = 0
+                }
+            }
         }
     }
 
@@ -261,14 +265,14 @@ if (-not $Finalize) {
     if (Test-Path $ModuleBase\dbatools_messages_and_errors.xml.zip) {
         Get-ChildItem $ModuleBase\dbatools_messages_and_errors.xml.zip | ForEach-Object { Push-AppveyorArtifact $_.FullName -FileName $_.Name }
     }
-    $failedcount = $results | Select-Object -ExpandProperty FailedCount | Measure-Object -Sum | Select-Object -ExpandProperty Sum
+    $failedcount = $results | ForEach-Object { $_.FailedCount } | Measure-Object -Sum | Select-Object -ExpandProperty Sum
     if ($failedcount -gt 0) {
-        $faileditems = $results | Select-Object -ExpandProperty TestResult | Where-Object { $_.Passed -notlike $True }
+        $faileditems = $results | ForEach-Object { $_.Tests | Where-Object Result -eq 'Failed' }
         if ($faileditems) {
             Write-Warning "Failed tests summary:"
             $faileditems | ForEach-Object {
                 [pscustomobject]@{
-                    Describe = $_.Block
+                    Describe = $_.Describe
                     Context  = $_.Context
                     Name     = "It $($_.Name)"
                     Result   = $_.Result
