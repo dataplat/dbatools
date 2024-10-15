@@ -209,9 +209,9 @@ if (-not $Finalize) {
             Add-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome Running
 
             # Create a Pester configuration
-            $PesterConfiguration = [Pester.Configuration]::Default.Clone()
+            $PesterConfiguration = New-PesterConfiguration -Full
             $PesterConfiguration.Run.Path = $f.FullName
-            $PesterConfiguration.Run.OutputVerbosity = 'None'
+            $PesterConfiguration.Run.Output.Verbosity = 'None'
             $PesterConfiguration.Output.Verbosity = 'None'
             $PesterConfiguration.Run.PassThru = $true
 
