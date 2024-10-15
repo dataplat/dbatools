@@ -74,7 +74,7 @@ function Get-CoverageIndications($Path, $ModuleBase) {
     $leaf = Split-Path $path -Leaf
     # assuming Get-DbaFoo.Tests.ps1 wants coverage for "Get-DbaFoo"
     # but allowing also Get-DbaFoo.one.Tests.ps1 and Get-DbaFoo.two.Tests.ps1
-    $func_name += ($leaf -replace '^([^.]+)(.+)?.Tests.ps1', '$1')
+    $func_name = ($leaf -replace '^([^.]+)(.+)?.Tests.ps1', '$1')
     if ($func_name -in $everyfunction) {
         $funcs += $func_name
         $f = $everything | Where-Object Name -eq $func_name
@@ -114,8 +114,8 @@ function Get-CodecovReport($Results, $ModuleBase) {
     # things we wanna a report for (and later backfill if not tested)
     $allfiles = Get-ChildItem -File -Path "$ModuleBase\private\functions", "$ModuleBase\public" -Filter '*.ps1'
 
-    $missed = $results.CodeCoverage | Select-Object -ExpandProperty MissedCommands | Sort-Object -Property File, Line -Unique
-    $hits = $results.CodeCoverage | Select-Object -ExpandProperty HitCommands | Sort-Object -Property File, Line -Unique
+    $missed = $results.CodeCoverage.MissedCommands | Sort-Object -Property File, Line -Unique
+    $hits = $results.CodeCoverage.HitCommands | Sort-Object -Property File, Line -Unique
     $LineCount = @{ }
     $hits | ForEach-Object {
         $filename = $_.File.Replace("$ModuleBase\", '').Replace('\', '/')
@@ -178,15 +178,14 @@ function Send-CodecovReport($CodecovReport) {
     Invoke-RestMethod -Uri $Request.Uri -Method Post -InFile $CodecovReport -ContentType 'multipart/form-data'
 }
 
-
 if (-not $Finalize) {
     # Invoke appveyor.common.ps1 to know which tests to run
     . "$ModuleBase\tests\appveyor.common.ps1"
     $AllScenarioTests = Get-TestsForBuildScenario -ModuleBase $ModuleBase
 }
 
-#Run a test with the current version of PowerShell
-#Make things faster by removing most output
+# Run a test with the current version of PowerShell
+# Make things faster by removing most output
 if (-not $Finalize) {
     Import-Module Pester
     Write-Host -Object "appveyor.pester: Running with Pester Version $((Get-Command Invoke-Pester -ErrorAction SilentlyContinue).Version)" -ForegroundColor DarkGreen
@@ -200,35 +199,38 @@ if (-not $Finalize) {
     $Counter = 0
     foreach ($f in $AllTestsWithinScenario) {
         $Counter += 1
-        $PesterSplat = @{
-            'Script'   = $f.FullName
-            'Show'     = 'None'
-            'PassThru' = $true
-        }
-        #opt-in
-        if ($IncludeCoverage) {
-            $CoverFiles = Get-CoverageIndications -Path $f -ModuleBase $ModuleBase
-            $PesterSplat['CodeCoverage'] = $CoverFiles
-            $PesterSplat['CodeCoverageOutputFile'] = "$ModuleBase\PesterCoverage$Counter.xml"
-        }
-        # Pester 4.0 outputs already what file is being ran. If we remove write-host from every test, we can time
-        # executions for each test script (i.e. Executing Get-DbaFoo .... Done (40 seconds))
         $trialNo = 1
         while ($trialNo -le 3) {
             if ($trialNo -eq 1) {
                 $appvTestName = $f.Name
             } else {
-                $appvTestName = "$f.Name, attempt #$trialNo"
+                $appvTestName = "$($f.Name), attempt #$trialNo"
             }
             Add-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome Running
-            $PesterRun = Invoke-Pester @PesterSplat
+
+            # Create a Pester configuration
+            $PesterConfiguration = [Pester.Configuration]::Default.Clone()
+            $PesterConfiguration.Run.Path = $f.FullName
+            $PesterConfiguration.Run.OutputVerbosity = 'None'
+            $PesterConfiguration.Output.Verbosity = 'None'
+            $PesterConfiguration.Run.PassThru = $true
+
+            if ($IncludeCoverage) {
+                $CoverFiles = Get-CoverageIndications -Path $f -ModuleBase $ModuleBase
+                $PesterConfiguration.CodeCoverage.Enabled = $true
+                $PesterConfiguration.CodeCoverage.OutputFormat = 'JaCoCo'
+                $PesterConfiguration.CodeCoverage.OutputPath = "$ModuleBase\PesterCoverage$Counter.xml"
+                $PesterConfiguration.CodeCoverage.Path = $CoverFiles
+            }
+
+            $PesterRun = Invoke-Pester -Configuration $PesterConfiguration
             $PesterRun | Export-Clixml -Path "$ModuleBase\PesterResults$PSVersion$Counter.xml"
             $outcome = "Passed"
-            if ($PesterRun.FailedCount -gt 0) {
-                $trialno += 1
-                Update-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome "Failed" -Duration $PesterRun.Time.TotalMilliseconds
+            if ($PesterRun.Result.FailedCount -gt 0) {
+                $trialNo += 1
+                Update-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome "Failed" -Duration $PesterRun.Result.Duration.TotalMilliseconds
             } else {
-                Update-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome "Passed" -Duration $PesterRun.Time.TotalMilliseconds
+                Update-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome "Passed" -Duration $PesterRun.Result.Duration.TotalMilliseconds
                 break
             }
         }
@@ -243,7 +245,7 @@ if (-not $Finalize) {
         Write-Host -ForegroundColor Yellow "Skipping dump of error log into $errorFile"
         try {
             # Uncomment this when needed
-            #Get-DbatoolsError -All -ErrorAction Stop | Export-Clixml -Depth 1 -Path $errorFile -ErrorAction Stop
+            # Get-DbatoolsError -All -ErrorAction Stop | Export-Clixml -Depth 1 -Path $errorFile -ErrorAction Stop
         } catch {
             Set-Content -Path $errorFile -Value 'Uncomment line 245 in appveyor.pester.ps1 if needed'
         }
@@ -257,39 +259,22 @@ if (-not $Finalize) {
         Write-Host -ForegroundColor Red "Message collection failed: $($_.Exception.Message)"
     }
 } else {
-    # Unsure why we're uploading so I removed it for now
-    <#
-    #If finalize is specified, check for failures and  show status
-    $allfiles = Get-ChildItem -Path $ModuleBase\*Results*.xml | Select-Object -ExpandProperty FullName
-    Write-Output "Finalizing results and collating the following files:"
-    Write-Output ($allfiles | Out-String)
-    #Upload results for test page
-    Get-ChildItem -Path "$ModuleBase\TestResultsPS*.xml" | Foreach-Object {
-        $Address = "https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)"
-        $Source = $_.FullName
-        Write-Output "Uploading files: $Address $Source"
-        (New-Object System.Net.WebClient).UploadFile($Address, $Source)
-        Write-Output "You can download it from https://ci.appveyor.com/api/buildjobs/$($env:APPVEYOR_JOB_ID)/tests"
-    }
-    #>
-    #What failed? How many tests did we run ?
+    # What failed? How many tests did we run?
     $results = @(Get-ChildItem -Path "$ModuleBase\PesterResults*.xml" | Import-Clixml)
-    #Publish the support package regardless of the outcome
-    if (Test-Path $ModuleBase\dbatools_messages_and_errors.xml.zip) {
-        Get-ChildItem $ModuleBase\dbatools_messages_and_errors.xml.zip | ForEach-Object { Push-AppveyorArtifact $_.FullName -FileName $_.Name }
+    # Publish the support package regardless of the outcome
+    if (Test-Path "$ModuleBase\dbatools_messages_and_errors.xml.zip") {
+        Get-ChildItem "$ModuleBase\dbatools_messages_and_errors.xml.zip" | ForEach-Object { Push-AppveyorArtifact $_.FullName -FileName $_.Name }
     }
-    #$totalcount = $results | Select-Object -ExpandProperty TotalCount | Measure-Object -Sum | Select-Object -ExpandProperty Sum
-    $failedcount = $results | Select-Object -ExpandProperty FailedCount | Measure-Object -Sum | Select-Object -ExpandProperty Sum
+    $failedcount = $results | Select-Object -ExpandProperty Result | Select-Object -ExpandProperty FailedCount | Measure-Object -Sum | Select-Object -ExpandProperty Sum
     if ($failedcount -gt 0) {
-        $faileditems = $results | Select-Object -ExpandProperty TestResult | Where-Object { $_.Passed -notlike $True }
+        $faileditems = $results | Select-Object -ExpandProperty Result | Select-Object -ExpandProperty TestResult | Where-Object { $_.Passed -ne $true }
         if ($faileditems) {
             Write-Warning "Failed tests summary:"
             $faileditems | ForEach-Object {
-                $name = $_.Name
                 [pscustomobject]@{
                     Describe = $_.Describe
                     Context  = $_.Context
-                    Name     = "It $name"
+                    Name     = "It $_.Name"
                     Result   = $_.Result
                     Message  = $_.FailureMessage
                 }
@@ -297,7 +282,7 @@ if (-not $Finalize) {
             throw "$failedcount tests failed."
         }
     }
-    #opt-in
+    # opt-in
     if ($IncludeCoverage) {
         $CodecovReport = Get-CodecovReport -Results $results -ModuleBase $ModuleBase
         $CodecovReport | ConvertTo-Json -Depth 4 -Compress | Out-File -FilePath "$ModuleBase\PesterResultsCoverage.json" -Encoding utf8
