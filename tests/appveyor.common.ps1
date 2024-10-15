@@ -137,6 +137,13 @@ function Get-TestsForBuildScenario {
     if ($AllTests.Count -eq 0 -and $AllScenarioTests.Count -eq 0) {
         throw "something went wrong, nothing to test"
     }
+
+    # Extract and display the name of each command being run
+    foreach ($test in $AllScenarioTests) {
+        $commandName = $test.BaseName -replace '\.Tests$', ''
+        Write-Host "Running test for command: $commandName"
+    }
+
     return $AllScenarioTests
 }
 
