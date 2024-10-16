@@ -24,6 +24,8 @@
 
 ## Example Pester v5 Test Script
 
+**IMPORTANT** Follow this setup starting with the param and only validating the paramters the way you see here. ONLY test the parameters using this method. No additional tests are needed for parameters.
+
 ```powershell
 param($ModuleName = 'dbatools')
 Describe "Connect-DbaInstance" {
@@ -179,3 +181,4 @@ Describe "Connect-DbaInstance" {
 2. Implement necessary adjustments for SQL Server-specific testing scenarios while maintaining the integrity of the tests.
 3. Leave in comments like "#$script:instance2 for appveyor" -- it's a debugging thing
 4. Do not leave in the knownparameters section because it's taken care of by Should -HaveParameter
+5. Start with `param($ModuleName = 'dbatools')` like in the example above.

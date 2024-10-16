@@ -46,5 +46,5 @@ foreach ($command in $commands) {
     $cmdprompt = $cmdPrompt -join "`n"
 
     # Run Aider in non-interactive mode with auto-confirmation
-    aider --message "$cmdPrompt" --file $filename --yes --no-stream --cache-prompts --read /workspace/.aider/prompts/conventions.md
+    aider --message "$cmdPrompt" --file $filename --yes-always --no-stream --cache-prompts --read /workspace/.aider/prompts/conventions.md
 }

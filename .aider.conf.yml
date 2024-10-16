@@ -20,7 +20,7 @@ map-refresh: manual
 dark-mode: true
 
 ## Enable pretty, colorized output (default: true)
-pretty: false
+pretty: true
 
 ## Disable streaming responses; waits for full response before displaying
 ## helps with estimating costs
@@ -41,15 +41,16 @@ no-suggest-shell-commands: true
 
 ## Number of pings to keep the prompt cache alive at 5-minute intervals (default: 0)
 cache-keepalive-pings: 5
+
 ## Add aider-specific files to .gitignore (default: true)
-gitignore: true
+gitignore: false
 
 ## Automatically lints code after changes using PSScriptAnalyzer (PowerShell linting)
 auto-lint: true
 
 ## map
 show-repo-map: false
-aiderignore: .aider/.aiderignore
+#aiderignore: .aider/.aiderignore
 
 ## Command to lint PowerShell code using PSScriptAnalyzer
 lint-cmd: "pwsh -Command Invoke-ScriptAnalyzer -Path *.ps1"
@@ -61,7 +62,7 @@ auto-test: false
 #test-cmd: "pwsh -Command Invoke-Pester -Path .\\Tests"
 
 ## Control verbosity of the output (default: false)
-verbose: true
+verbose: false
 
 ## Specify the input history file
 input-history-file: .aider/aider.input.history
@@ -84,7 +85,7 @@ suggest-shell-commands: false
 ## Git Integration
 
 ## Enable Git integration to track file changes
-git: true
+git: false
 
 ## Completion Menu Colors
 
