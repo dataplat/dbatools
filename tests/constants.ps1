@@ -8,12 +8,9 @@ if (Test-Path "$PSScriptRoot\constants.local.ps1") {
     $script:instance3 = "dbatools3"
     $script:instances = @($script:instance1, $script:instance2)
 
-    $script:SqlCred = [PSCredential]::new('sa', (ConvertTo-SecureString $env:SA_PASSWORD -AsPlainText -Force))
-    # We don't want to affect the global PSDefaultParameterValues
-    if (-not $PSDefaultParameterValues.ContainsKey('*:SqlCredential')) {
-        $PSDefaultParameterValues = $PSDefaultParameterValues + @{
-            "*:SqlCredential" = [PSCredential]::new('sa', (ConvertTo-SecureString $env:SA_PASSWORD -AsPlainText -Force))
-        }
+    $SqlCred = [PSCredential]::new('sa', (ConvertTo-SecureString $env:SA_PASSWORD -AsPlainText -Force))
+    $PSDefaultParameterValues = @{
+        "*:SqlCredential" = $sqlCred
     }
 } elseif ($env:GITHUB_WORKSPACE) {
     $script:dbatoolsci_computer = "localhost"
@@ -25,6 +22,7 @@ if (Test-Path "$PSScriptRoot\constants.local.ps1") {
     $script:instance2_detailed = "localhost,14333" #Just to make sure things parse a port properly
     $script:appveyorlabrepo = "/tmp/appveyor-lab"
     $instances = @($script:instance1, $script:instance2)
+    $ssisserver = "localhost\sql2016"
     $script:azureblob = "https://dbatools.blob.core.windows.net/sql"
     $script:azureblobaccount = "dbatools"
     $script:azureserver = 'psdbatools.database.windows.net'
