@@ -43,8 +43,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $null = New-DbaDbSynonym -SqlInstance $script:instance2 -Database $dbname -Synonym 'syn3' -BaseObject 'obj3'
             $null = New-DbaDbSynonym -SqlInstance $script:instance2 -Database $dbname -Synonym 'syn4' -BaseObject 'obj4'
             $result3 = Get-DbaDbSynonym -SqlInstance $script:instance2 -Synonym 'syn3','syn4'
-            Remove-DbaDbSynonym -SqlInstance $script:instance2 -Database $dbname1 -Synonym 'syn3','syn4' -Confirm:$false
-            $result4 = Get-DbaDbSynonym -SqlInstance $script:instance2 -Database $dbname1
+            Remove-DbaDbSynonym -SqlInstance $script:instance2 -Database $dbname -Synonym 'syn3','syn4' -Confirm:$false
+            $result4 = Get-DbaDbSynonym -SqlInstance $script:instance2 -Database $dbname
 
             $result3.Count | Should BeGreaterThan $result4.Count
             $result4.Name | Should -Not -Contain 'syn3'
@@ -109,7 +109,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $null = New-DbaDbSynonym -SqlInstance $script:instance2 -Database $dbname2 -Synonym 'syn16' -BaseObject 'obj15' -Schema 'dbo'
             $result15 = Get-DbaDbSynonym -SqlInstance $script:instance2
             Remove-DbaDbSynonym -SqlInstance $script:instance2 -Schema 'sch3', 'dbo' -Confirm:$false
-            $result16 = Get-DbaDbSynonym -SqlInstance $script:instance2 -Database $dbname1
+            $result16 = Get-DbaDbSynonym -SqlInstance $script:instance2
 
             $result15.Count | Should BeGreaterThan $result16.Count
             $result16.Schema | Should -Not -Contain 'sch3'

@@ -55,7 +55,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results.Status | Should Be "Skipped"
         }
 
-        It "upgrades SQLNCLI provider based on what is registered" {
+        # SQLNCLI10 and SQLNCLI11 are not used on newer versions, not sure which versions, but skipping if later than 2017
+        It -Skip:$($server1.VersionMajor -gt 14 -or $server2.VersionMajor -gt 14) "upgrades SQLNCLI provider based on what is registered" {
             $result = Copy-DbaLinkedServer -Source $script:instance2 -Destination $script:instance3 -LinkedServer dbatoolsci_localhost2 -UpgradeSqlClient
             $server1 = Connect-DbaInstance -SqlInstance $script:instance2
             $server2 = Connect-DbaInstance -SqlInstance $script:instance3
