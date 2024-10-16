@@ -1,6 +1,6 @@
 param (
-    [int]$First = 10,
-    [int]$Skip = 50
+    [int]$First = 1000,
+    [int]$Skip = 0
 )
 # Full prompt path
 if (-not (Get-Module dbatools.library -ListAvailable)) {
