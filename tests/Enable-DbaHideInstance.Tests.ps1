@@ -1,26 +1,37 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Enable-DbaHideInstance" {
+    BeforeAll {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'Credential', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Enable-DbaHideInstance
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have Credential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    AfterAll {
-        $null = Disable-DbaHideInstance $script:instance1
-    }
+    Context "Integration Tests" -Tag "IntegrationTests" {
+        BeforeAll {
+            $instance = $script:instance1
+        }
 
-    $results = Enable-DbaHideInstance $script:instance1 -EnableException
+        AfterAll {
+            $null = Disable-DbaHideInstance -SqlInstance $instance
+        }
 
-    It "returns true" {
-        $results.HideInstance -eq $true
+        It "Enables Hide Instance" {
+            $results = Enable-DbaHideInstance -SqlInstance $instance -EnableException
+            $results.HideInstance | Should -Be $true
+        }
     }
 }

@@ -1,19 +1,54 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Copy-DbaSsisCatalog" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Source', 'Destination', 'SourceSqlCredential', 'DestinationSqlCredential', 'Project', 'Folder', 'Environment', 'CreateCatalogPassword', 'EnableSqlClr', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Copy-DbaSsisCatalog
+        }
+        It "Should have Source parameter" {
+            $CommandUnderTest | Should -HaveParameter Source -Type DbaInstanceParameter
+        }
+        It "Should have Destination parameter" {
+            $CommandUnderTest | Should -HaveParameter Destination -Type DbaInstanceParameter[]
+        }
+        It "Should have SourceSqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SourceSqlCredential -Type PSCredential
+        }
+        It "Should have DestinationSqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type PSCredential
+        }
+        It "Should have Project parameter" {
+            $CommandUnderTest | Should -HaveParameter Project -Type String
+        }
+        It "Should have Folder parameter" {
+            $CommandUnderTest | Should -HaveParameter Folder -Type String
+        }
+        It "Should have Environment parameter" {
+            $CommandUnderTest | Should -HaveParameter Environment -Type String
+        }
+        It "Should have CreateCatalogPassword parameter" {
+            $CommandUnderTest | Should -HaveParameter CreateCatalogPassword -Type SecureString
+        }
+        It "Should have EnableSqlClr parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableSqlClr -Type Switch
+        }
+        It "Should have Force parameter" {
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 }
+
 <#
     Integration test should appear below and are custom to the command you are writing.
     Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
-    for more guidence.
+    for more guidance.
 #>

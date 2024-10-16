@@ -1,22 +1,12 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'Login', 'ExcludeLogin', 'ExcludeSystemLogins', 'SyncSaName', 'OutFile', 'InputObject', 'LoginRenameHashtable', 'KillActiveConnection', 'Force', 'ExcludePermissionSync', 'NewSid', 'EnableException', 'ObjectLevel'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params | Write-Host
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
-        }
-    }
-}
-
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "Copy-DbaLogin" {
     BeforeAll {
-        # drop all objects
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+
+        # Helper function
         Function Initialize-TestLogin {
             Param ($Instance, $Login)
             Get-DbaProcess -SqlInstance $Instance -Login $Login | Stop-DbaProcess
@@ -29,6 +19,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $dropUserQuery = "IF EXISTS (SELECT * FROM sys.database_principals WHERE name = '{0}') DROP USER [{0}]" -f $Login
             $null = Invoke-DbaQuery -SqlInstance $instance -Database tempdb -Query $dropUserQuery
         }
+
         $logins = "claudio", "port", "tester", "tester_new"
         $dropTableQuery = "IF EXISTS (SELECT * FROM sys.tables WHERE name = 'tester_table') DROP TABLE tester_table"
         foreach ($instance in $instances) {
@@ -36,7 +27,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 Initialize-TestLogin -Instance $instance -Login $login
             }
             $null = Invoke-DbaQuery -SqlInstance $instance -Database tempdb -Query $dropTableQuery
-
         }
 
         # create objects
@@ -45,13 +35,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $tableQuery = @("CREATE TABLE tester_table (a int)", "CREATE USER tester FOR LOGIN tester", "GRANT INSERT ON tester_table TO tester;")
         $null = Invoke-DbaQuery -SqlInstance $script:instance1 -Database tempdb -Query ($tableQuery -join '; ')
         $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query $tableQuery[0]
-
     }
+
     BeforeEach {
         # cleanup targets
         Initialize-TestLogin -Instance $script:instance2 -Login tester
         Initialize-TestLogin -Instance $script:instance1 -Login tester_new
     }
+
     AfterAll {
         # cleanup everything
         $logins = "claudio", "port", "tester", "tester_new"
@@ -64,7 +55,64 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
 
-    Context "Copy login with the same properties." {
+    Context "Validate parameters" {
+        BeforeAll {
+            $CommandUnderTest = Get-Command Copy-DbaLogin
+        }
+        It "Should have Source parameter" {
+            $CommandUnderTest | Should -HaveParameter Source -Type DbaInstanceParameter
+        }
+        It "Should have SourceSqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SourceSqlCredential -Type PSCredential
+        }
+        It "Should have Destination parameter" {
+            $CommandUnderTest | Should -HaveParameter Destination -Type DbaInstanceParameter[]
+        }
+        It "Should have DestinationSqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type PSCredential
+        }
+        It "Should have Login parameter" {
+            $CommandUnderTest | Should -HaveParameter Login -Type Object[]
+        }
+        It "Should have ExcludeLogin parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeLogin -Type Object[]
+        }
+        It "Should have ExcludeSystemLogins parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeSystemLogins -Type SwitchParameter
+        }
+        It "Should have SyncSaName parameter" {
+            $CommandUnderTest | Should -HaveParameter SyncSaName -Type SwitchParameter
+        }
+        It "Should have OutFile parameter" {
+            $CommandUnderTest | Should -HaveParameter OutFile -Type String
+        }
+        It "Should have InputObject parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[]
+        }
+        It "Should have LoginRenameHashtable parameter" {
+            $CommandUnderTest | Should -HaveParameter LoginRenameHashtable -Type Hashtable
+        }
+        It "Should have KillActiveConnection parameter" {
+            $CommandUnderTest | Should -HaveParameter KillActiveConnection -Type SwitchParameter
+        }
+        It "Should have Force parameter" {
+            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter
+        }
+        It "Should have ExcludePermissionSync parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludePermissionSync -Type SwitchParameter
+        }
+        It "Should have NewSid parameter" {
+            $CommandUnderTest | Should -HaveParameter NewSid -Type SwitchParameter
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+        }
+        It "Should have ObjectLevel parameter" {
+            $CommandUnderTest | Should -HaveParameter ObjectLevel -Type SwitchParameter
+        }
+    }
+
+    Context "Copy login with the same properties" {
         It "Should copy successfully" {
             $results = Copy-DbaLogin -Source $script:instance1 -Destination $script:instance2 -Login Tester
             $results.Status | Should -Be "Successful"
@@ -74,17 +122,17 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $login2 | Should -Not -BeNullOrEmpty
 
             # Compare its value
-            $login1.Name | Should -Be $login2.Name
-            $login1.Language | Should -Be $login2.Language
-            $login1.Credential | Should -Be $login2.Credential
-            $login1.DefaultDatabase | Should -Be $login2.DefaultDatabase
-            $login1.IsDisabled | Should -Be $login2.IsDisabled
-            $login1.IsLocked | Should -Be $login2.IsLocked
-            $login1.IsPasswordExpired | Should -Be $login2.IsPasswordExpired
-            $login1.PasswordExpirationEnabled | Should -Be $login2.PasswordExpirationEnabled
-            $login1.PasswordPolicyEnforced | Should -Be $login2.PasswordPolicyEnforced
-            $login1.Sid | Should -Be $login2.Sid
-            $login1.Status | Should -Be $login2.Status
+            $login2.Name | Should -Be $login1.Name
+            $login2.Language | Should -Be $login1.Language
+            $login2.Credential | Should -Be $login1.Credential
+            $login2.DefaultDatabase | Should -Be $login1.DefaultDatabase
+            $login2.IsDisabled | Should -Be $login1.IsDisabled
+            $login2.IsLocked | Should -Be $login1.IsLocked
+            $login2.IsPasswordExpired | Should -Be $login1.IsPasswordExpired
+            $login2.PasswordExpirationEnabled | Should -Be $login1.PasswordExpirationEnabled
+            $login2.PasswordPolicyEnforced | Should -Be $login1.PasswordPolicyEnforced
+            $login2.Sid | Should -Be $login1.Sid
+            $login2.Status | Should -Be $login1.Status
         }
 
         It "Should login with newly created Sql Login (also tests credential login) and gets name" {
@@ -99,24 +147,24 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         BeforeAll {
             $null = Invoke-DbaQuery -SqlInstance $script:instance2 -InputFile $script:appveyorlabrepo\sql2008-scripts\logins.sql
         }
-        $results = Copy-DbaLogin -Source $script:instance1 -Destination $script:instance2 -Login tester
         It "Should say skipped" {
+            $results = Copy-DbaLogin -Source $script:instance1 -Destination $script:instance2 -Login tester
             $results.Status | Should -Be "Skipped"
             $results.Notes | Should -Be "Already exists on destination"
         }
     }
 
     Context "ExcludeSystemLogins Parameter" {
-        $results = Copy-DbaLogin -Source $script:instance1 -Destination $script:instance2 -ExcludeSystemLogins
         It "Should say skipped" {
+            $results = Copy-DbaLogin -Source $script:instance1 -Destination $script:instance2 -ExcludeSystemLogins
             $results.Status.Contains('Skipped') | Should -Be $true
             $results.Notes.Contains('System login') | Should -Be $true
         }
     }
 
     Context "Supports pipe" {
-        $results = Get-DbaLogin -SqlInstance $script:instance1 -Login tester | Copy-DbaLogin -Destination $script:instance2 -Force
         It "migrates the one tester login" {
+            $results = Get-DbaLogin -SqlInstance $script:instance1 -Login tester | Copy-DbaLogin -Destination $script:instance2 -Force
             $results.Name | Should -Be "tester"
             $results.Status | Should -Be "Successful"
         }

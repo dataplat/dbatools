@@ -1,27 +1,50 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Export-DbaDiagnosticQuery" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'InputObject', 'ConvertTo', 'Path', 'Suffix', 'NoPlanExport', 'NoQueryExport', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Export-DbaDiagnosticQuery
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Not -Mandatory
+        }
+        It "Should have ConvertTo as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ConvertTo -Type String -Not -Mandatory
+        }
+        It "Should have Path as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Path -Type FileInfo -Not -Mandatory
+        }
+        It "Should have Suffix as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Suffix -Type String -Not -Mandatory
+        }
+        It "Should have NoPlanExport as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter NoPlanExport -Type Switch -Not -Mandatory
+        }
+        It "Should have NoQueryExport as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter NoQueryExport -Type Switch -Not -Mandatory
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    AfterAll {
-        Get-ChildItem "C:\temp\dbatoolsci" -Recurse | Remove-Item -ErrorAction Ignore
-        Get-Item "C:\temp\dbatoolsci" | Remove-Item -ErrorAction Ignore
-    }
-    Context "Verifying output" {
+    Context "Verifying output" -Tag "IntegrationTests" {
+        BeforeAll {
+            $testPath = "C:\temp\dbatoolsci"
+        }
+        AfterAll {
+            Get-ChildItem $testPath -Recurse | Remove-Item -ErrorAction Ignore
+            Get-Item $testPath | Remove-Item -ErrorAction Ignore
+        }
         It "exports results to one file and creates directory if required" {
-            $null = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -QueryName 'Memory Clerk Usage' | Export-DbaDiagnosticQuery -Path "C:\temp\dbatoolsci"
-            (Get-ChildItem "C:\temp\dbatoolsci").Count | Should Be 1
+            $null = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -QueryName 'Memory Clerk Usage' | Export-DbaDiagnosticQuery -Path $testPath
+            (Get-ChildItem $testPath).Count | Should -Be 1
         }
     }
 }

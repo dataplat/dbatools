@@ -1,50 +1,76 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Export-DbaDbTableData" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'InputObject', 'Path', 'FilePath', 'Encoding', 'BatchSeparator', 'NoPrefix', 'Passthru', 'NoClobber', 'Append', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Export-DbaDbTableData
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Table[] -Not -Mandatory
+        }
+        It "Should have Path as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Path -Type String -Not -Mandatory
+        }
+        It "Should have FilePath as a parameter" {
+            $CommandUnderTest | Should -HaveParameter FilePath -Type String -Not -Mandatory
+        }
+        It "Should have Encoding as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Encoding -Type String -Not -Mandatory
+        }
+        It "Should have BatchSeparator as a parameter" {
+            $CommandUnderTest | Should -HaveParameter BatchSeparator -Type String -Not -Mandatory
+        }
+        It "Should have NoPrefix as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter NoPrefix -Type Switch -Not -Mandatory
+        }
+        It "Should have Passthru as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter Passthru -Type Switch -Not -Mandatory
+        }
+        It "Should have NoClobber as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter NoClobber -Type Switch -Not -Mandatory
+        }
+        It "Should have Append as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter Append -Type Switch -Not -Mandatory
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    BeforeAll {
-        $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database tempdb
-        $null = $db.Query("CREATE TABLE dbo.dbatoolsci_example (id int);
-            INSERT dbo.dbatoolsci_example
-            SELECT top 10 1
-            FROM sys.objects")
-        $null = $db.Query("Select * into dbatoolsci_temp from sys.databases")
-    }
-    AfterAll {
-        try {
-            $null = $db.Query("DROP TABLE dbo.dbatoolsci_example")
-            $null = $db.Query("DROP TABLE dbo.dbatoolsci_temp")
-        } catch {
-            $null = 1
+    Context "Command usage" {
+        BeforeAll {
+            . "$PSScriptRoot\constants.ps1"
+            $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database tempdb
+            $null = $db.Query("CREATE TABLE dbo.dbatoolsci_example (id int);
+                INSERT dbo.dbatoolsci_example
+                SELECT top 10 1
+                FROM sys.objects")
+            $null = $db.Query("Select * into dbatoolsci_temp from sys.databases")
         }
-    }
+        AfterAll {
+            try {
+                $null = $db.Query("DROP TABLE dbo.dbatoolsci_example")
+                $null = $db.Query("DROP TABLE dbo.dbatoolsci_temp")
+            } catch {
+                $null = 1
+            }
+        }
 
-    It "exports the table data" {
-        $escaped = [regex]::escape('INSERT [dbo].[dbatoolsci_example] ([id]) VALUES (1)')
-        $secondescaped = [regex]::escape('INSERT [dbo].[dbatoolsci_temp] ([name], [database_id],')
-        $results = Get-DbaDbTable -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example | Export-DbaDbTableData -Passthru
-        "$results" | Should -match $escaped
-        $results = Get-DbaDbTable -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_temp | Export-DbaDbTableData -Passthru
-        "$results" | Should -Match $secondescaped
-    }
+        It "exports the table data" {
+            $escaped = [regex]::escape('INSERT [dbo].[dbatoolsci_example] ([id]) VALUES (1)')
+            $secondescaped = [regex]::escape('INSERT [dbo].[dbatoolsci_temp] ([name], [database_id],')
+            $results = Get-DbaDbTable -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example | Export-DbaDbTableData -Passthru
+            "$results" | Should -Match $escaped
+            $results = Get-DbaDbTable -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_temp | Export-DbaDbTableData -Passthru
+            "$results" | Should -Match $secondescaped
+        }
 
-    It "supports piping more than one table" {
-        $escaped = [regex]::escape('INSERT [dbo].[dbatoolsci_example] ([id]) VALUES (1)')
-        $secondescaped = [regex]::escape('INSERT [dbo].[dbatoolsci_temp] ([name], [database_id],')
-        $results = Get-DbaDbTable -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example, dbatoolsci_temp | Export-DbaDbTableData -Passthru
-        "$results" | Should -match $escaped
-        "$results" | Should -match $secondescaped
+        It "supports piping more than one table" {
+            $escaped = [regex]::escape('INSERT [dbo].[dbatoolsci_example] ([id]) VALUES (1)')
+            $secondescaped = [regex]::escape('INSERT [dbo].[dbatoolsci_temp] ([name], [database_id],')
+            $results = Get-DbaDbTable -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example, dbatoolsci_temp | Export-DbaDbTableData -Passthru
+            "$results" | Should -Match $escaped
+            "$results" | Should -Match $secondescaped
+        }
     }
 }

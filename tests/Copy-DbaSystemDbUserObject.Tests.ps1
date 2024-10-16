@@ -1,19 +1,11 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'Force', 'Classic', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
-        }
-    }
-}
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "Copy-DbaSystemDbUserObject" {
     BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+
         #Function Scripts roughly From https://docs.microsoft.com/en-us/sql/t-sql/statements/create-function-transact-sql
         #Rule Scripts roughly from https://docs.microsoft.com/en-us/sql/t-sql/statements/create-rule-transact-sql
         $Function = @"
@@ -59,26 +51,54 @@ AS
         $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query $TableFunction
         $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query $Rule
     }
+
     AfterAll {
         $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "DROP FUNCTION dbo.dbatoolscs_ISOweek;"
         $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "DROP FUNCTION dbo.dbatoolsci_TableFunction;"
         $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "DROP RULE dbo.dbatoolsci_range_rule;"
     }
 
+    Context "Validate parameters" {
+        BeforeAll {
+            $CommandUnderTest = Get-Command Copy-DbaSystemDbUserObject
+        }
+        It "Should have Source as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Source -Type DbaInstanceParameter
+        }
+        It "Should have SourceSqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SourceSqlCredential -Type PSCredential
+        }
+        It "Should have Destination as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Destination -Type DbaInstanceParameter[]
+        }
+        It "Should have DestinationSqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type PSCredential
+        }
+        It "Should have Force as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter Force -Type switch
+        }
+        It "Should have Classic as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter Classic -Type switch
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type switch
+        }
+    }
+
     Context "Should Copy Objects to the same instance" {
-        $results = Copy-DbaSystemDbUserObject -Source $script:instance2 -Destination $script:instance2
         It "Should execute with default parameters" {
-            $results | Should Not Be Null
+            $results = Copy-DbaSystemDbUserObject -Source $script:instance2 -Destination $script:instance2
+            $results | Should -Not -BeNullOrEmpty
         }
 
-        $results = Copy-DbaSystemDbUserObject -Source $script:instance2 -Destination $script:instance2 -Classic
         It "Should execute with -Classic parameter" {
-            $results | Should Not Be Null
+            $results = Copy-DbaSystemDbUserObject -Source $script:instance2 -Destination $script:instance2 -Classic
+            $results | Should -Not -BeNullOrEmpty
         }
 
-        $results = Copy-DbaSystemDbUserObject -Source $script:instance2 -Destination $script:instance2 -Force
-        It "Should execute with -Classic parameter" {
-            $results | Should Not Be Null
+        It "Should execute with -Force parameter" {
+            $results = Copy-DbaSystemDbUserObject -Source $script:instance2 -Destination $script:instance2 -Force
+            $results | Should -Not -BeNullOrEmpty
         }
     }
 }

@@ -1,20 +1,11 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'LinkedServer', 'ExcludeLinkedServer', 'UpgradeSqlClient', 'ExcludePassword', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
-        }
-    }
-}
-
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "Copy-DbaLinkedServer" {
     BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+
         $createsql = "EXEC master.dbo.sp_addlinkedserver @server = N'dbatoolsci_localhost', @srvproduct=N'SQL Server';
         EXEC master.dbo.sp_addlinkedsrvlogin @rmtsrvname=N'dbatoolsci_localhost',@useself=N'False',@locallogin=NULL,@rmtuser=N'testuser1',@rmtpassword='supfool';
         EXEC master.dbo.sp_addlinkedserver @server = N'dbatoolsci_localhost2', @srvproduct=N'', @provider=N'SQLNCLI10';
@@ -24,6 +15,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $server2 = Connect-DbaInstance -SqlInstance $script:instance3
         $server1.Query($createsql)
     }
+
     AfterAll {
         $dropsql = "EXEC master.dbo.sp_dropserver @server=N'dbatoolsci_localhost', @droplogins='droplogins';
         EXEC master.dbo.sp_dropserver @server=N'dbatoolsci_localhost2', @droplogins='droplogins'"
@@ -34,11 +26,47 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         } catch {}
     }
 
+    Context "Validate parameters" {
+        BeforeAll {
+            $CommandUnderTest = Get-Command Copy-DbaLinkedServer
+        }
+        It "Should have Source as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Source -Type DbaInstanceParameter
+        }
+        It "Should have SourceSqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SourceSqlCredential -Type PSCredential
+        }
+        It "Should have Destination as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Destination -Type DbaInstanceParameter[]
+        }
+        It "Should have DestinationSqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type PSCredential
+        }
+        It "Should have LinkedServer as a parameter" {
+            $CommandUnderTest | Should -HaveParameter LinkedServer -Type Object[]
+        }
+        It "Should have ExcludeLinkedServer as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeLinkedServer -Type Object[]
+        }
+        It "Should have UpgradeSqlClient as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter UpgradeSqlClient -Type Switch
+        }
+        It "Should have ExcludePassword as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludePassword -Type Switch
+        }
+        It "Should have Force as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+        }
+    }
+
     Context "Copy linked server with the same properties" {
         It "copies successfully" {
             $result = Copy-DbaLinkedServer -Source $script:instance2 -Destination $script:instance3 -LinkedServer dbatoolsci_localhost -WarningAction SilentlyContinue
-            $result | Select-Object -ExpandProperty Name -Unique | Should Be "dbatoolsci_localhost"
-            $result | Select-Object -ExpandProperty Status -Unique | Should Be "Successful"
+            $result | Select-Object -ExpandProperty Name -Unique | Should -Be "dbatoolsci_localhost"
+            $result | Select-Object -ExpandProperty Status -Unique | Should -Be "Successful"
         }
 
         It "retains the same properties" {
@@ -46,17 +74,16 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $LinkedServer2 = Get-DbaLinkedServer -SqlInstance $server2 -LinkedServer dbatoolsci_localhost -WarningAction SilentlyContinue
 
             # Compare its value
-            $LinkedServer1.Name | Should Be $LinkedServer2.Name
-            $LinkedServer1.LinkedServer | Should Be $LinkedServer2.LinkedServer
+            $LinkedServer1.Name | Should -Be $LinkedServer2.Name
+            $LinkedServer1.LinkedServer | Should -Be $LinkedServer2.LinkedServer
         }
 
         It "skips existing linked servers" {
             $results = Copy-DbaLinkedServer -Source $script:instance2 -Destination $script:instance3 -LinkedServer dbatoolsci_localhost -WarningAction SilentlyContinue
-            $results.Status | Should Be "Skipped"
+            $results.Status | Should -Be "Skipped"
         }
 
-        # SQLNCLI10 and SQLNCLI11 are not used on newer versions, not sure which versions, but skipping if later than 2017
-        It -Skip:$($server1.VersionMajor -gt 14 -or $server2.VersionMajor -gt 14) "upgrades SQLNCLI provider based on what is registered" {
+        It "upgrades SQLNCLI provider based on what is registered" -Skip:($server1.VersionMajor -gt 14 -or $server2.VersionMajor -gt 14) {
             $result = Copy-DbaLinkedServer -Source $script:instance2 -Destination $script:instance3 -LinkedServer dbatoolsci_localhost2 -UpgradeSqlClient
             $server1 = Connect-DbaInstance -SqlInstance $script:instance2
             $server2 = Connect-DbaInstance -SqlInstance $script:instance3

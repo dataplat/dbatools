@@ -1,69 +1,97 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Enable-DbaStartupProcedure" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('WhatIf', 'Confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'StartupProcedure', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Enable-DbaStartupProcedure
         }
-
-    }
-}
-Describe "$commandname Integration Test" -Tag "IntegrationTests" {
-    BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $random = Get-Random
-        $startupProcName = "StartUpProc$random"
-        $startupProc = "dbo.$startupProcName"
-        $dbname = 'master'
-
-        $null = $server.Query("CREATE PROCEDURE $startupProc AS Select 1", $dbname)
-    }
-    AfterAll {
-        $null = $server.Query("DROP PROCEDURE $startupProc", $dbname)
-    }
-
-    Context "Validate returns correct output for enable" {
-        $result = Enable-DbaStartupProcedure -SqlInstance $script:instance2 -StartupProcedure $startupProc -Confirm:$false
-
-        It "returns correct results" {
-            $result.Schema -eq "dbo" | Should Be $true
-            $result.Name -eq "$startupProcName" | Should Be $true
-            $result.Action -eq "Enable" | Should Be $true
-            $result.Status | Should Be $true
-            $result.Note -eq "Enable succeded" | Should Be $true
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have StartupProcedure as a parameter" {
+            $CommandUnderTest | Should -HaveParameter StartupProcedure -Type Object[]
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
 
-    Context "Validate returns correct output for already existing state" {
-        $result = Enable-DbaStartupProcedure -SqlInstance $script:instance2 -StartupProcedure $startupProc -Confirm:$false
+    Context "Command usage" {
+        BeforeAll {
+            . "$PSScriptRoot\constants.ps1"
+            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $random = Get-Random
+            $startupProcName = "StartUpProc$random"
+            $startupProc = "dbo.$startupProcName"
+            $dbname = 'master'
 
-        It "returns correct results" {
-            $result.Schema -eq "dbo" | Should Be $true
-            $result.Name -eq "$startupProcName" | Should Be $true
-            $result.Action -eq "Enable" | Should Be $true
-            $result.Status | Should Be $false
-            $result.Note -eq "Action Enable already performed" | Should Be $true
+            $null = $server.Query("CREATE PROCEDURE $startupProc AS Select 1", $dbname)
         }
-    }
-
-    Context "Validate returns correct output for missing procedures" {
-        $result = Enable-DbaStartupProcedure -SqlInstance $script:instance2 -StartupProcedure "Unknown.NotHere" -Confirm:$false
-
-        It "returns correct results" {
-            $null -eq $result | Should Be $true
+        AfterAll {
+            $null = $server.Query("DROP PROCEDURE $startupProc", $dbname)
         }
-    }
 
-    Context "Validate returns correct output for incorrectly formed procedures" {
-        $result = Enable-DbaStartupProcedure -SqlInstance $script:instance2 -StartupProcedure "Four.Part.Schema.Name" -Confirm:$false
+        Context "Validate returns correct output for enable" {
+            BeforeAll {
+                $result = Enable-DbaStartupProcedure -SqlInstance $script:instance2 -StartupProcedure $startupProc -Confirm:$false
+            }
+            It "returns correct schema" {
+                $result.Schema | Should -Be "dbo"
+            }
+            It "returns correct name" {
+                $result.Name | Should -Be $startupProcName
+            }
+            It "returns correct action" {
+                $result.Action | Should -Be "Enable"
+            }
+            It "returns correct status" {
+                $result.Status | Should -Be $true
+            }
+            It "returns correct note" {
+                $result.Note | Should -Be "Enable succeded"
+            }
+        }
 
-        It "returns correct results" {
-            $null -eq $result | Should Be $true
+        Context "Validate returns correct output for already existing state" {
+            BeforeAll {
+                $result = Enable-DbaStartupProcedure -SqlInstance $script:instance2 -StartupProcedure $startupProc -Confirm:$false
+            }
+            It "returns correct schema" {
+                $result.Schema | Should -Be "dbo"
+            }
+            It "returns correct name" {
+                $result.Name | Should -Be $startupProcName
+            }
+            It "returns correct action" {
+                $result.Action | Should -Be "Enable"
+            }
+            It "returns correct status" {
+                $result.Status | Should -Be $false
+            }
+            It "returns correct note" {
+                $result.Note | Should -Be "Action Enable already performed"
+            }
+        }
+
+        Context "Validate returns correct output for missing procedures" {
+            BeforeAll {
+                $result = Enable-DbaStartupProcedure -SqlInstance $script:instance2 -StartupProcedure "Unknown.NotHere" -Confirm:$false
+            }
+            It "returns null" {
+                $result | Should -BeNullOrEmpty
+            }
+        }
+
+        Context "Validate returns correct output for incorrectly formed procedures" {
+            BeforeAll {
+                $result = Enable-DbaStartupProcedure -SqlInstance $script:instance2 -StartupProcedure "Four.Part.Schema.Name" -Confirm:$false
+            }
+            It "returns null" {
+                $result | Should -BeNullOrEmpty
+            }
         }
     }
 }

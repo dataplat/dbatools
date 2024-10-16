@@ -1,20 +1,41 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Copy-DbaRegServer" {
+    BeforeAll {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'Group', 'SwitchServerName', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Copy-DbaRegServer
+        }
+        It "Should have Source as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Source -Type DbaInstanceParameter
+        }
+        It "Should have SourceSqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SourceSqlCredential -Type PSCredential
+        }
+        It "Should have Destination as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Destination -Type DbaInstanceParameter[]
+        }
+        It "Should have DestinationSqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type PSCredential
+        }
+        It "Should have Group as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Group -Type String[]
+        }
+        It "Should have SwitchServerName as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter SwitchServerName -Type Switch
+        }
+        It "Should have Force as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    Context "Setup" {
+    Context "Integration Tests" {
         BeforeAll {
             $server = Connect-DbaInstance $script:instance2
             $regstore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($server.ConnectionContext.SqlConnectionObject)
@@ -35,6 +56,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $newserver.Description = $regserverdescription
             $newserver.Create()
         }
+
         AfterAll {
             $newgroup.Drop()
             $server = Connect-DbaInstance $script:instance1
@@ -44,12 +66,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $groupstore.Drop()
         }
 
-        $results = Copy-DbaRegServer -Source $script:instance2 -Destination $script:instance1 -WarningAction SilentlyContinue -CMSGroup $group
-
-        It "should report success" {
-            $results.Status | Should Be "Successful", "Successful"
+        It "should copy registered servers successfully" {
+            $results = Copy-DbaRegServer -Source $script:instance2 -Destination $script:instance1 -Group $group -WarningAction SilentlyContinue
+            $results.Status | Should -Be @("Successful", "Successful")
         }
-
-        # Property Comparisons will come later when we have the commands
     }
 }

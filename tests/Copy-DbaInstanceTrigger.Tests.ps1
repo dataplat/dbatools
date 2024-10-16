@@ -1,20 +1,41 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Copy-DbaInstanceTrigger" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'ServerTrigger', 'ExcludeServerTrigger', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Copy-DbaInstanceTrigger
+        }
+        It "Should have Source as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Source -Type DbaInstanceParameter
+        }
+        It "Should have SourceSqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SourceSqlCredential -Type PSCredential
+        }
+        It "Should have Destination as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Destination -Type DbaInstanceParameter[]
+        }
+        It "Should have DestinationSqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type PSCredential
+        }
+        It "Should have ServerTrigger as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ServerTrigger -Type Object[]
+        }
+        It "Should have ExcludeServerTrigger as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeServerTrigger -Type Object[]
+        }
+        It "Should have Force as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    Context "Setup" {
+    Context "Command usage" {
+        BeforeDiscovery {
+            . (Join-Path $PSScriptRoot 'constants.ps1')
+        }
+
         BeforeAll {
             $triggername = "dbatoolsci-trigger"
             $sql = "CREATE TRIGGER [$triggername] -- Trigger name
@@ -24,6 +45,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $server = Connect-DbaInstance -SqlInstance $script:instance1
             $server.Query($sql)
         }
+
         AfterAll {
             $server.Query("DROP TRIGGER [$triggername] ON ALL SERVER")
 
@@ -35,11 +57,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             }
         }
 
-        $results = Copy-DbaInstanceTrigger -Source $script:instance1 -Destination $script:instance2 -WarningAction SilentlyContinue
-
         It "should report success" {
-            $results.Status | Should Be "Successful"
+            $results = Copy-DbaInstanceTrigger -Source $script:instance1 -Destination $script:instance2 -WarningAction SilentlyContinue
+            $results.Status | Should -Be "Successful"
         }
-        # same properties need to be added
     }
 }

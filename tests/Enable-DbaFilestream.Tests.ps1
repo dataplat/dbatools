@@ -1,23 +1,43 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Enable-DbaFilestream" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Credential', 'FileStreamLevel', 'ShareName', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Enable-DbaFilestream
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Credential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
+        }
+        It "Should have FileStreamLevel as a parameter" {
+            $CommandUnderTest | Should -HaveParameter FileStreamLevel -Type String
+        }
+        It "Should have ShareName as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ShareName -Type String
+        }
+        It "Should have Force as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 }
 
-<#
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+Describe "Enable-DbaFilestream Integration Tests" -Tag "IntegrationTests" {
+    BeforeDiscovery {
+        $OriginalFileStream = Get-DbaFilestream -SqlInstance $script:instance1
+    }
+
     BeforeAll {
         $OriginalFileStream = Get-DbaFilestream -SqlInstance $script:instance1
     }
+
     AfterAll {
         if ($OriginalFileStream.InstanceAccessLevel -eq 0) {
             Disable-DbaFilestream -SqlInstance $script:instance1 -Confirm:$false
@@ -27,11 +47,13 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Changing FileStream Level" {
-        $NewLevel = ($OriginalFileStream.FileStreamStateId + 1) % 3 #Move it on one, but keep it less than 4 with modulo division
-        $results = Enable-DbaFilestream -SqlInstance $script:instance1 -FileStreamLevel $NewLevel -Confirm:$false
+        BeforeAll {
+            $NewLevel = ($OriginalFileStream.FileStreamStateId + 1) % 3 #Move it on one, but keep it less than 4 with modulo division
+            $results = Enable-DbaFilestream -SqlInstance $script:instance1 -FileStreamLevel $NewLevel -Confirm:$false
+        }
+
         It "Should have changed the FileStream Level" {
-            $results.InstanceAccessLevel | Should be $NewLevel
+            $results.InstanceAccessLevel | Should -Be $NewLevel
         }
     }
 }
-#>

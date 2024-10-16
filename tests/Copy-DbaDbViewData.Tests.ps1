@@ -1,21 +1,11 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        It "Should only contain our specific parameters" {
-            [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm') }
-            [object[]]$knownParameters = 'AutoCreateTable', 'BatchSize', 'bulkCopyTimeOut', 'CheckConstraints', 'Database', 'Destination', 'DestinationDatabase', 'DestinationSqlCredential', 'DestinationTable', 'EnableException', 'FireTriggers', 'InputObject', 'KeepIdentity', 'KeepNulls', 'NoTableLock', 'NotifyAfter', 'Query', 'SqlCredential', 'SqlInstance', 'Truncate', 'View'
-            $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should -Be 0
-        }
-    }
-}
-
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "Copy-DbaDbViewData" {
     BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+
         function Remove-TempObjects {
             param ($dbs)
             function Remove-TempObject {
@@ -42,6 +32,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 Remove-TempObject $d dbo.dbatoolsci_view_example4_table
             }
         }
+
         $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database tempdb
         $db2 = Get-DbaDatabase -SqlInstance $script:instance2 -Database tempdb
         Remove-TempObjects $db, $db2
@@ -66,83 +57,154 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             SELECT top 13 2
             FROM sys.objects")
     }
+
     AfterAll {
         Remove-TempObjects $db, $db2
     }
 
-    It "copies the view data" {
-        $null = Copy-DbaDbViewData -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_example -DestinationTable dbatoolsci_example2
-        $table1count = $db.Query("select id from dbo.dbatoolsci_view_example")
-        $table2count = $db.Query("select id from dbo.dbatoolsci_example2")
-        $table1count.Count | Should -Be $table2count.Count
+    Context "Validate parameters" {
+        BeforeAll {
+            $CommandUnderTest = Get-Command Copy-DbaDbViewData
+        }
+        It "Should have SqlInstance as a DbaInstanceParameter parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter
+        }
+        It "Should have SqlCredential as a PSCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Destination as a DbaInstanceParameter[] parameter" {
+            $CommandUnderTest | Should -HaveParameter Destination -Type DbaInstanceParameter[]
+        }
+        It "Should have DestinationSqlCredential as a PSCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type PSCredential
+        }
+        It "Should have Database as a String parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String
+        }
+        It "Should have DestinationDatabase as a String parameter" {
+            $CommandUnderTest | Should -HaveParameter DestinationDatabase -Type String
+        }
+        It "Should have View as a String[] parameter" {
+            $CommandUnderTest | Should -HaveParameter View -Type String[]
+        }
+        It "Should have Query as a String parameter" {
+            $CommandUnderTest | Should -HaveParameter Query -Type String
+        }
+        It "Should have AutoCreateTable as a SwitchParameter parameter" {
+            $CommandUnderTest | Should -HaveParameter AutoCreateTable -Type SwitchParameter
+        }
+        It "Should have BatchSize as an Int32 parameter" {
+            $CommandUnderTest | Should -HaveParameter BatchSize -Type Int32
+        }
+        It "Should have NotifyAfter as an Int32 parameter" {
+            $CommandUnderTest | Should -HaveParameter NotifyAfter -Type Int32
+        }
+        It "Should have DestinationTable as a String parameter" {
+            $CommandUnderTest | Should -HaveParameter DestinationTable -Type String
+        }
+        It "Should have NoTableLock as a SwitchParameter parameter" {
+            $CommandUnderTest | Should -HaveParameter NoTableLock -Type SwitchParameter
+        }
+        It "Should have CheckConstraints as a SwitchParameter parameter" {
+            $CommandUnderTest | Should -HaveParameter CheckConstraints -Type SwitchParameter
+        }
+        It "Should have FireTriggers as a SwitchParameter parameter" {
+            $CommandUnderTest | Should -HaveParameter FireTriggers -Type SwitchParameter
+        }
+        It "Should have KeepIdentity as a SwitchParameter parameter" {
+            $CommandUnderTest | Should -HaveParameter KeepIdentity -Type SwitchParameter
+        }
+        It "Should have KeepNulls as a SwitchParameter parameter" {
+            $CommandUnderTest | Should -HaveParameter KeepNulls -Type SwitchParameter
+        }
+        It "Should have Truncate as a SwitchParameter parameter" {
+            $CommandUnderTest | Should -HaveParameter Truncate -Type SwitchParameter
+        }
+        It "Should have BulkCopyTimeOut as an Int32 parameter" {
+            $CommandUnderTest | Should -HaveParameter BulkCopyTimeOut -Type Int32
+        }
+        It "Should have InputObject as a TableViewBase[] parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type TableViewBase[]
+        }
+        It "Should have EnableException as a SwitchParameter parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+        }
     }
 
-    It "copies the view data to another instance" {
-        $null = Copy-DbaDbViewData -SqlInstance $script:instance1 -Destination $script:instance2 -Database tempdb -View dbatoolsci_view_example -DestinationTable dbatoolsci_view_example3
-        $table1count = $db.Query("select id from dbo.dbatoolsci_view_example")
-        $table2count = $db2.Query("select id from dbo.dbatoolsci_view_example3")
-        $table1count.Count | Should -Be $table2count.Count
-    }
+    Context "Command usage" {
+        It "copies the view data" {
+            $null = Copy-DbaDbViewData -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_example -DestinationTable dbatoolsci_example2
+            $table1count = $db.Query("select id from dbo.dbatoolsci_view_example")
+            $table2count = $db.Query("select id from dbo.dbatoolsci_example2")
+            $table1count.Count | Should -Be $table2count.Count
+        }
 
-    It "supports piping" {
-        $null = Get-DbaDbView -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_example | Copy-DbaDbViewData -DestinationTable dbatoolsci_example2 -Truncate
-        $table1count = $db.Query("select id from dbo.dbatoolsci_view_example")
-        $table2count = $db.Query("select id from dbo.dbatoolsci_example2")
-        $table1count.Count | Should -Be $table2count.Count
-    }
+        It "copies the view data to another instance" {
+            $null = Copy-DbaDbViewData -SqlInstance $script:instance1 -Destination $script:instance2 -Database tempdb -View dbatoolsci_view_example -DestinationTable dbatoolsci_view_example3
+            $table1count = $db.Query("select id from dbo.dbatoolsci_view_example")
+            $table2count = $db2.Query("select id from dbo.dbatoolsci_view_example3")
+            $table1count.Count | Should -Be $table2count.Count
+        }
 
-    It "supports piping more than one view" {
-        $results = Get-DbaDbView -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_example2, dbatoolsci_view_example | Copy-DbaDbViewData -DestinationTable dbatoolsci_example3
-        $results.Count | Should -Be 2
-        $results.RowsCopied | Measure-Object -Sum | Select -Expand Sum | Should -Be 20
-    }
+        It "supports piping" {
+            $null = Get-DbaDbView -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_example | Copy-DbaDbViewData -DestinationTable dbatoolsci_example2 -Truncate
+            $table1count = $db.Query("select id from dbo.dbatoolsci_view_example")
+            $table2count = $db.Query("select id from dbo.dbatoolsci_example2")
+            $table1count.Count | Should -Be $table2count.Count
+        }
 
-    It "opens and closes connections properly" {
-        #regression test, see #3468
-        $results = Get-DbaDbView -SqlInstance $script:instance1 -Database tempdb -View 'dbo.dbatoolsci_view_example', 'dbo.dbatoolsci_view_example4' | Copy-DbaDbViewData -Destination $script:instance2 -DestinationDatabase tempdb -KeepIdentity -KeepNulls -BatchSize 5000 -Truncate
-        $results.Count | Should -Be 2
-        $table1dbcount = $db.Query("select id from dbo.dbatoolsci_view_example")
-        $table4dbcount = $db2.Query("select id from dbo.dbatoolsci_view_example4")
-        $table1db2count = $db.Query("select id from dbo.dbatoolsci_view_example")
-        $table4db2count = $db2.Query("select id from dbo.dbatoolsci_view_example4")
-        $table1dbcount.Count | Should -Be $table1db2count.Count
-        $table4dbcount.Count | Should -Be $table4db2count.Count
-        $results[0].RowsCopied | Should -Be 10
-        $results[1].RowsCopied | Should -Be 13
-        $table4db2check = $db2.Query("select id from dbo.dbatoolsci_view_example4 where id = 1")
-        $table4db2check.Count | Should -Be 13
-    }
+        It "supports piping more than one view" {
+            $results = Get-DbaDbView -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_example2, dbatoolsci_view_example | Copy-DbaDbViewData -DestinationTable dbatoolsci_example3
+            $results.Count | Should -Be 2
+            ($results.RowsCopied | Measure-Object -Sum).Sum | Should -Be 20
+        }
 
-    It "Should warn and return nothing if Source and Destination are same" {
-        $result = Copy-DbaDbViewData -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_example -Truncate -WarningVariable tablewarning 3> $null
-        $result | Should -Be $null
-        $tablewarning | Should -match "Cannot copy dbatoolsci_view_example into itself"
-    }
+        It "opens and closes connections properly" {
+            $results = Get-DbaDbView -SqlInstance $script:instance1 -Database tempdb -View 'dbo.dbatoolsci_view_example', 'dbo.dbatoolsci_view_example4' | Copy-DbaDbViewData -Destination $script:instance2 -DestinationDatabase tempdb -KeepIdentity -KeepNulls -BatchSize 5000 -Truncate
+            $results.Count | Should -Be 2
+            $table1dbcount = $db.Query("select id from dbo.dbatoolsci_view_example")
+            $table4dbcount = $db2.Query("select id from dbo.dbatoolsci_view_example4")
+            $table1db2count = $db.Query("select id from dbo.dbatoolsci_view_example")
+            $table4db2count = $db2.Query("select id from dbo.dbatoolsci_view_example4")
+            $table1dbcount.Count | Should -Be $table1db2count.Count
+            $table4dbcount.Count | Should -Be $table4db2count.Count
+            $results[0].RowsCopied | Should -Be 10
+            $results[1].RowsCopied | Should -Be 13
+            $table4db2check = $db2.Query("select id from dbo.dbatoolsci_view_example4 where id = 1")
+            $table4db2check.Count | Should -Be 13
+        }
 
-    It "Should warn if the destination table doesn't exist" {
-        $result = Copy-DbaDbViewData -SqlInstance $script:instance1 -Database tempdb -View tempdb.dbo.dbatoolsci_view_example -DestinationTable dbatoolsci_view_does_not_exist -WarningVariable tablewarning 3> $null
-        $result | Should -Be $null
-        $tablewarning | Should -match Auto
-    }
+        It "Should warn and return nothing if Source and Destination are same" {
+            $result = Copy-DbaDbViewData -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_example -Truncate -WarningVariable tablewarning 3> $null
+            $result | Should -BeNullOrEmpty
+            $tablewarning | Should -Match "Cannot copy dbatoolsci_view_example into itself"
+        }
 
-    It "automatically creates the table" {
-        $result = Copy-DbaDbViewData -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_example -DestinationTable dbatoolsci_view_will_exist -AutoCreateTable
-        $result.DestinationTable | Should -Be 'dbatoolsci_view_will_exist'
-    }
+        It "Should warn if the destination table doesn't exist" {
+            $result = Copy-DbaDbViewData -SqlInstance $script:instance1 -Database tempdb -View tempdb.dbo.dbatoolsci_view_example -DestinationTable dbatoolsci_view_does_not_exist -WarningVariable tablewarning 3> $null
+            $result | Should -BeNullOrEmpty
+            $tablewarning | Should -Match Auto
+        }
 
-    It "Should warn if the source database doesn't exist" {
-        $result = Copy-DbaDbViewData -SqlInstance $script:instance2 -Database tempdb_invalid -View dbatoolsci_view_example -DestinationTable dbatoolsci_doesntexist -WarningVariable tablewarning 3> $null
-        $result | Should -Be $null
-        $tablewarning | Should -match "Failure"
-    }
+        It "automatically creates the table" {
+            $result = Copy-DbaDbViewData -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_example -DestinationTable dbatoolsci_view_will_exist -AutoCreateTable
+            $result.DestinationTable | Should -Be 'dbatoolsci_view_will_exist'
+        }
 
-    It "Copy data using a query that relies on the default source database" {
-        $result = Copy-DbaDbViewData -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_example -Query "SELECT TOP (1) Id FROM dbo.dbatoolsci_view_example4 ORDER BY Id DESC" -DestinationTable dbatoolsci_example3 -Truncate
-        $result.RowsCopied | Should -Be 1
-    }
+        It "Should warn if the source database doesn't exist" {
+            $result = Copy-DbaDbViewData -SqlInstance $script:instance2 -Database tempdb_invalid -View dbatoolsci_view_example -DestinationTable dbatoolsci_doesntexist -WarningVariable tablewarning 3> $null
+            $result | Should -BeNullOrEmpty
+            $tablewarning | Should -Match "Failure"
+        }
 
-    It "Copy data using a query that uses a 3 part query" {
-        $result = Copy-DbaDbViewData -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_example -Query "SELECT TOP (1) Id FROM tempdb.dbo.dbatoolsci_view_example4 ORDER BY Id DESC" -DestinationTable dbatoolsci_example3 -Truncate
-        $result.RowsCopied | Should -Be 1
+        It "Copy data using a query that relies on the default source database" {
+            $result = Copy-DbaDbViewData -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_example -Query "SELECT TOP (1) Id FROM dbo.dbatoolsci_view_example4 ORDER BY Id DESC" -DestinationTable dbatoolsci_example3 -Truncate
+            $result.RowsCopied | Should -Be 1
+        }
+
+        It "Copy data using a query that uses a 3 part query" {
+            $result = Copy-DbaDbViewData -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_example -Query "SELECT TOP (1) Id FROM tempdb.dbo.dbatoolsci_view_example4 ORDER BY Id DESC" -DestinationTable dbatoolsci_example3 -Truncate
+            $result.RowsCopied | Should -Be 1
+        }
     }
 }

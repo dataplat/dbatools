@@ -1,88 +1,146 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Export-DbaDbRole Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'InputObject', 'ScriptingOptionsObject', 'Database', 'Role', 'ExcludeRole', 'ExcludeFixedRole', 'IncludeRoleMember', 'Path', 'FilePath', 'Passthru', 'BatchSeparator', 'NoClobber', 'Append', 'NoPrefix', 'Encoding', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Export-DbaDbRole
+        }
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have InputObject parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Not -Mandatory
+        }
+        It "Should have ScriptingOptionsObject parameter" {
+            $CommandUnderTest | Should -HaveParameter ScriptingOptionsObject -Type ScriptingOptions -Not -Mandatory
+        }
+        It "Should have Database parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Not -Mandatory
+        }
+        It "Should have Role parameter" {
+            $CommandUnderTest | Should -HaveParameter Role -Type Object[] -Not -Mandatory
+        }
+        It "Should have ExcludeRole parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeRole -Type Object[] -Not -Mandatory
+        }
+        It "Should have ExcludeFixedRole parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeFixedRole -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have IncludeRoleMember parameter" {
+            $CommandUnderTest | Should -HaveParameter IncludeRoleMember -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have Path parameter" {
+            $CommandUnderTest | Should -HaveParameter Path -Type String -Not -Mandatory
+        }
+        It "Should have FilePath parameter" {
+            $CommandUnderTest | Should -HaveParameter FilePath -Type String -Not -Mandatory
+        }
+        It "Should have Passthru parameter" {
+            $CommandUnderTest | Should -HaveParameter Passthru -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have BatchSeparator parameter" {
+            $CommandUnderTest | Should -HaveParameter BatchSeparator -Type String -Not -Mandatory
+        }
+        It "Should have NoClobber parameter" {
+            $CommandUnderTest | Should -HaveParameter NoClobber -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have Append parameter" {
+            $CommandUnderTest | Should -HaveParameter Append -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have NoPrefix parameter" {
+            $CommandUnderTest | Should -HaveParameter NoPrefix -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have Encoding parameter" {
+            $CommandUnderTest | Should -HaveParameter Encoding -Type String -Not -Mandatory
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "Export-DbaDbRole Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $AltExportPath = "$env:USERPROFILE\Documents"
         $outputFile1 = "$AltExportPath\Dbatoolsci_DbRole_CustomFile1.sql"
-        try {
-            $random = Get-Random
-            $dbname1 = "dbatoolsci_exportdbadbrole$random"
-            $login1 = "dbatoolsci_exportdbadbrole_login1$random"
-            $user1 = "dbatoolsci_exportdbadbrole_user1$random"
-            $dbRole = "dbatoolsci_SpExecute$random"
+        $random = Get-Random
+        $dbname1 = "dbatoolsci_exportdbadbrole$random"
+        $login1 = "dbatoolsci_exportdbadbrole_login1$random"
+        $user1 = "dbatoolsci_exportdbadbrole_user1$random"
+        $dbRole = "dbatoolsci_SpExecute$random"
 
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
-            $null = $server.Query("CREATE DATABASE [$dbname1]")
-            $null = $server.Query("CREATE LOGIN [$login1] WITH PASSWORD = 'GoodPass1234!'")
-            $server.Databases[$dbname1].ExecuteNonQuery("CREATE USER [$user1] FOR LOGIN [$login1]")
+        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $null = $server.Query("CREATE DATABASE [$dbname1]")
+        $null = $server.Query("CREATE LOGIN [$login1] WITH PASSWORD = 'GoodPass1234!'")
+        $server.Databases[$dbname1].ExecuteNonQuery("CREATE USER [$user1] FOR LOGIN [$login1]")
 
-            $server.Databases[$dbname1].ExecuteNonQuery("ALTER ROLE [$dbRole] ADD MEMBER [$user1]")
-            $server.Databases[$dbname1].ExecuteNonQuery("GRANT SELECT ON SCHEMA::dbo to [$dbRole]")
-            $server.Databases[$dbname1].ExecuteNonQuery("GRANT EXECUTE ON SCHEMA::dbo to [$dbRole]")
-            $server.Databases[$dbname1].ExecuteNonQuery("GRANT VIEW DEFINITION ON SCHEMA::dbo to [$dbRole]")
-        } catch {}
+        $server.Databases[$dbname1].ExecuteNonQuery("CREATE ROLE [$dbRole]")
+        $server.Databases[$dbname1].ExecuteNonQuery("ALTER ROLE [$dbRole] ADD MEMBER [$user1]")
+        $server.Databases[$dbname1].ExecuteNonQuery("GRANT SELECT ON SCHEMA::dbo to [$dbRole]")
+        $server.Databases[$dbname1].ExecuteNonQuery("GRANT EXECUTE ON SCHEMA::dbo to [$dbRole]")
+        $server.Databases[$dbname1].ExecuteNonQuery("GRANT VIEW DEFINITION ON SCHEMA::dbo to [$dbRole]")
     }
+
     AfterAll {
-        try {
-            Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname1 -Confirm:$false
-            Remove-DbaLogin -SqlInstance $script:instance2 -Login $login1 -Confirm:$false
-        } catch { }
-        (Get-ChildItem $outputFile1 -ErrorAction SilentlyContinue) | Remove-Item -ErrorAction SilentlyContinue
+        Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname1 -Confirm:$false
+        Remove-DbaLogin -SqlInstance $script:instance2 -Login $login1 -Confirm:$false
+        Remove-Item -Path $outputFile1 -ErrorAction SilentlyContinue
     }
 
     Context "Check if output file was created" {
-
-        $null = Export-DbaDbRole -SqlInstance $script:instance2 -Database msdb -FilePath $outputFile1
-        It "Exports results to one sql file" {
-            (Get-ChildItem $outputFile1).Count | Should Be 1
+        BeforeAll {
+            $null = Export-DbaDbRole -SqlInstance $script:instance2 -Database msdb -FilePath $outputFile1
         }
+
+        It "Exports results to one sql file" {
+            (Get-ChildItem $outputFile1).Count | Should -Be 1
+        }
+
         It "Exported file is bigger than 0" {
-            (Get-ChildItem $outputFile1).Length | Should BeGreaterThan 0
+            (Get-ChildItem $outputFile1).Length | Should -BeGreaterThan 0
         }
     }
 
     Context "Check piping support" {
+        BeforeAll {
+            $role = Get-DbaDbRole -SqlInstance $script:instance2 -Database $dbname1 -Role $dbRole
+            $null = $role | Export-DbaDbRole -FilePath $outputFile1
+            $script:results = $role | Export-DbaDbRole -Passthru
+        }
 
-        $role = Get-DbaDbRole -SqlInstance $script:instance2 -Database $dbname1 -Role $dbRole
-        $null = $role | Export-DbaDbRole -FilePath $outputFile1
         It "Exports results to one sql file" {
-            (Get-ChildItem $outputFile1).Count | Should Be 1
-        }
-        It "Exported file is bigger than 0" {
-            (Get-ChildItem $outputFile1).Length | Should BeGreaterThan 0
+            (Get-ChildItem $outputFile1).Count | Should -Be 1
         }
 
-        $script:results = $role | Export-DbaDbRole -Passthru
+        It "Exported file is bigger than 0" {
+            (Get-ChildItem $outputFile1).Length | Should -BeGreaterThan 0
+        }
+
         It "should include the defined BatchSeparator" {
-            $script:results -match "GO"
+            $script:results | Should -Match "GO"
         }
+
         It "should include the role" {
-            $script:results -match "CREATE ROLE [$dbRole]"
+            $script:results | Should -Match "CREATE ROLE [$dbRole]"
         }
+
         It "should include GRANT EXECUTE ON SCHEMA" {
-            $script:results -match "GRANT EXECUTE ON SCHEMA::[dbo] TO [$dbRole];"
+            $script:results | Should -Match "GRANT EXECUTE ON SCHEMA::\[dbo\] TO \[$dbRole\];"
         }
+
         It "should include GRANT SELECT ON SCHEMA" {
-            $script:results -match "GRANT SELECT ON SCHEMA::[dbo] TO [$dbRole];"
+            $script:results | Should -Match "GRANT SELECT ON SCHEMA::\[dbo\] TO \[$dbRole\];"
         }
+
         It "should include GRANT VIEW DEFINITION ON SCHEMA" {
-            $script:results -match "GRANT VIEW DEFINITION ON SCHEMA::[dbo] TO [$dbRole];"
+            $script:results | Should -Match "GRANT VIEW DEFINITION ON SCHEMA::\[dbo\] TO \[$dbRole\];"
         }
+
         It "should include ALTER ROLE ADD MEMBER" {
-            $script:results -match "ALTER ROLE [$dbRole] ADD MEMBER [$user1];"
+            $script:results | Should -Match "ALTER ROLE \[$dbRole\] ADD MEMBER \[$user1\];"
         }
     }
 }

@@ -1,20 +1,29 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Disable-DbaTraceFlag" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'TraceFlag', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Disable-DbaTraceFlag
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have TraceFlag as a parameter" {
+            $CommandUnderTest | Should -HaveParameter TraceFlag -Type Int32[]
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Verifying TraceFlag output" {
+        BeforeDiscovery {
+            . "$PSScriptRoot\constants.ps1"
+        }
+
         BeforeAll {
             $server = Connect-DbaInstance -SqlInstance $script:instance1
             $startingtfs = Get-DbaTraceFlag -SqlInstance $server
@@ -23,18 +32,17 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             if ($startingtfs.TraceFlag -notcontains $safetraceflag) {
                 $null = $server.Query("DBCC TRACEON($safetraceflag,-1)")
             }
-
         }
+
         AfterAll {
             if ($startingtfs.TraceFlag -contains $safetraceflag) {
                 $server.Query("DBCC TRACEON($safetraceflag,-1)  WITH NO_INFOMSGS")
             }
         }
 
-        $results = Disable-DbaTraceFlag -SqlInstance $server -TraceFlag $safetraceflag
-
-        It "Return $safetraceflag as disabled" {
-            $results.TraceFlag -contains $safetraceflag | Should Be $true
+        It "Should disable trace flag $safetraceflag" {
+            $results = Disable-DbaTraceFlag -SqlInstance $server -TraceFlag $safetraceflag
+            $results.TraceFlag | Should -Contain $safetraceflag
         }
     }
 }

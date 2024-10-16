@@ -1,24 +1,44 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Copy-DbaEndpoint" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'Endpoint', 'ExcludeEndpoint', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Copy-DbaEndpoint
+        }
+        It "Should have Source parameter" {
+            $CommandUnderTest | Should -HaveParameter Source -Type DbaInstanceParameter
+        }
+        It "Should have SourceSqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SourceSqlCredential -Type PSCredential
+        }
+        It "Should have Destination parameter" {
+            $CommandUnderTest | Should -HaveParameter Destination -Type DbaInstanceParameter[]
+        }
+        It "Should have DestinationSqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type PSCredential
+        }
+        It "Should have Endpoint parameter" {
+            $CommandUnderTest | Should -HaveParameter Endpoint -Type Object[]
+        }
+        It "Should have ExcludeEndpoint parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeEndpoint -Type Object[]
+        }
+        It "Should have Force parameter" {
+            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+Describe "Copy-DbaEndpoint Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         Get-DbaEndpoint -SqlInstance $script:instance2 -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
         New-DbaEndpoint -SqlInstance $script:instance2 -Name dbatoolsci_MirroringEndpoint -Type DatabaseMirroring -Port 5022 -Owner sa
@@ -33,7 +53,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
 
     It "copies an endpoint" {
         $results = Copy-DbaEndpoint -Source $script:instance2 -Destination $script:instance3 -Endpoint dbatoolsci_MirroringEndpoint
-        $results.DestinationServer | Should -Be  $script:instance3
+        $results.DestinationServer | Should -Be $script:instance3
         $results.Status | Should -Be 'Successful'
         $results.Name | Should -Be 'dbatoolsci_MirroringEndpoint'
     }

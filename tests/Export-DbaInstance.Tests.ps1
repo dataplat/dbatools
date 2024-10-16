@@ -1,36 +1,62 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Export-DbaInstance Unit Tests" -Tag 'UnitTests' {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        It "Should only contain our specific parameters" {
-            [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-            [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Credential', 'Path', 'NoRecovery', 'IncludeDbMasterKey', 'Exclude', 'BatchSeparator', 'ScriptingOption', 'NoPrefix', 'ExcludePassword', 'EnableException', 'Force', 'AzureCredential'
-            $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Export-DbaInstance
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Credential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Path as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Path -Type String -Not -Mandatory
+        }
+        It "Should have NoRecovery as a parameter" {
+            $CommandUnderTest | Should -HaveParameter NoRecovery -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have AzureCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter AzureCredential -Type String -Not -Mandatory
+        }
+        It "Should have IncludeDbMasterKey as a parameter" {
+            $CommandUnderTest | Should -HaveParameter IncludeDbMasterKey -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have Exclude as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Exclude -Type String[] -Not -Mandatory
+        }
+        It "Should have BatchSeparator as a parameter" {
+            $CommandUnderTest | Should -HaveParameter BatchSeparator -Type String -Not -Mandatory
+        }
+        It "Should have ScriptingOption as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ScriptingOption -Type ScriptingOptions -Not -Mandatory
+        }
+        It "Should have NoPrefix as a parameter" {
+            $CommandUnderTest | Should -HaveParameter NoPrefix -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have ExcludePassword as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludePassword -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have Force as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
 }
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    BeforeEach {
-        $results = $null
-    }
 
-    AfterEach {
-        $dirToRemove = $null
-
-        if (($results -ne $null) -and ($results.length -gt 1)) {
-            $dirToRemove = $results[0].Directory.FullName
-        } elseif ($results -ne $null) {
-            $dirToRemove = $results.Directory.FullName
-        }
-
-        if ($dirToRemove -ne $null) {
-            $null = Remove-Item -Path $dirToRemove -Force -Recurse
-        }
-    }
-
+Describe "Export-DbaInstance Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $random = Get-Random
         $dbName = "dbatoolsci_$random"
@@ -39,7 +65,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $null = New-Item -Path $exportDir -ItemType Container
         }
 
-        # registered server and group
         $testServer = $script:instance2
         $server = Connect-DbaInstance -SqlInstance $testServer
         $srvName = "dbatoolsci-server1"
@@ -50,27 +75,20 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $newGroup = Add-DbaRegServerGroup -SqlInstance $testServer -Name $group
         $newServer = Add-DbaRegServer -SqlInstance $testServer -ServerName $srvName -Name $regSrvName -Description $regSrvDesc
 
-        # custom error message
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "EXEC sp_addmessage 250000, 16, N'Sample error message1'"
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "EXEC sp_addmessage 250001, 16, N'Sample error message2'"
 
-        # credentials
         New-DbaCredential -SqlInstance $testServer -Name "dbatools1$random" -Identity "dbatools1$random" -SecurePassword (ConvertTo-SecureString -String "dbatools1" -AsPlainText -Force) -Confirm:$false
         New-DbaCredential -SqlInstance $testServer -Name "dbatools2$random" -Identity "dbatools2$random" -SecurePassword (ConvertTo-SecureString -String "dbatools2" -AsPlainText -Force) -Confirm:$false
 
-        # logins
         New-DbaLogin -SqlInstance $testServer -Login "dbatools$random" -SecurePassword (ConvertTo-SecureString -String "dbatools1" -AsPlainText -Force) -Confirm:$false
 
-        # backup device
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "EXEC sp_addumpdevice 'disk', 'backupdevice$random', 'c:\temp\backupdevice$random.bak'"
 
-        # linked server
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "EXEC sp_addlinkedserver @server = N'server$random', @srvproduct=N'SQL Server'"
 
-        # system trigger
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "CREATE TRIGGER [create_database_$random] ON ALL SERVER FOR CREATE_DATABASE AS SELECT 1"
 
-        # database restore scripts
         $backupdir = Join-Path $server.BackupDirectory $dbName
         if (-not (Test-Path $backupdir -PathType Container)) {
             $null = New-Item -Path $backupdir -ItemType Container
@@ -78,18 +96,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         New-DbaDatabase -SqlInstance $testServer -Name $dbName
         Backup-DbaDatabase -SqlInstance $testServer -Database $dbName -BackupDirectory $backupdir
 
-        # server audit and spec
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "CREATE SERVER AUDIT [Audit_$random] TO FILE (FILEPATH = N'c:\temp', MAXSIZE = 8 MB, MAX_ROLLOVER_FILES = 2, RESERVE_DISK_SPACE = OFF) WITH (QUEUE_DELAY = 1000, ON_FAILURE = CONTINUE)"
 
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "CREATE SERVER AUDIT SPECIFICATION [Audit_Specification_$random] FOR SERVER AUDIT [Audit_$random] ADD (FAILED_LOGIN_GROUP) WITH (STATE=ON)"
 
-        # database audit
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database $dbName -Query "CREATE DATABASE AUDIT SPECIFICATION [DatabaseAuditSpecification_$random] FOR SERVER AUDIT [Audit_$random] ADD (DELETE ON DATABASE::[$dbName] BY [public])"
 
-        # endpoint
         New-DbaEndpoint -SqlInstance $testServer -Type DatabaseMirroring -Name dbatoolsci_$random
 
-        # policies
         $output = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "Declare @condition_id int;
                                                                                     EXEC msdb.dbo.sp_syspolicy_add_condition @name=N'dbatoolsci_condition_$random', @description=N'dbatools_test', @facet=N'Database', @expression=N'<Operator>
                                                                                       <TypeClass>Bool</TypeClass>
@@ -125,237 +139,223 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
         $policyId = $output.PolicyId
 
-        # add a procedure to the master db for the export of user objects in system databases
         Install-DbaWhoIsActive -SqlInstance $testServer -Database master
     }
 
     AfterAll {
-        # registered server and group
         Get-DbaRegServer -SqlInstance $testServer | Where-Object Name -Match dbatoolsci | Remove-DbaRegServer -Confirm:$false
         Get-DbaRegServerGroup -SqlInstance $testServer | Where-Object Name -Match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
 
-        # custom error message
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "EXEC sp_dropmessage 250000"
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "EXEC sp_dropmessage 250001"
 
-        # credentials
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "DROP CREDENTIAL [dbatools1$random]"
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "DROP CREDENTIAL [dbatools2$random]"
 
-        # logins
         Remove-DbaLogin -SqlInstance $testServer -Login "dbatools$random" -Confirm:$false
 
-        # backup devices
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "EXEC sp_dropdevice 'backupdevice$random'"
 
-        # linked server
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "EXEC sp_dropserver @server = 'server$random'"
 
-        # system trigger
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "DROP TRIGGER [create_database_$random] ON ALL SERVER"
 
-        # database restore scripts
         Remove-Item -Path $backupdir -Recurse -Force -ErrorAction SilentlyContinue
 
-        # database audit
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database $dbName -Query "ALTER DATABASE AUDIT SPECIFICATION [DatabaseAuditSpecification_$random] WITH (STATE = OFF); DROP DATABASE AUDIT SPECIFICATION [DatabaseAuditSpecification_$random]"
 
-        # server audit and spec
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "ALTER SERVER AUDIT SPECIFICATION [Audit_Specification_$random] WITH (STATE = OFF); DROP SERVER AUDIT SPECIFICATION [Audit_Specification_$random]"
 
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "ALTER SERVER AUDIT [Audit_$random] WITH (STATE = OFF); DROP SERVER AUDIT [Audit_$random];"
 
-        # endpoint
         Remove-DbaEndpoint -SqlInstance $testServer -EndPoint dbatoolsci_$random -Confirm:$false
 
-        # policies
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "EXEC msdb.dbo.sp_syspolicy_delete_policy @policy_id=$policyId;
                                                                                   EXEC msdb.dbo.sp_syspolicy_delete_condition @condition_id=$policyConditionId;
                                                                                   EXEC msdb.dbo.sp_syspolicy_delete_object_set @object_set_id=$objectSetId;"
 
-        # last step to remove sample db
         Remove-DbaDatabase -SqlInstance $testServer -Database $dbName -Confirm:$false
 
-        # remove export dir
         Remove-Item -Path $exportDir -Recurse -Force -ErrorAction SilentlyContinue
     }
 
-    It "Export dir should have the date in the correct format" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
-        $results.length | Should -BeGreaterThan 0
+    Context "Export dir should have the date in the correct format" {
+        It "Exports with correct date format" {
+            $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
+            $results.Count | Should -BeGreaterThan 0
 
-        # parse the exact format of the date
-        $indexOfDateTimeStamp = $results[0].Directory.Name.Split("-").length
-        $dateTimeStampOnFolder = [datetime]::parseexact($results[0].Directory.Name.Split("-")[$indexOfDateTimeStamp - 1], "yyyyMMddHHmmss", $null)
+            $indexOfDateTimeStamp = $results[0].Directory.Name.Split("-").Count - 1
+            $dateTimeStampOnFolder = [datetime]::parseexact($results[0].Directory.Name.Split("-")[$indexOfDateTimeStamp], "yyyyMMddHHmmss", $null)
 
-        $dateTimeStampOnFolder | Should -Not -Be Null
+            $dateTimeStampOnFolder | Should -Not -BeNullOrEmpty
+        }
     }
 
-    It "Ensure the -Force param replaces existing files" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider' -Force
+    Context "Ensure the -Force param replaces existing files" {
+        It "Replaces existing files when using -Force" {
+            $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider' -Force
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
+            $results.FullName | Should -Exist
+            $results.Count | Should -BeGreaterThan 0
 
-        $originalLength = $results.Length
-        $originalLastWriteTime = $results.LastWriteTime
+            $originalCount = $results.Count
+            $originalLastWriteTime = $results.LastWriteTime
 
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider' -Force
+            $newResults = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider' -Force
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-        $results.Length | Should -Be $originalLength
-        $results.LastWriteTime | Should -BeGreaterThan $originalLastWriteTime
+            $newResults.FullName | Should -Exist
+            $newResults.Count | Should -BeGreaterThan 0
+            $newResults.Count | Should -Be $originalCount
+            $newResults.LastWriteTime | Should -BeGreaterThan $originalLastWriteTime
+        }
     }
 
-    It "Export sp_configure values" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
+    Context "Export various server components" {
+        It "Exports sp_configure values" {
+            $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-    }
+            $results.FullName | Should -Exist
+            $results.Count | Should -BeGreaterThan 0
+        }
 
-    It "Export CentralManagementServer" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
+        It "Exports CentralManagementServer" {
+            $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-    }
+            $results.FullName | Should -Exist
+            $results.Count | Should -BeGreaterThan 0
+        }
 
-    It "Export custom errors" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
+        It "Exports custom errors" {
+            $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-    }
+            $results.FullName | Should -Exist
+            $results.Count | Should -BeGreaterThan 0
+        }
 
-    It "Export server roles" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
+        It "Exports server roles" {
+            $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-    }
+            $results.FullName | Should -Exist
+            $results.Count | Should -BeGreaterThan 0
+        }
 
-    It "Export credentials" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
+        It "Exports credentials" {
+            $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-    }
+            $results.FullName | Should -Exist
+            $results.Count | Should -BeGreaterThan 0
+        }
 
-    It "Export logins" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
+        It "Exports logins" {
+            $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-    }
+            $results.FullName | Should -Exist
+            $results.Count | Should -BeGreaterThan 0
+        }
 
-    It "Export database mail settings" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
+        It "Exports database mail settings" {
+            $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-    }
+            $results.FullName | Should -Exist
+            $results.Count | Should -BeGreaterThan 0
+        }
 
-    It "Export backup devices" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
+        It "Exports backup devices" {
+            $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-    }
+            $results.FullName | Should -Exist
+            $results.Count | Should -BeGreaterThan 0
+        }
 
-    It "Export linked servers" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
+        It "Exports linked servers" {
+            $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-    }
+            $results.FullName | Should -Exist
+            $results.Count | Should -BeGreaterThan 0
+        }
 
-    It "Export system triggers" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'OleDbProvider'
+        It "Exports system triggers" {
+            $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'OleDbProvider'
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-    }
+            $results.FullName | Should -Exist
+            $results.Count | Should -BeGreaterThan 0
+        }
 
-    It "Export database restore scripts" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
+        It "Exports database restore scripts" {
+            $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-    }
+            $results.FullName | Should -Exist
+            $results.Count | Should -BeGreaterThan 0
+        }
 
-    It "Export server audits" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
+        It "Exports server audits" {
+            $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-    }
+            $results.FullName | Should -Exist
+            $results.Count | Should -BeGreaterThan 0
+        }
 
-    It "Export server audit specifications" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
+        It "Exports server audit specifications" {
+            $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-    }
+            $results.FullName | Should -Exist
+            $results.Count | Should -BeGreaterThan 0
+        }
 
-    It "Export endpoints" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
+        It "Exports endpoints" {
+            $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-    }
+            $results.FullName | Should -Exist
+            $results.Count | Should -BeGreaterThan 0
+        }
 
-    It "Export policies" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
+        It "Exports policies" {
+            $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-    }
+            $results.FullName | Should -Exist
+            $results.Count | Should -BeGreaterThan 0
+        }
 
-    It "Export resource governor settings" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
+        It "Exports resource governor settings" {
+            $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-    }
+            $results.FullName | Should -Exist
+            $results.Count | Should -BeGreaterThan 0
+        }
 
-    It "Export extended events" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
+        It "Exports extended events" {
+            $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-    }
+            $results.FullName | Should -Exist
+            $results.Count | Should -BeGreaterThan 0
+        }
 
-    It "Export agent server" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
+        It "Exports agent server" {
+            $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-    }
+            $results.FullName | Should -Exist
+            $results.Count | Should -BeGreaterThan 0
+        }
 
-    It "Export replication settings" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
+        It "Exports replication settings" {
+            $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-    }
+            $results.FullName | Should -Exist
+            $results.Count | Should -BeGreaterThan 0
+        }
 
-    It "Export system db user objects" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SystemTriggers', 'OleDbProvider'
+        It "Exports system db user objects" {
+            $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SystemTriggers', 'OleDbProvider'
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-    }
+            $results.FullName | Should -Exist
+            $results.Count | Should -BeGreaterThan 0
+        }
 
-    It "Exports oledb providers" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SystemTriggers', 'SysDbUserObjects'
+        It "Exports oledb providers" {
+            $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SystemTriggers', 'SysDbUserObjects'
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-    }
-
-    # placeholder for a future test with availability groups
-    It -Skip "Export availability groups" {
+            $results.FullName | Should -Exist
+            $results.Count | Should -BeGreaterThan 0
+        }
     }
 }

@@ -1,24 +1,32 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Copy-DbaXESessionTemplate" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Path', 'Destination', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Copy-DbaXESessionTemplate
+        }
+        It "Should have Path as a non-mandatory parameter of type String[]" {
+            $CommandUnderTest | Should -HaveParameter Path -Type String[] -Not -Mandatory
+        }
+        It "Should have Destination as a non-mandatory parameter of type String" {
+            $CommandUnderTest | Should -HaveParameter Destination -Type String -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    Context "Get Template Index" {
-        $null = Copy-DbaXESessionTemplate *>1
-        $source = ((Get-DbaXESessionTemplate -Path $Path | Where-Object Source -ne Microsoft).Path | Select-Object -First 1).Name
-        It "copies the files properly" {
-            Get-ChildItem "$home\Documents\SQL Server Management Studio\Templates\XEventTemplates" | Where-Object Name -eq $source | Should Not Be Null
+    Context "Command usage" {
+        BeforeAll {
+            # Run setup code to get script variables within scope of the discovery phase
+            . (Join-Path $PSScriptRoot 'constants.ps1')
+        }
+
+        It "Copies the files properly" {
+            $null = Copy-DbaXESessionTemplate *>1
+            $source = ((Get-DbaXESessionTemplate -Path $Path | Where-Object Source -ne Microsoft).Path | Select-Object -First 1).Name
+            $result = Get-ChildItem "$home\Documents\SQL Server Management Studio\Templates\XEventTemplates" | Where-Object Name -eq $source
+            $result | Should -Not -BeNullOrEmpty
         }
     }
 }
