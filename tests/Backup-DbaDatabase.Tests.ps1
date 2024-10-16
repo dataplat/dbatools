@@ -1,112 +1,267 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Backup-DbaDatabase Unit Tests" -Tag 'UnitTests' {
+    BeforeAll {
+        # Import module and set up any necessary test data
+        Import-Module $ModuleName
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Path', 'FilePath', 'ReplaceInName', 'NoAppendDbNameInPath', 'CopyOnly', 'Type', 'InputObject', 'CreateFolder', 'FileCount', 'CompressBackup', 'Checksum', 'Verify', 'MaxTransferSize', 'BlockSize', 'BufferCount', 'AzureBaseUrl', 'AzureCredential', 'NoRecovery', 'BuildPath', 'WithFormat', 'Initialize', 'SkipTapeHeader', 'TimeStampFormat', 'IgnoreFileChecks', 'OutputScriptOnly', 'EnableException', 'EncryptionAlgorithm', 'EncryptionCertificate', 'IncrementPrefix', 'Description'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $commandName = "Backup-DbaDatabase"
+            $command = Get-Command -Name $commandName -Module $ModuleName
+        }
+
+        It "Should have SqlInstance parameter" {
+            $command | Should -HaveParameter SqlInstance -Type DbaInstanceParameter -Not -Mandatory
+        }
+
+        It "Should have SqlCredential parameter" {
+            $command | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+
+        It "Should have Database parameter" {
+            $command | Should -HaveParameter Database -Type Object[] -Not -Mandatory
+        }
+
+        It "Should have ExcludeDatabase parameter" {
+            $command | Should -HaveParameter ExcludeDatabase -Type Object[] -Not -Mandatory
+        }
+
+        It "Should have Path parameter" {
+            $command | Should -HaveParameter Path -Type String[] -Not -Mandatory
+        }
+
+        It "Should have FilePath parameter" {
+            $command | Should -HaveParameter FilePath -Type String -Not -Mandatory
+        }
+
+        It "Should have IncrementPrefix parameter" {
+            $command | Should -HaveParameter IncrementPrefix -Type SwitchParameter
+        }
+
+        It "Should have ReplaceInName parameter" {
+            $command | Should -HaveParameter ReplaceInName -Type SwitchParameter
+        }
+
+        It "Should have NoAppendDbNameInPath parameter" {
+            $command | Should -HaveParameter NoAppendDbNameInPath -Type SwitchParameter
+        }
+
+        It "Should have CopyOnly parameter" {
+            $command | Should -HaveParameter CopyOnly -Type SwitchParameter
+        }
+
+        It "Should have Type parameter" {
+            $command | Should -HaveParameter Type -Type String -Not -Mandatory
+        }
+
+        It "Should have InputObject parameter" {
+            $command | Should -HaveParameter InputObject -Type Object[] -Not -Mandatory
+        }
+
+        It "Should have CreateFolder parameter" {
+            $command | Should -HaveParameter CreateFolder -Type SwitchParameter
+        }
+
+        It "Should have FileCount parameter" {
+            $command | Should -HaveParameter FileCount -Type Int32 -Not -Mandatory
+        }
+
+        It "Should have CompressBackup parameter" {
+            $command | Should -HaveParameter CompressBackup -Type SwitchParameter
+        }
+
+        It "Should have Checksum parameter" {
+            $command | Should -HaveParameter Checksum -Type SwitchParameter
+        }
+
+        It "Should have Verify parameter" {
+            $command | Should -HaveParameter Verify -Type SwitchParameter
+        }
+
+        It "Should have MaxTransferSize parameter" {
+            $command | Should -HaveParameter MaxTransferSize -Type Int32 -Not -Mandatory
+        }
+
+        It "Should have BlockSize parameter" {
+            $command | Should -HaveParameter BlockSize -Type Int32 -Not -Mandatory
+        }
+
+        It "Should have BufferCount parameter" {
+            $command | Should -HaveParameter BufferCount -Type Int32 -Not -Mandatory
+        }
+
+        It "Should have AzureBaseUrl parameter" {
+            $command | Should -HaveParameter AzureBaseUrl -Type String[] -Not -Mandatory
+        }
+
+        It "Should have AzureCredential parameter" {
+            $command | Should -HaveParameter AzureCredential -Type String -Not -Mandatory
+        }
+
+        It "Should have NoRecovery parameter" {
+            $command | Should -HaveParameter NoRecovery -Type SwitchParameter
+        }
+
+        It "Should have BuildPath parameter" {
+            $command | Should -HaveParameter BuildPath -Type SwitchParameter
+        }
+
+        It "Should have WithFormat parameter" {
+            $command | Should -HaveParameter WithFormat -Type SwitchParameter
+        }
+
+        It "Should have Initialize parameter" {
+            $command | Should -HaveParameter Initialize -Type SwitchParameter
+        }
+
+        It "Should have SkipTapeHeader parameter" {
+            $command | Should -HaveParameter SkipTapeHeader -Type SwitchParameter
+        }
+
+        It "Should have TimeStampFormat parameter" {
+            $command | Should -HaveParameter TimeStampFormat -Type String -Not -Mandatory
+        }
+
+        It "Should have IgnoreFileChecks parameter" {
+            $command | Should -HaveParameter IgnoreFileChecks -Type SwitchParameter
+        }
+
+        It "Should have OutputScriptOnly parameter" {
+            $command | Should -HaveParameter OutputScriptOnly -Type SwitchParameter
+        }
+
+        It "Should have EncryptionAlgorithm parameter" {
+            $command | Should -HaveParameter EncryptionAlgorithm -Type String -Not -Mandatory
+        }
+
+        It "Should have EncryptionCertificate parameter" {
+            $command | Should -HaveParameter EncryptionCertificate -Type String -Not -Mandatory
+        }
+
+        It "Should have Description parameter" {
+            $command | Should -HaveParameter Description -Type String -Not -Mandatory
+        }
+
+        It "Should have EnableException parameter" {
+            $command | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "Backup-DbaDatabase Integration Tests" -Tag "IntegrationTests" {
+    BeforeAll {
+        $script:instance1 = "localhost"
+        $script:instance2 = "localhost\SQL2019"
+        $script:appveyorlabrepo = "C:\github\appveyor-lab"
+        $script:DestBackupDir = 'C:\Temp\backups'
+        $script:random = Get-Random
+        $script:DestDbRandom = "dbatools_ci_backupdbadatabase$script:random"
+
+        # Create backup directory if it doesn't exist
+        if (-not (Test-Path $script:DestBackupDir)) {
+            New-Item -Type Container -Path $script:DestBackupDir
+        }
+
+        # Remove test databases if they exist
+        Get-DbaDatabase -SqlInstance $script:instance1 -Database "dbatoolsci_singlerestore" | Remove-DbaDatabase -Confirm:$false
+        Get-DbaDatabase -SqlInstance $script:instance2 -Database $script:DestDbRandom | Remove-DbaDatabase -Confirm:$false
+    }
+
+    AfterAll {
+        # Clean up test databases and backup files
+        Get-DbaDatabase -SqlInstance $script:instance1 -Database "dbatoolsci_singlerestore" | Remove-DbaDatabase -Confirm:$false
+        Get-DbaDatabase -SqlInstance $script:instance2 -Database $script:DestDbRandom | Remove-DbaDatabase -Confirm:$false
+        if (Test-Path $script:DestBackupDir) {
+            Remove-Item "$script:DestBackupDir\*" -Force -Recurse
+        }
+    }
 
     Context "Properly restores a database on the local drive using Path" {
-        $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory C:\temp\backups
         It "Should return a database name, specifically master" {
-            ($results.DatabaseName -contains 'master') | Should -Be $true
+            $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $script:DestBackupDir
+            $results.DatabaseName | Should -Contain 'master'
         }
+
         It "Should return successful restore" {
-            $results.ForEach{ $_.BackupComplete | Should -Be $true }
+            $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $script:DestBackupDir
+            $results | ForEach-Object { $_.BackupComplete | Should -Be $true }
         }
     }
 
-    BeforeAll {
-        $DestBackupDir = 'C:\Temp\backups'
-        $random = Get-Random
-        $DestDbRandom = "dbatools_ci_backupdbadatabase$random"
-        if (-Not(Test-Path $DestBackupDir)) {
-            New-Item -Type Container -Path $DestBackupDir
-        }
-        Get-DbaDatabase -SqlInstance $script:instance1 -Database "dbatoolsci_singlerestore" | Remove-DbaDatabase -Confirm:$false
-        Get-DbaDatabase -SqlInstance $script:instance2 -Database $DestDbRandom | Remove-DbaDatabase -Confirm:$false
-    }
-    AfterAll {
-        Get-DbaDatabase -SqlInstance $script:instance1 -Database "dbatoolsci_singlerestore" | Remove-DbaDatabase -Confirm:$false
-        Get-DbaDatabase -SqlInstance $script:instance2 -Database $DestDbRandom | Remove-DbaDatabase -Confirm:$false
-        if (Test-Path $DestBackupDir) {
-            Remove-Item "$DestBackupDir\*" -Force -Recurse
-        }
-    }
     Context "Should not backup if database and exclude match" {
-        $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $DestBackupDir -Database master -Exclude master
         It "Should not return object" {
-            $results | Should -Be $null
+            $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $script:DestBackupDir -Database master -Exclude master
+            $results | Should -BeNullOrEmpty
         }
     }
 
     Context "No database found to backup should raise warning and null output" {
-        $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $DestBackupDir -Database AliceDoesntDBHereAnyMore -WarningVariable warnvar 3> $null
-        It "Should not return object" {
-            $results | Should -Be $null
-        }
-        It "Should return a warning" {
+        It "Should not return object and should return a warning" {
+            $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $script:DestBackupDir -Database AliceDoesntDBHereAnyMore -WarningVariable warnvar -WarningAction SilentlyContinue
+            $results | Should -BeNullOrEmpty
             $warnvar | Should -BeLike "*No databases match the request for backups*"
         }
     }
 
     Context "Database should backup 1 database" {
-        $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $DestBackupDir -Database master
         It "Database backup object count Should Be 1" {
+            $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $script:DestBackupDir -Database master
             $results.DatabaseName.Count | Should -Be 1
             $results.BackupComplete | Should -Be $true
         }
+
         It "Database ID should be returned" {
-            $results.DatabaseID | Should -Be (Get-DbaDatabase -SqlInstance $script:instance1 -Database master).ID
+            $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $script:DestBackupDir -Database master
+            $masterDb = Get-DbaDatabase -SqlInstance $script:instance1 -Database master
+            $results.DatabaseID | Should -Be $masterDb.ID
         }
     }
 
     Context "Database should backup 2 databases" {
-        $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $DestBackupDir -Database master, msdb
         It "Database backup object count Should Be 2" {
+            $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $script:DestBackupDir -Database master, msdb
             $results.DatabaseName.Count | Should -Be 2
             $results.BackupComplete | Should -Be @($true, $true)
         }
     }
 
     Context "Should take path and filename" {
-        $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $DestBackupDir -Database master -BackupFileName 'PesterTest.bak'
         It "Should report it has backed up to the path with the correct name" {
-            $results.Fullname | Should -BeLike "$DestBackupDir*PesterTest.bak"
+            $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $script:DestBackupDir -Database master -BackupFileName 'PesterTest.bak'
+            $results.Fullname | Should -BeLike "$script:DestBackupDir*PesterTest.bak"
         }
+
         It "Should have backed up to the path with the correct name" {
-            Test-Path "$DestBackupDir\PesterTest.bak" | Should -Be $true
+            $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $script:DestBackupDir -Database master -BackupFileName 'PesterTest.bak'
+            Test-Path "$script:DestBackupDir\PesterTest.bak" | Should -Be $true
         }
     }
 
     Context "Database parameter works when using pipes (fixes #5044)" {
-        $results = Get-DbaDatabase -SqlInstance $script:instance1 | Backup-DbaDatabase -Database master -BackupFileName PesterTest.bak -BackupDirectory $DestBackupDir
         It "Should report it has backed up to the path with the correct name" {
-            $results.Fullname | Should -BeLike "$DestBackupDir*PesterTest.bak"
+            $results = Get-DbaDatabase -SqlInstance $script:instance1 | Backup-DbaDatabase -Database master -BackupFileName PesterTest.bak -BackupDirectory $script:DestBackupDir
+            $results.Fullname | Should -BeLike "$script:DestBackupDir*PesterTest.bak"
         }
+
         It "Should have backed up to the path with the correct name" {
-            Test-Path "$DestBackupDir\PesterTest.bak" | Should -Be $true
+            $results = Get-DbaDatabase -SqlInstance $script:instance1 | Backup-DbaDatabase -Database master -BackupFileName PesterTest.bak -BackupDirectory $script:DestBackupDir
+            Test-Path "$script:DestBackupDir\PesterTest.bak" | Should -Be $true
         }
     }
 
     Context "ExcludeDatabase parameter works when using pipes (fixes #5044)" {
-        $results = Get-DbaDatabase -SqlInstance $script:instance1 | Backup-DbaDatabase -ExcludeDatabase master, tempdb, msdb, model
-        It "Should report it has backed up to the path with the correct name" {
+        It "Should not contain excluded databases" {
+            $results = Get-DbaDatabase -SqlInstance $script:instance1 | Backup-DbaDatabase -ExcludeDatabase master, tempdb, msdb, model
             $results.DatabaseName | Should -Not -Contain master
             $results.DatabaseName | Should -Not -Contain tempdb
             $results.DatabaseName | Should -Not -Contain msdb
             $results.DatabaseName | Should -Not -Contain model
         }
     }
+
+    
 
     Context "Handling backup paths that don't exist" {
         $MissingPathTrailing = "$DestBackupDir\Missing1\Awol2\"
@@ -299,7 +454,6 @@ GO
         $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query $createdb -Database encrypted
         It "Should compress an encrypted db" {
             $results = Backup-DbaDatabase -SqlInstance $script:instance2 -Database encrypted -Compress
-            Invoke-Command2 -ComputerName $script:instance2 -ScriptBlock { Remove-Item -Path $args[0] } -ArgumentList $results.FullName
             $results.script | Should -BeLike '*D, COMPRESSION,*'
         }
         Remove-DbaDatabase -SqlInstance $script:instance2 -Database encrypted -confirm:$false
@@ -338,64 +492,57 @@ go
     }
 
     Context "Test Backup Encryption with Certificate" {
-        $securePass = ConvertTo-SecureString "estBackupDir\master\script:instance1).split('\')[1])\Full\master-Full.bak" -AsPlainText -Force
-        New-DbaDbMasterKey -SqlInstance $script:instance2 -Database Master -SecurePassword $securePass -confirm:$false -ErrorAction SilentlyContinue
-        $cert = New-DbaDbCertificate -SqlInstance $script:instance2 -Database master -Name BackupCertt -Subject BackupCertt
-        $encBackupResults = Backup-DbaDatabase -SqlInstance $script:instance2 -Database master -EncryptionAlgorithm AES128 -EncryptionCertificate BackupCertt -BackupFileName 'encryptiontest.bak' -Description "Encrypted backup"
-        Invoke-Command2 -ComputerName $script:instance2 -ScriptBlock { Remove-Item -Path $args[0] } -ArgumentList $encBackupResults.FullName
-        It "Should encrypt the backup" {
-            $encBackupResults.EncryptorType | Should Be "CERTIFICATE"
-            $encBackupResults.KeyAlgorithm | Should Be "aes_128"
+        BeforeAll {
+            $securePass = ConvertTo-SecureString "TestPassword1" -AsPlainText -Force
+            New-DbaDbMasterKey -SqlInstance $script:instance2 -Database Master -SecurePassword $securePass -Confirm:$false -ErrorAction SilentlyContinue
+            $cert = New-DbaDbCertificate -SqlInstance $script:instance2 -Database master -Name BackupCertt -Subject BackupCertt
         }
-        Remove-DbaDbCertificate -SqlInstance $script:instance2 -Database master -Certificate BackupCertt -Confirm:$false
-        Remove-DbaDbMasterKey -SqlInstance $script:instance2 -Database Master -confirm:$false
+
+        AfterAll {
+            Remove-DbaDbCertificate -SqlInstance $script:instance2 -Database master -Certificate BackupCertt -Confirm:$false
+            Remove-DbaDbMasterKey -SqlInstance $script:instance2 -Database Master -Confirm:$false
+        }
+
+        It "Should encrypt the backup" {
+            $encBackupResults = Backup-DbaDatabase -SqlInstance $script:instance2 -Database master -EncryptionAlgorithm AES128 -EncryptionCertificate BackupCertt -BackupFileName 'encryptiontest.bak' -Description "Encrypted backup"
+            $encBackupResults.EncryptorType | Should -Be "CERTIFICATE"
+            $encBackupResults.KeyAlgorithm | Should -Be "aes_128"
+            Invoke-Command2 -ComputerName $script:instance2 -ScriptBlock { Remove-Item -Path $args[0] } -ArgumentList $encBackupResults.FullName
+        }
     }
 
-    # Context "Test Backup Encryption with Asymmetric Key" {
-    #     $key = New-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Database master -Name BackupKey
-    #     $encBackupResults = Backup-DbaDatabase -SqlInstance $script:instance2 -Database master -EncryptionAlgorithm AES128 -EncryptionKey BackupKey
-    #     It "Should encrypt the backup" {
-    #         $encBackupResults.EncryptorType | Should Be "CERTIFICATE"
-    #         $encBackupResults.KeyAlgorithm | Should Be "aes_128"
-    #     }
-    #     remove-DbaDbCertificate -SqlInstance $script:instance2 -Database master -Certificate BackupCertt -Confirm:$false
-    # }
-
-    if ($env:azurepasswd) {
-        Context "Azure works" {
-            BeforeAll {
-                Get-DbaDatabase -SqlInstance $script:instance2 -Database "dbatoolsci_azure" | Remove-DbaDatabase -Confirm:$false
-                $server = Connect-DbaInstance -SqlInstance $script:instance2
-                if (Get-DbaCredential -SqlInstance $script:instance2 -Name "[$script:azureblob]" ) {
-                    $sql = "DROP CREDENTIAL [$script:azureblob]"
-                    $server.Query($sql)
-                }
-                $sql = "CREATE CREDENTIAL [$script:azureblob] WITH IDENTITY = N'SHARED ACCESS SIGNATURE', SECRET = N'$env:azurepasswd'"
-                $server.Query($sql)
-                $server.Query("CREATE DATABASE dbatoolsci_azure")
-                if (Get-DbaCredential -SqlInstance $script:instance2 -name dbatools_ci) {
-                    $sql = "DROP CREDENTIAL dbatools_ci"
-                    $server.Query($sql)
-                }
-                $sql = "CREATE CREDENTIAL [dbatools_ci] WITH IDENTITY = N'$script:azureblobaccount', SECRET = N'$env:azurelegacypasswd'"
-                $server.Query($sql)
-            }
-            AfterAll {
-                Get-DbaDatabase -SqlInstance $script:instance2 -Database "dbatoolsci_azure" | Remove-DbaDatabase -Confirm:$false
+    Context "Azure works" -Skip:(-not $env:azurepasswd) {
+        BeforeAll {
+            Get-DbaDatabase -SqlInstance $script:instance2 -Database "dbatoolsci_azure" | Remove-DbaDatabase -Confirm:$false
+            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            if (Get-DbaCredential -SqlInstance $script:instance2 -Name "[$script:azureblob]" ) {
                 $server.Query("DROP CREDENTIAL [$script:azureblob]")
             }
-            It "backs up to Azure properly using SHARED ACCESS SIGNATURE" {
-                $results = Backup-DbaDatabase -SqlInstance $script:instance2 -AzureBaseUrl $script:azureblob -Database dbatoolsci_azure -BackupFileName dbatoolsci_azure.bak -WithFormat
-                $results.Database | Should -Be 'dbatoolsci_azure'
-                $results.DeviceType | Should -Be 'URL'
-                $results.BackupFile | Should -Be 'dbatoolsci_azure.bak'
+            $server.Query("CREATE CREDENTIAL [$script:azureblob] WITH IDENTITY = N'SHARED ACCESS SIGNATURE', SECRET = N'$env:azurepasswd'")
+            $server.Query("CREATE DATABASE dbatoolsci_azure")
+            if (Get-DbaCredential -SqlInstance $script:instance2 -name dbatools_ci) {
+                $server.Query("DROP CREDENTIAL dbatools_ci")
             }
-            It "backs up to Azure properly using legacy credential" {
-                $results = Backup-DbaDatabase -SqlInstance $script:instance2 -AzureBaseUrl $script:azureblob -Database dbatoolsci_azure -BackupFileName dbatoolsci_azure2.bak -WithFormat -AzureCredential dbatools_ci
-                $results.Database | Should -Be 'dbatoolsci_azure'
-                $results.DeviceType | Should -Be 'URL'
-                $results.BackupFile | Should -Be 'dbatoolsci_azure2.bak'
-            }
+            $server.Query("CREATE CREDENTIAL [dbatools_ci] WITH IDENTITY = N'$script:azureblobaccount', SECRET = N'$env:azurelegacypasswd'")
+        }
+
+        AfterAll {
+            Get-DbaDatabase -SqlInstance $script:instance2 -Database "dbatoolsci_azure" | Remove-DbaDatabase -Confirm:$false
+            $server.Query("DROP CREDENTIAL [$script:azureblob]")
+        }
+
+        It "backs up to Azure properly using SHARED ACCESS SIGNATURE" {
+            $results = Backup-DbaDatabase -SqlInstance $script:instance2 -AzureBaseUrl $script:azureblob -Database dbatoolsci_azure -BackupFileName dbatoolsci_azure.bak -WithFormat
+            $results.Database | Should -Be 'dbatoolsci_azure'
+            $results.DeviceType | Should -Be 'URL'
+            $results.BackupFile | Should -Be 'dbatoolsci_azure.bak'
+        }
+
+        It "backs up to Azure properly using legacy credential" {
+            $results = Backup-DbaDatabase -SqlInstance $script:instance2 -AzureBaseUrl $script:azureblob -Database dbatoolsci_azure -BackupFileName dbatoolsci_azure2.bak -WithFormat -AzureCredential dbatools_ci
+            $results.Database | Should -Be 'dbatoolsci_azure'
+            $results.DeviceType | Should -Be 'URL'
+            $results.BackupFile | Should -Be 'dbatoolsci_azure2.bak'
         }
     }
 }

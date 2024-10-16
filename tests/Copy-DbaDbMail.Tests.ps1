@@ -1,20 +1,11 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Source', 'Destination', 'Type', 'SourceSqlCredential', 'DestinationSqlCredential', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
-        }
-    }
-}
-
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe "Copy-DbaDbMail" {
     BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+
         $servers = Connect-DbaInstance -SqlInstance $script:instance2, $script:instance3
         foreach ($s in $servers) {
             if ( (Get-DbaSpConfigure -SqlInstance $s -Name 'Database Mail XPs').RunningValue -ne 1 ) {
@@ -22,17 +13,16 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             }
         }
 
-        $accountName = "dbatoolsci_test_$(get-random)"
+        $accountName = "dbatoolsci_test_$(Get-Random)"
         $account_display_name = 'dbatoolsci mail alerts'
         $account_description = 'Mail account for email alerts'
-        $profilename = "dbatoolsci_test_$(get-random)"
+        $profilename = "dbatoolsci_test_$(Get-Random)"
         $profile_description = 'Mail profile for email alerts'
 
         $email_address = 'dbatoolssci@dbatools.io'
         $mailserver_name = 'smtp.dbatools.io'
         $replyto_address = 'no-reply@dbatools.io'
         $mailaccountpriority = 1
-
 
         $splat1 = @{
             SqlInstance    = $script:instance2
@@ -53,8 +43,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             MailAccountPriority = $mailaccountpriority
         }
         $null = New-DbaDbMailProfile @splat2
-
     }
+
     AfterAll {
         $servers = Connect-DbaInstance -SqlInstance $script:instance2, $script:instance3
 
@@ -63,43 +53,84 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             Invoke-DbaQuery -SqlInstance $s -Query $mailAccountSettings -Database msdb
             $mailProfileSettings = "EXEC msdb.dbo.sysmail_delete_profile_sp @profile_name = '$profilename';"
             Invoke-DbaQuery -SqlInstance $s -Query $mailProfileSettings -Database msdb
+        }
+    }
 
+    Context "Validate parameters" {
+        BeforeAll {
+            $CommandUnderTest = Get-Command Copy-DbaDbMail
+        }
+        It "Should have Source as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Source -Type DbaInstanceParameter
+        }
+        It "Should have Destination as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Destination -Type DbaInstanceParameter[]
+        }
+        It "Should have Type as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Type -Type String[]
+        }
+        It "Should have SourceSqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SourceSqlCredential -Type PSCredential
+        }
+        It "Should have DestinationSqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type PSCredential
+        }
+        It "Should have Force as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
 
     Context "Copy DbMail to $script:instance3" {
-        $results = Copy-DbaDbMail -Source $script:instance2 -Destination $script:instance3
+        BeforeAll {
+            $results = Copy-DbaDbMail -Source $script:instance2 -Destination $script:instance3
+        }
 
         It "Should have copied database mailitems" {
-            $results | Should Not Be $null
+            $results | Should -Not -BeNullOrEmpty
         }
-        foreach ($r in $results) {
-            if ($r.type -in @('Mail Configuration', 'Mail Account', 'Mail Profile')) {
-                It "Should have copied $($r.type) from $script:instance2" {
-                    $r.SourceServer | Should Be "$script:instance2"
-                }
-                It "Should have copied $($r.type) to $script:instance3" {
-                    $r.DestinationServer | Should Be "$script:instance3"
-                }
+
+        It "Should have copied Mail Configuration from $script:instance2 to $script:instance3" {
+            $results | Where-Object { $_.Type -eq 'Mail Configuration' } | Should -Not -BeNullOrEmpty
+            $results | Where-Object { $_.Type -eq 'Mail Configuration' } | ForEach-Object {
+                $_.SourceServer | Should -Be "$script:instance2"
+                $_.DestinationServer | Should -Be "$script:instance3"
+            }
+        }
+
+        It "Should have copied Mail Account from $script:instance2 to $script:instance3" {
+            $results | Where-Object { $_.Type -eq 'Mail Account' } | Should -Not -BeNullOrEmpty
+            $results | Where-Object { $_.Type -eq 'Mail Account' } | ForEach-Object {
+                $_.SourceServer | Should -Be "$script:instance2"
+                $_.DestinationServer | Should -Be "$script:instance3"
+            }
+        }
+
+        It "Should have copied Mail Profile from $script:instance2 to $script:instance3" {
+            $results | Where-Object { $_.Type -eq 'Mail Profile' } | Should -Not -BeNullOrEmpty
+            $results | Where-Object { $_.Type -eq 'Mail Profile' } | ForEach-Object {
+                $_.SourceServer | Should -Be "$script:instance2"
+                $_.DestinationServer | Should -Be "$script:instance3"
             }
         }
     }
 
     Context "Copy MailServers specifically" {
-        $results = Copy-DbaDbMail -Source $script:instance2 -Destination $script:instance3 -Type MailServers
-
-        It "Should have copied database mailitems" {
-            $results | Should Not Be $null
+        BeforeAll {
+            $results = Copy-DbaDbMail -Source $script:instance2 -Destination $script:instance3 -Type MailServers
         }
 
-        foreach ($r in $results) {
-            It "Should have $($r.status) $($r.type) from $script:instance2" {
-                $r.SourceServer | Should Be "$script:instance2"
-                $r.status | Should Be 'Skipped'
-            }
-            It "Should have $($r.status) $($r.type) to $script:instance3" {
-                $r.DestinationServer | Should Be "$script:instance3"
-                $r.status | Should Be 'Skipped'
+        It "Should have copied database mailitems" {
+            $results | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should have skipped MailServers from $script:instance2 to $script:instance3" {
+            $results | ForEach-Object {
+                $_.SourceServer | Should -Be "$script:instance2"
+                $_.DestinationServer | Should -Be "$script:instance3"
+                $_.Status | Should -Be 'Skipped'
             }
         }
     }

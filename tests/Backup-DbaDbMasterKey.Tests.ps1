@@ -1,39 +1,69 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Backup-DbaDbMasterKey" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Credential', 'Database', 'ExcludeDatabase', 'SecurePassword', 'Path', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Backup-DbaDbMasterKey
+        }
+        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Credential as a non-mandatory parameter of type PSCredential" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database as a non-mandatory parameter of type String[]" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Not -Mandatory
+        }
+        It "Should have ExcludeDatabase as a non-mandatory parameter of type String[]" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type String[] -Not -Mandatory
+        }
+        It "Should have SecurePassword as a non-mandatory parameter of type SecureString" {
+            $CommandUnderTest | Should -HaveParameter SecurePassword -Type SecureString -Not -Mandatory
+        }
+        It "Should have Path as a non-mandatory parameter of type String" {
+            $CommandUnderTest | Should -HaveParameter Path -Type String -Not -Mandatory
+        }
+        It "Should have InputObject as a non-mandatory parameter of type Database[]" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[] -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    Context "Can create a database certificate" {
+    Context "Command usage" {
+        BeforeDiscovery {
+            . (Join-Path $PSScriptRoot 'constants.ps1')
+        }
+
         BeforeAll {
-            if (-not (Get-DbaDbMasterKey -SqlInstance $script:instance1 -Database tempdb)) {
-                $masterkey = New-DbaDbMasterKey -SqlInstance $script:instance1 -Database tempdb -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
+            $password = ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force
+            $server = Connect-DbaInstance -SqlInstance $script:instance1
+            if (-not (Get-DbaDbMasterKey -SqlInstance $server -Database tempdb)) {
+                $null = New-DbaDbMasterKey -SqlInstance $server -Database tempdb -Password $password -Confirm:$false
             }
         }
+
         AfterAll {
-            (Get-DbaDbMasterKey -SqlInstance $script:instance1 -Database tempdb) | Remove-DbaDbMasterKey -Confirm:$false
+            $null = Get-DbaDbMasterKey -SqlInstance $server -Database tempdb | Remove-DbaDbMasterKey -Confirm:$false
         }
 
-        $results = Backup-DbaDbMasterKey -SqlInstance $script:instance1 -Confirm:$false -Database tempdb -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force)
-        $null = Remove-Item -Path $results.Path -ErrorAction SilentlyContinue -Confirm:$false
+        It "backs up the db master key" {
+            $results = Backup-DbaDbMasterKey -SqlInstance $server -Database tempdb -Password $password -Confirm:$false
+            $null = Remove-Item -Path $results.Path -ErrorAction SilentlyContinue -Confirm:$false
 
-        It "backs up the db cert" {
-            $results.Database -eq 'tempdb'
-            $results.Status -eq "Success"
+            $results.Database | Should -Be 'tempdb'
+            $results.Status | Should -Be "Success"
         }
 
-        It "Database ID should be returned" {
-            $results.DatabaseID | Should -Be (Get-DbaDatabase -SqlInstance $script:instance1 -Database tempdb).ID
+        It "returns the correct Database ID" {
+            $results = Backup-DbaDbMasterKey -SqlInstance $server -Database tempdb -Password $password -Confirm:$false
+            $null = Remove-Item -Path $results.Path -ErrorAction SilentlyContinue -Confirm:$false
+
+            $results.DatabaseID | Should -Be (Get-DbaDatabase -SqlInstance $server -Database tempdb).ID
         }
     }
 }

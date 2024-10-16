@@ -1,42 +1,69 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Backup-DbaDbCertificate" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Certificate', 'Database', 'ExcludeDatabase', 'EncryptionPassword', 'DecryptionPassword', 'Path', 'Suffix', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Backup-DbaDbCertificate
+        }
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Certificate parameter" {
+            $CommandUnderTest | Should -HaveParameter Certificate -Type Object[]
+        }
+        It "Should have Database parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[]
+        }
+        It "Should have ExcludeDatabase parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[]
+        }
+        It "Should have EncryptionPassword parameter" {
+            $CommandUnderTest | Should -HaveParameter EncryptionPassword -Type SecureString
+        }
+        It "Should have DecryptionPassword parameter" {
+            $CommandUnderTest | Should -HaveParameter DecryptionPassword -Type SecureString
+        }
+        It "Should have Path parameter" {
+            $CommandUnderTest | Should -HaveParameter Path -Type FileInfo
+        }
+        It "Should have Suffix parameter" {
+            $CommandUnderTest | Should -HaveParameter Suffix -Type String
+        }
+        It "Should have InputObject parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Certificate[]
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
-    BeforeAll {
-        $random = Get-Random
-        $db1Name = "dbatoolscli_$random"
-        $db1 = New-DbaDatabase -SqlInstance $script:instance1 -Name $db1Name
-        $pw = ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force
-        if (-not (Get-DbaDbMasterKey -SqlInstance $script:instance1 -Database $db1Name)) {
-            $masterkey = New-DbaDbMasterKey -SqlInstance $script:instance1 -Database $db1Name -Password $pw -Confirm:$false
+    Context "Command usage" {
+        BeforeAll {
+            . "$PSScriptRoot\constants.ps1"
+            $random = Get-Random
+            $db1Name = "dbatoolscli_$random"
+            $db1 = New-DbaDatabase -SqlInstance $script:instance1 -Name $db1Name
+            $pw = ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force
+            if (-not (Get-DbaDbMasterKey -SqlInstance $script:instance1 -Database $db1Name)) {
+                $masterkey = New-DbaDbMasterKey -SqlInstance $script:instance1 -Database $db1Name -Password $pw -Confirm:$false
+            }
+
+            $cert = New-DbaDbCertificate -SqlInstance $script:instance1 -Database $db1Name -Confirm:$false -Password $pw -Name dbatoolscli_cert1_$random
+            $cert2 = New-DbaDbCertificate -SqlInstance $script:instance1 -Database $db1Name -Confirm:$false -Password $pw -Name dbatoolscli_cert2_$random
         }
 
-        $cert = New-DbaDbCertificate -SqlInstance $script:instance1 -Database $db1Name -Confirm:$false -Password $pw -Name dbatoolscli_cert1_$random
-        $cert2 = New-DbaDbCertificate -SqlInstance $script:instance1 -Database $db1Name -Confirm:$false -Password $pw -Name dbatoolscli_cert2_$random
-    }
-    AfterAll {
-        Remove-DbaDatabase -SqlInstance $script:instance1 -Database $db1Name -Confirm:$false
-    }
-
-    Context "Can create and backup a database certificate" {
+        AfterAll {
+            Remove-DbaDatabase -SqlInstance $script:instance1 -Database $db1Name -Confirm:$false
+        }
 
         It "backs up the db cert" {
             $results = Backup-DbaDbCertificate -SqlInstance $script:instance1 -Certificate $cert.Name -Database $db1Name -EncryptionPassword $pw -DecryptionPassword $pw
             $null = Get-ChildItem -Path $results.Path -ErrorAction Ignore | Remove-Item -Confirm:$false -ErrorAction Ignore
             $results.Certificate | Should -Be $cert.Name
-            $results.Status -match "Success"
+            $results.Status | Should -Match "Success"
             $results.DatabaseID | Should -Be (Get-DbaDatabase -SqlInstance $script:instance1 -Database $db1Name).ID
         }
 
@@ -45,23 +72,19 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $invalidDBCertName2 = "dbatoolscli_invalidCertName2"
             $results = Backup-DbaDbCertificate -SqlInstance $script:instance1 -Certificate $invalidDBCertName, $invalidDBCertName2, $cert2.Name -Database $db1Name -EncryptionPassword $pw -DecryptionPassword $pw -WarningVariable warnVariable 3> $null
             $null = Get-ChildItem -Path $results.Path -ErrorAction Ignore | Remove-Item -Confirm:$false -ErrorAction Ignore
-            #$results.Certificate | Should -Be $cert2.Name
             $warnVariable | Should -BeLike "*Database certificate(s) * not found*"
         }
 
-        # works locally, gah
-        It -Skip "backs up all db certs for a database" {
+        It "backs up all db certs for a database" -Skip {
             $results = Backup-DbaDbCertificate -SqlInstance $script:instance1 -Database $db1Name -EncryptionPassword $pw -DecryptionPassword $pw
             $null = Get-ChildItem -Path $results.Path -ErrorAction Ignore | Remove-Item -Confirm:$false -ErrorAction Ignore
             $results.length | Should -Be 2
-            $results.Certificate | Should -Be $cert.Name, $cert2.Name
+            $results.Certificate | Should -Be @($cert.Name, $cert2.Name)
         }
 
-        # Skip this test as there's a mix of certs, some require a password and some don't and i'll fix later
-        It -Skip "backs up all db certs for an instance" {
+        It "backs up all db certs for an instance" -Skip {
             $results = Backup-DbaDbCertificate -SqlInstance $script:instance1 -EncryptionPassword $pw
             $null = Get-ChildItem -Path $results.Path -ErrorAction Ignore | Remove-Item -Confirm:$false -ErrorAction Ignore
-            # $results.length | Should -BeGreaterOrEqual 2
         }
     }
 }

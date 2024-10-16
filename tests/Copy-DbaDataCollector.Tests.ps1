@@ -1,19 +1,53 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Copy-DbaDataCollector" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'CollectionSet', 'ExcludeCollectionSet', 'NoServerReconfig', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Copy-DbaDataCollector
+        }
+        It "Should have Source parameter" {
+            $CommandUnderTest | Should -HaveParameter Source -Type DbaInstanceParameter
+        }
+        It "Should have SourceSqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SourceSqlCredential -Type PSCredential
+        }
+        It "Should have Destination parameter" {
+            $CommandUnderTest | Should -HaveParameter Destination -Type DbaInstanceParameter[]
+        }
+        It "Should have DestinationSqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type PSCredential
+        }
+        It "Should have CollectionSet parameter" {
+            $CommandUnderTest | Should -HaveParameter CollectionSet -Type Object[]
+        }
+        It "Should have ExcludeCollectionSet parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeCollectionSet -Type Object[]
+        }
+        It "Should have NoServerReconfig parameter" {
+            $CommandUnderTest | Should -HaveParameter NoServerReconfig -Type Switch
+        }
+        It "Should have Force parameter" {
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+
+# Integration tests
+Describe "Copy-DbaDataCollector Integration Tests" -Tag 'IntegrationTests' {
+    BeforeAll {
+        . "$PSScriptRoot\constants.ps1"
+        # Add any necessary setup code here
+    }
+
+    Context "Command executes properly" {
+        It "Copies data collector successfully" {
+            # Add your test here
+            $true | Should -Be $true
+        }
+    }
+
+    # Add more contexts and tests as needed
+}

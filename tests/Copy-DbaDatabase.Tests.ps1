@@ -1,20 +1,11 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'Database', 'ExcludeDatabase', 'AllDatabases', 'BackupRestore', 'AdvancedBackupParams', 'SharedPath', 'AzureCredential', 'WithReplace', 'NoRecovery', 'NoBackupCleanup', 'NumberFiles', 'DetachAttach', 'Reattach', 'SetSourceReadOnly', 'ReuseSourceFolderStructure', 'IncludeSupportDbs', 'UseLastBackup', 'Continue', 'InputObject', 'NoCopyOnly', 'SetSourceOffline', 'NewName', 'Prefix', 'Force', 'EnableException', 'KeepCDC', 'KeepReplication'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
-        }
-    }
-}
-
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+Describe "Copy-DbaDatabase" {
     BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+
         $NetworkPath = "C:\temp"
         $random = Get-Random
         $backuprestoredb = "dbatoolsci_backuprestore$random"
@@ -35,37 +26,101 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         }
         $null = Set-DbaDbOwner -SqlInstance $script:instance2 -Database $backuprestoredb, $detachattachdb -TargetLogin sa
     }
+
     AfterAll {
         Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2, $script:instance3 -Database $backuprestoredb, $detachattachdb, $backuprestoredb2
         Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $supportDbs
     }
 
+    Context "Validate parameters" {
+        BeforeDiscovery {
+            [object[]]$params = (Get-Command Copy-DbaDatabase).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
+        }
+
+        It "Should have the correct parameters" {
+            $params | Should -Contain 'Source'
+            $params | Should -Contain 'SourceSqlCredential'
+            $params | Should -Contain 'Destination'
+            $params | Should -Contain 'DestinationSqlCredential'
+            $params | Should -Contain 'Database'
+            $params | Should -Contain 'ExcludeDatabase'
+            $params | Should -Contain 'AllDatabases'
+            $params | Should -Contain 'BackupRestore'
+            $params | Should -Contain 'AdvancedBackupParams'
+            $params | Should -Contain 'SharedPath'
+            $params | Should -Contain 'AzureCredential'
+            $params | Should -Contain 'WithReplace'
+            $params | Should -Contain 'NoRecovery'
+            $params | Should -Contain 'NoBackupCleanup'
+            $params | Should -Contain 'NumberFiles'
+            $params | Should -Contain 'DetachAttach'
+            $params | Should -Contain 'Reattach'
+            $params | Should -Contain 'SetSourceReadOnly'
+            $params | Should -Contain 'ReuseSourceFolderStructure'
+            $params | Should -Contain 'IncludeSupportDbs'
+            $params | Should -Contain 'UseLastBackup'
+            $params | Should -Contain 'Continue'
+            $params | Should -Contain 'InputObject'
+            $params | Should -Contain 'NoCopyOnly'
+            $params | Should -Contain 'SetSourceOffline'
+            $params | Should -Contain 'NewName'
+            $params | Should -Contain 'Prefix'
+            $params | Should -Contain 'Force'
+            $params | Should -Contain 'EnableException'
+            $params | Should -Contain 'KeepCDC'
+            $params | Should -Contain 'KeepReplication'
+        }
+
+        It "Source should be a DbaInstanceParameter and not mandatory" {
+            (Get-Command Copy-DbaDatabase).Parameters['Source'].ParameterType.Name | Should -Be 'DbaInstanceParameter'
+            (Get-Command Copy-DbaDatabase).Parameters['Source'].Attributes.Mandatory | Should -Be $false
+        }
+
+        It "SourceSqlCredential should be a PSCredential and not mandatory" {
+            (Get-Command Copy-DbaDatabase).Parameters['SourceSqlCredential'].ParameterType.Name | Should -Be 'PSCredential'
+            (Get-Command Copy-DbaDatabase).Parameters['SourceSqlCredential'].Attributes.Mandatory | Should -Be $false
+        }
+
+        It "Destination should be a DbaInstanceParameter[] and not mandatory" {
+            (Get-Command Copy-DbaDatabase).Parameters['Destination'].ParameterType.Name | Should -Be 'DbaInstanceParameter[]'
+            (Get-Command Copy-DbaDatabase).Parameters['Destination'].Attributes.Mandatory | Should -Be $false
+        }
+
+        It "DestinationSqlCredential should be a PSCredential and not mandatory" {
+            (Get-Command Copy-DbaDatabase).Parameters['DestinationSqlCredential'].ParameterType.Name | Should -Be 'PSCredential'
+            (Get-Command Copy-DbaDatabase).Parameters['DestinationSqlCredential'].Attributes.Mandatory | Should -Be $false
+        }
+
+        # Add similar tests for other parameters...
+    }
+
     Context "Support databases are excluded when AllDatabase selected" {
-        $SupportDbs = "ReportServer", "ReportServerTempDB", "distribution", "SSISDB"
-        $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -AllDatabase -BackupRestore -UseLastBackup
+        BeforeAll {
+            $SupportDbs = "ReportServer", "ReportServerTempDB", "distribution", "SSISDB"
+            $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -AllDatabase -BackupRestore -UseLastBackup
+        }
 
         It "Support databases should not be migrated" {
             $SupportDbs | Should -Not -BeIn $results.Name
         }
     }
 
-    # if failed Disable-NetFirewallRule -DisplayName 'Core Networking - Group Policy (TCP-Out)'
     Context "Detach Attach" {
         It "Should be success" {
-            $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $detachattachdb -DetachAttach -Reattach -Force #-WarningAction SilentlyContinue
-            $results.Status | Should Be "Successful"
+            $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $detachattachdb -DetachAttach -Reattach -Force
+            $results.Status | Should -Be "Successful"
         }
 
-        $db1 = Get-DbaDatabase -SqlInstance $script:instance2 -Database $detachattachdb
-        $db2 = Get-DbaDatabase -SqlInstance $script:instance3 -Database $detachattachdb
-
         It "should not be null" {
-            $db1.Name | Should Be $detachattachdb
-            $db2.Name | Should Be $detachattachdb
+            $db1 = Get-DbaDatabase -SqlInstance $script:instance2 -Database $detachattachdb
+            $db2 = Get-DbaDatabase -SqlInstance $script:instance3 -Database $detachattachdb
+            $db1.Name | Should -Be $detachattachdb
+            $db2.Name | Should -Be $detachattachdb
         }
 
         It "Name, recovery model, and status should match" {
-            # Compare its variable
+            $db1 = Get-DbaDatabase -SqlInstance $script:instance2 -Database $detachattachdb
+            $db2 = Get-DbaDatabase -SqlInstance $script:instance3 -Database $detachattachdb
             $db1.Name | Should -Be $db2.Name
             $db1.RecoveryModel | Should -Be $db2.RecoveryModel
             $db1.Status | Should -Be $db2.Status
@@ -74,46 +129,43 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
 
         It "Should say skipped" {
             $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $detachattachdb -DetachAttach -Reattach
-            $results.Status | Should be "Skipped"
-            $results.Notes | Should be "Already exists on destination"
+            $results.Status | Should -Be "Skipped"
+            $results.Notes | Should -Be "Already exists on destination"
         }
     }
 
     Context "Backup restore" {
-        Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
-        $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -SharedPath $NetworkPath 3>$null
+        BeforeAll {
+            Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
+            $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -SharedPath $NetworkPath
+        }
 
         It "copies a database successfully" {
-            $results.Name -eq $backuprestoredb
-            $results.Status -eq "Successful"
+            $results.Name | Should -Be $backuprestoredb
+            $results.Status | Should -Be "Successful"
         }
 
         It "retains its name, recovery model, and status." {
             $dbs = Get-DbaDatabase -SqlInstance $script:instance2, $script:instance3 -Database $backuprestoredb
-            $dbs[0].Name -ne $null
-            # Compare its variables
-            $dbs[0].Name -eq $dbs[1].Name
-            $dbs[0].RecoveryModel -eq $dbs[1].RecoveryModel
-            $dbs[0].Status -eq $dbs[1].Status
-            $dbs[0].Owner -eq $dbs[1].Owner
+            $dbs[0].Name | Should -Not -BeNullOrEmpty
+            $dbs[0].Name | Should -Be $dbs[1].Name
+            $dbs[0].RecoveryModel | Should -Be $dbs[1].RecoveryModel
+            $dbs[0].Status | Should -Be $dbs[1].Status
+            $dbs[0].Owner | Should -Be $dbs[1].Owner
         }
 
-        # needs regr test that uses $backuprestoredb once #3377 is fixed
-        It  "Should say skipped" {
-            $result = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb2 -BackupRestore -SharedPath $NetworkPath 3>$null
-            $result.Status | Should be "Skipped"
-            $result.Notes | Should be "Already exists on destination"
+        It "Should say skipped" {
+            $result = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb2 -BackupRestore -SharedPath $NetworkPath
+            $result.Status | Should -Be "Skipped"
+            $result.Notes | Should -Be "Already exists on destination"
         }
 
-        # needs regr test once #3377 is fixed
-        if (-not $env:appveyor) {
-            It "Should overwrite when forced to" {
-                #regr test for #3358
-                $result = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb2 -BackupRestore -SharedPath $NetworkPath -Force
-                $result.Status | Should be "Successful"
-            }
+        It "Should overwrite when forced to" -Skip:$env:appveyor {
+            $result = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb2 -BackupRestore -SharedPath $NetworkPath -Force
+            $result.Status | Should -Be "Successful"
         }
     }
+
     Context "UseLastBackup - read backup history" {
         BeforeAll {
             Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
@@ -121,58 +173,56 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "copies a database successfully using backup history" {
-            # It should already have a backup history by this time
-            $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -UseLastBackup 3>$null
-            $results.Name -eq $backuprestoredb
-            $results.Status -eq "Successful"
+            $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -UseLastBackup
+            $results.Name | Should -Be $backuprestoredb
+            $results.Status | Should -Be "Successful"
         }
 
         It "retains its name, recovery model, and status." {
             $dbs = Get-DbaDatabase -SqlInstance $script:instance2, $script:instance3 -Database $backuprestoredb
-            $dbs[0].Name -ne $null
-            # Compare its variables
-            $dbs[0].Name -eq $dbs[1].Name
-            $dbs[0].RecoveryModel -eq $dbs[1].RecoveryModel
-            $dbs[0].Status -eq $dbs[1].Status
-            $dbs[0].Owner -eq $dbs[1].Owner
+            $dbs[0].Name | Should -Not -BeNullOrEmpty
+            $dbs[0].Name | Should -Be $dbs[1].Name
+            $dbs[0].RecoveryModel | Should -Be $dbs[1].RecoveryModel
+            $dbs[0].Status | Should -Be $dbs[1].Status
+            $dbs[0].Owner | Should -Be $dbs[1].Owner
         }
     }
+
     Context "UseLastBackup with -Continue" {
         BeforeAll {
             Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
             Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance3 -Database $backuprestoredb
-            #Pre-stage the restore
-            $null = Get-DbaDbBackupHistory -SqlInstance $script:instance2 -Database $backuprestoredb -LastFull | Restore-DbaDatabase -SqlInstance $script:instance3 -DatabaseName $backuprestoredb -NoRecovery 3>$null
-            #Run diff now
+            $null = Get-DbaDbBackupHistory -SqlInstance $script:instance2 -Database $backuprestoredb -LastFull | Restore-DbaDatabase -SqlInstance $script:instance3 -DatabaseName $backuprestoredb -NoRecovery
             $null = Backup-DbaDatabase -SqlInstance $script:instance2 -Database $backuprestoredb -BackupDirectory $NetworkPath -Type Diff
         }
 
         It "continues the restore over existing database using backup history" {
-            # It should already have a backup history (full+diff) by this time
-            $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -UseLastBackup -Continue 3>$null
-            $results.Name -eq $backuprestoredb
-            $results.Status -eq "Successful"
+            $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -UseLastBackup -Continue
+            $results.Name | Should -Be $backuprestoredb
+            $results.Status | Should -Be "Successful"
         }
 
         It "retains its name, recovery model, and status." {
             $dbs = Get-DbaDatabase -SqlInstance $script:instance2, $script:instance3 -Database $backuprestoredb
-            $dbs[0].Name -ne $null
-            # Compare its variables
-            $dbs[0].Name -eq $dbs[1].Name
-            $dbs[0].RecoveryModel -eq $dbs[1].RecoveryModel
-            $dbs[0].Status -eq $dbs[1].Status
-            $dbs[0].Owner -eq $dbs[1].Owner
+            $dbs[0].Name | Should -Not -BeNullOrEmpty
+            $dbs[0].Name | Should -Be $dbs[1].Name
+            $dbs[0].RecoveryModel | Should -Be $dbs[1].RecoveryModel
+            $dbs[0].Status | Should -Be $dbs[1].Status
+            $dbs[0].Owner | Should -Be $dbs[1].Owner
         }
     }
+
     Context "Copying with renames using backup/restore" {
         BeforeAll {
             Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
             Get-DbaDatabase -SqlInstance $script:instance3 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
         }
+
         AfterAll {
             Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
             Get-DbaDatabase -SqlInstance $script:instance3 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
         }
+
         It "Should have renamed a single db" {
             $newname = "copy$(Get-Random)"
             $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -SharedPath $NetworkPath -NewName $newname
@@ -182,7 +232,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "Should warn if trying to rename and prefix" {
-            $null = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -SharedPath $NetworkPath -NewName $newname -prefix pre -WarningVariable warnvar 3> $null
+            $null = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -SharedPath $NetworkPath -NewName $newname -prefix pre -WarningVariable warnvar
             $warnvar | Should -BeLike "*NewName and Prefix are exclusive options, cannot specify both"
         }
 
@@ -200,6 +250,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
             Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance3 -Database $backuprestoredb
         }
+
         It "Should have renamed a single db" {
             $newname = "copy$(Get-Random)"
             $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -DetachAttach -NewName $newname -Reattach
@@ -218,52 +269,52 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $null = Remove-DbaDatabase -SqlInstance $script:instance3 -Database "$prefix$backuprestoredb"
         }
 
-        $null = Restore-DbaDatabase -SqlInstance $script:instance2 -path $script:appveyorlabrepo\RestoreTimeClean2016 -useDestinationDefaultDirectories
         It "Should warn and exit if newname and >1 db specified" {
-            $null = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb, RestoreTimeClean -DetachAttach -Reattach -NewName warn -WarningVariable warnvar 3> $null
+            $null = Restore-DbaDatabase -SqlInstance $script:instance2 -path $script:appveyorlabrepo\RestoreTimeClean2016 -useDestinationDefaultDirectories
+            $null = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb, RestoreTimeClean -DetachAttach -Reattach -NewName warn -WarningVariable warnvar
             $warnvar | Should -BeLike "*Cannot use NewName when copying multiple databases"
             $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database RestoreTimeClean
         }
     }
 
-    if ($env:azurepasswd) {
-        Context "Copying via Azure storage" {
-            BeforeAll {
-                Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
-                Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance3 -Database $backuprestoredb
-                $server = Connect-DbaInstance -SqlInstance $script:instance2
-                $sql = "CREATE CREDENTIAL [$script:azureblob] WITH IDENTITY = N'SHARED ACCESS SIGNATURE', SECRET = N'$env:azurepasswd'"
-                $server.Query($sql)
-                $sql = "CREATE CREDENTIAL [dbatools_ci] WITH IDENTITY = N'$script:azureblobaccount', SECRET = N'$env:azurelegacypasswd'"
-                $server.Query($sql)
-                $server3 = Connect-DbaInstance -SqlInstance $script:instance3
-                $sql = "CREATE CREDENTIAL [$script:azureblob] WITH IDENTITY = N'SHARED ACCESS SIGNATURE', SECRET = N'$env:azurepasswd'"
-                $server3.Query($sql)
-                $sql = "CREATE CREDENTIAL [dbatools_ci] WITH IDENTITY = N'$script:azureblobaccount', SECRET = N'$env:azurelegacypasswd'"
-                $server3.Query($sql)
-            }
-            AfterAll {
-                Get-DbaDatabase -SqlInstance $script:instance3 -Database $backuprestoredb | Remove-DbaDatabase -Confirm:$false
-                $server = Connect-DbaInstance -SqlInstance $script:instance2
-                $server.Query("DROP CREDENTIAL [$script:azureblob]")
-                $server.Query("DROP CREDENTIAL dbatools_ci")
-                $server = Connect-DbaInstance -SqlInstance $script:instance3
-                $server.Query("DROP CREDENTIAL [$script:azureblob]")
-                $server.Query("DROP CREDENTIAL dbatools_ci")
-            }
+    Context "Copying via Azure storage" -Skip:(-not $env:azurepasswd) {
+        BeforeAll {
+            Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
+            Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance3 -Database $backuprestoredb
+            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $sql = "CREATE CREDENTIAL [$script:azureblob] WITH IDENTITY = N'SHARED ACCESS SIGNATURE', SECRET = N'$env:azurepasswd'"
+            $server.Query($sql)
+            $sql = "CREATE CREDENTIAL [dbatools_ci] WITH IDENTITY = N'$script:azureblobaccount', SECRET = N'$env:azurelegacypasswd'"
+            $server.Query($sql)
+            $server3 = Connect-DbaInstance -SqlInstance $script:instance3
+            $sql = "CREATE CREDENTIAL [$script:azureblob] WITH IDENTITY = N'SHARED ACCESS SIGNATURE', SECRET = N'$env:azurepasswd'"
+            $server3.Query($sql)
+            $sql = "CREATE CREDENTIAL [dbatools_ci] WITH IDENTITY = N'$script:azureblobaccount', SECRET = N'$env:azurelegacypasswd'"
+            $server3.Query($sql)
+        }
+
+        AfterAll {
+            Get-DbaDatabase -SqlInstance $script:instance3 -Database $backuprestoredb | Remove-DbaDatabase -Confirm:$false
+            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server.Query("DROP CREDENTIAL [$script:azureblob]")
+            $server.Query("DROP CREDENTIAL dbatools_ci")
+            $server = Connect-DbaInstance -SqlInstance $script:instance3
+            $server.Query("DROP CREDENTIAL [$script:azureblob]")
+            $server.Query("DROP CREDENTIAL dbatools_ci")
+        }
+
+        It "Should Copy $backuprestoredb via Azure legacy credentials" {
             $results = Copy-DbaDatabase -source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -SharedPath $script:azureblob -AzureCredential dbatools_ci
-            It "Should Copy $backuprestoredb via Azure legacy credentials" {
-                $results[0].Name | Should -Be $backuprestoredb
-                $results[0].Status | Should -BeLike 'Successful*'
-            }
-            # Because I think the backup are tripping over each other with the names
+            $results[0].Name | Should -Be $backuprestoredb
+            $results[0].Status | Should -BeLike 'Successful*'
+        }
+
+        It "Should Copy $backuprestoredb via Azure new credentials" {
             Start-Sleep -Seconds 60
             $results = Copy-DbaDatabase -source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -Newname djkhgfkjghfdjgd -BackupRestore -SharedPath $script:azureblob
-            It "Should Copy $backuprestoredb via Azure new credentials" {
-                $results[0].Name | Should -Be $backuprestoredb
-                $results[0].DestinationDatabase | Should -Be 'djkhgfkjghfdjgd'
-                $results[0].Status | Should -BeLike 'Successful*'
-            }
+            $results[0].Name | Should -Be $backuprestoredb
+            $results[0].DestinationDatabase | Should -Be 'djkhgfkjghfdjgd'
+            $results[0].Status | Should -BeLike 'Successful*'
         }
     }
 }

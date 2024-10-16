@@ -1,19 +1,39 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Copy-DbaDbAssembly Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'Assembly', 'ExcludeAssembly', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandName = $PSCommandPath.Split('\')[-1].Replace(".Tests.ps1", "")
+            $Command = Get-Command -Name $CommandName
+        }
+        It "Should have Source parameter" {
+            $Command | Should -HaveParameter Source -Type DbaInstanceParameter -Not -Mandatory
+        }
+        It "Should have SourceSqlCredential parameter" {
+            $Command | Should -HaveParameter SourceSqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Destination parameter" {
+            $Command | Should -HaveParameter Destination -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have DestinationSqlCredential parameter" {
+            $Command | Should -HaveParameter DestinationSqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Assembly parameter" {
+            $Command | Should -HaveParameter Assembly -Type Object[] -Not -Mandatory
+        }
+        It "Should have ExcludeAssembly parameter" {
+            $Command | Should -HaveParameter ExcludeAssembly -Type Object[] -Not -Mandatory
+        }
+        It "Should have Force parameter" {
+            $Command | Should -HaveParameter Force -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have EnableException parameter" {
+            $Command | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+Describe "Copy-DbaDbAssembly Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $server3 = Connect-DbaInstance -SqlInstance $script:instance3
         $server3.Query("CREATE DATABASE dbclrassembly")
@@ -39,6 +59,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
                 @hash           = @hash
             ,   @description    = @assemblyName")
     }
+
     AfterAll {
         Get-DbaDatabase -SqlInstance $script:instance2, $script:instance3 -Database dbclrassembly | Remove-DbaDatabase -Confirm:$false
         $server3.Query("
@@ -52,30 +73,32 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             END")
     }
 
-    It "copies the sample database assembly" {
-        $results = Copy-DbaDbAssembly -Source $script:instance2 -Destination $script:instance3 -Assembly dbclrassembly.resolveDNS
-        $results.Name | Should -Be resolveDns
-        $results.Status | Should -Be Successful
-        $results.Type | Should -Be "Database Assembly"
-        $results.SourceDatabaseID | Should -Be (Get-DbaDatabase -SqlInstance $script:instance2 -Database dbclrassembly).ID
-        $results.DestinationDatabaseID | Should -Be (Get-DbaDatabase -SqlInstance $script:instance3 -Database dbclrassembly).ID
-    }
+    Context "Copying database assemblies" {
+        It "copies the sample database assembly" {
+            $results = Copy-DbaDbAssembly -Source $script:instance2 -Destination $script:instance3 -Assembly dbclrassembly.resolveDNS
+            $results.Name | Should -Be resolveDns
+            $results.Status | Should -Be Successful
+            $results.Type | Should -Be "Database Assembly"
+            $results.SourceDatabaseID | Should -Be (Get-DbaDatabase -SqlInstance $script:instance2 -Database dbclrassembly).ID
+            $results.DestinationDatabaseID | Should -Be (Get-DbaDatabase -SqlInstance $script:instance3 -Database dbclrassembly).ID
+        }
 
-    It "excludes an assembly" {
-        $results = Copy-DbaDbAssembly -Source $script:instance2 -Destination $script:instance3 -Assembly dbclrassembly.resolveDNS -ExcludeAssembly dbclrassembly.resolveDNS
-        $results | Should -BeNullOrEmpty
-    }
+        It "excludes an assembly" {
+            $results = Copy-DbaDbAssembly -Source $script:instance2 -Destination $script:instance3 -Assembly dbclrassembly.resolveDNS -ExcludeAssembly dbclrassembly.resolveDNS
+            $results | Should -BeNullOrEmpty
+        }
 
-    It "forces a drop/create of the assembly in the target server" {
-        $results = Copy-DbaDbAssembly -Source $script:instance2 -Destination $script:instance3 -Assembly dbclrassembly.resolveDNS
-        $results.Status | Should -Be Skipped
-        $results.Notes | Should -Be "Already exists on destination"
+        It "forces a drop/create of the assembly in the target server" {
+            $results = Copy-DbaDbAssembly -Source $script:instance2 -Destination $script:instance3 -Assembly dbclrassembly.resolveDNS
+            $results.Status | Should -Be Skipped
+            $results.Notes | Should -Be "Already exists on destination"
 
-        $results = Copy-DbaDbAssembly -Source $script:instance2 -Destination $script:instance3 -Assembly dbclrassembly.resolveDNS -Force
-        $results.Name | Should -Be resolveDns
-        $results.Status | Should -Be Successful
-        $results.Type | Should -Be "Database Assembly"
-        $results.SourceDatabaseID | Should -Be (Get-DbaDatabase -SqlInstance $script:instance2 -Database dbclrassembly).ID
-        $results.DestinationDatabaseID | Should -Be (Get-DbaDatabase -SqlInstance $script:instance3 -Database dbclrassembly).ID
+            $results = Copy-DbaDbAssembly -Source $script:instance2 -Destination $script:instance3 -Assembly dbclrassembly.resolveDNS -Force
+            $results.Name | Should -Be resolveDns
+            $results.Status | Should -Be Successful
+            $results.Type | Should -Be "Database Assembly"
+            $results.SourceDatabaseID | Should -Be (Get-DbaDatabase -SqlInstance $script:instance2 -Database dbclrassembly).ID
+            $results.DestinationDatabaseID | Should -Be (Get-DbaDatabase -SqlInstance $script:instance3 -Database dbclrassembly).ID
+        }
     }
 }

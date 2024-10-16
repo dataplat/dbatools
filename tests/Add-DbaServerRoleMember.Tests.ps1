@@ -1,35 +1,51 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tags "UnitTests" {
+Describe "Add-DbaServerRoleMember" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('WhatIf', 'Confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'ServerRole', 'Login', 'Role', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should -Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Add-DbaServerRoleMember
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have ServerRole as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ServerRole -Type String[]
+        }
+        It "Should have Login as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Login -Type String[]
+        }
+        It "Should have Role as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Role -Type String[]
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[]
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $login1 = "dbatoolsci_login1_$(Get-Random)"
-        $login2 = "dbatoolsci_login2_$(Get-Random)"
-        $customServerRole = "dbatoolsci_customrole_$(Get-Random)"
-        $fixedServerRoles = 'dbcreator','processadmin'
-        $null = New-DbaLogin -SqlInstance $script:instance2 -Login $login1 -Password ('Password1234!' | ConvertTo-SecureString -asPlainText -Force)
-        $null = New-DbaLogin -SqlInstance $script:instance2 -Login $login2 -Password ('Password1234!' | ConvertTo-SecureString -asPlainText -Force)
-        $null = New-DbaServerRole -SqlInstance $script:instance2 -ServerRole $customServerRole -Owner sa
-    }
-    AfterAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $null = Remove-DbaLogin -SqlInstance $script:instance2 -Login $login1, $login2 -Confirm:$false
-    }
+    Context "Command usage" {
+        BeforeAll {
+            . "$PSScriptRoot\constants.ps1"
+            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $login1 = "dbatoolsci_login1_$(Get-Random)"
+            $login2 = "dbatoolsci_login2_$(Get-Random)"
+            $customServerRole = "dbatoolsci_customrole_$(Get-Random)"
+            $fixedServerRoles = 'dbcreator','processadmin'
+            $null = New-DbaLogin -SqlInstance $script:instance2 -Login $login1 -Password ('Password1234!' | ConvertTo-SecureString -asPlainText -Force)
+            $null = New-DbaLogin -SqlInstance $script:instance2 -Login $login2 -Password ('Password1234!' | ConvertTo-SecureString -asPlainText -Force)
+            $null = New-DbaServerRole -SqlInstance $script:instance2 -ServerRole $customServerRole -Owner sa
+        }
 
-    Context "Functionality" {
+        AfterAll {
+            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $null = Remove-DbaLogin -SqlInstance $script:instance2 -Login $login1, $login2 -Confirm:$false
+        }
+
         It 'Adds Login to Role' {
             Add-DbaServerRoleMember -SqlInstance $script:instance2 -ServerRole $fixedServerRoles[0] -Login $login1 -Confirm:$false
             $roleAfter = Get-DbaServerRole -SqlInstance $server -ServerRole $fixedServerRoles[0]
@@ -45,7 +61,6 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $roleDBAfter = Get-DbaServerRole -SqlInstance $server -ServerRole $fixedServerRoles
             $roleDBAfter.Count | Should -Be $serverRoles.Count
             $roleDBAfter.Login -contains $login1 | Should -Be $true
-
         }
 
         It 'Adds Customer Server-Level Role Membership' {

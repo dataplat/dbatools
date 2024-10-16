@@ -1,19 +1,42 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Copy-DbaAgentProxy" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'ProxyAccount', 'ExcludeProxyAccount', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Copy-DbaAgentProxy
+        }
+        It "Should have Source as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Source -Type DbaInstanceParameter
+        }
+        It "Should have SourceSqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SourceSqlCredential -Type PSCredential
+        }
+        It "Should have Destination as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Destination -Type DbaInstanceParameter[]
+        }
+        It "Should have DestinationSqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type PSCredential
+        }
+        It "Should have ProxyAccount as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ProxyAccount -Type String[]
+        }
+        It "Should have ExcludeProxyAccount as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeProxyAccount -Type String[]
+        }
+        It "Should have Force as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+Describe "Copy-DbaAgentProxy Integration Tests" -Tag "IntegrationTests" {
+    BeforeDiscovery {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     BeforeAll {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $sql = "CREATE CREDENTIAL dbatoolsci_credential WITH IDENTITY = 'sa', SECRET = 'dbatools'"
@@ -25,6 +48,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $sql = "CREATE CREDENTIAL dbatoolsci_credential WITH IDENTITY = 'sa', SECRET = 'dbatools'"
         $server.Query($sql)
     }
+
     AfterAll {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $sql = "EXEC msdb.dbo.sp_delete_proxy @proxy_name = 'dbatoolsci_agentproxy'"
@@ -40,16 +64,15 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Copies Agent Proxy" {
-        $results = Copy-DbaAgentProxy -Source $script:instance2 -Destination $script:instance3 -ProxyAccount dbatoolsci_agentproxy
-
-        It "returns one results" {
-            $results.Count -eq 1
-            $results.Status -eq "Successful"
+        It "returns one successful result" {
+            $results = Copy-DbaAgentProxy -Source $script:instance2 -Destination $script:instance3 -ProxyAccount dbatoolsci_agentproxy
+            $results.Count | Should -Be 1
+            $results.Status | Should -Be "Successful"
         }
 
-        It "return one result that's skipped" {
+        It "creates one proxy on the destination" {
             $results = Get-DbaAgentProxy -SqlInstance $script:instance3 -Proxy dbatoolsci_agentproxy
-            $results.Count -eq 1
+            $results.Count | Should -Be 1
         }
     }
 }

@@ -1,55 +1,73 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Copy-DbaBackupDevice" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'BackupDevice', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Copy-DbaBackupDevice
+        }
+        It "Should have Source as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Source -Type DbaInstanceParameter
+        }
+        It "Should have SourceSqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SourceSqlCredential -Type PSCredential
+        }
+        It "Should have Destination as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Destination -Type DbaInstanceParameter[]
+        }
+        It "Should have DestinationSqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type PSCredential
+        }
+        It "Should have BackupDevice as a parameter" {
+            $CommandUnderTest | Should -HaveParameter BackupDevice -Type Object[]
+        }
+        It "Should have Force as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
 
-if (-not $env:appveyor) {
-    Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-        Context "Setup" {
-            BeforeAll {
-                $devicename = "dbatoolsci-backupdevice"
-                $backupdir = (Get-DbaDefaultPath -SqlInstance $script:instance1).Backup
-                $backupfilename = "$backupdir\$devicename.bak"
-                $server = Connect-DbaInstance -SqlInstance $script:instance1
-                $server.Query("EXEC master.dbo.sp_addumpdevice  @devtype = N'disk', @logicalname = N'$devicename',@physicalname = N'$backupfilename'")
-                $server.Query("BACKUP DATABASE master TO DISK = '$backupfilename'")
-            }
-            AfterAll {
-                $server.Query("EXEC master.dbo.sp_dropdevice @logicalname = N'$devicename'")
-                $server1 = Connect-DbaInstance -SqlInstance $script:instance2
-                try {
-                    $server1.Query("EXEC master.dbo.sp_dropdevice @logicalname = N'$devicename'")
-                } catch {
-                    # don't care
-                }
-                Get-ChildItem -Path $backupfilename | Remove-Item
-            }
+    Context "Integration Tests" -Skip:($env:appveyor) {
+        BeforeAll {
+            $devicename = "dbatoolsci-backupdevice"
+            $backupdir = (Get-DbaDefaultPath -SqlInstance $script:instance1).Backup
+            $backupfilename = "$backupdir\$devicename.bak"
+            $server = Connect-DbaInstance -SqlInstance $script:instance1
+            $server.Query("EXEC master.dbo.sp_addumpdevice  @devtype = N'disk', @logicalname = N'$devicename',@physicalname = N'$backupfilename'")
+            $server.Query("BACKUP DATABASE master TO DISK = '$backupfilename'")
+        }
 
-            $results = Copy-DbaBackupDevice -Source $script:instance1 -Destination $script:instance2 -WarningVariable warn -WarningAction SilentlyContinue 3> $null
-            if ($warn) {
-                It "warns if it has a problem moving (issue for local to local)" {
-                    $warn | Should -Match "backup device to destination"
-                }
-            } else {
-                It "should report success" {
-                    $results.Status | Should Be "Successful"
-                }
+        AfterAll {
+            $server.Query("EXEC master.dbo.sp_dropdevice @logicalname = N'$devicename'")
+            $server1 = Connect-DbaInstance -SqlInstance $script:instance2
+            try {
+                $server1.Query("EXEC master.dbo.sp_dropdevice @logicalname = N'$devicename'")
+            } catch {
+                # don't care
             }
+            Get-ChildItem -Path $backupfilename | Remove-Item
+        }
 
+        It "Should copy the backup device with a warning" {
+            $results = Copy-DbaBackupDevice -Source $script:instance1 -Destination $script:instance2 -WarningVariable warn -WarningAction SilentlyContinue
+            $warn | Should -Match "backup device to destination"
+        }
+
+        It "Should report success when copying the backup device" {
+            $results = Copy-DbaBackupDevice -Source $script:instance1 -Destination $script:instance2 -WarningAction SilentlyContinue
+            $results.Status | Should -Be "Successful"
+        }
+
+        It "Should skip copying when the backup device already exists" {
             $results = Copy-DbaBackupDevice -Source $script:instance1 -Destination $script:instance2
-            It "Should say skipped" {
-                $results.Status -ne "Successful" | Should be $true
-            }
+            $results.Status | Should -Not -Be "Successful"
         }
     }
 }

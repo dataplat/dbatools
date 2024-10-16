@@ -1,22 +1,60 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Copy-DbaDbCertificate" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'Database', 'ExcludeDatabase', 'Certificate', 'ExcludeCertificate', 'SharedPath', 'MasterKeyPassword', 'EncryptionPassword', 'DecryptionPassword', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Copy-DbaDbCertificate
+        }
+        It "Should have Source as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Source -Type DbaInstanceParameter
+        }
+        It "Should have SourceSqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SourceSqlCredential -Type PSCredential
+        }
+        It "Should have Destination as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Destination -Type DbaInstanceParameter[]
+        }
+        It "Should have DestinationSqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type PSCredential
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String[]
+        }
+        It "Should have ExcludeDatabase as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type String[]
+        }
+        It "Should have Certificate as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Certificate -Type String[]
+        }
+        It "Should have ExcludeCertificate as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeCertificate -Type String[]
+        }
+        It "Should have SharedPath as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SharedPath -Type String
+        }
+        It "Should have MasterKeyPassword as a parameter" {
+            $CommandUnderTest | Should -HaveParameter MasterKeyPassword -Type SecureString
+        }
+        It "Should have EncryptionPassword as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EncryptionPassword -Type SecureString
+        }
+        It "Should have DecryptionPassword as a parameter" {
+            $CommandUnderTest | Should -HaveParameter DecryptionPassword -Type SecureString
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe "Copy-DbaDbCertificate Integration Tests" -Tag "IntegrationTests" {
+    BeforeDiscovery {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Can create a database certificate" {
         BeforeAll {
-            $passwd = $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force)
+            $passwd = ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force
             $masterkey = New-DbaDbMasterKey -SqlInstance $script:instance2 -Database master -SecurePassword $passwd -Confirm:$false -ErrorAction SilentlyContinue
 
             $newdbs = New-DbaDatabase -SqlInstance $script:instance2, $script:instance3 -Name dbatoolscopycred
@@ -24,15 +62,16 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $certificateName2 = "Cert_$(Get-Random)"
             $null = New-DbaDbCertificate -SqlInstance $script:instance2 -Name $certificateName2 -Database dbatoolscopycred -Confirm:$false
         }
+
         AfterAll {
             $null = $newdbs | Remove-DbaDatabase -Confirm:$false -ErrorAction SilentlyContinue
             if ($masterKey) {
                 $masterkey | Remove-DbaDbMasterKey -Confirm:$false -ErrorAction SilentlyContinue
             }
         }
-        # doing it on docker instead. this works on linux and on a windows homelab so i dont know
-        It -Skip "Successfully copies a certificate" {
-            $passwd = $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force)
+
+        It "Successfully copies a certificate" -Skip {
+            $passwd = ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force
             $paramscopydb = @{
                 Source             = $script:instance2
                 Destination        = $script:instance3

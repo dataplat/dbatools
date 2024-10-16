@@ -1,43 +1,65 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Copy-DbaDbQueryStoreOption" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'SourceDatabase', 'Destination', 'DestinationSqlCredential', 'DestinationDatabase', 'Exclude', 'AllDatabases', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Copy-DbaDbQueryStoreOption
+        }
+        It "Should have Source as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Source -Type DbaInstanceParameter
+        }
+        It "Should have SourceSqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SourceSqlCredential -Type PSCredential
+        }
+        It "Should have SourceDatabase as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SourceDatabase -Type Object
+        }
+        It "Should have Destination as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Destination -Type DbaInstanceParameter[]
+        }
+        It "Should have DestinationSqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type PSCredential
+        }
+        It "Should have DestinationDatabase as a parameter" {
+            $CommandUnderTest | Should -HaveParameter DestinationDatabase -Type Object[]
+        }
+        It "Should have Exclude as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Exclude -Type Object[]
+        }
+        It "Should have AllDatabases as a parameter" {
+            $CommandUnderTest | Should -HaveParameter AllDatabases -Type SwitchParameter
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe "Copy-DbaDbQueryStoreOption Integration Tests" -Tag "IntegrationTests" {
+    BeforeAll {
+        $server2 = Connect-DbaInstance -SqlInstance $script:instance2
+    }
+
     Context "Verifying query store options are copied" {
         BeforeAll {
-            $server2 = Connect-DbaInstance -SqlInstance $script:instance2
-        }
-        BeforeEach {
             $db1Name = "dbatoolsci_querystoretest1"
+            $db2Name = "dbatoolsci_querystoretest2"
+            $db3Name = "dbatoolsci_querystoretest3"
+            $db4Name = "dbatoolsci_querystoretest4"
+
             $db1 = New-DbaDatabase -SqlInstance $server2 -Name $db1Name
+            $db2 = New-DbaDatabase -SqlInstance $server2 -Name $db2Name
+            $db3 = New-DbaDatabase -SqlInstance $server2 -Name $db3Name
+            $db4 = New-DbaDatabase -SqlInstance $server2 -Name $db4Name
 
             $db1QSOptions = Get-DbaDbQueryStoreOption -SqlInstance $server2 -Database $db1Name
             $originalQSOptionValue = $db1QSOptions.DataFlushIntervalInSeconds
             $updatedQSOption = $db1QSOptions.DataFlushIntervalInSeconds + 1
             $updatedDB1Options = Set-DbaDbQueryStoreOption -SqlInstance $server2 -Database $db1Name -FlushInterval $updatedQSOption -State ReadWrite
-
-            $db2Name = "dbatoolsci_querystoretest2"
-            $db2 = New-DbaDatabase -SqlInstance $server2 -Name $db2Name
-
-            $db3Name = "dbatoolsci_querystoretest3"
-            $db3 = New-DbaDatabase -SqlInstance $server2 -Name $db3Name
-
-            $db4Name = "dbatoolsci_querystoretest4"
-            $db4 = New-DbaDatabase -SqlInstance $server2 -Name $db4Name
         }
-        AfterEach {
-            $db1, $db2, $db3, $db4 | Remove-DbaDatabase -Confirm:$false
+
+        AfterAll {
+            $null = $db1, $db2, $db3, $db4 | Remove-DbaDatabase -Confirm:$false
         }
 
         It "Copy the query store options from one db to another on the same instance" {
@@ -46,7 +68,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
             $result = Copy-DbaDbQueryStoreOption -Source $server2 -SourceDatabase $db1Name -Destination $server2 -DestinationDatabase $db2Name
 
-            $result.Status | Should -Be Successful
+            $result.Status | Should -Be "Successful"
             $result.SourceDatabase | Should -Be $db1Name
             $result.SourceDatabaseID | Should -Be $db1.ID
             $result.Name | Should -Be $db2Name

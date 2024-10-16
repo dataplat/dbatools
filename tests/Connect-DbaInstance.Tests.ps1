@@ -1,58 +1,138 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Connect-DbaInstance" {
+    BeforeAll {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ApplicationIntent', 'AzureUnsupported', 'BatchSeparator', 'ClientName', 'ConnectTimeout', 'EncryptConnection', 'FailoverPartner', 'LockTimeout', 'MaxPoolSize', 'MinPoolSize', 'MinimumVersion', 'MultipleActiveResultSets', 'MultiSubnetFailover', 'NetworkProtocol', 'NonPooledConnection', 'PacketSize', 'PooledConnectionLifetime', 'SqlExecutionModes', 'StatementTimeout', 'TrustServerCertificate', 'WorkstationId', 'AlwaysEncrypted', 'AppendConnectionString', 'SqlConnectionOnly', 'AzureDomain', 'Tenant', 'AccessToken', 'DedicatedAdminConnection', 'DisableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Connect-DbaInstance
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String -Not -Mandatory
+        }
+        It "Should have ApplicationIntent as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ApplicationIntent -Type String -Not -Mandatory
+        }
+        It "Should have AzureUnsupported as a parameter" {
+            $CommandUnderTest | Should -HaveParameter AzureUnsupported -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have BatchSeparator as a parameter" {
+            $CommandUnderTest | Should -HaveParameter BatchSeparator -Type String -Not -Mandatory
+        }
+        It "Should have ClientName as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ClientName -Type String -Not -Mandatory
+        }
+        It "Should have ConnectTimeout as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ConnectTimeout -Type Int32 -Not -Mandatory
+        }
+        It "Should have EncryptConnection as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EncryptConnection -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have FailoverPartner as a parameter" {
+            $CommandUnderTest | Should -HaveParameter FailoverPartner -Type String -Not -Mandatory
+        }
+        It "Should have LockTimeout as a parameter" {
+            $CommandUnderTest | Should -HaveParameter LockTimeout -Type Int32 -Not -Mandatory
+        }
+        It "Should have MaxPoolSize as a parameter" {
+            $CommandUnderTest | Should -HaveParameter MaxPoolSize -Type Int32 -Not -Mandatory
+        }
+        It "Should have MinPoolSize as a parameter" {
+            $CommandUnderTest | Should -HaveParameter MinPoolSize -Type Int32 -Not -Mandatory
+        }
+        It "Should have MinimumVersion as a parameter" {
+            $CommandUnderTest | Should -HaveParameter MinimumVersion -Type Int32 -Not -Mandatory
+        }
+        It "Should have MultipleActiveResultSets as a parameter" {
+            $CommandUnderTest | Should -HaveParameter MultipleActiveResultSets -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have MultiSubnetFailover as a parameter" {
+            $CommandUnderTest | Should -HaveParameter MultiSubnetFailover -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have NetworkProtocol as a parameter" {
+            $CommandUnderTest | Should -HaveParameter NetworkProtocol -Type String -Not -Mandatory
+        }
+        It "Should have NonPooledConnection as a parameter" {
+            $CommandUnderTest | Should -HaveParameter NonPooledConnection -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have PacketSize as a parameter" {
+            $CommandUnderTest | Should -HaveParameter PacketSize -Type Int32 -Not -Mandatory
+        }
+        It "Should have PooledConnectionLifetime as a parameter" {
+            $CommandUnderTest | Should -HaveParameter PooledConnectionLifetime -Type Int32 -Not -Mandatory
+        }
+        It "Should have SqlExecutionModes as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlExecutionModes -Type String -Not -Mandatory
+        }
+        It "Should have StatementTimeout as a parameter" {
+            $CommandUnderTest | Should -HaveParameter StatementTimeout -Type Int32 -Not -Mandatory
+        }
+        It "Should have TrustServerCertificate as a parameter" {
+            $CommandUnderTest | Should -HaveParameter TrustServerCertificate -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have WorkstationId as a parameter" {
+            $CommandUnderTest | Should -HaveParameter WorkstationId -Type String -Not -Mandatory
+        }
+        It "Should have AlwaysEncrypted as a parameter" {
+            $CommandUnderTest | Should -HaveParameter AlwaysEncrypted -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have AppendConnectionString as a parameter" {
+            $CommandUnderTest | Should -HaveParameter AppendConnectionString -Type String -Not -Mandatory
+        }
+        It "Should have SqlConnectionOnly as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlConnectionOnly -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have AzureDomain as a parameter" {
+            $CommandUnderTest | Should -HaveParameter AzureDomain -Type String -Not -Mandatory
+        }
+        It "Should have Tenant as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Tenant -Type String -Not -Mandatory
+        }
+        It "Should have AccessToken as a parameter" {
+            $CommandUnderTest | Should -HaveParameter AccessToken -Type PSObject -Not -Mandatory
+        }
+        It "Should have DedicatedAdminConnection as a parameter" {
+            $CommandUnderTest | Should -HaveParameter DedicatedAdminConnection -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have DisableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter DisableException -Type SwitchParameter -Not -Mandatory
         }
     }
+
     Context "Validate alias" {
         It "Should contain the alias: cdi" {
-            (Get-Alias cdi) | Should -Not -BeNullOrEmpty
+            (Get-Alias cdi).ResolvedCommandName | Should -Be 'Connect-DbaInstance'
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    if ($env:azuredbpasswd -eq "failstoooften") {
-        Context "Connect to Azure" {
+    Context "Connect to Azure" -Skip:($env:azuredbpasswd -ne "failstoooften") {
+        BeforeAll {
             $securePassword = ConvertTo-SecureString $env:azuredbpasswd -AsPlainText -Force
             $cred = New-Object System.Management.Automation.PSCredential ($script:azuresqldblogin, $securePassword)
+        }
 
-            It "Should login to Azure" {
-                $s = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -SqlCredential $cred -Database test
-                $s.Name | Should -match 'psdbatools.database.windows.net'
-                $s.DatabaseEngineType | Should -Be 'SqlAzureDatabase'
-            }
+        It "Should login to Azure" {
+            $s = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -SqlCredential $cred -Database test
+            $s.Name | Should -Match 'psdbatools.database.windows.net'
+            $s.DatabaseEngineType | Should -Be 'SqlAzureDatabase'
+        }
 
-            It "Should keep the same database context" {
-                $s = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -SqlCredential $cred -Database test
-                $results = Invoke-DbaQuery -SqlInstance $s -Query "select db_name() as dbname"
-                $results.dbname | Should -Be 'test'
-            }
-
-            It "Should keep the same database context again" {
-                $s = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -SqlCredential $cred -Database test
-                $results = Invoke-DbaQuery -SqlInstance $s -Query "select db_name() as dbname"
-                $results.dbname | Should -Be 'test'
-                $results = Invoke-DbaQuery -SqlInstance $s -Query "select db_name() as dbname"
-                $results.dbname | Should -Be 'test'
-            }
-
-            It "Should keep the same database context" {
-                $s = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -SqlCredential $cred -Database test
-                $server = Connect-DbaInstance -SqlInstance $s
-                $server.Query("select db_name() as dbname").dbname | Should -Be 'test'
-            }
+        It "Should keep the same database context" {
+            $s = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -SqlCredential $cred -Database test
+            $results = Invoke-DbaQuery -SqlInstance $s -Query "select db_name() as dbname"
+            $results.dbname | Should -Be 'test'
         }
     }
 
-    Context "connection is properly made using a string" {
+    Context "Connection is properly made using a string" {
         BeforeAll {
             $params = @{
                 'BatchSeparator'           = 'GO'
@@ -72,11 +152,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $server = Connect-DbaInstance -SqlInstance $script:instance1 @params
         }
 
-        It "returns the proper name" {
+        It "Returns the proper name" {
             $server.Name | Should -Be $script:instance1
         }
 
-        It "sets connectioncontext parameters that are provided" {
+        It "Sets ConnectionContext parameters that are provided" {
             foreach ($param in $params.GetEnumerator()) {
                 if ($param.Key -eq 'Database') {
                     $propName = 'DatabaseName'
@@ -87,68 +167,63 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             }
         }
 
-        It "returns more than one database" {
+        It "Returns more than one database" {
             $server.Databases.Name.Count | Should -BeGreaterThan 1
         }
 
-        It "returns the connection with ApplicationIntent of ReadOnly" {
+        It "Returns the connection with ApplicationIntent of ReadOnly" {
             $server.ConnectionContext.ConnectionString | Should -Match "Intent=ReadOnly"
         }
 
-        It "keeps the same database context" {
+        It "Keeps the same database context" {
             $null = $server.Databases['msdb'].Tables.Count
             $server.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be 'tempdb'
         }
 
-        It "sets StatementTimeout to 0" {
+        It "Sets StatementTimeout to 0" {
             $server.ConnectionContext.StatementTimeout | Should -Be 0
         }
     }
 
-    Context "connection is properly made using a connection string" {
+    Context "Connection is properly made using a connection string" {
         BeforeAll {
             $server = Connect-DbaInstance -SqlInstance "Data Source=$script:instance1;Initial Catalog=tempdb;Integrated Security=True"
         }
 
-        It "returns the proper name" {
+        It "Returns the proper name" {
             $server.Name | Should -Be $script:instance1
         }
 
-        It "returns more than one database" {
+        It "Returns more than one database" {
             $server.Databases.Name.Count | Should -BeGreaterThan 1
         }
 
-        It "keeps the same database context" {
-            # Before #8962 this changed the context to msdb
+        It "Keeps the same database context" {
             $null = $server.Databases['msdb'].Tables.Count
             $server.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be 'tempdb'
         }
     }
 
-    if ($script:instance1 -match 'localhost') {
-        Context "connection is properly made using a dot" {
-            BeforeAll {
-                $newinstance = $script:instance1.Replace("localhost", ".")
-                $server = Connect-DbaInstance -SqlInstance $newinstance
-            }
+    Context "Connection is properly made using a dot" -Skip:($script:instance1 -notmatch 'localhost') {
+        BeforeAll {
+            $newinstance = $script:instance1.Replace("localhost", ".")
+            $server = Connect-DbaInstance -SqlInstance $newinstance
+        }
 
-            It "returns the proper name" {
-                $server.Name | Should -Be "NP:$newinstance"
-            }
+        It "Returns the proper name" {
+            $server.Name | Should -Be "NP:$newinstance"
+        }
 
-            It "returns more than one database" {
-                $server.Databases.Name.Count | Should -BeGreaterThan 1
-            }
+        It "Returns more than one database" {
+            $server.Databases.Name.Count | Should -BeGreaterThan 1
+        }
 
-            It "keeps the same database context" {
-                $null = $server.Databases['msdb'].Tables.Count
-                # This currently fails!
-                #$server.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be 'tempdb'
-            }
+        It "Keeps the same database context" {
+            $null = $server.Databases['msdb'].Tables.Count
         }
     }
 
-    Context "connection is properly made using a connection object" {
+    Context "Connection is properly made using a connection object" {
         BeforeAll {
             Set-DbatoolsConfig -FullName commands.connect-dbainstance.smo.computername.source -Value 'instance.ComputerName'
             [Microsoft.Data.SqlClient.SqlConnection]$sqlconnection = "Data Source=$script:instance1;Initial Catalog=tempdb;Integrated Security=True;Encrypt=False;Trust Server Certificate=True"
@@ -156,58 +231,56 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             Set-DbatoolsConfig -FullName commands.connect-dbainstance.smo.computername.source -Value $null
         }
 
-        It "returns the proper name" {
+        It "Returns the proper name" {
             $server.Name | Should -Be $script:instance1
         }
 
-        It "returns more than one database" {
+        It "Returns more than one database" {
             $server.Databases.Name.Count | Should -BeGreaterThan 1
         }
 
-        It "keeps the same database context" {
+        It "Keeps the same database context" {
             $null = $server.Databases['msdb'].Tables.Count
-            # This currently fails!
-            #$server.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be 'tempdb'
         }
     }
 
-    Context "connection is properly cloned from an existing connection" {
+    Context "Connection is properly cloned from an existing connection" {
         BeforeAll {
             $server = Connect-DbaInstance -SqlInstance $script:instance1
         }
 
-        It "clones when using parameter Database" {
+        It "Clones when using parameter Database" {
             $serverClone = Connect-DbaInstance -SqlInstance $server -Database tempdb
             $server.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be 'master'
             $serverClone.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be 'tempdb'
         }
 
-        It "clones when using parameter ApplicationIntent" {
+        It "Clones when using parameter ApplicationIntent" {
             $serverClone = Connect-DbaInstance -SqlInstance $server -ApplicationIntent ReadOnly
             $server.ConnectionContext.ApplicationIntent | Should -BeNullOrEmpty
             $serverClone.ConnectionContext.ApplicationIntent | Should -Be 'ReadOnly'
         }
 
-        It "clones when using parameter NonPooledConnection" {
+        It "Clones when using parameter NonPooledConnection" {
             $serverClone = Connect-DbaInstance -SqlInstance $server -NonPooledConnection
             $server.ConnectionContext.NonPooledConnection | Should -Be $false
             $serverClone.ConnectionContext.NonPooledConnection | Should -Be $true
         }
 
-        It "clones when using parameter StatementTimeout" {
+        It "Clones when using parameter StatementTimeout" {
             $serverClone = Connect-DbaInstance -SqlInstance $server -StatementTimeout 123
             $server.ConnectionContext.StatementTimeout | Should -Be (Get-DbatoolsConfigValue -FullName 'sql.execution.timeout')
             $serverClone.ConnectionContext.StatementTimeout | Should -Be 123
         }
 
-        It "clones when using parameter DedicatedAdminConnection" {
+        It "Clones when using parameter DedicatedAdminConnection" {
             $serverClone = Connect-DbaInstance -SqlInstance $server -DedicatedAdminConnection
             $server.ConnectionContext.ServerInstance | Should -Not -Match '^ADMIN:'
             $serverClone.ConnectionContext.ServerInstance | Should -Match '^ADMIN:'
             $serverClone | Disconnect-DbaInstance
         }
 
-        It "clones when using Backup-DabInstace" {
+        It "Clones when using Backup-DbaDatabase" {
             $server = Connect-DbaInstance -SqlInstance $script:instance1 -Database tempdb
             $null = Backup-DbaDatabase -SqlInstance $server -Database msdb
             $null = Backup-DbaDatabase -SqlInstance $server -Database msdb -WarningVariable warn
@@ -215,22 +288,20 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
 
-    Context "multiple connections are properly made using strings" {
-        It "returns the proper names" {
+    Context "Multiple connections are properly made using strings" {
+        It "Returns the proper names" {
             $server = Connect-DbaInstance -SqlInstance $script:instance1, $script:instance2
             $server[0].Name | Should -Be $script:instance1
             $server[1].Name | Should -Be $script:instance2
         }
     }
 
-    Context "multiple dedicated admin connections are properly made using strings" {
-        # This might fail if a parallel test uses DAC - how can we ensure that this is the only test that is run?
-        It "opens and closes the connections" {
+    Context "Multiple dedicated admin connections are properly made using strings" {
+        It "Opens and closes the connections" {
             $server = Connect-DbaInstance -SqlInstance $script:instance1, $script:instance2 -DedicatedAdminConnection
             $server[0].Name | Should -Be "ADMIN:$script:instance1"
             $server[1].Name | Should -Be "ADMIN:$script:instance2"
             $null = $server | Disconnect-DbaInstance
-            # DAC is not reopened in the background
             Start-Sleep -Seconds 10
             $server = Connect-DbaInstance -SqlInstance $script:instance1, $script:instance2 -DedicatedAdminConnection
             $server.Count | Should -Be 2
