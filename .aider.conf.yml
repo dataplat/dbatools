@@ -3,9 +3,6 @@
 ## Load environment variables from a specified file (default: .env in git root)
 env-file: .aider/.env
 
-## Max number of tokens to use for repo map (default: 1024)
-map-tokens: 512
-
 ## Specify the model to use for chat and code assistance
 ## Available models: gpt-4o, claude-3-5-sonnet, o1-preview, deepseek, etc.
 # model: gpt-4o
@@ -13,11 +10,17 @@ map-tokens: 512
 ## Model for editing code
 # editor-model: gpt-4o
 
+## Suggested number of tokens to use for repo map, use 0 to disable (default: 1024)
+map-tokens: 0
+
+## Control how often the repo map is refreshed. Options: auto, always, files, manual (default: auto)
+map-refresh: manual
+
 ## Enable dark mode for a better terminal appearance on dark backgrounds
 dark-mode: true
 
 ## Enable pretty, colorized output (default: true)
-pretty: true
+pretty: false
 
 ## Disable streaming responses; waits for full response before displaying
 ## helps with estimating costs
@@ -25,10 +28,10 @@ stream: false
 no-stream: true
 
 ## Enable caching of prompts to reduce token costs (default: false)
-cache-prompts: false
+cache-prompts: true
 
 ## Show the differences between current and previous file versions
-show-diffs: true
+show-diffs: false
 
 ## Disable automatic commits after changes made by the AI
 auto-commits: false
@@ -43,6 +46,10 @@ gitignore: true
 
 ## Automatically lints code after changes using PSScriptAnalyzer (PowerShell linting)
 auto-lint: true
+
+## map
+show-repo-map: false
+aiderignore: .aider/.aiderignore
 
 ## Command to lint PowerShell code using PSScriptAnalyzer
 lint-cmd: "pwsh -Command Invoke-ScriptAnalyzer -Path *.ps1"
@@ -94,3 +101,8 @@ git: true
 
 ## edit the whole file
 edit-format: whole
+
+## yesss
+yes-always: true
+
+show-prompts: false

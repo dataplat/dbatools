@@ -1,5 +1,6 @@
 param (
-    [int]$Skip
+    [int]$First = 10,
+    [int]$Skip = 50
 )
 # Full prompt path
 if (-not (Get-Module dbatools.library -ListAvailable)) {
@@ -9,7 +10,7 @@ if (-not (Get-Module dbatools.library -ListAvailable)) {
 Import-Module /workspace/dbatools.psm1
 
 $promptTemplate = Get-Content /workspace/.aider/prompts/template.md
-$commands = Get-Command -Module dbatools -Type Function, Cmdlet | Select-Object -First 10 -Skip $Skip
+$commands = Get-Command -Module dbatools -Type Function, Cmdlet | Select-Object -First $First -Skip $Skip
 
 foreach ($command in $commands) {
     $cmdName = $command.Name
@@ -45,5 +46,5 @@ foreach ($command in $commands) {
     $cmdprompt = $cmdPrompt -join "`n"
 
     # Run Aider in non-interactive mode with auto-confirmation
-    aider --message "$cmdPrompt" $filename --yes
+    aider --message "$cmdPrompt" --file $filename --yes --no-stream --cache-prompts --read /workspace/.aider/prompts/conventions.md
 }
