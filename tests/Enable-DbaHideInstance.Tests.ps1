@@ -14,6 +14,10 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+    AfterAll {
+        $null = Disable-DbaHideInstance $script:instance1
+    }
+
     $results = Enable-DbaHideInstance $script:instance1 -EnableException
 
     It "returns true" {
