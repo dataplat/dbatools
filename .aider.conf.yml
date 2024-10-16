@@ -1,7 +1,104 @@
 ## General Settings
 
-## Load environment variables from a specified file (default: .env in git root)
-env-file: .aider/.env
+## Enable dark mode for a better terminal appearance on dark backgrounds
+dark-mode: true
+
+## Enable pretty, colorized output (default: True)
+pretty: false
+
+## Disable streaming responses; waits for full response before displaying
+## helps with estimating costs
+no-stream: true
+
+## Enable caching of prompts to reduce token costs (default: False)
+cache-prompts: true
+
+## Number of times to ping at 5min intervals to keep prompt cache warm (default: 0)
+cache-keepalive-pings: 5
+
+## Show diffs when committing changes (default: False)
+show-diffs: false
+
+## Enable/disable auto commit of LLM changes (default: True)
+auto-commits: false
+
+## Enable/disable suggesting shell commands (default: True)
+no-suggest-shell-commands: true
+
+## Control verbosity of the output (default: False)
+verbose: true
+
+## Specify what edit format the LLM should use (default depends on model)
+edit-format: whole
+
+## Always say yes to every confirmation
+yes-always: true
+
+## Print the system prompts and exit (debug)
+show-prompts: false
+
+
+## History and Settings Files
+
+## Specify the chat input history file (default: .aider.input.history)
+input-history-file: .aider/aider.input.history
+
+## Specify the chat history file (default: .aider.chat.history.md)
+chat-history-file: .aider/aider.chat.history.md
+
+## Log the conversation with the LLM to this file (for example, .aider.llm.history)
+llm-history-file: .aider/aider.llm.history
+
+## Specify a file with aider model settings for unknown models
+model-settings-file: .aider/aider.model.settings.yml
+
+## Specify a file with context window and costs for unknown models
+model-metadata-file: .aider/aider.model.metadata.json
+
+
+## Git Integration
+
+## Enable/disable adding .aider* to .gitignore (default: True)
+gitignore: false
+
+## Enable/disable looking for a git repo (default: True)
+git: false
+
+
+## Code Analysis and Testing
+
+## Automatically lints code after changes using PSScriptAnalyzer (PowerShell linting)
+auto-lint: true
+
+## Command to lint PowerShell code using PSScriptAnalyzer
+lint-cmd: "pwsh -Command Invoke-ScriptAnalyzer -Path *.ps1"
+
+## Automatically runs tests after code changes using Pester
+auto-test: false
+
+
+## Repo Mapping
+
+## Suggested number of tokens to use for repo map, use 0 to disable (default: 1024)
+map-tokens: 0
+
+## Control how often the repo map is refreshed. Options: auto, always, files, manual (default: auto)
+map-refresh: manual
+
+## Specify the aider ignore file (default: .aiderignore in git root)
+aiderignore: .aider/.aiderignore
+
+## Print the repo map and exit (debug)
+show-repo-map: false
+
+
+## Read-only Files
+
+## specify a read-only file (can be used multiple times)
+read: /workspace/.aider/prompts/conventions.md
+
+
+## Model Settings (Commented Out)
 
 ## Specify the model to use for chat and code assistance
 ## Available models: gpt-4o, claude-3-5-sonnet, o1-preview, deepseek, etc.
@@ -10,99 +107,125 @@ env-file: .aider/.env
 ## Model for editing code
 # editor-model: gpt-4o
 
-## Suggested number of tokens to use for repo map, use 0 to disable (default: 1024)
-map-tokens: 0
+## Use gpt-4-0613 model for the main chat
+#4: false
 
-## Control how often the repo map is refreshed. Options: auto, always, files, manual (default: auto)
-map-refresh: manual
+## Use gpt-4o-2024-08-06 model for the main chat
+#4o: false
 
-## Enable dark mode for a better terminal appearance on dark backgrounds
-dark-mode: true
+## Use gpt-4o-mini model for the main chat
+#mini: false
 
-## Enable pretty, colorized output (default: true)
-pretty: false
+## Use gpt-4-1106-preview model for the main chat
+#4-turbo: false
 
-## Disable streaming responses; waits for full response before displaying
-## helps with estimating costs
-stream: false
-no-stream: true
+## Use gpt-3.5-turbo model for the main chat
+#35turbo: false
 
-## Enable caching of prompts to reduce token costs (default: false)
-cache-prompts: true
+## Specify the api base url
+#openai-api-base: xxx
 
-## Show the differences between current and previous file versions
-show-diffs: false
+## Specify the api_type
+#openai-api-type: xxx
 
-## Disable automatic commits after changes made by the AI
-auto-commits: false
+## Specify the api_version
+#openai-api-version: xxx
 
-## Prevent the AI from suggesting shell commands during chats
-no-suggest-shell-commands: true
+## Specify the deployment_id
+#openai-api-deployment-id: xxx
 
-## Number of pings to keep the prompt cache alive at 5-minute intervals (default: 0)
-cache-keepalive-pings: 5
-## Add aider-specific files to .gitignore (default: true)
-gitignore: true
+## Specify the OpenAI organization ID
+#openai-organization-id: xxx
 
-## Automatically lints code after changes using PSScriptAnalyzer (PowerShell linting)
-auto-lint: true
+## Verify the SSL cert when connecting to models (default: True)
+#verify-ssl: true
 
-## map
-show-repo-map: false
-aiderignore: .aider/.aiderignore
+## Soft limit on tokens for chat history, after which summarization begins. If unspecified, defaults to the model's max_chat_history_tokens.
+#max-chat-history-tokens: xxx
 
-## Command to lint PowerShell code using PSScriptAnalyzer
-lint-cmd: "pwsh -Command Invoke-ScriptAnalyzer -Path *.ps1"
 
-## Automatically runs tests after code changes using Pester
-auto-test: false
+## Additional Settings (Commented Out)
 
-## Command to run PowerShell tests using Pester
-#test-cmd: "pwsh -Command Invoke-Pester -Path .\\Tests"
+## Load environment variables from a specified file (default: .env in git root)
+#env-file: .aider/.env
 
-## Control verbosity of the output (default: false)
-verbose: true
+## Multiplier for map tokens when no files are specified (default: 2)
+#map-multiplier-no-files: true
 
-## Specify the input history file
-input-history-file: .aider/aider.input.history
+## Restore the previous chat history messages (default: False)
+#restore-chat-history: false
 
-## Specify the chat history file
-chat-history-file: .aider/aider.chat.history.md
+## Attribute aider code changes in the git author name (default: True)
+#attribute-author: true
 
-## Specify the LLM history file
-llm-history-file: .aider/aider.llm.history
+## Attribute aider commits in the git committer name (default: True)
+#attribute-committer: true
 
-## Specify model-specific settings
-model-settings-file: .aider/aider.model.settings.yml
-model-metadata-file: .aider/aider.model.metadata.json
+## Prefix commit messages with 'aider: ' if aider authored the changes (default: False)
+#attribute-commit-message-author: false
 
-## Completion and Suggestions
+## Prefix all commit messages with 'aider: ' (default: False)
+#attribute-commit-message-committer: false
 
-## Disable completion suggestions for shell commands
-suggest-shell-commands: false
+## Commit all pending changes with a suitable commit message, then exit
+#commit: false
 
-## Git Integration
+## Specify a custom prompt for generating commit messages
+#commit-prompt: xxx
 
-## Enable Git integration to track file changes
-git: true
+## Perform a dry run without modifying files (default: False)
+#dry-run: false
 
-## Completion Menu Colors
+## Skip the sanity check for the git repository (default: False)
+#skip-sanity-check-repo: false
 
-## Set the colors for the completion menu
-#completion-menu-color: "cyan"
-#completion-menu-bg-color: "black"
-#completion-menu-current-color: "white"
-#completion-menu-current-bg-color: "blue"
+## Specify lint commands to run for different languages, eg: "python: flake8 --select=..." (can be used multiple times)
+#lint-cmd: xxx
 
-## Miscellaneous Settings
+## Specify a file to edit (can be used multiple times)
+#file: xxx
 
-## Code Theme
-#code-theme: "monokai"
+## Use VI editing mode in the terminal (default: False)
+#vim: false
 
-## edit the whole file
-edit-format: whole
+## Specify the language to use in the chat (default: None, uses system settings)
+#chat-language: xxx
 
-## yesss
-yes-always: true
+## Check for updates and return status in the exit code
+#just-check-update: false
 
-show-prompts: false
+## Check for new aider versions on launch
+#check-update: true
+
+## Install the latest version from the main branch
+#install-main-branch: false
+
+## Upgrade aider to the latest version from PyPI
+#upgrade: false
+
+## Apply the changes from the given file instead of running the chat (debug)
+#apply: xxx
+
+## Do all startup activities then exit before accepting user input (debug)
+#exit: false
+
+## Specify a single message to send the LLM, process reply then exit (disables chat mode)
+#message: xxx
+
+## Specify a file containing the message to send the LLM, process reply, then exit (disables chat mode)
+#message-file: xxx
+
+## Specify the encoding for input and output (default: utf-8)
+#encoding: utf-8
+
+## Specify the config file (default: search for .aider.conf.yml in git root, cwd or home directory)
+#config: xxx
+
+## Run aider in your browser
+#gui: false
+
+## Audio format for voice recording (default: wav). webm and mp3 require ffmpeg
+#voice-format: wav
+
+## Specify the language for voice using ISO 639-1 code (default: auto)
+#voice-language: en
