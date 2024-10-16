@@ -1,0 +1,6 @@
+# Ignore everything
+*
+
+# Allow the 'tests' directory
+!tests/
+!tests/**
