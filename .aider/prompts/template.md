@@ -189,7 +189,7 @@ Describe "Connect-DbaInstance" {
 
 11. Do not use the Legacy parameter set that adapts Pester 5 syntax to Pester 4 syntax. This parameter set is deprecated, and does not work 100%. The -Strict and -PesterOption parameters are ignored, and providing advanced configuration to -Path (-Script), and -CodeCoverage via a hash table does not work.
 
-12. Analyze and update: --CMDNAME--
+12. Analyze and update: /workspace/tests/--CMDNAME--.Tests.ps1
 
 Make these changes directly in the code. If you encounter any SQL Server-specific testing scenarios that require special handling, implement the necessary adjustments while maintaining the integrity of the tests.
 

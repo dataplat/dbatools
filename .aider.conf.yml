@@ -4,7 +4,7 @@
 env-file: .aider/.env
 
 ## Max number of tokens to use for repo map (default: 1024)
-map-tokens: 2048
+map-tokens: 512
 
 ## Specify the model to use for chat and code assistance
 ## Available models: gpt-4o, claude-3-5-sonnet, o1-preview, deepseek, etc.
