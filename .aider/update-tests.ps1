@@ -1,3 +1,6 @@
+param (
+    [int]$Skip
+)
 # Full prompt path
 if (-not (Get-Module dbatools.library -ListAvailable)) {
     Write-Warning "dbatools.library not found, installing"
@@ -6,7 +9,7 @@ if (-not (Get-Module dbatools.library -ListAvailable)) {
 Import-Module /workspace/dbatools.psm1
 
 $promptTemplate = Get-Content /workspace/.aider/prompts/template.md
-$commands = Get-Command -Module dbatools -Type Function, Cmdlet | Select-Object -First 10
+$commands = Get-Command -Module dbatools -Type Function, Cmdlet | Select-Object -First 10 -Skip $Skip
 
 foreach ($command in $commands) {
     $cmdName = $command.Name
