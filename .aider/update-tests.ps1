@@ -26,5 +26,5 @@ foreach ($command in $commands) {
     $cmdprompt = $cmdPrompt -join "`n"
 
     # Run Aider in non-interactive mode with auto-confirmation
-    #aider --message "$cmdPrompt" "$($command.Name).Tests.ps1" --yes
+    aider --message "$cmdPrompt" "$($command.Name).Tests.ps1" --yes
 }

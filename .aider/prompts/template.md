@@ -31,6 +31,9 @@ Analyze the Pester test files for the dbatools PowerShell module and perform the
 
    Make these changes directly in the code. If you encounter any SQL Server-specific testing scenarios that require special handling, implement the necessary adjustments while maintaining the integrity of the tests.
 
+8.5 Adjust parameter check syntax:
+   - Look at the example below for the new syntax for parameter checks.
+
 9. EXAMPLE PESTER V5 TEST SCRIPT:
 
 ```powershell
