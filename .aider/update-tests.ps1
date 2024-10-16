@@ -9,7 +9,7 @@ if (-not (Get-Module dbatools.library -ListAvailable)) {
 }
 Import-Module /workspace/dbatools.psm1
 
-$promptTemplate = Get-Content /workspace/.aider/prompts/template.md
+$promptTemplate = Get-Content /workspace/.aider/prompts/prompt.md
 $commands = Get-Command -Module dbatools -Type Function, Cmdlet | Select-Object -First $First -Skip $Skip
 
 foreach ($command in $commands) {

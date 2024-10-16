@@ -1,4 +1,17 @@
-## General Settings
+####################
+#                  #
+#     General      #
+#                  #
+####################
+
+## Load environment variables from a specified file (default: .env in git root)
+env-file: .aider/.env
+
+## Suggested number of tokens to use for repo map, use 0 to disable (default: 1024)
+map-tokens: 0
+
+## Control how often the repo map is refreshed. Options: auto, always, files, manual (default: auto)
+map-refresh: manual
 
 ## Enable dark mode for a better terminal appearance on dark backgrounds
 dark-mode: true
@@ -13,9 +26,6 @@ no-stream: true
 ## Enable caching of prompts to reduce token costs (default: False)
 cache-prompts: true
 
-## Number of times to ping at 5min intervals to keep prompt cache warm (default: 0)
-cache-keepalive-pings: 5
-
 ## Show diffs when committing changes (default: False)
 show-diffs: false
 
@@ -24,6 +34,9 @@ auto-commits: false
 
 ## Enable/disable suggesting shell commands (default: True)
 no-suggest-shell-commands: true
+
+## Number of times to ping at 5min intervals to keep prompt cache warm (default: 0)
+cache-keepalive-pings: 5
 
 ## Control verbosity of the output (default: False)
 verbose: true
@@ -38,7 +51,11 @@ yes-always: true
 show-prompts: false
 
 
-## History and Settings Files
+################################
+#                              #
+#   History and Settings Files #
+#                              #
+################################
 
 ## Specify the chat input history file (default: .aider.input.history)
 input-history-file: .aider/aider.input.history
@@ -56,16 +73,24 @@ model-settings-file: .aider/aider.model.settings.yml
 model-metadata-file: .aider/aider.model.metadata.json
 
 
-## Git Integration
+#######################
+#                     #
+#   Git Integration   #
+#                     #
+#######################
 
 ## Enable/disable adding .aider* to .gitignore (default: True)
-gitignore: false
+gitignore: true
 
 ## Enable/disable looking for a git repo (default: True)
-git: false
+git: true
 
 
-## Code Analysis and Testing
+#################################
+#                               #
+#   Code Analysis and Testing   #
+#                               #
+#################################
 
 ## Automatically lints code after changes using PSScriptAnalyzer (PowerShell linting)
 auto-lint: true
@@ -77,28 +102,24 @@ lint-cmd: "pwsh -Command Invoke-ScriptAnalyzer -Path *.ps1"
 auto-test: false
 
 
-## Repo Mapping
+####################
+#                  #
+#   Repo Mapping   #
+#                  #
+####################
 
-## Suggested number of tokens to use for repo map, use 0 to disable (default: 1024)
-map-tokens: 0
-
-## Control how often the repo map is refreshed. Options: auto, always, files, manual (default: auto)
-map-refresh: manual
+## map
+show-repo-map: false
 
 ## Specify the aider ignore file (default: .aiderignore in git root)
 aiderignore: .aider/.aiderignore
 
-## Print the repo map and exit (debug)
-show-repo-map: false
 
-
-## Read-only Files
-
-## specify a read-only file (can be used multiple times)
-read: /workspace/.aider/prompts/conventions.md
-
-
-## Model Settings (Commented Out)
+##################################
+#                                #
+#   Model Settings (Commented)   #
+#                                #
+##################################
 
 ## Specify the model to use for chat and code assistance
 ## Available models: gpt-4o, claude-3-5-sonnet, o1-preview, deepseek, etc.
@@ -106,6 +127,13 @@ read: /workspace/.aider/prompts/conventions.md
 
 ## Model for editing code
 # editor-model: gpt-4o
+
+
+##########################################
+#                                        #
+#   Additional Settings (Commented)      #
+#                                        #
+##########################################
 
 ## Use gpt-4-0613 model for the main chat
 #4: false
@@ -143,12 +171,6 @@ read: /workspace/.aider/prompts/conventions.md
 ## Soft limit on tokens for chat history, after which summarization begins. If unspecified, defaults to the model's max_chat_history_tokens.
 #max-chat-history-tokens: xxx
 
-
-## Additional Settings (Commented Out)
-
-## Load environment variables from a specified file (default: .env in git root)
-#env-file: .aider/.env
-
 ## Multiplier for map tokens when no files are specified (default: 2)
 #map-multiplier-no-files: true
 
@@ -184,6 +206,9 @@ read: /workspace/.aider/prompts/conventions.md
 
 ## Specify a file to edit (can be used multiple times)
 #file: xxx
+
+## specify a read-only file (can be used multiple times)
+#read: xxx
 
 ## Use VI editing mode in the terminal (default: False)
 #vim: false
