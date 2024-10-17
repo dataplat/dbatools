@@ -53,7 +53,7 @@ Describe "Set-DbaAgReplica" {
             $CommandUnderTest | Should -HaveParameter ReadOnlyRoutingList -Type Object[]
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type AvailabilityReplica
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.AvailabilityReplica
         }
         It "Should have EnableException as a parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch

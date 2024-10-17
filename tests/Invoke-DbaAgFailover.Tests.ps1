@@ -19,7 +19,7 @@ Describe "Invoke-DbaAgFailover" {
             $CommandUnderTest | Should -HaveParameter AvailabilityGroup -Type String[] -Mandatory:$false
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type AvailabilityGroup[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.AvailabilityGroup[] -Mandatory:$false
         }
         It "Should have Force parameter" {
             $CommandUnderTest | Should -HaveParameter Force -Type Switch -Mandatory:$false

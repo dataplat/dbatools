@@ -25,7 +25,7 @@ Describe "Test-DbaAgSpn" {
             $CommandUnderTest | Should -HaveParameter Listener -Type String[] -Mandatory:$false
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type AvailabilityGroup[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.AvailabilityGroup[] -Mandatory:$false
         }
         It "Should have EnableException parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false

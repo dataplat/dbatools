@@ -42,7 +42,7 @@ Describe "Set-DbaAvailabilityGroup" {
             $CommandUnderTest | Should -HaveParameter IsDistributedAvailabilityGroup -Type Switch
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type AvailabilityGroup[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.AvailabilityGroup[]
         }
         It "Should have EnableException as a switch parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch

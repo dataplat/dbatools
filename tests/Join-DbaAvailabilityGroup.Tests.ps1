@@ -22,7 +22,7 @@ Describe "Join-DbaAvailabilityGroup" {
             $CommandUnderTest | Should -HaveParameter ClusterType -Type String
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type AvailabilityGroup[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.AvailabilityGroup[]
         }
         It "Should have EnableException as a parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch

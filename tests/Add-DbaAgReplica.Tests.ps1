@@ -65,7 +65,7 @@ Describe "Add-DbaAgReplica" {
             $CommandUnderTest | Should -HaveParameter SessionTimeout -Type Int32
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type AvailabilityGroup
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.AvailabilityGroup
         }
         It "Should have EnableException parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch

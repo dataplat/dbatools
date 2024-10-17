@@ -21,7 +21,7 @@ Describe "Set-DbaAgListener" {
             $CommandUnderTest | Should -HaveParameter Port -Type Int32
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type AvailabilityGroupListener[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.AvailabilityGroupListener[]
         }
         It "Should have EnableException as a parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch

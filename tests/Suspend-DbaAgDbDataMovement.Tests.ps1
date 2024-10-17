@@ -39,7 +39,7 @@ Describe "Suspend-DbaAgDbDataMovement" {
             $CommandUnderTest | Should -HaveParameter Database -Type String[]
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type AvailabilityDatabase[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.AvailabilityDatabase[]
         }
         It "Should have EnableException as a parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch

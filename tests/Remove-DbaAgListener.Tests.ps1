@@ -17,7 +17,7 @@ Describe "Remove-DbaAgListener" {
             $CommandUnderTest | Should -HaveParameter AvailabilityGroup -Type String[]
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type AvailabilityGroupListener[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.AvailabilityGroupListener[]
         }
         It "Should have EnableException as a parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch

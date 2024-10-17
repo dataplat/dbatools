@@ -45,7 +45,7 @@ Describe "Sync-DbaAvailabilityGroup" {
             $CommandUnderTest | Should -HaveParameter DisableJobOnDestination -Type Switch
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type AvailabilityGroup[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.AvailabilityGroup[]
         }
         It "Should have Force parameter" {
             $CommandUnderTest | Should -HaveParameter Force -Type Switch
