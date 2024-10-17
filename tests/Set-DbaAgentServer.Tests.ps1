@@ -6,7 +6,7 @@ Describe "Set-DbaAgentServer" {
         Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
         . "$PSScriptRoot\constants.ps1"
 
-        $testServer = $env:instance2
+        $testServer = $global:instance2
         $random = Get-Random
         $mailProfileName = "dbatoolsci_$random"
         $mailProfile = New-DbaDbMailProfile -SqlInstance $testServer -Name $mailProfileName

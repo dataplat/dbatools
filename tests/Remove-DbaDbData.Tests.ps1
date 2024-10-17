@@ -30,10 +30,10 @@ Describe "Remove-DbaDbData" {
 
     Context "Integration Tests" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $env:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $dbname1 = "dbatoolsci_$(Get-Random)"
-            $null = New-DbaDatabase -SqlInstance $env:instance2 -Name $dbname1 -Owner sa
-            Invoke-DbaQuery -SqlInstance $env:instance2 -Database $dbname1 -Query "
+            $null = New-DbaDatabase -SqlInstance $global:instance2 -Name $dbname1 -Owner sa
+            Invoke-DbaQuery -SqlInstance $global:instance2 -Database $dbname1 -Query "
             create table dept (
                 deptid int identity(1,1) primary key,
                 deptname varchar(10)
@@ -52,92 +52,92 @@ Describe "Remove-DbaDbData" {
             "
         }
         AfterAll {
-            $null = Remove-DbaDatabase -SqlInstance $env:instance2 -Database $dbname1 -Confirm:$false
+            $null = Remove-DbaDatabase -SqlInstance $global:instance2 -Database $dbname1 -Confirm:$false
         }
 
         Context "Functionality" {
             BeforeEach {
-                Invoke-DbaQuery -SqlInstance $env:instance2 -Database $dbname1 -Query "
+                Invoke-DbaQuery -SqlInstance $global:instance2 -Database $dbname1 -Query "
                     insert into dept values ('hr');
                     insert into emp values (1);"
             }
 
             It 'Removes Data for a specified database' {
-                Remove-DbaDbData -SqlInstance $env:instance2 -Database $dbname1 -Confirm:$false
-                $result = Invoke-DbaQuery -SqlInstance $env:instance2 -Database $dbname1 -Query 'Select count(*) as rwCnt from dept'
+                Remove-DbaDbData -SqlInstance $global:instance2 -Database $dbname1 -Confirm:$false
+                $result = Invoke-DbaQuery -SqlInstance $global:instance2 -Database $dbname1 -Query 'Select count(*) as rwCnt from dept'
                 $result.rwCnt | Should -Be 0
             }
 
             It 'Foreign Keys are recreated' {
-                $fkeys = Get-DbaDbForeignKey -SqlInstance $env:instance2 -Database $dbname1
+                $fkeys = Get-DbaDbForeignKey -SqlInstance $global:instance2 -Database $dbname1
                 $fkeys.Name | Should -Be 'FK_dept'
             }
 
             It 'Foreign Keys are trusted' {
-                $fkeys = Get-DbaDbForeignKey -SqlInstance $env:instance2 -Database $dbname1
+                $fkeys = Get-DbaDbForeignKey -SqlInstance $global:instance2 -Database $dbname1
                 $fkeys.IsChecked | Should -Be $true
             }
 
             It 'Views are recreated' {
-                $views = Get-DbaDbView -SqlInstance $env:instance2 -Database $dbname1 -ExcludeSystemView
+                $views = Get-DbaDbView -SqlInstance $global:instance2 -Database $dbname1 -ExcludeSystemView
                 $views.Name | Should -Be 'vw_emp'
             }
         }
 
         Context "Functionality - Pipe database" {
             BeforeEach {
-                Invoke-DbaQuery -SqlInstance $env:instance2 -Database $dbname1 -Query "
+                Invoke-DbaQuery -SqlInstance $global:instance2 -Database $dbname1 -Query "
                     insert into dept values ('hr');
                     insert into emp values (1);"
             }
 
             It 'Removes Data for a specified database' {
-                Get-DbaDatabase -SqlInstance $env:instance2 -Database $dbname1 | Remove-DbaDbData -Confirm:$false
-                $result = Invoke-DbaQuery -SqlInstance $env:instance2 -Database $dbname1 -Query 'Select count(*) as rwCnt from dept'
+                Get-DbaDatabase -SqlInstance $global:instance2 -Database $dbname1 | Remove-DbaDbData -Confirm:$false
+                $result = Invoke-DbaQuery -SqlInstance $global:instance2 -Database $dbname1 -Query 'Select count(*) as rwCnt from dept'
                 $result.rwCnt | Should -Be 0
             }
 
             It 'Foreign Keys are recreated' {
-                $fkeys = Get-DbaDbForeignKey -SqlInstance $env:instance2 -Database $dbname1
+                $fkeys = Get-DbaDbForeignKey -SqlInstance $global:instance2 -Database $dbname1
                 $fkeys.Name | Should -Be 'FK_dept'
             }
 
             It 'Foreign Keys are trusted' {
-                $fkeys = Get-DbaDbForeignKey -SqlInstance $env:instance2 -Database $dbname1
+                $fkeys = Get-DbaDbForeignKey -SqlInstance $global:instance2 -Database $dbname1
                 $fkeys.IsChecked | Should -Be $true
             }
 
             It 'Views are recreated' {
-                $views = Get-DbaDbView -SqlInstance $env:instance2 -Database $dbname1 -ExcludeSystemView
+                $views = Get-DbaDbView -SqlInstance $global:instance2 -Database $dbname1 -ExcludeSystemView
                 $views.Name | Should -Be 'vw_emp'
             }
         }
 
         Context "Functionality - Pipe server" {
             BeforeEach {
-                Invoke-DbaQuery -SqlInstance $env:instance2 -Database $dbname1 -Query "
+                Invoke-DbaQuery -SqlInstance $global:instance2 -Database $dbname1 -Query "
                     insert into dept values ('hr');
                     insert into emp values (1);"
             }
 
             It 'Removes Data for a specified database' {
-                Connect-DbaInstance -SqlInstance $env:instance2 | Remove-DbaDbData -Database $dbname1 -Confirm:$false
-                $result = Invoke-DbaQuery -SqlInstance $env:instance2 -Database $dbname1 -Query 'Select count(*) as rwCnt from dept'
+                Connect-DbaInstance -SqlInstance $global:instance2 | Remove-DbaDbData -Database $dbname1 -Confirm:$false
+                $result = Invoke-DbaQuery -SqlInstance $global:instance2 -Database $dbname1 -Query 'Select count(*) as rwCnt from dept'
                 $result.rwCnt | Should -Be 0
             }
 
             It 'Foreign Keys are recreated' {
-                $fkeys = Get-DbaDbForeignKey -SqlInstance $env:instance2 -Database $dbname1
+                $fkeys = Get-DbaDbForeignKey -SqlInstance $global:instance2 -Database $dbname1
                 $fkeys.Name | Should -Be 'FK_dept'
             }
 
             It 'Foreign Keys are trusted' {
-                $fkeys = Get-DbaDbForeignKey -SqlInstance $env:instance2 -Database $dbname1
+                $fkeys = Get-DbaDbForeignKey -SqlInstance $global:instance2 -Database $dbname1
                 $fkeys.IsChecked | Should -Be $true
             }
 
             It 'Views are recreated' {
-                $views = Get-DbaDbView -SqlInstance $env:instance2 -Database $dbname1 -ExcludeSystemView
+                $views = Get-DbaDbView -SqlInstance $global:instance2 -Database $dbname1 -ExcludeSystemView
                 $views.Name | Should -Be 'vw_emp'
             }
         }

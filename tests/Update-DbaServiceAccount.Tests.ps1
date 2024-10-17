@@ -11,7 +11,7 @@ Describe "Update-DbaServiceAccount" {
         $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
         $newPassword = 'Myxtr33mly$ecur3P@ssw0rd'
         $newSecurePassword = ConvertTo-SecureString $newPassword -AsPlainText -Force
-        $server = Connect-DbaInstance -SqlInstance $env:instance2
+        $server = Connect-DbaInstance -SqlInstance $global:instance2
         $computerName = $server.NetName
         $instanceName = $server.ServiceName
         $winLogin = "$computerName\$login"
@@ -25,7 +25,7 @@ Describe "Update-DbaServiceAccount" {
             }
         } catch { <#User does not exist#> }
 
-        if ($l = Get-DbaLogin -SqlInstance $env:instance2 -Login $winLogin) {
+        if ($l = Get-DbaLogin -SqlInstance $global:instance2 -Login $winLogin) {
             $results = $server.Query("IF EXISTS (SELECT * FROM sys.server_principals WHERE name = '$winLogin') EXEC sp_who '$winLogin'")
             foreach ($spid in $results.spid) {
                 $null = $server.Query("kill $spid")
@@ -41,7 +41,7 @@ Describe "Update-DbaServiceAccount" {
         $user.SetInfo()
 
         #Get current service users
-        $services = Get-DbaService -ComputerName $env:instance2 -Type Engine, Agent -Instance $instanceName
+        $services = Get-DbaService -ComputerName $global:instance2 -Type Engine, Agent -Instance $instanceName
         $currentAgentUser = ($services | Where-Object { $_.ServiceType -eq 'Agent' }).StartName
         $currentEngineUser = ($services | Where-Object { $_.ServiceType -eq 'Engine' }).StartName
 

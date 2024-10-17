@@ -24,8 +24,8 @@ Describe "Get-DbaNetworkConfiguration" {
             . (Join-Path $PSScriptRoot 'constants.ps1')
         }
         BeforeAll {
-            $resultsFull = Get-DbaNetworkConfiguration -SqlInstance $env:instance2
-            $resultsTcpIpProperties = Get-DbaNetworkConfiguration -SqlInstance $env:instance2 -OutputType TcpIpProperties
+            $resultsFull = Get-DbaNetworkConfiguration -SqlInstance $global:instance2
+            $resultsTcpIpProperties = Get-DbaNetworkConfiguration -SqlInstance $global:instance2 -OutputType TcpIpProperties
         }
 
         It "Should Return a Result" {

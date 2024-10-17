@@ -31,7 +31,7 @@ Describe "Show-DbaDbList" {
             . (Join-Path $PSScriptRoot 'constants.ps1')
         }
 
-        Context "Connects and shows database list" -ForEach $env:instance1, $env:instance2 {
+        Context "Connects and shows database list" -ForEach $global:instance1, $global:instance2 {
             BeforeAll {
                 $server = Connect-DbaInstance -SqlInstance $_
             }

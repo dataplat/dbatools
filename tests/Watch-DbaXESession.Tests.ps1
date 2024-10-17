@@ -31,7 +31,7 @@ Describe "Watch-DbaXESession" {
 
     Context "Command functions as expected" {
         BeforeAll {
-            $env:instanceNotSupported = $true
+            $global:instanceNotSupported = $true
         }
 
         It "warns if SQL instance version is not supported" {
@@ -42,7 +42,7 @@ Describe "Watch-DbaXESession" {
             }
 
             $warningMessage = ""
-            $null = Watch-DbaXESession -SqlInstance $env:instance1 -Session system_health -WarningAction SilentlyContinue -WarningVariable warningMessage
+            $null = Watch-DbaXESession -SqlInstance $global:instance1 -Session system_health -WarningAction SilentlyContinue -WarningVariable warningMessage
 
             $warningMessage | Should -Match "SQL Server version 11 required"
         }

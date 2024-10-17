@@ -38,11 +38,11 @@ Describe "Measure-DbaDiskSpaceRequirement" {
 
     Context "Should Measure Disk Space Required" {
         BeforeAll {
-            $server1 = Connect-DbaInstance -SqlInstance $env:instance1
-            $server2 = Connect-DbaInstance -SqlInstance $env:instance2
+            $server1 = Connect-DbaInstance -SqlInstance $global:instance1
+            $server2 = Connect-DbaInstance -SqlInstance $global:instance2
             $Options = @{
-                Source              = $env:instance1
-                Destination         = $env:instance2
+                Source              = $global:instance1
+                Destination         = $global:instance2
                 Database            = "master"
                 DestinationDatabase = "Dbatoolsci_DestinationDB"
             }
@@ -57,7 +57,7 @@ Describe "Measure-DbaDiskSpaceRequirement" {
             $results.SourceDatabase | Should -Be $Options.Database
         }
 
-        It "Should be sourced from the instance $($env:instance1)" {
+        It "Should be sourced from the instance $($global:instance1)" {
             $results.SourceSqlInstance | Should -Be $server1.SqlInstance
         }
 
@@ -65,7 +65,7 @@ Describe "Measure-DbaDiskSpaceRequirement" {
             $results.DestinationDatabase | Should -Be $Options.DestinationDatabase
         }
 
-        It "Should be destined for the instance $($env:instance2)" {
+        It "Should be destined for the instance $($global:instance2)" {
             $results.DestinationSqlInstance | Should -Be $server2.SqlInstance
         }
 

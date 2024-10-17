@@ -42,17 +42,17 @@ Describe "Measure-DbaBackupThroughput" {
 
     Context "Returns output for single database" {
         BeforeAll {
-            $null = Get-DbaProcess -SqlInstance $env:instance2 | Where-Object Program -Match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
+            $null = Get-DbaProcess -SqlInstance $global:instance2 | Where-Object Program -Match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
             $random = Get-Random
             $db = "dbatoolsci_measurethruput$random"
-            $null = New-DbaDatabase -SqlInstance $env:instance2 -Database $db | Backup-DbaDatabase
+            $null = New-DbaDatabase -SqlInstance $global:instance2 -Database $db | Backup-DbaDatabase
         }
         AfterAll {
-            $null = Remove-DbaDatabase -SqlInstance $env:instance2 -Database $db
+            $null = Remove-DbaDatabase -SqlInstance $global:instance2 -Database $db
         }
 
         It "Should return results" {
-            $results = Measure-DbaBackupThroughput -SqlInstance $env:instance2 -Database $db
+            $results = Measure-DbaBackupThroughput -SqlInstance $global:instance2 -Database $db
             $results.Database | Should -Be $db
             $results.BackupCount | Should -Be 1
         }

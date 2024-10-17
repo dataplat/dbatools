@@ -46,7 +46,7 @@ Describe "Invoke-DbaDbClone" {
             $clonedb = "dbatoolsci_clonetest_CLONE"
             $clonedb2 = "dbatoolsci_clonetest_CLONE2"
 
-            $server = Connect-DbaInstance -SqlInstance $env:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $server.Query("CREATE DATABASE $dbname")
         }
 
@@ -56,24 +56,24 @@ Describe "Invoke-DbaDbClone" {
 
         It "warns if SQL instance version is not supported" {
             $versionwarn = $null
-            $results = Invoke-DbaDbClone -SqlInstance $env:instance1 -Database $dbname -CloneDatabase $clonedb -WarningAction SilentlyContinue -WarningVariable versionwarn
+            $results = Invoke-DbaDbClone -SqlInstance $global:instance1 -Database $dbname -CloneDatabase $clonedb -WarningAction SilentlyContinue -WarningVariable versionwarn
             $versionwarn | Should -Match "required"
         }
 
         It "warns if destination database already exists" {
             $dbwarn = $null
-            $results = Invoke-DbaDbClone -SqlInstance $env:instance2 -Database $dbname -CloneDatabase tempdb -WarningAction SilentlyContinue -WarningVariable dbwarn
+            $results = Invoke-DbaDbClone -SqlInstance $global:instance2 -Database $dbname -CloneDatabase tempdb -WarningAction SilentlyContinue -WarningVariable dbwarn
             $dbwarn | Should -Match "exists"
         }
 
         It "warns if a system db is specified to clone" {
             $systemwarn = $null
-            $results = Invoke-DbaDbClone -SqlInstance $env:instance2 -Database master -CloneDatabase $clonedb -WarningAction SilentlyContinue -WarningVariable systemwarn
+            $results = Invoke-DbaDbClone -SqlInstance $global:instance2 -Database master -CloneDatabase $clonedb -WarningAction SilentlyContinue -WarningVariable systemwarn
             $systemwarn | Should -Match "user database"
         }
 
         It "returns 1 result with the correct name" {
-            $results = Invoke-DbaDbClone -SqlInstance $env:instance2 -Database $dbname -CloneDatabase $clonedb -WarningAction SilentlyContinue
+            $results = Invoke-DbaDbClone -SqlInstance $global:instance2 -Database $dbname -CloneDatabase $clonedb -WarningAction SilentlyContinue
             $results | Should -HaveCount 1
             $results.Name | Should -BeIn @($clonedb, $clonedb2)
         }

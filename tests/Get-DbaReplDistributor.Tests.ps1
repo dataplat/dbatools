@@ -58,7 +58,7 @@ Describe "Get-DbaReplDistributor" {
         }
 
         BeforeAll {
-            $results = Get-DbaReplDistributor -SqlInstance $env:instance1
+            $results = Get-DbaReplDistributor -SqlInstance $global:instance1
         }
 
         It "accurately reports that the distributor is not installed" {

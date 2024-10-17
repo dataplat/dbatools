@@ -45,7 +45,7 @@ Describe "Remove-DbaDbCertificate Integration Tests" -Tag "IntegrationTests" {
 
     Context "Can remove a database certificate" -Skip:$SkipTests {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $env:instance1
+            $server = Connect-DbaInstance -SqlInstance $global:instance1
             if (-not (Get-DbaDbMasterKey -SqlInstance $server -Database master)) {
                 $masterkey = New-DbaDbMasterKey -SqlInstance $server -Database master -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
             }

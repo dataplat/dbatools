@@ -8,12 +8,12 @@ Describe "Get-DbaLogin" {
 
         $random = Get-Random
         $password = ConvertTo-SecureString -String "password1A@" -AsPlainText -Force
-        New-DbaLogin -SqlInstance $env:instance1 -Login "testlogin1_$random" -Password $password
-        New-DbaLogin -SqlInstance $env:instance1 -Login "testlogin2_$random" -Password $password
+        New-DbaLogin -SqlInstance $global:instance1 -Login "testlogin1_$random" -Password $password
+        New-DbaLogin -SqlInstance $global:instance1 -Login "testlogin2_$random" -Password $password
     }
 
     AfterAll {
-        Remove-DbaLogin -SqlInstance $env:instance1 -Login "testlogin1_$random", "testlogin2_$random" -Confirm:$false -Force
+        Remove-DbaLogin -SqlInstance $global:instance1 -Login "testlogin1_$random", "testlogin2_$random" -Confirm:$false -Force
     }
 
     Context "Validate parameters" {
@@ -66,25 +66,25 @@ Describe "Get-DbaLogin" {
 
     Context "Does sql instance have a SA account" {
         It "Should report that one account named SA exists" {
-            $results = Get-DbaLogin -SqlInstance $env:instance1 -Login sa
+            $results = Get-DbaLogin -SqlInstance $global:instance1 -Login sa
             $results.Count | Should -Be 1
         }
     }
 
     Context "Check that SA account is enabled" {
         It "Should say the SA account is disabled FALSE" {
-            $results = Get-DbaLogin -SqlInstance $env:instance1 -Login sa
+            $results = Get-DbaLogin -SqlInstance $global:instance1 -Login sa
             $results.IsDisabled | Should -Be "False"
         }
     }
 
     Context "Check that SA account is SQL Login" {
         It "Should report that one SQL Login named SA exists" {
-            $results = Get-DbaLogin -SqlInstance $env:instance1 -Login sa -Type SQL -Detailed
+            $results = Get-DbaLogin -SqlInstance $global:instance1 -Login sa -Type SQL -Detailed
             $results.Count | Should -Be 1
         }
         It "Should get LoginProperties via Detailed switch" {
-            $results = Get-DbaLogin -SqlInstance $env:instance1 -Login sa -Type SQL -Detailed
+            $results = Get-DbaLogin -SqlInstance $global:instance1 -Login sa -Type SQL -Detailed
             $results.BadPasswordCount | Should -Not -BeNullOrEmpty
             $results.PasswordHash | Should -Not -BeNullOrEmpty
         }
@@ -92,55 +92,55 @@ Describe "Get-DbaLogin" {
 
     Context "Validate params" {
         It "Multiple logins" {
-            $results = Get-DbaLogin -SqlInstance $env:instance1 -Login "testlogin1_$random", "testlogin2_$random" -Type SQL
+            $results = Get-DbaLogin -SqlInstance $global:instance1 -Login "testlogin1_$random", "testlogin2_$random" -Type SQL
             $results.Count | Should -Be 2
             $results.Name | Should -Contain "testlogin1_$random"
             $results.Name | Should -Contain "testlogin2_$random"
         }
 
         It "ExcludeLogin" {
-            $results = Get-DbaLogin -SqlInstance $env:instance1 -ExcludeLogin "testlogin2_$random" -Type SQL
+            $results = Get-DbaLogin -SqlInstance $global:instance1 -ExcludeLogin "testlogin2_$random" -Type SQL
             $results.Name | Should -Not -Contain "testlogin2_$random"
             $results.Name | Should -Contain "testlogin1_$random"
 
-            $results = Get-DbaLogin -SqlInstance $env:instance1 -ExcludeLogin "testlogin1_$random", "testlogin2_$random" -Type SQL
+            $results = Get-DbaLogin -SqlInstance $global:instance1 -ExcludeLogin "testlogin1_$random", "testlogin2_$random" -Type SQL
             $results.Name | Should -Not -Contain "testlogin2_$random"
             $results.Name | Should -Not -Contain "testlogin1_$random"
         }
 
         It "IncludeFilter" {
-            $results = Get-DbaLogin -SqlInstance $env:instance1 -IncludeFilter "*$random" -Type SQL
+            $results = Get-DbaLogin -SqlInstance $global:instance1 -IncludeFilter "*$random" -Type SQL
             $results.Count | Should -Be 2
             $results.Name | Should -Contain "testlogin1_$random"
             $results.Name | Should -Contain "testlogin2_$random"
         }
 
         It "ExcludeFilter" {
-            $results = Get-DbaLogin -SqlInstance $env:instance1 -ExcludeFilter "*$random" -Type SQL
+            $results = Get-DbaLogin -SqlInstance $global:instance1 -ExcludeFilter "*$random" -Type SQL
             $results.Name | Should -Not -Contain "testlogin1_$random"
             $results.Name | Should -Not -Contain "testlogin2_$random"
         }
 
         It "ExcludeSystemLogin" {
-            $results = Get-DbaLogin -SqlInstance $env:instance1 -ExcludeSystemLogin -Type SQL
+            $results = Get-DbaLogin -SqlInstance $global:instance1 -ExcludeSystemLogin -Type SQL
             $results.Name | Should -Not -Contain "sa"
         }
 
         It "HasAccess" {
-            $results = Get-DbaLogin -SqlInstance $env:instance1 -HasAccess -Type SQL
+            $results = Get-DbaLogin -SqlInstance $global:instance1 -HasAccess -Type SQL
             $results.Name | Should -Contain "testlogin1_$random"
             $results.Name | Should -Contain "testlogin2_$random"
         }
 
         It "Disabled" {
-            $null = Set-DbaLogin -SqlInstance $env:instance1 -Login "testlogin1_$random" -Disable
-            $result = Get-DbaLogin -SqlInstance $env:instance1 -Disabled
+            $null = Set-DbaLogin -SqlInstance $global:instance1 -Login "testlogin1_$random" -Disable
+            $result = Get-DbaLogin -SqlInstance $global:instance1 -Disabled
             $result.Name | Should -Contain "testlogin1_$random"
-            $null = Set-DbaLogin -SqlInstance $env:instance1 -Login "testlogin1_$random" -Enable
+            $null = Set-DbaLogin -SqlInstance $global:instance1 -Login "testlogin1_$random" -Enable
         }
 
         It "Detailed" {
-            $results = Get-DbaLogin -SqlInstance $env:instance1 -Detailed -Type SQL
+            $results = Get-DbaLogin -SqlInstance $global:instance1 -Detailed -Type SQL
 
             $results.Count | Should -BeGreaterOrEqual 2
 
@@ -155,10 +155,10 @@ Describe "Get-DbaLogin" {
         }
 
         It "MustChangePassword" {
-            $changeResult = Set-DbaLogin -SqlInstance $env:instance1 -Login "testlogin1_$random" -MustChange -Password $password -PasswordPolicyEnforced -PasswordExpirationEnabled
+            $changeResult = Set-DbaLogin -SqlInstance $global:instance1 -Login "testlogin1_$random" -MustChange -Password $password -PasswordPolicyEnforced -PasswordExpirationEnabled
             $changeResult.MustChangePassword | Should -Be $true
 
-            $result = Get-DbaLogin -SqlInstance $env:instance1 -MustChangePassword
+            $result = Get-DbaLogin -SqlInstance $global:instance1 -MustChangePassword
             $result.Name | Should -Contain "testlogin1_$random"
         }
     }
@@ -168,7 +168,7 @@ Describe "Get-DbaLogin" {
             $SkipLocalTest = [Environment]::GetEnvironmentVariable('SkipLocalTest') -eq $true
         }
         It "Should lock and unlock a login" -Skip:$SkipLocalTest {
-            $results = Set-DbaLogin -SqlInstance $env:instance1 -Login "testlogin1_$random" -PasswordPolicyEnforced -EnableException
+            $results = Set-DbaLogin -SqlInstance $global:instance1 -Login "testlogin1_$random" -PasswordPolicyEnforced -EnableException
             $results.PasswordPolicyEnforced | Should -Be $true
 
             # simulate a lockout
@@ -178,26 +178,26 @@ Describe "Get-DbaLogin" {
             # exceed the lockout count
             for (($i = 0); $i -le 4; $i++) {
                 try {
-                    Connect-DbaInstance -SqlInstance $env:instance1 -SqlCredential $invalidSqlCredential
+                    Connect-DbaInstance -SqlInstance $global:instance1 -SqlCredential $invalidSqlCredential
                 } catch {
                     Write-Message -Level Warning -Message "invalid login credentials used on purpose to lock out account"
                     Start-Sleep -s 5
                 }
             }
 
-            $results = Get-DbaLogin -SqlInstance $env:instance1 -Locked
+            $results = Get-DbaLogin -SqlInstance $global:instance1 -Locked
             $results.Name | Should -Contain "testlogin1_$random"
 
-            $results = Get-DbaLogin -SqlInstance $env:instance1 -Login "testlogin1_$random" -Type SQL
+            $results = Get-DbaLogin -SqlInstance $global:instance1 -Login "testlogin1_$random" -Type SQL
             $results.IsLocked | Should -Be $true
 
-            $results = Set-DbaLogin -SqlInstance $env:instance1 -Login "testlogin1_$random" -Unlock -Force
+            $results = Set-DbaLogin -SqlInstance $global:instance1 -Login "testlogin1_$random" -Unlock -Force
             $results.IsLocked | Should -Be $false
 
-            $results = Get-DbaLogin -SqlInstance $env:instance1 -Locked
+            $results = Get-DbaLogin -SqlInstance $global:instance1 -Locked
             $results.Name | Should -Not -Contain "testlogin1_$random"
 
-            $results = Get-DbaLogin -SqlInstance $env:instance1 -Login "testlogin1_$random" -Type SQL
+            $results = Get-DbaLogin -SqlInstance $global:instance1 -Login "testlogin1_$random" -Type SQL
             $results.IsLocked | Should -Be $false
         }
     }

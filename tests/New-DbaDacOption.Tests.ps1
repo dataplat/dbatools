@@ -25,7 +25,7 @@ Describe "New-DbaDacOption" {
     Context "Command usage" {
         BeforeAll {
             . "$PSScriptRoot\constants.ps1"
-            $publishprofile = New-DbaDacProfile -SqlInstance $env:instance1 -Database whatever -Path C:\temp
+            $publishprofile = New-DbaDacProfile -SqlInstance $global:instance1 -Database whatever -Path C:\temp
         }
         AfterAll {
             Remove-Item -Confirm:$false -Path $publishprofile.FileName -ErrorAction SilentlyContinue

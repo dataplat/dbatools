@@ -16,7 +16,7 @@ CREATE USER [$DBUserName] FOR LOGIN [$DBUserName]
     WITH DEFAULT_SCHEMA = dbo;
 GRANT VIEW ANY DEFINITION to [$DBUserName];
 "@
-        Invoke-DbaQuery -SqlInstance $env:instance2 -Query $CreateTestUser -Database master
+        Invoke-DbaQuery -SqlInstance $global:instance2 -Query $CreateTestUser -Database master
 
         #This is used later in the test
         $CreateTestLogin = @"
@@ -27,7 +27,7 @@ CREATE LOGIN [$DBUserName]
 
     AfterAll {
         $DropTestUser = "DROP LOGIN [$DBUserName]"
-        Invoke-DbaQuery -SqlInstance $env:instance2, $env:instance3 -Query $DropTestUser -Database master
+        Invoke-DbaQuery -SqlInstance $global:instance2, $global:instance3 -Query $DropTestUser -Database master
     }
 
     Context "Validate parameters" {
@@ -59,20 +59,20 @@ CREATE LOGIN [$DBUserName]
 
     Context "Verifying command output" {
         It "Should not have the user permissions of $DBUserName" {
-            $permissionsBefore = Get-DbaUserPermission -SqlInstance $env:instance3 -Database master | Where-Object {$_.member -eq $DBUserName}
+            $permissionsBefore = Get-DbaUserPermission -SqlInstance $global:instance3 -Database master | Where-Object {$_.member -eq $DBUserName}
             $permissionsBefore | Should -BeNullOrEmpty
         }
 
         It "Should execute against active nodes" {
             #Creates the user on
-            Invoke-DbaQuery -SqlInstance $env:instance3 -Query $CreateTestLogin
-            $results = Sync-DbaLoginPermission -Source $env:instance2 -Destination $env:instance3 -Login $DBUserName -ExcludeLogin 'NotaLogin' -WarningVariable warn
+            Invoke-DbaQuery -SqlInstance $global:instance3 -Query $CreateTestLogin
+            $results = Sync-DbaLoginPermission -Source $global:instance2 -Destination $global:instance3 -Login $DBUserName -ExcludeLogin 'NotaLogin' -WarningVariable warn
             $results.Status | Should -Be 'Successful'
             $warn | Should -BeNullOrEmpty
         }
 
         It "Should have copied the user permissions of $DBUserName" {
-            $permissionsAfter = Get-DbaUserPermission -SqlInstance $env:instance3 -Database master | Where-Object {$_.member -eq $DBUserName -and $_.permission -eq 'VIEW ANY DEFINITION' }
+            $permissionsAfter = Get-DbaUserPermission -SqlInstance $global:instance3 -Database master | Where-Object {$_.member -eq $DBUserName -and $_.permission -eq 'VIEW ANY DEFINITION' }
             $permissionsAfter.member | Should -Be $DBUserName
         }
     }

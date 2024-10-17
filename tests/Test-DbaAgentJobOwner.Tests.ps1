@@ -34,24 +34,24 @@ Describe "Test-DbaAgentJobOwner Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $saJob = ("dbatoolsci_sa_{0}" -f $(Get-Random))
         $notSaJob = ("dbatoolsci_nonsa_{0}" -f $(Get-Random))
-        $null = New-DbaAgentJob -SqlInstance $env:instance2 -Job $saJob -OwnerLogin 'sa'
-        $null = New-DbaAgentJob -SqlInstance $env:instance2 -Job $notSaJob -OwnerLogin 'NT AUTHORITY\SYSTEM'
+        $null = New-DbaAgentJob -SqlInstance $global:instance2 -Job $saJob -OwnerLogin 'sa'
+        $null = New-DbaAgentJob -SqlInstance $global:instance2 -Job $notSaJob -OwnerLogin 'NT AUTHORITY\SYSTEM'
     }
 
     AfterAll {
-        $null = Remove-DbaAgentJob -SqlInstance $env:instance2 -Job $saJob, $notSaJob -Confirm:$false
+        $null = Remove-DbaAgentJob -SqlInstance $global:instance2 -Job $saJob, $notSaJob -Confirm:$false
     }
 
     Context "Command actually works" {
         It "Should return $notSaJob" {
-            $results = Test-DbaAgentJobOwner -SqlInstance $env:instance2
+            $results = Test-DbaAgentJobOwner -SqlInstance $global:instance2
             $results | Where-Object {$_.Job -eq $notSaJob} | Should -Not -BeNullOrEmpty
         }
     }
 
     Context "Command works for specific jobs" {
         BeforeAll {
-            $results = Test-DbaAgentJobOwner -SqlInstance $env:instance2 -Job $saJob, $notSaJob
+            $results = Test-DbaAgentJobOwner -SqlInstance $global:instance2 -Job $saJob, $notSaJob
         }
 
         It "Should find $saJob owner matches default sa" {
@@ -65,7 +65,7 @@ Describe "Test-DbaAgentJobOwner Integration Tests" -Tag "IntegrationTests" {
 
     Context "Exclusions work" {
         It "Should exclude $notSaJob job" {
-            $results = Test-DbaAgentJobOwner -SqlInstance $env:instance2 -ExcludeJob $notSaJob
+            $results = Test-DbaAgentJobOwner -SqlInstance $global:instance2 -ExcludeJob $notSaJob
             $results.job | Should -Not -Contain $notSaJob
         }
     }

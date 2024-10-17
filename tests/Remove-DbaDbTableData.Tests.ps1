@@ -5,8 +5,8 @@ Describe "Remove-DbaDbTableData" {
         Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
         . "$PSScriptRoot\constants.ps1"
 
-        $server = Connect-DbaInstance -SqlInstance $env:instance2
-        $server2 = Connect-DbaInstance -SqlInstance $env:instance3
+        $server = Connect-DbaInstance -SqlInstance $global:instance2
+        $server2 = Connect-DbaInstance -SqlInstance $global:instance3
 
         # scenario for testing with a db in the simple recovery model
         $dbnameSimpleModel = "dbatoolsci_$(Get-Random)"
@@ -180,11 +180,11 @@ Describe "Remove-DbaDbTableData" {
 
     Context "Functionality with bulk_logged recovery model" {
         BeforeEach {
-            $addRowsToBulkLoggedDb = Invoke-DbaQuery -SqlInstance $env:instance2 -Database $dbnameBulkLoggedModel -Query $sqlAddRows
+            $addRowsToBulkLoggedDb = Invoke-DbaQuery -SqlInstance $global:instance2 -Database $dbnameBulkLoggedModel -Query $sqlAddRows
         }
 
         It 'Removes Data for a specified database' {
-            $server = Connect-DbaInstance -SqlInstance $env:instance2 -Database $dbnameBulkLoggedModel -NonPooledConnection
+            $server = Connect-DbaInstance -SqlInstance $global:instance2 -Database $dbnameBulkLoggedModel -NonPooledConnection
             $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameBulkLoggedModel -Table dbo.Test -BatchSize 10 -LogBackupPath $logBackupPath -Confirm:$false
             $result.TotalIterations | Should -Be 10
             $result.TotalRowsDeleted | Should -Be 100

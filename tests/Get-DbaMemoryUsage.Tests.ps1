@@ -38,8 +38,8 @@ Describe "Get-DbaMemoryUsage" {
 
     Context "Command actually works" {
         BeforeAll {
-            $results = Get-DbaMemoryUsage -ComputerName $env:instance1
-            $resultsSimple = Get-DbaMemoryUsage -ComputerName $env:instance1
+            $results = Get-DbaMemoryUsage -ComputerName $global:instance1
+            $resultsSimple = Get-DbaMemoryUsage -ComputerName $global:instance1
         }
 
         It "returns results" {

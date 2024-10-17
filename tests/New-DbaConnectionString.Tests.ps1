@@ -92,42 +92,42 @@ Describe "New-DbaConnectionString" {
         }
 
         It "Creates a valid connection string" {
-            $connectionString = New-DbaConnectionString -SqlInstance $env:instance1 -Database 'master'
-            $connectionString | Should -Match "Data Source=$([regex]::Escape($env:instance1))"
+            $connectionString = New-DbaConnectionString -SqlInstance $global:instance1 -Database 'master'
+            $connectionString | Should -Match "Data Source=$([regex]::Escape($global:instance1))"
             $connectionString | Should -Match "Initial Catalog=master"
         }
 
         It "Appends custom string when using AppendConnectionString" {
             $customString = "Application Name=MyApp"
-            $connectionString = New-DbaConnectionString -SqlInstance $env:instance1 -AppendConnectionString $customString
+            $connectionString = New-DbaConnectionString -SqlInstance $global:instance1 -AppendConnectionString $customString
             $connectionString | Should -Match $customString
         }
 
         It "Uses provided credentials" {
             $securePassword = ConvertTo-SecureString 'P@ssw0rd' -AsPlainText -Force
             $cred = New-Object System.Management.Automation.PSCredential ('testuser', $securePassword)
-            $connectionString = New-DbaConnectionString -SqlInstance $env:instance1 -Credential $cred
+            $connectionString = New-DbaConnectionString -SqlInstance $global:instance1 -Credential $cred
             $connectionString | Should -Match "User ID=testuser"
             $connectionString | Should -Match "Password=P@ssw0rd"
         }
 
         It "Sets ApplicationIntent when provided" {
-            $connectionString = New-DbaConnectionString -SqlInstance $env:instance1 -ApplicationIntent ReadOnly
+            $connectionString = New-DbaConnectionString -SqlInstance $global:instance1 -ApplicationIntent ReadOnly
             $connectionString | Should -Match "ApplicationIntent=ReadOnly"
         }
 
         It "Sets ConnectTimeout when provided" {
-            $connectionString = New-DbaConnectionString -SqlInstance $env:instance1 -ConnectTimeout 30
+            $connectionString = New-DbaConnectionString -SqlInstance $global:instance1 -ConnectTimeout 30
             $connectionString | Should -Match "Connect Timeout=30"
         }
 
         It "Sets EncryptConnection when provided" {
-            $connectionString = New-DbaConnectionString -SqlInstance $env:instance1 -EncryptConnection
+            $connectionString = New-DbaConnectionString -SqlInstance $global:instance1 -EncryptConnection
             $connectionString | Should -Match "Encrypt=True"
         }
 
         It "Sets MultiSubnetFailover when provided" {
-            $connectionString = New-DbaConnectionString -SqlInstance $env:instance1 -MultiSubnetFailover
+            $connectionString = New-DbaConnectionString -SqlInstance $global:instance1 -MultiSubnetFailover
             $connectionString | Should -Match "MultiSubnetFailover=True"
         }
     }

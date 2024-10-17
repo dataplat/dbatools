@@ -14,7 +14,7 @@ Describe "Import-DbaCsv" {
     }
 
     AfterAll {
-        Invoke-DbaQuery -SqlInstance $env:instance1, $env:instance2 -Database tempdb -Query "drop table SuperSmall; drop table CommaSeparatedWithHeader"
+        Invoke-DbaQuery -SqlInstance $global:instance1, $global:instance2 -Database tempdb -Query "drop table SuperSmall; drop table CommaSeparatedWithHeader"
     }
 
     Context "Validate parameters" {
@@ -136,24 +136,24 @@ Describe "Import-DbaCsv" {
 
     Context "Command usage" {
         It "accepts piped input and doesn't add rows if the table does not exist" {
-            $results = $path | Import-DbaCsv -SqlInstance $env:instance1 -Database tempdb -Delimiter `t -NotifyAfter 50000 -WarningVariable warn
+            $results = $path | Import-DbaCsv -SqlInstance $global:instance1 -Database tempdb -Delimiter `t -NotifyAfter 50000 -WarningVariable warn
             $results | Should -BeNullOrEmpty
         }
 
         It "creates the right columnmap (#7630), handles pipe delimiters (#7806)" {
-            $null = Import-DbaCsv -SqlInstance $env:instance1 -Path $col1 -Database tempdb -AutoCreateTable -Table cols
-            $null = Import-DbaCsv -SqlInstance $env:instance1 -Path $col2 -Database tempdb -Table cols
-            $null = Import-DbaCsv -SqlInstance $env:instance1 -Path $pipe3 -Database tempdb -Table cols2 -Delimiter "|" -AutoCreateTable
-            $results = Invoke-DbaQuery -SqlInstance $env:instance1 -Database tempdb -Query "select * from cols"
+            $null = Import-DbaCsv -SqlInstance $global:instance1 -Path $col1 -Database tempdb -AutoCreateTable -Table cols
+            $null = Import-DbaCsv -SqlInstance $global:instance1 -Path $col2 -Database tempdb -Table cols
+            $null = Import-DbaCsv -SqlInstance $global:instance1 -Path $pipe3 -Database tempdb -Table cols2 -Delimiter "|" -AutoCreateTable
+            $results = Invoke-DbaQuery -SqlInstance $global:instance1 -Database tempdb -Query "select * from cols"
             $results | Where-Object third -notmatch "three" | Should -BeNullOrEmpty
             $results | Where-Object firstcol -notmatch "one" | Should -BeNullOrEmpty
-            $results = Invoke-DbaQuery -SqlInstance $env:instance1 -Database tempdb -Query "select * from cols2"
+            $results = Invoke-DbaQuery -SqlInstance $global:instance1 -Database tempdb -Query "select * from cols2"
             $results | Where-Object third -notmatch "three" | Should -BeNullOrEmpty
             $results | Where-Object firstcol -notmatch "one" | Should -BeNullOrEmpty
         }
 
         It "performs 4 imports" -Skip:($env:appveyor) {
-            $results = Import-DbaCsv -Path $path, $path -SqlInstance $env:instance1, $env:instance2 -Database tempdb -Delimiter `t -NotifyAfter 50000 -WarningVariable warn2 -AutoCreateTable
+            $results = Import-DbaCsv -Path $path, $path -SqlInstance $global:instance1, $global:instance2 -Database tempdb -Delimiter `t -NotifyAfter 50000 -WarningVariable warn2 -AutoCreateTable
             $results.Count | Should -Be 4
 
             foreach ($result in $results) {
@@ -164,25 +164,25 @@ Describe "Import-DbaCsv" {
         }
 
         It "doesn't break when truncate is passed" -Skip:($env:appveyor) {
-            $result = Import-DbaCsv -Path $path -SqlInstance $env:instance1 -Database tempdb -Delimiter `t -Table SuperSmall -Truncate
+            $result = Import-DbaCsv -Path $path -SqlInstance $global:instance1 -Database tempdb -Delimiter `t -Table SuperSmall -Truncate
             $result.RowsCopied | Should -Be 999
             $result.Database | Should -Be tempdb
             $result.Table | Should -Be SuperSmall
         }
 
         It "works with NoTransaction" -Skip:($env:appveyor) {
-            $result = Import-DbaCsv -Path $path -SqlInstance $env:instance1 -Database tempdb -Delimiter `t -Table SuperSmall -Truncate -NoTransaction
+            $result = Import-DbaCsv -Path $path -SqlInstance $global:instance1 -Database tempdb -Delimiter `t -Table SuperSmall -Truncate -NoTransaction
             $result.RowsCopied | Should -Be 999
             $result.Database | Should -Be tempdb
             $result.Table | Should -Be SuperSmall
         }
 
         It "Catches the scenario where the database param does not match the server object passed into the command" {
-            $server = Connect-DbaInstance $env:instance1 -Database tempdb
+            $server = Connect-DbaInstance $global:instance1 -Database tempdb
             $result = Import-DbaCsv -Path $path -SqlInstance $server -Database InvalidDB -Delimiter `t -Table SuperSmall -Truncate -AutoCreateTable
             $result | Should -BeNullOrEmpty
 
-            $server = Connect-DbaInstance $env:instance1 -Database tempdb
+            $server = Connect-DbaInstance $global:instance1 -Database tempdb
             $result = Import-DbaCsv -Path $path -SqlInstance $server -Database tempdb -Delimiter `t -Table SuperSmall -Truncate -AutoCreateTable
             $result.RowsCopied | Should -Be 999
             $result.Database | Should -Be tempdb
@@ -190,7 +190,7 @@ Describe "Import-DbaCsv" {
         }
 
         It "Catches the scenario where the header is not properly parsed causing param errors" {
-            $server = Connect-DbaInstance $env:instance1 -Database tempdb
+            $server = Connect-DbaInstance $global:instance1 -Database tempdb
             $null = Import-DbaCsv -Path $CommaSeparatedWithHeader -SqlInstance $server -Database tempdb -AutoCreateTable
 
             $result = Import-DbaCsv -Path $CommaSeparatedWithHeader -SqlInstance $server -Database tempdb -Truncate
@@ -201,7 +201,7 @@ Describe "Import-DbaCsv" {
         }
 
         It "works with NoHeaderRow" {
-            $server = Connect-DbaInstance $env:instance1 -Database tempdb
+            $server = Connect-DbaInstance $global:instance1 -Database tempdb
             Invoke-DbaQuery -SqlInstance $server -Query 'CREATE TABLE NoHeaderRow (c1 VARCHAR(50), c2 VARCHAR(50), c3 VARCHAR(50))'
             $result = Import-DbaCsv -Path $col1 -NoHeaderRow -SqlInstance $server -Database tempdb -Table 'NoHeaderRow' -WarningVariable warnNoHeaderRow
             $data = Invoke-DbaQuery -SqlInstance $server -Query 'SELECT * FROM NoHeaderRow' -As PSObject
@@ -214,7 +214,7 @@ Describe "Import-DbaCsv" {
         }
 
         It "works with tables which have non-varchar types (date)" {
-            $server = Connect-DbaInstance $env:instance1 -Database tempdb
+            $server = Connect-DbaInstance $global:instance1 -Database tempdb
             Invoke-DbaQuery -SqlInstance $server -Query 'CREATE TABLE WithTypes ([date] DATE, col1 VARCHAR(50), col2 VARCHAR(50))'
             $result = Import-DbaCsv -Path $CommaSeparatedWithHeader -SqlInstance $server -Database tempdb -Table 'WithTypes'
             Invoke-DbaQuery -SqlInstance $server -Query 'DROP TABLE WithTypes'
@@ -225,7 +225,7 @@ Describe "Import-DbaCsv" {
 
         It "works with tables which have non-varchar types (guid, bit)" {
             $filePath = '.\foo.csv'
-            $server = Connect-DbaInstance $env:instance1 -Database tempdb
+            $server = Connect-DbaInstance $global:instance1 -Database tempdb
             Invoke-DbaQuery -SqlInstance $server -Query 'CREATE TABLE WithGuidsAndBits (one_guid UNIQUEIDENTIFIER, one_bit BIT)'
             $row = [pscustomobject]@{
                 one_guid = (New-Guid).Guid

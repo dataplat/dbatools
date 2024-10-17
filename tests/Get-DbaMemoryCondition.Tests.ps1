@@ -60,7 +60,7 @@ Describe "Get-DbaMemoryCondition Integration Test" -Tag "IntegrationTests" {
 
     Context "Command actually works" {
         BeforeAll {
-            $results = Get-DbaMemoryCondition -SqlInstance $env:instance1
+            $results = Get-DbaMemoryCondition -SqlInstance $global:instance1
         }
 
         It "returns results" {

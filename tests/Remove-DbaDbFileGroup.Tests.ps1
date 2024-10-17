@@ -39,10 +39,10 @@ Describe "Remove-DbaDbFileGroup Integration Tests" -Tag "IntegrationTests" {
         $fileGroup5Name = "FG5"
         $fileGroup6Name = "FG6"
 
-        $server = Connect-DbaInstance -SqlInstance $env:instance2
-        $newDb1 = New-DbaDatabase -SqlInstance $env:instance2 -Name $db1name
-        $newDb2 = New-DbaDatabase -SqlInstance $env:instance2 -Name $db2name
-        $newDb3 = New-DbaDatabase -SqlInstance $env:instance2 -Name $db3name
+        $server = Connect-DbaInstance -SqlInstance $global:instance2
+        $newDb1 = New-DbaDatabase -SqlInstance $global:instance2 -Name $db1name
+        $newDb2 = New-DbaDatabase -SqlInstance $global:instance2 -Name $db2name
+        $newDb3 = New-DbaDatabase -SqlInstance $global:instance2 -Name $db3name
 
         $server.Query("ALTER DATABASE $db1name ADD FILEGROUP $fileGroup1Name;")
         $server.Query("ALTER DATABASE $db2name ADD FILEGROUP $fileGroup1Name;")
@@ -61,40 +61,40 @@ Describe "Remove-DbaDbFileGroup Integration Tests" -Tag "IntegrationTests" {
 
     Context "Command works" {
         It "Removes filegroups" {
-            $results = Get-DbaDbFileGroup -SqlInstance $env:instance2 -Database $db1name, $db3name -FileGroup $fileGroup1Name, $fileGroup3Name
+            $results = Get-DbaDbFileGroup -SqlInstance $global:instance2 -Database $db1name, $db3name -FileGroup $fileGroup1Name, $fileGroup3Name
             $results.Length | Should -Be 3
-            Remove-DbaDbFileGroup -SqlInstance $env:instance2 -Database $db1name, $db3name -FileGroup $fileGroup1Name, $fileGroup3Name -Confirm:$false
-            $results = Get-DbaDbFileGroup -SqlInstance $env:instance2 -Database $db1name, $db3name -FileGroup $fileGroup1Name, $fileGroup3Name
+            Remove-DbaDbFileGroup -SqlInstance $global:instance2 -Database $db1name, $db3name -FileGroup $fileGroup1Name, $fileGroup3Name -Confirm:$false
+            $results = Get-DbaDbFileGroup -SqlInstance $global:instance2 -Database $db1name, $db3name -FileGroup $fileGroup1Name, $fileGroup3Name
             $results | Should -BeNullOrEmpty
         }
 
         It "Tries to remove a non-existent filegroup" {
-            Remove-DbaDbFileGroup -SqlInstance $env:instance2 -Database $db1name -FileGroup invalidFileGroupName -Confirm:$false -WarningVariable warnings
-            $warnings | Should -BeLike "*Filegroup invalidFileGroupName does not exist in the database $db1name on $env:instance2"
+            Remove-DbaDbFileGroup -SqlInstance $global:instance2 -Database $db1name -FileGroup invalidFileGroupName -Confirm:$false -WarningVariable warnings
+            $warnings | Should -BeLike "*Filegroup invalidFileGroupName does not exist in the database $db1name on $global:instance2"
         }
 
         It "Tries to remove a filegroup that still has files" {
-            Remove-DbaDbFileGroup -SqlInstance $env:instance2 -Database $db1name -FileGroup $fileGroup2Name -Confirm:$false -WarningVariable warnings
-            $warnings | Should -BeLike "*Filegroup $fileGroup2Name is not empty. Before the filegroup can be dropped the files must be removed in $fileGroup2Name on $db1name on $env:instance2"
+            Remove-DbaDbFileGroup -SqlInstance $global:instance2 -Database $db1name -FileGroup $fileGroup2Name -Confirm:$false -WarningVariable warnings
+            $warnings | Should -BeLike "*Filegroup $fileGroup2Name is not empty. Before the filegroup can be dropped the files must be removed in $fileGroup2Name on $db1name on $global:instance2"
         }
 
         It "Removes a filegroup using a database from a pipeline and a filegroup from a pipeline" {
-            $results = Get-DbaDbFileGroup -SqlInstance $env:instance2 -Database $db2name -FileGroup $fileGroup1Name
+            $results = Get-DbaDbFileGroup -SqlInstance $global:instance2 -Database $db2name -FileGroup $fileGroup1Name
             $results.Length | Should -Be 1
             $newDb2 | Remove-DbaDbFileGroup -FileGroup $fileGroup1Name -Confirm:$false
-            $results = Get-DbaDbFileGroup -SqlInstance $env:instance2 -Database $db2name -FileGroup $fileGroup1Name
+            $results = Get-DbaDbFileGroup -SqlInstance $global:instance2 -Database $db2name -FileGroup $fileGroup1Name
             $results | Should -BeNullOrEmpty
 
-            $results = Get-DbaDbFileGroup -SqlInstance $env:instance2 -Database $db1name -FileGroup $fileGroup4Name, $fileGroup5Name
+            $results = Get-DbaDbFileGroup -SqlInstance $global:instance2 -Database $db1name -FileGroup $fileGroup4Name, $fileGroup5Name
             $results.Length | Should -Be 2
             $results[0], $newDb1 | Remove-DbaDbFileGroup -FileGroup $fileGroup5Name -Confirm:$false
-            $results = Get-DbaDbFileGroup -SqlInstance $env:instance2 -Database $db1name -FileGroup $fileGroup4Name, $fileGroup5Name
+            $results = Get-DbaDbFileGroup -SqlInstance $global:instance2 -Database $db1name -FileGroup $fileGroup4Name, $fileGroup5Name
             $results | Should -BeNullOrEmpty
 
-            $fileGroup6 = Get-DbaDbFileGroup -SqlInstance $env:instance2 -Database $db1name -FileGroup $fileGroup6Name
+            $fileGroup6 = Get-DbaDbFileGroup -SqlInstance $global:instance2 -Database $db1name -FileGroup $fileGroup6Name
             $fileGroup6 | Should -Not -BeNullOrEmpty
             $fileGroup6 | Remove-DbaDbFileGroup -Confirm:$false
-            $fileGroup6 = Get-DbaDbFileGroup -SqlInstance $env:instance2 -Database $db1name -FileGroup $fileGroup6Name
+            $fileGroup6 = Get-DbaDbFileGroup -SqlInstance $global:instance2 -Database $db1name -FileGroup $fileGroup6Name
             $fileGroup6 | Should -BeNullOrEmpty
         }
     }

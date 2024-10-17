@@ -28,26 +28,26 @@ Describe "Remove-DbaDbAsymmetricKey" {
     Context "Remove a certificate" {
         BeforeAll {
             $database = 'RemAsy'
-            $null = New-DbaDatabase -SqlInstance $env:instance2 -Name $database
+            $null = New-DbaDatabase -SqlInstance $global:instance2 -Name $database
             $keyname = 'test1'
             $tPassword = ConvertTo-SecureString "ThisIsThePassword1" -AsPlainText -Force
-            New-DbaDbMasterKey -SqlInstance $env:instance2 -Database $database -SecurePassword $tPassword -Confirm:$false
-            $key = New-DbaDbAsymmetricKey -SqlInstance $env:instance2 -Name $keyname -Database $database
+            New-DbaDbMasterKey -SqlInstance $global:instance2 -Database $database -SecurePassword $tPassword -Confirm:$false
+            $key = New-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Name $keyname -Database $database
         }
         AfterAll {
-            Remove-DbaDatabase -SqlInstance $env:instance2 -Database $database -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $global:instance2 -Database $database -Confirm:$false
         }
 
         It "Should create new key in $database called $keyname" {
-            $results = Get-DbaDbAsymmetricKey -SqlInstance $env:instance2 -Name $keyname -Database $database
+            $results = Get-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Name $keyname -Database $database
             $results.Database | Should -Be $database
             $results.Name | Should -Be $keyname
             $results.KeyLength | Should -Be '2048'
         }
 
         It "Should Remove a certificate" {
-            $removeResults = Remove-DbaDbAsymmetricKey -SqlInstance $env:instance2 -Name $keyname -Database $database -Confirm:$false
-            $getResults = Get-DbaDbAsymmetricKey -SqlInstance $env:instance2 -Name $keyname -Database $database
+            $removeResults = Remove-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Name $keyname -Database $database -Confirm:$false
+            $getResults = Get-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Name $keyname -Database $database
             $getResults | Should -HaveCount 0
             $removeResults.Status | Should -Be 'Success'
         }
@@ -58,22 +58,22 @@ Describe "Remove-DbaDbAsymmetricKey" {
             $database = 'RemAsy'
             $keyname = 'test1'
             $keyname2 = 'test2'
-            $null = New-DbaDatabase -SqlInstance $env:instance2 -Name $database
-            $key = New-DbaDbAsymmetricKey -SqlInstance $env:instance2 -Name $keyname -Database $database
-            $key2 = New-DbaDbAsymmetricKey -SqlInstance $env:instance2 -Name $keyname2 -Database $database
+            $null = New-DbaDatabase -SqlInstance $global:instance2 -Name $database
+            $key = New-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Name $keyname -Database $database
+            $key2 = New-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Name $keyname2 -Database $database
         }
         AfterAll {
-            Remove-DbaDatabase -SqlInstance $env:instance2 -Database $database -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $global:instance2 -Database $database -Confirm:$false
         }
 
         It "Should create new keys in $database" {
-            $results = Get-DbaDbAsymmetricKey -SqlInstance $env:instance2 -Database $database
+            $results = Get-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Database $database
             $results | Should -HaveCount 2
         }
 
         It "Should Remove a specific certificate" {
-            $removeResults = Remove-DbaDbAsymmetricKey -SqlInstance $env:instance2 -Name $keyname -Database $database -Confirm:$false
-            $getResults = Get-DbaDbAsymmetricKey -SqlInstance $env:instance2 -Database $database
+            $removeResults = Remove-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Name $keyname -Database $database -Confirm:$false
+            $getResults = Get-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Database $database
             $getResults | Should -HaveCount 1
             $getResults[0].Name | Should -Be $keyname2
             $removeResults.Status | Should -Be 'Success'
@@ -81,8 +81,8 @@ Describe "Remove-DbaDbAsymmetricKey" {
         }
 
         It "Should remove the remaining certificate" {
-            $removeResults = Remove-DbaDbAsymmetricKey -SqlInstance $env:instance2 -Name $keyname2 -Database $database -Confirm:$false
-            $getResults = Get-DbaDbAsymmetricKey -SqlInstance $env:instance2 -Database $database
+            $removeResults = Remove-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Name $keyname2 -Database $database -Confirm:$false
+            $getResults = Get-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Database $database
             $getResults | Should -HaveCount 0
             $removeResults.Status | Should -Be 'Success'
             $removeResults.Name | Should -Be $keyname2

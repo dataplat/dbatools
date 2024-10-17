@@ -51,7 +51,7 @@ Describe "Get-DbaMaxMemory" {
 
     Context "Connects to multiple instances" -Skip:$env:CI {
         BeforeAll {
-            $instances = $env:instance1, $env:instance2
+            $instances = $global:instance1, $global:instance2
         }
 
         It 'Returns multiple objects' {
@@ -61,7 +61,7 @@ Describe "Get-DbaMaxMemory" {
 
         It 'Returns the right amount of memory' {
             $null = Set-DbaMaxMemory -SqlInstance $instances -Max 1024
-            $results = Get-DbaMaxMemory -SqlInstance $env:instance1
+            $results = Get-DbaMaxMemory -SqlInstance $global:instance1
             $results.MaxValue | Should -Be 1024
         }
     }

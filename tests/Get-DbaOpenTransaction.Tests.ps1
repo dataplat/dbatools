@@ -60,7 +60,7 @@ Describe "Get-DbaOpenTransaction" {
 
     Context "Command execution" {
         It "doesn't throw" {
-            { Get-DbaOpenTransaction -SqlInstance $env:instance1 } | Should -Not -Throw
+            { Get-DbaOpenTransaction -SqlInstance $global:instance1 } | Should -Not -Throw
         }
     }
 }

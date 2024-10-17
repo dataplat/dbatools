@@ -6,7 +6,7 @@ Describe "Import-DbaBinaryFile" {
         Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
         . "$PSScriptRoot\constants.ps1"
 
-        $db = Get-DbaDatabase -SqlInstance $env:instance2 -Database tempdb
+        $db = Get-DbaDatabase -SqlInstance $global:instance2 -Database tempdb
         $null = $db.Query("CREATE TABLE [dbo].[BunchOFiles]([FileName123] [nvarchar](50) NULL, [TheFile123] [image] NULL)")
     }
 
@@ -65,19 +65,19 @@ Describe "Import-DbaBinaryFile" {
 
     Context "Command usage" {
         It "imports files into table data" {
-            $results = Import-DbaBinaryFile -SqlInstance $env:instance2 -Database tempdb -Table BunchOFiles -FilePath $env:appveyorlabrepo\azure\adalsql.msi -WarningAction Continue -ErrorAction Stop -EnableException
+            $results = Import-DbaBinaryFile -SqlInstance $global:instance2 -Database tempdb -Table BunchOFiles -FilePath $env:appveyorlabrepo\azure\adalsql.msi -WarningAction Continue -ErrorAction Stop -EnableException
             $results.Database | Should -Be "tempdb"
             $results.FilePath | Should -Match "adalsql.msi"
         }
 
         It "imports files into table data from piped" {
-            $results = Get-ChildItem -Path $env:appveyorlabrepo\certificates | Import-DbaBinaryFile -SqlInstance $env:instance2 -Database tempdb -Table BunchOFiles -WarningAction Continue -ErrorAction Stop -EnableException
+            $results = Get-ChildItem -Path $env:appveyorlabrepo\certificates | Import-DbaBinaryFile -SqlInstance $global:instance2 -Database tempdb -Table BunchOFiles -WarningAction Continue -ErrorAction Stop -EnableException
             $results.Database | Should -Be @("tempdb", "tempdb")
             Split-Path -Path $results.FilePath -Leaf | Should -Be @("localhost.crt", "localhost.pfx")
         }
 
         It "piping from Get-DbaBinaryFileTable works" {
-            $results = Get-DbaBinaryFileTable -SqlInstance $env:instance2 -Database tempdb -Table BunchOFiles | Import-DbaBinaryFile -WarningAction Continue -ErrorAction Stop -EnableException -Path $env:appveyorlabrepo\certificates
+            $results = Get-DbaBinaryFileTable -SqlInstance $global:instance2 -Database tempdb -Table BunchOFiles | Import-DbaBinaryFile -WarningAction Continue -ErrorAction Stop -EnableException -Path $env:appveyorlabrepo\certificates
             $results.Database | Should -Be @("tempdb", "tempdb")
             Split-Path -Path $results.FilePath -Leaf | Should -Be @("localhost.crt", "localhost.pfx")
         }

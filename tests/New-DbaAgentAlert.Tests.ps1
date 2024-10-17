@@ -70,8 +70,8 @@ Describe "New-DbaAgentAlert" {
 
     Context "Creating a new SQL Server Agent alert" {
         BeforeAll {
-            $env:instance2 = "instance2"
-            $env:instance3 = "instance3"
+            $global:instance2 = "instance2"
+            $global:instance3 = "instance3"
         }
 
         BeforeEach {
@@ -104,7 +104,7 @@ Describe "New-DbaAgentAlert" {
 
         It 'Should create a new alert' {
             $parms = @{
-                SqlInstance           = $env:instance2
+                SqlInstance           = $global:instance2
                 Alert                 = "Test Alert"
                 DelayBetweenResponses = 60
                 Disabled              = $false
@@ -131,13 +131,13 @@ Describe "New-DbaAgentAlert" {
             $alert.Severity | Should -Be 17
 
             Should -Invoke Get-DbaAgentAlert -Times 1 -Exactly -ParameterFilter {
-                $SqlInstance -eq $env:instance2 -and $Alert -eq $parms.Alert
+                $SqlInstance -eq $global:instance2 -and $Alert -eq $parms.Alert
             }
         }
 
         It 'Should create another new alert' {
             $parms = @{
-                SqlInstance           = $env:instance3
+                SqlInstance           = $global:instance3
                 Alert                 = "Another Alert"
                 DelayBetweenResponses = 60
                 NotifyMethod          = "NotifyEmail"
@@ -165,7 +165,7 @@ Describe "New-DbaAgentAlert" {
             $alert.Severity | Should -Be 0
 
             Should -Invoke Get-DbaAgentAlert -Times 1 -Exactly -ParameterFilter {
-                $SqlInstance -eq $env:instance3 -and $Alert -eq $parms.Alert
+                $SqlInstance -eq $global:instance3 -and $Alert -eq $parms.Alert
             }
         }
     }

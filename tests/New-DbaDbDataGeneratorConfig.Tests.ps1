@@ -12,12 +12,12 @@ Describe "New-DbaDbDataGeneratorConfig" {
                     [LastName] [varchar](50) NULL,
                     [City] [datetime] NULL
                 ) ON [PRIMARY]"
-        $db = New-DbaDatabase -SqlInstance $env:instance1 -Name $dbname
+        $db = New-DbaDatabase -SqlInstance $global:instance1 -Name $dbname
         $db.Query($sql)
     }
 
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $env:instance1 -Database $dbname -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $global:instance1 -Database $dbname -Confirm:$false
         $results | Remove-Item -Confirm:$false -ErrorAction Ignore
     }
 
@@ -59,7 +59,7 @@ Describe "New-DbaDbDataGeneratorConfig" {
 
     Context "Command works" {
         It "Should output a file with specific content" {
-            $results = New-DbaDbDataGeneratorConfig -SqlInstance $env:instance1 -Database $dbname -Path C:\temp
+            $results = New-DbaDbDataGeneratorConfig -SqlInstance $global:instance1 -Database $dbname -Path C:\temp
             $results.Directory.Name | Should -Be 'temp'
             $results.FullName | Should -FileContentMatch $dbname
             $results.FullName | Should -FileContentMatch 'FirstName'

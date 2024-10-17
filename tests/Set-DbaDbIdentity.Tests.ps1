@@ -27,7 +27,7 @@ Describe "Set-DbaDbIdentity" {
 
     Context "Command usage" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $env:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $random = Get-Random
             $tableName1 = "dbatools_getdbtbl1"
             $tableName2 = "dbatools_getdbtbl2"
@@ -42,12 +42,12 @@ Describe "Set-DbaDbIdentity" {
         }
 
         AfterAll {
-            $null = Get-DbaDatabase -SqlInstance $env:instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
+            $null = Get-DbaDatabase -SqlInstance $global:instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
         }
 
         It "Returns standard output with correct properties" {
             $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Table', 'Cmd', 'IdentityValue', 'ColumnValue', 'Output'
-            $result = Set-DbaDbIdentity -SqlInstance $env:instance2 -Database $dbname -Table $tableName1, $tableName2 -Confirm:$false
+            $result = Set-DbaDbIdentity -SqlInstance $global:instance2 -Database $dbname -Table $tableName1, $tableName2 -Confirm:$false
 
             foreach ($prop in $props) {
                 $result[0].PSObject.Properties[$prop] | Should -Not -BeNullOrEmpty
@@ -58,7 +58,7 @@ Describe "Set-DbaDbIdentity" {
         }
 
         It "Reseed option returns correct results" {
-            $result = Set-DbaDbIdentity -SqlInstance $env:instance2 -Database $dbname -Table $tableName2 -ReSeedValue 400 -Confirm:$false
+            $result = Set-DbaDbIdentity -SqlInstance $global:instance2 -Database $dbname -Table $tableName2 -ReSeedValue 400 -Confirm:$false
 
             $result.cmd | Should -Be "DBCC CHECKIDENT('$tableName2', RESEED, 400)"
             $result.IdentityValue | Should -Be '5.'

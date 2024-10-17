@@ -30,8 +30,8 @@ Describe "Remove-DbaFirewallRule Integration Tests" -Tag "IntegrationTests" {
 
     Context "Command actually works" {
         BeforeAll {
-            $env:instance1 = $env:instance1
-            $env:instance2 = $env:instance2
+            $global:instance1 = $global:instance1
+            $global:instance2 = $global:instance2
         }
 
         It "Removes firewall rules" {

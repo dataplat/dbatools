@@ -41,18 +41,18 @@ Describe "New-DbaDbEncryptionKey Integration Tests" -Tag "IntegrationTests" {
         $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
         $cred = New-Object System.Management.Automation.PSCredential "sqladmin", $passwd
 
-        $masterkey = Get-DbaDbMasterKey -SqlInstance $env:instance2 -Database master
+        $masterkey = Get-DbaDbMasterKey -SqlInstance $global:instance2 -Database master
         if (-not $masterkey) {
             $delmasterkey = $true
-            $masterkey = New-DbaServiceMasterKey -SqlInstance $env:instance2 -SecurePassword $passwd
+            $masterkey = New-DbaServiceMasterKey -SqlInstance $global:instance2 -SecurePassword $passwd
         }
-        $mastercert = Get-DbaDbCertificate -SqlInstance $env:instance2 -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
+        $mastercert = Get-DbaDbCertificate -SqlInstance $global:instance2 -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
         if (-not $mastercert) {
             $delmastercert = $true
-            $mastercert = New-DbaDbCertificate -SqlInstance $env:instance2
+            $mastercert = New-DbaDbCertificate -SqlInstance $global:instance2
         }
 
-        $db = New-DbaDatabase -SqlInstance $env:instance2
+        $db = New-DbaDatabase -SqlInstance $global:instance2
     }
 
     AfterAll {
@@ -73,8 +73,8 @@ Describe "New-DbaDbEncryptionKey Integration Tests" -Tag "IntegrationTests" {
             $results.EncryptionAlgorithm | Should -Be "Aes256"
         }
         It "should create a new encryption key" {
-            $null = Get-DbaDbEncryptionKey -SqlInstance $env:instance2 -Database $db.Name | Remove-DbaDbEncryptionKey
-            $results = New-DbaDbEncryptionKey -SqlInstance $env:instance2 -Database $db.Name -Force -EncryptorName $mastercert.Name
+            $null = Get-DbaDbEncryptionKey -SqlInstance $global:instance2 -Database $db.Name | Remove-DbaDbEncryptionKey
+            $results = New-DbaDbEncryptionKey -SqlInstance $global:instance2 -Database $db.Name -Force -EncryptorName $mastercert.Name
             $results.EncryptionAlgorithm | Should -Be "Aes256"
         }
     }
@@ -84,20 +84,20 @@ Describe "New-DbaDbEncryptionKey Integration Tests for Async" -Tag "IntegrationT
     BeforeAll {
         $PSDefaultParameterValues["*:Confirm"] = $false
         $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
-        $masterkey = Get-DbaDbMasterKey -SqlInstance $env:instance2 -Database master
+        $masterkey = Get-DbaDbMasterKey -SqlInstance $global:instance2 -Database master
         if (-not $masterkey) {
             $delmasterkey = $true
-            $masterkey = New-DbaServiceMasterKey -SqlInstance $env:instance2 -SecurePassword $passwd
+            $masterkey = New-DbaServiceMasterKey -SqlInstance $global:instance2 -SecurePassword $passwd
         }
 
-        $masterasym = Get-DbaDbAsymmetricKey -SqlInstance $env:instance2 -Database master
+        $masterasym = Get-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Database master
 
         if (-not $masterasym) {
             $delmasterasym = $true
-            $masterasym = New-DbaDbAsymmetricKey -SqlInstance $env:instance2 -Database master
+            $masterasym = New-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Database master
         }
 
-        $db = New-DbaDatabase -SqlInstance $env:instance2
+        $db = New-DbaDatabase -SqlInstance $global:instance2
         $db | New-DbaDbMasterKey -SecurePassword $passwd
         $db | New-DbaDbAsymmetricKey
     }

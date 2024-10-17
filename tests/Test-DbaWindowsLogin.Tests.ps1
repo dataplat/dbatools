@@ -43,18 +43,18 @@ Describe "Test-DbaWindowsLogin" {
         }
 
         It "Should return correct properties" -Skip:$env:skipIntegrationTests {
-            $results = Test-DbaWindowsLogin -SqlInstance $env:instance2
+            $results = Test-DbaWindowsLogin -SqlInstance $global:instance2
             $ExpectedProps = 'AccountNotDelegated', 'AllowReversiblePasswordEncryption', 'CannotChangePassword', 'DisabledInSQLServer', 'Domain', 'Enabled', 'Found', 'LockedOut', 'Login', 'PasswordExpired', 'PasswordNeverExpires', 'PasswordNotRequired', 'Server', 'SmartcardLogonRequired', 'TrustedForDelegation', 'Type', 'UserAccountControl'
             ($results[0].PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
         }
 
         It "Should return true if Account type is User" -Skip:$env:skipIntegrationTests {
-            $results = Test-DbaWindowsLogin -SqlInstance $env:instance2
+            $results = Test-DbaWindowsLogin -SqlInstance $global:instance2
             ($results | Where-Object Type -match 'User').Count | Should -BeGreaterThan 0
         }
 
         It "Should return true if Account is Found" -Skip:$env:skipIntegrationTests {
-            $results = Test-DbaWindowsLogin -SqlInstance $env:instance2
+            $results = Test-DbaWindowsLogin -SqlInstance $global:instance2
             ($results | Where-Object Found).Found | Should -Be $true
         }
     }

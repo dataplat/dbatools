@@ -45,10 +45,10 @@ Describe "New-DbaXESmartTableWriter" {
 
     Context "Creates a smart object" {
         BeforeAll {
-            $results = New-DbaXESmartReplay -SqlInstance $env:instance2 -Database planning
+            $results = New-DbaXESmartReplay -SqlInstance $global:instance2 -Database planning
         }
         It "returns the object with all of the correct properties" {
-            $results.ServerName | Should -Be $env:instance2
+            $results.ServerName | Should -Be $global:instance2
             $results.DatabaseName | Should -Be 'planning'
             $results.Password | Should -BeNullOrEmpty
             $results.DelaySeconds | Should -Be 0

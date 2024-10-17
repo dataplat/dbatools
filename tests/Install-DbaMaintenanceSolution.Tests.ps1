@@ -61,22 +61,22 @@ Describe "Install-DbaMaintenanceSolution" {
 
     Context "Limited testing of Maintenance Solution installer" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $env:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $server.Databases['tempdb'].Query("CREATE TABLE CommandLog (id int)")
         }
         AfterAll {
             $server.Databases['tempdb'].Query("DROP TABLE CommandLog")
-            Invoke-DbaQuery -SqlInstance $env:instance3 -Database tempdb -Query "drop procedure CommandExecute; drop procedure DatabaseBackup; drop procedure DatabaseIntegrityCheck; drop procedure IndexOptimize;"
+            Invoke-DbaQuery -SqlInstance $global:instance3 -Database tempdb -Query "drop procedure CommandExecute; drop procedure DatabaseBackup; drop procedure DatabaseIntegrityCheck; drop procedure IndexOptimize;"
         }
         It "does not overwrite existing" {
             $warn = $null
-            $results = Install-DbaMaintenanceSolution -SqlInstance $env:instance2 -Database tempdb -WarningVariable warn -WarningAction SilentlyContinue
+            $results = Install-DbaMaintenanceSolution -SqlInstance $global:instance2 -Database tempdb -WarningVariable warn -WarningAction SilentlyContinue
             $warn | Should -Match "already exists"
         }
 
         It "Continues the installation on other servers" {
-            $results2 = Install-DbaMaintenanceSolution -SqlInstance $env:instance2, $env:instance3 -Database tempdb
-            $sproc = Get-DbaDbModule -SqlInstance $env:instance3 -Database tempdb | Where-Object { $_.Name -eq "CommandExecute" }
+            $results2 = Install-DbaMaintenanceSolution -SqlInstance $global:instance2, $global:instance3 -Database tempdb
+            $sproc = Get-DbaDbModule -SqlInstance $global:instance3 -Database tempdb | Where-Object { $_.Name -eq "CommandExecute" }
             $sproc | Should -Not -BeNullOrEmpty
         }
     }

@@ -30,7 +30,7 @@ Describe "Set-DbaDefaultPath" {
 
     Context "Integration Tests" {
         BeforeAll {
-            $results = Set-DbaDefaultPath -SqlInstance $env:instance1 -Type Backup -Path C:\temp
+            $results = Set-DbaDefaultPath -SqlInstance $global:instance1 -Type Backup -Path C:\temp
         }
         It "Data returns a value that contains :\" {
             $results.Data | Should -Match "\:\\"

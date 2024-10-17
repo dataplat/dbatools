@@ -52,17 +52,17 @@ exec sp_addrolemember 'userrole','alice';
 exec sp_addrolemember 'userrole','bob';
 '@
 
-        $db = New-DbaDatabase -SqlInstance $env:instance1 -Name $dbName
+        $db = New-DbaDatabase -SqlInstance $global:instance1 -Name $dbName
         $db.ExecuteNonQuery($sql)
     }
 
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $env:instance1 -Database $dbName -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $global:instance1 -Database $dbName -Confirm:$false
     }
 
     Context "Command returns proper info" {
         BeforeAll {
-            $results = Get-DbaUserPermission -SqlInstance $env:instance1 -Database $dbName
+            $results = Get-DbaUserPermission -SqlInstance $global:instance1 -Database $dbName
         }
 
         It "returns results" {
@@ -87,21 +87,21 @@ exec sp_addrolemember 'userrole','bob';
             $dbNameDiffCollation = "dbatoolsci_UserPermissionDiffCollation"
             $dbCollation = "Latin1_General_CI_AI"
 
-            New-DbaDatabase -SqlInstance $env:instance1 -Name $dbNameDiffCollation -Collation $dbCollation
+            New-DbaDatabase -SqlInstance $global:instance1 -Name $dbNameDiffCollation -Collation $dbCollation
         }
 
         AfterAll {
-            Remove-DbaDatabase -SqlInstance $env:instance1 -Database $dbNameDiffCollation -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $global:instance1 -Database $dbNameDiffCollation -Confirm:$false
         }
 
         It "Should not warn about collation conflict" {
             $warnVar = $null
-            $results = Get-DbaUserPermission -SqlInstance $env:instance1 -Database $dbNameDiffCollation -WarningVariable warnVar 3> $null
+            $results = Get-DbaUserPermission -SqlInstance $global:instance1 -Database $dbNameDiffCollation -WarningVariable warnVar 3> $null
             $warnVar | Should -BeNullOrEmpty
         }
 
         It "returns results" {
-            $results = Get-DbaUserPermission -SqlInstance $env:instance1 -Database $dbNameDiffCollation
+            $results = Get-DbaUserPermission -SqlInstance $global:instance1 -Database $dbNameDiffCollation
             $results.Count | Should -BeGreaterThan 0
         }
     }

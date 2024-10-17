@@ -24,7 +24,7 @@ Describe "Test-DbaOptimizeForAdHoc" {
 
     Context "Command actually works" {
         BeforeAll {
-            $results = Test-DbaOptimizeForAdHoc -SqlInstance $env:instance2
+            $results = Test-DbaOptimizeForAdHoc -SqlInstance $global:instance2
         }
         It "Should return result for the server" {
             $results | Should -Not -BeNullOrEmpty

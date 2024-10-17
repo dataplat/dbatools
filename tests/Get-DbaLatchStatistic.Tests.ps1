@@ -27,7 +27,7 @@ Describe "Get-DbaLatchStatistic" {
 
     Context "Command returns proper info" {
         BeforeAll {
-            $results = Get-DbaLatchStatistic -SqlInstance $env:instance2 -Threshold 100
+            $results = Get-DbaLatchStatistic -SqlInstance $global:instance2 -Threshold 100
         }
 
         It "returns results" {

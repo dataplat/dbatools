@@ -7,8 +7,8 @@ Describe "New-DbaLinkedServer" {
         . "$PSScriptRoot\constants.ps1"
 
         $random = Get-Random
-        $instance2 = Connect-DbaInstance -SqlInstance $env:instance2
-        $instance3 = Connect-DbaInstance -SqlInstance $env:instance3
+        $instance2 = Connect-DbaInstance -SqlInstance $global:instance2
+        $instance3 = Connect-DbaInstance -SqlInstance $global:instance3
 
         $securePassword = ConvertTo-SecureString -String 'securePassword!' -AsPlainText -Force
         $loginName = "dbatoolscli_test_$random"

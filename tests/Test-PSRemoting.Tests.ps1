@@ -33,7 +33,7 @@ Describe "Test-PSRemoting" {
         }
 
         It "Handles an instance, using just the computername" {
-            $result = Test-PSRemoting -ComputerName $env:instance1
+            $result = Test-PSRemoting -ComputerName $global:instance1
             $result | Should -Be $true
         }
     }

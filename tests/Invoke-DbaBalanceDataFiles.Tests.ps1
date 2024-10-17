@@ -35,7 +35,7 @@ Describe "Invoke-DbaBalanceDataFiles Integration Tests" -Tag "IntegrationTests" 
     }
 
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $env:instance2
+        $server = Connect-DbaInstance -SqlInstance $global:instance2
         $defaultdata = (Get-DbaDefaultPath -SqlInstance $server).Data
         $dbname = "dbatoolscsi_balance"
 

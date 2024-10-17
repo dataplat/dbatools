@@ -100,19 +100,19 @@ Describe "Test-DbaDbOwner Unit Tests" -Tag "UnitTests" {
 
 Describe "Test-DbaDbOwner Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $env:instance1 = "localhost"
+        $global:instance1 = "localhost"
         $dbname = "dbatoolsci_testdbowner"
-        $server = Connect-DbaInstance -SqlInstance $env:instance1
+        $server = Connect-DbaInstance -SqlInstance $global:instance1
         $null = $server.Query("CREATE DATABASE [$dbname]")
     }
 
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $env:instance1 -Database $dbname -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $global:instance1 -Database $dbname -Confirm:$false
     }
 
     It "Should return the correct information including database, currentowner and targetowner" {
         $whoami = whoami
-        $results = Test-DbaDbOwner -SqlInstance $env:instance1 -Database $dbname
+        $results = Test-DbaDbOwner -SqlInstance $global:instance1 -Database $dbname
         $results.Database | Should -Be $dbname
         $results.CurrentOwner | Should -Be $whoami
         $results.TargetOwner | Should -Be 'sa'

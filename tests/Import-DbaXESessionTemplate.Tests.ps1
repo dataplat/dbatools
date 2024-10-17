@@ -42,15 +42,15 @@ Describe "Import-DbaXESessionTemplate" {
 
     Context "Test Importing Session Template" {
         BeforeAll {
-            $env:instanceName = $env:instance2
+            $global:instanceName = $global:instance2
         }
 
         AfterAll {
-            $null = Get-DbaXESession -SqlInstance $env:instanceName -Session 'Overly Complex Queries' | Remove-DbaXESession
+            $null = Get-DbaXESession -SqlInstance $global:instanceName -Session 'Overly Complex Queries' | Remove-DbaXESession
         }
 
         It "Session imports with proper name and non-default target file location" -Skip {
-            $result = Import-DbaXESessionTemplate -SqlInstance $env:instanceName -Template 'Overly Complex Queries' -TargetFilePath C:\temp
+            $result = Import-DbaXESessionTemplate -SqlInstance $global:instanceName -Template 'Overly Complex Queries' -TargetFilePath C:\temp
             $result.Name | Should -Be "Overly Complex Queries"
             $result.TargetFile | Should -Match 'C:\\temp'
         }

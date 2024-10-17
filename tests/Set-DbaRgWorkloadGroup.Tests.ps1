@@ -55,14 +55,14 @@ Describe "Set-DbaRgWorkloadGroup" {
 
     Context "Functionality" {
         BeforeAll {
-            $null = Set-DbaResourceGovernor -SqlInstance $env:instance2 -Enabled
+            $null = Set-DbaResourceGovernor -SqlInstance $global:instance2 -Enabled
         }
 
         It "Sets a workload group in default resource pool" {
             $wklGroupName = "dbatoolssci_wklgroupTest"
             $resourcePoolType = "Internal"
             $splatNewWorkloadGroup = @{
-                SqlInstance                         = $env:instance2
+                SqlInstance                         = $global:instance2
                 WorkloadGroup                       = $wklGroupName
                 ResourcePool                        = "default"
                 ResourcePoolType                    = $resourcePoolType
@@ -75,7 +75,7 @@ Describe "Set-DbaRgWorkloadGroup" {
                 Force                               = $true
             }
             $splatSetWorkloadGroup = @{
-                SqlInstance                         = $env:instance2
+                SqlInstance                         = $global:instance2
                 WorkloadGroup                       = $wklGroupName
                 ResourcePool                        = "default"
                 ResourcePoolType                    = $resourcePoolType
@@ -88,7 +88,7 @@ Describe "Set-DbaRgWorkloadGroup" {
             }
             $newWorkloadGroup = New-DbaRgWorkloadGroup @splatNewWorkloadGroup
             $result = Set-DbaRgWorkloadGroup @splatSetWorkloadGroup
-            $resGov = Get-DbaResourceGovernor -SqlInstance $env:instance2
+            $resGov = Get-DbaResourceGovernor -SqlInstance $global:instance2
 
             $newWorkloadGroup | Should -Not -BeNullOrEmpty
             $resGov.ReconfigurePending | Should -BeFalse
@@ -105,13 +105,13 @@ Describe "Set-DbaRgWorkloadGroup" {
             $resourcePoolName = "dbatoolssci_poolTest"
             $resourcePoolType = "Internal"
             $splatNewResourcePool = @{
-                SqlInstance  = $env:instance2
+                SqlInstance  = $global:instance2
                 ResourcePool = $resourcePoolName
                 Type         = $resourcePoolType
                 Force        = $true
             }
             $splatNewWorkloadGroup = @{
-                SqlInstance                         = $env:instance2
+                SqlInstance                         = $global:instance2
                 WorkloadGroup                       = $wklGroupName
                 ResourcePool                        = $resourcePoolName
                 ResourcePoolType                    = $resourcePoolType
@@ -124,7 +124,7 @@ Describe "Set-DbaRgWorkloadGroup" {
                 Force                               = $true
             }
             $splatSetWorkloadGroup = @{
-                SqlInstance                         = $env:instance2
+                SqlInstance                         = $global:instance2
                 WorkloadGroup                       = $wklGroupName
                 ResourcePool                        = $resourcePoolName
                 ResourcePoolType                    = $resourcePoolType
@@ -138,10 +138,10 @@ Describe "Set-DbaRgWorkloadGroup" {
             $null = New-DbaRgResourcePool @splatNewResourcePool
             $newWorkloadGroup = New-DbaRgWorkloadGroup @splatNewWorkloadGroup
             $result = Set-DbaRgWorkloadGroup @splatSetWorkloadGroup
-            $resGov = Get-DbaResourceGovernor -SqlInstance $env:instance2
+            $resGov = Get-DbaResourceGovernor -SqlInstance $global:instance2
 
-            $null = Remove-DbaRgWorkloadGroup -SqlInstance $env:instance2 -WorkloadGroup $wklGroupName -ResourcePool $resourcePoolName
-            $null = Remove-DbaRgResourcePool -SqlInstance $env:instance2 -ResourcePool $resourcePoolName -Type $resourcePoolType
+            $null = Remove-DbaRgWorkloadGroup -SqlInstance $global:instance2 -WorkloadGroup $wklGroupName -ResourcePool $resourcePoolName
+            $null = Remove-DbaRgResourcePool -SqlInstance $global:instance2 -ResourcePool $resourcePoolName -Type $resourcePoolType
 
             $newWorkloadGroup | Should -Not -BeNullOrEmpty
             $resGov.ReconfigurePending | Should -BeFalse
@@ -157,7 +157,7 @@ Describe "Set-DbaRgWorkloadGroup" {
             $wklGroupName = "dbatoolssci_wklgroupTest"
             $wklGroupName2 = "dbatoolssci_wklgroupTest2"
             $splatNewWorkloadGroup = @{
-                SqlInstance                         = $env:instance2
+                SqlInstance                         = $global:instance2
                 WorkloadGroup                       = @($wklGroupName, $wklGroupName2)
                 Importance                          = "MEDIUM"
                 RequestMaximumMemoryGrantPercentage = 25
@@ -168,7 +168,7 @@ Describe "Set-DbaRgWorkloadGroup" {
                 Force                               = $true
             }
             $splatSetWorkloadGroup = @{
-                SqlInstance                         = $env:instance2
+                SqlInstance                         = $global:instance2
                 WorkloadGroup                       = @($wklGroupName, $wklGroupName2)
                 ResourcePool                        = "default"
                 Importance                          = "HIGH"
@@ -180,7 +180,7 @@ Describe "Set-DbaRgWorkloadGroup" {
             }
             $newWorkloadGroups = New-DbaRgWorkloadGroup @splatNewWorkloadGroup
             $result = Set-DbaRgWorkloadGroup @splatSetWorkloadGroup
-            $resGov = Get-DbaResourceGovernor -SqlInstance $env:instance2
+            $resGov = Get-DbaResourceGovernor -SqlInstance $global:instance2
 
             $newWorkloadGroups | Should -Not -BeNullOrEmpty
             $resGov.ReconfigurePending | Should -BeFalse
@@ -197,7 +197,7 @@ Describe "Set-DbaRgWorkloadGroup" {
             $oldGroupMaximumRequests = 10
             $newGroupMaximumRequests = 20
             $splatNewWorkloadGroup = @{
-                SqlInstance          = $env:instance2
+                SqlInstance          = $global:instance2
                 WorkloadGroup        = $wklGroupName
                 ResourcePool         = "default"
                 GroupMaximumRequests = $oldGroupMaximumRequests
@@ -213,13 +213,13 @@ Describe "Set-DbaRgWorkloadGroup" {
         It "Skips Resource Governor reconfiguration" {
             $wklGroupName = "dbatoolssci_wklgroupTest"
             $splatNewWorkloadGroup = @{
-                SqlInstance     = $env:instance2
+                SqlInstance     = $global:instance2
                 WorkloadGroup   = $wklGroupName
                 SkipReconfigure = $false
                 Force           = $true
             }
             $splatSetWorkloadGroup = @{
-                SqlInstance      = $env:instance2
+                SqlInstance      = $global:instance2
                 WorkloadGroup    = $wklGroupName
                 ResourcePool     = "default"
                 ResourcePoolType = "Internal"
@@ -228,18 +228,18 @@ Describe "Set-DbaRgWorkloadGroup" {
             }
 
             $null = New-DbaRgWorkloadGroup @splatNewWorkloadGroup
-            $result = Get-DbaResourceGovernor -SqlInstance $env:instance2
+            $result = Get-DbaResourceGovernor -SqlInstance $global:instance2
             $result.ReconfigurePending | Should -BeFalse
 
             $null = Set-DbaRgWorkloadGroup @splatSetWorkloadGroup
-            $result2 = Get-DbaResourceGovernor -SqlInstance $env:instance2
+            $result2 = Get-DbaResourceGovernor -SqlInstance $global:instance2
             $result2.ReconfigurePending | Should -BeTrue
         }
 
         AfterEach {
             $wklGroupName = "dbatoolssci_wklgroupTest"
             $wklGroupName2 = "dbatoolssci_wklgroupTest2"
-            $null = Remove-DbaRgWorkloadGroup -SqlInstance $env:instance2 -WorkloadGroup $wklGroupName, $wklGroupName2
+            $null = Remove-DbaRgWorkloadGroup -SqlInstance $global:instance2 -WorkloadGroup $wklGroupName, $wklGroupName2
         }
     }
 }

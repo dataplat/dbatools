@@ -23,7 +23,7 @@ Describe "Test-DbaDbDataGeneratorConfig" {
             $dbname = "dbatools_datagentest"
             $query = "CREATE DATABASE [$dbname]"
 
-            Invoke-DbaQuery -SqlInstance $env:instance1 -Database master -Query $query
+            Invoke-DbaQuery -SqlInstance $global:instance1 -Database master -Query $query
 
             $query = @"
             CREATE TABLE [dbo].[Customer](
@@ -39,13 +39,13 @@ Describe "Test-DbaDbDataGeneratorConfig" {
             ) ON [PRIMARY]
 "@
 
-            Invoke-DbaQuery -SqlInstance $env:instance1 -Database $dbname -Query $query
+            Invoke-DbaQuery -SqlInstance $global:instance1 -Database $dbname -Query $query
 
-            $file = New-DbaDbDataGeneratorConfig -SqlInstance $env:instance1 -Database $dbname -Table Customer -Path "C:\temp\datageneration"
+            $file = New-DbaDbDataGeneratorConfig -SqlInstance $global:instance1 -Database $dbname -Table Customer -Path "C:\temp\datageneration"
         }
 
         AfterAll {
-            Remove-DbaDatabase -SqlInstance $env:instance1 -Database $dbname -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $global:instance1 -Database $dbname -Confirm:$false
         }
 
         It "gives no errors with a correct json file" {

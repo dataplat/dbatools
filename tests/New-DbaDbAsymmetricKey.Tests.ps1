@@ -47,19 +47,19 @@ Describe "New-DbaDbAsymmetricKey" {
     Context "Integration Tests" {
         BeforeAll {
             $tPassword = ConvertTo-SecureString "ThisIsThePassword1" -AsPlainText -Force
-            if (!(Get-DbaDbMasterKey -SqlInstance $env:instance2 -Database master)) {
-                New-DbaDbMasterKey -SqlInstance $env:instance2 -Database master -SecurePassword $tPassword -Confirm:$false
+            if (!(Get-DbaDbMasterKey -SqlInstance $global:instance2 -Database master)) {
+                New-DbaDbMasterKey -SqlInstance $global:instance2 -Database master -SecurePassword $tPassword -Confirm:$false
             }
         }
 
         AfterAll {
-            Remove-DbaDatabase -SqlInstance $env:instance2 -Database enctest -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $global:instance2 -Database enctest -Confirm:$false
         }
 
         It "Should create new key in master" {
             $keyname = 'test1'
-            $key = New-DbaDbAsymmetricKey -SqlInstance $env:instance2 -Name $keyname
-            $results = Get-DbaDbAsymmetricKey -SqlInstance $env:instance2 -Name $keyname -Database master
+            $key = New-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Name $keyname
+            $results = Get-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Name $keyname -Database master
             $results.database | Should -Be 'master'
             $results.name | Should -Be $keyname
             $results.KeyLength | Should -Be '2048'
@@ -67,20 +67,20 @@ Describe "New-DbaDbAsymmetricKey" {
 
         It "Should warn when key already exists" {
             $keyname = 'test1'
-            $null = New-DbaDbAsymmetricKey -SqlInstance $env:instance2 -Name $keyname -Database master -WarningVariable warnvar 3> $null
-            $null = Remove-DbaDbAsymmetricKey -SqlInstance $env:instance2 -Name $keyname -Database master -Confirm:$false
+            $null = New-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Name $keyname -Database master -WarningVariable warnvar 3> $null
+            $null = Remove-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Name $keyname -Database master -Confirm:$false
             $warnvar | Should -BeLike '*already exists in master on*'
         }
 
         It "Should handle algorithm changes" {
             $keyname = 'test2'
             $algorithm = 'Rsa4096'
-            $key = New-DbaDbAsymmetricKey -SqlInstance $env:instance2 -Name $keyname -Algorithm $algorithm
-            $results = Get-DbaDbAsymmetricKey -SqlInstance $env:instance2 -Name $keyname -Database master
+            $key = New-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Name $keyname -Algorithm $algorithm
+            $results = Get-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Name $keyname -Database master
             $results.database | Should -Be 'master'
             $results.name | Should -Be $keyname
             $results.KeyLength | Should -Be 4096
-            $null = Remove-DbaDbAsymmetricKey -SqlInstance $env:instance2 -Name $keyname -Database master -Confirm:$false
+            $null = Remove-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Name $keyname -Database master -Confirm:$false
         }
 
         It "Should create key in non-master database" {
@@ -88,17 +88,17 @@ Describe "New-DbaDbAsymmetricKey" {
             $algorithm = 'Rsa4096'
             $dbuser = 'keyowner'
             $database = 'enctest'
-            New-DbaDatabase -SqlInstance $env:instance2 -Name $database
+            New-DbaDatabase -SqlInstance $global:instance2 -Name $database
             $tPassword = ConvertTo-SecureString "ThisIsThePassword1" -AsPlainText -Force
-            New-DbaDbMasterKey -SqlInstance $env:instance2 -Database $database -SecurePassword $tPassword -Confirm:$false
-            New-DbaDbUser -SqlInstance $env:instance2 -Database $database -UserName $dbuser
-            $key = New-DbaDbAsymmetricKey -SqlInstance $env:instance2 -Database $database -Name $keyname -Owner $dbuser -Algorithm $algorithm
-            $results = Get-DbaDbAsymmetricKey -SqlInstance $env:instance2 -Name $keyname -Database $database
+            New-DbaDbMasterKey -SqlInstance $global:instance2 -Database $database -SecurePassword $tPassword -Confirm:$false
+            New-DbaDbUser -SqlInstance $global:instance2 -Database $database -UserName $dbuser
+            $key = New-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Database $database -Name $keyname -Owner $dbuser -Algorithm $algorithm
+            $results = Get-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Name $keyname -Database $database
             $results.database | Should -Be $database
             $results.name | Should -Be $keyname
             $results.KeyLength | Should -Be 4096
             $results.Owner | Should -Be $dbuser
-            $null = Remove-DbaDbAsymmetricKey -SqlInstance $env:instance2 -Name $keyname -Database $database -Confirm:$false
+            $null = Remove-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Name $keyname -Database $database -Confirm:$false
         }
 
         It "Should set owner correctly" {
@@ -106,13 +106,13 @@ Describe "New-DbaDbAsymmetricKey" {
             $algorithm = 'Rsa4096'
             $dbuser = 'keyowner'
             $database = 'enctest'
-            $key = New-DbaDbAsymmetricKey -SqlInstance $env:instance2 -Name $keyname -Owner $dbuser -Database $database -Algorithm $algorithm
-            $results = Get-DbaDbAsymmetricKey -SqlInstance $env:instance2 -Name $keyname -Database $database
+            $key = New-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Name $keyname -Owner $dbuser -Database $database -Algorithm $algorithm
+            $results = Get-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Name $keyname -Database $database
             $results.database | Should -Be $database
             $results.name | Should -Be $keyname
             $results.KeyLength | Should -Be 4096
             $results.Owner | Should -Be $dbuser
-            $null = Remove-DbaDbAsymmetricKey -SqlInstance $env:instance2 -Name $keyname -Database $database -Confirm:$false
+            $null = Remove-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Name $keyname -Database $database -Confirm:$false
         }
 
         It "Should create new key loaded from a keyfile" -Skip:(-not (Test-Path -Path "$($env:appveyorlabrepo)\keytests\keypair.snk")) {
@@ -120,12 +120,12 @@ Describe "New-DbaDbAsymmetricKey" {
             $dbuser = 'keyowner'
             $database = 'enctest'
             $path = "$($env:appveyorlabrepo)\keytests\keypair.snk"
-            $key = New-DbaDbAsymmetricKey -SqlInstance $env:instance2 -Database $database -Name $keyname -Owner $dbuser -KeySourceType File -KeySource $path
-            $results = Get-DbaDbAsymmetricKey -SqlInstance $env:instance2 -Name $keyname -Database $database
+            $key = New-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Database $database -Name $keyname -Owner $dbuser -KeySourceType File -KeySource $path
+            $results = Get-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Name $keyname -Database $database
             $results.database | Should -Be $database
             $results.name | Should -Be $keyname
             $results.Owner | Should -Be $dbuser
-            $null = Remove-DbaDbAsymmetricKey -SqlInstance $env:instance2 -Name $keyname -Database $database -Confirm:$false
+            $null = Remove-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Name $keyname -Database $database -Confirm:$false
         }
 
         It "Should fail key creation from a missing keyfile" {
@@ -133,11 +133,11 @@ Describe "New-DbaDbAsymmetricKey" {
             $dbuser = 'keyowner'
             $database = 'enctest'
             $path = "$($env:appveyorlabrepo)\keytests\keypair.bad"
-            $null = New-DbaDbAsymmetricKey -SqlInstance $env:instance2 -Database $database -Name $keyname -Owner $dbuser -KeySourceType File -KeySource $path -WarningVariable warnvar 3> $null
-            $results = Get-DbaDbAsymmetricKey -SqlInstance $env:instance2 -Name $keyname -Database $database
+            $null = New-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Database $database -Name $keyname -Owner $dbuser -KeySourceType File -KeySource $path -WarningVariable warnvar 3> $null
+            $results = Get-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Name $keyname -Database $database
             $warnvar | Should -Not -BeNullOrEmpty
             $results | Should -BeNullOrEmpty
-            $null = Remove-DbaDbAsymmetricKey -SqlInstance $env:instance2 -Name $keyname -Database $database -Confirm:$false
+            $null = Remove-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Name $keyname -Database $database -Confirm:$false
         }
     }
 }

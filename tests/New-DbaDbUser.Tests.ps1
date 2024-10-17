@@ -13,17 +13,17 @@ Describe "New-DbaDbUser" {
 
         $password = 'MyV3ry$ecur3P@ssw0rd'
         $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
-        $null = New-DbaLogin -SqlInstance $env:instance2 -Login $userName -Password $securePassword -Force
-        $null = New-DbaDatabase -SqlInstance $env:instance2 -Name $dbname
-        $dbContainmentSpValue = (Get-DbaSpConfigure -SqlInstance $env:instance2 -Name ContainmentEnabled).ConfiguredValue
-        $null = Set-DbaSpConfigure -SqlInstance $env:instance2 -Name ContainmentEnabled -Value 1
-        $null = Invoke-DbaQuery -SqlInstance $env:instance2 -Query "ALTER DATABASE [$dbname] SET CONTAINMENT = PARTIAL WITH NO_WAIT"
+        $null = New-DbaLogin -SqlInstance $global:instance2 -Login $userName -Password $securePassword -Force
+        $null = New-DbaDatabase -SqlInstance $global:instance2 -Name $dbname
+        $dbContainmentSpValue = (Get-DbaSpConfigure -SqlInstance $global:instance2 -Name ContainmentEnabled).ConfiguredValue
+        $null = Set-DbaSpConfigure -SqlInstance $global:instance2 -Name ContainmentEnabled -Value 1
+        $null = Invoke-DbaQuery -SqlInstance $global:instance2 -Query "ALTER DATABASE [$dbname] SET CONTAINMENT = PARTIAL WITH NO_WAIT"
     }
 
     AfterAll {
-        $null = Remove-DbaDatabase -SqlInstance $env:instance2 -Database $dbname -Confirm:$false
-        $null = Remove-DbaLogin -SqlInstance $env:instance2 -Login $userName -Confirm:$false
-        $null = Set-DbaSpConfigure -SqlInstance $env:instance2 -Name ContainmentEnabled -Value $dbContainmentSpValue
+        $null = Remove-DbaDatabase -SqlInstance $global:instance2 -Database $dbname -Confirm:$false
+        $null = Remove-DbaLogin -SqlInstance $global:instance2 -Login $userName -Confirm:$false
+        $null = Set-DbaSpConfigure -SqlInstance $global:instance2 -Name ContainmentEnabled -Value $dbContainmentSpValue
     }
 
     Context "Validate parameters" {
@@ -71,7 +71,7 @@ Describe "New-DbaDbUser" {
     Context "Test error handling" {
         It "Tries to create the user with an invalid default schema" {
             $warningMessage = $null
-            $results = New-DbaDbUser -SqlInstance $env:instance2 -Database $dbname -Login $userName -DefaultSchema invalidSchemaName -WarningVariable warningMessage
+            $results = New-DbaDbUser -SqlInstance $global:instance2 -Database $dbname -Login $userName -DefaultSchema invalidSchemaName -WarningVariable warningMessage
             $results | Should -BeNullOrEmpty
             $warningMessage | Should -BeLike "*Schema * does not exist in database*"
         }
@@ -79,8 +79,8 @@ Describe "New-DbaDbUser" {
 
     Context "Should create the user with login" {
         It "Creates the user and get it" {
-            New-DbaDbUser -SqlInstance $env:instance2 -Database $dbname -Login $userName -DefaultSchema guest
-            $newDbUser = Get-DbaDbUser -SqlInstance $env:instance2 -Database $dbname | Where-Object Name -eq $userName
+            New-DbaDbUser -SqlInstance $global:instance2 -Database $dbname -Login $userName -DefaultSchema guest
+            $newDbUser = Get-DbaDbUser -SqlInstance $global:instance2 -Database $dbname | Where-Object Name -eq $userName
             $newDbUser.Name | Should -Be $userName
             $newDbUser.DefaultSchema | Should -Be 'guest'
         }
@@ -88,8 +88,8 @@ Describe "New-DbaDbUser" {
 
     Context "Should create the user with password" {
         It "Creates the contained sql user and get it." {
-            New-DbaDbUser -SqlInstance $env:instance2 -Database $dbname -Username $userNameWithPassword -Password $securePassword -DefaultSchema guest
-            $newDbUser = Get-DbaDbUser -SqlInstance $env:instance2 -Database $dbname | Where-Object Name -eq $userNameWithPassword
+            New-DbaDbUser -SqlInstance $global:instance2 -Database $dbname -Username $userNameWithPassword -Password $securePassword -DefaultSchema guest
+            $newDbUser = Get-DbaDbUser -SqlInstance $global:instance2 -Database $dbname | Where-Object Name -eq $userNameWithPassword
             $newDbUser.Name | Should -Be $userNameWithPassword
             $newDbUser.DefaultSchema | Should -Be 'guest'
         }
@@ -97,8 +97,8 @@ Describe "New-DbaDbUser" {
 
     Context "Should create the user without login" {
         It "Creates the user and get it. Login property is empty" {
-            New-DbaDbUser -SqlInstance $env:instance2 -Database $dbname -User $userNameWithoutLogin -DefaultSchema guest
-            $results = Get-DbaDbUser -SqlInstance $env:instance2 -Database $dbname | Where-Object Name -eq $userNameWithoutLogin
+            New-DbaDbUser -SqlInstance $global:instance2 -Database $dbname -User $userNameWithoutLogin -DefaultSchema guest
+            $results = Get-DbaDbUser -SqlInstance $global:instance2 -Database $dbname | Where-Object Name -eq $userNameWithoutLogin
             $results.Name | Should -Be $userNameWithoutLogin
             $results.DefaultSchema | Should -Be 'guest'
             $results.Login | Should -BeNullOrEmpty
@@ -112,25 +112,25 @@ Describe "New-DbaDbUser" {
 
             $password = 'MyV3ry$ecur3P@ssw0rd'
             $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
-            $null = New-DbaLogin -SqlInstance $env:instance2 -Login $loginName -Password $securePassword -Force
-            $null = New-DbaDatabase -SqlInstance $env:instance2 -Name $dbs
-            $accessibleDbCount = (Get-DbaDatabase -SqlInstance $env:instance2 -ExcludeSystem -OnlyAccessible).count
+            $null = New-DbaLogin -SqlInstance $global:instance2 -Login $loginName -Password $securePassword -Force
+            $null = New-DbaDatabase -SqlInstance $global:instance2 -Name $dbs
+            $accessibleDbCount = (Get-DbaDatabase -SqlInstance $global:instance2 -ExcludeSystem -OnlyAccessible).count
         }
 
         AfterAll {
-            $null = Remove-DbaDatabase -SqlInstance $env:instance2 -Database $dbs -Confirm:$false
-            $null = Remove-DbaLogin -SqlInstance $env:instance2 -Login $loginName -Confirm:$false
+            $null = Remove-DbaDatabase -SqlInstance $global:instance2 -Database $dbs -Confirm:$false
+            $null = Remove-DbaLogin -SqlInstance $global:instance2 -Login $loginName -Confirm:$false
         }
 
         It "Should add login to all databases provided" {
-            $results = New-DbaDbUser -SqlInstance $env:instance2 -Login $loginName -Database $dbs -Force -EnableException
+            $results = New-DbaDbUser -SqlInstance $global:instance2 -Login $loginName -Database $dbs -Force -EnableException
             $results.Count | Should -Be 3
             $results.Name | Should -Be $loginName, $loginName, $loginName
             $results.DefaultSchema | Should -Be dbo, dbo, dbo
         }
 
         It "Should add user to all user databases" {
-            $results = New-DbaDbUser -SqlInstance $env:instance2 -Login $loginName -Force -EnableException
+            $results = New-DbaDbUser -SqlInstance $global:instance2 -Login $loginName -Force -EnableException
             $results.Count | Should -Be $accessibleDbCount
             $results.Name | Get-Unique | Should -Be $loginName
         }

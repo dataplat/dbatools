@@ -30,7 +30,7 @@ Describe "Set-DbaErrorLogConfig" {
 
     Context "Integration Tests" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $env:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $logfiles = $server.NumberOfLogFiles
             $logsize = $server.ErrorLogSizeKb
 
@@ -38,7 +38,7 @@ Describe "Set-DbaErrorLogConfig" {
             $server.ErrorLogSizeKb = 1024
             $server.Alter()
 
-            $server = Connect-DbaInstance -SqlInstance $env:instance1
+            $server = Connect-DbaInstance -SqlInstance $global:instance1
             $logfiles2 = $server.NumberOfLogFiles
             $logsize2 = $server.ErrorLogSizeKb
 
@@ -46,11 +46,11 @@ Describe "Set-DbaErrorLogConfig" {
             $server.Alter()
         }
         AfterAll {
-            $server = Connect-DbaInstance -SqlInstance $env:instance1
+            $server = Connect-DbaInstance -SqlInstance $global:instance1
             $server.NumberOfLogFiles = $logfiles2
             $server.Alter()
 
-            $server = Connect-DbaInstance -SqlInstance $env:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $server.NumberOfLogFiles = $logfiles
             $server.ErrorLogSizeKb = $logsize
             $server.Alter()
@@ -58,7 +58,7 @@ Describe "Set-DbaErrorLogConfig" {
 
         Context "Apply LogCount to multiple instances" {
             BeforeAll {
-                $results = Set-DbaErrorLogConfig -SqlInstance $env:instance2, $env:instance1 -LogCount 8
+                $results = Set-DbaErrorLogConfig -SqlInstance $global:instance2, $global:instance1 -LogCount 8
             }
             It 'Returns LogCount set to 8 for each instance' {
                 foreach ($result in $results) {
@@ -68,7 +68,7 @@ Describe "Set-DbaErrorLogConfig" {
         }
         Context "Apply LogSize to multiple instances" {
             BeforeAll {
-                $results = Set-DbaErrorLogConfig -SqlInstance $env:instance2, $env:instance1 -LogSize 100 -WarningAction SilentlyContinue -WarningVariable warn2
+                $results = Set-DbaErrorLogConfig -SqlInstance $global:instance2, $global:instance1 -LogSize 100 -WarningAction SilentlyContinue -WarningVariable warn2
             }
             It 'Returns LogSize set to 100 for each instance' {
                 foreach ($result in $results) {

@@ -50,32 +50,32 @@ Describe 'New-DbaCredential' -Tag 'UnitTests', 'IntegrationTests' {
 
             # Add users
             foreach ($login in $logins) {
-                $null = Invoke-Command2 -ScriptBlock { net user $using:login $using:plaintext /add *>&1 } -ComputerName $env:instance2
+                $null = Invoke-Command2 -ScriptBlock { net user $using:login $using:plaintext /add *>&1 } -ComputerName $global:instance2
             }
         }
 
         AfterAll {
             try {
-                (Get-DbaCredential -SqlInstance $env:instance2 -Identity dbatoolsci_thor, dbatoolsci_thorsmomma -ErrorAction Stop -WarningAction SilentlyContinue) | ForEach-Object { $_.Drop() }
-                (Get-DbaCredential -SqlInstance $env:instance2 -Name "https://mystorageaccount.blob.core.windows.net/mycontainer" -ErrorAction Stop -WarningAction SilentlyContinue).Drop()
+                (Get-DbaCredential -SqlInstance $global:instance2 -Identity dbatoolsci_thor, dbatoolsci_thorsmomma -ErrorAction Stop -WarningAction SilentlyContinue) | ForEach-Object { $_.Drop() }
+                (Get-DbaCredential -SqlInstance $global:instance2 -Name "https://mystorageaccount.blob.core.windows.net/mycontainer" -ErrorAction Stop -WarningAction SilentlyContinue).Drop()
             } catch { }
 
             foreach ($login in $logins) {
-                $null = Invoke-Command2 -ScriptBlock { net user $using:login /delete *>&1 } -ComputerName $env:instance2
+                $null = Invoke-Command2 -ScriptBlock { net user $using:login /delete *>&1 } -ComputerName $global:instance2
             }
         }
 
         Context "Create a new credential" {
             It "Should create new credentials with the proper properties" {
-                $results = New-DbaCredential -SqlInstance $env:instance2 -Name dbatoolsci_thorcred -Identity dbatoolsci_thor -Password $password
+                $results = New-DbaCredential -SqlInstance $global:instance2 -Name dbatoolsci_thorcred -Identity dbatoolsci_thor -Password $password
                 $results.Name     | Should -Be "dbatoolsci_thorcred"
                 $results.Identity | Should -Be "dbatoolsci_thor"
 
-                $results = New-DbaCredential -SqlInstance $env:instance2 -Identity dbatoolsci_thorsmomma -Password $password
+                $results = New-DbaCredential -SqlInstance $global:instance2 -Identity dbatoolsci_thorsmomma -Password $password
                 $results | Should -Not -Be $null
             }
             It "Gets the newly created credential" {
-                $results = Get-DbaCredential -SqlInstance $env:instance2 -Identity dbatoolsci_thorsmomma
+                $results = Get-DbaCredential -SqlInstance $global:instance2 -Identity dbatoolsci_thorsmomma
                 $results.Name     | Should -Be "dbatoolsci_thorsmomma"
                 $results.Identity | Should -Be "dbatoolsci_thorsmomma"
             }
@@ -84,7 +84,7 @@ Describe 'New-DbaCredential' -Tag 'UnitTests', 'IntegrationTests' {
         Context "Create a new credential without password" {
             It "Should create new credentials with the proper properties but without password" {
                 $credentialParams = @{
-                    SqlInstance = $env:instance2
+                    SqlInstance = $global:instance2
                     Name        = "https://mystorageaccount.blob.core.windows.net/mycontainer"
                     Identity    = 'Managed Identity'
                 }
@@ -93,7 +93,7 @@ Describe 'New-DbaCredential' -Tag 'UnitTests', 'IntegrationTests' {
                 $results.Identity | Should -Be "Managed Identity"
             }
             It "Gets the newly created credential that doesn't have password" {
-                $results = Get-DbaCredential -SqlInstance $env:instance2 -Identity "Managed Identity"
+                $results = Get-DbaCredential -SqlInstance $global:instance2 -Identity "Managed Identity"
                 $results.Name     | Should -Be "https://mystorageaccount.blob.core.windows.net/mycontainer"
                 $results.Identity | Should -Be "Managed Identity"
             }

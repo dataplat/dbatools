@@ -74,7 +74,7 @@ Describe "New-DbaSqlParameter Integration Tests" -Tag "IntegrationTests" {
     }
 
     BeforeAll {
-        $null = Invoke-DbaQuery -SqlInstance $env:instance2 -Database tempdb -Query "CREATE OR ALTER PROC [dbo].[my_proc]
+        $null = Invoke-DbaQuery -SqlInstance $global:instance2 -Database tempdb -Query "CREATE OR ALTER PROC [dbo].[my_proc]
         @json_result nvarchar(max) output
             AS
             BEGIN
@@ -87,7 +87,7 @@ Describe "New-DbaSqlParameter Integration Tests" -Tag "IntegrationTests" {
 
     AfterAll {
         try {
-            $null = Invoke-DbaQuery -SqlInstance $env:instance2 -Database tempdb -Query "DROP PROCEDURE dbo.my_proc"
+            $null = Invoke-DbaQuery -SqlInstance $global:instance2 -Database tempdb -Query "DROP PROCEDURE dbo.my_proc"
         } catch {
             $null = 1
         }
@@ -95,7 +95,7 @@ Describe "New-DbaSqlParameter Integration Tests" -Tag "IntegrationTests" {
 
     It "creates a usable sql parameter" {
         $output = New-DbaSqlParameter -ParameterName json_result -SqlDbType NVarChar -Size -1 -Direction Output
-        Invoke-DbaQuery -SqlInstance $env:instance2 -Database tempdb -CommandType StoredProcedure -Query my_proc -SqlParameters $output
+        Invoke-DbaQuery -SqlInstance $global:instance2 -Database tempdb -CommandType StoredProcedure -Query my_proc -SqlParameters $output
         $output.Value | Should -Be '{"example":"sample"}'
     }
 }

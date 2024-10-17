@@ -58,7 +58,7 @@ Describe "Remove-DbaExtendedProperty" {
     Context "Command usage" {
         BeforeAll {
             $random = Get-Random
-            $instance2 = Connect-DbaInstance -SqlInstance $env:instance2
+            $instance2 = Connect-DbaInstance -SqlInstance $global:instance2
             $null = Get-DbaProcess -SqlInstance $instance2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false
             $newDbName = "dbatoolsci_newdb_$random"
             $db = New-DbaDatabase -SqlInstance $instance2 -Name $newDbName

@@ -32,18 +32,18 @@ Describe "Remove-DbaAvailabilityGroup" {
 
         BeforeAll {
             $agname = "dbatoolsci_removewholegroup"
-            $null = New-DbaAvailabilityGroup -Primary $env:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Confirm:$false
+            $null = New-DbaAvailabilityGroup -Primary $global:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Confirm:$false
         }
 
         It "removes the newly created ag" {
-            $results = Remove-DbaAvailabilityGroup -SqlInstance $env:instance3 -AvailabilityGroup $agname -Confirm:$false
+            $results = Remove-DbaAvailabilityGroup -SqlInstance $global:instance3 -AvailabilityGroup $agname -Confirm:$false
             $results.Status | Should -Be 'Removed'
             $results.AvailabilityGroup | Should -Be $agname
         }
 
         It "really removed the ag" {
-            $results = Get-DbaAvailabilityGroup -SqlInstance $env:instance3 -AvailabilityGroup $agname
+            $results = Get-DbaAvailabilityGroup -SqlInstance $global:instance3 -AvailabilityGroup $agname
             $results | Should -BeNullOrEmpty
         }
     }
-} #$env:instance2 for appveyor
+} #$global:instance2 for appveyor

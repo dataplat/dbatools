@@ -62,11 +62,11 @@ Describe "Install-DbaAgentAdminAlert" {
 
     Context "Integration Tests" {
         BeforeAll {
-            $env:instances = @($env:instance2, $env:instance3)
+            $global:instances = @($global:instance2, $global:instance3)
         }
 
         BeforeEach {
-            foreach ($instance in $env:instances) {
+            foreach ($instance in $global:instances) {
                 Get-DbaAgentAlert -SqlInstance $instance | Remove-DbaAgentAlert -Confirm:$false
             }
         }
@@ -74,7 +74,7 @@ Describe "Install-DbaAgentAdminAlert" {
         Context 'Creating a new SQL Server Agent alert' {
             It 'Should create a bunch of new alerts on instance2' {
                 $parms = @{
-                    SqlInstance           = $env:instance2
+                    SqlInstance           = $global:instance2
                     DelayBetweenResponses = 60
                     Disabled              = $false
                     NotifyMethod          = "NotifyEmail"
@@ -94,7 +94,7 @@ Describe "Install-DbaAgentAdminAlert" {
 
             It 'Should create a bunch of new alerts on instance3' {
                 $parms = @{
-                    SqlInstance           = $env:instance3
+                    SqlInstance           = $global:instance3
                     DelayBetweenResponses = 60
                     Disabled              = $false
                     NotifyMethod          = "NotifyEmail"
@@ -108,7 +108,7 @@ Describe "Install-DbaAgentAdminAlert" {
                 $alerts = Install-DbaAgentAdminAlert @parms
 
                 $alerts.Severity | Should -Not -Contain 17
-                Get-DbaAgentAlert -SqlInstance $env:instance3 | Should -Not -BeNullOrEmpty
+                Get-DbaAgentAlert -SqlInstance $global:instance3 | Should -Not -BeNullOrEmpty
             }
         }
     }

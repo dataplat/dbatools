@@ -42,13 +42,13 @@ Describe "Stop-DbaService" {
 
     Context "Command actually works" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $env:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $instanceName = $server.ServiceName
             $computerName = $server.NetName
         }
 
         It "stops some services" {
-            $services = Stop-DbaService -ComputerName $env:instance2 -InstanceName $instanceName -Type Agent
+            $services = Stop-DbaService -ComputerName $global:instance2 -InstanceName $instanceName -Type Agent
             $services | Should -Not -BeNullOrEmpty
             foreach ($service in $services) {
                 $service.State | Should -Be 'Stopped'
@@ -67,7 +67,7 @@ Describe "Stop-DbaService" {
                 Get-Service -ComputerName $computerName -Name $serviceName | Start-Service -WarningAction SilentlyContinue | Out-Null
             }
 
-            $services = Get-DbaService -ComputerName $env:instance2 -InstanceName $instanceName -Type Agent, Engine | Stop-DbaService
+            $services = Get-DbaService -ComputerName $global:instance2 -InstanceName $instanceName -Type Agent, Engine | Stop-DbaService
             $services | Should -Not -BeNullOrEmpty
             foreach ($service in $services) {
                 $service.State | Should -Be 'Stopped'

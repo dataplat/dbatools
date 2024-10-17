@@ -27,10 +27,10 @@ Describe "Get-DbaPowerPlan" {
 
     Context "Command actually works" {
         BeforeDiscovery {
-            $env:instance2 = $env:instance2 # Ensure this variable is available in the discovery phase
+            $global:instance2 = $global:instance2 # Ensure this variable is available in the discovery phase
         }
         It "Should return result for the server" {
-            $results = Get-DbaPowerPlan -ComputerName $env:instance2
+            $results = Get-DbaPowerPlan -ComputerName $global:instance2
             $results | Should -Not -BeNullOrEmpty
         }
     }

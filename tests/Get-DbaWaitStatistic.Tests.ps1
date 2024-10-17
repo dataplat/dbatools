@@ -30,7 +30,7 @@ Describe "Get-DbaWaitStatistic" {
 
     Context "Command returns proper info" {
         BeforeAll {
-            $results = Get-DbaWaitStatistic -SqlInstance $env:instance2 -Threshold 100
+            $results = Get-DbaWaitStatistic -SqlInstance $global:instance2 -Threshold 100
         }
 
         It "returns results" {
@@ -47,7 +47,7 @@ Describe "Get-DbaWaitStatistic" {
     Context "Command returns proper info when using parameter IncludeIgnorable" {
         BeforeAll {
             $ignoredWaits = 'REQUEST_FOR_DEADLOCK_SEARCH', 'SLEEP_MASTERDBREADY', 'SLEEP_TASK', 'LAZYWRITER_SLEEP'
-            $results = Get-DbaWaitStatistic -SqlInstance $env:instance2 -Threshold 100 -IncludeIgnorable | Where-Object {
+            $results = Get-DbaWaitStatistic -SqlInstance $global:instance2 -Threshold 100 -IncludeIgnorable | Where-Object {
                 $ignoredWaits -contains $_.WaitType
             }
         }

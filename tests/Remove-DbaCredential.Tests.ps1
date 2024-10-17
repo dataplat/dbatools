@@ -34,7 +34,7 @@ Describe "Remove-DbaCredential" {
     Context "Command usage" {
         BeforeAll {
             . "$PSScriptRoot\constants.ps1"
-            $server = Connect-DbaInstance -SqlInstance $env:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $credentialName = "dbatoolsci_test_$(Get-Random)"
             $credentialName2 = "dbatoolsci_test_$(Get-Random)"
 

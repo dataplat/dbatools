@@ -28,7 +28,7 @@ Describe "New-DbaServerRole" {
 
     Context "Integration Tests" {
         BeforeAll {
-            $instance = Connect-DbaInstance -SqlInstance $env:instance2
+            $instance = Connect-DbaInstance -SqlInstance $global:instance2
             $roleExecutor = "serverExecuter"
             $roleMaster = "serverMaster"
             $owner = "sa"

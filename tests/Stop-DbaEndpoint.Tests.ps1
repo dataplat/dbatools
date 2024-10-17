@@ -32,7 +32,7 @@ Describe "Stop-DbaEndpoint" {
         }
 
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $env:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $endpoint = Get-DbaEndpoint -SqlInstance $server -Endpoint 'TSQL Default TCP'
             $endpoint | Start-DbaEndpoint
         }

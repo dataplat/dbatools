@@ -43,7 +43,7 @@ Describe "Set-DbaNetworkConfiguration" {
 
     Context "Command works with piped input" {
         BeforeAll {
-            $netConf = Get-DbaNetworkConfiguration -SqlInstance $env:instance2
+            $netConf = Get-DbaNetworkConfiguration -SqlInstance $global:instance2
             $netConf.TcpIpProperties.KeepAlive = 60000
             $results = $netConf | Set-DbaNetworkConfiguration -Confirm:$false -WarningAction SilentlyContinue
         }
@@ -57,7 +57,7 @@ Describe "Set-DbaNetworkConfiguration" {
         }
 
         AfterAll {
-            $netConf = Get-DbaNetworkConfiguration -SqlInstance $env:instance2
+            $netConf = Get-DbaNetworkConfiguration -SqlInstance $global:instance2
             $netConf.TcpIpProperties.KeepAlive = 30000
             $null = $netConf | Set-DbaNetworkConfiguration -Confirm:$false -WarningAction SilentlyContinue
         }
@@ -65,11 +65,11 @@ Describe "Set-DbaNetworkConfiguration" {
 
     Context "Command works with commandline input" {
         BeforeAll {
-            $netConf = Get-DbaNetworkConfiguration -SqlInstance $env:instance2
+            $netConf = Get-DbaNetworkConfiguration -SqlInstance $global:instance2
             if ($netConf.NamedPipesEnabled) {
-                $results = Set-DbaNetworkConfiguration -SqlInstance $env:instance2 -DisableProtocol NamedPipes -Confirm:$false -WarningAction SilentlyContinue
+                $results = Set-DbaNetworkConfiguration -SqlInstance $global:instance2 -DisableProtocol NamedPipes -Confirm:$false -WarningAction SilentlyContinue
             } else {
-                $results = Set-DbaNetworkConfiguration -SqlInstance $env:instance2 -EnableProtocol NamedPipes -Confirm:$false -WarningAction SilentlyContinue
+                $results = Set-DbaNetworkConfiguration -SqlInstance $global:instance2 -EnableProtocol NamedPipes -Confirm:$false -WarningAction SilentlyContinue
             }
         }
 
@@ -83,9 +83,9 @@ Describe "Set-DbaNetworkConfiguration" {
 
         AfterAll {
             if ($netConf.NamedPipesEnabled) {
-                $null = Set-DbaNetworkConfiguration -SqlInstance $env:instance2 -EnableProtocol NamedPipes -Confirm:$false -WarningAction SilentlyContinue
+                $null = Set-DbaNetworkConfiguration -SqlInstance $global:instance2 -EnableProtocol NamedPipes -Confirm:$false -WarningAction SilentlyContinue
             } else {
-                $null = Set-DbaNetworkConfiguration -SqlInstance $env:instance2 -DisableProtocol NamedPipes -Confirm:$false -WarningAction SilentlyContinue
+                $null = Set-DbaNetworkConfiguration -SqlInstance $global:instance2 -DisableProtocol NamedPipes -Confirm:$false -WarningAction SilentlyContinue
             }
         }
     }

@@ -35,7 +35,7 @@ Describe "Get-DbaLastBackup Integration Tests" -Tag "IntegrationTests" {
     }
 
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $env:instance2
+        $server = Connect-DbaInstance -SqlInstance $global:instance2
         $random = Get-Random
         $dbname = "dbatoolsci_getlastbackup$random"
         $server.Query("CREATE DATABASE $dbname")
@@ -47,13 +47,13 @@ Describe "Get-DbaLastBackup Integration Tests" -Tag "IntegrationTests" {
     }
 
     AfterAll {
-        $null = Get-DbaDatabase -SqlInstance $env:instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
+        $null = Get-DbaDatabase -SqlInstance $global:instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
         Remove-Item -Path $backupdir -Recurse -Force -ErrorAction SilentlyContinue
     }
 
     Context "Get null history for database" {
         It "doesn't have any values for last backups because none exist yet" {
-            $results = Get-DbaLastBackup -SqlInstance $env:instance2 -Database $dbname
+            $results = Get-DbaLastBackup -SqlInstance $global:instance2 -Database $dbname
             $results.LastFullBackup | Should -BeNullOrEmpty
             $results.LastDiffBackup | Should -BeNullOrEmpty
             $results.LastLogBackup  | Should -BeNullOrEmpty
@@ -63,9 +63,9 @@ Describe "Get-DbaLastBackup Integration Tests" -Tag "IntegrationTests" {
     Context "Get last history for single database" {
         It "returns a date within the proper range" {
             $yesterday = (Get-Date).AddDays(-1)
-            $null = Get-DbaDatabase -SqlInstance $env:instance2 -Database $dbname | Backup-DbaDatabase -BackupDirectory $backupdir
-            $null = Get-DbaDatabase -SqlInstance $env:instance2 -Database $dbname | Backup-DbaDatabase -BackupDirectory $backupdir -Type Differential
-            $null = Get-DbaDatabase -SqlInstance $env:instance2 -Database $dbname | Backup-DbaDatabase -BackupDirectory $backupdir -Type Log
+            $null = Get-DbaDatabase -SqlInstance $global:instance2 -Database $dbname | Backup-DbaDatabase -BackupDirectory $backupdir
+            $null = Get-DbaDatabase -SqlInstance $global:instance2 -Database $dbname | Backup-DbaDatabase -BackupDirectory $backupdir -Type Differential
+            $null = Get-DbaDatabase -SqlInstance $global:instance2 -Database $dbname | Backup-DbaDatabase -BackupDirectory $backupdir -Type Log
             $results = Get-DbaLastBackup -SqlInstance $global:instance2 -Database $dbname
             [datetime]$results.LastFullBackup | Should -BeGreaterThan $yesterday
             [datetime]$results.LastDiffBackup | Should -BeGreaterThan $yesterday

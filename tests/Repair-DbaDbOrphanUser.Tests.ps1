@@ -39,7 +39,7 @@ CREATE LOGIN [dbatoolsci_orphan2] WITH PASSWORD = N'password2', CHECK_EXPIRATION
 CREATE LOGIN [dbatoolsci_orphan3] WITH PASSWORD = N'password3', CHECK_EXPIRATION = OFF, CHECK_POLICY = OFF;
 CREATE DATABASE dbatoolsci_orphan;
 '@
-            $server = Connect-DbaInstance -SqlInstance $env:instance1
+            $server = Connect-DbaInstance -SqlInstance $global:instance1
             $null = Remove-DbaLogin -SqlInstance $server -Login dbatoolsci_orphan1, dbatoolsci_orphan2, dbatoolsci_orphan3 -Force -Confirm:$false
             $null = Remove-DbaDatabase -SqlInstance $server -Database dbatoolsci_orphan -Confirm:$false
             $null = Invoke-DbaQuery -SqlInstance $server -Query $loginsq
@@ -59,13 +59,13 @@ CREATE LOGIN [dbatoolsci_orphan2] WITH PASSWORD = N'password2', CHECK_EXPIRATION
         }
 
         AfterAll {
-            $server = Connect-DbaInstance -SqlInstance $env:instance1
+            $server = Connect-DbaInstance -SqlInstance $global:instance1
             $null = Remove-DbaLogin -SqlInstance $server -Login dbatoolsci_orphan1, dbatoolsci_orphan2, dbatoolsci_orphan3 -Force -Confirm:$false
             $null = Remove-DbaDatabase -SqlInstance $server -Database dbatoolsci_orphan -Confirm:$false
         }
 
         It "Finds two orphans" {
-            $results = Repair-DbaDbOrphanUser -SqlInstance $env:instance1 -Database dbatoolsci_orphan
+            $results = Repair-DbaDbOrphanUser -SqlInstance $global:instance1 -Database dbatoolsci_orphan
             $results.Count | Should -Be 2
             foreach ($user in $results) {
                 $user.User | Should -BeIn @('dbatoolsci_orphan1', 'dbatoolsci_orphan2')
@@ -75,14 +75,14 @@ CREATE LOGIN [dbatoolsci_orphan2] WITH PASSWORD = N'password2', CHECK_EXPIRATION
         }
 
         It "Has the correct properties" {
-            $results = Repair-DbaDbOrphanUser -SqlInstance $env:instance1 -Database dbatoolsci_orphan
+            $results = Repair-DbaDbOrphanUser -SqlInstance $global:instance1 -Database dbatoolsci_orphan
             $result = $results[0]
             $ExpectedProps = 'ComputerName', 'InstanceName', 'SqlInstance', 'DatabaseName', 'User', 'Status'
             $result.PSObject.Properties.Name | Should -Be $ExpectedProps
         }
 
         It "Does not find any other orphan" {
-            $results = Repair-DbaDbOrphanUser -SqlInstance $env:instance1 -Database dbatoolsci_orphan
+            $results = Repair-DbaDbOrphanUser -SqlInstance $global:instance1 -Database dbatoolsci_orphan
             $results | Should -BeNullOrEmpty
         }
     }

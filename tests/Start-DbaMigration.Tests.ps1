@@ -9,20 +9,20 @@ Describe "Start-DbaMigration" {
         $startmigrationrestoredb = "dbatoolsci_startmigrationrestore$random"
         $startmigrationrestoredb2 = "dbatoolsci_startmigrationrestoreother$random"
         $detachattachdb = "dbatoolsci_detachattach$random"
-        Remove-DbaDatabase -Confirm:$false -SqlInstance $env:instance2, $env:instance3 -Database $startmigrationrestoredb, $detachattachdb
+        Remove-DbaDatabase -Confirm:$false -SqlInstance $global:instance2, $global:instance3 -Database $startmigrationrestoredb, $detachattachdb
 
-        $server = Connect-DbaInstance -SqlInstance $env:instance3
+        $server = Connect-DbaInstance -SqlInstance $global:instance3
         Invoke-DbaQuery -SqlInstance $server -Query "CREATE DATABASE $startmigrationrestoredb2; ALTER DATABASE $startmigrationrestoredb2 SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE"
 
-        $server = Connect-DbaInstance -SqlInstance $env:instance2
+        $server = Connect-DbaInstance -SqlInstance $global:instance2
         Invoke-DbaQuery -SqlInstance $server -Query "CREATE DATABASE $startmigrationrestoredb; ALTER DATABASE $startmigrationrestoredb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE"
         Invoke-DbaQuery -SqlInstance $server -Query "CREATE DATABASE $detachattachdb; ALTER DATABASE $detachattachdb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE"
         Invoke-DbaQuery -SqlInstance $server -Query "CREATE DATABASE $startmigrationrestoredb2; ALTER DATABASE $startmigrationrestoredb2 SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE"
-        $null = Set-DbaDbOwner -SqlInstance $env:instance2 -Database $startmigrationrestoredb, $detachattachdb -TargetLogin sa
+        $null = Set-DbaDbOwner -SqlInstance $global:instance2 -Database $startmigrationrestoredb, $detachattachdb -TargetLogin sa
     }
 
     AfterAll {
-        Remove-DbaDatabase -Confirm:$false -SqlInstance $env:instance2, $env:instance3 -Database $startmigrationrestoredb, $detachattachdb, $startmigrationrestoredb2
+        Remove-DbaDatabase -Confirm:$false -SqlInstance $global:instance2, $global:instance3 -Database $startmigrationrestoredb, $detachattachdb, $startmigrationrestoredb2
     }
 
     Context "Validate parameters" {
@@ -108,7 +108,7 @@ Describe "Start-DbaMigration" {
 
     Context "Backup restore" {
         BeforeAll {
-            $results = Start-DbaMigration -Force -Source $env:instance2 -Destination $env:instance3 -BackupRestore -SharedPath "C:\temp" -Exclude Logins, SpConfigure, SysDbUserObjects, AgentServer, CentralManagementServer, ExtendedEvents, PolicyManagement, ResourceGovernor, Endpoints, ServerAuditSpecifications, Audits, LinkedServers, SystemTriggers, DataCollector, DatabaseMail, BackupDevices, Credentials
+            $results = Start-DbaMigration -Force -Source $global:instance2 -Destination $global:instance3 -BackupRestore -SharedPath "C:\temp" -Exclude Logins, SpConfigure, SysDbUserObjects, AgentServer, CentralManagementServer, ExtendedEvents, PolicyManagement, ResourceGovernor, Endpoints, ServerAuditSpecifications, Audits, LinkedServers, SystemTriggers, DataCollector, DatabaseMail, BackupDevices, Credentials
         }
 
         It "returns at least one result" {
@@ -122,7 +122,7 @@ Describe "Start-DbaMigration" {
         }
 
         It "retains its name, recovery model, and status" {
-            $dbs = Get-DbaDatabase -SqlInstance $env:instance2, $env:instance3 -Database $startmigrationrestoredb2
+            $dbs = Get-DbaDatabase -SqlInstance $global:instance2, $global:instance3 -Database $startmigrationrestoredb2
             $dbs[0].Name | Should -Not -BeNullOrEmpty
             $dbs[0].Name | Should -Be $dbs[1].Name
             $dbs[0].RecoveryModel | Should -Be $dbs[1].RecoveryModel
@@ -133,8 +133,8 @@ Describe "Start-DbaMigration" {
 
     Context "Backup restore using last backup" {
         BeforeAll {
-            $quickbackup = Get-DbaDatabase -SqlInstance $env:instance2 -ExcludeSystem | Backup-DbaDatabase -BackupDirectory C:\temp
-            $results = Start-DbaMigration -Force -Source $env:instance2 -Destination $env:instance3 -UseLastBackup -Exclude Logins, SpConfigure, SysDbUserObjects, AgentServer, CentralManagementServer, ExtendedEvents, PolicyManagement, ResourceGovernor, Endpoints, ServerAuditSpecifications, Audits, LinkedServers, SystemTriggers, DataCollector, DatabaseMail, BackupDevices, Credentials, StartupProcedures
+            $quickbackup = Get-DbaDatabase -SqlInstance $global:instance2 -ExcludeSystem | Backup-DbaDatabase -BackupDirectory C:\temp
+            $results = Start-DbaMigration -Force -Source $global:instance2 -Destination $global:instance3 -UseLastBackup -Exclude Logins, SpConfigure, SysDbUserObjects, AgentServer, CentralManagementServer, ExtendedEvents, PolicyManagement, ResourceGovernor, Endpoints, ServerAuditSpecifications, Audits, LinkedServers, SystemTriggers, DataCollector, DatabaseMail, BackupDevices, Credentials, StartupProcedures
         }
 
         It "returns at least one result" {
@@ -148,7 +148,7 @@ Describe "Start-DbaMigration" {
         }
 
         It "retains its name, recovery model, and status" {
-            $dbs = Get-DbaDatabase -SqlInstance $env:instance2, $env:instance3 -Database $startmigrationrestoredb2
+            $dbs = Get-DbaDatabase -SqlInstance $global:instance2, $global:instance3 -Database $startmigrationrestoredb2
             $dbs[0].Name | Should -Not -BeNullOrEmpty
             $dbs[0].Name | Should -Be $dbs[1].Name
             $dbs[0].RecoveryModel | Should -Be $dbs[1].RecoveryModel

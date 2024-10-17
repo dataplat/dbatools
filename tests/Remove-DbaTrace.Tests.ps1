@@ -102,7 +102,7 @@ exec sp_trace_setstatus @TraceID, 1
 -- display trace id for future references
 select TraceID=@TraceID
 "@
-            $server = Connect-DbaInstance -SqlInstance $env:instance1
+            $server = Connect-DbaInstance -SqlInstance $global:instance1
             $traceid = ($server.Query($sql)).TraceID
         }
 
@@ -111,13 +111,13 @@ select TraceID=@TraceID
         }
 
         It "Removes the trace" {
-            $results = Get-DbaTrace -SqlInstance $env:instance1 -Id $traceid | Remove-DbaTrace
+            $results = Get-DbaTrace -SqlInstance $global:instance1 -Id $traceid | Remove-DbaTrace
             $results.Id | Should -Be $traceid
             $results.Status | Should -Be "Stopped, closed and deleted"
         }
 
         It "Doesn't return any result for removed trace file id" {
-            Get-DbaTrace -SqlInstance $env:instance1 -Id $traceid | Should -BeNullOrEmpty
+            Get-DbaTrace -SqlInstance $global:instance1 -Id $traceid | Should -BeNullOrEmpty
         }
     }
 }

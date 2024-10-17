@@ -36,11 +36,11 @@ Describe "New-DbaXESmartQueryExec" {
 
     Context "Creates a smart object" {
         BeforeAll {
-            $results = New-DbaXESmartQueryExec -SqlInstance $env:instance2 -Database dbadb -Query "update table set whatever = 1"
+            $results = New-DbaXESmartQueryExec -SqlInstance $global:instance2 -Database dbadb -Query "update table set whatever = 1"
         }
         It "returns the object with all of the correct properties" {
             $results.TSQL | Should -Be 'update table set whatever = 1'
-            $results.ServerName | Should -Be $env:instance2
+            $results.ServerName | Should -Be $global:instance2
             $results.DatabaseName | Should -Be 'dbadb'
             $results.Password | Should -BeNullOrEmpty
         }

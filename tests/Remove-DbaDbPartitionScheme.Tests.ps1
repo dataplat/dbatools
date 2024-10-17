@@ -70,7 +70,7 @@ Describe "Remove-DbaDbPartitionScheme" {
 
 Describe "Remove-DbaDbPartitionScheme Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $env:instance2
+        $server = Connect-DbaInstance -SqlInstance $global:instance2
         $dbname1 = "dbatoolsci_$(Get-Random)"
         $dbname2 = "dbatoolsci_$(Get-Random)"
         $null = New-DbaDatabase -SqlInstance $server -Name $dbname1

@@ -25,7 +25,7 @@ Describe "Get-DbaRgWorkloadGroup" {
             . (Join-Path $PSScriptRoot 'constants.ps1')
         }
 
-        Context "Connects and retrieves workload groups" -ForEach $env:instance1, $env:instance2 {
+        Context "Connects and retrieves workload groups" -ForEach $global:instance1, $global:instance2 {
             BeforeAll {
                 $server = Connect-DbaInstance -SqlInstance $_
             }
@@ -49,7 +49,7 @@ Describe "Get-DbaRgWorkloadGroup" {
 
         Context "Handles pipeline input" {
             BeforeAll {
-                $server = Connect-DbaInstance -SqlInstance $env:instance1
+                $server = Connect-DbaInstance -SqlInstance $global:instance1
                 $resourcePools = Get-DbaRgResourcePool -SqlInstance $server
             }
 

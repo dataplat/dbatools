@@ -29,12 +29,12 @@ Describe "Remove-DbaRegServerGroup" {
 
         BeforeAll {
             $group = "dbatoolsci-group1"
-            $newGroup = Add-DbaRegServerGroup -SqlInstance $env:instance1 -Name $group
+            $newGroup = Add-DbaRegServerGroup -SqlInstance $global:instance1 -Name $group
 
             $group2 = "dbatoolsci-group1a"
-            $newGroup2 = Add-DbaRegServerGroup -SqlInstance $env:instance1 -Name $group2
+            $newGroup2 = Add-DbaRegServerGroup -SqlInstance $global:instance1 -Name $group2
 
-            $hellagroup = Get-DbaRegServerGroup -SqlInstance $env:instance1 -Id 1 |
+            $hellagroup = Get-DbaRegServerGroup -SqlInstance $global:instance1 -Id 1 |
                 Add-DbaRegServerGroup -Name dbatoolsci-first |
                 Add-DbaRegServerGroup -Name dbatoolsci-second |
                 Add-DbaRegServerGroup -Name dbatoolsci-third |
@@ -42,7 +42,7 @@ Describe "Remove-DbaRegServerGroup" {
         }
 
         AfterAll {
-            Get-DbaRegServerGroup -SqlInstance $env:instance1 |
+            Get-DbaRegServerGroup -SqlInstance $global:instance1 |
                 Where-Object Name -match dbatoolsci |
                 Remove-DbaRegServerGroup -Confirm:$false
         }
@@ -54,13 +54,13 @@ Describe "Remove-DbaRegServerGroup" {
         }
 
         It "supports dropping manually" {
-            $results = Remove-DbaRegServerGroup -Confirm:$false -SqlInstance $env:instance1 -Name $group2
+            $results = Remove-DbaRegServerGroup -Confirm:$false -SqlInstance $global:instance1 -Name $group2
             $results.Name | Should -Be $group2
             $results.Status | Should -Be 'Dropped'
         }
 
         It "supports hella long group name" {
-            $results = Get-DbaRegServerGroup -SqlInstance $env:instance1 -Group $hellagroup.Group
+            $results = Get-DbaRegServerGroup -SqlInstance $global:instance1 -Group $hellagroup.Group
             $results.Name | Should -Be 'dbatoolsci-third'
         }
     }

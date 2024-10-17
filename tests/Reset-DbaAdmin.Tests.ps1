@@ -38,12 +38,12 @@ Describe "Reset-DbaAdmin" {
         }
 
         AfterAll {
-            Get-DbaProcess -SqlInstance $env:instance2 -Login dbatoolsci_resetadmin | Stop-DbaProcess -WarningAction SilentlyContinue
-            Get-DbaLogin -SqlInstance $env:instance2 -Login dbatoolsci_resetadmin | Remove-DbaLogin -Confirm:$false
+            Get-DbaProcess -SqlInstance $global:instance2 -Login dbatoolsci_resetadmin | Stop-DbaProcess -WarningAction SilentlyContinue
+            Get-DbaLogin -SqlInstance $global:instance2 -Login dbatoolsci_resetadmin | Remove-DbaLogin -Confirm:$false
         }
 
         It "adds the login as sysadmin" {
-            $results = Reset-DbaAdmin -SqlInstance $env:instance2 -Login dbatoolsci_resetadmin -SecurePassword $password -Confirm:$false
+            $results = Reset-DbaAdmin -SqlInstance $global:instance2 -Login dbatoolsci_resetadmin -SecurePassword $password -Confirm:$false
             $results.Name | Should -Be 'dbatoolsci_resetadmin'
             $results.IsMember("sysadmin") | Should -Be $true
         }

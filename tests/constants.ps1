@@ -38,7 +38,7 @@ if (Test-Path "$PSScriptRoot\constants.local.ps1") {
     $global:azureserver = 'psdbatools.database.windows.net'
     $global:azuresqldblogin = "appveyor@clemairegmail.onmicrosoft.com"
 } else {
-    Write-Host "Tests will use AppVeyor constants." -ForegroundColor Cyan
+    # Write-Host "Tests will use AppVeyor constants." -ForegroundColor Cyan
 
     # Global variables for AppVeyor constants
     $global:dbatoolsci_computer = "localhost"

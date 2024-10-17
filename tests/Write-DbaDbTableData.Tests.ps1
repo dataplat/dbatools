@@ -6,7 +6,7 @@ Describe "Write-DbaDbTableData" {
         Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
         . "$PSScriptRoot\constants.ps1"
 
-        $server = Connect-DbaInstance -SqlInstance $env:instance1
+        $server = Connect-DbaInstance -SqlInstance $global:instance1
         $random = Get-Random
         $db = "dbatoolsci_writedbadaatable$random"
         $server.Query("CREATE DATABASE $db")
@@ -82,7 +82,7 @@ Describe "Write-DbaDbTableData" {
     Context "Command usage" {
         It "defaults to dbo if no schema is specified" {
             $results = Get-ChildItem | ConvertTo-DbaDataTable
-            $results | Write-DbaDbTableData -SqlInstance $env:instance1 -Database $db -Table 'childitem' -AutoCreateTable
+            $results | Write-DbaDbTableData -SqlInstance $global:instance1 -Database $db -Table 'childitem' -AutoCreateTable
 
             ($server.Databases[$db].Tables | Where-Object { $_.Schema -eq 'dbo' -and $_.Name -eq 'childitem' }).Count | Should -Be 1
         }

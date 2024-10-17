@@ -47,10 +47,10 @@ Describe "Get-DbaService" {
 
     Context "Command actually works" {
         BeforeAll {
-            $instanceName = (Connect-DbaInstance -SqlInstance $env:instance2).ServiceName
-            $results = Get-DbaService -ComputerName $env:instance2
-            $agentResults = Get-DbaService -ComputerName $env:instance2 -Type Agent
-            $advancedResults = Get-DbaService -ComputerName $env:instance2 -InstanceName $instanceName -Type Agent -AdvancedProperties
+            $instanceName = (Connect-DbaInstance -SqlInstance $global:instance2).ServiceName
+            $results = Get-DbaService -ComputerName $global:instance2
+            $agentResults = Get-DbaService -ComputerName $global:instance2 -Type Agent
+            $advancedResults = Get-DbaService -ComputerName $global:instance2 -InstanceName $instanceName -Type Agent -AdvancedProperties
         }
 
         It "shows some services" {
@@ -72,23 +72,23 @@ Describe "Get-DbaService" {
         }
 
         It "sets startup mode of the service to 'Manual'" {
-            $service = Get-DbaService -ComputerName $env:instance2 -Type Agent -InstanceName $instanceName
+            $service = Get-DbaService -ComputerName $global:instance2 -Type Agent -InstanceName $instanceName
             { $service.ChangeStartMode('Manual') } | Should -Not -Throw
-            $results = Get-DbaService -ComputerName $env:instance2 -Type Agent -InstanceName $instanceName
+            $results = Get-DbaService -ComputerName $global:instance2 -Type Agent -InstanceName $instanceName
             $results.StartMode | Should -Be 'Manual'
         }
 
         It "sets startup mode of the service to 'Automatic'" {
-            $service = Get-DbaService -ComputerName $env:instance2 -Type Agent -InstanceName $instanceName
+            $service = Get-DbaService -ComputerName $global:instance2 -Type Agent -InstanceName $instanceName
             { $service.ChangeStartMode('Automatic') } | Should -Not -Throw
-            $results = Get-DbaService -ComputerName $env:instance2 -Type Agent -InstanceName $instanceName
+            $results = Get-DbaService -ComputerName $global:instance2 -Type Agent -InstanceName $instanceName
             $results.StartMode | Should -Be 'Automatic'
         }
     }
 
     Context "Command actually works with SqlInstance" {
         BeforeAll {
-            $results = @( Get-DbaService -SqlInstance $env:instance2 -Type Engine )
+            $results = @( Get-DbaService -SqlInstance $global:instance2 -Type Engine )
         }
 
         It "shows exactly one service" {

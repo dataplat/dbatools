@@ -33,7 +33,7 @@ Describe "Test-DbaEndpoint" {
         }
 
         It "Returns success" -Skip {
-            $results = Test-DbaEndpoint -SqlInstance $env:instance3
+            $results = Test-DbaEndpoint -SqlInstance $global:instance3
             $results | Select-Object -First 1 -ExpandProperty Connection | Should -Be 'Success'
         }
     }

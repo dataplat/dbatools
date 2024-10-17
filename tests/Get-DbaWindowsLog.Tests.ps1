@@ -36,7 +36,7 @@ Describe "Get-DbaWindowsLog" {
 
     Context "Command returns proper info" {
         BeforeAll {
-            $results = Get-DbaWindowsLog -SqlInstance $env:instance2
+            $results = Get-DbaWindowsLog -SqlInstance $global:instance2
         }
         It "returns results" {
             $results.Count | Should -BeGreaterThan 0

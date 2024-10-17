@@ -31,7 +31,7 @@ Describe "Remove-DbaDbSequence" {
     Context "Command usage" {
         BeforeAll {
             $random = Get-Random
-            $server = Connect-DbaInstance -SqlInstance $env:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $newDbName = "dbatoolsci_newdb_$random"
             $null = New-DbaDatabase -SqlInstance $server -Name $newDbName
 

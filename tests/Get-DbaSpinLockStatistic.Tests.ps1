@@ -60,7 +60,7 @@ Describe "Get-DbaSpinLockStatistic" {
 
     Context "Command returns proper info" {
         BeforeAll {
-            $results = Get-DbaSpinLockStatistic -SqlInstance $env:instance2
+            $results = Get-DbaSpinLockStatistic -SqlInstance $global:instance2
         }
 
         It "returns results" {

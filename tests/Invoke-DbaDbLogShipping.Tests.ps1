@@ -263,7 +263,7 @@ Describe "Invoke-DbaDbLogShipping" {
         }
 
         It "returns success" -Skip:$skipIntegrationTests {
-            $results = Invoke-DbaDbLogShipping -SourceSqlInstance $env:instance2 -DestinationSqlInstance $env:instance -Database $dbname -BackupNetworkPath C:\temp -BackupLocalPath "C:\temp\logshipping\backup" -GenerateFullBackup -CompressBackup -SecondaryDatabaseSuffix "_LS" -Force
+            $results = Invoke-DbaDbLogShipping -SourceSqlInstance $global:instance2 -DestinationSqlInstance $global:instance -Database $dbname -BackupNetworkPath C:\temp -BackupLocalPath "C:\temp\logshipping\backup" -GenerateFullBackup -CompressBackup -SecondaryDatabaseSuffix "_LS" -Force
             $results.Status | Should -Be 'Success'
         }
     }

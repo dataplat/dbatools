@@ -7,7 +7,7 @@ Describe "New-DbaDbTable" {
         . "$PSScriptRoot\constants.ps1"
 
         $dbname = "dbatoolsscidb_$(Get-Random)"
-        $null = New-DbaDatabase -SqlInstance $env:instance1 -Name $dbname
+        $null = New-DbaDatabase -SqlInstance $global:instance1 -Name $dbname
         $tablename = "dbatoolssci_$(Get-Random)"
         $tablename2 = "dbatoolssci2_$(Get-Random)"
         $tablename3 = "dbatoolssci3_$(Get-Random)"
@@ -16,8 +16,8 @@ Describe "New-DbaDbTable" {
     }
 
     AfterAll {
-        $null = Invoke-DbaQuery -SqlInstance $env:instance1 -Database $dbname -Query "drop table if exists $tablename, $tablename2, $tablename3, $tablename4, $tablename5"
-        $null = Remove-DbaDatabase -SqlInstance $env:instance1 -Database $dbname -Confirm:$false
+        $null = Invoke-DbaQuery -SqlInstance $global:instance1 -Database $dbname -Query "drop table if exists $tablename, $tablename2, $tablename3, $tablename4, $tablename5"
+        $null = Remove-DbaDatabase -SqlInstance $global:instance1 -Database $dbname -Confirm:$false
     }
 
     Context "Validate parameters" {
@@ -58,11 +58,11 @@ Describe "New-DbaDbTable" {
             }
         }
         It "Creates the table" {
-            $result = New-DbaDbTable -SqlInstance $env:instance1 -Database $dbname -Name $tablename -ColumnMap $map
+            $result = New-DbaDbTable -SqlInstance $global:instance1 -Database $dbname -Name $tablename -ColumnMap $map
             $result.Name | Should -Contain $tablename
         }
         It "Really created it" {
-            $tables = Get-DbaDbTable -SqlInstance $env:instance1 -Database $dbname
+            $tables = Get-DbaDbTable -SqlInstance $global:instance1 -Database $dbname
             $tables.Name | Should -Contain $tablename
         }
     }
@@ -79,11 +79,11 @@ Describe "New-DbaDbTable" {
             }
         }
         It "Creates the table" {
-            $result = New-DbaDbTable -SqlInstance $env:instance1 -Database $dbname -Name $tablename2 -ColumnMap $map
+            $result = New-DbaDbTable -SqlInstance $global:instance1 -Database $dbname -Name $tablename2 -ColumnMap $map
             $result.Name | Should -Contain $tablename2
         }
         It "Has a default constraint" {
-            $table = Get-DbaDbTable -SqlInstance $env:instance1 -Database $dbname -Table $tablename2
+            $table = Get-DbaDbTable -SqlInstance $global:instance1 -Database $dbname -Table $tablename2
             $table.Name | Should -Be $tablename2
             $table.Columns.DefaultConstraint.Name | Should -Contain "DF_MyTest"
         }
@@ -100,11 +100,11 @@ Describe "New-DbaDbTable" {
             }
         }
         It "Creates the table" {
-            $result = New-DbaDbTable -SqlInstance $env:instance1 -Database $dbname -Name $tablename3 -ColumnMap $map
+            $result = New-DbaDbTable -SqlInstance $global:instance1 -Database $dbname -Name $tablename3 -ColumnMap $map
             $result.Name | Should -Contain $tablename3
         }
         It "Has an identity column" {
-            $table = Get-DbaDbTable -SqlInstance $env:instance1 -Database $dbname -Table $tablename3
+            $table = Get-DbaDbTable -SqlInstance $global:instance1 -Database $dbname -Table $tablename3
             $table.Name | Should -Be $tablename3
             $table.Columns.Identity | Should -BeTrue
             $table.Columns.IdentitySeed | Should -Be $map.IdentitySeed
@@ -129,7 +129,7 @@ Describe "New-DbaDbTable" {
             )
         }
         It "Creates the table" {
-            { New-DbaDbTable -SqlInstance $env:instance1 -Database $dbname -Name $tablename4 -ColumnMap $map -EnableException } | Should -Not -Throw
+            { New-DbaDbTable -SqlInstance $global:instance1 -Database $dbname -Name $tablename4 -ColumnMap $map -EnableException } | Should -Not -Throw
         }
     }
 
@@ -142,11 +142,11 @@ Describe "New-DbaDbTable" {
             }
         }
         It "Creates the table" {
-            $result = New-DbaDbTable -SqlInstance $env:instance1 -Database $dbname -Name $tablename5 -ColumnMap $map
+            $result = New-DbaDbTable -SqlInstance $global:instance1 -Database $dbname -Name $tablename5 -ColumnMap $map
             $result.Name | Should -Contain $tablename5
         }
         It "Has the correct column datatype" {
-            $table = Get-DbaDbTable -SqlInstance $env:instance1 -Database $dbname -Table $tablename5
+            $table = Get-DbaDbTable -SqlInstance $global:instance1 -Database $dbname -Table $tablename5
             $table.Columns['test'].DataType.SqlDataType | Should -Be "NVarCharMax"
         }
     }
@@ -161,7 +161,7 @@ Describe "New-DbaDbTable" {
                 Type = 'int'
             }
 
-            $tableWithSchema = New-DbaDbTable -SqlInstance $env:instance1 -Database $dbname -Name $tableName -ColumnMap $map -Schema $schemaName
+            $tableWithSchema = New-DbaDbTable -SqlInstance $global:instance1 -Database $dbname -Name $tableName -ColumnMap $map -Schema $schemaName
             $tableWithSchema.Count | Should -Be 1
             $tableWithSchema.Database | Should -Be $dbname
             $tableWithSchema.Name | Should -Be "table_$random"
@@ -177,7 +177,7 @@ Describe "New-DbaDbTable" {
                 Type = 'int'
             }
 
-            $tableWithSchema = New-DbaDbTable -SqlInstance $env:instance1 -Database $dbname -Name $tableName -ColumnMap $map -Schema $schemaName -Passthru
+            $tableWithSchema = New-DbaDbTable -SqlInstance $global:instance1 -Database $dbname -Name $tableName -ColumnMap $map -Schema $schemaName -Passthru
             $tableWithSchema[0] | Should -Be "CREATE SCHEMA [$schemaName]"
             $tableWithSchema[2] | Should -Match "$schemaName"
             $tableWithSchema[2] | Should -Match "$tableName"

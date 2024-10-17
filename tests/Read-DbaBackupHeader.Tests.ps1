@@ -46,7 +46,7 @@ Describe "Read-DbaBackupHeader" {
             # Add more specific assertions based on expected output
         }
 
-        It "Should read backup header from SQL Server" -ForEach @($env:instance1, $env:instance2) {
+        It "Should read backup header from SQL Server" -ForEach @($global:instance1, $global:instance2) {
             $result = Read-DbaBackupHeader -SqlInstance $_ -Path $backupFile
             $result | Should -Not -BeNullOrEmpty
             # Add more specific assertions based on expected output

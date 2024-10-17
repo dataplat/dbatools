@@ -169,7 +169,7 @@ Describe "Restore-DbaDatabase Unit Tests" -Tag 'UnitTests' {
 
 Describe "Restore-DbaDatabase Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $env:instance2 = "localhost"
+        $global:instance2 = "localhost"
         $env:appveyorlabrepo = "C:\github\appveyor-lab"
         $DataFolder = 'C:\temp\datafiles'
         $LogFolder = 'C:\temp\logfiles'
@@ -179,8 +179,8 @@ Describe "Restore-DbaDatabase Integration Tests" -Tag "IntegrationTests" {
 
     Context "Properly restores a database on the local drive using Path" {
         BeforeAll {
-            Get-DbaDatabase -SqlInstance $env:instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
-            $results = Restore-DbaDatabase -SqlInstance $env:instance2 -Path "$env:appveyorlabrepo\singlerestore\singlerestore.bak"
+            Get-DbaDatabase -SqlInstance $global:instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
+            $results = Restore-DbaDatabase -SqlInstance $global:instance2 -Path "$env:appveyorlabrepo\singlerestore\singlerestore.bak"
         }
         It "Should return the proper backup file location" {
             $results.BackupFile | Should -Be "$env:appveyorlabrepo\singlerestore\singlerestore.bak"
@@ -192,7 +192,7 @@ Describe "Restore-DbaDatabase Integration Tests" -Tag "IntegrationTests" {
 
     Context "Ensuring warning is thrown if database already exists" {
         BeforeAll {
-            $results = Restore-DbaDatabase -SqlInstance $env:instance2 -Path "$env:appveyorlabrepo\singlerestore\singlerestore.bak" -WarningVariable warning -WarningAction SilentlyContinue
+            $results = Restore-DbaDatabase -SqlInstance $global:instance2 -Path "$env:appveyorlabrepo\singlerestore\singlerestore.bak" -WarningVariable warning -WarningAction SilentlyContinue
         }
         It "Should warn" {
             $warning | Where-Object { $_ -like '*Test-DbaBackupInformation*Database*' } | Should -Match "exists, so WithReplace must be specified"
@@ -204,8 +204,8 @@ Describe "Restore-DbaDatabase Integration Tests" -Tag "IntegrationTests" {
 
     Context "Database is properly removed again after withreplace test" {
         BeforeAll {
-            Get-DbaProcess $env:instance2 -Database singlerestore | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
-            $results = Remove-DbaDatabase -Confirm:$false -SqlInstance $env:instance2 -Database singlerestore
+            Get-DbaProcess $global:instance2 -Database singlerestore | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
+            $results = Remove-DbaDatabase -Confirm:$false -SqlInstance $global:instance2 -Database singlerestore
         }
         It "Should say the status was dropped" {
             $results.Status -eq "Dropped" -or $results.Status -eq $null | Should -Be $true

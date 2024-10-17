@@ -28,7 +28,7 @@ Describe "Get-DbaRgResourcePool" {
 
     Context "Command actually works" {
         BeforeAll {
-            $results = Get-DbaRgResourcePool -SqlInstance $env:instance2
+            $results = Get-DbaRgResourcePool -SqlInstance $global:instance2
         }
         It "Gets Results" {
             $results | Should -Not -BeNullOrEmpty
@@ -37,7 +37,7 @@ Describe "Get-DbaRgResourcePool" {
 
     Context "Command actually works using -Type" {
         BeforeAll {
-            $results = Get-DbaRgResourcePool -SqlInstance $env:instance2 -Type Internal
+            $results = Get-DbaRgResourcePool -SqlInstance $global:instance2 -Type Internal
         }
         It "Gets Results" {
             $results | Should -Not -BeNullOrEmpty

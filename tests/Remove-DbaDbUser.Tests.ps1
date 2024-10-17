@@ -40,11 +40,11 @@ Describe "Remove-DbaDbUser Unit Tests" -Tag 'UnitTests' {
 
 Describe "Remove-DbaDbUser Integration Tests" -Tag "IntegrationTests" {
     BeforeDiscovery {
-        $env:instance1 = "localhost"
+        $global:instance1 = "localhost"
     }
 
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $env:instance1
+        $server = Connect-DbaInstance -SqlInstance $global:instance1
         $db = Get-DbaDatabase $server -Database tempdb
         $securePassword = ConvertTo-SecureString "password" -AsPlainText -Force
         $loginTest = New-DbaLogin $server -Login dbatoolsci_remove_dba_db_user -Password $securePassword -Force

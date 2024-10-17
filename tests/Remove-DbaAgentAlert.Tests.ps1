@@ -32,11 +32,11 @@ Describe "Remove-DbaAgentAlert Unit Tests" -Tag 'UnitTests' {
 
 Describe "Remove-DbaAgentAlert Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $env:instance2 = "localhost"
+        $global:instance2 = "localhost"
     }
 
     BeforeEach {
-        $server = Connect-DbaInstance -SqlInstance $env:instance2
+        $server = Connect-DbaInstance -SqlInstance $global:instance2
         $alertName = "dbatoolsci_test_$(Get-Random)"
         $alertName2 = "dbatoolsci_test_$(Get-Random)"
 

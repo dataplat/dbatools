@@ -57,24 +57,24 @@ Describe "Set-DbaAvailabilityGroup Integration Tests" -Tag "IntegrationTests" {
 
     BeforeAll {
         $agname = "dbatoolsci_agroup"
-        $null = New-DbaAvailabilityGroup -Primary $env:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Confirm:$false -Certificate dbatoolsci_AGCert
+        $null = New-DbaAvailabilityGroup -Primary $global:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Confirm:$false -Certificate dbatoolsci_AGCert
     }
 
     AfterAll {
-        Remove-DbaAvailabilityGroup -SqlInstance $env:instance3 -AvailabilityGroup $agname -Confirm:$false
+        Remove-DbaAvailabilityGroup -SqlInstance $global:instance3 -AvailabilityGroup $agname -Confirm:$false
     }
 
     Context "Sets AG properties" {
         It "Returns modified results" {
-            $results = Set-DbaAvailabilityGroup -SqlInstance $env:instance3 -AvailabilityGroup $agname -Confirm:$false -DtcSupportEnabled:$false
+            $results = Set-DbaAvailabilityGroup -SqlInstance $global:instance3 -AvailabilityGroup $agname -Confirm:$false -DtcSupportEnabled:$false
             $results.AvailabilityGroup | Should -Be $agname
             $results.DtcSupportEnabled | Should -Be $false
         }
 
         It "Returns newly modified results" {
-            $results = Set-DbaAvailabilityGroup -SqlInstance $env:instance3 -AvailabilityGroup $agname -Confirm:$false -DtcSupportEnabled
+            $results = Set-DbaAvailabilityGroup -SqlInstance $global:instance3 -AvailabilityGroup $agname -Confirm:$false -DtcSupportEnabled
             $results.AvailabilityGroup | Should -Be $agname
             $results.DtcSupportEnabled | Should -Be $true
         }
     }
-} #$env:instance2 for appveyor
+} #$global:instance2 for appveyor

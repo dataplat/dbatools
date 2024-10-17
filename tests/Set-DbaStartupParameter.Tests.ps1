@@ -6,8 +6,8 @@ Describe "Set-DbaStartupParameter" {
         Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
         . "$PSScriptRoot\constants.ps1"
 
-        $defaultInstance = $env:instance1
-        $namedInstance = $env:instance2
+        $defaultInstance = $global:instance1
+        $namedInstance = $global:instance2
         $SkipLocalTest = $true # Change to $false to run the tests on a local instance.
     }
 

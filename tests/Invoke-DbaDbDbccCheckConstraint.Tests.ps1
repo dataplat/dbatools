@@ -40,7 +40,7 @@ Describe "Invoke-DbaDbDbccCheckConstraint Unit Tests" -Tag 'UnitTests' {
 
 Describe "Invoke-DbaDbDbccCheckConstraint Integration Test" -Tag "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $env:instance2
+        $server = Connect-DbaInstance -SqlInstance $global:instance2
         $random = Get-Random
         $tableName = "dbatools_CheckConstraintTbl1"
         $check1 = "chkTab1"
@@ -53,12 +53,12 @@ Describe "Invoke-DbaDbDbccCheckConstraint Integration Test" -Tag "IntegrationTes
     }
 
     AfterAll {
-        $null = Get-DbaDatabase -SqlInstance $env:instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
+        $null = Get-DbaDatabase -SqlInstance $global:instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
     }
 
     Context "Validate standard output" {
         BeforeAll {
-            $result = Invoke-DbaDbDbccCheckConstraint -SqlInstance $env:instance2 -Database $dbname -Object $tableName -Confirm:$false
+            $result = Invoke-DbaDbDbccCheckConstraint -SqlInstance $global:instance2 -Database $dbname -Object $tableName -Confirm:$false
         }
 
         It "Should return correct properties" {

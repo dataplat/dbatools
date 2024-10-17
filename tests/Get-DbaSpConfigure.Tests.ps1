@@ -30,28 +30,28 @@ Describe "Get-DbaSpConfigure" {
 
     Context "Get configuration" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $env:instance1
+            $server = Connect-DbaInstance -SqlInstance $global:instance1
             $configs = $server.Query("sp_configure")
             $remotequerytimeout = $configs | Where-Object name -match 'remote query timeout'
         }
 
         It "returns equal to results of the straight T-SQL query" {
-            $results = Get-DbaSpConfigure -SqlInstance $env:instance1
+            $results = Get-DbaSpConfigure -SqlInstance $global:instance1
             $results.count | Should -Be $configs.count
         }
 
         It "returns two results" {
-            $results = Get-DbaSpConfigure -SqlInstance $env:instance1 -Name RemoteQueryTimeout, AllowUpdates
+            $results = Get-DbaSpConfigure -SqlInstance $global:instance1 -Name RemoteQueryTimeout, AllowUpdates
             $results.Count | Should -Be 2
         }
 
         It "returns two results less than all data" {
-            $results = Get-DbaSpConfigure -SqlInstance $env:instance1 -ExcludeName "remote query timeout (s)", AllowUpdates
+            $results = Get-DbaSpConfigure -SqlInstance $global:instance1 -ExcludeName "remote query timeout (s)", AllowUpdates
             $results.Count | Should -Be ($configs.count - 2)
         }
 
         It "matches the output of sp_configure " {
-            $results = Get-DbaSpConfigure -SqlInstance $env:instance1 -Name RemoteQueryTimeout
+            $results = Get-DbaSpConfigure -SqlInstance $global:instance1 -Name RemoteQueryTimeout
             $results.ConfiguredValue | Should -Be $remotequerytimeout.config_value
             $results.RunningValue | Should -Be $remotequerytimeout.run_value
         }

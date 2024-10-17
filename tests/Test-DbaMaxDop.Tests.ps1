@@ -23,23 +23,23 @@ Describe "Test-DbaMaxDop" {
 
     Context "Command usage" {
         BeforeDiscovery {
-            $env:instance2 = $env:instance2
+            $global:instance2 = $global:instance2
         }
 
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $env:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $db1 = "dbatoolsci_testMaxDop"
             $server.Query("CREATE DATABASE $db1")
-            $needed = Get-DbaDatabase -SqlInstance $env:instance2 -Database $db1
+            $needed = Get-DbaDatabase -SqlInstance $global:instance2 -Database $db1
             $setupright = $null -ne $needed
         }
 
         AfterAll {
-            Get-DbaDatabase -SqlInstance $env:instance2 -Database $db1 | Remove-DbaDatabase -Confirm:$false
+            Get-DbaDatabase -SqlInstance $global:instance2 -Database $db1 | Remove-DbaDatabase -Confirm:$false
         }
 
         It "Command works on SQL Server 2016 or higher instances" -Skip:(-not $setupright) {
-            $results = Test-DbaMaxDop -SqlInstance $env:instance2
+            $results = Test-DbaMaxDop -SqlInstance $global:instance2
 
             $ExpectedProps = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'DatabaseMaxDop', 'CurrentInstanceMaxDop', 'RecommendedMaxDop', 'Notes'
             $results | ForEach-Object {

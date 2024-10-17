@@ -35,14 +35,14 @@ Describe "Get-DbaServerRoleMember Integration Tests" -Tag "IntegrationTests" {
     }
 
     BeforeAll {
-        $server2 = Connect-DbaInstance -SqlInstance $env:instance2
+        $server2 = Connect-DbaInstance -SqlInstance $global:instance2
 
         $password1 = ConvertTo-SecureString 'password1' -AsPlainText -Force
         $testLogin = 'getDbaInstanceRoleMemberLogin'
         $null = New-DbaLogin -SqlInstance $server2 -Login $testLogin -Password $password1
         $null = Set-DbaLogin -SqlInstance $server2 -Login $testLogin -AddRole 'dbcreator'
 
-        $server1 = Connect-DbaInstance -SqlInstance $env:instance1
+        $server1 = Connect-DbaInstance -SqlInstance $global:instance1
         $null = New-DbaLogin -SqlInstance $server1 -Login $testLogin -Password $password1
         $null = Set-DbaLogin -SqlInstance $server1 -Login $testLogin -AddRole 'dbcreator'
     }

@@ -26,7 +26,7 @@ Describe "Get-DbaTraceFlag" {
 
         BeforeAll {
             $safetraceflag = 3226
-            $server = Connect-DbaInstance -SqlInstance $env:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $startingtfs = $server.Query("DBCC TRACESTATUS(-1)")
             $startingtfscount = $startingtfs.Count
 
@@ -44,17 +44,17 @@ Describe "Get-DbaTraceFlag" {
 
         It "Has the right default properties" {
             $expectedProps = 'ComputerName', 'InstanceName', 'SqlInstance', 'TraceFlag', 'Global', 'Status'
-            $results = Get-DbaTraceFlag -SqlInstance $env:instance2
+            $results = Get-DbaTraceFlag -SqlInstance $global:instance2
             ($results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should -Be ($expectedProps | Sort-Object)
         }
 
         It "Returns filtered results" {
-            $results = Get-DbaTraceFlag -SqlInstance $env:instance2 -TraceFlag $safetraceflag
+            $results = Get-DbaTraceFlag -SqlInstance $global:instance2 -TraceFlag $safetraceflag
             $results.TraceFlag.Count | Should -Be 1
         }
 
         It "Returns following number of TFs: $startingtfscount" {
-            $results = Get-DbaTraceFlag -SqlInstance $env:instance2
+            $results = Get-DbaTraceFlag -SqlInstance $global:instance2
             $results.TraceFlag.Count | Should -Be $startingtfscount
         }
     }

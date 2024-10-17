@@ -31,14 +31,14 @@ Describe "Get-DbaXESessionTarget" {
         }
 
         It "returns only the system_health session" {
-            $results = Get-DbaXESessionTarget -SqlInstance $env:instance2 -Target package0.event_file
+            $results = Get-DbaXESessionTarget -SqlInstance $global:instance2 -Target package0.event_file
             foreach ($result in $results) {
                 $result.Name | Should -Be 'package0.event_file'
             }
         }
 
         It "supports the pipeline" {
-            $results = Get-DbaXESession -SqlInstance $env:instance2 -Session system_health | Get-DbaXESessionTarget -Target package0.event_file
+            $results = Get-DbaXESession -SqlInstance $global:instance2 -Session system_health | Get-DbaXESessionTarget -Target package0.event_file
             $results.Count | Should -BeGreaterThan 0
         }
     }

@@ -27,7 +27,7 @@ Describe "Set-DbaExtendedProtection" {
 
     Context "Command actually works" {
         It "Default set and returns '0 - Off'" {
-            $results = Set-DbaExtendedProtection -SqlInstance $env:instance1 -EnableException *>$null
+            $results = Set-DbaExtendedProtection -SqlInstance $global:instance1 -EnableException *>$null
             $results.ExtendedProtection | Should -Be "0 - Off"
         }
     }
@@ -42,7 +42,7 @@ Describe "Set-DbaExtendedProtection" {
                     $ScriptBlock,
                     $EnableException
                 )
-                $server = [DbaInstanceParameter[]]$env:instance1
+                $server = [DbaInstanceParameter[]]$global:instance1
                 @{
                     DisplayName        = "SQL Server ($($instance.InstanceName))"
                     AdvancedProperties = @(
@@ -56,32 +56,32 @@ Describe "Set-DbaExtendedProtection" {
         }
 
         It "Set explicitly to '0 - Off' using text" {
-            $results = Set-DbaExtendedProtection -SqlInstance $env:instance1 -Value Off -EnableException -Verbose 4>&1
+            $results = Set-DbaExtendedProtection -SqlInstance $global:instance1 -Value Off -EnableException -Verbose 4>&1
             $results[-1] | Should -Be 'Value: 0'
         }
 
         It "Set explicitly to '0 - Off' using number" {
-            $results = Set-DbaExtendedProtection -SqlInstance $env:instance1 -Value 0 -EnableException -Verbose 4>&1
+            $results = Set-DbaExtendedProtection -SqlInstance $global:instance1 -Value 0 -EnableException -Verbose 4>&1
             $results[-1] | Should -Be 'Value: 0'
         }
 
         It "Set explicitly to '1 - Allowed' using text" {
-            $results = Set-DbaExtendedProtection -SqlInstance $env:instance1 -Value Allowed -EnableException -Verbose 4>&1
+            $results = Set-DbaExtendedProtection -SqlInstance $global:instance1 -Value Allowed -EnableException -Verbose 4>&1
             $results[-1] | Should -Be 'Value: 1'
         }
 
         It "Set explicitly to '1 - Allowed' using number" {
-            $results = Set-DbaExtendedProtection -SqlInstance $env:instance1 -Value 1 -EnableException -Verbose 4>&1
+            $results = Set-DbaExtendedProtection -SqlInstance $global:instance1 -Value 1 -EnableException -Verbose 4>&1
             $results[-1] | Should -Be 'Value: 1'
         }
 
         It "Set explicitly to '2 - Required' using text" {
-            $results = Set-DbaExtendedProtection -SqlInstance $env:instance1 -Value Required -EnableException -Verbose 4>&1
+            $results = Set-DbaExtendedProtection -SqlInstance $global:instance1 -Value Required -EnableException -Verbose 4>&1
             $results[-1] | Should -Be 'Value: 2'
         }
 
         It "Set explicitly to '2 - Required' using number" {
-            $results = Set-DbaExtendedProtection -SqlInstance $env:instance1 -Value 2 -EnableException -Verbose 4>&1
+            $results = Set-DbaExtendedProtection -SqlInstance $global:instance1 -Value 2 -EnableException -Verbose 4>&1
             $results[-1] | Should -Be 'Value: 2'
         }
     }

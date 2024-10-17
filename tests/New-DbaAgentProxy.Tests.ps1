@@ -51,7 +51,7 @@ Describe "New-DbaAgentProxy" {
         BeforeAll {
             $random = Get-Random
 
-            $instance2 = Connect-DbaInstance -SqlInstance $env:instance2
+            $instance2 = Connect-DbaInstance -SqlInstance $global:instance2
 
             $login = "db$random"
             $plaintext = "BigOlPassword!"

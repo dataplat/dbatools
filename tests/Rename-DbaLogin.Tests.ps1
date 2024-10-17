@@ -32,19 +32,19 @@ Describe "Rename-DbaLogin" {
             $renamed = "dbatoolsci_renamelogin2"
             $password = 'MyV3ry$ecur3P@ssw0rd'
             $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
-            $newlogin = New-DbaLogin -SqlInstance $env:instance1 -Login $login -Password $securePassword
+            $newlogin = New-DbaLogin -SqlInstance $global:instance1 -Login $login -Password $securePassword
         }
         AfterAll {
-            $null = Stop-DbaProcess -SqlInstance $env:instance1 -Login $renamed
-            $null = Remove-DbaLogin -SqlInstance $env:instance1 -Login $renamed -Confirm:$false
+            $null = Stop-DbaProcess -SqlInstance $global:instance1 -Login $renamed
+            $null = Remove-DbaLogin -SqlInstance $global:instance1 -Login $renamed -Confirm:$false
         }
 
         It "renames the login" {
-            $results = Rename-DbaLogin -SqlInstance $env:instance1 -Login $login -NewLogin $renamed
+            $results = Rename-DbaLogin -SqlInstance $global:instance1 -Login $login -NewLogin $renamed
             $results.Status | Should -Be "Successful"
             $results.PreviousLogin | Should -Be $login
             $results.NewLogin | Should -Be $renamed
-            Get-DbaLogin -SqlInstance $env:instance1 -login $renamed | Should -Not -BeNullOrEmpty
+            Get-DbaLogin -SqlInstance $global:instance1 -login $renamed | Should -Not -BeNullOrEmpty
         }
     }
 }

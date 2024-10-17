@@ -29,7 +29,7 @@ Describe "Get-DbaOperatingSystem" {
 
     Context "Get-DbaOperatingSystem Integration Test" -Tag "IntegrationTests" {
         BeforeAll {
-            $result = Get-DbaOperatingSystem -ComputerName $env:instance1
+            $result = Get-DbaOperatingSystem -ComputerName $global:instance1
 
             $props = 'ComputerName', 'Manufacturer', 'Organization',
             'Architecture', 'Build', 'Version', 'InstallDate', 'LastBootTime', 'LocalDateTime',

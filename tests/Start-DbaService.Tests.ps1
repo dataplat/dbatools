@@ -37,7 +37,7 @@ Describe "Start-DbaService" {
 
     Context "Command actually works" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $env:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $instanceName = $server.ServiceName
             $computerName = $server.NetName
 
@@ -51,7 +51,7 @@ Describe "Start-DbaService" {
         }
 
         It "starts the services back" {
-            $services = Start-DbaService -ComputerName $env:instance2 -Type Agent -InstanceName $instanceName
+            $services = Start-DbaService -ComputerName $global:instance2 -Type Agent -InstanceName $instanceName
             $services | Should -Not -BeNullOrEmpty
             foreach ($service in $services) {
                 $service.State | Should -Be 'Running'
@@ -68,7 +68,7 @@ Describe "Start-DbaService" {
             }
             foreach ($sn in $servicename) { Get-Service -ComputerName $computerName -Name $sn | Stop-Service -WarningAction SilentlyContinue | Out-Null }
 
-            $services = Get-DbaService -ComputerName $env:instance2 -InstanceName $instanceName -Type Agent, Engine | Start-DbaService
+            $services = Get-DbaService -ComputerName $global:instance2 -InstanceName $instanceName -Type Agent, Engine | Start-DbaService
             $services | Should -Not -BeNullOrEmpty
             foreach ($service in $services) {
                 $service.State | Should -Be 'Running'
@@ -77,7 +77,7 @@ Describe "Start-DbaService" {
         }
 
         It "errors when passing an invalid InstanceName" {
-            { Start-DbaService -ComputerName $env:instance2 -Type 'Agent' -InstanceName 'ThisIsInvalid' -EnableException } | Should -Throw 'No SQL Server services found with current parameters.'
+            { Start-DbaService -ComputerName $global:instance2 -Type 'Agent' -InstanceName 'ThisIsInvalid' -EnableException } | Should -Throw 'No SQL Server services found with current parameters.'
         }
     }
 }

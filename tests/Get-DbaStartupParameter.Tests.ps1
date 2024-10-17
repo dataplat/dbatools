@@ -39,7 +39,7 @@ Describe "Get-DbaStartupParameter" {
 
     Context "Command actually works" {
         BeforeAll {
-            $results = Get-DbaStartupParameter -SqlInstance $env:instance2
+            $results = Get-DbaStartupParameter -SqlInstance $global:instance2
         }
         It "Gets Results" {
             $results | Should -Not -BeNullOrEmpty

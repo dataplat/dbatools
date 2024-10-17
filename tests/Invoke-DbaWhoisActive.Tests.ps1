@@ -7,13 +7,13 @@ Describe "Invoke-DbaWhoIsActive" {
         . "$PSScriptRoot\constants.ps1"
 
         $testzippath = "$env:appveyorlabrepo\CommunitySoftware\sp_whoisactive-12.00.zip"
-        $resultInstallMaster = Install-DbaWhoIsActive -SqlInstance $env:instance1 -LocalFile $testzippath -Database master -WarningVariable warnInstallMaster
-        $resultInstallTempdb = Install-DbaWhoIsActive -SqlInstance $env:instance1 -LocalFile $testzippath -Database tempdb -WarningVariable warnInstallTempdb
+        $resultInstallMaster = Install-DbaWhoIsActive -SqlInstance $global:instance1 -LocalFile $testzippath -Database master -WarningVariable warnInstallMaster
+        $resultInstallTempdb = Install-DbaWhoIsActive -SqlInstance $global:instance1 -LocalFile $testzippath -Database tempdb -WarningVariable warnInstallTempdb
     }
 
     AfterAll {
-        Invoke-DbaQuery -SqlInstance $env:instance1 -Database master -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
-        Invoke-DbaQuery -SqlInstance $env:instance1 -Database tempdb -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
+        Invoke-DbaQuery -SqlInstance $global:instance1 -Database master -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
+        Invoke-DbaQuery -SqlInstance $global:instance1 -Database tempdb -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
     }
 
     Context "Validate parameters" {
@@ -122,33 +122,33 @@ Describe "Invoke-DbaWhoIsActive" {
 
     Context "Should Execute SPWhoisActive" {
         It "Should execute and return Help" {
-            $results = Invoke-DbaWhoIsActive -SqlInstance $env:instance1 -Help -WarningVariable warn
+            $results = Invoke-DbaWhoIsActive -SqlInstance $global:instance1 -Help -WarningVariable warn
             $warn | Should -BeNullOrEmpty
             $results | Should -Not -BeNullOrEmpty
         }
 
         It "Should execute with ShowSleepingSpids" {
-            $results = Invoke-DbaWhoIsActive -SqlInstance $env:instance1 -ShowSleepingSpids 2
+            $results = Invoke-DbaWhoIsActive -SqlInstance $global:instance1 -ShowSleepingSpids 2
             $results | Should -Not -BeNullOrEmpty
         }
 
         It "Should execute with ShowOwnSpid" {
-            $results = Invoke-DbaWhoIsActive -SqlInstance $env:instance1 -ShowOwnSpid
+            $results = Invoke-DbaWhoIsActive -SqlInstance $global:instance1 -ShowOwnSpid
             $results | Should -Not -BeNullOrEmpty
         }
 
         It "Should execute with ShowSystemSpids" {
-            $results = Invoke-DbaWhoIsActive -SqlInstance $env:instance1 -ShowSystemSpids
+            $results = Invoke-DbaWhoIsActive -SqlInstance $global:instance1 -ShowSystemSpids
             $results | Should -Not -BeNullOrEmpty
         }
 
         It "Should execute with GetOuterCommand and FindBlockLeaders" {
-            $results = Invoke-DbaWhoIsActive -SqlInstance $env:instance1 -GetOuterCommand -FindBlockLeaders
+            $results = Invoke-DbaWhoIsActive -SqlInstance $global:instance1 -GetOuterCommand -FindBlockLeaders
             $results | Should -Not -BeNullOrEmpty
         }
 
         It "Should execute with NotFilter and NotFilterType" {
-            $results = Invoke-DbaWhoIsActive -SqlInstance $env:instance1 -NotFilter 0 -NotFilterType Program
+            $results = Invoke-DbaWhoIsActive -SqlInstance $global:instance1 -NotFilter 0 -NotFilterType Program
             $results | Should -Not -BeNullOrEmpty
         }
     }

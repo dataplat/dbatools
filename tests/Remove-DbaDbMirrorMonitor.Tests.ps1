@@ -22,23 +22,23 @@ Describe "Remove-DbaDbMirrorMonitor" {
         }
 
         BeforeAll {
-            $db = Get-DbaDatabase -SqlInstance $env:instance2 -Database msdb
+            $db = Get-DbaDatabase -SqlInstance $global:instance2 -Database msdb
             if (($db.Tables['dbm_monitor_data'].Name)) {
                 $env:putback = $true
             } else {
-                $null = Add-DbaDbMirrorMonitor -SqlInstance $env:instance2 -WarningAction SilentlyContinue
+                $null = Add-DbaDbMirrorMonitor -SqlInstance $global:instance2 -WarningAction SilentlyContinue
             }
         }
 
         AfterAll {
             if ($env:putback) {
                 # add it back
-                $results = Add-DbaDbMirrorMonitor -SqlInstance $env:instance2 -WarningAction SilentlyContinue
+                $results = Add-DbaDbMirrorMonitor -SqlInstance $global:instance2 -WarningAction SilentlyContinue
             }
         }
 
         It "removes the mirror monitor" {
-            $results = Remove-DbaDbMirrorMonitor -SqlInstance $env:instance2 -WarningAction SilentlyContinue
+            $results = Remove-DbaDbMirrorMonitor -SqlInstance $global:instance2 -WarningAction SilentlyContinue
             $results.MonitorStatus | Should -Be 'Removed'
         }
     }

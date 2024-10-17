@@ -58,11 +58,11 @@ Describe "Get-DbaPlanCache" {
 
     Context "Command usage" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $env:instance1
+            $server = Connect-DbaInstance -SqlInstance $global:instance1
         }
 
         It "returns correct datatypes" {
-            $results = Get-DbaPlanCache -SqlInstance $env:instance1 | Clear-DbaPlanCache -Threshold 1024
+            $results = Get-DbaPlanCache -SqlInstance $global:instance1 | Clear-DbaPlanCache -Threshold 1024
             $results.Size | Should -BeOfType [dbasize]
         }
     }

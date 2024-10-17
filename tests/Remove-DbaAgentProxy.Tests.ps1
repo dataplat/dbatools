@@ -27,7 +27,7 @@ Describe "Remove-DbaAgentProxy" {
 
     Context "Command usage" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $env:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $null = Invoke-DbaQuery -SqlInstance $server -Query "CREATE CREDENTIAL proxyCred WITH IDENTITY = 'NT AUTHORITY\SYSTEM',  SECRET = 'G31o)lkJ8HNd!';"
         }
 
@@ -36,7 +36,7 @@ Describe "Remove-DbaAgentProxy" {
         }
 
         BeforeEach {
-            $server = Connect-DbaInstance -SqlInstance $env:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $proxyName = "dbatoolsci_test_$(Get-Random)"
             $proxyName2 = "dbatoolsci_test_$(Get-Random)"
 

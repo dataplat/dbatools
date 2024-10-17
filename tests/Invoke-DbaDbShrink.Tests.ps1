@@ -55,7 +55,7 @@ Describe "Invoke-DbaDbShrink Unit Tests" -Tag 'UnitTests' {
 
 Describe "Invoke-DbaDbShrink Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $env:instance2
+        $server = Connect-DbaInstance -SqlInstance $global:instance2
         $defaultPath = $server | Get-DbaDefaultPath
     }
 

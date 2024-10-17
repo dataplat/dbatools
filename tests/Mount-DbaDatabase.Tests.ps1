@@ -33,14 +33,14 @@ Describe "Mount-DbaDatabase" {
             . "$PSScriptRoot\constants.ps1"
 
             # Setup: remove, restore and backup on the local drive
-            Get-DbaDatabase -SqlInstance $env:instance1 -Database detachattach | Remove-DbaDatabase -Confirm:$false
-            Restore-DbaDatabase -SqlInstance $env:instance1 -Path $env:appveyorlabrepo\detachattach\detachattach.bak -WithReplace
-            Get-DbaDatabase -SqlInstance $env:instance1 -Database detachattach | Backup-DbaDatabase -Type Full
-            Detach-DbaDatabase -SqlInstance $env:instance1 -Database detachattach -Force
+            Get-DbaDatabase -SqlInstance $global:instance1 -Database detachattach | Remove-DbaDatabase -Confirm:$false
+            Restore-DbaDatabase -SqlInstance $global:instance1 -Path $env:appveyorlabrepo\detachattach\detachattach.bak -WithReplace
+            Get-DbaDatabase -SqlInstance $global:instance1 -Database detachattach | Backup-DbaDatabase -Type Full
+            Detach-DbaDatabase -SqlInstance $global:instance1 -Database detachattach -Force
         }
 
         It "Attaches a single database and ensures the alias still exists" {
-            $results = Attach-DbaDatabase -SqlInstance $env:instance1 -Database detachattach
+            $results = Attach-DbaDatabase -SqlInstance $global:instance1 -Database detachattach
 
             $results.AttachResult | Should -Be "Success"
             $results.Database | Should -Be "detachattach"
@@ -48,7 +48,7 @@ Describe "Mount-DbaDatabase" {
         }
 
         AfterAll {
-            Get-DbaDatabase -SqlInstance $env:instance1 -Database detachattach | Remove-DbaDatabase -Confirm:$false
+            Get-DbaDatabase -SqlInstance $global:instance1 -Database detachattach | Remove-DbaDatabase -Confirm:$false
         }
     }
 }

@@ -36,13 +36,13 @@ Describe "Test-DbaDbLogShipStatus Unit Tests" -Tag "UnitTests" {
 Describe "Test-DbaDbLogShipStatus Integration Tests" -Tag "IntegrationTests" {
     BeforeDiscovery {
         $env:skipIntegrationTests = $false
-        $env:instance1 = $null
-        $env:instance2 = $null
+        $global:instance1 = $null
+        $global:instance2 = $null
 
         try {
             . "$PSScriptRoot\constants.ps1"
-            $env:instance1 = $env:instance1
-            $env:instance2 = $env:instance2
+            $global:instance1 = $global:instance1
+            $global:instance2 = $global:instance2
         } catch {
             $env:skipIntegrationTests = $true
         }
@@ -50,21 +50,21 @@ Describe "Test-DbaDbLogShipStatus Integration Tests" -Tag "IntegrationTests" {
 
     BeforeAll {
         if (-not $env:skipIntegrationTests) {
-            $server = Connect-DbaInstance -SqlInstance $env:instance1
+            $server = Connect-DbaInstance -SqlInstance $global:instance1
             $env:skipExpressEdition = $server.Edition -notmatch 'Express'
         }
     }
 
     Context "When testing SQL Server Express edition" {
         It "Warns if SQL instance edition is not supported" -Skip:$env:skipIntegrationTests {
-            $null = Test-DbaDbLogShipStatus -SqlInstance $env:instance1 -WarningAction SilentlyContinue -WarningVariable editionwarn
+            $null = Test-DbaDbLogShipStatus -SqlInstance $global:instance1 -WarningAction SilentlyContinue -WarningVariable editionwarn
             $editionwarn | Should -Match "Express"
         }
     }
 
     Context "When no log shipping is found" {
         It "Warns if no log shipping found" -Skip:$env:skipIntegrationTests {
-            $null = Test-DbaDbLogShipStatus -SqlInstance $env:instance2 -Database 'master' -WarningAction SilentlyContinue -WarningVariable doesntexist
+            $null = Test-DbaDbLogShipStatus -SqlInstance $global:instance2 -Database 'master' -WarningAction SilentlyContinue -WarningVariable doesntexist
             $doesntexist | Should -Match "No information available"
         }
     }

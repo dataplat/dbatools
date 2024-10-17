@@ -48,13 +48,13 @@ Describe "New-DbaDbCertificate" {
 
     Context "Can create a database certificate" {
         BeforeAll {
-            $env:instance1 = $env:instance1 # Assuming this is defined in constants.ps1
+            $global:instance1 = $global:instance1 # Assuming this is defined in constants.ps1
 
-            if (-not (Get-DbaDbMasterKey -SqlInstance $env:instance1 -Database master)) {
-                $masterkey = New-DbaDbMasterKey -SqlInstance $env:instance1 -Database master -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
+            if (-not (Get-DbaDbMasterKey -SqlInstance $global:instance1 -Database master)) {
+                $masterkey = New-DbaDbMasterKey -SqlInstance $global:instance1 -Database master -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
             }
 
-            $tempdbmasterkey = New-DbaDbMasterKey -SqlInstance $env:instance1 -Database tempdb -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
+            $tempdbmasterkey = New-DbaDbMasterKey -SqlInstance $global:instance1 -Database tempdb -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
             $certificateName1 = "Cert_$(Get-random)"
             $certificateName2 = "Cert_$(Get-random)"
         }
@@ -65,13 +65,13 @@ Describe "New-DbaDbCertificate" {
         }
 
         It "Successfully creates a new database certificate in default, master database" {
-            $cert1 = New-DbaDbCertificate -SqlInstance $env:instance1 -Name $certificateName1 -Confirm:$false
+            $cert1 = New-DbaDbCertificate -SqlInstance $global:instance1 -Name $certificateName1 -Confirm:$false
             $cert1.Name | Should -Match $certificateName1
             $cert1 | Remove-DbaDbCertificate -Confirm:$false
         }
 
         It "Successfully creates a new database certificate in the tempdb database" {
-            $cert2 = New-DbaDbCertificate -SqlInstance $env:instance1 -Name $certificateName2 -Database tempdb -Confirm:$false
+            $cert2 = New-DbaDbCertificate -SqlInstance $global:instance1 -Name $certificateName2 -Database tempdb -Confirm:$false
             $cert2.Database | Should -Match "tempdb"
             $cert2 | Remove-DbaDbCertificate -Confirm:$false
         }

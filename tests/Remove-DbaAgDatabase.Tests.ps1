@@ -29,14 +29,14 @@ Describe "Remove-DbaAgDatabase" {
 Describe "Remove-DbaAgDatabase Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         . "$PSScriptRoot\constants.ps1"
-        $null = Get-DbaProcess -SqlInstance $env:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
-        $server = Connect-DbaInstance -SqlInstance $env:instance3
+        $null = Get-DbaProcess -SqlInstance $global:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
+        $server = Connect-DbaInstance -SqlInstance $global:instance3
         $agname = "dbatoolsci_removeagdb_agroup"
         $dbname = "dbatoolsci_removeagdb_agroupdb"
         $server.Query("create database $dbname")
-        $null = Get-DbaDatabase -SqlInstance $env:instance3 -Database $dbname | Backup-DbaDatabase
-        $null = Get-DbaDatabase -SqlInstance $env:instance3 -Database $dbname | Backup-DbaDatabase -Type Log
-        $ag = New-DbaAvailabilityGroup -Primary $env:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Database $dbname -Confirm:$false -Certificate dbatoolsci_AGCert -UseLastBackup
+        $null = Get-DbaDatabase -SqlInstance $global:instance3 -Database $dbname | Backup-DbaDatabase
+        $null = Get-DbaDatabase -SqlInstance $global:instance3 -Database $dbname | Backup-DbaDatabase -Type Log
+        $ag = New-DbaAvailabilityGroup -Primary $global:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Database $dbname -Confirm:$false -Certificate dbatoolsci_AGCert -UseLastBackup
     }
     AfterAll {
         $null = Remove-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $agname -Confirm:$false
@@ -44,16 +44,16 @@ Describe "Remove-DbaAgDatabase Integration Tests" -Tag "IntegrationTests" {
     }
     Context "removes ag db" {
         It "returns removed results" {
-            $results = Remove-DbaAgDatabase -SqlInstance $env:instance3 -Database $dbname -Confirm:$false
+            $results = Remove-DbaAgDatabase -SqlInstance $global:instance3 -Database $dbname -Confirm:$false
             $results.AvailabilityGroup | Should -Be $agname
             $results.Database | Should -Be $dbname
             $results.Status | Should -Be 'Removed'
         }
 
         It "really removed the db from the ag" {
-            $results = Get-DbaAvailabilityGroup -SqlInstance $env:instance3 -AvailabilityGroup $agname
+            $results = Get-DbaAvailabilityGroup -SqlInstance $global:instance3 -AvailabilityGroup $agname
             $results.AvailabilityGroup | Should -Be $agname
             $results.AvailabilityDatabases.Name | Should -Not -Contain $dbname
         }
     }
-} #$env:instance2 for appveyor
+} #$global:instance2 for appveyor

@@ -50,7 +50,7 @@ Describe "Invoke-DbaCycleErrorLog Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         # Importing constants and any necessary setup
         . "$PSScriptRoot\constants.ps1"
-        $results = Invoke-DbaCycleErrorLog -SqlInstance $env:instance1 -Type instance
+        $results = Invoke-DbaCycleErrorLog -SqlInstance $global:instance1 -Type instance
     }
 
     Context "Validate output" {

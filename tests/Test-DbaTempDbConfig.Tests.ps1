@@ -22,9 +22,9 @@ Describe "Test-DbaTempDbConfig" {
         }
     }
 
-    Context "Command actually works on $env:instance2" {
+    Context "Command actually works on $global:instance2" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $env:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $results = Test-DbaTempDbConfig -SqlInstance $server
         }
 

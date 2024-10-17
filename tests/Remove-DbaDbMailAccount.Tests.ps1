@@ -33,7 +33,7 @@ Describe "Remove-DbaDbMailAccount" {
 
     Context "Command usage" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $env:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $accountname = "dbatoolsci_test_$(Get-Random)"
             $accountname2 = "dbatoolsci_test_$(Get-Random)"
 

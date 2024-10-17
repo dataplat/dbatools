@@ -68,14 +68,14 @@ Describe "New-DbaAgentSchedule Unit Tests" -Tag 'UnitTests' {
 
 Describe "New-DbaAgentSchedule Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $null = New-DbaAgentJob -SqlInstance $env:instance2 -Job 'dbatoolsci_newschedule' -OwnerLogin 'sa'
-        $null = New-DbaAgentJobStep -SqlInstance $env:instance2 -Job 'dbatoolsci_newschedule' -StepId 1 -StepName 'dbatoolsci Test Select' -Subsystem TransactSql -SubsystemServer $env:instance2 -Command "SELECT * FROM master.sys.all_columns;" -CmdExecSuccessCode 0 -OnSuccessAction QuitWithSuccess -OnFailAction QuitWithFailure -Database master -DatabaseUser sa
+        $null = New-DbaAgentJob -SqlInstance $global:instance2 -Job 'dbatoolsci_newschedule' -OwnerLogin 'sa'
+        $null = New-DbaAgentJobStep -SqlInstance $global:instance2 -Job 'dbatoolsci_newschedule' -StepId 1 -StepName 'dbatoolsci Test Select' -Subsystem TransactSql -SubsystemServer $global:instance2 -Command "SELECT * FROM master.sys.all_columns;" -CmdExecSuccessCode 0 -OnSuccessAction QuitWithSuccess -OnFailAction QuitWithFailure -Database master -DatabaseUser sa
 
         $start = (Get-Date).AddDays(2).ToString('yyyyMMdd')
         $end = (Get-Date).AddDays(4).ToString('yyyyMMdd')
     }
     AfterAll {
-        $null = Remove-DbaAgentJob -SqlInstance $env:instance2 -Job 'dbatoolsci_newschedule' -Confirm:$false
+        $null = Remove-DbaAgentJob -SqlInstance $global:instance2 -Job 'dbatoolsci_newschedule' -Confirm:$false
     }
 
     Context "Should create schedules based on frequency type" {
@@ -86,7 +86,7 @@ Describe "New-DbaAgentSchedule Integration Tests" -Tag "IntegrationTests" {
 
             foreach ($frequency in $scheduleOptions) {
                 $variables = @{
-                    SqlInstance               = $env:instance2
+                    SqlInstance               = $global:instance2
                     Schedule                  = "dbatoolsci_$frequency"
                     Job                       = 'dbatoolsci_newschedule'
                     FrequencyType             = $frequency
@@ -103,7 +103,7 @@ Describe "New-DbaAgentSchedule Integration Tests" -Tag "IntegrationTests" {
             }
         }
         AfterAll {
-            $null = Get-DbaAgentSchedule -SqlInstance $env:instance2 |
+            $null = Get-DbaAgentSchedule -SqlInstance $global:instance2 |
                 Where-Object { $_.name -like 'dbatools*' } |
                 Remove-DbaAgentSchedule -Confirm:$false -Force
         }
@@ -113,7 +113,7 @@ Describe "New-DbaAgentSchedule Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "Should be a schedule on an existing job and have the correct frequency type" {
-            $jobId = (Get-DbaAgentJob -SqlInstance $env:instance2 -Job dbatoolsci_newschedule).JobID
+            $jobId = (Get-DbaAgentJob -SqlInstance $global:instance2 -Job dbatoolsci_newschedule).JobID
             foreach ($key in $results.keys) {
                 $results[$key].EnumJobReferences() | Should -Contain $jobId
                 $results[$key].FrequencyTypes | Should -BeIn $scheduleOptions
@@ -146,7 +146,7 @@ Describe "New-DbaAgentSchedule Integration Tests" -Tag "IntegrationTests" {
                 }
 
                 $variables = @{
-                    SqlInstance               = $env:instance2
+                    SqlInstance               = $global:instance2
                     Schedule                  = "dbatoolsci_$frequencyinterval"
                     Job                       = 'dbatoolsci_newschedule'
                     FrequencyType             = $frequencyType
@@ -162,7 +162,7 @@ Describe "New-DbaAgentSchedule Integration Tests" -Tag "IntegrationTests" {
             }
         }
         AfterAll {
-            $null = Get-DbaAgentSchedule -SqlInstance $env:instance2 |
+            $null = Get-DbaAgentSchedule -SqlInstance $global:instance2 |
                 Where-Object { $_.name -like 'dbatools*' } |
                 Remove-DbaAgentSchedule -Confirm:$false -Force
         }
@@ -172,7 +172,7 @@ Describe "New-DbaAgentSchedule Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "Should be a schedule on an existing job and have the correct interval for the frequency type" {
-            $jobId = (Get-DbaAgentJob -SqlInstance $env:instance2 -Job dbatoolsci_newschedule).JobID
+            $jobId = (Get-DbaAgentJob -SqlInstance $global:instance2 -Job dbatoolsci_newschedule).JobID
             foreach ($key in $results.keys) {
                 $results[$key].EnumJobReferences() | Should -Contain $jobId
 
@@ -204,7 +204,7 @@ Describe "New-DbaAgentSchedule Integration Tests" -Tag "IntegrationTests" {
 
             foreach ($frequencySubdayType in $scheduleOptions) {
                 $variables = @{
-                    SqlInstance               = $env:instance2
+                    SqlInstance               = $global:instance2
                     Schedule                  = "dbatoolsci_$frequencySubdayType"
                     Job                       = 'dbatoolsci_newschedule'
                     FrequencyType             = 'Daily'
@@ -222,7 +222,7 @@ Describe "New-DbaAgentSchedule Integration Tests" -Tag "IntegrationTests" {
             }
         }
         AfterAll {
-            $null = Get-DbaAgentSchedule -SqlInstance $env:instance2 |
+            $null = Get-DbaAgentSchedule -SqlInstance $global:instance2 |
                 Where-Object { $_.name -like 'dbatools*' } |
                 Remove-DbaAgentSchedule -Confirm:$false -Force
         }
@@ -232,7 +232,7 @@ Describe "New-DbaAgentSchedule Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "Should be a schedule on an existing job and have a valid frequency subday type" {
-            $jobId = (Get-DbaAgentJob -SqlInstance $env:instance2 -Job dbatoolsci_newschedule).JobID
+            $jobId = (Get-DbaAgentJob -SqlInstance $global:instance2 -Job dbatoolsci_newschedule).JobID
             foreach ($key in $results.keys) {
                 $results[$key].EnumJobReferences() | Should -Contain $jobId
                 $results[$key].FrequencySubdayTypes | Should -BeIn $scheduleOptions
@@ -260,7 +260,7 @@ Describe "New-DbaAgentSchedule Integration Tests" -Tag "IntegrationTests" {
 
             foreach ($frequencyRelativeInterval in $scheduleOptions) {
                 $variables = @{
-                    SqlInstance               = $env:instance2
+                    SqlInstance               = $global:instance2
                     Schedule                  = "dbatoolsci_$frequencyRelativeInterval"
                     Job                       = 'dbatoolsci_newschedule'
                     FrequencyType             = 'MonthlyRelative'
@@ -279,7 +279,7 @@ Describe "New-DbaAgentSchedule Integration Tests" -Tag "IntegrationTests" {
             }
         }
         AfterAll {
-            $null = Get-DbaAgentSchedule -SqlInstance $env:instance2 |
+            $null = Get-DbaAgentSchedule -SqlInstance $global:instance2 |
                 Where-Object { $_.name -like 'dbatools*' } |
                 Remove-DbaAgentSchedule -Confirm:$false -Force
         }
@@ -289,7 +289,7 @@ Describe "New-DbaAgentSchedule Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "Should be a schedule on an existing job and have a valid frequency relative interval" {
-            $jobId = (Get-DbaAgentJob -SqlInstance $env:instance2 -Job dbatoolsci_newschedule).JobID
+            $jobId = (Get-DbaAgentJob -SqlInstance $global:instance2 -Job dbatoolsci_newschedule).JobID
             foreach ($key in $results.keys) {
                 $results[$key].EnumJobReferences() | Should -Contain $jobId
                 $results[$key].FrequencyRelativeIntervals | Should -BeIn $scheduleOptions

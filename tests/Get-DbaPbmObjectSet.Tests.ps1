@@ -34,7 +34,7 @@ Describe "Get-DbaPbmObjectSet" {
         # Add your integration tests here
         # Example:
         # It "Should return object sets" {
-        #     $results = Get-DbaPbmObjectSet -SqlInstance $env:instance1
+        #     $results = Get-DbaPbmObjectSet -SqlInstance $global:instance1
         #     $results | Should -Not -BeNullOrEmpty
         # }
     }

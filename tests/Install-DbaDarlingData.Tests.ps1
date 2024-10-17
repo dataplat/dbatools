@@ -34,13 +34,13 @@ Describe "Install-DbaDarlingData" {
     Context "Testing DarlingData installer with download" {
         BeforeAll {
             $database = "dbatoolsci_darling_$(Get-Random)"
-            $server = Connect-DbaInstance -SqlInstance $env:instance3
+            $server = Connect-DbaInstance -SqlInstance $global:instance3
             $server.Query("CREATE DATABASE $database")
 
-            $resultsDownload = Install-DbaDarlingData -SqlInstance $env:instance3 -Database $database -Branch main -Force -Verbose:$false
+            $resultsDownload = Install-DbaDarlingData -SqlInstance $global:instance3 -Database $database -Branch main -Force -Verbose:$false
         }
         AfterAll {
-            Remove-DbaDatabase -SqlInstance $env:instance3 -Database $database -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $global:instance3 -Database $database -Confirm:$false
         }
 
         It "Installs to specified database: $database" {
@@ -59,7 +59,7 @@ Describe "Install-DbaDarlingData" {
     Context "Testing DarlingData installer with LocalFile" {
         BeforeAll {
             $database = "dbatoolsci_darling_$(Get-Random)"
-            $server = Connect-DbaInstance -SqlInstance $env:instance3
+            $server = Connect-DbaInstance -SqlInstance $global:instance3
             $server.Query("CREATE DATABASE $database")
 
             $outfile = "DarlingData-main.zip"
@@ -67,10 +67,10 @@ Describe "Install-DbaDarlingData" {
             if (Test-Path $outfile) {
                 $fullOutfile = (Get-ChildItem $outfile).FullName
             }
-            $resultsLocalFile = Install-DbaDarlingData -SqlInstance $env:instance3 -Database $database -Branch main -LocalFile $fullOutfile -Force
+            $resultsLocalFile = Install-DbaDarlingData -SqlInstance $global:instance3 -Database $database -Branch main -LocalFile $fullOutfile -Force
         }
         AfterAll {
-            Remove-DbaDatabase -SqlInstance $env:instance3 -Database $database -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $global:instance3 -Database $database -Confirm:$false
         }
 
         It "Installs to specified database: $database" {

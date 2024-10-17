@@ -37,18 +37,18 @@ Describe "Revoke-DbaAgPermission" {
         }
 
         BeforeAll {
-            $null = Invoke-DbaQuery -SqlInstance $env:instance3 -InputFile $env:appveyorlabrepo\sql2008-scripts\logins.sql -ErrorAction SilentlyContinue
+            $null = Invoke-DbaQuery -SqlInstance $global:instance3 -InputFile $env:appveyorlabrepo\sql2008-scripts\logins.sql -ErrorAction SilentlyContinue
             $agname = "dbatoolsci_ag_revoke"
-            $null = New-DbaAvailabilityGroup -Primary $env:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Confirm:$false -Certificate dbatoolsci_AGCert
+            $null = New-DbaAvailabilityGroup -Primary $global:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Confirm:$false -Certificate dbatoolsci_AGCert
         }
 
         AfterAll {
-            $null = Remove-DbaAvailabilityGroup -SqlInstance $env:instance3 -AvailabilityGroup $agname -Confirm:$false
+            $null = Remove-DbaAvailabilityGroup -SqlInstance $global:instance3 -AvailabilityGroup $agname -Confirm:$false
         }
 
         It "returns results with proper data" {
-            $results = Get-DbaLogin -SqlInstance $env:instance3 -Login tester | Revoke-DbaAgPermission -Type EndPoint
+            $results = Get-DbaLogin -SqlInstance $global:instance3 -Login tester | Revoke-DbaAgPermission -Type EndPoint
             $results.Status | Should -Be 'Success'
         }
     }
-} #$env:instance2 for appveyor
+} #$global:instance2 for appveyor

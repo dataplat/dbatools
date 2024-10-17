@@ -8,7 +8,7 @@ Describe "Start-DbaDbEncryption" {
 
         $PSDefaultParameterValues["*:Confirm"] = $false
         $alldbs = @()
-        1..5 | ForEach-Object { $alldbs += New-DbaDatabase -SqlInstance $env:instance2 }
+        1..5 | ForEach-Object { $alldbs += New-DbaDatabase -SqlInstance $global:instance2 }
     }
 
     AfterAll {
@@ -75,7 +75,7 @@ Describe "Start-DbaDbEncryption" {
         It "should mass enable encryption" {
             $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
             $splat = @{
-                SqlInstance             = $env:instance2
+                SqlInstance             = $global:instance2
                 Database                = $alldbs.Name
                 MasterKeySecurePassword = $passwd
                 BackupSecurePassword    = $passwd

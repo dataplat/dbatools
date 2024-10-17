@@ -31,25 +31,25 @@ Describe "Set-DbaSpConfigure" {
         }
 
         BeforeAll {
-            $remotequerytimeout = (Get-DbaSpConfigure -SqlInstance $env:instance1 -ConfigName RemoteQueryTimeout).ConfiguredValue
+            $remotequerytimeout = (Get-DbaSpConfigure -SqlInstance $global:instance1 -ConfigName RemoteQueryTimeout).ConfiguredValue
             $newtimeout = $remotequerytimeout + 1
         }
 
         It "changes the remote query timeout from $remotequerytimeout to $newtimeout" {
-            $results = Set-DbaSpConfigure -SqlInstance $env:instance1 -ConfigName RemoteQueryTimeout -Value $newtimeout
+            $results = Set-DbaSpConfigure -SqlInstance $global:instance1 -ConfigName RemoteQueryTimeout -Value $newtimeout
             $results.PreviousValue | Should -Be $remotequerytimeout
             $results.NewValue | Should -Be $newtimeout
         }
 
         It "changes the remote query timeout from $newtimeout to $remotequerytimeout" {
-            $results = Set-DbaSpConfigure -SqlInstance $env:instance1 -ConfigName RemoteQueryTimeout -Value $remotequerytimeout
+            $results = Set-DbaSpConfigure -SqlInstance $global:instance1 -ConfigName RemoteQueryTimeout -Value $remotequerytimeout
             $results.PreviousValue | Should -Be $newtimeout
             $results.NewValue | Should -Be $remotequerytimeout
         }
 
         It "returns a warning when if the new value is the same as the old" {
             $warning = $null
-            $results = Set-DbaSpConfigure -SqlInstance $env:instance1 -ConfigName RemoteQueryTimeout -Value $remotequerytimeout -WarningVariable warning -WarningAction SilentlyContinue
+            $results = Set-DbaSpConfigure -SqlInstance $global:instance1 -ConfigName RemoteQueryTimeout -Value $remotequerytimeout -WarningVariable warning -WarningAction SilentlyContinue
             $warning | Should -Match "existing"
         }
     }

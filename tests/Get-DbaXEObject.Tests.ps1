@@ -64,7 +64,7 @@ Describe "Get-DbaXEObject" {
         # Add your integration tests here
         # Example:
         # It "Should return XE objects" {
-        #     $results = Get-DbaXEObject -SqlInstance $env:instance1
+        #     $results = Get-DbaXEObject -SqlInstance $global:instance1
         #     $results | Should -Not -BeNullOrEmpty
         # }
     }

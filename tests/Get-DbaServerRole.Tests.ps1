@@ -31,7 +31,7 @@ Describe "Get-DbaServerRole" {
 
     Context "Command actually works" {
         BeforeAll {
-            $results = Get-DbaServerRole -SqlInstance $env:instance2
+            $results = Get-DbaServerRole -SqlInstance $global:instance2
         }
 
         It "Should have correct properties" {
@@ -40,17 +40,17 @@ Describe "Get-DbaServerRole" {
         }
 
         It "Shows only one value with ServerRole parameter" {
-            $results = Get-DbaServerRole -SqlInstance $env:instance2 -ServerRole sysadmin
+            $results = Get-DbaServerRole -SqlInstance $global:instance2 -ServerRole sysadmin
             $results[0].Role | Should -Be "sysadmin"
         }
 
         It "Should exclude sysadmin from output" {
-            $results = Get-DbaServerRole -SqlInstance $env:instance2 -ExcludeServerRole sysadmin
+            $results = Get-DbaServerRole -SqlInstance $global:instance2 -ExcludeServerRole sysadmin
             $results.Role | Should -Not -Contain 'sysadmin'
         }
 
         It "Should exclude fixed server-level roles" {
-            $results = Get-DbaServerRole -SqlInstance $env:instance2 -ExcludeFixedRole
+            $results = Get-DbaServerRole -SqlInstance $global:instance2 -ExcludeFixedRole
             $results.Role | Should -Not -Contain 'sysadmin'
         }
     }

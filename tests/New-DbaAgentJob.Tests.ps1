@@ -76,24 +76,24 @@ Describe "New-DbaAgentJob" {
 
         AfterAll {
             # Cleanup and ignore all output
-            Remove-DbaAgentJob -SqlInstance $env:instance2 -Job $jobName -Confirm:$false *> $null
+            Remove-DbaAgentJob -SqlInstance $global:instance2 -Job $jobName -Confirm:$false *> $null
         }
 
         It "Should create a new job with the right name and description" {
-            $results = New-DbaAgentJob -SqlInstance $env:instance2 -Job $jobName -Description $jobDescription
+            $results = New-DbaAgentJob -SqlInstance $global:instance2 -Job $jobName -Description $jobDescription
             $results.Name | Should -Be $jobName
             $results.Description | Should -Be $jobDescription
         }
 
         It "Should verify the job exists" {
-            $newResults = Get-DbaAgentJob -SqlInstance $env:instance2 -Job $jobName
+            $newResults = Get-DbaAgentJob -SqlInstance $global:instance2 -Job $jobName
             $newResults.Name | Should -Be $jobName
             $newResults.Description | Should -Be $jobDescription
         }
 
         It "Should not overwrite existing jobs" {
             $warn = $null
-            $results = New-DbaAgentJob -SqlInstance $env:instance2 -Job $jobName -Description $jobDescription -WarningAction SilentlyContinue -WarningVariable warn
+            $results = New-DbaAgentJob -SqlInstance $global:instance2 -Job $jobName -Description $jobDescription -WarningAction SilentlyContinue -WarningVariable warn
             $warn | Should -Match "already exists"
         }
     }

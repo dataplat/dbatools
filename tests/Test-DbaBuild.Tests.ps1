@@ -66,12 +66,12 @@ Describe "Test-DbaBuild" {
             . (Join-Path $PSScriptRoot 'constants.ps1')
         }
         It "Should return a result" {
-            $results = Test-DbaBuild -Build "12.00.4502" -MinimumBuild "12.0.4511" -SqlInstance $env:instance2
+            $results = Test-DbaBuild -Build "12.00.4502" -MinimumBuild "12.0.4511" -SqlInstance $global:instance2
             $results | Should -Not -BeNullOrEmpty
         }
 
         It "Should return a result" {
-            $results = Test-DbaBuild -Build "12.0.5540" -MaxBehind "1SP 1CU" -SqlInstance $env:instance2
+            $results = Test-DbaBuild -Build "12.0.5540" -MaxBehind "1SP 1CU" -SqlInstance $global:instance2
             $results | Should -Not -BeNullOrEmpty
         }
     }

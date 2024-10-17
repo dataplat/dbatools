@@ -31,23 +31,23 @@ Describe "New-DbaAgentJobCategory" {
 
     Context "New Agent Job Category is added properly" {
         BeforeAll {
-            $env:instance2 = "localhost"
+            $global:instance2 = "localhost"
         }
 
         It "Should have the right name and category type" {
-            $results = New-DbaAgentJobCategory -SqlInstance $env:instance2 -Category CategoryTest1
+            $results = New-DbaAgentJobCategory -SqlInstance $global:instance2 -Category CategoryTest1
             $results.Name | Should -Be "CategoryTest1"
             $results.CategoryType | Should -Be "LocalJob"
         }
 
         It "Should have the right name and category type" {
-            $results = New-DbaAgentJobCategory -SqlInstance $env:instance2 -Category CategoryTest2 -CategoryType MultiServerJob
+            $results = New-DbaAgentJobCategory -SqlInstance $global:instance2 -Category CategoryTest2 -CategoryType MultiServerJob
             $results.Name | Should -Be "CategoryTest2"
             $results.CategoryType | Should -Be "MultiServerJob"
         }
 
         It "Should actually for sure exist" {
-            $newresults = Get-DbaAgentJobCategory -SqlInstance $env:instance2 -Category CategoryTest1, CategoryTest2
+            $newresults = Get-DbaAgentJobCategory -SqlInstance $global:instance2 -Category CategoryTest1, CategoryTest2
             $newresults[0].Name | Should -Be "CategoryTest1"
             $newresults[0].CategoryType | Should -Be "LocalJob"
             $newresults[1].Name | Should -Be "CategoryTest2"
@@ -56,13 +56,13 @@ Describe "New-DbaAgentJobCategory" {
 
         It "Should not write over existing job categories" {
             $warn = $null
-            $results = New-DbaAgentJobCategory -SqlInstance $env:instance2 -Category CategoryTest1 -WarningAction SilentlyContinue -WarningVariable warn
+            $results = New-DbaAgentJobCategory -SqlInstance $global:instance2 -Category CategoryTest1 -WarningAction SilentlyContinue -WarningVariable warn
             $warn | Should -Match "already exists"
         }
 
         AfterAll {
             # Cleanup and ignore all output
-            Remove-DbaAgentJobCategory -SqlInstance $env:instance2 -Category CategoryTest1, CategoryTest2 -Confirm:$false *> $null
+            Remove-DbaAgentJobCategory -SqlInstance $global:instance2 -Category CategoryTest1, CategoryTest2 -Confirm:$false *> $null
         }
     }
 }

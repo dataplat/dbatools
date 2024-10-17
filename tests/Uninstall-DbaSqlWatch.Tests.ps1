@@ -26,33 +26,33 @@ Describe "Uninstall-DbaSqlWatch" {
 
         BeforeAll {
             $database = "dbatoolsci_sqlwatch_$(Get-Random)"
-            $server = Connect-DbaInstance -SqlInstance $env:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $server.Query("CREATE DATABASE $database")
-            Install-DbaSqlWatch -SqlInstance $env:instance2 -Database $database
-            Uninstall-DbaSqlWatch -SqlInstance $env:instance2 -Database $database
+            Install-DbaSqlWatch -SqlInstance $global:instance2 -Database $database
+            Uninstall-DbaSqlWatch -SqlInstance $global:instance2 -Database $database
         }
 
         AfterAll {
-            Remove-DbaDatabase -SqlInstance $env:instance2 -Database $database -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $global:instance2 -Database $database -Confirm:$false
         }
 
         It "Removed all tables" {
-            $tableCount = (Get-DbaDbTable -SqlInstance $env:instance2 -Database $Database | Where-Object {($_.Name -like "sql_perf_mon_*") -or ($_.Name -like "logger_*")}).Count
+            $tableCount = (Get-DbaDbTable -SqlInstance $global:instance2 -Database $Database | Where-Object {($_.Name -like "sql_perf_mon_*") -or ($_.Name -like "logger_*")}).Count
             $tableCount | Should -Be 0
         }
 
         It "Removed all views" {
-            $viewCount = (Get-DbaDbView -SqlInstance $env:instance2 -Database $Database | Where-Object {$_.Name -like "vw_sql_perf_mon_*" }).Count
+            $viewCount = (Get-DbaDbView -SqlInstance $global:instance2 -Database $Database | Where-Object {$_.Name -like "vw_sql_perf_mon_*" }).Count
             $viewCount | Should -Be 0
         }
 
         It "Removed all stored procedures" {
-            $sprocCount = (Get-DbaDbStoredProcedure -SqlInstance $env:instance2 -Database $Database | Where-Object {($_.Name -like "sp_sql_perf_mon_*") -or ($_.Name -like "usp_logger_*")}).Count
+            $sprocCount = (Get-DbaDbStoredProcedure -SqlInstance $global:instance2 -Database $Database | Where-Object {($_.Name -like "sp_sql_perf_mon_*") -or ($_.Name -like "usp_logger_*")}).Count
             $sprocCount | Should -Be 0
         }
 
         It "Removed all SQL Agent jobs" {
-            $agentCount = (Get-DbaAgentJob -SqlInstance $env:instance2 | Where-Object {($_.Name -like "SqlWatch-*") -or ($_.Name -like "DBA-PERF-*")}).Count
+            $agentCount = (Get-DbaAgentJob -SqlInstance $global:instance2 | Where-Object {($_.Name -like "SqlWatch-*") -or ($_.Name -like "DBA-PERF-*")}).Count
             $agentCount | Should -Be 0
         }
     }

@@ -41,8 +41,8 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $random = Get-Random
-        $instance1 = Connect-DbaInstance -SqlInstance $env:instance1
-        $instance2 = Connect-DbaInstance -SqlInstance $env:instance2
+        $instance1 = Connect-DbaInstance -SqlInstance $global:instance1
+        $instance2 = Connect-DbaInstance -SqlInstance $global:instance2
 
         $job1Instance1 = New-DbaAgentJob -SqlInstance $instance1 -Job "dbatoolsci_job_1_$random"
         $job1Instance2 = New-DbaAgentJob -SqlInstance $instance2 -Job "dbatoolsci_job_1_$random"

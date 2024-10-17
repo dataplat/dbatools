@@ -36,7 +36,7 @@ Describe "Stop-DbaAgentJob" {
         It "Returns a CurrentRunStatus of Idle" -Skip:([Environment]::GetEnvironmentVariable('appveyor')) {
             BeforeAll {
                 $jobName = 'DatabaseBackup - SYSTEM_DATABASES - FULL'
-                $server = Connect-DbaInstance -SqlInstance $env:instance2
+                $server = Connect-DbaInstance -SqlInstance $global:instance2
                 $job = Get-DbaAgentJob -SqlInstance $server -Job $jobName
             }
 

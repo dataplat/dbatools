@@ -50,7 +50,7 @@ Describe "Set-DbaDbSequence" {
         BeforeAll {
             . "$PSScriptRoot\constants.ps1"
             $random = Get-Random
-            $server = Connect-DbaInstance -SqlInstance $env:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $newDbName = "dbatoolsci_newdb_$random"
             $newDb = New-DbaDatabase -SqlInstance $server -Name $newDbName
 

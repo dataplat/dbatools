@@ -32,10 +32,10 @@ Describe "Test-DbaLoginPassword" {
 
     Context "Integration Tests" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $env:instance1
+            $server = Connect-DbaInstance -SqlInstance $global:instance1
             $weaksauce = "dbatoolsci_testweak"
             $weakpass = ConvertTo-SecureString $weaksauce -AsPlainText -Force
-            $newlogin = New-DbaLogin -SqlInstance $env:instance1 -Login $weaksauce -HashedPassword (Get-PasswordHash $weakpass $server.VersionMajor) -Force
+            $newlogin = New-DbaLogin -SqlInstance $global:instance1 -Login $weaksauce -HashedPassword (Get-PasswordHash $weakpass $server.VersionMajor) -Force
         }
         AfterAll {
             try {
@@ -46,15 +46,15 @@ Describe "Test-DbaLoginPassword" {
         }
 
         It "finds the new weak password and supports piping" {
-            $results = Get-DbaLogin -SqlInstance $env:instance1 | Test-DbaLoginPassword
+            $results = Get-DbaLogin -SqlInstance $global:instance1 | Test-DbaLoginPassword
             $results.SqlLogin | Should -Contain $weaksauce
         }
         It "returns just one login" {
-            $results = Test-DbaLoginPassword -SqlInstance $env:instance1 -Login $weaksauce
+            $results = Test-DbaLoginPassword -SqlInstance $global:instance1 -Login $weaksauce
             $results.SqlLogin | Should -Be $weaksauce
         }
         It "handles passwords with quotes, see #9095" {
-            $results = Test-DbaLoginPassword -SqlInstance $env:instance1 -Login $weaksauce -Dictionary "&é`"'(-", "hello"
+            $results = Test-DbaLoginPassword -SqlInstance $global:instance1 -Login $weaksauce -Dictionary "&é`"'(-", "hello"
             $results.SqlLogin | Should -Be $weaksauce
         }
     }

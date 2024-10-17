@@ -37,19 +37,19 @@ Describe "Move-DbaRegServerGroup" {
             $regSrvName = "dbatoolsci-server12"
             $regSrvDesc = "dbatoolsci-server123"
 
-            $newGroup = Add-DbaRegServerGroup -SqlInstance $env:instance1 -Name $group
-            $newServer = Add-DbaRegServer -SqlInstance $env:instance1 -ServerName $srvName -Name $regSrvName -Description $regSrvDesc -Group $newGroup.Name
+            $newGroup = Add-DbaRegServerGroup -SqlInstance $global:instance1 -Name $group
+            $newServer = Add-DbaRegServer -SqlInstance $global:instance1 -ServerName $srvName -Name $regSrvName -Description $regSrvDesc -Group $newGroup.Name
 
             $group2 = "dbatoolsci-group1a"
-            $newGroup2 = Add-DbaRegServerGroup -SqlInstance $env:instance1 -Name $group2
+            $newGroup2 = Add-DbaRegServerGroup -SqlInstance $global:instance1 -Name $group2
 
             $group3 = "dbatoolsci-group1b"
-            $newGroup3 = Add-DbaRegServerGroup -SqlInstance $env:instance1 -Name $group3
+            $newGroup3 = Add-DbaRegServerGroup -SqlInstance $global:instance1 -Name $group3
         }
 
         AfterAll {
-            Get-DbaRegServer -SqlInstance $env:instance1 -Name $regSrvName | Remove-DbaRegServer -Confirm:$false
-            Get-DbaRegServerGroup -SqlInstance $env:instance1 -Group $group, $group2, $group3 | Remove-DbaRegServerGroup -Confirm:$false
+            Get-DbaRegServer -SqlInstance $global:instance1 -Name $regSrvName | Remove-DbaRegServer -Confirm:$false
+            Get-DbaRegServerGroup -SqlInstance $global:instance1 -Group $group, $group2, $group3 | Remove-DbaRegServerGroup -Confirm:$false
         }
 
         It "moves a piped group" {
@@ -58,7 +58,7 @@ Describe "Move-DbaRegServerGroup" {
         }
 
         It "moves a manually specified group" {
-            $results = Move-DbaRegServerGroup -SqlInstance $env:instance1 -Group "$group\$group3" -NewGroup Default
+            $results = Move-DbaRegServerGroup -SqlInstance $global:instance1 -Group "$group\$group3" -NewGroup Default
             $results.Parent.Name | Should -Be 'DatabaseEngineServerGroup'
         }
     }

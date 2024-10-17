@@ -27,7 +27,7 @@ Describe "Test-DbaInstanceName" {
 
     Context "Command tests servername" {
         BeforeAll {
-            $results = Test-DbaInstanceName -SqlInstance $env:instance2
+            $results = Test-DbaInstanceName -SqlInstance $global:instance2
         }
 
         It "should say rename is not required" {

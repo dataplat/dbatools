@@ -9,8 +9,8 @@ Describe "New-DbaLogin" {
         $password = 'MyV3ry$ecur3P@ssw0rd'
         $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
         $sid = '0xDBA700131337C0D30123456789ABCDEF'
-        $server1 = Connect-DbaInstance -SqlInstance $env:instance1
-        $server2 = Connect-DbaInstance -SqlInstance $env:instance2
+        $server1 = Connect-DbaInstance -SqlInstance $global:instance1
+        $server2 = Connect-DbaInstance -SqlInstance $global:instance2
         $servers = @($server1, $server2)
         $computerName = $server1.NetName
         $credLogin = 'credologino'
@@ -232,8 +232,8 @@ Describe "New-DbaLogin" {
         }
 
         It "Should retain its same properties" {
-            $login1 = Get-DbaLogin -SqlInstance $env:instance1 -login tester
-            $login2 = Get-DbaLogin -SqlInstance $env:instance2 -login tester
+            $login1 = Get-DbaLogin -SqlInstance $global:instance1 -login tester
+            $login2 = Get-DbaLogin -SqlInstance $global:instance2 -login tester
 
             $login2 | Should -Not -BeNullOrEmpty
 
@@ -250,8 +250,8 @@ Describe "New-DbaLogin" {
         }
 
         It "Should not have same properties because of the overrides" {
-            $login1 = Get-DbaLogin -SqlInstance $env:instance1 -login claudio
-            $login2 = Get-DbaLogin -SqlInstance $env:instance2 -login withMustChange
+            $login1 = Get-DbaLogin -SqlInstance $global:instance1 -login claudio
+            $login2 = Get-DbaLogin -SqlInstance $global:instance2 -login withMustChange
 
             $login2 | Should -Not -BeNullOrEmpty
 
@@ -276,12 +276,12 @@ Describe "New-DbaLogin" {
         }
     }
 
-    Context "Connect with a new login" -Skip:((Connect-DbaInstance -SqlInstance $env:instance1).LoginMode -ne "Mixed") {
+    Context "Connect with a new login" -Skip:((Connect-DbaInstance -SqlInstance $global:instance1).LoginMode -ne "Mixed") {
         It "Should login with newly created Sql Login, get instance name and kill the process" {
             $cred = New-Object System.Management.Automation.PSCredential ("tester", $securePassword)
-            $s = Connect-DbaInstance -SqlInstance $env:instance1 -SqlCredential $cred
-            $s.Name | Should -Be $env:instance1
-            Stop-DbaProcess -SqlInstance $env:instance1 -Login tester
+            $s = Connect-DbaInstance -SqlInstance $global:instance1 -SqlCredential $cred
+            $s.Name | Should -Be $global:instance1
+            Stop-DbaProcess -SqlInstance $global:instance1 -Login tester
         }
     }
 
@@ -314,7 +314,7 @@ Describe "New-DbaLogin" {
         $server1.Credentials[$credLogin].Drop()
         $server1.Databases['master'].Certificates[$certificateName].Drop()
         if (!$mkey) {
-            $null = Remove-DbaDbMasterKey -SqlInstance $env:instance1 -Database master -Confirm:$false
+            $null = Remove-DbaDbMasterKey -SqlInstance $global:instance1 -Database master -Confirm:$false
         }
     }
 }

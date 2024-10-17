@@ -28,7 +28,7 @@ Describe "Test-DbaConnectionAuthScheme" {
 
     Context "returns the proper transport" {
         BeforeAll {
-            $results = Test-DbaConnectionAuthScheme -SqlInstance $env:instance1
+            $results = Test-DbaConnectionAuthScheme -SqlInstance $global:instance1
         }
         It "returns ntlm auth scheme" {
             $results.AuthScheme | Should -Be 'ntlm'

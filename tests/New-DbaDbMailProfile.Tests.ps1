@@ -32,7 +32,7 @@ Describe "New-DbaDbMailProfile" {
         BeforeAll {
             . "$PSScriptRoot\constants.ps1"
             $profilename = "dbatoolsci_test_$(Get-Random)"
-            $server = Connect-DbaInstance -SqlInstance $env:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $description = 'Mail account for email alerts'
             $mailaccountname = 'dbatoolssci@dbatools.io'
             $mailaccountpriority = 1
@@ -47,7 +47,7 @@ Describe "New-DbaDbMailProfile" {
         }
 
         AfterAll {
-            $server = Connect-DbaInstance -SqlInstance $env:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $mailAccountSettings = "EXEC msdb.dbo.sysmail_delete_profile_sp @profile_name = '$profilename';"
             $server.Query($mailAccountSettings)
             $regularaccountsettings = "EXEC msdb.dbo.sysmail_delete_account_sp @account_name = '$mailaccountname';"
@@ -56,7 +56,7 @@ Describe "New-DbaDbMailProfile" {
 
         It "Sets DbMail Profile" {
             $splat = @{
-                SqlInstance         = $env:instance2
+                SqlInstance         = $global:instance2
                 Profile             = $profilename
                 Description         = $description
                 MailAccountName     = $mailaccountname

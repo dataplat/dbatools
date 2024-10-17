@@ -31,17 +31,17 @@ Describe "Remove-DbaAgListener" {
 
         BeforeAll {
             $agname = "dbatoolsci_ag_removelistener"
-            $ag = New-DbaAvailabilityGroup -Primary $env:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Confirm:$false -Certificate dbatoolsci_AGCert
+            $ag = New-DbaAvailabilityGroup -Primary $global:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Confirm:$false -Certificate dbatoolsci_AGCert
             $aglistener = $ag | Add-DbaAgListener -IPAddress 127.0.20.1 -Port 14330 -Confirm:$false
         }
 
         AfterAll {
-            $null = Remove-DbaAvailabilityGroup -SqlInstance $env:instance3 -AvailabilityGroup $agname -Confirm:$false
+            $null = Remove-DbaAvailabilityGroup -SqlInstance $global:instance3 -AvailabilityGroup $agname -Confirm:$false
         }
 
         It "removes a listener" {
-            $results = Remove-DbaAgListener -SqlInstance $env:instance3 -Listener $aglistener.Name -Confirm:$false
+            $results = Remove-DbaAgListener -SqlInstance $global:instance3 -Listener $aglistener.Name -Confirm:$false
             $results.Status | Should -Be 'Removed'
         }
     }
-} #$env:instance2 for appveyor
+} #$global:instance2 for appveyor

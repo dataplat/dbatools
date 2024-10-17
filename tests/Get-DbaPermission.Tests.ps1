@@ -37,7 +37,7 @@ Describe "Get-DbaPermission Unit Tests" -Tag 'UnitTests' {
 
 Describe "Get-DbaPermission Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $server = $env:instance1
+        $server = $global:instance1
         $random = Get-Random
         $password = 'MyV3ry$ecur3P@ssw0rd'
         $securePassword = ConvertTo-SecureString $password -AsPlainText -Force

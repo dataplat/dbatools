@@ -7,8 +7,8 @@ Describe "New-DbaDatabase" {
         . "$PSScriptRoot\constants.ps1"
 
         $random = Get-Random
-        $instance2 = Connect-DbaInstance -SqlInstance $env:instance2
-        $instance3 = Connect-DbaInstance -SqlInstance $env:instance3
+        $instance2 = Connect-DbaInstance -SqlInstance $global:instance2
+        $instance3 = Connect-DbaInstance -SqlInstance $global:instance3
         $null = Get-DbaProcess -SqlInstance $instance2, $instance3 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false
         $randomDb = New-DbaDatabase -SqlInstance $instance2
         $newDbName = "dbatoolsci_newdb_$random"

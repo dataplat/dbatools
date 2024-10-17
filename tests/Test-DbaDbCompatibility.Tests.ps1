@@ -28,17 +28,17 @@ Describe "Test-DbaDbCompatibility" {
         }
 
         It "Should return a result" {
-            $results = Test-DbaDbCompatibility -SqlInstance $env:instance2
+            $results = Test-DbaDbCompatibility -SqlInstance $global:instance2
             $results | Should -Not -BeNullOrEmpty
         }
 
         It "Should return a result for a database" {
-            $results = Test-DbaDbCompatibility -Database Master -SqlInstance $env:instance2
+            $results = Test-DbaDbCompatibility -Database Master -SqlInstance $global:instance2
             $results | Should -Not -BeNullOrEmpty
         }
 
         It "Should return a result excluding one database" {
-            $results = Test-DbaDbCompatibility -ExcludeDatabase Master -SqlInstance $env:instance2
+            $results = Test-DbaDbCompatibility -ExcludeDatabase Master -SqlInstance $global:instance2
             $results | Should -Not -BeNullOrEmpty
         }
     }

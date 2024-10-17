@@ -25,12 +25,12 @@ Describe "Get-DbaXESession" {
 
     Context "Verifying command output" {
         It "returns some results" {
-            $results = Get-DbaXESession -SqlInstance $env:instance2
+            $results = Get-DbaXESession -SqlInstance $global:instance2
             $results.Count | Should -BeGreaterThan 1
         }
 
         It "returns only the system_health session" {
-            $results = Get-DbaXESession -SqlInstance $env:instance2 -Session system_health
+            $results = Get-DbaXESession -SqlInstance $global:instance2 -Session system_health
             $results.Name | Should -Be 'system_health'
         }
     }

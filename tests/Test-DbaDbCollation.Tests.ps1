@@ -24,7 +24,7 @@ Describe "Test-DbaDbCollation" {
 
     Context "testing collation of a single database" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $env:instance1
+            $server = Connect-DbaInstance -SqlInstance $global:instance1
             $db1 = "dbatoolsci_collation"
             Get-DbaDatabase -SqlInstance $server -Database $db1 | Remove-DbaDatabase -Confirm:$false
             $server.Query("CREATE DATABASE $db1")
@@ -34,7 +34,7 @@ Describe "Test-DbaDbCollation" {
         }
 
         It "confirms the db is the same collation as the server" {
-            $result = Test-DbaDbCollation -SqlInstance $env:instance1 -Database $db1
+            $result = Test-DbaDbCollation -SqlInstance $global:instance1 -Database $db1
             $result.IsEqual | Should -BeTrue
         }
     }

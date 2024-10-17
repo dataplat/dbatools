@@ -43,14 +43,14 @@ Describe "New-DbaXESmartReplay" {
 
 Describe "New-DbaXESmartReplay Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $env:instance2 = [Environment]::GetEnvironmentVariable("instance2")
+        $global:instance2 = [Environment]::GetEnvironmentVariable("instance2")
     }
 
     Context "Creates a smart object" {
         It "returns the object with all of the correct properties" {
             $columns = "cpu_time", "duration", "physical_reads", "logical_reads", "writes", "row_count", "batch_text"
-            $results = New-DbaXESmartTableWriter -SqlInstance $env:instance2 -Database dbadb -Table deadlocktracker -OutputColumn $columns -Filter "duration > 10000"
-            $results.ServerName | Should -Be $env:instance2
+            $results = New-DbaXESmartTableWriter -SqlInstance $global:instance2 -Database dbadb -Table deadlocktracker -OutputColumn $columns -Filter "duration > 10000"
+            $results.ServerName | Should -Be $global:instance2
             $results.DatabaseName | Should -Be 'dbadb'
             $results.Password | Should -BeNullOrEmpty
             $results.TableName | Should -Be 'deadlocktracker'

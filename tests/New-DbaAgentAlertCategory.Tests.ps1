@@ -28,33 +28,33 @@ Describe "New-DbaAgentAlertCategory" {
 
     Context "New Agent Alert Category is added properly" {
         BeforeAll {
-            $env:instance2 = "localhost"
+            $global:instance2 = "localhost"
         }
 
         AfterAll {
             # Cleanup and ignore all output
-            $null = Remove-DbaAgentAlertCategory -SqlInstance $env:instance2 -Category CategoryTest1, CategoryTest2 -Confirm:$false
+            $null = Remove-DbaAgentAlertCategory -SqlInstance $global:instance2 -Category CategoryTest1, CategoryTest2 -Confirm:$false
         }
 
         It "Should have the right name and category type" {
-            $results = New-DbaAgentAlertCategory -SqlInstance $env:instance2 -Category CategoryTest1
+            $results = New-DbaAgentAlertCategory -SqlInstance $global:instance2 -Category CategoryTest1
             $results.Name | Should -Be "CategoryTest1"
         }
 
         It "Should have the right name and category type" {
-            $results = New-DbaAgentAlertCategory -SqlInstance $env:instance2 -Category CategoryTest2
+            $results = New-DbaAgentAlertCategory -SqlInstance $global:instance2 -Category CategoryTest2
             $results.Name | Should -Be "CategoryTest2"
         }
 
         It "Should actually for sure exist" {
-            $newresults = Get-DbaAgentAlertCategory -SqlInstance $env:instance2 -Category CategoryTest1, CategoryTest2
+            $newresults = Get-DbaAgentAlertCategory -SqlInstance $global:instance2 -Category CategoryTest1, CategoryTest2
             $newresults[0].Name | Should -Be "CategoryTest1"
             $newresults[1].Name | Should -Be "CategoryTest2"
         }
 
         It "Should not write over existing job categories" {
             $warn = $null
-            $results = New-DbaAgentAlertCategory -SqlInstance $env:instance2 -Category CategoryTest1 -WarningAction SilentlyContinue -WarningVariable warn
+            $results = New-DbaAgentAlertCategory -SqlInstance $global:instance2 -Category CategoryTest1 -WarningAction SilentlyContinue -WarningVariable warn
             $warn | Should -Match "already exists"
         }
     }

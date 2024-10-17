@@ -44,14 +44,14 @@ Describe "Set-DbaMaxDop" {
             Mock Stop-Function { } -ModuleName dbatools
         }
         It "Should Call Stop-Function when -Database, -AllDatabases and -ExcludeDatabase are used together" {
-            Set-DbaMaxDop -SqlInstance $env:instance1 -MaxDop 12 -Database $singledb -AllDatabases -ExcludeDatabase "master"
+            Set-DbaMaxDop -SqlInstance $global:instance1 -MaxDop 12 -Database $singledb -AllDatabases -ExcludeDatabase "master"
             Should -Invoke Stop-Function -Exactly 1 -Scope It -ModuleName dbatools
         }
     }
 
     Context "Apply to multiple instances" {
         BeforeAll {
-            $results = Set-DbaMaxDop -SqlInstance $env:instance1, $env:instance2 -MaxDop 2
+            $results = Set-DbaMaxDop -SqlInstance $global:instance1, $global:instance2 -MaxDop 2
         }
         It 'Returns MaxDop 2 for each instance' {
             $results | ForEach-Object {
@@ -62,7 +62,7 @@ Describe "Set-DbaMaxDop" {
 
     Context "Connects to 2016+ instance and apply configuration to single database" {
         BeforeAll {
-            $results = Set-DbaMaxDop -SqlInstance $env:instance2 -MaxDop 4 -Database $singledb
+            $results = Set-DbaMaxDop -SqlInstance $global:instance2 -MaxDop 4 -Database $singledb
         }
         It 'Returns 4 for each database' {
             $results | ForEach-Object {
@@ -73,7 +73,7 @@ Describe "Set-DbaMaxDop" {
 
     Context "Connects to 2016+ instance and apply configuration to multiple databases" {
         BeforeAll {
-            $results = Set-DbaMaxDop -SqlInstance $env:instance2 -MaxDop 8 -Database $dbs
+            $results = Set-DbaMaxDop -SqlInstance $global:instance2 -MaxDop 8 -Database $dbs
         }
         It 'Returns 8 for each database' {
             $results | ForEach-Object {
@@ -84,8 +84,8 @@ Describe "Set-DbaMaxDop" {
 
     Context "Piping from Test-DbaMaxDop works" {
         BeforeAll {
-            $results = Test-DbaMaxDop -SqlInstance $env:instance2 | Set-DbaMaxDop -MaxDop 4
-            $server = Connect-DbaInstance -SqlInstance $env:instance2
+            $results = Test-DbaMaxDop -SqlInstance $global:instance2 | Set-DbaMaxDop -MaxDop 4
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
         }
         It 'Command returns output' {
             $results.CurrentInstanceMaxDop | Should -Not -BeNullOrEmpty
@@ -98,8 +98,8 @@ Describe "Set-DbaMaxDop" {
 
     Context "Piping SqlInstance name works" {
         BeforeAll {
-            $results = $env:instance2 | Set-DbaMaxDop -MaxDop 2
-            $server = Connect-DbaInstance -SqlInstance $env:instance2
+            $results = $global:instance2 | Set-DbaMaxDop -MaxDop 2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
         }
         It 'Command returns output' {
             $results.CurrentInstanceMaxDop | Should -Not -BeNullOrEmpty

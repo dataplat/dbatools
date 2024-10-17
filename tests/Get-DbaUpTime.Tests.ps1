@@ -27,7 +27,7 @@ Describe "Get-DbaUptime" {
 
     Context "Command actually works" {
         BeforeAll {
-            $results = Get-DbaUptime -SqlInstance $env:instance1
+            $results = Get-DbaUptime -SqlInstance $global:instance1
         }
         It "Should have correct properties" {
             $ExpectedProps = 'ComputerName', 'InstanceName', 'SqlServer', 'SqlUptime', 'WindowsUptime', 'SqlStartTime', 'WindowsBootTime', 'SinceSqlStart', 'SinceWindowsBoot'
@@ -37,7 +37,7 @@ Describe "Get-DbaUptime" {
 
     Context "Command can handle multiple SqlInstances" {
         BeforeAll {
-            $results = Get-DbaUptime -SqlInstance $env:instance1, $env:instance2
+            $results = Get-DbaUptime -SqlInstance $global:instance1, $global:instance2
         }
         It "Command resultset should contain 2 results" {
             $results.count | Should -Be 2
@@ -51,7 +51,7 @@ Describe "Get-DbaUptime" {
 
     Context "Properties should return expected types" {
         BeforeAll {
-            $results = Get-DbaUptime -SqlInstance $env:instance1
+            $results = Get-DbaUptime -SqlInstance $global:instance1
         }
         It "SqlStartTime should be a DbaDateTime" {
             $results.SqlStartTime | Should -BeOfType DbaDateTime

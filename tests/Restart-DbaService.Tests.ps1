@@ -40,11 +40,11 @@ Describe "Restart-DbaService" {
 
     Context "Command actually works" {
         BeforeAll {
-            $instanceName = (Connect-DbaInstance -SqlInstance $env:instance2).ServiceName
+            $instanceName = (Connect-DbaInstance -SqlInstance $global:instance2).ServiceName
         }
 
         It "restarts some services" {
-            $services = Restart-DbaService -ComputerName $env:instance2 -InstanceName $instanceName -Type Agent
+            $services = Restart-DbaService -ComputerName $global:instance2 -InstanceName $instanceName -Type Agent
             $services | Should -Not -BeNullOrEmpty
             foreach ($service in $services) {
                 $service.State | Should -Be 'Running'
@@ -53,7 +53,7 @@ Describe "Restart-DbaService" {
         }
 
         It "restarts some services through pipeline" {
-            $services = Get-DbaService -ComputerName $env:instance2 -InstanceName $instanceName -Type Agent, Engine | Restart-DbaService
+            $services = Get-DbaService -ComputerName $global:instance2 -InstanceName $instanceName -Type Agent, Engine | Restart-DbaService
             $services | Should -Not -BeNullOrEmpty
             foreach ($service in $services) {
                 $service.State | Should -Be 'Running'

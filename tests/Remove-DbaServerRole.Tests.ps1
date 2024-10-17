@@ -29,7 +29,7 @@ Describe "Remove-DbaServerRole Integration Tests" -Tag "IntegrationTests" {
     }
 
     BeforeAll {
-        $instance = Connect-DbaInstance -SqlInstance $env:instance2
+        $instance = Connect-DbaInstance -SqlInstance $global:instance2
         $roleExecutor = "serverExecuter"
         $null = New-DbaServerRole -SqlInstance $instance -ServerRole $roleExecutor
     }

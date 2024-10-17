@@ -28,18 +28,18 @@ Describe "Remove-DbaXESession" {
     Context "Integration Tests" -Tag "IntegrationTests" {
         BeforeAll {
             . "$PSScriptRoot\constants.ps1"
-            $null = Get-DbaXESession -SqlInstance $env:instance2 -Session 'Profiler TSQL Duration' | Remove-DbaXESession
+            $null = Get-DbaXESession -SqlInstance $global:instance2 -Session 'Profiler TSQL Duration' | Remove-DbaXESession
         }
         AfterAll {
-            $null = Get-DbaXESession -SqlInstance $env:instance2 -Session 'Profiler TSQL Duration' | Remove-DbaXESession
+            $null = Get-DbaXESession -SqlInstance $global:instance2 -Session 'Profiler TSQL Duration' | Remove-DbaXESession
         }
 
         It "Imports and removes a session template" {
-            $results = Import-DbaXESessionTemplate -SqlInstance $env:instance2 -Template 'Profiler TSQL Duration'
+            $results = Import-DbaXESessionTemplate -SqlInstance $global:instance2 -Template 'Profiler TSQL Duration'
             $results.Name | Should -Be 'Profiler TSQL Duration'
 
-            $null = Get-DbaXESession -SqlInstance $env:instance2 -Session 'Profiler TSQL Duration' | Remove-DbaXESession
-            $results = Get-DbaXESession -SqlInstance $env:instance2 -Session 'Profiler TSQL Duration'
+            $null = Get-DbaXESession -SqlInstance $global:instance2 -Session 'Profiler TSQL Duration' | Remove-DbaXESession
+            $results = Get-DbaXESession -SqlInstance $global:instance2 -Session 'Profiler TSQL Duration'
 
             $results.Name | Should -BeNullOrEmpty
             $results.Status | Should -BeNullOrEmpty

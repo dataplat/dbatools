@@ -6,19 +6,19 @@ Describe "Invoke-DbaDbDbccUpdateUsage" {
         Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
         . "$PSScriptRoot\constants.ps1"
 
-        $server = Connect-DbaInstance -SqlInstance $env:instance1
+        $server = Connect-DbaInstance -SqlInstance $global:instance1
         $random = Get-Random
         $tableName = "dbatools_getdbtbl1"
 
         $dbname = "dbatoolsci_getdbUsage$random"
-        $db = New-DbaDatabase -SqlInstance $env:instance1 -Name $dbname
+        $db = New-DbaDatabase -SqlInstance $global:instance1 -Name $dbname
         $null = $db.Query("CREATE TABLE $tableName (id int)", $dbname)
         $null = $db.Query("CREATE CLUSTERED INDEX [PK_Id] ON $tableName ([id] ASC)", $dbname)
         $null = $db.Query("INSERT $tableName(id) SELECT object_id FROM sys.objects", $dbname)
     }
 
     AfterAll {
-        $null = Get-DbaDatabase -SqlInstance $env:instance1 -Database $dbname | Remove-DbaDatabase -Confirm:$false
+        $null = Get-DbaDatabase -SqlInstance $global:instance1 -Database $dbname | Remove-DbaDatabase -Confirm:$false
     }
 
     Context "Validate parameters" {
@@ -53,7 +53,7 @@ Describe "Invoke-DbaDbDbccUpdateUsage" {
 
     Context "Validate standard output" {
         BeforeAll {
-            $result = Invoke-DbaDbDbccUpdateUsage -SqlInstance $env:instance1 -Confirm:$false
+            $result = Invoke-DbaDbDbccUpdateUsage -SqlInstance $global:instance1 -Confirm:$false
         }
 
         It "returns results" {
@@ -68,12 +68,12 @@ Describe "Invoke-DbaDbDbccUpdateUsage" {
 
     Context "Validate returns results" {
         It "returns results for table" {
-            $result = Invoke-DbaDbDbccUpdateUsage -SqlInstance $env:instance1 -Database $dbname -Table $tableName -Confirm:$false
+            $result = Invoke-DbaDbDbccUpdateUsage -SqlInstance $global:instance1 -Database $dbname -Table $tableName -Confirm:$false
             $result.Output | Should -Match 'DBCC execution completed. If DBCC printed error messages, contact your system administrator.'
         }
 
         It "returns results for index by id" {
-            $result = Invoke-DbaDbDbccUpdateUsage -SqlInstance $env:instance1 -Database $dbname -Table $tableName -Index 1 -Confirm:$false
+            $result = Invoke-DbaDbDbccUpdateUsage -SqlInstance $global:instance1 -Database $dbname -Table $tableName -Index 1 -Confirm:$false
             $result.Output | Should -Match 'DBCC execution completed. If DBCC printed error messages, contact your system administrator.'
         }
     }

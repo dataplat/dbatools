@@ -33,7 +33,7 @@ Describe "Remove-DbaDbBackupRestoreHistory" {
 
         BeforeAll {
             # Setup code for all tests in this context
-            $server = Connect-DbaInstance -SqlInstance $env:instance1
+            $server = Connect-DbaInstance -SqlInstance $global:instance1
             $randomDb = "dbatoolsci_$(Get-Random)"
             $null = New-DbaDatabase -SqlInstance $server -Name $randomDb
         }

@@ -33,9 +33,9 @@ Describe "Get-DbaTcpPort" {
 
     Context "Command actually works" {
         BeforeAll {
-            $results = Get-DbaTcpPort -SqlInstance $env:instance2
-            $resultsIpv6 = Get-DbaTcpPort -SqlInstance $env:instance2 -All -ExcludeIpv6
-            $resultsAll = Get-DbaTcpPort -SqlInstance $env:instance2 -All
+            $results = Get-DbaTcpPort -SqlInstance $global:instance2
+            $resultsIpv6 = Get-DbaTcpPort -SqlInstance $global:instance2 -All -ExcludeIpv6
+            $resultsAll = Get-DbaTcpPort -SqlInstance $global:instance2 -All
         }
 
         It "Should Return a Result" {

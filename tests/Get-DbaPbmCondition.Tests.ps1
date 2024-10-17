@@ -52,7 +52,7 @@ Describe "Get-DbaPbmCondition Integration Tests" -Tag "IntegrationTests" {
             SELECT @condition_id AS conditionId
 "@
 
-        $server = Connect-DbaInstance -SqlInstance $env:instance2
+        $server = Connect-DbaInstance -SqlInstance $global:instance2
         $conditionId = $server.Query($conditionQuery) | Select-Object -ExpandProperty conditionId
     }
 
@@ -63,24 +63,24 @@ Describe "Get-DbaPbmCondition Integration Tests" -Tag "IntegrationTests" {
 
     Context "Command returns results" {
         It "Should get results" {
-            $results = Get-DbaPbmCondition -SqlInstance $env:instance2
+            $results = Get-DbaPbmCondition -SqlInstance $global:instance2
             $results | Should -Not -BeNullOrEmpty
         }
 
         It "Should have name property '$conditionName'" {
-            $results = Get-DbaPbmCondition -SqlInstance $env:instance2
+            $results = Get-DbaPbmCondition -SqlInstance $global:instance2
             $results.Name | Should -Contain $conditionName
         }
     }
 
     Context "Command actually works by condition name" {
         It "Should get results" {
-            $results = Get-DbaPbmCondition -SqlInstance $env:instance2 -Condition $conditionName
+            $results = Get-DbaPbmCondition -SqlInstance $global:instance2 -Condition $conditionName
             $results | Should -Not -BeNullOrEmpty
         }
 
         It "Should have name property '$conditionName'" {
-            $results = Get-DbaPbmCondition -SqlInstance $env:instance2 -Condition $conditionName
+            $results = Get-DbaPbmCondition -SqlInstance $global:instance2 -Condition $conditionName
             $results.Name | Should -Be $conditionName
         }
     }

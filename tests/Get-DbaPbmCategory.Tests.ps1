@@ -33,7 +33,7 @@ Describe "Get-DbaPbmCategory" {
 
     Context "Command actually works" {
         BeforeAll {
-            $results = Get-DbaPbmCategory -SqlInstance $env:instance2
+            $results = Get-DbaPbmCategory -SqlInstance $global:instance2
         }
         It "Gets Results" {
             $results | Should -Not -BeNullOrEmpty
@@ -42,7 +42,7 @@ Describe "Get-DbaPbmCategory" {
 
     Context "Command actually works using -Category" {
         BeforeAll {
-            $results = Get-DbaPbmCategory -SqlInstance $env:instance2 -Category 'Availability database errors'
+            $results = Get-DbaPbmCategory -SqlInstance $global:instance2 -Category 'Availability database errors'
         }
         It "Gets Results" {
             $results | Should -Not -BeNullOrEmpty
@@ -51,7 +51,7 @@ Describe "Get-DbaPbmCategory" {
 
     Context "Command actually works using -ExcludeSystemObject" {
         BeforeAll {
-            $results = Get-DbaPbmCategory -SqlInstance $env:instance2 -ExcludeSystemObject
+            $results = Get-DbaPbmCategory -SqlInstance $global:instance2 -ExcludeSystemObject
         }
         It "Gets Results" {
             $results | Should -Not -BeNullOrEmpty

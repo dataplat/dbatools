@@ -24,7 +24,7 @@ Describe "Get-DbaRegServerStore" {
 
     Context "Components are properly retrieved" {
         It "Should return the right values" {
-            $results = Get-DbaRegServerStore -SqlInstance $env:instance2
+            $results = Get-DbaRegServerStore -SqlInstance $global:instance2
             $results.InstanceName | Should -Not -BeNullOrEmpty
             $results.DisplayName | Should -Be "Central Management Servers"
         }

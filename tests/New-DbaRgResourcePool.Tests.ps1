@@ -58,13 +58,13 @@ Describe "New-DbaRgResourcePool" {
 
     Context "Functionality" {
         BeforeAll {
-            $null = Set-DbaResourceGovernor -SqlInstance $env:instance2 -Enabled
+            $null = Set-DbaResourceGovernor -SqlInstance $global:instance2 -Enabled
         }
 
         It "Creates a resource pool" {
             $resourcePoolName = "dbatoolssci_poolTest"
             $splatNewResourcePool = @{
-                SqlInstance             = $env:instance2
+                SqlInstance             = $global:instance2
                 ResourcePool            = $resourcePoolName
                 MaximumCpuPercentage    = 100
                 MaximumMemoryPercentage = 100
@@ -72,9 +72,9 @@ Describe "New-DbaRgResourcePool" {
                 CapCpuPercentage        = 100
                 Force                   = $true
             }
-            $result = Get-DbaRgResourcePool -SqlInstance $env:instance2
+            $result = Get-DbaRgResourcePool -SqlInstance $global:instance2
             $newResourcePool = New-DbaRgResourcePool @splatNewResourcePool
-            $result2 = Get-DbaRgResourcePool -SqlInstance $env:instance2
+            $result2 = Get-DbaRgResourcePool -SqlInstance $global:instance2
 
             $result.Count | Should -BeLessThan $result2.Count
             $result2.Name | Should -Contain $resourcePoolName
@@ -84,7 +84,7 @@ Describe "New-DbaRgResourcePool" {
         It "Works using -Type Internal" {
             $resourcePoolName = "dbatoolssci_poolTest"
             $splatNewResourcePool = @{
-                SqlInstance             = $env:instance2
+                SqlInstance             = $global:instance2
                 ResourcePool            = $resourcePoolName
                 MaximumCpuPercentage    = 100
                 MaximumMemoryPercentage = 100
@@ -96,9 +96,9 @@ Describe "New-DbaRgResourcePool" {
                 Type                    = "Internal"
                 Force                   = $true
             }
-            $result = Get-DbaRgResourcePool -SqlInstance $env:instance2 -Type Internal
+            $result = Get-DbaRgResourcePool -SqlInstance $global:instance2 -Type Internal
             $newResourcePool = New-DbaRgResourcePool @splatNewResourcePool
-            $result2 = Get-DbaRgResourcePool -SqlInstance $env:instance2 -Type Internal
+            $result2 = Get-DbaRgResourcePool -SqlInstance $global:instance2 -Type Internal
 
             $result.Count | Should -BeLessThan $result2.Count
             $result2.Name | Should -Contain $resourcePoolName
@@ -114,7 +114,7 @@ Describe "New-DbaRgResourcePool" {
         It "Works using -Type External" {
             $resourcePoolName = "dbatoolssci_poolTest"
             $splatNewResourcePool = @{
-                SqlInstance             = $env:instance2
+                SqlInstance             = $global:instance2
                 ResourcePool            = $resourcePoolName
                 MaximumCpuPercentage    = 100
                 MaximumMemoryPercentage = 100
@@ -122,9 +122,9 @@ Describe "New-DbaRgResourcePool" {
                 Type                    = "External"
                 Force                   = $true
             }
-            $result = Get-DbaRgResourcePool -SqlInstance $env:instance2 -Type External
+            $result = Get-DbaRgResourcePool -SqlInstance $global:instance2 -Type External
             $newResourcePool = New-DbaRgResourcePool @splatNewResourcePool
-            $result2 = Get-DbaRgResourcePool -SqlInstance $env:instance2 -Type External
+            $result2 = Get-DbaRgResourcePool -SqlInstance $global:instance2 -Type External
 
             $result.Count | Should -BeLessThan $result2.Count
             $result2.Name | Should -Contain $resourcePoolName
@@ -136,7 +136,7 @@ Describe "New-DbaRgResourcePool" {
         It "Skips Resource Governor reconfiguration" {
             $resourcePoolName = "dbatoolssci_poolTest"
             $splatNewResourcePool = @{
-                SqlInstance             = $env:instance2
+                SqlInstance             = $global:instance2
                 ResourcePool            = $resourcePoolName
                 MaximumCpuPercentage    = 100
                 MaximumMemoryPercentage = 100
@@ -147,7 +147,7 @@ Describe "New-DbaRgResourcePool" {
             }
 
             $null = New-DbaRgResourcePool @splatNewResourcePool
-            $result = Get-DbaResourceGovernor -SqlInstance $env:instance2
+            $result = Get-DbaResourceGovernor -SqlInstance $global:instance2
 
             $result.ReconfigurePending | Should -BeTrue
         }
@@ -155,8 +155,8 @@ Describe "New-DbaRgResourcePool" {
         AfterEach {
             $resourcePoolName = "dbatoolssci_poolTest"
             $resourcePoolName2 = "dbatoolssci_poolTest2"
-            $null = Remove-DbaRgResourcePool -SqlInstance $env:instance2 -ResourcePool $resourcePoolName, $resourcePoolName2 -Type Internal
-            $null = Remove-DbaRgResourcePool -SqlInstance $env:instance2 -ResourcePool $resourcePoolName, $resourcePoolName2 -Type External
+            $null = Remove-DbaRgResourcePool -SqlInstance $global:instance2 -ResourcePool $resourcePoolName, $resourcePoolName2 -Type Internal
+            $null = Remove-DbaRgResourcePool -SqlInstance $global:instance2 -ResourcePool $resourcePoolName, $resourcePoolName2 -Type External
         }
     }
 }

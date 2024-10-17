@@ -28,11 +28,11 @@ Describe "Stop-DbaXESession" {
     Context "Command usage" {
         BeforeAll {
             . "$PSScriptRoot\constants.ps1"
-            $server = Connect-DbaInstance -SqlInstance $env:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $server.Query("CREATE EVENT SESSION [dbatoolsci_session_valid] ON SERVER ADD EVENT sqlserver.lock_acquired;")
-            $dbatoolsciValid = Get-DbaXESession -SqlInstance $env:instance2 -Session dbatoolsci_session_valid
+            $dbatoolsciValid = Get-DbaXESession -SqlInstance $global:instance2 -Session dbatoolsci_session_valid
             $dbatoolsciValid.Start()
-            $allSessions = Get-DbaXESession -SqlInstance $env:instance2
+            $allSessions = Get-DbaXESession -SqlInstance $global:instance2
         }
 
         BeforeEach {
@@ -56,7 +56,7 @@ Describe "Stop-DbaXESession" {
                 }
             }
 
-            $server = Connect-DbaInstance -SqlInstance $env:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $server.Query("IF EXISTS(SELECT * FROM sys.server_event_sessions WHERE name = 'dbatoolsci_session_valid') DROP EVENT SESSION [dbatoolsci_session_valid] ON SERVER;")
         }
 

@@ -37,15 +37,15 @@ Describe "Restore-DbaDbCertificate" {
     Context "Can create a database certificate" {
         BeforeAll {
             . "$PSScriptRoot\constants.ps1"
-            $masterkey = New-DbaDbMasterKey -SqlInstance $env:instance1 -Database tempdb -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
+            $masterkey = New-DbaDbMasterKey -SqlInstance $global:instance1 -Database tempdb -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
             $password = ConvertTo-SecureString -AsPlainText "GoodPass1234!!" -Force
-            $cert = New-DbaDbCertificate -SqlInstance $env:instance1 -Database tempdb -Confirm:$false
-            $backup = Backup-DbaDbCertificate -SqlInstance $env:instance1 -Certificate $cert.Name -Database tempdb -EncryptionPassword $password -Confirm:$false
+            $cert = New-DbaDbCertificate -SqlInstance $global:instance1 -Database tempdb -Confirm:$false
+            $backup = Backup-DbaDbCertificate -SqlInstance $global:instance1 -Certificate $cert.Name -Database tempdb -EncryptionPassword $password -Confirm:$false
             $cert | Remove-DbaDbCertificate -Confirm:$false
         }
 
         AfterEach {
-            $null = Remove-DbaDbCertificate -SqlInstance $env:instance1 -Certificate $cert.Name -Database tempdb -Confirm:$false
+            $null = Remove-DbaDbCertificate -SqlInstance $global:instance1 -Certificate $cert.Name -Database tempdb -Confirm:$false
         }
 
         AfterAll {
@@ -54,7 +54,7 @@ Describe "Restore-DbaDbCertificate" {
         }
 
         It "restores the db cert when passing in a .cer file" {
-            $results = Restore-DbaDbCertificate -SqlInstance $env:instance1 -Path $backup.ExportPath -Password $password -Database tempdb -EncryptionPassword $password -Confirm:$false
+            $results = Restore-DbaDbCertificate -SqlInstance $global:instance1 -Path $backup.ExportPath -Password $password -Database tempdb -EncryptionPassword $password -Confirm:$false
             $results.Parent.Name | Should -Be 'tempdb'
             $results.Name | Should -Not -BeNullOrEmpty
             $results.PrivateKeyEncryptionType | Should -Be "Password"
@@ -63,7 +63,7 @@ Describe "Restore-DbaDbCertificate" {
 
         It "restores the db cert when passing in a folder" {
             $folder = Split-Path $backup.ExportPath -Parent
-            $results = Restore-DbaDbCertificate -SqlInstance $env:instance1 -Path $folder -Password $password -Database tempdb -EncryptionPassword $password -Confirm:$false
+            $results = Restore-DbaDbCertificate -SqlInstance $global:instance1 -Path $folder -Password $password -Database tempdb -EncryptionPassword $password -Confirm:$false
             $results.Parent.Name | Should -Be 'tempdb'
             $results.Name | Should -Not -BeNullOrEmpty
             $results.PrivateKeyEncryptionType | Should -Be "Password"
@@ -72,7 +72,7 @@ Describe "Restore-DbaDbCertificate" {
 
         It "restores the db cert and encrypts with master key" {
             $folder = Split-Path $backup.ExportPath -Parent
-            $results = Restore-DbaDbCertificate -SqlInstance $env:instance1 -Path $folder -Password $password -Database tempdb -Confirm:$false
+            $results = Restore-DbaDbCertificate -SqlInstance $global:instance1 -Path $folder -Password $password -Database tempdb -Confirm:$false
             $results.Parent.Name | Should -Be 'tempdb'
             $results.Name | Should -Not -BeNullOrEmpty
             $results.PrivateKeyEncryptionType | Should -Be "MasterKey"

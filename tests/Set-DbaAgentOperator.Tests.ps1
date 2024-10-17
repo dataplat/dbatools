@@ -69,7 +69,7 @@ Describe "Set-DbaAgentOperator" {
 
     Context "Command usage" {
         BeforeAll {
-            $instance2 = Connect-DbaInstance -SqlInstance $env:instance2 -Database msdb
+            $instance2 = Connect-DbaInstance -SqlInstance $global:instance2 -Database msdb
             $instance2.Invoke("EXEC msdb.dbo.sp_add_operator @name=N'dbatools dba', @enabled=1, @pager_days=0")
         }
 

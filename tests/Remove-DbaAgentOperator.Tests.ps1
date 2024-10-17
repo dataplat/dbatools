@@ -71,7 +71,7 @@ Describe "Remove-DbaAgentOperator" {
 Describe "Remove-DbaAgentOperator Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $random = Get-Random
-        $instance2 = Connect-DbaInstance -SqlInstance $env:instance2
+        $instance2 = Connect-DbaInstance -SqlInstance $global:instance2
         $email1 = "test1$($random)@test.com"
         $email2 = "test2$($random)@test.com"
     }

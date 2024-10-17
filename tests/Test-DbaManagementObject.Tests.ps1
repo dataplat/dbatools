@@ -27,23 +27,23 @@ Describe "Test-DbaManagementObject" {
 
     Context "Command actually works" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $env:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $versionMajor = $server.VersionMajor
         }
 
         It "Should have correct properties" {
-            $trueResults = Test-DbaManagementObject -ComputerName $env:instance2 -VersionNumber $versionMajor
+            $trueResults = Test-DbaManagementObject -ComputerName $global:instance2 -VersionNumber $versionMajor
             $ExpectedProps = 'ComputerName', 'Version', 'Exists'
             ($trueResults[0].PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
         }
 
         It "Should return true for VersionNumber $versionMajor" {
-            $trueResults = Test-DbaManagementObject -ComputerName $env:instance2 -VersionNumber $versionMajor
+            $trueResults = Test-DbaManagementObject -ComputerName $global:instance2 -VersionNumber $versionMajor
             $trueResults.Exists | Should -Be $true
         }
 
         It "Should return false for VersionNumber -1" {
-            $falseResults = Test-DbaManagementObject -ComputerName $env:instance2 -VersionNumber -1
+            $falseResults = Test-DbaManagementObject -ComputerName $global:instance2 -VersionNumber -1
             $falseResults.Exists | Should -Be $false
         }
     }
