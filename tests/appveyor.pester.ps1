@@ -284,7 +284,7 @@ if (-not $Finalize) {
         }
     }
     
-	# Gather support package as an artifact
+    # Gather support package as an artifact
     # New-DbatoolsSupportPackage -Path $ModuleBase - turns out to be too heavy
     try {
         $msgFile = "$ModuleBase\dbatools_messages.xml"
