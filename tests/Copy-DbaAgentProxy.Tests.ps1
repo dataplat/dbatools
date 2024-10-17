@@ -1,4 +1,5 @@
 param($ModuleName = 'dbatools')
+. "$PSScriptRoot\constants.ps1"
 
 Describe "Copy-DbaAgentProxy" {
     Context "Validate parameters" {
@@ -33,9 +34,6 @@ Describe "Copy-DbaAgentProxy" {
 }
 
 Describe "Copy-DbaAgentProxy Integration Tests" -Tag "IntegrationTests" {
-    BeforeDiscovery {
-        . "$PSScriptRoot\constants.ps1"
-    }
 
     BeforeAll {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
