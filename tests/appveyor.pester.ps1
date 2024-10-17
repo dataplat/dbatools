@@ -207,7 +207,8 @@ if (-not $Finalize) {
         $PesterConfig = New-PesterConfiguration
         $PesterConfig.Run.Path = $f.FullName
         $PesterConfig.Run.PassThru = $true
-        $PesterConfig.Output.Verbosity = 'None'
+        $PesterConfig.Run.ShowFullOutput = $true
+        $PesterConfig.Output.Verbosity = 'Normal'
 
         if ($IncludeCoverage) {
             $CoverFiles = Get-CoverageIndications -Path $f -ModuleBase $ModuleBase
