@@ -6,13 +6,13 @@ Describe "Copy-DbaXESessionTemplate" {
             $CommandUnderTest = Get-Command Copy-DbaXESessionTemplate
         }
         It "Should have Path as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter Path -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Path -Type String[] -Mandatory:$false
         }
         It "Should have Destination as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter Destination -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Destination -Type String -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

@@ -12,34 +12,34 @@ Describe "Get-DbaProcess" {
             $CommandUnderTest = Get-Command Get-DbaProcess
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Spid as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Spid -Type Int32[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Spid -Type Int32[] -Mandatory:$false
         }
         It "Should have ExcludeSpid as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSpid -Type Int32[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeSpid -Type Int32[] -Mandatory:$false
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Mandatory:$false
         }
         It "Should have Login as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Login -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Login -Type String[] -Mandatory:$false
         }
         It "Should have Hostname as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Hostname -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Hostname -Type String[] -Mandatory:$false
         }
         It "Should have Program as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Program -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Program -Type String[] -Mandatory:$false
         }
         It "Should have ExcludeSystemSpids as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSystemSpids -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeSystemSpids -Type Switch -Mandatory:$false
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

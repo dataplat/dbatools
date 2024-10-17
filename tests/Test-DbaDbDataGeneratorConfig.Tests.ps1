@@ -11,10 +11,10 @@ Describe "Test-DbaDbDataGeneratorConfig" {
             $CommandUnderTest = Get-Command Test-DbaDbDataGeneratorConfig
         }
         It "Should have FilePath as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter FilePath -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter FilePath -Type String -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

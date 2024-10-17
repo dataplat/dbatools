@@ -12,18 +12,18 @@ Describe "Get-DbaConnectedInstance" {
             $CommandUnderTest = Get-Command Get-DbaConnectedInstance
         }
         It "Should have the expected parameters" {
-            $CommandUnderTest | Should -HaveParameter Verbose -Type switch -Not -Mandatory
-            $CommandUnderTest | Should -HaveParameter Debug -Type switch -Not -Mandatory
-            $CommandUnderTest | Should -HaveParameter ErrorAction -Type ActionPreference -Not -Mandatory
-            $CommandUnderTest | Should -HaveParameter WarningAction -Type ActionPreference -Not -Mandatory
-            $CommandUnderTest | Should -HaveParameter InformationAction -Type ActionPreference -Not -Mandatory
-            $CommandUnderTest | Should -HaveParameter ProgressAction -Type ActionPreference -Not -Mandatory
-            $CommandUnderTest | Should -HaveParameter ErrorVariable -Type string -Not -Mandatory
-            $CommandUnderTest | Should -HaveParameter WarningVariable -Type string -Not -Mandatory
-            $CommandUnderTest | Should -HaveParameter InformationVariable -Type string -Not -Mandatory
-            $CommandUnderTest | Should -HaveParameter OutVariable -Type string -Not -Mandatory
-            $CommandUnderTest | Should -HaveParameter OutBuffer -Type int -Not -Mandatory
-            $CommandUnderTest | Should -HaveParameter PipelineVariable -Type string -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Verbose -Type switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Debug -Type switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ErrorAction -Type ActionPreference -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter WarningAction -Type ActionPreference -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InformationAction -Type ActionPreference -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ProgressAction -Type ActionPreference -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ErrorVariable -Type string -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter WarningVariable -Type string -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InformationVariable -Type string -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter OutVariable -Type string -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter OutBuffer -Type int -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter PipelineVariable -Type string -Mandatory:$false
         }
     }
 

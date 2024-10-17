@@ -6,67 +6,67 @@ Describe "Get-DbaDbBackupHistory Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Get-DbaDbBackupHistory
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Mandatory:$false
         }
         It "Should have ExcludeDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Mandatory:$false
         }
         It "Should have IncludeCopyOnly as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeCopyOnly -Type switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter IncludeCopyOnly -Type switch -Mandatory:$false
         }
         It "Should have Force as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Force -Type switch -Mandatory:$false
         }
         It "Should have Since as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Since -Type PSObject -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Since -Type PSObject -Mandatory:$false
         }
         It "Should have RecoveryFork as a parameter" {
-            $CommandUnderTest | Should -HaveParameter RecoveryFork -Type string -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter RecoveryFork -Type string -Mandatory:$false
         }
         It "Should have Last as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Last -Type switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Last -Type switch -Mandatory:$false
         }
         It "Should have LastFull as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter LastFull -Type switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter LastFull -Type switch -Mandatory:$false
         }
         It "Should have LastDiff as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter LastDiff -Type switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter LastDiff -Type switch -Mandatory:$false
         }
         It "Should have LastLog as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter LastLog -Type switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter LastLog -Type switch -Mandatory:$false
         }
         It "Should have DeviceType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DeviceType -Type string[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter DeviceType -Type string[] -Mandatory:$false
         }
         It "Should have Raw as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Raw -Type switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Raw -Type switch -Mandatory:$false
         }
         It "Should have LastLsn as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LastLsn -Type BigInteger -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter LastLsn -Type BigInteger -Mandatory:$false
         }
         It "Should have IncludeMirror as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeMirror -Type switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter IncludeMirror -Type switch -Mandatory:$false
         }
         It "Should have Type as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Type -Type string[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Type -Type string[] -Mandatory:$false
         }
         It "Should have AgCheck as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter AgCheck -Type switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter AgCheck -Type switch -Mandatory:$false
         }
         It "Should have IgnoreDiffBackup as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IgnoreDiffBackup -Type switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter IgnoreDiffBackup -Type switch -Mandatory:$false
         }
         It "Should have LsnSort as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LsnSort -Type string -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter LsnSort -Type string -Mandatory:$false
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type switch -Mandatory:$false
         }
     }
 }

@@ -12,13 +12,13 @@ Describe "ConvertTo-DbaTimeline" {
             $CommandUnderTest = Get-Command ConvertTo-DbaTimeline
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Mandatory:$false
         }
         It "Should have ExcludeRowLabel as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeRowLabel -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeRowLabel -Type Switch -Mandatory:$false
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

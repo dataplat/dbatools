@@ -11,13 +11,13 @@ Describe "Get-DirectoryRestoreFile" {
             $CommandUnderTest = Get-Command Get-DirectoryRestoreFile
         }
         It "Should have Path as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Path -Type String -Mandatory:$false
         }
         It "Should have Recurse as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter Recurse -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Recurse -Type Switch -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

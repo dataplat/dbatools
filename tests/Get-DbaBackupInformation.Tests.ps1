@@ -59,58 +59,58 @@ Describe "Get-DbaBackupInformation" {
             $CommandUnderTest = Get-Command Get-DbaBackupInformation
         }
         It "Should have Path parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type Object[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Path -Type Object[] -Mandatory:$false
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have DatabaseName parameter" {
-            $CommandUnderTest | Should -HaveParameter DatabaseName -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter DatabaseName -Type String[] -Mandatory:$false
         }
         It "Should have SourceInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SourceInstance -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SourceInstance -Type String[] -Mandatory:$false
         }
         It "Should have NoXpDirTree parameter" {
-            $CommandUnderTest | Should -HaveParameter NoXpDirTree -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NoXpDirTree -Type Switch -Mandatory:$false
         }
         It "Should have NoXpDirRecurse parameter" {
-            $CommandUnderTest | Should -HaveParameter NoXpDirRecurse -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NoXpDirRecurse -Type Switch -Mandatory:$false
         }
         It "Should have DirectoryRecurse parameter" {
-            $CommandUnderTest | Should -HaveParameter DirectoryRecurse -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter DirectoryRecurse -Type Switch -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
         It "Should have MaintenanceSolution parameter" {
-            $CommandUnderTest | Should -HaveParameter MaintenanceSolution -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter MaintenanceSolution -Type Switch -Mandatory:$false
         }
         It "Should have IgnoreLogBackup parameter" {
-            $CommandUnderTest | Should -HaveParameter IgnoreLogBackup -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter IgnoreLogBackup -Type Switch -Mandatory:$false
         }
         It "Should have IgnoreDiffBackup parameter" {
-            $CommandUnderTest | Should -HaveParameter IgnoreDiffBackup -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter IgnoreDiffBackup -Type Switch -Mandatory:$false
         }
         It "Should have ExportPath parameter" {
-            $CommandUnderTest | Should -HaveParameter ExportPath -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExportPath -Type String -Mandatory:$false
         }
         It "Should have AzureCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter AzureCredential -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter AzureCredential -Type String -Mandatory:$false
         }
         It "Should have Import parameter" {
-            $CommandUnderTest | Should -HaveParameter Import -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Import -Type Switch -Mandatory:$false
         }
         It "Should have Anonymise parameter" {
-            $CommandUnderTest | Should -HaveParameter Anonymise -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Anonymise -Type Switch -Mandatory:$false
         }
         It "Should have NoClobber parameter" {
-            $CommandUnderTest | Should -HaveParameter NoClobber -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NoClobber -Type Switch -Mandatory:$false
         }
         It "Should have PassThru parameter" {
-            $CommandUnderTest | Should -HaveParameter PassThru -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter PassThru -Type Switch -Mandatory:$false
         }
     }
 

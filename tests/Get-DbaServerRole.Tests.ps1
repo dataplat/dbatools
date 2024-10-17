@@ -10,22 +10,22 @@ Describe "Get-DbaServerRole" {
             $CommandUnderTest = Get-Command Get-DbaServerRole
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have ServerRole parameter" {
-            $CommandUnderTest | Should -HaveParameter ServerRole -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ServerRole -Type String[] -Mandatory:$false
         }
         It "Should have ExcludeServerRole parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeServerRole -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeServerRole -Type String[] -Mandatory:$false
         }
         It "Should have ExcludeFixedRole parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeFixedRole -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeFixedRole -Type Switch -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

@@ -10,37 +10,37 @@ Describe "Get-DbatoolsLog" {
             $CommandUnderTest = Get-Command Get-DbatoolsLog
         }
         It "Should have FunctionName as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter FunctionName -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter FunctionName -Type String -Mandatory:$false
         }
         It "Should have ModuleName as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter ModuleName -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ModuleName -Type String -Mandatory:$false
         }
         It "Should have Target as a non-mandatory Object parameter" {
-            $CommandUnderTest | Should -HaveParameter Target -Type Object -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Target -Type Object -Mandatory:$false
         }
         It "Should have Tag as a non-mandatory String[] parameter" {
-            $CommandUnderTest | Should -HaveParameter Tag -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Tag -Type String[] -Mandatory:$false
         }
         It "Should have Last as a non-mandatory Int32 parameter" {
-            $CommandUnderTest | Should -HaveParameter Last -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Last -Type Int32 -Mandatory:$false
         }
         It "Should have LastError as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter LastError -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter LastError -Type Switch -Mandatory:$false
         }
         It "Should have Skip as a non-mandatory Int32 parameter" {
-            $CommandUnderTest | Should -HaveParameter Skip -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Skip -Type Int32 -Mandatory:$false
         }
         It "Should have Runspace as a non-mandatory Guid parameter" {
-            $CommandUnderTest | Should -HaveParameter Runspace -Type Guid -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Runspace -Type Guid -Mandatory:$false
         }
         It "Should have Level as a non-mandatory MessageLevel[] parameter" {
-            $CommandUnderTest | Should -HaveParameter Level -Type MessageLevel[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Level -Type MessageLevel[] -Mandatory:$false
         }
         It "Should have Raw as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter Raw -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Raw -Type Switch -Mandatory:$false
         }
         It "Should have Errors as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter Errors -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Errors -Type Switch -Mandatory:$false
         }
     }
 

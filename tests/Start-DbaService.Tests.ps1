@@ -10,28 +10,28 @@ Describe "Start-DbaService" {
             $CommandUnderTest = Get-Command Start-DbaService
         }
         It "Should have ComputerName parameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have InstanceName parameter" {
-            $CommandUnderTest | Should -HaveParameter InstanceName -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter InstanceName -Type String[] -Mandatory:$false
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have Type parameter" {
-            $CommandUnderTest | Should -HaveParameter Type -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Type -Type String[] -Mandatory:$false
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Mandatory:$false
         }
         It "Should have Timeout parameter" {
-            $CommandUnderTest | Should -HaveParameter Timeout -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Timeout -Type Int32 -Mandatory:$false
         }
         It "Should have Credential parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

@@ -26,34 +26,34 @@ Describe "New-DbaDbDataGeneratorConfig" {
             $CommandUnderTest = Get-Command New-DbaDbDataGeneratorConfig
         }
         It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Database as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Mandatory:$false
         }
         It "Should have Table as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter Table -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Table -Type String[] -Mandatory:$false
         }
         It "Should have ResetIdentity as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ResetIdentity -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ResetIdentity -Type Switch -Mandatory:$false
         }
         It "Should have TruncateTable as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter TruncateTable -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter TruncateTable -Type Switch -Mandatory:$false
         }
         It "Should have Rows as a non-mandatory parameter of type Int32" {
-            $CommandUnderTest | Should -HaveParameter Rows -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Rows -Type Int32 -Mandatory:$false
         }
         It "Should have Path as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter Path -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Path -Type String -Mandatory:$false
         }
         It "Should have Force as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

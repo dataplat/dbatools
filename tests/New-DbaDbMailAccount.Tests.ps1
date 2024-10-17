@@ -6,34 +6,34 @@ Describe "New-DbaDbMailAccount" {
             $CommandUnderTest = Get-Command New-DbaDbMailAccount
         }
         It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Account as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter Account -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Account -Type String -Mandatory:$false
         }
         It "Should have DisplayName as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter DisplayName -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter DisplayName -Type String -Mandatory:$false
         }
         It "Should have Description as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter Description -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Description -Type String -Mandatory:$false
         }
         It "Should have EmailAddress as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter EmailAddress -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EmailAddress -Type String -Mandatory:$false
         }
         It "Should have ReplyToAddress as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter ReplyToAddress -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ReplyToAddress -Type String -Mandatory:$false
         }
         It "Should have MailServer as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter MailServer -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter MailServer -Type String -Mandatory:$false
         }
         It "Should have Force as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

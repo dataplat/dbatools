@@ -10,46 +10,46 @@ Describe "Set-DbaRgWorkloadGroup" {
             $CommandUnderTest = Get-Command Set-DbaRgWorkloadGroup
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have WorkloadGroup parameter" {
-            $CommandUnderTest | Should -HaveParameter WorkloadGroup -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter WorkloadGroup -Type String[] -Mandatory:$false
         }
         It "Should have ResourcePool parameter" {
-            $CommandUnderTest | Should -HaveParameter ResourcePool -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ResourcePool -Type String -Mandatory:$false
         }
         It "Should have ResourcePoolType parameter" {
-            $CommandUnderTest | Should -HaveParameter ResourcePoolType -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ResourcePoolType -Type String -Mandatory:$false
         }
         It "Should have Importance parameter" {
-            $CommandUnderTest | Should -HaveParameter Importance -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Importance -Type String -Mandatory:$false
         }
         It "Should have RequestMaximumMemoryGrantPercentage parameter" {
-            $CommandUnderTest | Should -HaveParameter RequestMaximumMemoryGrantPercentage -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter RequestMaximumMemoryGrantPercentage -Type Int32 -Mandatory:$false
         }
         It "Should have RequestMaximumCpuTimeInSeconds parameter" {
-            $CommandUnderTest | Should -HaveParameter RequestMaximumCpuTimeInSeconds -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter RequestMaximumCpuTimeInSeconds -Type Int32 -Mandatory:$false
         }
         It "Should have RequestMemoryGrantTimeoutInSeconds parameter" {
-            $CommandUnderTest | Should -HaveParameter RequestMemoryGrantTimeoutInSeconds -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter RequestMemoryGrantTimeoutInSeconds -Type Int32 -Mandatory:$false
         }
         It "Should have MaximumDegreeOfParallelism parameter" {
-            $CommandUnderTest | Should -HaveParameter MaximumDegreeOfParallelism -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter MaximumDegreeOfParallelism -Type Int32 -Mandatory:$false
         }
         It "Should have GroupMaximumRequests parameter" {
-            $CommandUnderTest | Should -HaveParameter GroupMaximumRequests -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter GroupMaximumRequests -Type Int32 -Mandatory:$false
         }
         It "Should have SkipReconfigure parameter" {
-            $CommandUnderTest | Should -HaveParameter SkipReconfigure -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SkipReconfigure -Type Switch -Mandatory:$false
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type WorkloadGroup[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter InputObject -Type WorkloadGroup[] -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

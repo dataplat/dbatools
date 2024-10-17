@@ -9,25 +9,25 @@ Describe "Remove-DbaDbLogShipping Unit Tests" -Tag "UnitTests" {
             $CommandUnderTest = Get-Command Remove-DbaDbLogShipping
         }
         It "Should have PrimarySqlInstance as a non-mandatory DbaInstanceParameter" {
-            $CommandUnderTest | Should -HaveParameter PrimarySqlInstance -Type DbaInstanceParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter PrimarySqlInstance -Type DbaInstanceParameter -Mandatory:$false
         }
         It "Should have SecondarySqlInstance as a non-mandatory DbaInstanceParameter" {
-            $CommandUnderTest | Should -HaveParameter SecondarySqlInstance -Type DbaInstanceParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SecondarySqlInstance -Type DbaInstanceParameter -Mandatory:$false
         }
         It "Should have PrimarySqlCredential as a non-mandatory PSCredential" {
-            $CommandUnderTest | Should -HaveParameter PrimarySqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter PrimarySqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have SecondarySqlCredential as a non-mandatory PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SecondarySqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SecondarySqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Database as a non-mandatory Object[]" {
-            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Mandatory:$false
         }
         It "Should have RemoveSecondaryDatabase as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter RemoveSecondaryDatabase -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter RemoveSecondaryDatabase -Type Switch -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 }

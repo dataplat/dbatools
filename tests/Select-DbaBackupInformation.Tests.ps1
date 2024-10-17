@@ -12,31 +12,31 @@ Describe "Select-DbaBackupInformation" {
             $CommandUnderTest = Get-Command Select-DbaBackupInformation
         }
         It "Should have BackupHistory as a non-mandatory parameter of type Object" {
-            $CommandUnderTest | Should -HaveParameter BackupHistory -Type Object -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter BackupHistory -Type Object -Mandatory:$false
         }
         It "Should have RestoreTime as a non-mandatory parameter of type DateTime" {
-            $CommandUnderTest | Should -HaveParameter RestoreTime -Type DateTime -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter RestoreTime -Type DateTime -Mandatory:$false
         }
         It "Should have IgnoreLogs as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IgnoreLogs -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter IgnoreLogs -Type Switch -Mandatory:$false
         }
         It "Should have IgnoreDiffs as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IgnoreDiffs -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter IgnoreDiffs -Type Switch -Mandatory:$false
         }
         It "Should have DatabaseName as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter DatabaseName -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter DatabaseName -Type String[] -Mandatory:$false
         }
         It "Should have ServerName as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter ServerName -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ServerName -Type String[] -Mandatory:$false
         }
         It "Should have ContinuePoints as a non-mandatory parameter of type Object" {
-            $CommandUnderTest | Should -HaveParameter ContinuePoints -Type Object -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ContinuePoints -Type Object -Mandatory:$false
         }
         It "Should have LastRestoreType as a non-mandatory parameter of type Object" {
-            $CommandUnderTest | Should -HaveParameter LastRestoreType -Type Object -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter LastRestoreType -Type Object -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

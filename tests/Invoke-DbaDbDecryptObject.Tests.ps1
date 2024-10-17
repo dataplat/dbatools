@@ -12,25 +12,25 @@ Describe "Invoke-DbaDbDecryptObject Unit Tests" -Tag 'UnitTests' {
             $command = Get-Command -Name $CommandName
         }
         It "Should have SqlInstance parameter" {
-            $command | Should -HaveParameter SqlInstance -Type DbaInstanceParameter -Not -Mandatory
+            $command | Should -HaveParameter SqlInstance -Type DbaInstanceParameter -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $command | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $command | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Database parameter" {
-            $command | Should -HaveParameter Database -Type Object[] -Not -Mandatory
+            $command | Should -HaveParameter Database -Type Object[] -Mandatory:$false
         }
         It "Should have ObjectName parameter" {
-            $command | Should -HaveParameter ObjectName -Type String[] -Not -Mandatory
+            $command | Should -HaveParameter ObjectName -Type String[] -Mandatory:$false
         }
         It "Should have EncodingType parameter" {
-            $command | Should -HaveParameter EncodingType -Type String -Not -Mandatory
+            $command | Should -HaveParameter EncodingType -Type String -Mandatory:$false
         }
         It "Should have ExportDestination parameter" {
-            $command | Should -HaveParameter ExportDestination -Type String -Not -Mandatory
+            $command | Should -HaveParameter ExportDestination -Type String -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $command | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $command | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 }

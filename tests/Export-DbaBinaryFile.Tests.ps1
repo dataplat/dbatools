@@ -12,40 +12,40 @@ Describe "Export-DbaBinaryFile" {
             $CommandUnderTest = Get-Command Export-DbaBinaryFile
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Mandatory:$false
         }
         It "Should have Table as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Table -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Table -Type String[] -Mandatory:$false
         }
         It "Should have Schema as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Schema -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Schema -Type String[] -Mandatory:$false
         }
         It "Should have FileNameColumn as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FileNameColumn -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter FileNameColumn -Type String -Mandatory:$false
         }
         It "Should have BinaryColumn as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BinaryColumn -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter BinaryColumn -Type String -Mandatory:$false
         }
         It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Path -Type String -Mandatory:$false
         }
         It "Should have Query as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Query -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Query -Type String -Mandatory:$false
         }
         It "Should have FilePath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FilePath -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter FilePath -Type String -Mandatory:$false
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Table[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Table[] -Mandatory:$false
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

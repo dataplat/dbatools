@@ -29,109 +29,109 @@ Describe "Install-DbaInstance" {
             $command = Get-Command -Name Install-DbaInstance
         }
         It "Should have SqlInstance parameter" {
-            $command | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $command | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have Version parameter" {
-            $command | Should -HaveParameter Version -Type String -Not -Mandatory
+            $command | Should -HaveParameter Version -Type String -Mandatory:$false
         }
         It "Should have InstanceName parameter" {
-            $command | Should -HaveParameter InstanceName -Type String -Not -Mandatory
+            $command | Should -HaveParameter InstanceName -Type String -Mandatory:$false
         }
         It "Should have SaCredential parameter" {
-            $command | Should -HaveParameter SaCredential -Type PSCredential -Not -Mandatory
+            $command | Should -HaveParameter SaCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Credential parameter" {
-            $command | Should -HaveParameter Credential -Type PSCredential -Not -Mandatory
+            $command | Should -HaveParameter Credential -Type PSCredential -Mandatory:$false
         }
         It "Should have Authentication parameter" {
-            $command | Should -HaveParameter Authentication -Type String -Not -Mandatory
+            $command | Should -HaveParameter Authentication -Type String -Mandatory:$false
         }
         It "Should have ConfigurationFile parameter" {
-            $command | Should -HaveParameter ConfigurationFile -Type Object -Not -Mandatory
+            $command | Should -HaveParameter ConfigurationFile -Type Object -Mandatory:$false
         }
         It "Should have Configuration parameter" {
-            $command | Should -HaveParameter Configuration -Type Hashtable -Not -Mandatory
+            $command | Should -HaveParameter Configuration -Type Hashtable -Mandatory:$false
         }
         It "Should have Path parameter" {
-            $command | Should -HaveParameter Path -Type String[] -Not -Mandatory
+            $command | Should -HaveParameter Path -Type String[] -Mandatory:$false
         }
         It "Should have Feature parameter" {
-            $command | Should -HaveParameter Feature -Type String[] -Not -Mandatory
+            $command | Should -HaveParameter Feature -Type String[] -Mandatory:$false
         }
         It "Should have AuthenticationMode parameter" {
-            $command | Should -HaveParameter AuthenticationMode -Type String -Not -Mandatory
+            $command | Should -HaveParameter AuthenticationMode -Type String -Mandatory:$false
         }
         It "Should have InstancePath parameter" {
-            $command | Should -HaveParameter InstancePath -Type String -Not -Mandatory
+            $command | Should -HaveParameter InstancePath -Type String -Mandatory:$false
         }
         It "Should have DataPath parameter" {
-            $command | Should -HaveParameter DataPath -Type String -Not -Mandatory
+            $command | Should -HaveParameter DataPath -Type String -Mandatory:$false
         }
         It "Should have LogPath parameter" {
-            $command | Should -HaveParameter LogPath -Type String -Not -Mandatory
+            $command | Should -HaveParameter LogPath -Type String -Mandatory:$false
         }
         It "Should have TempPath parameter" {
-            $command | Should -HaveParameter TempPath -Type String -Not -Mandatory
+            $command | Should -HaveParameter TempPath -Type String -Mandatory:$false
         }
         It "Should have BackupPath parameter" {
-            $command | Should -HaveParameter BackupPath -Type String -Not -Mandatory
+            $command | Should -HaveParameter BackupPath -Type String -Mandatory:$false
         }
         It "Should have UpdateSourcePath parameter" {
-            $command | Should -HaveParameter UpdateSourcePath -Type String -Not -Mandatory
+            $command | Should -HaveParameter UpdateSourcePath -Type String -Mandatory:$false
         }
         It "Should have AdminAccount parameter" {
-            $command | Should -HaveParameter AdminAccount -Type String[] -Not -Mandatory
+            $command | Should -HaveParameter AdminAccount -Type String[] -Mandatory:$false
         }
         It "Should have Port parameter" {
-            $command | Should -HaveParameter Port -Type Int32 -Not -Mandatory
+            $command | Should -HaveParameter Port -Type Int32 -Mandatory:$false
         }
         It "Should have Throttle parameter" {
-            $command | Should -HaveParameter Throttle -Type Int32 -Not -Mandatory
+            $command | Should -HaveParameter Throttle -Type Int32 -Mandatory:$false
         }
         It "Should have ProductID parameter" {
-            $command | Should -HaveParameter ProductID -Type String -Not -Mandatory
+            $command | Should -HaveParameter ProductID -Type String -Mandatory:$false
         }
         It "Should have AsCollation parameter" {
-            $command | Should -HaveParameter AsCollation -Type String -Not -Mandatory
+            $command | Should -HaveParameter AsCollation -Type String -Mandatory:$false
         }
         It "Should have SqlCollation parameter" {
-            $command | Should -HaveParameter SqlCollation -Type String -Not -Mandatory
+            $command | Should -HaveParameter SqlCollation -Type String -Mandatory:$false
         }
         It "Should have EngineCredential parameter" {
-            $command | Should -HaveParameter EngineCredential -Type PSCredential -Not -Mandatory
+            $command | Should -HaveParameter EngineCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have AgentCredential parameter" {
-            $command | Should -HaveParameter AgentCredential -Type PSCredential -Not -Mandatory
+            $command | Should -HaveParameter AgentCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have ASCredential parameter" {
-            $command | Should -HaveParameter ASCredential -Type PSCredential -Not -Mandatory
+            $command | Should -HaveParameter ASCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have ISCredential parameter" {
-            $command | Should -HaveParameter ISCredential -Type PSCredential -Not -Mandatory
+            $command | Should -HaveParameter ISCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have RSCredential parameter" {
-            $command | Should -HaveParameter RSCredential -Type PSCredential -Not -Mandatory
+            $command | Should -HaveParameter RSCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have FTCredential parameter" {
-            $command | Should -HaveParameter FTCredential -Type PSCredential -Not -Mandatory
+            $command | Should -HaveParameter FTCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have PBEngineCredential parameter" {
-            $command | Should -HaveParameter PBEngineCredential -Type PSCredential -Not -Mandatory
+            $command | Should -HaveParameter PBEngineCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have SaveConfiguration parameter" {
-            $command | Should -HaveParameter SaveConfiguration -Type String -Not -Mandatory
+            $command | Should -HaveParameter SaveConfiguration -Type String -Mandatory:$false
         }
         It "Should have PerformVolumeMaintenanceTasks parameter" {
-            $command | Should -HaveParameter PerformVolumeMaintenanceTasks -Type Switch -Not -Mandatory
+            $command | Should -HaveParameter PerformVolumeMaintenanceTasks -Type Switch -Mandatory:$false
         }
         It "Should have Restart parameter" {
-            $command | Should -HaveParameter Restart -Type Switch -Not -Mandatory
+            $command | Should -HaveParameter Restart -Type Switch -Mandatory:$false
         }
         It "Should have NoPendingRenameCheck parameter" {
-            $command | Should -HaveParameter NoPendingRenameCheck -Type Switch -Not -Mandatory
+            $command | Should -HaveParameter NoPendingRenameCheck -Type Switch -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $command | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $command | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

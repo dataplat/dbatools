@@ -6,19 +6,19 @@ Describe "New-DbaDacOption" {
             $CommandUnderTest = Get-Command New-DbaDacOption
         }
         It "Should have Type as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Type -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Type -Type String -Mandatory:$false
         }
         It "Should have Action as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Action -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Action -Type String -Mandatory:$false
         }
         It "Should have PublishXml as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter PublishXml -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter PublishXml -Type String -Mandatory:$false
         }
         It "Should have Property as a non-mandatory Hashtable parameter" {
-            $CommandUnderTest | Should -HaveParameter Property -Type Hashtable -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Property -Type Hashtable -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

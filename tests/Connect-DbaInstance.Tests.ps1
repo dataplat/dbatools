@@ -10,100 +10,100 @@ Describe "Connect-DbaInstance" {
             $CommandUnderTest = Get-Command Connect-DbaInstance
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Database -Type String -Mandatory:$false
         }
         It "Should have ApplicationIntent as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ApplicationIntent -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ApplicationIntent -Type String -Mandatory:$false
         }
         It "Should have AzureUnsupported as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AzureUnsupported -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter AzureUnsupported -Type Switch -Mandatory:$false
         }
         It "Should have BatchSeparator as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BatchSeparator -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter BatchSeparator -Type String -Mandatory:$false
         }
         It "Should have ClientName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ClientName -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ClientName -Type String -Mandatory:$false
         }
         It "Should have ConnectTimeout as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ConnectTimeout -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ConnectTimeout -Type Int32 -Mandatory:$false
         }
         It "Should have EncryptConnection as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EncryptConnection -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EncryptConnection -Type Switch -Mandatory:$false
         }
         It "Should have FailoverPartner as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FailoverPartner -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter FailoverPartner -Type String -Mandatory:$false
         }
         It "Should have LockTimeout as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LockTimeout -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter LockTimeout -Type Int32 -Mandatory:$false
         }
         It "Should have MaxPoolSize as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MaxPoolSize -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter MaxPoolSize -Type Int32 -Mandatory:$false
         }
         It "Should have MinPoolSize as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MinPoolSize -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter MinPoolSize -Type Int32 -Mandatory:$false
         }
         It "Should have MinimumVersion as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MinimumVersion -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter MinimumVersion -Type Int32 -Mandatory:$false
         }
         It "Should have MultipleActiveResultSets as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MultipleActiveResultSets -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter MultipleActiveResultSets -Type Switch -Mandatory:$false
         }
         It "Should have MultiSubnetFailover as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MultiSubnetFailover -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter MultiSubnetFailover -Type Switch -Mandatory:$false
         }
         It "Should have NetworkProtocol as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NetworkProtocol -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NetworkProtocol -Type String -Mandatory:$false
         }
         It "Should have NonPooledConnection as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NonPooledConnection -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NonPooledConnection -Type Switch -Mandatory:$false
         }
         It "Should have PacketSize as a parameter" {
-            $CommandUnderTest | Should -HaveParameter PacketSize -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter PacketSize -Type Int32 -Mandatory:$false
         }
         It "Should have PooledConnectionLifetime as a parameter" {
-            $CommandUnderTest | Should -HaveParameter PooledConnectionLifetime -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter PooledConnectionLifetime -Type Int32 -Mandatory:$false
         }
         It "Should have SqlExecutionModes as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlExecutionModes -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlExecutionModes -Type String -Mandatory:$false
         }
         It "Should have StatementTimeout as a parameter" {
-            $CommandUnderTest | Should -HaveParameter StatementTimeout -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter StatementTimeout -Type Int32 -Mandatory:$false
         }
         It "Should have TrustServerCertificate as a parameter" {
-            $CommandUnderTest | Should -HaveParameter TrustServerCertificate -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter TrustServerCertificate -Type Switch -Mandatory:$false
         }
         It "Should have WorkstationId as a parameter" {
-            $CommandUnderTest | Should -HaveParameter WorkstationId -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter WorkstationId -Type String -Mandatory:$false
         }
         It "Should have AlwaysEncrypted as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AlwaysEncrypted -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter AlwaysEncrypted -Type Switch -Mandatory:$false
         }
         It "Should have AppendConnectionString as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AppendConnectionString -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter AppendConnectionString -Type String -Mandatory:$false
         }
         It "Should have SqlConnectionOnly as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlConnectionOnly -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlConnectionOnly -Type Switch -Mandatory:$false
         }
         It "Should have AzureDomain as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AzureDomain -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter AzureDomain -Type String -Mandatory:$false
         }
         It "Should have Tenant as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Tenant -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Tenant -Type String -Mandatory:$false
         }
         It "Should have AccessToken as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AccessToken -Type PSObject -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter AccessToken -Type PSObject -Mandatory:$false
         }
         It "Should have DedicatedAdminConnection as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DedicatedAdminConnection -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter DedicatedAdminConnection -Type Switch -Mandatory:$false
         }
         It "Should have DisableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DisableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter DisableException -Type Switch -Mandatory:$false
         }
     }
 

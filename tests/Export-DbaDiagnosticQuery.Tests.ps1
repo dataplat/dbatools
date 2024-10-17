@@ -12,25 +12,25 @@ Describe "Export-DbaDiagnosticQuery" {
             $CommandUnderTest = Get-Command Export-DbaDiagnosticQuery
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Mandatory:$false
         }
         It "Should have ConvertTo as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ConvertTo -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ConvertTo -Type String -Mandatory:$false
         }
         It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type FileInfo -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Path -Type FileInfo -Mandatory:$false
         }
         It "Should have Suffix as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Suffix -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Suffix -Type String -Mandatory:$false
         }
         It "Should have NoPlanExport as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoPlanExport -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NoPlanExport -Type Switch -Mandatory:$false
         }
         It "Should have NoQueryExport as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoQueryExport -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NoQueryExport -Type Switch -Mandatory:$false
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

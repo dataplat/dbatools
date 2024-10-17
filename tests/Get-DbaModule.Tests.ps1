@@ -12,34 +12,34 @@ Describe "Get-DbaModule" {
             $CommandUnderTest = Get-Command Get-DbaModule
         }
         It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Database as a non-mandatory parameter of type Object[]" {
-            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Mandatory:$false
         }
         It "Should have ExcludeDatabase as a non-mandatory parameter of type Object[]" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Mandatory:$false
         }
         It "Should have ModifiedSince as a non-mandatory parameter of type DateTime" {
-            $CommandUnderTest | Should -HaveParameter ModifiedSince -Type DateTime -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ModifiedSince -Type DateTime -Mandatory:$false
         }
         It "Should have Type as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter Type -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Type -Type String[] -Mandatory:$false
         }
         It "Should have ExcludeSystemDatabases as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSystemDatabases -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeSystemDatabases -Type Switch -Mandatory:$false
         }
         It "Should have ExcludeSystemObjects as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSystemObjects -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeSystemObjects -Type Switch -Mandatory:$false
         }
         It "Should have InputObject as a non-mandatory parameter of type Database[]" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[] -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

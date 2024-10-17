@@ -31,40 +31,40 @@ Describe "New-DbaDbUser" {
             $CommandUnderTest = Get-Command New-DbaDbUser
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Mandatory:$false
         }
         It "Should have ExcludeDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type String[] -Mandatory:$false
         }
         It "Should have IncludeSystem as a parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeSystem -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter IncludeSystem -Type Switch -Mandatory:$false
         }
         It "Should have User as a parameter" {
-            $CommandUnderTest | Should -HaveParameter User -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter User -Type String -Mandatory:$false
         }
         It "Should have Login as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Login -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Login -Type String -Mandatory:$false
         }
         It "Should have SecurePassword as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SecurePassword -Type SecureString -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SecurePassword -Type SecureString -Mandatory:$false
         }
         It "Should have ExternalProvider as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExternalProvider -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExternalProvider -Type Switch -Mandatory:$false
         }
         It "Should have DefaultSchema as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DefaultSchema -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter DefaultSchema -Type String -Mandatory:$false
         }
         It "Should have Force as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Mandatory:$false
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

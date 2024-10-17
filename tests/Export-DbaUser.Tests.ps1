@@ -6,55 +6,55 @@ Describe "Export-DbaUser Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Export-DbaUser
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[] -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Mandatory:$false
         }
         It "Should have ExcludeDatabase parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type String[] -Mandatory:$false
         }
         It "Should have User parameter" {
-            $CommandUnderTest | Should -HaveParameter User -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter User -Type String[] -Mandatory:$false
         }
         It "Should have DestinationVersion parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationVersion -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter DestinationVersion -Type String -Mandatory:$false
         }
         It "Should have Path parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Path -Type String -Mandatory:$false
         }
         It "Should have FilePath parameter" {
-            $CommandUnderTest | Should -HaveParameter FilePath -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter FilePath -Type String -Mandatory:$false
         }
         It "Should have Encoding parameter" {
-            $CommandUnderTest | Should -HaveParameter Encoding -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Encoding -Type String -Mandatory:$false
         }
         It "Should have NoClobber parameter" {
-            $CommandUnderTest | Should -HaveParameter NoClobber -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NoClobber -Type Switch -Mandatory:$false
         }
         It "Should have Append parameter" {
-            $CommandUnderTest | Should -HaveParameter Append -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Append -Type Switch -Mandatory:$false
         }
         It "Should have Passthru parameter" {
-            $CommandUnderTest | Should -HaveParameter Passthru -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Passthru -Type Switch -Mandatory:$false
         }
         It "Should have Template parameter" {
-            $CommandUnderTest | Should -HaveParameter Template -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Template -Type Switch -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
         It "Should have ScriptingOptionsObject parameter" {
-            $CommandUnderTest | Should -HaveParameter ScriptingOptionsObject -Type ScriptingOptions -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ScriptingOptionsObject -Type ScriptingOptions -Mandatory:$false
         }
         It "Should have ExcludeGoBatchSeparator parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeGoBatchSeparator -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeGoBatchSeparator -Type Switch -Mandatory:$false
         }
     }
 }

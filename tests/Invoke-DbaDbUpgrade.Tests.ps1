@@ -10,40 +10,40 @@ Describe "Invoke-DbaDbUpgrade" {
             $CommandUnderTest = Get-Command Invoke-DbaDbUpgrade
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Mandatory:$false
         }
         It "Should have ExcludeDatabase parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Mandatory:$false
         }
         It "Should have NoCheckDb parameter" {
-            $CommandUnderTest | Should -HaveParameter NoCheckDb -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NoCheckDb -Type Switch -Mandatory:$false
         }
         It "Should have NoUpdateUsage parameter" {
-            $CommandUnderTest | Should -HaveParameter NoUpdateUsage -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NoUpdateUsage -Type Switch -Mandatory:$false
         }
         It "Should have NoUpdateStats parameter" {
-            $CommandUnderTest | Should -HaveParameter NoUpdateStats -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NoUpdateStats -Type Switch -Mandatory:$false
         }
         It "Should have NoRefreshView parameter" {
-            $CommandUnderTest | Should -HaveParameter NoRefreshView -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NoRefreshView -Type Switch -Mandatory:$false
         }
         It "Should have AllUserDatabases parameter" {
-            $CommandUnderTest | Should -HaveParameter AllUserDatabases -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter AllUserDatabases -Type Switch -Mandatory:$false
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Mandatory:$false
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[] -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 }

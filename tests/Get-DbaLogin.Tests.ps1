@@ -21,46 +21,46 @@ Describe "Get-DbaLogin" {
             $CommandUnderTest = Get-Command Get-DbaLogin
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Login parameter" {
-            $CommandUnderTest | Should -HaveParameter Login -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Login -Type String[] -Mandatory:$false
         }
         It "Should have IncludeFilter parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeFilter -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter IncludeFilter -Type String[] -Mandatory:$false
         }
         It "Should have ExcludeLogin parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeLogin -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeLogin -Type String[] -Mandatory:$false
         }
         It "Should have ExcludeFilter parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeFilter -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeFilter -Type String[] -Mandatory:$false
         }
         It "Should have ExcludeSystemLogin parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSystemLogin -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeSystemLogin -Type Switch -Mandatory:$false
         }
         It "Should have Type parameter" {
-            $CommandUnderTest | Should -HaveParameter Type -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Type -Type String -Mandatory:$false
         }
         It "Should have HasAccess parameter" {
-            $CommandUnderTest | Should -HaveParameter HasAccess -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter HasAccess -Type Switch -Mandatory:$false
         }
         It "Should have Locked parameter" {
-            $CommandUnderTest | Should -HaveParameter Locked -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Locked -Type Switch -Mandatory:$false
         }
         It "Should have Disabled parameter" {
-            $CommandUnderTest | Should -HaveParameter Disabled -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Disabled -Type Switch -Mandatory:$false
         }
         It "Should have MustChangePassword parameter" {
-            $CommandUnderTest | Should -HaveParameter MustChangePassword -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter MustChangePassword -Type Switch -Mandatory:$false
         }
         It "Should have Detailed parameter" {
-            $CommandUnderTest | Should -HaveParameter Detailed -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Detailed -Type Switch -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

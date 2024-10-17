@@ -6,31 +6,31 @@ Describe "New-DbaLinkedServerLogin" {
             $CommandUnderTest = Get-Command New-DbaLinkedServerLogin
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have LinkedServer parameter" {
-            $CommandUnderTest | Should -HaveParameter LinkedServer -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter LinkedServer -Type String[] -Mandatory:$false
         }
         It "Should have LocalLogin parameter" {
-            $CommandUnderTest | Should -HaveParameter LocalLogin -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter LocalLogin -Type String -Mandatory:$false
         }
         It "Should have RemoteUser parameter" {
-            $CommandUnderTest | Should -HaveParameter RemoteUser -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter RemoteUser -Type String -Mandatory:$false
         }
         It "Should have RemoteUserPassword parameter" {
-            $CommandUnderTest | Should -HaveParameter RemoteUserPassword -Type SecureString -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter RemoteUserPassword -Type SecureString -Mandatory:$false
         }
         It "Should have Impersonate parameter" {
-            $CommandUnderTest | Should -HaveParameter Impersonate -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Impersonate -Type Switch -Mandatory:$false
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type LinkedServer[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter InputObject -Type LinkedServer[] -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 }

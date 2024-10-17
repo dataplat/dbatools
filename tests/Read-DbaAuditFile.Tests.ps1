@@ -6,13 +6,13 @@ Describe "Read-DbaAuditFile" {
             $CommandUnderTest = Get-Command Read-DbaAuditFile
         }
         It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type Object[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Path -Type Object[] -Mandatory:$false
         }
         It "Should have Raw as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Raw -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Raw -Type Switch -Mandatory:$false
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

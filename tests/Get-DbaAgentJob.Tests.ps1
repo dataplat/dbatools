@@ -12,37 +12,37 @@ Describe "Get-DbaAgentJob Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Get-DbaAgentJob
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Job parameter" {
-            $CommandUnderTest | Should -HaveParameter Job -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Job -Type String[] -Mandatory:$false
         }
         It "Should have ExcludeJob parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeJob -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeJob -Type String[] -Mandatory:$false
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Mandatory:$false
         }
         It "Should have Category parameter" {
-            $CommandUnderTest | Should -HaveParameter Category -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Category -Type String[] -Mandatory:$false
         }
         It "Should have ExcludeCategory parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeCategory -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeCategory -Type String[] -Mandatory:$false
         }
         It "Should have ExcludeDisabledJobs parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDisabledJobs -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeDisabledJobs -Type Switch -Mandatory:$false
         }
         It "Should have IncludeExecution parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeExecution -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter IncludeExecution -Type Switch -Mandatory:$false
         }
         It "Should have Type parameter" {
-            $CommandUnderTest | Should -HaveParameter Type -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Type -Type String[] -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 }

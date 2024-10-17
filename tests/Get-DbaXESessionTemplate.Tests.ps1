@@ -12,16 +12,16 @@ Describe "Get-DbaXESessionTemplate" {
             $CommandUnderTest = Get-Command Get-DbaXESessionTemplate
         }
         It "Should have Path as a non-mandatory String[] parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Path -Type String[] -Mandatory:$false
         }
         It "Should have Pattern as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Pattern -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Pattern -Type String -Mandatory:$false
         }
         It "Should have Template as a non-mandatory String[] parameter" {
-            $CommandUnderTest | Should -HaveParameter Template -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Template -Type String[] -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

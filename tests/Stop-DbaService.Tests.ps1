@@ -12,31 +12,31 @@ Describe "Stop-DbaService" {
             $CommandUnderTest = Get-Command Stop-DbaService
         }
         It "Should have ComputerName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have InstanceName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InstanceName -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter InstanceName -Type String[] -Mandatory:$false
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have Type as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Type -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Type -Type String[] -Mandatory:$false
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Mandatory:$false
         }
         It "Should have Timeout as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Timeout -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Timeout -Type Int32 -Mandatory:$false
         }
         It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Mandatory:$false
         }
         It "Should have Force as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Mandatory:$false
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

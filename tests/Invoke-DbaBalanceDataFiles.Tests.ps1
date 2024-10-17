@@ -6,25 +6,25 @@ Describe "Invoke-DbaBalanceDataFiles" {
             $CommandUnderTest = Get-Command Invoke-DbaBalanceDataFiles
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Mandatory:$false
         }
         It "Should have Table parameter" {
-            $CommandUnderTest | Should -HaveParameter Table -Type Object[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Table -Type Object[] -Mandatory:$false
         }
         It "Should have RebuildOffline parameter" {
-            $CommandUnderTest | Should -HaveParameter RebuildOffline -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter RebuildOffline -Type Switch -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Mandatory:$false
         }
     }
 }

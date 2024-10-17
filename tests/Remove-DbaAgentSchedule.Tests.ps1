@@ -12,28 +12,28 @@ Describe "Remove-DbaAgentSchedule Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Remove-DbaAgentSchedule
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Schedule as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Schedule -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Schedule -Type String[] -Mandatory:$false
         }
         It "Should have ScheduleUid as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ScheduleUid -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ScheduleUid -Type String[] -Mandatory:$false
         }
         It "Should have Id as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Id -Type Int32[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Id -Type Int32[] -Mandatory:$false
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type ScheduleBase[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter InputObject -Type ScheduleBase[] -Mandatory:$false
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
         It "Should have Force as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Mandatory:$false
         }
     }
 }

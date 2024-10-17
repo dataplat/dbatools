@@ -11,16 +11,16 @@ Describe "Get-DbaKbUpdate" {
             $CommandUnderTest = Get-Command Get-DbaKbUpdate
         }
         It "Should have Name as a non-mandatory String[] parameter" {
-            $CommandUnderTest | Should -HaveParameter Name -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Name -Type String[] -Mandatory:$false
         }
         It "Should have Simple as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter Simple -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Simple -Type Switch -Mandatory:$false
         }
         It "Should have Language as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Language -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Language -Type String -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

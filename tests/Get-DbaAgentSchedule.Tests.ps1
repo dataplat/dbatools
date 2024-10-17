@@ -10,12 +10,12 @@ Describe "Get-DbaAgentSchedule Unit Tests" -Tag 'UnitTests' {
             $CommandName = Get-Command Get-DbaAgentSchedule
         }
         It "Should have the correct parameters" {
-            $CommandName | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
-            $CommandName | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
-            $CommandName | Should -HaveParameter Schedule -Type String[] -Not -Mandatory
-            $CommandName | Should -HaveParameter ScheduleUid -Type String[] -Not -Mandatory
-            $CommandName | Should -HaveParameter Id -Type Int32[] -Not -Mandatory
-            $CommandName | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandName | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+            $CommandName | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+            $CommandName | Should -HaveParameter Schedule -Type String[] -Mandatory:$false
+            $CommandName | Should -HaveParameter ScheduleUid -Type String[] -Mandatory:$false
+            $CommandName | Should -HaveParameter Id -Type Int32[] -Mandatory:$false
+            $CommandName | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 }

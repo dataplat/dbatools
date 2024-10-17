@@ -12,31 +12,31 @@ Describe "Invoke-DbaDbClone" {
             $CommandUnderTest = Get-Command Invoke-DbaDbClone
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Mandatory:$false
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[] -Mandatory:$false
         }
         It "Should have CloneDatabase parameter" {
-            $CommandUnderTest | Should -HaveParameter CloneDatabase -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter CloneDatabase -Type String[] -Mandatory:$false
         }
         It "Should have ExcludeStatistics parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeStatistics -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeStatistics -Type Switch -Mandatory:$false
         }
         It "Should have ExcludeQueryStore parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeQueryStore -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeQueryStore -Type Switch -Mandatory:$false
         }
         It "Should have UpdateStatistics parameter" {
-            $CommandUnderTest | Should -HaveParameter UpdateStatistics -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter UpdateStatistics -Type Switch -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

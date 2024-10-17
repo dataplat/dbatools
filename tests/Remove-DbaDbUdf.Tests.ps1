@@ -6,37 +6,37 @@ Describe "Remove-DbaDbUdf" {
             $CommandUnderTest = Get-Command Remove-DbaDbUdf
         }
         It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Database as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Mandatory:$false
         }
         It "Should have ExcludeDatabase as a non-mandatory parameter of type Object[]" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Mandatory:$false
         }
         It "Should have ExcludeSystemUdf as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSystemUdf -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeSystemUdf -Type Switch -Mandatory:$false
         }
         It "Should have Schema as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter Schema -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Schema -Type String[] -Mandatory:$false
         }
         It "Should have ExcludeSchema as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSchema -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeSchema -Type String[] -Mandatory:$false
         }
         It "Should have Name as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter Name -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Name -Type String[] -Mandatory:$false
         }
         It "Should have ExcludeName as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter ExcludeName -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeName -Type String[] -Mandatory:$false
         }
         It "Should have InputObject as a non-mandatory parameter of type UserDefinedFunction[]" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type UserDefinedFunction[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter InputObject -Type UserDefinedFunction[] -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

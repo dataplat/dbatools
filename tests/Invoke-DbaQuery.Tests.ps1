@@ -25,52 +25,52 @@ Describe "Invoke-DbaQuery" {
             $CommandUnderTest = Get-Command Invoke-DbaQuery
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Database -Type String -Mandatory:$false
         }
         It "Should have Query parameter" {
-            $CommandUnderTest | Should -HaveParameter Query -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Query -Type String -Mandatory:$false
         }
         It "Should have QueryTimeout parameter" {
-            $CommandUnderTest | Should -HaveParameter QueryTimeout -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter QueryTimeout -Type Int32 -Mandatory:$false
         }
         It "Should have File parameter" {
-            $CommandUnderTest | Should -HaveParameter File -Type Object[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter File -Type Object[] -Mandatory:$false
         }
         It "Should have SqlObject parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlObject -Type SqlSmoObject[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlObject -Type SqlSmoObject[] -Mandatory:$false
         }
         It "Should have As parameter" {
-            $CommandUnderTest | Should -HaveParameter As -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter As -Type String -Mandatory:$false
         }
         It "Should have SqlParameter parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlParameter -Type PSObject[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlParameter -Type PSObject[] -Mandatory:$false
         }
         It "Should have CommandType parameter" {
-            $CommandUnderTest | Should -HaveParameter CommandType -Type CommandType -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter CommandType -Type CommandType -Mandatory:$false
         }
         It "Should have AppendServerInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter AppendServerInstance -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter AppendServerInstance -Type Switch -Mandatory:$false
         }
         It "Should have MessagesToOutput parameter" {
-            $CommandUnderTest | Should -HaveParameter MessagesToOutput -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter MessagesToOutput -Type Switch -Mandatory:$false
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[] -Mandatory:$false
         }
         It "Should have ReadOnly parameter" {
-            $CommandUnderTest | Should -HaveParameter ReadOnly -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ReadOnly -Type Switch -Mandatory:$false
         }
         It "Should have NoExec parameter" {
-            $CommandUnderTest | Should -HaveParameter NoExec -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NoExec -Type Switch -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

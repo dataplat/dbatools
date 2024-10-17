@@ -12,61 +12,61 @@ Describe "Set-DbaDbQueryStoreOption" {
             $CommandUnderTest = Get-Command Set-DbaDbQueryStoreOption
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Mandatory:$false
         }
         It "Should have ExcludeDatabase parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Mandatory:$false
         }
         It "Should have AllDatabases parameter" {
-            $CommandUnderTest | Should -HaveParameter AllDatabases -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter AllDatabases -Type Switch -Mandatory:$false
         }
         It "Should have State parameter" {
-            $CommandUnderTest | Should -HaveParameter State -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter State -Type String[] -Mandatory:$false
         }
         It "Should have FlushInterval parameter" {
-            $CommandUnderTest | Should -HaveParameter FlushInterval -Type Int64 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter FlushInterval -Type Int64 -Mandatory:$false
         }
         It "Should have CollectionInterval parameter" {
-            $CommandUnderTest | Should -HaveParameter CollectionInterval -Type Int64 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter CollectionInterval -Type Int64 -Mandatory:$false
         }
         It "Should have MaxSize parameter" {
-            $CommandUnderTest | Should -HaveParameter MaxSize -Type Int64 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter MaxSize -Type Int64 -Mandatory:$false
         }
         It "Should have CaptureMode parameter" {
-            $CommandUnderTest | Should -HaveParameter CaptureMode -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter CaptureMode -Type String[] -Mandatory:$false
         }
         It "Should have CleanupMode parameter" {
-            $CommandUnderTest | Should -HaveParameter CleanupMode -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter CleanupMode -Type String[] -Mandatory:$false
         }
         It "Should have StaleQueryThreshold parameter" {
-            $CommandUnderTest | Should -HaveParameter StaleQueryThreshold -Type Int64 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter StaleQueryThreshold -Type Int64 -Mandatory:$false
         }
         It "Should have MaxPlansPerQuery parameter" {
-            $CommandUnderTest | Should -HaveParameter MaxPlansPerQuery -Type Int64 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter MaxPlansPerQuery -Type Int64 -Mandatory:$false
         }
         It "Should have WaitStatsCaptureMode parameter" {
-            $CommandUnderTest | Should -HaveParameter WaitStatsCaptureMode -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter WaitStatsCaptureMode -Type String[] -Mandatory:$false
         }
         It "Should have CustomCapturePolicyExecutionCount parameter" {
-            $CommandUnderTest | Should -HaveParameter CustomCapturePolicyExecutionCount -Type Int64 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter CustomCapturePolicyExecutionCount -Type Int64 -Mandatory:$false
         }
         It "Should have CustomCapturePolicyTotalCompileCPUTimeMS parameter" {
-            $CommandUnderTest | Should -HaveParameter CustomCapturePolicyTotalCompileCPUTimeMS -Type Int64 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter CustomCapturePolicyTotalCompileCPUTimeMS -Type Int64 -Mandatory:$false
         }
         It "Should have CustomCapturePolicyTotalExecutionCPUTimeMS parameter" {
-            $CommandUnderTest | Should -HaveParameter CustomCapturePolicyTotalExecutionCPUTimeMS -Type Int64 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter CustomCapturePolicyTotalExecutionCPUTimeMS -Type Int64 -Mandatory:$false
         }
         It "Should have CustomCapturePolicyStaleThresholdHours parameter" {
-            $CommandUnderTest | Should -HaveParameter CustomCapturePolicyStaleThresholdHours -Type Int64 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter CustomCapturePolicyStaleThresholdHours -Type Int64 -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

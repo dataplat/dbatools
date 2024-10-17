@@ -9,22 +9,22 @@ Describe "Set-DbaAgentJobCategory" {
             $CommandUnderTest = Get-Command Set-DbaAgentJobCategory
         }
         It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Category as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter Category -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Category -Type String[] -Mandatory:$false
         }
         It "Should have NewName as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter NewName -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NewName -Type String[] -Mandatory:$false
         }
         It "Should have Force as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

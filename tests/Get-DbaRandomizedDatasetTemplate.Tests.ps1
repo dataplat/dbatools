@@ -12,16 +12,16 @@ Describe "Get-DbaRandomizedDatasetTemplate" {
             $CommandUnderTest = Get-Command Get-DbaRandomizedDatasetTemplate
         }
         It "Should have Template as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter Template -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Template -Type String[] -Mandatory:$false
         }
         It "Should have Path as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter Path -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Path -Type String[] -Mandatory:$false
         }
         It "Should have ExcludeDefault as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDefault -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeDefault -Type Switch -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

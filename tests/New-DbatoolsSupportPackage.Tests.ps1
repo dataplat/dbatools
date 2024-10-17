@@ -11,58 +11,58 @@ Describe "New-DbatoolsSupportPackage" {
             $CommandUnderTest = Get-Command New-DbatoolsSupportPackage
         }
         It "Should have Path as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Path -Type String -Mandatory:$false
         }
         It "Should have Variables as a non-mandatory String[] parameter" {
-            $CommandUnderTest | Should -HaveParameter Variables -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Variables -Type String[] -Mandatory:$false
         }
         It "Should have PassThru as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter PassThru -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter PassThru -Type Switch -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
         It "Should have Verbose as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter Verbose -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Verbose -Type Switch -Mandatory:$false
         }
         It "Should have Debug as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter Debug -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Debug -Type Switch -Mandatory:$false
         }
         It "Should have ErrorAction as a non-mandatory ActionPreference parameter" {
-            $CommandUnderTest | Should -HaveParameter ErrorAction -Type ActionPreference -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ErrorAction -Type ActionPreference -Mandatory:$false
         }
         It "Should have WarningAction as a non-mandatory ActionPreference parameter" {
-            $CommandUnderTest | Should -HaveParameter WarningAction -Type ActionPreference -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter WarningAction -Type ActionPreference -Mandatory:$false
         }
         It "Should have InformationAction as a non-mandatory ActionPreference parameter" {
-            $CommandUnderTest | Should -HaveParameter InformationAction -Type ActionPreference -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter InformationAction -Type ActionPreference -Mandatory:$false
         }
         It "Should have ProgressAction as a non-mandatory ActionPreference parameter" {
-            $CommandUnderTest | Should -HaveParameter ProgressAction -Type ActionPreference -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ProgressAction -Type ActionPreference -Mandatory:$false
         }
         It "Should have ErrorVariable as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter ErrorVariable -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ErrorVariable -Type String -Mandatory:$false
         }
         It "Should have WarningVariable as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter WarningVariable -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter WarningVariable -Type String -Mandatory:$false
         }
         It "Should have InformationVariable as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter InformationVariable -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter InformationVariable -Type String -Mandatory:$false
         }
         It "Should have OutVariable as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter OutVariable -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter OutVariable -Type String -Mandatory:$false
         }
         It "Should have OutBuffer as a non-mandatory Int32 parameter" {
-            $CommandUnderTest | Should -HaveParameter OutBuffer -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter OutBuffer -Type Int32 -Mandatory:$false
         }
         It "Should have PipelineVariable as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter PipelineVariable -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter PipelineVariable -Type String -Mandatory:$false
         }
         It "Should have WhatIf as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter WhatIf -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter WhatIf -Type Switch -Mandatory:$false
         }
         It "Should have Confirm as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter Confirm -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Confirm -Type Switch -Mandatory:$false
         }
     }
 

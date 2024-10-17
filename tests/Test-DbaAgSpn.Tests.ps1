@@ -10,61 +10,61 @@ Describe "Test-DbaAgSpn" {
             $CommandUnderTest = Get-Command Test-DbaAgSpn
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Credential parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Mandatory:$false
         }
         It "Should have AvailabilityGroup parameter" {
-            $CommandUnderTest | Should -HaveParameter AvailabilityGroup -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter AvailabilityGroup -Type String[] -Mandatory:$false
         }
         It "Should have Listener parameter" {
-            $CommandUnderTest | Should -HaveParameter Listener -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Listener -Type String[] -Mandatory:$false
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type AvailabilityGroup[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter InputObject -Type AvailabilityGroup[] -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
         It "Should have Verbose parameter" {
-            $CommandUnderTest | Should -HaveParameter Verbose -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Verbose -Type Switch -Mandatory:$false
         }
         It "Should have Debug parameter" {
-            $CommandUnderTest | Should -HaveParameter Debug -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Debug -Type Switch -Mandatory:$false
         }
         It "Should have ErrorAction parameter" {
-            $CommandUnderTest | Should -HaveParameter ErrorAction -Type ActionPreference -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ErrorAction -Type ActionPreference -Mandatory:$false
         }
         It "Should have WarningAction parameter" {
-            $CommandUnderTest | Should -HaveParameter WarningAction -Type ActionPreference -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter WarningAction -Type ActionPreference -Mandatory:$false
         }
         It "Should have InformationAction parameter" {
-            $CommandUnderTest | Should -HaveParameter InformationAction -Type ActionPreference -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter InformationAction -Type ActionPreference -Mandatory:$false
         }
         It "Should have ProgressAction parameter" {
-            $CommandUnderTest | Should -HaveParameter ProgressAction -Type ActionPreference -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ProgressAction -Type ActionPreference -Mandatory:$false
         }
         It "Should have ErrorVariable parameter" {
-            $CommandUnderTest | Should -HaveParameter ErrorVariable -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ErrorVariable -Type String -Mandatory:$false
         }
         It "Should have WarningVariable parameter" {
-            $CommandUnderTest | Should -HaveParameter WarningVariable -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter WarningVariable -Type String -Mandatory:$false
         }
         It "Should have InformationVariable parameter" {
-            $CommandUnderTest | Should -HaveParameter InformationVariable -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter InformationVariable -Type String -Mandatory:$false
         }
         It "Should have OutVariable parameter" {
-            $CommandUnderTest | Should -HaveParameter OutVariable -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter OutVariable -Type String -Mandatory:$false
         }
         It "Should have OutBuffer parameter" {
-            $CommandUnderTest | Should -HaveParameter OutBuffer -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter OutBuffer -Type Int32 -Mandatory:$false
         }
         It "Should have PipelineVariable parameter" {
-            $CommandUnderTest | Should -HaveParameter PipelineVariable -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter PipelineVariable -Type String -Mandatory:$false
         }
     }
 

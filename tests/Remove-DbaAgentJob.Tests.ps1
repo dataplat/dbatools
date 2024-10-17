@@ -6,25 +6,25 @@ Describe "Remove-DbaAgentJob Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Remove-DbaAgentJob
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Job as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Job -Type Object[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Job -Type Object[] -Mandatory:$false
         }
         It "Should have KeepHistory as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter KeepHistory -Type switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter KeepHistory -Type switch -Mandatory:$false
         }
         It "Should have KeepUnusedSchedule as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter KeepUnusedSchedule -Type switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter KeepUnusedSchedule -Type switch -Mandatory:$false
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Job[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Job[] -Mandatory:$false
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type switch -Mandatory:$false
         }
     }
 }

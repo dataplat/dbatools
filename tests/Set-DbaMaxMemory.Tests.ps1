@@ -20,19 +20,19 @@ Describe "Set-DbaMaxMemory" {
             $CommandUnderTest = Get-Command Set-DbaMaxMemory
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Max parameter" {
-            $CommandUnderTest | Should -HaveParameter Max -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Max -Type Int32 -Mandatory:$false
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type PSObject[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter InputObject -Type PSObject[] -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

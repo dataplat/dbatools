@@ -6,25 +6,25 @@ Describe "Test-DbaIdentityUsage" {
             $CommandUnderTest = Get-Command Test-DbaIdentityUsage
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Mandatory:$false
         }
         It "Should have ExcludeDatabase parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Mandatory:$false
         }
         It "Should have Threshold parameter" {
-            $CommandUnderTest | Should -HaveParameter Threshold -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Threshold -Type Int32 -Mandatory:$false
         }
         It "Should have ExcludeSystem parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSystem -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeSystem -Type Switch -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

@@ -6,58 +6,58 @@ Describe "Get-DbaDatabase" {
             $CommandUnderTest = Get-Command Get-DbaDatabase
         }
         It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Database as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Mandatory:$false
         }
         It "Should have ExcludeDatabase as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type String[] -Mandatory:$false
         }
         It "Should have ExcludeUser as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeUser -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeUser -Type Switch -Mandatory:$false
         }
         It "Should have ExcludeSystem as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSystem -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeSystem -Type Switch -Mandatory:$false
         }
         It "Should have Owner as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter Owner -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Owner -Type String[] -Mandatory:$false
         }
         It "Should have Encrypted as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Encrypted -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Encrypted -Type Switch -Mandatory:$false
         }
         It "Should have Status as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter Status -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Status -Type String[] -Mandatory:$false
         }
         It "Should have Access as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter Access -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Access -Type String -Mandatory:$false
         }
         It "Should have RecoveryModel as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter RecoveryModel -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter RecoveryModel -Type String[] -Mandatory:$false
         }
         It "Should have NoFullBackup as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoFullBackup -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NoFullBackup -Type Switch -Mandatory:$false
         }
         It "Should have NoFullBackupSince as a non-mandatory parameter of type DateTime" {
-            $CommandUnderTest | Should -HaveParameter NoFullBackupSince -Type DateTime -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NoFullBackupSince -Type DateTime -Mandatory:$false
         }
         It "Should have NoLogBackup as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoLogBackup -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NoLogBackup -Type Switch -Mandatory:$false
         }
         It "Should have NoLogBackupSince as a non-mandatory parameter of type DateTime" {
-            $CommandUnderTest | Should -HaveParameter NoLogBackupSince -Type DateTime -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NoLogBackupSince -Type DateTime -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
         It "Should have IncludeLastUsed as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeLastUsed -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter IncludeLastUsed -Type Switch -Mandatory:$false
         }
         It "Should have OnlyAccessible as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter OnlyAccessible -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter OnlyAccessible -Type Switch -Mandatory:$false
         }
     }
 

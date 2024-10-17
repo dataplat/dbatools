@@ -12,19 +12,19 @@ Describe "Test-DbaDiskAllocation" {
             $CommandUnderTest = Get-Command Test-DbaDiskAllocation
         }
         It "Should have ComputerName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName -Type Object[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type Object[] -Mandatory:$false
         }
         It "Should have NoSqlCheck as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NoSqlCheck -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NoSqlCheck -Type Switch -Mandatory:$false
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Mandatory:$false
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

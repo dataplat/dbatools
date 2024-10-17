@@ -11,25 +11,25 @@ Describe "Save-DbaKbUpdate" {
             $CommandUnderTest = Get-Command Save-DbaKbUpdate
         }
         It "Should have Name as a non-mandatory String[] parameter" {
-            $CommandUnderTest | Should -HaveParameter Name -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Name -Type String[] -Mandatory:$false
         }
         It "Should have Path as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Path -Type String -Mandatory:$false
         }
         It "Should have FilePath as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter FilePath -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter FilePath -Type String -Mandatory:$false
         }
         It "Should have Architecture as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Architecture -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Architecture -Type String -Mandatory:$false
         }
         It "Should have Language as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Language -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Language -Type String -Mandatory:$false
         }
         It "Should have InputObject as a non-mandatory Object[] parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

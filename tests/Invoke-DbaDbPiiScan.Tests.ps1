@@ -12,49 +12,49 @@ Describe "Invoke-DbaDbPiiScan Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Invoke-DbaDbPiiScan
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Mandatory:$false
         }
         It "Should have Table as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Table -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Table -Type String[] -Mandatory:$false
         }
         It "Should have Column as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Column -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Column -Type String[] -Mandatory:$false
         }
         It "Should have Country as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Country -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Country -Type String[] -Mandatory:$false
         }
         It "Should have CountryCode as a parameter" {
-            $CommandUnderTest | Should -HaveParameter CountryCode -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter CountryCode -Type String[] -Mandatory:$false
         }
         It "Should have ExcludeTable as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeTable -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeTable -Type String[] -Mandatory:$false
         }
         It "Should have ExcludeColumn as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeColumn -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeColumn -Type String[] -Mandatory:$false
         }
         It "Should have SampleCount as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SampleCount -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SampleCount -Type Int32 -Mandatory:$false
         }
         It "Should have KnownNameFilePath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter KnownNameFilePath -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter KnownNameFilePath -Type String -Mandatory:$false
         }
         It "Should have PatternFilePath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter PatternFilePath -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter PatternFilePath -Type String -Mandatory:$false
         }
         It "Should have ExcludeDefaultKnownName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDefaultKnownName -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeDefaultKnownName -Type Switch -Mandatory:$false
         }
         It "Should have ExcludeDefaultPattern as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDefaultPattern -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeDefaultPattern -Type Switch -Mandatory:$false
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 }

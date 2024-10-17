@@ -6,43 +6,43 @@ Describe "Get-DbaRandomizedValue" {
             $CommandUnderTest = Get-Command Get-DbaRandomizedValue
         }
         It "Should have DataType as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter DataType -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter DataType -Type String -Mandatory:$false
         }
         It "Should have RandomizerType as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter RandomizerType -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter RandomizerType -Type String -Mandatory:$false
         }
         It "Should have RandomizerSubType as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter RandomizerSubType -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter RandomizerSubType -Type String -Mandatory:$false
         }
         It "Should have Min as a non-mandatory Object parameter" {
-            $CommandUnderTest | Should -HaveParameter Min -Type Object -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Min -Type Object -Mandatory:$false
         }
         It "Should have Max as a non-mandatory Object parameter" {
-            $CommandUnderTest | Should -HaveParameter Max -Type Object -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Max -Type Object -Mandatory:$false
         }
         It "Should have Precision as a non-mandatory Int32 parameter" {
-            $CommandUnderTest | Should -HaveParameter Precision -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Precision -Type Int32 -Mandatory:$false
         }
         It "Should have CharacterString as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter CharacterString -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter CharacterString -Type String -Mandatory:$false
         }
         It "Should have Format as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Format -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Format -Type String -Mandatory:$false
         }
         It "Should have Symbol as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Symbol -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Symbol -Type String -Mandatory:$false
         }
         It "Should have Separator as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Separator -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Separator -Type String -Mandatory:$false
         }
         It "Should have Value as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Value -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Value -Type String -Mandatory:$false
         }
         It "Should have Locale as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Locale -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Locale -Type String -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

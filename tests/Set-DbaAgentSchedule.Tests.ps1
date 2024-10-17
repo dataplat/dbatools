@@ -10,61 +10,61 @@ Describe "Set-DbaAgentSchedule" {
             $CommandUnderTest = Get-Command Set-DbaAgentSchedule
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Job parameter" {
-            $CommandUnderTest | Should -HaveParameter Job -Type Object[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Job -Type Object[] -Mandatory:$false
         }
         It "Should have ScheduleName parameter" {
-            $CommandUnderTest | Should -HaveParameter ScheduleName -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ScheduleName -Type String -Mandatory:$false
         }
         It "Should have NewName parameter" {
-            $CommandUnderTest | Should -HaveParameter NewName -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NewName -Type String -Mandatory:$false
         }
         It "Should have Enabled parameter" {
-            $CommandUnderTest | Should -HaveParameter Enabled -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Enabled -Type Switch -Mandatory:$false
         }
         It "Should have Disabled parameter" {
-            $CommandUnderTest | Should -HaveParameter Disabled -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Disabled -Type Switch -Mandatory:$false
         }
         It "Should have FrequencyType parameter" {
-            $CommandUnderTest | Should -HaveParameter FrequencyType -Type Object -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter FrequencyType -Type Object -Mandatory:$false
         }
         It "Should have FrequencyInterval parameter" {
-            $CommandUnderTest | Should -HaveParameter FrequencyInterval -Type Object[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter FrequencyInterval -Type Object[] -Mandatory:$false
         }
         It "Should have FrequencySubdayType parameter" {
-            $CommandUnderTest | Should -HaveParameter FrequencySubdayType -Type Object -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter FrequencySubdayType -Type Object -Mandatory:$false
         }
         It "Should have FrequencySubdayInterval parameter" {
-            $CommandUnderTest | Should -HaveParameter FrequencySubdayInterval -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter FrequencySubdayInterval -Type Int32 -Mandatory:$false
         }
         It "Should have FrequencyRelativeInterval parameter" {
-            $CommandUnderTest | Should -HaveParameter FrequencyRelativeInterval -Type Object -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter FrequencyRelativeInterval -Type Object -Mandatory:$false
         }
         It "Should have FrequencyRecurrenceFactor parameter" {
-            $CommandUnderTest | Should -HaveParameter FrequencyRecurrenceFactor -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter FrequencyRecurrenceFactor -Type Int32 -Mandatory:$false
         }
         It "Should have StartDate parameter" {
-            $CommandUnderTest | Should -HaveParameter StartDate -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter StartDate -Type String -Mandatory:$false
         }
         It "Should have EndDate parameter" {
-            $CommandUnderTest | Should -HaveParameter EndDate -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EndDate -Type String -Mandatory:$false
         }
         It "Should have StartTime parameter" {
-            $CommandUnderTest | Should -HaveParameter StartTime -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter StartTime -Type String -Mandatory:$false
         }
         It "Should have EndTime parameter" {
-            $CommandUnderTest | Should -HaveParameter EndTime -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EndTime -Type String -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Mandatory:$false
         }
     }
 

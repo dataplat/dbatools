@@ -12,31 +12,31 @@ Describe "New-DbaXESmartReplay" {
             $CommandUnderTest = Get-Command New-DbaXESmartReplay
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Database -Type String -Mandatory:$false
         }
         It "Should have Event parameter" {
-            $CommandUnderTest | Should -HaveParameter Event -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Event -Type String[] -Mandatory:$false
         }
         It "Should have Filter parameter" {
-            $CommandUnderTest | Should -HaveParameter Filter -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Filter -Type String -Mandatory:$false
         }
         It "Should have DelaySeconds parameter" {
-            $CommandUnderTest | Should -HaveParameter DelaySeconds -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter DelaySeconds -Type Int32 -Mandatory:$false
         }
         It "Should have StopOnError parameter" {
-            $CommandUnderTest | Should -HaveParameter StopOnError -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter StopOnError -Type Switch -Mandatory:$false
         }
         It "Should have ReplayIntervalSeconds parameter" {
-            $CommandUnderTest | Should -HaveParameter ReplayIntervalSeconds -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ReplayIntervalSeconds -Type Int32 -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 }

@@ -12,28 +12,28 @@ Describe "Remove-DbaDbUser Unit Tests" -Tag 'UnitTests' {
             $command = Get-Command -Name $CommandName
         }
         It "Should have SqlInstance parameter" {
-            $command | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $command | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $command | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $command | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Database parameter" {
-            $command | Should -HaveParameter Database -Type Object[] -Not -Mandatory
+            $command | Should -HaveParameter Database -Type Object[] -Mandatory:$false
         }
         It "Should have ExcludeDatabase parameter" {
-            $command | Should -HaveParameter ExcludeDatabase -Type Object[] -Not -Mandatory
+            $command | Should -HaveParameter ExcludeDatabase -Type Object[] -Mandatory:$false
         }
         It "Should have User parameter" {
-            $command | Should -HaveParameter User -Type Object[] -Not -Mandatory
+            $command | Should -HaveParameter User -Type Object[] -Mandatory:$false
         }
         It "Should have InputObject parameter" {
-            $command | Should -HaveParameter InputObject -Type User[] -Not -Mandatory
+            $command | Should -HaveParameter InputObject -Type User[] -Mandatory:$false
         }
         It "Should have Force parameter" {
-            $command | Should -HaveParameter Force -Type Switch -Not -Mandatory
+            $command | Should -HaveParameter Force -Type Switch -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $command | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $command | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 }

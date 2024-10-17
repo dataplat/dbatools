@@ -6,34 +6,34 @@ Describe "Find-DbaInstance" {
             $CommandUnderTest = Get-Command Find-DbaInstance
         }
         It "Should have ComputerName as a non-mandatory parameter of type DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have DiscoveryType as a non-mandatory parameter of type DbaInstanceDiscoveryType" {
-            $CommandUnderTest | Should -HaveParameter DiscoveryType -Type DbaInstanceDiscoveryType -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter DiscoveryType -Type DbaInstanceDiscoveryType -Mandatory:$false
         }
         It "Should have Credential as a non-mandatory parameter of type PSCredential" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Mandatory:$false
         }
         It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have ScanType as a non-mandatory parameter of type DbaInstanceScanType[]" {
-            $CommandUnderTest | Should -HaveParameter ScanType -Type DbaInstanceScanType[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ScanType -Type DbaInstanceScanType[] -Mandatory:$false
         }
         It "Should have IpAddress as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter IpAddress -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter IpAddress -Type String[] -Mandatory:$false
         }
         It "Should have DomainController as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter DomainController -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter DomainController -Type String -Mandatory:$false
         }
         It "Should have TCPPort as a non-mandatory parameter of type Int32[]" {
-            $CommandUnderTest | Should -HaveParameter TCPPort -Type Int32[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter TCPPort -Type Int32[] -Mandatory:$false
         }
         It "Should have MinimumConfidence as a non-mandatory parameter of type DbaInstanceConfidenceLevel" {
-            $CommandUnderTest | Should -HaveParameter MinimumConfidence -Type DbaInstanceConfidenceLevel -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter MinimumConfidence -Type DbaInstanceConfidenceLevel -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

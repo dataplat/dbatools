@@ -13,13 +13,13 @@ Describe "Read-DbaXEFile" {
             $CommandUnderTest = Get-Command Read-DbaXEFile
         }
         It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type Object[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Path -Type Object[] -Mandatory:$false
         }
         It "Should have Raw as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Raw -Type switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Raw -Type switch -Mandatory:$false
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type switch -Mandatory:$false
         }
     }
 

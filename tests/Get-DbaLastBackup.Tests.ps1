@@ -12,19 +12,19 @@ Describe "Get-DbaLastBackup Unit Tests" -Tag 'UnitTests' {
             $Command = Get-Command Get-DbaLastBackup
         }
         It "Should have SqlInstance parameter" {
-            $Command | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $Command | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $Command | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $Command | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Database parameter" {
-            $Command | Should -HaveParameter Database -Type Object[] -Not -Mandatory
+            $Command | Should -HaveParameter Database -Type Object[] -Mandatory:$false
         }
         It "Should have ExcludeDatabase parameter" {
-            $Command | Should -HaveParameter ExcludeDatabase -Type Object[] -Not -Mandatory
+            $Command | Should -HaveParameter ExcludeDatabase -Type Object[] -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $Command | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $Command | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 }

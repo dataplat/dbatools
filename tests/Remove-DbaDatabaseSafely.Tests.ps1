@@ -12,46 +12,46 @@ Describe "Remove-DbaDatabaseSafely" {
             $CommandUnderTest = Get-Command Remove-DbaDatabaseSafely
         }
         It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter -Mandatory:$false
         }
         It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Database as a non-mandatory parameter of type Object[]" {
-            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Mandatory:$false
         }
         It "Should have Destination as a non-mandatory parameter of type DbaInstanceParameter" {
-            $CommandUnderTest | Should -HaveParameter Destination -Type DbaInstanceParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Destination -Type DbaInstanceParameter -Mandatory:$false
         }
         It "Should have DestinationSqlCredential as a non-mandatory parameter of type PSCredential" {
-            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have NoDbccCheckDb as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoDbccCheckDb -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NoDbccCheckDb -Type Switch -Mandatory:$false
         }
         It "Should have BackupFolder as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter BackupFolder -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter BackupFolder -Type String -Mandatory:$false
         }
         It "Should have CategoryName as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter CategoryName -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter CategoryName -Type String -Mandatory:$false
         }
         It "Should have JobOwner as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter JobOwner -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter JobOwner -Type String -Mandatory:$false
         }
         It "Should have AllDatabases as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter AllDatabases -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter AllDatabases -Type Switch -Mandatory:$false
         }
         It "Should have BackupCompression as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter BackupCompression -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter BackupCompression -Type String -Mandatory:$false
         }
         It "Should have ReuseSourceFolderStructure as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ReuseSourceFolderStructure -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ReuseSourceFolderStructure -Type Switch -Mandatory:$false
         }
         It "Should have Force as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

@@ -6,22 +6,22 @@ Describe "Stop-DbaXESession" {
             $CommandUnderTest = Get-Command Stop-DbaXESession
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Session parameter" {
-            $CommandUnderTest | Should -HaveParameter Session -Type Object[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Session -Type Object[] -Mandatory:$false
         }
         It "Should have AllSessions parameter" {
-            $CommandUnderTest | Should -HaveParameter AllSessions -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter AllSessions -Type Switch -Mandatory:$false
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Session[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Session[] -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

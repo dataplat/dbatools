@@ -11,7 +11,7 @@ Describe "Get-ObjectNameParts" {
             $CommandUnderTest = Get-Command Get-ObjectNameParts
         }
         It "Should have ObjectName as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter ObjectName -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ObjectName -Type String -Mandatory:$false
         }
     }
 

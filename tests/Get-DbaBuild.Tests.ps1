@@ -15,31 +15,31 @@ Describe "Get-DbaBuild" {
             $CommandUnderTest = Get-Command Get-DbaBuild
         }
         It "Should have Build parameter" {
-            $CommandUnderTest | Should -HaveParameter Build -Type Version[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Build -Type Version[] -Mandatory:$false
         }
         It "Should have Kb parameter" {
-            $CommandUnderTest | Should -HaveParameter Kb -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Kb -Type String[] -Mandatory:$false
         }
         It "Should have MajorVersion parameter" {
-            $CommandUnderTest | Should -HaveParameter MajorVersion -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter MajorVersion -Type String -Mandatory:$false
         }
         It "Should have ServicePack parameter" {
-            $CommandUnderTest | Should -HaveParameter ServicePack -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ServicePack -Type String -Mandatory:$false
         }
         It "Should have CumulativeUpdate parameter" {
-            $CommandUnderTest | Should -HaveParameter CumulativeUpdate -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter CumulativeUpdate -Type String -Mandatory:$false
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Update parameter" {
-            $CommandUnderTest | Should -HaveParameter Update -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Update -Type Switch -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

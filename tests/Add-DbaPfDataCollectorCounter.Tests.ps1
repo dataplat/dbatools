@@ -6,25 +6,25 @@ Describe "Add-DbaPfDataCollectorCounter" {
             $CommandUnderTest = Get-Command Add-DbaPfDataCollectorCounter
         }
         It "Should have ComputerName as a non-mandatory DbaInstanceParameter[] parameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have Credential as a non-mandatory PSCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Mandatory:$false
         }
         It "Should have CollectorSet as a non-mandatory String[] parameter" {
-            $CommandUnderTest | Should -HaveParameter CollectorSet -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter CollectorSet -Type String[] -Mandatory:$false
         }
         It "Should have Collector as a non-mandatory String[] parameter" {
-            $CommandUnderTest | Should -HaveParameter Collector -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Collector -Type String[] -Mandatory:$false
         }
         It "Should have Counter as a non-mandatory Object[] parameter" {
-            $CommandUnderTest | Should -HaveParameter Counter -Type Object[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Counter -Type Object[] -Mandatory:$false
         }
         It "Should have InputObject as a non-mandatory Object[] parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 }

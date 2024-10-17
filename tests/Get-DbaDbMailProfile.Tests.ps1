@@ -12,22 +12,22 @@ Describe "Get-DbaDbMailProfile Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Get-DbaDbMailProfile
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Profile as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Profile -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Profile -Type String[] -Mandatory:$false
         }
         It "Should have ExcludeProfile as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeProfile -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeProfile -Type String[] -Mandatory:$false
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type SqlMail[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter InputObject -Type SqlMail[] -Mandatory:$false
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 }

@@ -12,31 +12,31 @@ Describe "Set-DbaDbMirror" {
             $CommandUnderTest = Get-Command Set-DbaDbMirror
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Mandatory:$false
         }
         It "Should have Partner parameter" {
-            $CommandUnderTest | Should -HaveParameter Partner -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Partner -Type String -Mandatory:$false
         }
         It "Should have Witness parameter" {
-            $CommandUnderTest | Should -HaveParameter Witness -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Witness -Type String -Mandatory:$false
         }
         It "Should have SafetyLevel parameter" {
-            $CommandUnderTest | Should -HaveParameter SafetyLevel -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SafetyLevel -Type String -Mandatory:$false
         }
         It "Should have State parameter" {
-            $CommandUnderTest | Should -HaveParameter State -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter State -Type String -Mandatory:$false
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[] -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 }

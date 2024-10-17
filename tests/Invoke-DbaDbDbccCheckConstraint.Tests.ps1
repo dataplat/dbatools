@@ -12,28 +12,28 @@ Describe "Invoke-DbaDbDbccCheckConstraint Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Invoke-DbaDbDbccCheckConstraint
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Mandatory:$false
         }
         It "Should have Object parameter" {
-            $CommandUnderTest | Should -HaveParameter Object -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Object -Type String -Mandatory:$false
         }
         It "Should have AllConstraints parameter" {
-            $CommandUnderTest | Should -HaveParameter AllConstraints -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter AllConstraints -Type Switch -Mandatory:$false
         }
         It "Should have AllErrorMessages parameter" {
-            $CommandUnderTest | Should -HaveParameter AllErrorMessages -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter AllErrorMessages -Type Switch -Mandatory:$false
         }
         It "Should have NoInformationalMessages parameter" {
-            $CommandUnderTest | Should -HaveParameter NoInformationalMessages -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NoInformationalMessages -Type Switch -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 }

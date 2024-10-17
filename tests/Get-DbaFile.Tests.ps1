@@ -6,22 +6,22 @@ Describe "Get-DbaFile" {
             $CommandUnderTest = Get-Command Get-DbaFile
         }
         It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Path as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter Path -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Path -Type String[] -Mandatory:$false
         }
         It "Should have FileType as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter FileType -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter FileType -Type String[] -Mandatory:$false
         }
         It "Should have Depth as a non-mandatory parameter of type Int32" {
-            $CommandUnderTest | Should -HaveParameter Depth -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Depth -Type Int32 -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

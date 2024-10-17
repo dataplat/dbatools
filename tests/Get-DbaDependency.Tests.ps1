@@ -12,19 +12,19 @@ Describe "Get-DbaDependency Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Get-DbaDependency
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Object -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Object -Mandatory:$false
         }
         It "Should have AllowSystemObjects as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AllowSystemObjects -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter AllowSystemObjects -Type Switch -Mandatory:$false
         }
         It "Should have Parents as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Parents -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Parents -Type Switch -Mandatory:$false
         }
         It "Should have IncludeSelf as a parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeSelf -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter IncludeSelf -Type Switch -Mandatory:$false
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 }

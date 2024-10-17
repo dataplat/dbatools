@@ -12,34 +12,34 @@ Describe "New-DbaXESmartTableWriter" {
             $CommandUnderTest = Get-Command New-DbaXESmartTableWriter
         }
         It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Database as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Database -Type String -Mandatory:$false
         }
         It "Should have Table as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter Table -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Table -Type String -Mandatory:$false
         }
         It "Should have AutoCreateTargetTable as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter AutoCreateTargetTable -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter AutoCreateTargetTable -Type Switch -Mandatory:$false
         }
         It "Should have UploadIntervalSeconds as a non-mandatory parameter of type Int32" {
-            $CommandUnderTest | Should -HaveParameter UploadIntervalSeconds -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter UploadIntervalSeconds -Type Int32 -Mandatory:$false
         }
         It "Should have Event as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter Event -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Event -Type String[] -Mandatory:$false
         }
         It "Should have OutputColumn as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter OutputColumn -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter OutputColumn -Type String[] -Mandatory:$false
         }
         It "Should have Filter as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter Filter -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Filter -Type String -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

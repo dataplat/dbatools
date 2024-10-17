@@ -10,34 +10,34 @@ Describe "Get-DbaDbLogShipError Unit Tests" -Tag 'UnitTests' {
             $CommandName = Get-Command Get-DbaDbLogShipError
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandName | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandName | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandName | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandName | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Database as a parameter" {
-            $CommandName | Should -HaveParameter Database -Type String[] -Not -Mandatory
+            $CommandName | Should -HaveParameter Database -Type String[] -Mandatory:$false
         }
         It "Should have ExcludeDatabase as a parameter" {
-            $CommandName | Should -HaveParameter ExcludeDatabase -Type String[] -Not -Mandatory
+            $CommandName | Should -HaveParameter ExcludeDatabase -Type String[] -Mandatory:$false
         }
         It "Should have Action as a parameter" {
-            $CommandName | Should -HaveParameter Action -Type String[] -Not -Mandatory
+            $CommandName | Should -HaveParameter Action -Type String[] -Mandatory:$false
         }
         It "Should have DateTimeFrom as a parameter" {
-            $CommandName | Should -HaveParameter DateTimeFrom -Type DateTime -Not -Mandatory
+            $CommandName | Should -HaveParameter DateTimeFrom -Type DateTime -Mandatory:$false
         }
         It "Should have DateTimeTo as a parameter" {
-            $CommandName | Should -HaveParameter DateTimeTo -Type DateTime -Not -Mandatory
+            $CommandName | Should -HaveParameter DateTimeTo -Type DateTime -Mandatory:$false
         }
         It "Should have Primary as a parameter" {
-            $CommandName | Should -HaveParameter Primary -Type Switch -Not -Mandatory
+            $CommandName | Should -HaveParameter Primary -Type Switch -Mandatory:$false
         }
         It "Should have Secondary as a parameter" {
-            $CommandName | Should -HaveParameter Secondary -Type Switch -Not -Mandatory
+            $CommandName | Should -HaveParameter Secondary -Type Switch -Mandatory:$false
         }
         It "Should have EnableException as a parameter" {
-            $CommandName | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandName | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 }

@@ -7,28 +7,28 @@ Describe "Copy-DbaDbAssembly Unit Tests" -Tag 'UnitTests' {
             $Command = Get-Command -Name $CommandName
         }
         It "Should have Source parameter" {
-            $Command | Should -HaveParameter Source -Type DbaInstanceParameter -Not -Mandatory
+            $Command | Should -HaveParameter Source -Type DbaInstanceParameter -Mandatory:$false
         }
         It "Should have SourceSqlCredential parameter" {
-            $Command | Should -HaveParameter SourceSqlCredential -Type PSCredential -Not -Mandatory
+            $Command | Should -HaveParameter SourceSqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Destination parameter" {
-            $Command | Should -HaveParameter Destination -Type DbaInstanceParameter[] -Not -Mandatory
+            $Command | Should -HaveParameter Destination -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have DestinationSqlCredential parameter" {
-            $Command | Should -HaveParameter DestinationSqlCredential -Type PSCredential -Not -Mandatory
+            $Command | Should -HaveParameter DestinationSqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Assembly parameter" {
-            $Command | Should -HaveParameter Assembly -Type Object[] -Not -Mandatory
+            $Command | Should -HaveParameter Assembly -Type Object[] -Mandatory:$false
         }
         It "Should have ExcludeAssembly parameter" {
-            $Command | Should -HaveParameter ExcludeAssembly -Type Object[] -Not -Mandatory
+            $Command | Should -HaveParameter ExcludeAssembly -Type Object[] -Mandatory:$false
         }
         It "Should have Force parameter" {
-            $Command | Should -HaveParameter Force -Type Switch -Not -Mandatory
+            $Command | Should -HaveParameter Force -Type Switch -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $Command | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $Command | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 }

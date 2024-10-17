@@ -6,16 +6,16 @@ Describe "Get-DbatoolsConfig" {
             $CommandUnderTest = Get-Command Get-DbatoolsConfig
         }
         It "Should have parameter FullName of type String" {
-            $CommandUnderTest | Should -HaveParameter FullName -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter FullName -Type String -Mandatory:$false
         }
         It "Should have parameter Name of type String" {
-            $CommandUnderTest | Should -HaveParameter Name -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Name -Type String -Mandatory:$false
         }
         It "Should have parameter Module of type String" {
-            $CommandUnderTest | Should -HaveParameter Module -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Module -Type String -Mandatory:$false
         }
         It "Should have parameter Force of type Switch" {
-            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Mandatory:$false
         }
     }
 

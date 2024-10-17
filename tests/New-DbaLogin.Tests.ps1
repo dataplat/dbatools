@@ -70,70 +70,70 @@ Describe "New-DbaLogin" {
             $Command = Get-Command -Name $CommandName
         }
         It "Should have SqlInstance parameter" {
-            $Command | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $Command | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $Command | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $Command | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Login parameter" {
-            $Command | Should -HaveParameter Login -Type String[] -Not -Mandatory
+            $Command | Should -HaveParameter Login -Type String[] -Mandatory:$false
         }
         It "Should have InputObject parameter" {
-            $Command | Should -HaveParameter InputObject -Type Object[] -Not -Mandatory
+            $Command | Should -HaveParameter InputObject -Type Object[] -Mandatory:$false
         }
         It "Should have LoginRenameHashtable parameter" {
-            $Command | Should -HaveParameter LoginRenameHashtable -Type Hashtable -Not -Mandatory
+            $Command | Should -HaveParameter LoginRenameHashtable -Type Hashtable -Mandatory:$false
         }
         It "Should have SecurePassword parameter" {
-            $Command | Should -HaveParameter SecurePassword -Type SecureString -Not -Mandatory
+            $Command | Should -HaveParameter SecurePassword -Type SecureString -Mandatory:$false
         }
         It "Should have HashedPassword parameter" {
-            $Command | Should -HaveParameter HashedPassword -Type String -Not -Mandatory
+            $Command | Should -HaveParameter HashedPassword -Type String -Mandatory:$false
         }
         It "Should have MapToCertificate parameter" {
-            $Command | Should -HaveParameter MapToCertificate -Type String -Not -Mandatory
+            $Command | Should -HaveParameter MapToCertificate -Type String -Mandatory:$false
         }
         It "Should have MapToAsymmetricKey parameter" {
-            $Command | Should -HaveParameter MapToAsymmetricKey -Type String -Not -Mandatory
+            $Command | Should -HaveParameter MapToAsymmetricKey -Type String -Mandatory:$false
         }
         It "Should have MapToCredential parameter" {
-            $Command | Should -HaveParameter MapToCredential -Type String -Not -Mandatory
+            $Command | Should -HaveParameter MapToCredential -Type String -Mandatory:$false
         }
         It "Should have Sid parameter" {
-            $Command | Should -HaveParameter Sid -Type Object -Not -Mandatory
+            $Command | Should -HaveParameter Sid -Type Object -Mandatory:$false
         }
         It "Should have DefaultDatabase parameter" {
-            $Command | Should -HaveParameter DefaultDatabase -Type String -Not -Mandatory
+            $Command | Should -HaveParameter DefaultDatabase -Type String -Mandatory:$false
         }
         It "Should have Language parameter" {
-            $Command | Should -HaveParameter Language -Type String -Not -Mandatory
+            $Command | Should -HaveParameter Language -Type String -Mandatory:$false
         }
         It "Should have PasswordExpirationEnabled parameter" {
-            $Command | Should -HaveParameter PasswordExpirationEnabled -Type Switch -Not -Mandatory
+            $Command | Should -HaveParameter PasswordExpirationEnabled -Type Switch -Mandatory:$false
         }
         It "Should have PasswordPolicyEnforced parameter" {
-            $Command | Should -HaveParameter PasswordPolicyEnforced -Type Switch -Not -Mandatory
+            $Command | Should -HaveParameter PasswordPolicyEnforced -Type Switch -Mandatory:$false
         }
         It "Should have PasswordMustChange parameter" {
-            $Command | Should -HaveParameter PasswordMustChange -Type Switch -Not -Mandatory
+            $Command | Should -HaveParameter PasswordMustChange -Type Switch -Mandatory:$false
         }
         It "Should have Disabled parameter" {
-            $Command | Should -HaveParameter Disabled -Type Switch -Not -Mandatory
+            $Command | Should -HaveParameter Disabled -Type Switch -Mandatory:$false
         }
         It "Should have DenyWindowsLogin parameter" {
-            $Command | Should -HaveParameter DenyWindowsLogin -Type Switch -Not -Mandatory
+            $Command | Should -HaveParameter DenyWindowsLogin -Type Switch -Mandatory:$false
         }
         It "Should have NewSid parameter" {
-            $Command | Should -HaveParameter NewSid -Type Switch -Not -Mandatory
+            $Command | Should -HaveParameter NewSid -Type Switch -Mandatory:$false
         }
         It "Should have ExternalProvider parameter" {
-            $Command | Should -HaveParameter ExternalProvider -Type Switch -Not -Mandatory
+            $Command | Should -HaveParameter ExternalProvider -Type Switch -Mandatory:$false
         }
         It "Should have Force parameter" {
-            $Command | Should -HaveParameter Force -Type Switch -Not -Mandatory
+            $Command | Should -HaveParameter Force -Type Switch -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $Command | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $Command | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

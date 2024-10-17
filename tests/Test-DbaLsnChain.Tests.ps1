@@ -11,13 +11,13 @@ Describe "Test-DbaLsnChain" {
             $CommandUnderTest = Get-Command Test-DbaLsnChain
         }
         It "Should have FilteredRestoreFiles as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FilteredRestoreFiles -Type Object[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter FilteredRestoreFiles -Type Object[] -Mandatory:$false
         }
         It "Should have Continue as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Continue -Type switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Continue -Type switch -Mandatory:$false
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type switch -Mandatory:$false
         }
     }
 

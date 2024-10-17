@@ -6,34 +6,34 @@ Describe "Get-DbaDbRoleMember Unit Tests" -Tag "UnitTests" {
             $CommandUnderTest = Get-Command Get-DbaDbRoleMember
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Mandatory:$false
         }
         It "Should have ExcludeDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type String[] -Mandatory:$false
         }
         It "Should have Role as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Role -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Role -Type String[] -Mandatory:$false
         }
         It "Should have ExcludeRole as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeRole -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeRole -Type String[] -Mandatory:$false
         }
         It "Should have ExcludeFixedRole as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeFixedRole -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeFixedRole -Type Switch -Mandatory:$false
         }
         It "Should have IncludeSystemUser as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeSystemUser -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter IncludeSystemUser -Type Switch -Mandatory:$false
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Mandatory:$false
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 }

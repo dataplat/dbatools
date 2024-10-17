@@ -12,40 +12,40 @@ Describe "Add-DbaAgDatabase" {
             $CommandUnderTest = Get-Command Add-DbaAgDatabase
         }
         It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter -Mandatory:$false
         }
         It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have AvailabilityGroup as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter AvailabilityGroup -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter AvailabilityGroup -Type String -Mandatory:$false
         }
         It "Should have Database as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Mandatory:$false
         }
         It "Should have Secondary as a non-mandatory parameter of type DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter Secondary -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Secondary -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SecondarySqlCredential as a non-mandatory parameter of type PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SecondarySqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SecondarySqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have InputObject as a non-mandatory parameter of type Database[]" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[] -Mandatory:$false
         }
         It "Should have SeedingMode as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter SeedingMode -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SeedingMode -Type String -Mandatory:$false
         }
         It "Should have SharedPath as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter SharedPath -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SharedPath -Type String -Mandatory:$false
         }
         It "Should have UseLastBackup as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter UseLastBackup -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter UseLastBackup -Type Switch -Mandatory:$false
         }
         It "Should have AdvancedBackupParams as a non-mandatory parameter of type Hashtable" {
-            $CommandUnderTest | Should -HaveParameter AdvancedBackupParams -Type Hashtable -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter AdvancedBackupParams -Type Hashtable -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

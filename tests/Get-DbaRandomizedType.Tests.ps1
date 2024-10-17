@@ -11,16 +11,16 @@ Describe "Get-DbaRandomizedType" {
             $CommandUnderTest = Get-Command Get-DbaRandomizedType
         }
         It "Should have RandomizedType as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter RandomizedType -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter RandomizedType -Type String[] -Mandatory:$false
         }
         It "Should have RandomizedSubType as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter RandomizedSubType -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter RandomizedSubType -Type String[] -Mandatory:$false
         }
         It "Should have Pattern as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter Pattern -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Pattern -Type String -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

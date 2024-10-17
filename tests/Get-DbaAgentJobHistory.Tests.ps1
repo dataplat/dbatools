@@ -12,37 +12,37 @@ Describe "Get-DbaAgentJobHistory Unit Tests" -Tag 'UnitTests' {
             $command = Get-Command -Name $CommandName
         }
         It "Should have SqlInstance parameter" {
-            $command | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $command | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $command | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $command | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Job parameter" {
-            $command | Should -HaveParameter Job -Type Object[] -Not -Mandatory
+            $command | Should -HaveParameter Job -Type Object[] -Mandatory:$false
         }
         It "Should have ExcludeJob parameter" {
-            $command | Should -HaveParameter ExcludeJob -Type Object[] -Not -Mandatory
+            $command | Should -HaveParameter ExcludeJob -Type Object[] -Mandatory:$false
         }
         It "Should have StartDate parameter" {
-            $command | Should -HaveParameter StartDate -Type DateTime -Not -Mandatory
+            $command | Should -HaveParameter StartDate -Type DateTime -Mandatory:$false
         }
         It "Should have EndDate parameter" {
-            $command | Should -HaveParameter EndDate -Type DateTime -Not -Mandatory
+            $command | Should -HaveParameter EndDate -Type DateTime -Mandatory:$false
         }
         It "Should have OutcomeType parameter" {
-            $command | Should -HaveParameter OutcomeType -Type CompletionResult -Not -Mandatory
+            $command | Should -HaveParameter OutcomeType -Type CompletionResult -Mandatory:$false
         }
         It "Should have ExcludeJobSteps parameter" {
-            $command | Should -HaveParameter ExcludeJobSteps -Type Switch -Not -Mandatory
+            $command | Should -HaveParameter ExcludeJobSteps -Type Switch -Mandatory:$false
         }
         It "Should have WithOutputFile parameter" {
-            $command | Should -HaveParameter WithOutputFile -Type Switch -Not -Mandatory
+            $command | Should -HaveParameter WithOutputFile -Type Switch -Mandatory:$false
         }
         It "Should have JobCollection parameter" {
-            $command | Should -HaveParameter JobCollection -Type Job -Not -Mandatory
+            $command | Should -HaveParameter JobCollection -Type Job -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $command | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $command | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 }

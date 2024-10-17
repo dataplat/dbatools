@@ -10,13 +10,13 @@ Describe "ConvertTo-DbaDataTable" {
             $CommandUnderTest = Get-Command ConvertTo-DbaDataTable
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type PSObject[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter InputObject -Type PSObject[] -Mandatory:$false
         }
         It "Should have TimeSpanType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter TimeSpanType -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter TimeSpanType -Type String -Mandatory:$false
         }
         It "Should have SizeType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SizeType -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SizeType -Type String -Mandatory:$false
         }
         It "Should have IgnoreNull as a switch parameter" {
             $CommandUnderTest | Should -HaveParameter IgnoreNull -Type Switch

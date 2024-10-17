@@ -12,46 +12,46 @@ Describe "Export-DbaInstance Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Export-DbaInstance
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Mandatory:$false
         }
         It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Path -Type String -Mandatory:$false
         }
         It "Should have NoRecovery as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NoRecovery -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NoRecovery -Type Switch -Mandatory:$false
         }
         It "Should have AzureCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AzureCredential -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter AzureCredential -Type String -Mandatory:$false
         }
         It "Should have IncludeDbMasterKey as a parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeDbMasterKey -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter IncludeDbMasterKey -Type Switch -Mandatory:$false
         }
         It "Should have Exclude as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Exclude -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Exclude -Type String[] -Mandatory:$false
         }
         It "Should have BatchSeparator as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BatchSeparator -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter BatchSeparator -Type String -Mandatory:$false
         }
         It "Should have ScriptingOption as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ScriptingOption -Type ScriptingOptions -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ScriptingOption -Type ScriptingOptions -Mandatory:$false
         }
         It "Should have NoPrefix as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NoPrefix -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NoPrefix -Type Switch -Mandatory:$false
         }
         It "Should have ExcludePassword as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludePassword -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludePassword -Type Switch -Mandatory:$false
         }
         It "Should have Force as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Mandatory:$false
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 }

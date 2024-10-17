@@ -30,25 +30,25 @@ Describe "Set-DbaLogin" {
         }
 
         It "Should have the correct parameters" {
-            $command | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
-            $command | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
-            $command | Should -HaveParameter Login -Type String[] -Not -Mandatory
-            $command | Should -HaveParameter SecurePassword -Type Object -Not -Mandatory
-            $command | Should -HaveParameter DefaultDatabase -Type String -Not -Mandatory
-            $command | Should -HaveParameter Unlock -Type Switch -Not -Mandatory
-            $command | Should -HaveParameter PasswordMustChange -Type Switch -Not -Mandatory
-            $command | Should -HaveParameter NewName -Type String -Not -Mandatory
-            $command | Should -HaveParameter Disable -Type Switch -Not -Mandatory
-            $command | Should -HaveParameter Enable -Type Switch -Not -Mandatory
-            $command | Should -HaveParameter DenyLogin -Type Switch -Not -Mandatory
-            $command | Should -HaveParameter GrantLogin -Type Switch -Not -Mandatory
-            $command | Should -HaveParameter PasswordPolicyEnforced -Type Switch -Not -Mandatory
-            $command | Should -HaveParameter PasswordExpirationEnabled -Type Switch -Not -Mandatory
-            $command | Should -HaveParameter AddRole -Type String[] -Not -Mandatory
-            $command | Should -HaveParameter RemoveRole -Type String[] -Not -Mandatory
-            $command | Should -HaveParameter InputObject -Type Login[] -Not -Mandatory
-            $command | Should -HaveParameter Force -Type Switch -Not -Mandatory
-            $command | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $command | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+            $command | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+            $command | Should -HaveParameter Login -Type String[] -Mandatory:$false
+            $command | Should -HaveParameter SecurePassword -Type Object -Mandatory:$false
+            $command | Should -HaveParameter DefaultDatabase -Type String -Mandatory:$false
+            $command | Should -HaveParameter Unlock -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter PasswordMustChange -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter NewName -Type String -Mandatory:$false
+            $command | Should -HaveParameter Disable -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter Enable -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter DenyLogin -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter GrantLogin -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter PasswordPolicyEnforced -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter PasswordExpirationEnabled -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter AddRole -Type String[] -Mandatory:$false
+            $command | Should -HaveParameter RemoveRole -Type String[] -Mandatory:$false
+            $command | Should -HaveParameter InputObject -Type Login[] -Mandatory:$false
+            $command | Should -HaveParameter Force -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
 
         It "Validates -AddRole contains <_>" -ForEach $systemRoles {

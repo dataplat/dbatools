@@ -6,25 +6,25 @@ Describe "Export-DbaXESessionTemplate" {
             $CommandUnderTest = Get-Command Export-DbaXESessionTemplate
         }
         It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Session as a non-mandatory parameter of type Object[]" {
-            $CommandUnderTest | Should -HaveParameter Session -Type Object[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Session -Type Object[] -Mandatory:$false
         }
         It "Should have Path as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter Path -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Path -Type String -Mandatory:$false
         }
         It "Should have FilePath as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter FilePath -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter FilePath -Type String -Mandatory:$false
         }
         It "Should have InputObject as a non-mandatory parameter of type Session[]" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Session[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Session[] -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

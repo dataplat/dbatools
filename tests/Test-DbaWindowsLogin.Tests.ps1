@@ -12,28 +12,28 @@ Describe "Test-DbaWindowsLogin" {
             $CommandUnderTest = Get-Command Test-DbaWindowsLogin
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Login parameter" {
-            $CommandUnderTest | Should -HaveParameter Login -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Login -Type String[] -Mandatory:$false
         }
         It "Should have ExcludeLogin parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeLogin -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeLogin -Type String[] -Mandatory:$false
         }
         It "Should have FilterBy parameter" {
-            $CommandUnderTest | Should -HaveParameter FilterBy -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter FilterBy -Type String -Mandatory:$false
         }
         It "Should have IgnoreDomains parameter" {
-            $CommandUnderTest | Should -HaveParameter IgnoreDomains -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter IgnoreDomains -Type String[] -Mandatory:$false
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Login[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Login[] -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

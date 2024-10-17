@@ -35,73 +35,73 @@ Describe "New-DbaDatabase" {
             $CommandUnderTest = Get-Command New-DbaDatabase
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Name parameter" {
-            $CommandUnderTest | Should -HaveParameter Name -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Name -Type String[] -Mandatory:$false
         }
         It "Should have Collation parameter" {
-            $CommandUnderTest | Should -HaveParameter Collation -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Collation -Type String -Mandatory:$false
         }
         It "Should have RecoveryModel parameter" {
-            $CommandUnderTest | Should -HaveParameter RecoveryModel -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter RecoveryModel -Type String -Mandatory:$false
         }
         It "Should have Owner parameter" {
-            $CommandUnderTest | Should -HaveParameter Owner -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Owner -Type String -Mandatory:$false
         }
         It "Should have DataFilePath parameter" {
-            $CommandUnderTest | Should -HaveParameter DataFilePath -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter DataFilePath -Type String -Mandatory:$false
         }
         It "Should have LogFilePath parameter" {
-            $CommandUnderTest | Should -HaveParameter LogFilePath -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter LogFilePath -Type String -Mandatory:$false
         }
         It "Should have PrimaryFilesize parameter" {
-            $CommandUnderTest | Should -HaveParameter PrimaryFilesize -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter PrimaryFilesize -Type Int32 -Mandatory:$false
         }
         It "Should have PrimaryFileGrowth parameter" {
-            $CommandUnderTest | Should -HaveParameter PrimaryFileGrowth -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter PrimaryFileGrowth -Type Int32 -Mandatory:$false
         }
         It "Should have PrimaryFileMaxSize parameter" {
-            $CommandUnderTest | Should -HaveParameter PrimaryFileMaxSize -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter PrimaryFileMaxSize -Type Int32 -Mandatory:$false
         }
         It "Should have LogSize parameter" {
-            $CommandUnderTest | Should -HaveParameter LogSize -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter LogSize -Type Int32 -Mandatory:$false
         }
         It "Should have LogGrowth parameter" {
-            $CommandUnderTest | Should -HaveParameter LogGrowth -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter LogGrowth -Type Int32 -Mandatory:$false
         }
         It "Should have LogMaxSize parameter" {
-            $CommandUnderTest | Should -HaveParameter LogMaxSize -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter LogMaxSize -Type Int32 -Mandatory:$false
         }
         It "Should have SecondaryFilesize parameter" {
-            $CommandUnderTest | Should -HaveParameter SecondaryFilesize -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SecondaryFilesize -Type Int32 -Mandatory:$false
         }
         It "Should have SecondaryFileGrowth parameter" {
-            $CommandUnderTest | Should -HaveParameter SecondaryFileGrowth -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SecondaryFileGrowth -Type Int32 -Mandatory:$false
         }
         It "Should have SecondaryFileMaxSize parameter" {
-            $CommandUnderTest | Should -HaveParameter SecondaryFileMaxSize -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SecondaryFileMaxSize -Type Int32 -Mandatory:$false
         }
         It "Should have SecondaryFileCount parameter" {
-            $CommandUnderTest | Should -HaveParameter SecondaryFileCount -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SecondaryFileCount -Type Int32 -Mandatory:$false
         }
         It "Should have DefaultFileGroup parameter" {
-            $CommandUnderTest | Should -HaveParameter DefaultFileGroup -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter DefaultFileGroup -Type String -Mandatory:$false
         }
         It "Should have DataFileSuffix parameter" {
-            $CommandUnderTest | Should -HaveParameter DataFileSuffix -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter DataFileSuffix -Type String -Mandatory:$false
         }
         It "Should have LogFileSuffix parameter" {
-            $CommandUnderTest | Should -HaveParameter LogFileSuffix -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter LogFileSuffix -Type String -Mandatory:$false
         }
         It "Should have SecondaryDataFileSuffix parameter" {
-            $CommandUnderTest | Should -HaveParameter SecondaryDataFileSuffix -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SecondaryDataFileSuffix -Type String -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

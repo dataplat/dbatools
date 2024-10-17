@@ -11,13 +11,13 @@ Describe "Test-PSRemoting" {
             $CommandUnderTest = Get-Command Test-PSRemoting
         }
         It "Should have ComputerName as a non-mandatory parameter of type DbaInstanceParameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter -Mandatory:$false
         }
         It "Should have Credential as a non-mandatory parameter of type Object" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type Object -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Credential -Type Object -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

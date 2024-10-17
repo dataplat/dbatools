@@ -6,43 +6,43 @@ Describe "Add-DbaRegServer" {
             $CommandUnderTest = Get-Command Add-DbaRegServer
         }
         It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have ServerName as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter ServerName -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ServerName -Type String -Mandatory:$false
         }
         It "Should have Name as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter Name -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Name -Type String -Mandatory:$false
         }
         It "Should have Description as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter Description -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Description -Type String -Mandatory:$false
         }
         It "Should have Group as a non-mandatory parameter of type Object" {
-            $CommandUnderTest | Should -HaveParameter Group -Type Object -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Group -Type Object -Mandatory:$false
         }
         It "Should have ActiveDirectoryTenant as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter ActiveDirectoryTenant -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ActiveDirectoryTenant -Type String -Mandatory:$false
         }
         It "Should have ActiveDirectoryUserId as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter ActiveDirectoryUserId -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ActiveDirectoryUserId -Type String -Mandatory:$false
         }
         It "Should have ConnectionString as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter ConnectionString -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ConnectionString -Type String -Mandatory:$false
         }
         It "Should have OtherParams as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter OtherParams -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter OtherParams -Type String -Mandatory:$false
         }
         It "Should have InputObject as a non-mandatory parameter of type ServerGroup[]" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type ServerGroup[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter InputObject -Type ServerGroup[] -Mandatory:$false
         }
         It "Should have ServerObject as a non-mandatory parameter of type Server[]" {
-            $CommandUnderTest | Should -HaveParameter ServerObject -Type Server[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ServerObject -Type Server[] -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 

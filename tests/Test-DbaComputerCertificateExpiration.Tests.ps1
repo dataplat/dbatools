@@ -6,31 +6,31 @@ Describe "Test-DbaComputerCertificateExpiration" {
             $CommandUnderTest = Get-Command Test-DbaComputerCertificateExpiration
         }
         It "Should have ComputerName as a non-mandatory parameter of type DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have Credential as a non-mandatory parameter of type PSCredential" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Mandatory:$false
         }
         It "Should have Store as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter Store -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Store -Type String[] -Mandatory:$false
         }
         It "Should have Folder as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter Folder -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Folder -Type String[] -Mandatory:$false
         }
         It "Should have Type as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter Type -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Type -Type String -Mandatory:$false
         }
         It "Should have Path as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter Path -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Path -Type String -Mandatory:$false
         }
         It "Should have Thumbprint as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter Thumbprint -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Thumbprint -Type String[] -Mandatory:$false
         }
         It "Should have Threshold as a non-mandatory parameter of type Int32" {
-            $CommandUnderTest | Should -HaveParameter Threshold -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Threshold -Type Int32 -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 }

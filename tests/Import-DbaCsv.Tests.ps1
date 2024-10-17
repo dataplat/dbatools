@@ -22,37 +22,37 @@ Describe "Import-DbaCsv" {
             $CommandUnderTest = Get-Command Import-DbaCsv
         }
         It "Should have Path parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type Object[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Path -Type Object[] -Mandatory:$false
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Database -Type String -Mandatory:$false
         }
         It "Should have Table parameter" {
-            $CommandUnderTest | Should -HaveParameter Table -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Table -Type String -Mandatory:$false
         }
         It "Should have Schema parameter" {
-            $CommandUnderTest | Should -HaveParameter Schema -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Schema -Type String -Mandatory:$false
         }
         It "Should have Truncate parameter" {
             $CommandUnderTest | Should -HaveParameter Truncate -Type Switch
         }
         It "Should have Delimiter parameter" {
-            $CommandUnderTest | Should -HaveParameter Delimiter -Type Char -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Delimiter -Type Char -Mandatory:$false
         }
         It "Should have SingleColumn parameter" {
             $CommandUnderTest | Should -HaveParameter SingleColumn -Type Switch
         }
         It "Should have BatchSize parameter" {
-            $CommandUnderTest | Should -HaveParameter BatchSize -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter BatchSize -Type Int32 -Mandatory:$false
         }
         It "Should have NotifyAfter parameter" {
-            $CommandUnderTest | Should -HaveParameter NotifyAfter -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NotifyAfter -Type Int32 -Mandatory:$false
         }
         It "Should have TableLock parameter" {
             $CommandUnderTest | Should -HaveParameter TableLock -Type Switch
@@ -70,10 +70,10 @@ Describe "Import-DbaCsv" {
             $CommandUnderTest | Should -HaveParameter KeepNulls -Type Switch
         }
         It "Should have Column parameter" {
-            $CommandUnderTest | Should -HaveParameter Column -Type String[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Column -Type String[] -Mandatory:$false
         }
         It "Should have ColumnMap parameter" {
-            $CommandUnderTest | Should -HaveParameter ColumnMap -Type Hashtable -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ColumnMap -Type Hashtable -Mandatory:$false
         }
         It "Should have KeepOrdinalOrder parameter" {
             $CommandUnderTest | Should -HaveParameter KeepOrdinalOrder -Type Switch
@@ -91,31 +91,31 @@ Describe "Import-DbaCsv" {
             $CommandUnderTest | Should -HaveParameter UseFileNameForSchema -Type Switch
         }
         It "Should have Quote parameter" {
-            $CommandUnderTest | Should -HaveParameter Quote -Type Char -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Quote -Type Char -Mandatory:$false
         }
         It "Should have Escape parameter" {
-            $CommandUnderTest | Should -HaveParameter Escape -Type Char -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Escape -Type Char -Mandatory:$false
         }
         It "Should have Comment parameter" {
-            $CommandUnderTest | Should -HaveParameter Comment -Type Char -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Comment -Type Char -Mandatory:$false
         }
         It "Should have TrimmingOption parameter" {
-            $CommandUnderTest | Should -HaveParameter TrimmingOption -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter TrimmingOption -Type String -Mandatory:$false
         }
         It "Should have BufferSize parameter" {
-            $CommandUnderTest | Should -HaveParameter BufferSize -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter BufferSize -Type Int32 -Mandatory:$false
         }
         It "Should have ParseErrorAction parameter" {
-            $CommandUnderTest | Should -HaveParameter ParseErrorAction -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ParseErrorAction -Type String -Mandatory:$false
         }
         It "Should have Encoding parameter" {
-            $CommandUnderTest | Should -HaveParameter Encoding -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Encoding -Type String -Mandatory:$false
         }
         It "Should have NullValue parameter" {
-            $CommandUnderTest | Should -HaveParameter NullValue -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NullValue -Type String -Mandatory:$false
         }
         It "Should have MaxQuotedFieldLength parameter" {
-            $CommandUnderTest | Should -HaveParameter MaxQuotedFieldLength -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter MaxQuotedFieldLength -Type Int32 -Mandatory:$false
         }
         It "Should have SkipEmptyLine parameter" {
             $CommandUnderTest | Should -HaveParameter SkipEmptyLine -Type Switch

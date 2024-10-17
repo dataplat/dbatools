@@ -13,27 +13,27 @@ Describe "Backup-DbaDatabase Unit Tests" -Tag 'UnitTests' {
         }
 
         It "Should have SqlInstance parameter" {
-            $command | Should -HaveParameter SqlInstance -Type DbaInstanceParameter -Not -Mandatory
+            $command | Should -HaveParameter SqlInstance -Type DbaInstanceParameter -Mandatory:$false
         }
 
         It "Should have SqlCredential parameter" {
-            $command | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+            $command | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
 
         It "Should have Database parameter" {
-            $command | Should -HaveParameter Database -Type Object[] -Not -Mandatory
+            $command | Should -HaveParameter Database -Type Object[] -Mandatory:$false
         }
 
         It "Should have ExcludeDatabase parameter" {
-            $command | Should -HaveParameter ExcludeDatabase -Type Object[] -Not -Mandatory
+            $command | Should -HaveParameter ExcludeDatabase -Type Object[] -Mandatory:$false
         }
 
         It "Should have Path parameter" {
-            $command | Should -HaveParameter Path -Type String[] -Not -Mandatory
+            $command | Should -HaveParameter Path -Type String[] -Mandatory:$false
         }
 
         It "Should have FilePath parameter" {
-            $command | Should -HaveParameter FilePath -Type String -Not -Mandatory
+            $command | Should -HaveParameter FilePath -Type String -Mandatory:$false
         }
 
         It "Should have IncrementPrefix parameter" {
@@ -53,11 +53,11 @@ Describe "Backup-DbaDatabase Unit Tests" -Tag 'UnitTests' {
         }
 
         It "Should have Type parameter" {
-            $command | Should -HaveParameter Type -Type String -Not -Mandatory
+            $command | Should -HaveParameter Type -Type String -Mandatory:$false
         }
 
         It "Should have InputObject parameter" {
-            $command | Should -HaveParameter InputObject -Type Object[] -Not -Mandatory
+            $command | Should -HaveParameter InputObject -Type Object[] -Mandatory:$false
         }
 
         It "Should have CreateFolder parameter" {
@@ -65,7 +65,7 @@ Describe "Backup-DbaDatabase Unit Tests" -Tag 'UnitTests' {
         }
 
         It "Should have FileCount parameter" {
-            $command | Should -HaveParameter FileCount -Type Int32 -Not -Mandatory
+            $command | Should -HaveParameter FileCount -Type Int32 -Mandatory:$false
         }
 
         It "Should have CompressBackup parameter" {
@@ -81,23 +81,23 @@ Describe "Backup-DbaDatabase Unit Tests" -Tag 'UnitTests' {
         }
 
         It "Should have MaxTransferSize parameter" {
-            $command | Should -HaveParameter MaxTransferSize -Type Int32 -Not -Mandatory
+            $command | Should -HaveParameter MaxTransferSize -Type Int32 -Mandatory:$false
         }
 
         It "Should have BlockSize parameter" {
-            $command | Should -HaveParameter BlockSize -Type Int32 -Not -Mandatory
+            $command | Should -HaveParameter BlockSize -Type Int32 -Mandatory:$false
         }
 
         It "Should have BufferCount parameter" {
-            $command | Should -HaveParameter BufferCount -Type Int32 -Not -Mandatory
+            $command | Should -HaveParameter BufferCount -Type Int32 -Mandatory:$false
         }
 
         It "Should have AzureBaseUrl parameter" {
-            $command | Should -HaveParameter AzureBaseUrl -Type String[] -Not -Mandatory
+            $command | Should -HaveParameter AzureBaseUrl -Type String[] -Mandatory:$false
         }
 
         It "Should have AzureCredential parameter" {
-            $command | Should -HaveParameter AzureCredential -Type String -Not -Mandatory
+            $command | Should -HaveParameter AzureCredential -Type String -Mandatory:$false
         }
 
         It "Should have NoRecovery parameter" {
@@ -121,7 +121,7 @@ Describe "Backup-DbaDatabase Unit Tests" -Tag 'UnitTests' {
         }
 
         It "Should have TimeStampFormat parameter" {
-            $command | Should -HaveParameter TimeStampFormat -Type String -Not -Mandatory
+            $command | Should -HaveParameter TimeStampFormat -Type String -Mandatory:$false
         }
 
         It "Should have IgnoreFileChecks parameter" {
@@ -133,15 +133,15 @@ Describe "Backup-DbaDatabase Unit Tests" -Tag 'UnitTests' {
         }
 
         It "Should have EncryptionAlgorithm parameter" {
-            $command | Should -HaveParameter EncryptionAlgorithm -Type String -Not -Mandatory
+            $command | Should -HaveParameter EncryptionAlgorithm -Type String -Mandatory:$false
         }
 
         It "Should have EncryptionCertificate parameter" {
-            $command | Should -HaveParameter EncryptionCertificate -Type String -Not -Mandatory
+            $command | Should -HaveParameter EncryptionCertificate -Type String -Mandatory:$false
         }
 
         It "Should have Description parameter" {
-            $command | Should -HaveParameter Description -Type String -Not -Mandatory
+            $command | Should -HaveParameter Description -Type String -Mandatory:$false
         }
 
         It "Should have EnableException parameter" {

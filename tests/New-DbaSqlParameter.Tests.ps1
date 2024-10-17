@@ -6,64 +6,64 @@ Describe "New-DbaSqlParameter" {
             $CommandUnderTest = Get-Command New-DbaSqlParameter
         }
         It "Should have CompareInfo as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter CompareInfo -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter CompareInfo -Type String -Mandatory:$false
         }
         It "Should have DbType as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter DbType -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter DbType -Type String -Mandatory:$false
         }
         It "Should have Direction as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Direction -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Direction -Type String -Mandatory:$false
         }
         It "Should have ForceColumnEncryption as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter ForceColumnEncryption -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ForceColumnEncryption -Type Switch -Mandatory:$false
         }
         It "Should have IsNullable as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter IsNullable -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter IsNullable -Type Switch -Mandatory:$false
         }
         It "Should have LocaleId as a non-mandatory Int32 parameter" {
-            $CommandUnderTest | Should -HaveParameter LocaleId -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter LocaleId -Type Int32 -Mandatory:$false
         }
         It "Should have Offset as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Offset -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Offset -Type String -Mandatory:$false
         }
         It "Should have ParameterName as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter ParameterName -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ParameterName -Type String -Mandatory:$false
         }
         It "Should have Precision as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Precision -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Precision -Type String -Mandatory:$false
         }
         It "Should have Scale as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Scale -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Scale -Type String -Mandatory:$false
         }
         It "Should have Size as a non-mandatory Int32 parameter" {
-            $CommandUnderTest | Should -HaveParameter Size -Type Int32 -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Size -Type Int32 -Mandatory:$false
         }
         It "Should have SourceColumn as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter SourceColumn -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SourceColumn -Type String -Mandatory:$false
         }
         It "Should have SourceColumnNullMapping as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter SourceColumnNullMapping -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SourceColumnNullMapping -Type Switch -Mandatory:$false
         }
         It "Should have SourceVersion as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter SourceVersion -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SourceVersion -Type String -Mandatory:$false
         }
         It "Should have SqlDbType as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlDbType -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlDbType -Type String -Mandatory:$false
         }
         It "Should have SqlValue as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlValue -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlValue -Type String -Mandatory:$false
         }
         It "Should have TypeName as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter TypeName -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter TypeName -Type String -Mandatory:$false
         }
         It "Should have UdtTypeName as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter UdtTypeName -Type String -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter UdtTypeName -Type String -Mandatory:$false
         }
         It "Should have Value as a non-mandatory Object parameter" {
-            $CommandUnderTest | Should -HaveParameter Value -Type Object -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Value -Type Object -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
     }
 }

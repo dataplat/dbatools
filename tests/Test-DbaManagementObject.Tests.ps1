@@ -12,16 +12,16 @@ Describe "Test-DbaManagementObject" {
             $CommandUnderTest = Get-Command Test-DbaManagementObject
         }
         It "Should have ComputerName as a non-mandatory parameter of type DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have Credential as a non-mandatory parameter of type PSCredential" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Mandatory:$false
         }
         It "Should have VersionNumber as a non-mandatory parameter of type Int32[]" {
-            $CommandUnderTest | Should -HaveParameter VersionNumber -Type Int32[] -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter VersionNumber -Type Int32[] -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type switch -Mandatory:$false
         }
     }
 
