@@ -1,7 +1,18 @@
 Add-AppveyorTest -Name "appveyor.post" -Framework NUnit -FileName "appveyor.post.ps1" -Outcome Running
 $sw = [system.diagnostics.stopwatch]::startNew()
-Write-Host -Object "appveyor.post: Sending coverage data" -ForeGroundColor DarkGreen
+Write-Host -Object "appveyor.post: Sending coverage data (pester 4)" -ForeGroundColor DarkGreen
 Push-AppveyorArtifact PesterResultsCoverage.json -FileName "PesterResultsCoverage"
 codecov -f PesterResultsCoverage.json --flag "ps,$($env:SCENARIO.ToLowerInvariant())" | Out-Null
+
+Write-Host -Object "appveyor.post: Sending coverage data (pester 5)" -ForeGroundColor DarkGreen
+$ProjectRoot = $env:APPVEYOR_BUILD_FOLDER,
+$ModuleBase = $ProjectRoot,
+$pester5CoverageFiles = Get-ChildItem -Path "$ModuleBase\Pester5Coverage*.xml"
+foreach($coverageFile in $pester5CoverageFiles)
+{
+    Push-AppveyorArtifact $coverageFile.FullName -FileName $coverageFile.Name
+    codecov -f $coverageFile.FullName --flag "ps,$($env:SCENARIO.ToLowerInvariant())" | Out-Null
+}
+
 $sw.Stop()
 Update-AppveyorTest -Name "appveyor.post" -Framework NUnit -FileName "appveyor.post.ps1" -Outcome Passed -Duration $sw.ElapsedMilliseconds

@@ -19,6 +19,7 @@ git clone -q --branch=master --depth=1 https://github.com/dataplat/appveyor-lab.
 #Get codecov (to upload coverage results)
 Write-Host -Object "appveyor.prep: Install codecov" -ForegroundColor DarkGreen
 choco install codecov | Out-Null
+#FIXME : read about the new uploader https://docs.codecov.com/docs/codecov-uploader#using-the-uploader
 
 #Get PSScriptAnalyzer (to check warnings)
 Write-Host -Object "appveyor.prep: Install PSScriptAnalyzer" -ForegroundColor DarkGreen
@@ -33,9 +34,13 @@ if (-not(Test-Path 'C:\Program Files\WindowsPowerShell\Modules\dbatools.library'
 }
 
 #Get Pester (to run tests) - choco isn't working onall scenarios, weird
-Write-Host -Object "appveyor.prep: Install Pester" -ForegroundColor DarkGreen
+Write-Host -Object "appveyor.prep: Install Pester4" -ForegroundColor DarkGreen
 if (-not(Test-Path 'C:\Program Files\WindowsPowerShell\Modules\Pester\4.4.2')) {
     Install-Module -Name Pester -Force -SkipPublisherCheck -MaximumVersion 4.4.2 | Out-Null
+}
+Write-Host -Object "appveyor.prep: Install Pester5" -ForegroundColor DarkGreen
+if (-not(Test-Path 'C:\Program Files\WindowsPowerShell\Modules\Pester\5.6.1')) {
+    Install-Module -Name Pester -Force -SkipPublisherCheck -RequiredVersion 5.6.1 | Out-Null
 }
 
 #Setup DbatoolsConfig Path.DbatoolsExport path
@@ -44,10 +49,6 @@ if (-not(Test-Path 'C:\Users\appveyor\Documents\DbatoolsExport')) {
     New-Item -Path C:\Users\appveyor\Documents\DbatoolsExport -ItemType Directory | Out-Null
 }
 
-
-#Get opencover.portable (to run DLL tests)
-Write-Host -Object "appveyor.prep: Install opencover.portable" -ForegroundColor DarkGreen
-choco install opencover.portable | Out-Null
 
 Write-Host -Object "appveyor.prep: Trust SQL Server Cert (now required)" -ForegroundColor DarkGreen
 Import-Module dbatools.library
