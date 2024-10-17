@@ -152,7 +152,7 @@ Describe "Import-DbaCsv" {
             $results | Where-Object firstcol -notmatch "one" | Should -BeNullOrEmpty
         }
 
-        It "performs 4 imports" -Skip:($env:appveyor) {
+        It "performs 4 imports" -Skip:($null -ne $env:appveyor) {
             $results = Import-DbaCsv -Path $path, $path -SqlInstance $global:instance1, $global:instance2 -Database tempdb -Delimiter `t -NotifyAfter 50000 -WarningVariable warn2 -AutoCreateTable
             $results.Count | Should -Be 4
 
@@ -163,14 +163,14 @@ Describe "Import-DbaCsv" {
             }
         }
 
-        It "doesn't break when truncate is passed" -Skip:($env:appveyor) {
+        It "doesn't break when truncate is passed" -Skip:($null -ne $env:appveyor) {
             $result = Import-DbaCsv -Path $path -SqlInstance $global:instance1 -Database tempdb -Delimiter `t -Table SuperSmall -Truncate
             $result.RowsCopied | Should -Be 999
             $result.Database | Should -Be tempdb
             $result.Table | Should -Be SuperSmall
         }
 
-        It "works with NoTransaction" -Skip:($env:appveyor) {
+        It "works with NoTransaction" -Skip:($null -ne $env:appveyor) {
             $result = Import-DbaCsv -Path $path -SqlInstance $global:instance1 -Database tempdb -Delimiter `t -Table SuperSmall -Truncate -NoTransaction
             $result.RowsCopied | Should -Be 999
             $result.Database | Should -Be tempdb

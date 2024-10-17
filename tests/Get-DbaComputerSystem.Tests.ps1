@@ -30,7 +30,7 @@ Describe "Get-DbaComputerSystem" {
         }
     }
 
-    Context "Validate output" -Skip:$env:CI {
+    Context "Validate output" -Skip:($null -ne $env:CI) {
         BeforeAll {
             $result = Get-DbaComputerSystem -ComputerName $global:instance1
 

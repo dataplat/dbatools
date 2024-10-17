@@ -16,7 +16,7 @@ Describe "Get-DbaDump" {
         }
     }
 
-    Context "Integration Tests" -Skip:($env:appveyor) {
+    Context "Integration Tests" -Skip:($null -ne $env:appveyor) {
         BeforeAll {
             . "$PSScriptRoot\constants.ps1"
             $server = Connect-DbaInstance -SqlInstance $global:instance1

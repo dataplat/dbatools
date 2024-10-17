@@ -49,7 +49,7 @@ Describe "Get-DbaMaxMemory" {
         }
     }
 
-    Context "Connects to multiple instances" -Skip:$env:CI {
+    Context "Connects to multiple instances" -Skip:($null -ne $env:CI) {
         BeforeAll {
             $instances = $global:instance1, $global:instance2
         }

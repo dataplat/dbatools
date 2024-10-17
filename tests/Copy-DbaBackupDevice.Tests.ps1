@@ -34,7 +34,7 @@ Describe "Copy-DbaBackupDevice" {
         }
     }
 
-    Context "Integration Tests" -Skip:($env:appveyor) {
+    Context "Integration Tests" -Skip:($null -ne $env:appveyor) {
         BeforeAll {
             $devicename = "dbatoolsci-backupdevice"
             $backupdir = (Get-DbaDefaultPath -SqlInstance $global:instance1).Backup

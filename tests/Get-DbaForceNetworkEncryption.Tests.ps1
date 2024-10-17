@@ -21,7 +21,7 @@ Describe "Get-DbaForceNetworkEncryption" {
             . (Join-Path $PSScriptRoot 'constants.ps1')
         }
 
-        Context "Integration Tests" -Skip:($env:appveyor) {
+        Context "Integration Tests" -Skip:($null -ne $env:appveyor) {
             BeforeAll {
                 $results = Get-DbaForceNetworkEncryption -SqlInstance $global:instance1 -EnableException
             }

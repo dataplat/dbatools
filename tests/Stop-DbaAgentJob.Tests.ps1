@@ -33,7 +33,7 @@ Describe "Stop-DbaAgentJob" {
             . (Join-Path $PSScriptRoot 'constants.ps1')
         }
 
-        It "Returns a CurrentRunStatus of Idle" -Skip:([Environment]::GetEnvironmentVariable('appveyor')) {
+        It "Returns a CurrentRunStatus of Idle" -Skip:($null -ne [Environment]::GetEnvironmentVariable('appveyor')) {
             BeforeAll {
                 $jobName = 'DatabaseBackup - SYSTEM_DATABASES - FULL'
                 $server = Connect-DbaInstance -SqlInstance $global:instance2

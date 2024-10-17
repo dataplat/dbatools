@@ -312,7 +312,7 @@ Describe "Set-DbaAgentServer" {
         }
     }
 
-    Context "SqlAgentAutoStart" -Skip:([Environment]::GetEnvironmentVariable('appveyor')) {
+    Context "SqlAgentAutoStart" -Skip:($null -ne [Environment]::GetEnvironmentVariable('appveyor')) {
         It "SqlAgentAutoStart" {
             $agentServer = Get-DbaAgentServer -SqlInstance $testServer
             $results = Set-DbaAgentServer -SqlInstance $testServer -SqlAgentAutoStart Enabled
