@@ -1,36 +1,50 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Test-DbaNetworkLatency" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Query', 'Count', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Test-DbaNetworkLatency
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Query as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Query -Type String
+        }
+        It "Should have Count as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Count -Type Int32
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command returns proper info" {
-        $results = $instances | Test-DbaNetworkLatency
-
-        It "returns two objects" {
-            $results.Count | Should Be 2
+        BeforeAll {
+            $results = $instances | Test-DbaNetworkLatency
         }
 
-        $results = Test-DbaNetworkLatency -SqlInstance $instances
+        It "returns two objects" {
+            $results.Count | Should -Be 2
+        }
 
         It "executes 3 times by default" {
-            $results.ExecutionCount | Should Be 3, 3
+            $results = Test-DbaNetworkLatency -SqlInstance $instances
+            $results.ExecutionCount | Should -Be @(3, 3)
         }
 
         It "has the correct properties" {
             $result = $results | Select-Object -First 1
-            $ExpectedPropsDefault = 'ComputerName,InstanceName,SqlInstance,ExecutionCount,Total,Average,ExecuteOnlyTotal,ExecuteOnlyAverage,NetworkOnlyTotal'.Split(',')
-            ($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should Be ($ExpectedPropsDefault | Sort-Object)
+            $ExpectedPropsDefault = 'ComputerName', 'InstanceName', 'SqlInstance', 'ExecutionCount', 'Total', 'Average', 'ExecuteOnlyTotal', 'ExecuteOnlyAverage', 'NetworkOnlyTotal'
+            $result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object | Should -Be ($ExpectedPropsDefault | Sort-Object)
         }
     }
 }

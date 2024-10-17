@@ -1,21 +1,11 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tags "UnitTests" {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'EncryptorName', 'EncryptorType', 'Database', 'BackupPath', 'MasterKeySecurePassword', 'CertificateSubject', 'CertificateStartDate', 'CertificateExpirationDate', 'CertificateActiveForServiceBrokerDialog', 'BackupSecurePassword', 'InputObject', 'AllUserDatabases', 'EnableException', 'Force'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
-        }
-    }
-}
-
-
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe "Start-DbaDbEncryption" {
     BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+
         $PSDefaultParameterValues["*:Confirm"] = $false
         $alldbs = @()
         1..5 | ForEach-Object { $alldbs += New-DbaDatabase -SqlInstance $script:instance2 }
@@ -24,6 +14,60 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     AfterAll {
         if ($alldbs) {
             $alldbs | Remove-DbaDatabase
+        }
+    }
+
+    Context "Validate parameters" {
+        BeforeAll {
+            $CommandUnderTest = Get-Command Start-DbaDbEncryption
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have EncryptorName as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EncryptorName -Type String
+        }
+        It "Should have EncryptorType as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EncryptorType -Type String
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String[]
+        }
+        It "Should have BackupPath as a parameter" {
+            $CommandUnderTest | Should -HaveParameter BackupPath -Type String
+        }
+        It "Should have MasterKeySecurePassword as a parameter" {
+            $CommandUnderTest | Should -HaveParameter MasterKeySecurePassword -Type SecureString
+        }
+        It "Should have CertificateSubject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter CertificateSubject -Type String
+        }
+        It "Should have CertificateStartDate as a parameter" {
+            $CommandUnderTest | Should -HaveParameter CertificateStartDate -Type DateTime
+        }
+        It "Should have CertificateExpirationDate as a parameter" {
+            $CommandUnderTest | Should -HaveParameter CertificateExpirationDate -Type DateTime
+        }
+        It "Should have CertificateActiveForServiceBrokerDialog as a parameter" {
+            $CommandUnderTest | Should -HaveParameter CertificateActiveForServiceBrokerDialog -Type SwitchParameter
+        }
+        It "Should have BackupSecurePassword as a parameter" {
+            $CommandUnderTest | Should -HaveParameter BackupSecurePassword -Type SecureString
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[]
+        }
+        It "Should have AllUserDatabases as a parameter" {
+            $CommandUnderTest | Should -HaveParameter AllUserDatabases -Type SwitchParameter
+        }
+        It "Should have Force as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
 

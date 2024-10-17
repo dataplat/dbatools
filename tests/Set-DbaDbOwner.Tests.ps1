@@ -1,19 +1,41 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Set-DbaDbOwner Unit Tests" -Tag 'UnitTests' {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'InputObject', 'TargetLogin', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Set-DbaDbOwner
+        }
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Not -Mandatory
+        }
+        It "Should have ExcludeDatabase parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Not -Mandatory
+        }
+        It "Should have InputObject parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[] -Not -Mandatory
+        }
+        It "Should have TargetLogin parameter" {
+            $CommandUnderTest | Should -HaveParameter TargetLogin -Type String -Not -Mandatory
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+Describe "Set-DbaDbOwner Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $svr = Connect-DbaInstance -SqlInstance $script:instance1
         $owner = "dbatoolssci_owner_$(Get-Random)"
@@ -26,65 +48,72 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $null = New-DbaDatabase -SqlInstance $script:instance1 -Name $dbnametwo -Owner sa
     }
     AfterAll {
-        $null = Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname, $dbnametwo -confirm:$false
-        $null = Remove-DbaLogin -SqlInstance $script:instance1 -Login $owner, $ownertwo -confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname, $dbnametwo -Confirm:$false
+        $null = Remove-DbaLogin -SqlInstance $script:instance1 -Login $owner, $ownertwo -Confirm:$false
     }
     Context "Should set the database owner" {
         It "Sets the database owner on a specific database" {
             $results = Set-DbaDbOwner -SqlInstance $script:instance1 -Database $dbName -TargetLogin $owner
-            $results.Owner | Should Be $owner
+            $results.Owner | Should -Be $owner
         }
         It "Check it actually set the owner" {
             $svr.Databases[$dbname].refresh()
-            $svr.Databases[$dbname].Owner | Should Be $owner
+            $svr.Databases[$dbname].Owner | Should -Be $owner
         }
     }
 
     Context "Sets multiple database owners" {
-        $results = Set-DbaDbOwner -SqlInstance $script:instance1 -Database $dbName, $dbnametwo -TargetLogin $ownertwo
+        BeforeAll {
+            $results = Set-DbaDbOwner -SqlInstance $script:instance1 -Database $dbName, $dbnametwo -TargetLogin $ownertwo
+        }
         It "Sets the database owner on multiple databases" {
             foreach ($r in $results) {
-                $r.owner | Should Be $ownertwo
+                $r.owner | Should -Be $ownertwo
             }
         }
         It "Set 2 database owners" {
-            $results.Count | Should Be 2
+            $results.Count | Should -Be 2
         }
     }
 
     Context "Excludes databases" {
-        $svr.Databases[$dbName].refresh()
-        $results = Set-DbaDbOwner -SqlInstance $script:instance1 -ExcludeDatabase $dbnametwo -TargetLogin $owner
+        BeforeAll {
+            $svr.Databases[$dbName].refresh()
+            $results = Set-DbaDbOwner -SqlInstance $script:instance1 -ExcludeDatabase $dbnametwo -TargetLogin $owner
+        }
         It "Excludes specified database" {
-            $results.Database | Should Not Contain $dbnametwo
+            $results.Database | Should -Not -Contain $dbnametwo
         }
         It "Updates at least one database" {
-            @($results).Count | Should BeGreaterOrEqual 1
+            @($results).Count | Should -BeGreaterOrEqual 1
         }
     }
 
     Context "Enables input from Get-DbaDatabase" {
-        $svr.Databases[$dbnametwo].refresh()
-        $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbnametwo
-        $results = Set-DbaDbOwner -InputObject $db -TargetLogin $owner
-
+        BeforeAll {
+            $svr.Databases[$dbnametwo].refresh()
+            $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbnametwo
+            $results = Set-DbaDbOwner -InputObject $db -TargetLogin $owner
+        }
         It "Includes specified database" {
-            $results.Database | Should Be $dbnametwo
+            $results.Database | Should -Be $dbnametwo
         }
         It "Sets the database owner on databases" {
-            $results.owner | Should Be $owner
+            $results.owner | Should -Be $owner
         }
     }
 
     Context "Sets database owner to sa" {
-        $results = Set-DbaDbOwner -SqlInstance $script:instance1
+        BeforeAll {
+            $results = Set-DbaDbOwner -SqlInstance $script:instance1
+        }
         It "Sets the database owner on multiple databases" {
             foreach ($r in $results) {
-                $r.owner | Should Be 'sa'
+                $r.owner | Should -Be 'sa'
             }
         }
         It "Updates at least one database" {
-            @($results).Count | Should BeGreaterOrEqual 1
+            @($results).Count | Should -BeGreaterOrEqual 1
         }
     }
 }

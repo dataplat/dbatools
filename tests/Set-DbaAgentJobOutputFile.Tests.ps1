@@ -1,19 +1,33 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Set-DbaAgentJobOutputFile" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Job', 'Step', 'OutputFile', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Set-DbaAgentJobOutputFile
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Job as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Job -Type Object[]
+        }
+        It "Should have Step as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Step -Type Object[]
+        }
+        It "Should have OutputFile as a parameter" {
+            $CommandUnderTest | Should -HaveParameter OutputFile -Type String
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
 }
+
 <#
     Integration test should appear below and are custom to the command you are writing.
     Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
+    for more guidance.
 #>

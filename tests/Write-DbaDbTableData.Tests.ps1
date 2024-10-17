@@ -1,34 +1,90 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'InputObject', 'Table', 'Schema', 'BatchSize', 'NotifyAfter', 'AutoCreateTable', 'NoTableLock', 'CheckConstraints', 'FireTriggers', 'KeepIdentity', 'KeepNulls', 'Truncate', 'bulkCopyTimeOut', 'ColumnMap', 'EnableException', 'UseDynamicStringLength'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
-        }
-    }
-}
-
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe "Write-DbaDbTableData" {
     BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+
         $server = Connect-DbaInstance -SqlInstance $script:instance1
         $random = Get-Random
         $db = "dbatoolsci_writedbadaatable$random"
         $server.Query("CREATE DATABASE $db")
     }
+
     AfterAll {
         $null = Get-DbaDatabase -SqlInstance $server -Database $db | Remove-DbaDatabase -Confirm:$false
     }
 
-    # calling random function to throw data into a table
-    It "defaults to dbo if no schema is specified" {
-        $results = Get-ChildItem | ConvertTo-DbaDataTable
-        $results | Write-DbaDbTableData -SqlInstance $script:instance1 -Database $db -Table 'childitem' -AutoCreateTable
+    Context "Validate parameters" {
+        BeforeAll {
+            $CommandUnderTest = Get-Command Write-DbaDbTableData
+        }
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter
+        }
+        It "Should have SqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Database parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type Object
+        }
+        It "Should have InputObject parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Object
+        }
+        It "Should have Table parameter" {
+            $CommandUnderTest | Should -HaveParameter Table -Type String
+        }
+        It "Should have Schema parameter" {
+            $CommandUnderTest | Should -HaveParameter Schema -Type String
+        }
+        It "Should have BatchSize parameter" {
+            $CommandUnderTest | Should -HaveParameter BatchSize -Type Int32
+        }
+        It "Should have NotifyAfter parameter" {
+            $CommandUnderTest | Should -HaveParameter NotifyAfter -Type Int32
+        }
+        It "Should have AutoCreateTable parameter" {
+            $CommandUnderTest | Should -HaveParameter AutoCreateTable -Type SwitchParameter
+        }
+        It "Should have NoTableLock parameter" {
+            $CommandUnderTest | Should -HaveParameter NoTableLock -Type SwitchParameter
+        }
+        It "Should have CheckConstraints parameter" {
+            $CommandUnderTest | Should -HaveParameter CheckConstraints -Type SwitchParameter
+        }
+        It "Should have FireTriggers parameter" {
+            $CommandUnderTest | Should -HaveParameter FireTriggers -Type SwitchParameter
+        }
+        It "Should have KeepIdentity parameter" {
+            $CommandUnderTest | Should -HaveParameter KeepIdentity -Type SwitchParameter
+        }
+        It "Should have KeepNulls parameter" {
+            $CommandUnderTest | Should -HaveParameter KeepNulls -Type SwitchParameter
+        }
+        It "Should have Truncate parameter" {
+            $CommandUnderTest | Should -HaveParameter Truncate -Type SwitchParameter
+        }
+        It "Should have BulkCopyTimeOut parameter" {
+            $CommandUnderTest | Should -HaveParameter BulkCopyTimeOut -Type Int32
+        }
+        It "Should have ColumnMap parameter" {
+            $CommandUnderTest | Should -HaveParameter ColumnMap -Type Hashtable
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+        }
+        It "Should have UseDynamicStringLength parameter" {
+            $CommandUnderTest | Should -HaveParameter UseDynamicStringLength -Type SwitchParameter
+        }
+    }
 
-        ($server.Databases[$db].Tables | Where-Object { $_.Schema -eq 'dbo' -and $_.Name -eq 'childitem' }).Count | Should Be 1
+    Context "Command usage" {
+        It "defaults to dbo if no schema is specified" {
+            $results = Get-ChildItem | ConvertTo-DbaDataTable
+            $results | Write-DbaDbTableData -SqlInstance $script:instance1 -Database $db -Table 'childitem' -AutoCreateTable
+
+            ($server.Databases[$db].Tables | Where-Object { $_.Schema -eq 'dbo' -and $_.Name -eq 'childitem' }).Count | Should -Be 1
+        }
     }
 }

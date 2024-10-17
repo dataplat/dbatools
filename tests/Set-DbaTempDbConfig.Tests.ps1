@@ -1,19 +1,11 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'DataFileCount', 'DataFileSize', 'LogFileSize', 'DataFileGrowth', 'LogFileGrowth', 'DataPath', 'LogPath', 'OutFile', 'OutputScriptOnly', 'DisableGrowth', 'EnableException'
-        It "Should only contain our specific parameters" {
-            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
-        }
-    }
-}
-
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "Set-DbaTempDbConfig" {
     BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+
         $random = Get-Random
 
         $server = Connect-DbaInstance -SqlInstance $script:instance1
@@ -33,8 +25,53 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $null = Remove-Item "$tempdbDataFilePath\DataDir2_$random" -Force
         $null = Remove-Item "$tempdbDataFilePath\Log_$random" -Force
     }
-    Context "Command actually works" {
 
+    Context "Validate parameters" {
+        BeforeAll {
+            $CommandUnderTest = Get-Command Set-DbaTempDbConfig
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have DataFileCount as a parameter" {
+            $CommandUnderTest | Should -HaveParameter DataFileCount -Type Int32
+        }
+        It "Should have DataFileSize as a parameter" {
+            $CommandUnderTest | Should -HaveParameter DataFileSize -Type Int32
+        }
+        It "Should have LogFileSize as a parameter" {
+            $CommandUnderTest | Should -HaveParameter LogFileSize -Type Int32
+        }
+        It "Should have DataFileGrowth as a parameter" {
+            $CommandUnderTest | Should -HaveParameter DataFileGrowth -Type Int32
+        }
+        It "Should have LogFileGrowth as a parameter" {
+            $CommandUnderTest | Should -HaveParameter LogFileGrowth -Type Int32
+        }
+        It "Should have DataPath as a parameter" {
+            $CommandUnderTest | Should -HaveParameter DataPath -Type String[]
+        }
+        It "Should have LogPath as a parameter" {
+            $CommandUnderTest | Should -HaveParameter LogPath -Type String
+        }
+        It "Should have OutFile as a parameter" {
+            $CommandUnderTest | Should -HaveParameter OutFile -Type String
+        }
+        It "Should have OutputScriptOnly as a parameter" {
+            $CommandUnderTest | Should -HaveParameter OutputScriptOnly -Type SwitchParameter
+        }
+        It "Should have DisableGrowth as a parameter" {
+            $CommandUnderTest | Should -HaveParameter DisableGrowth -Type SwitchParameter
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+        }
+    }
+
+    Context "Command actually works" {
         It "test with an invalid data dir" {
             $result = Set-DbaTempDbConfig -SqlInstance $script:instance1 -DataFileSize 1024 -DataPath "$tempdbDataFilePath\invalidDir_$random" -OutputScriptOnly
             $result | Should -BeNullOrEmpty

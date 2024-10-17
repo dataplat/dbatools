@@ -1,14 +1,67 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Update-DbaMaintenanceSolution" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Solution', 'LocalFile', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Update-DbaMaintenanceSolution
+        }
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Database parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String
+        }
+        It "Should have Solution parameter" {
+            $CommandUnderTest | Should -HaveParameter Solution -Type String[]
+        }
+        It "Should have LocalFile parameter" {
+            $CommandUnderTest | Should -HaveParameter LocalFile -Type String
+        }
+        It "Should have Force parameter" {
+            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+        }
+    }
+
+    Context "Command usage" {
+        BeforeDiscovery {
+            # Run setup code to get script variables within scope of the discovery phase
+            . (Join-Path $PSScriptRoot 'constants.ps1')
+        }
+
+        BeforeAll {
+            # Setup code for all tests in this context
+            $server = Connect-DbaInstance -SqlInstance $script:instance1
+        }
+
+        It "Updates the maintenance solution" {
+            $result = Update-DbaMaintenanceSolution -SqlInstance $script:instance1 -Database master
+            $result | Should -Not -BeNullOrEmpty
+            $result.Database | Should -Be 'master'
+            $result.Status | Should -Be 'Updated'
+        }
+
+        It "Throws an exception when an invalid database is specified" {
+            { Update-DbaMaintenanceSolution -SqlInstance $script:instance1 -Database 'InvalidDB' -EnableException } | Should -Throw
+        }
+
+        It "Updates only specified solutions" {
+            $result = Update-DbaMaintenanceSolution -SqlInstance $script:instance1 -Database master -Solution 'IndexOptimize'
+            $result | Should -Not -BeNullOrEmpty
+            $result.Solution | Should -Be 'IndexOptimize'
+        }
+
+        It "Uses a local file when specified" {
+            $localFile = "TestDrive:\MaintenanceSolution.sql"
+            Set-Content -Path $localFile -Value "SELECT 1 AS TestColumn"
+            $result = Update-DbaMaintenanceSolution -SqlInstance $script:instance1 -Database master -LocalFile $localFile
+            $result | Should -Not -BeNullOrEmpty
+            $result.Status | Should -Be 'Updated'
         }
     }
 }

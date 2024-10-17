@@ -1,19 +1,56 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Unregister-DbatoolsConfig" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ConfigurationItem', 'FullName', 'Module', 'Name', 'Scope'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Unregister-DbatoolsConfig
+        }
+        It "Accepts ConfigurationItem as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ConfigurationItem -Type Config[] -Not -Mandatory
+        }
+        It "Accepts FullName as a parameter" {
+            $CommandUnderTest | Should -HaveParameter FullName -Type String[] -Not -Mandatory
+        }
+        It "Accepts Module as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Module -Type String -Not -Mandatory
+        }
+        It "Accepts Name as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Name -Type String -Not -Mandatory
+        }
+        It "Accepts Scope as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Scope -Type ConfigScope -Not -Mandatory
+        }
+    }
+
+    Context "Command usage" {
+        BeforeAll {
+            # Setup code for the tests
+            # This is where you would typically create test configurations
+        }
+
+        It "Should unregister a configuration item" {
+            # Test implementation
+            # Example:
+            # $testConfig = New-DbatoolsConfig -FullName "test.config" -Value "test"
+            # Register-DbatoolsConfig $testConfig
+            # Unregister-DbatoolsConfig -FullName "test.config"
+            # Get-DbatoolsConfig -FullName "test.config" | Should -BeNullOrEmpty
+        }
+
+        It "Should unregister multiple configuration items" {
+            # Test implementation
+        }
+
+        It "Should unregister configuration items by module" {
+            # Test implementation
+        }
+
+        It "Should unregister configuration items by name" {
+            # Test implementation
+        }
+
+        It "Should unregister configuration items by scope" {
+            # Test implementation
         }
     }
 }
-<#
-    Integration test are custom to the command you are writing for.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence
-#>

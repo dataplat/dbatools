@@ -1,22 +1,52 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Set-DbaNetworkConfiguration" {
+    BeforeAll {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'Credential', 'EnableProtocol', 'DisableProtocol', 'DynamicPortForIPAll', 'StaticPortForIPAll', 'IpAddress', 'RestartService', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Set-DbaNetworkConfiguration
+        }
+        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have Credential as a non-mandatory parameter of type PSCredential" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have EnableProtocol as a non-mandatory parameter of type String" {
+            $CommandUnderTest | Should -HaveParameter EnableProtocol -Type String -Not -Mandatory
+        }
+        It "Should have DisableProtocol as a non-mandatory parameter of type String" {
+            $CommandUnderTest | Should -HaveParameter DisableProtocol -Type String -Not -Mandatory
+        }
+        It "Should have DynamicPortForIPAll as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter DynamicPortForIPAll -Type Switch -Not -Mandatory
+        }
+        It "Should have StaticPortForIPAll as a non-mandatory parameter of type Int32[]" {
+            $CommandUnderTest | Should -HaveParameter StaticPortForIPAll -Type Int32[] -Not -Mandatory
+        }
+        It "Should have IpAddress as a non-mandatory parameter of type String[]" {
+            $CommandUnderTest | Should -HaveParameter IpAddress -Type String[] -Not -Mandatory
+        }
+        It "Should have RestartService as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter RestartService -Type Switch -Not -Mandatory
+        }
+        It "Should have InputObject as a non-mandatory parameter of type Object[]" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
-}
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+
     Context "Command works with piped input" {
-        $netConf = Get-DbaNetworkConfiguration -SqlInstance $script:instance2
-        $netConf.TcpIpProperties.KeepAlive = 60000
-        $results = $netConf | Set-DbaNetworkConfiguration -Confirm:$false -WarningAction SilentlyContinue
+        BeforeAll {
+            $netConf = Get-DbaNetworkConfiguration -SqlInstance $script:instance2
+            $netConf.TcpIpProperties.KeepAlive = 60000
+            $results = $netConf | Set-DbaNetworkConfiguration -Confirm:$false -WarningAction SilentlyContinue
+        }
 
         It "Should Return a Result" {
             $results.ComputerName | Should -Be $netConf.ComputerName
@@ -26,17 +56,21 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results.Changes | Should -Match "Changed TcpIpProperties.KeepAlive to 60000"
         }
 
-        $netConf = Get-DbaNetworkConfiguration -SqlInstance $script:instance2
-        $netConf.TcpIpProperties.KeepAlive = 30000
-        $null = $netConf | Set-DbaNetworkConfiguration -Confirm:$false -WarningAction SilentlyContinue
+        AfterAll {
+            $netConf = Get-DbaNetworkConfiguration -SqlInstance $script:instance2
+            $netConf.TcpIpProperties.KeepAlive = 30000
+            $null = $netConf | Set-DbaNetworkConfiguration -Confirm:$false -WarningAction SilentlyContinue
+        }
     }
 
     Context "Command works with commandline input" {
-        $netConf = Get-DbaNetworkConfiguration -SqlInstance $script:instance2
-        if ($netConf.NamedPipesEnabled) {
-            $results = Set-DbaNetworkConfiguration -SqlInstance $script:instance2 -DisableProtocol NamedPipes -Confirm:$false -WarningAction SilentlyContinue
-        } else {
-            $results = Set-DbaNetworkConfiguration -SqlInstance $script:instance2 -EnableProtocol NamedPipes -Confirm:$false -WarningAction SilentlyContinue
+        BeforeAll {
+            $netConf = Get-DbaNetworkConfiguration -SqlInstance $script:instance2
+            if ($netConf.NamedPipesEnabled) {
+                $results = Set-DbaNetworkConfiguration -SqlInstance $script:instance2 -DisableProtocol NamedPipes -Confirm:$false -WarningAction SilentlyContinue
+            } else {
+                $results = Set-DbaNetworkConfiguration -SqlInstance $script:instance2 -EnableProtocol NamedPipes -Confirm:$false -WarningAction SilentlyContinue
+            }
         }
 
         It "Should Return a Result" {
@@ -47,10 +81,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results.Changes | Should -Match "Changed NamedPipesEnabled to"
         }
 
-        if ($netConf.NamedPipesEnabled) {
-            $null = Set-DbaNetworkConfiguration -SqlInstance $script:instance2 -EnableProtocol NamedPipes -Confirm:$false -WarningAction SilentlyContinue
-        } else {
-            $null = Set-DbaNetworkConfiguration -SqlInstance $script:instance2 -DisableProtocol NamedPipes -Confirm:$false -WarningAction SilentlyContinue
+        AfterAll {
+            if ($netConf.NamedPipesEnabled) {
+                $null = Set-DbaNetworkConfiguration -SqlInstance $script:instance2 -EnableProtocol NamedPipes -Confirm:$false -WarningAction SilentlyContinue
+            } else {
+                $null = Set-DbaNetworkConfiguration -SqlInstance $script:instance2 -DisableProtocol NamedPipes -Confirm:$false -WarningAction SilentlyContinue
+            }
         }
     }
 }

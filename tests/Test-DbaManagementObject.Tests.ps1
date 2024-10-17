@@ -1,41 +1,50 @@
-<#
-    The below statement stays in for every test you build.
-#>
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-<#
-    Unit test is required for any command added
-#>
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Test-DbaManagementObject" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'Credential', 'VersionNumber', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Test-DbaManagementObject
+        }
+        It "Should have ComputerName as a non-mandatory parameter of type DbaInstanceParameter[]" {
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have Credential as a non-mandatory parameter of type PSCredential" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have VersionNumber as a non-mandatory parameter of type Int32[]" {
+            $CommandUnderTest | Should -HaveParameter VersionNumber -Type Int32[] -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type switch -Not -Mandatory
         }
     }
-}
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    BeforeAll {
-        $versionMajor = (Connect-DbaInstance -SqlInstance $script:instance2).VersionMajor
-    }
+
     Context "Command actually works" {
-        $trueResults = Test-DbaManagementObject -ComputerName $script:instance2 -VersionNumber $versionMajor
+        BeforeAll {
+            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $versionMajor = $server.VersionMajor
+        }
+
         It "Should have correct properties" {
-            $ExpectedProps = 'ComputerName,Version,Exists'.Split(',')
-            ($trueResults[0].PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
+            $trueResults = Test-DbaManagementObject -ComputerName $script:instance2 -VersionNumber $versionMajor
+            $ExpectedProps = 'ComputerName', 'Version', 'Exists'
+            ($trueResults[0].PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
         }
 
         It "Should return true for VersionNumber $versionMajor" {
-            $trueResults.Exists | Should Be $true
+            $trueResults = Test-DbaManagementObject -ComputerName $script:instance2 -VersionNumber $versionMajor
+            $trueResults.Exists | Should -Be $true
         }
 
-        $falseResults = Test-DbaManagementObject -ComputerName $script:instance2 -VersionNumber -1
         It "Should return false for VersionNumber -1" {
-            $falseResults.Exists | Should Be $false
+            $falseResults = Test-DbaManagementObject -ComputerName $script:instance2 -VersionNumber -1
+            $falseResults.Exists | Should -Be $false
         }
     }
 }

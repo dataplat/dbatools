@@ -1,20 +1,7 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
-
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Session', 'StartAt', 'StopAt', 'AllSessions', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
-        }
-    }
-}
-
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+param($ModuleName = 'dbatools')
+Describe "Start-DbaXESession" {
     BeforeAll {
+        . "$PSScriptRoot\constants.ps1"
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $conn = $server.ConnectionContext
         # Get the systemhealth session
@@ -28,12 +15,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         # Record the Status of all sessions
         $allSessions = Get-DbaXESession -SqlInstance $server
     }
-    BeforeEach {
-        $systemhealth.Refresh()
-        if ($systemhealth.IsRunning) {
-            $systemhealth.Stop()
-        }
-    }
+
     AfterAll {
         # Set the Status of all session back to what they were before the test
         foreach ($session in $allSessions) {
@@ -55,11 +37,48 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         Get-DbaAgentSchedule -SqlInstance $script:instance2 -Schedule "XE Session START - dbatoolsci_session_valid", "XE Session STOP - dbatoolsci_session_valid" | Remove-DbaAgentSchedule -Force -Confirm:$false
     }
 
+    Context "Validate parameters" {
+        BeforeAll {
+            $CommandUnderTest = Get-Command Start-DbaXESession
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Session as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Session -Type Object[]
+        }
+        It "Should have StartAt as a parameter" {
+            $CommandUnderTest | Should -HaveParameter StartAt -Type DateTime
+        }
+        It "Should have StopAt as a parameter" {
+            $CommandUnderTest | Should -HaveParameter StopAt -Type DateTime
+        }
+        It "Should have AllSessions as a parameter" {
+            $CommandUnderTest | Should -HaveParameter AllSessions -Type SwitchParameter
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Session[]
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+        }
+    }
+
     Context "Verifying command works" {
+        BeforeEach {
+            $systemhealth.Refresh()
+            if ($systemhealth.IsRunning) {
+                $systemhealth.Stop()
+            }
+        }
+
         It "starts the system_health session" {
             $systemhealth | Start-DbaXESession
             $systemhealth.Refresh()
-            $systemhealth.IsRunning | Should Be $true
+            $systemhealth.IsRunning | Should -Be $true
         }
 
         It "does not change state if XE session is already started" {
@@ -68,7 +87,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             }
             $systemhealth | Start-DbaXESession -WarningAction SilentlyContinue
             $systemhealth.Refresh()
-            $systemhealth.IsRunning | Should Be $true
+            $systemhealth.IsRunning | Should -Be $true
         }
 
         It "starts the other XE Sessions when one has an error" {
@@ -76,30 +95,30 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             Start-DbaXESession $server -Session $systemhealth.Name, $dbatoolsciInvalid.Name -WarningAction SilentlyContinue
             $systemhealth.Refresh()
             $dbatoolsciInvalid.Refresh()
-            $systemhealth.IsRunning | Should Be $true
-            $dbatoolsciInvalid.IsRunning | Should Be $false
+            $systemhealth.IsRunning | Should -Be $true
+            $dbatoolsciInvalid.IsRunning | Should -Be $false
         }
 
         It "starts all XE Sessions except the system ones if -AllSessions is used" {
             Start-DbaXESession $server -AllSessions -WarningAction SilentlyContinue
             $systemhealth.Refresh()
             $dbatoolsciValid.Refresh()
-            $systemhealth.IsRunning | Should Be $false
-            $dbatoolsciValid.IsRunning | Should Be $true
+            $systemhealth.IsRunning | Should -Be $false
+            $dbatoolsciValid.IsRunning | Should -Be $true
         }
 
         It "works when -StopAt is passed" {
             $StopAt = (Get-Date).AddSeconds(10)
             Start-DbaXESession $server -Session $dbatoolsciValid.Name -StopAt $StopAt -WarningAction SilentlyContinue
             $dbatoolsciValid.Refresh()
-            $dbatoolsciValid.IsRunning | Should Be $true
+            $dbatoolsciValid.IsRunning | Should -Be $true
             (Get-DbaAgentJob -SqlInstance $server -Job "XE Session STOP - dbatoolsci_session_valid").Count | Should -Be 1
             $stopSchedule = Get-DbaAgentSchedule -SqlInstance $server -Schedule "XE Session STOP - dbatoolsci_session_valid"
             $stopSchedule.ActiveStartTimeOfDay.ToString('hhmmss') | Should -Be $StopAt.TimeOfDay.ToString('hhmmss')
             $stopSchedule.ActiveStartDate | Should -Be $StopAt.Date
             Start-Sleep -Seconds 11
             $dbatoolsciValid.Refresh()
-            $dbatoolsciValid.IsRunning | Should Be $false
+            $dbatoolsciValid.IsRunning | Should -Be $false
             # Using $script:instance2 because the SMO $server is not updated after the job is removed
             (Get-DbaAgentJob -SqlInstance $script:instance2 -Job "XE Session STOP - dbatoolsci_session_valid").Count | Should -Be 0
         }
@@ -109,17 +128,16 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $StartAt = (Get-Date).AddSeconds(10)
             $null = Start-DbaXESession $server -Session $dbatoolsciValid.Name -StartAt $StartAt
             $dbatoolsciValid.Refresh()
-            $dbatoolsciValid.IsRunning | Should Be $false
+            $dbatoolsciValid.IsRunning | Should -Be $false
             (Get-DbaAgentJob -SqlInstance $server -Job "XE Session START - dbatoolsci_session_valid").Count | Should -Be 1
             $startSchedule = Get-DbaAgentSchedule -SqlInstance $server -Schedule "XE Session START - dbatoolsci_session_valid"
             $startSchedule.ActiveStartTimeOfDay.ToString('hhmmss') | Should -Be $StartAt.TimeOfDay.ToString('hhmmss')
             $startSchedule.ActiveStartDate | Should -Be $StartAt.Date
             Start-Sleep -Seconds 11
             $dbatoolsciValid.Refresh()
-            $dbatoolsciValid.IsRunning | Should Be $true
+            $dbatoolsciValid.IsRunning | Should -Be $true
             # Using $script:instance2 because the SMO $server is not updated after the job is removed
             (Get-DbaAgentJob -SqlInstance $script:instance2 -Job "XE Session STOP - dbatoolsci_session_valid").Count | Should -Be 0
         }
-
     }
 }

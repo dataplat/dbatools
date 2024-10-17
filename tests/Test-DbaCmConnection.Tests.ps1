@@ -1,22 +1,38 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Test-DbaCmConnection" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'Credential', 'Type', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Test-DbaCmConnection
+        }
+        It "Should have ComputerName as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaCmConnectionParameter[]
+        }
+        It "Should have Credential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
+        }
+        It "Should have Type as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Type -Type ManagementConnectionType[]
+        }
+        It "Should have Force as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter Force -Type switch
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type switch
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
-    $results = Test-DbaCmConnection -Type Wmi
-    It "returns some valid info" {
-        $results.ComputerName -eq $env:COMPUTERNAME
-        $results.Available -is [bool]
+    Context "Command usage" {
+        It "returns some valid info" {
+            $results = Test-DbaCmConnection -Type Wmi
+            $results.ComputerName | Should -Be $env:COMPUTERNAME
+            $results.Available | Should -BeOfType [bool]
+        }
     }
 }

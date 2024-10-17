@@ -1,36 +1,61 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Set-DbaDbFileGrowth" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'GrowthType', 'Growth', 'FileType', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Set-DbaDbFileGrowth
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String[]
+        }
+        It "Should have GrowthType as a parameter" {
+            $CommandUnderTest | Should -HaveParameter GrowthType -Type String
+        }
+        It "Should have Growth as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Growth -Type Int32
+        }
+        It "Should have FileType as a parameter" {
+            $CommandUnderTest | Should -HaveParameter FileType -Type String
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[]
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+Describe "Set-DbaDbFileGrowth Integration Tests" -Tag "IntegrationTests" {
+    BeforeDiscovery {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     BeforeAll {
         $newdb = New-DbaDatabase -SqlInstance $script:instance2 -Name newdb
     }
+
     AfterAll {
         $newdb | Remove-DbaDatabase -Confirm:$false
     }
+
     Context "Should return file information for only newdb" {
-        $result = Set-DbaDbFileGrowth -SqlInstance $script:instance2 -Database newdb | Select-Object -First 1
         It "returns the proper info" {
+            $result = Set-DbaDbFileGrowth -SqlInstance $script:instance2 -Database newdb | Select-Object -First 1
             $result.Database | Should -Be "newdb"
             $result.GrowthType | Should -Be "kb"
         }
     }
 
     Context "Supports piping" {
-        $result = Get-DbaDatabase $script:instance2 -Database newdb | Set-DbaDbFileGrowth | Select-Object -First 1
         It "returns only newdb files" {
+            $result = Get-DbaDatabase $script:instance2 -Database newdb | Set-DbaDbFileGrowth | Select-Object -First 1
             $result.Database | Should -Be "newdb"
         }
     }

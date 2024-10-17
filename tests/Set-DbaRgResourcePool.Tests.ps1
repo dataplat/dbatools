@@ -1,23 +1,62 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
-
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+param($ModuleName = 'dbatools')
+Describe "Set-DbaRgResourcePool" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'ResourcePool', 'Type', 'MinimumCpuPercentage', 'MaximumCpuPercentage', 'CapCpuPercentage', 'MinimumMemoryPercentage', 'MaximumMemoryPercentage', 'MinimumIOPSPerVolume', 'MaximumIOPSPerVolume', 'MaximumProcesses', 'SkipReconfigure', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should -Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Set-DbaRgResourcePool
+        }
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have ResourcePool parameter" {
+            $CommandUnderTest | Should -HaveParameter ResourcePool -Type String[] -Not -Mandatory
+        }
+        It "Should have Type parameter" {
+            $CommandUnderTest | Should -HaveParameter Type -Type String -Not -Mandatory
+        }
+        It "Should have MinimumCpuPercentage parameter" {
+            $CommandUnderTest | Should -HaveParameter MinimumCpuPercentage -Type Int32 -Not -Mandatory
+        }
+        It "Should have MaximumCpuPercentage parameter" {
+            $CommandUnderTest | Should -HaveParameter MaximumCpuPercentage -Type Int32 -Not -Mandatory
+        }
+        It "Should have CapCpuPercentage parameter" {
+            $CommandUnderTest | Should -HaveParameter CapCpuPercentage -Type Int32 -Not -Mandatory
+        }
+        It "Should have MinimumMemoryPercentage parameter" {
+            $CommandUnderTest | Should -HaveParameter MinimumMemoryPercentage -Type Int32 -Not -Mandatory
+        }
+        It "Should have MaximumMemoryPercentage parameter" {
+            $CommandUnderTest | Should -HaveParameter MaximumMemoryPercentage -Type Int32 -Not -Mandatory
+        }
+        It "Should have MinimumIOPSPerVolume parameter" {
+            $CommandUnderTest | Should -HaveParameter MinimumIOPSPerVolume -Type Int32 -Not -Mandatory
+        }
+        It "Should have MaximumIOPSPerVolume parameter" {
+            $CommandUnderTest | Should -HaveParameter MaximumIOPSPerVolume -Type Int32 -Not -Mandatory
+        }
+        It "Should have MaximumProcesses parameter" {
+            $CommandUnderTest | Should -HaveParameter MaximumProcesses -Type Int32 -Not -Mandatory
+        }
+        It "Should have SkipReconfigure parameter" {
+            $CommandUnderTest | Should -HaveParameter SkipReconfigure -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have InputObject parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Not -Mandatory
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Functionality" {
         BeforeAll {
+            . "$PSScriptRoot\constants.ps1"
             $null = Set-DbaResourceGovernor -SqlInstance $script:instance2 -Enabled
         }
+
         It "Sets a resource pool" {
             $resourcePoolName = "dbatoolssci_poolTest"
             $splatNewResourcePool = @{
@@ -33,6 +72,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
             $result2.MaximumCpuPercentage | Should -Be 99
         }
+
         It "Works using -Type Internal" {
             $resourcePoolName = "dbatoolssci_poolTest"
             $splatNewResourcePool = @{
@@ -68,6 +108,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $result.MinimumMemoryPercentage | Should -Be $splatSetResourcePool.MinimumMemoryPercentage
             $result.MinimumIOPSPerVolume | Should -Be $splatSetResourcePool.MinimumIOPSPerVolume
         }
+
         It "Works using -Type External" {
             $resourcePoolName = "dbatoolssci_poolTest"
             $splatNewResourcePool = @{
@@ -94,6 +135,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $result.MaximumMemoryPercentage | Should -Be $splatSetResourcePool.MaximumMemoryPercentage
             $result.MaximumProcesses | Should -Be $splatSetResourcePool.MaximumProcesses
         }
+
         It "Accepts resource pools from pipe" {
             $resourcePoolName = "dbatoolssci_poolTest"
             $resourcePoolName2 = "dbatoolssci_poolTest2"
@@ -115,6 +157,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             ($result2 | Where-Object Name -eq $resourcePoolName).MaximumCpuPercentage | Should -Be 99
             ($result2 | Where-Object Name -eq $resourcePoolName2).MaximumCpuPercentage | Should -Be 98
         }
+
         It "Skips Resource Governor reconfiguration" {
             $resourcePoolName = "dbatoolssci_poolTest"
             $splatNewResourcePool = @{
@@ -132,6 +175,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
             $result.ReconfigurePending | Should -Be $true
         }
+
         AfterEach {
             $resourcePoolName = "dbatoolssci_poolTest"
             $resourcePoolName2 = "dbatoolssci_poolTest2"

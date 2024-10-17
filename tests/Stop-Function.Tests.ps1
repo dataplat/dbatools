@@ -1,108 +1,149 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
-. "$PSScriptRoot\..\private\functions\flowcontrol\Stop-Function.ps1"
-$PSDefaultParameterValues.Remove('*:WarningAction')
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Stop-Function" {
+    BeforeAll {
+        . "$PSScriptRoot\..\private\functions\flowcontrol\Stop-Function.ps1"
+        $PSDefaultParameterValues.Remove('*:WarningAction')
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Message', 'Category', 'ErrorRecord', 'Tag', 'FunctionName', 'File', 'Line', 'Target', 'Exception', 'OverrideExceptionMessage', 'Continue', 'SilentlyContinue', 'ContinueLabel', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Stop-Function
+        }
+        It "Should have Message as a non-mandatory String parameter" {
+            $CommandUnderTest | Should -HaveParameter Message -Type String -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory Boolean parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Boolean -Not -Mandatory
+        }
+        It "Should have Category as a non-mandatory ErrorCategory parameter" {
+            $CommandUnderTest | Should -HaveParameter Category -Type ErrorCategory -Not -Mandatory
+        }
+        It "Should have ErrorRecord as a non-mandatory ErrorRecord[] parameter" {
+            $CommandUnderTest | Should -HaveParameter ErrorRecord -Type ErrorRecord[] -Not -Mandatory
+        }
+        It "Should have Tag as a non-mandatory String[] parameter" {
+            $CommandUnderTest | Should -HaveParameter Tag -Type String[] -Not -Mandatory
+        }
+        It "Should have FunctionName as a non-mandatory String parameter" {
+            $CommandUnderTest | Should -HaveParameter FunctionName -Type String -Not -Mandatory
+        }
+        It "Should have File as a non-mandatory String parameter" {
+            $CommandUnderTest | Should -HaveParameter File -Type String -Not -Mandatory
+        }
+        It "Should have Line as a non-mandatory Int32 parameter" {
+            $CommandUnderTest | Should -HaveParameter Line -Type Int32 -Not -Mandatory
+        }
+        It "Should have Target as a non-mandatory Object parameter" {
+            $CommandUnderTest | Should -HaveParameter Target -Type Object -Not -Mandatory
+        }
+        It "Should have Exception as a non-mandatory Exception parameter" {
+            $CommandUnderTest | Should -HaveParameter Exception -Type Exception -Not -Mandatory
+        }
+        It "Should have OverrideExceptionMessage as a non-mandatory SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter OverrideExceptionMessage -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have Continue as a non-mandatory SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter Continue -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have SilentlyContinue as a non-mandatory SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter SilentlyContinue -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have ContinueLabel as a non-mandatory String parameter" {
+            $CommandUnderTest | Should -HaveParameter ContinueLabel -Type String -Not -Mandatory
         }
     }
 
     Context "Testing non-EnableException: Explicit call" {
-        try {
-            $warning = Stop-Function -WarningAction Continue -Message "Nonsilent Foo" -EnableException $false -Category InvalidResult -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop 3>&1
-            $record = $Error[0]
-            $failed = $false
-        } catch {
+        BeforeAll {
+            $warning = $null
             $record = $null
-            $failed = $true
+            $failed = $false
+
+            try {
+                $warning = Stop-Function -WarningAction Continue -Message "Nonsilent Foo" -EnableException $false -Category InvalidResult -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop 3>&1
+                $record = $Error[0]
+            } catch {
+                $failed = $true
+            }
         }
 
         It "Should not have failed to execute without an exception." {
-            $failed | Should Be $false
+            $failed | Should -Be $false
         }
 
         It "Should have written the test warning 'Nonsilent Foo'" {
-            $warning[0] | Should BeLike "*Nonsilent Foo"
+            $warning[0] | Should -BeLike "*Nonsilent Foo"
         }
 
         It "Should have created an error record with the correct exception" {
-            $record.Exception.Message | Should Be "Nonsilent Foo"
+            $record.Exception.Message | Should -Be "Nonsilent Foo"
         }
 
-        It "Should have created an error record with the caegory 'InvalidResult'" {
-            $record.CategoryInfo.Category | Should BeLike "InvalidResult"
+        It "Should have created an error record with the category 'InvalidResult'" {
+            $record.CategoryInfo.Category | Should -BeLike "InvalidResult"
         }
 
         It "Should have created an error record with the targetobject 'Bar'" {
-            $record.TargetObject | Should Be "Bar"
+            $record.TargetObject | Should -Be "Bar"
         }
 
         It "Should have created an error record with the ErrorID 'dbatools_Invoke-Pester'" {
-            $record.FullyQualifiedErrorId | Should Be "dbatools_Invoke-Pester,Stop-Function"
+            $record.FullyQualifiedErrorId | Should -Be "dbatools_Invoke-Pester,Stop-Function"
         }
     }
 
     Context "Testing non-EnableException: In try/catch" {
-        try {
-            try {
-                $null.GetType()
-            } catch {
-                $warning = Stop-Function -WarningAction Continue -Message "Nonsilent Foo" -EnableException $false -ErrorRecord $_ -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop 3>&1
-                $record = $Error[0]
-                $failed = $false
-            }
-        } catch {
+        BeforeAll {
+            $warning = $null
             $record = $null
-            $failed = $true
+            $failed = $false
+
+            try {
+                try {
+                    $null.GetType()
+                } catch {
+                    $warning = Stop-Function -WarningAction Continue -Message "Nonsilent Foo" -EnableException $false -ErrorRecord $_ -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop 3>&1
+                    $record = $Error[0]
+                }
+            } catch {
+                $failed = $true
+            }
         }
 
         It "Should not have failed to execute without an exception." {
-            $failed | Should Be $false
+            $failed | Should -Be $false
         }
 
         It "Should have written the test warning 'Nonsilent Foo | '" {
-            $warning[0] | Should BeLike "*Nonsilent Foo | *"
+            $warning[0] | Should -BeLike "*Nonsilent Foo | *"
         }
 
         It "Should have created an error record with the correct exception" {
-            $record.Exception.InnerException.GetType().FullName | Should Be "System.Management.Automation.RuntimeException"
+            $record.Exception.InnerException.GetType().FullName | Should -Be "System.Management.Automation.RuntimeException"
         }
 
         It "Should have created an error record with the category 'InvalidOperation'" {
-            $record.CategoryInfo.Category | Should BeLike "InvalidOperation"
+            $record.CategoryInfo.Category | Should -BeLike "InvalidOperation"
         }
 
         It "Should have created an error record with the targetobject 'Bar'" {
-            $record.TargetObject | Should Be "Bar"
+            $record.TargetObject | Should -Be "Bar"
         }
 
         It "Should have created an error record with the ErrorID 'dbatools_Invoke-Pester'" {
-            $record.FullyQualifiedErrorId | Should Be "dbatools_Invoke-Pester,Stop-Function"
+            $record.FullyQualifiedErrorId | Should -Be "dbatools_Invoke-Pester,Stop-Function"
         }
 
         It "Should have created an error record with the an inner NULL-invocation exception" {
-            try {
-                $ExceptionName = $record.Exception.InnerException.GetType().FullName
-            } catch {
-                $ExceptionName = "Meeep."
-            }
-
-            $ExceptionName | Should Be "System.Management.Automation.RuntimeException"
+            $record.Exception.InnerException.GetType().FullName | Should -Be "System.Management.Automation.RuntimeException"
         }
     }
 
     Context "Testing non-EnableException: Continue & ContinueLabel" {
-        Mock -CommandName "Write-Warning" -MockWith { param ($Message) }
+        BeforeAll {
+            Mock Write-Warning { }
 
-        #region Run Tests
-        try {
             $failed = $false
             $a = 0
             $b = 0
@@ -111,11 +152,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                 Stop-Function -Message "Nonsilent Foo" -EnableException $false -Category InvalidOperation -Continue -ErrorAction Stop 3>&1
                 $b++
             }
-        } catch {
-            $failed = $true
-        }
 
-        try {
             $failed2 = $false
             $c = 0
             $d = 0
@@ -131,107 +168,107 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                 }
                 $f++
             }
-        } catch {
-            $failed2 = $true
         }
-        #endregion Run Tests
 
-        #region Evaluate Results
         It "Should not have failed to execute without an exception when testing Continue without a label." {
-            $failed | Should Be $false
+            $failed | Should -Be $false
         }
 
         It "Should not have failed to execute without an exception when testing Continue with a label." {
-            $failed2 | Should Be $false
+            $failed2 | Should -Be $false
         }
 
         It "Should have incremented the first counter when calling continue without a label" {
-            $a | Should Be 3
+            $a | Should -Be 3
         }
 
         It "Should not have incremented the second counter when calling continue without a label" {
-            $b | Should Be 0
+            $b | Should -Be 0
         }
 
         It "Should have incremented the first two counters thrice, but skipped the other two when calling continue with a label" {
             [int[]]$result = @($c, $d, $e, $f)
             [int[]]$reference = @(3, 3, 0, 0)
-            $result | Should Be $reference
+            $result | Should -Be $reference
         }
-        #endregion Evaluate Results
     }
 
     Context "Testing silent: Explicit call" {
-        try {
-            Stop-Function -Message "Nonsilent Foo" -EnableException $true -Category InvalidResult -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop
+        BeforeAll {
             $record = $null
             $failed = $false
-        } catch {
-            $record = $_
-            $failed = $true
+
+            try {
+                Stop-Function -Message "Nonsilent Foo" -EnableException $true -Category InvalidResult -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop
+            } catch {
+                $record = $_
+                $failed = $true
+            }
         }
 
-        It "Should not have failed to terminate with an exception." {
-            $failed | Should Be $true
+        It "Should have failed to terminate with an exception." {
+            $failed | Should -Be $true
         }
 
         It "Should have created an error record with the correct exception" {
-            $record.Exception.Message | Should Be "Nonsilent Foo"
+            $record.Exception.Message | Should -Be "Nonsilent Foo"
         }
 
-        It "Should have created an error record with the caegory 'InvalidResult'" {
-            $record.CategoryInfo.Category | Should BeLike "InvalidResult"
+        It "Should have created an error record with the category 'InvalidResult'" {
+            $record.CategoryInfo.Category | Should -BeLike "InvalidResult"
         }
 
         It "Should have created an error record with the targetobject 'Bar'" {
-            $record.TargetObject | Should Be "Bar"
+            $record.TargetObject | Should -Be "Bar"
         }
 
-        It "Should have created an error record with the ErrorID 'dbatools_Invoke-Pester,Stop-Function'" {
-            $record.FullyQualifiedErrorId | Should Be "dbatools_Invoke-Pester"
+        It "Should have created an error record with the ErrorID 'dbatools_Invoke-Pester'" {
+            $record.FullyQualifiedErrorId | Should -Be "dbatools_Invoke-Pester"
         }
     }
 
     Context "Testing silent: In try/catch" {
-        try {
+        BeforeAll {
+            $record = $null
+            $failed = $false
+
             try {
-                $null.GetType()
+                try {
+                    $null.GetType()
+                } catch {
+                    Stop-Function -Message "Nonsilent Foo" -EnableException $true -ErrorRecord $_ -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop
+                }
             } catch {
-                Stop-Function -Message "Nonsilent Foo" -EnableException $true -ErrorRecord $_ -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop
-                $record = $null
-                $failed = $false
+                $record = $_
+                $failed = $true
             }
-        } catch {
-            $record = $_
-            $failed = $true
         }
 
-        It "Should not have failed to terminate with an exception." {
-            $failed | Should Be $true
+        It "Should have failed to terminate with an exception." {
+            $failed | Should -Be $true
         }
 
         It "Should have created an error record with the correct exception" {
-            $record.Exception.InnerException.GetType().FullName | Should Be "System.Management.Automation.RuntimeException"
+            $record.Exception.InnerException.GetType().FullName | Should -Be "System.Management.Automation.RuntimeException"
         }
 
-        It "Should have created an error record with the caegory 'InvalidOperation'" {
-            $record.CategoryInfo.Category | Should BeLike "InvalidOperation"
+        It "Should have created an error record with the category 'InvalidOperation'" {
+            $record.CategoryInfo.Category | Should -BeLike "InvalidOperation"
         }
 
         It "Should have created an error record with the targetobject 'Bar'" {
-            $record.TargetObject | Should Be "Bar"
+            $record.TargetObject | Should -Be "Bar"
         }
 
         It "Should have created an error record with the ErrorID 'dbatools_Invoke-Pester'" {
-            $record.FullyQualifiedErrorId | Should Be "dbatools_Invoke-Pester"
+            $record.FullyQualifiedErrorId | Should -Be "dbatools_Invoke-Pester"
         }
     }
 
     Context "Testing silent: Continue & ContinueLabel" {
-        Mock -CommandName "Write-Error" -MockWith { param ($Message) }
+        BeforeAll {
+            Mock Write-Error { }
 
-        #region Run Tests
-        try {
             $failed = $false
             $a = 0
             $b = 0
@@ -240,11 +277,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                 Stop-Function -Message "Nonsilent Foo" -EnableException $true -Category InvalidOperation -SilentlyContinue -ErrorAction Stop
                 $b++
             }
-        } catch {
-            $failed = $true
-        }
 
-        try {
             $failed2 = $false
             $c = 0
             $d = 0
@@ -260,34 +293,30 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                 }
                 $f++
             }
-        } catch {
-            $failed2 = $true
         }
-        #endregion Run Tests
 
-        #region Evaluate Results
         It "Should not have failed to execute without an exception when testing Continue without a label." {
-            $failed | Should Be $false
+            $failed | Should -Be $false
         }
 
         It "Should not have failed to execute without an exception when testing Continue with a label." {
-            $failed2 | Should Be $false
+            $failed2 | Should -Be $false
         }
 
         It "Should have incremented the first counter when calling continue without a label" {
-            $a | Should Be 3
+            $a | Should -Be 3
         }
 
         It "Should not have incremented the second counter when calling continue without a label" {
-            $b | Should Be 0
+            $b | Should -Be 0
         }
 
         It "Should have incremented the first two counters thrice, but skipped the other two when calling continue with a label" {
             [int[]]$result = @($c, $d, $e, $f)
             [int[]]$reference = @(3, 3, 0, 0)
-            $result | Should Be $reference
+            $result | Should -Be $reference
         }
-        #endregion Evaluate Results
     }
 }
+
 $PSDefaultParameterValues['*:WarningAction'] = 'SilentlyContinue'

@@ -1,33 +1,65 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Set-DbaDbSequence" {
     Context "Validate parameters" {
-        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Sequence', 'Schema', 'RestartWith', 'IncrementBy', 'MinValue', 'MaxValue', 'Cycle', 'CacheSize', 'InputObject', 'EnableException'
-        It "Should only contain our specific parameters" {
-            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
+        BeforeAll {
+            $CommandUnderTest = Get-Command Set-DbaDbSequence
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String[]
+        }
+        It "Should have Sequence as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Sequence -Type String[]
+        }
+        It "Should have Schema as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Schema -Type String
+        }
+        It "Should have RestartWith as a parameter" {
+            $CommandUnderTest | Should -HaveParameter RestartWith -Type Int64
+        }
+        It "Should have IncrementBy as a parameter" {
+            $CommandUnderTest | Should -HaveParameter IncrementBy -Type Int64
+        }
+        It "Should have MinValue as a parameter" {
+            $CommandUnderTest | Should -HaveParameter MinValue -Type Int64
+        }
+        It "Should have MaxValue as a parameter" {
+            $CommandUnderTest | Should -HaveParameter MaxValue -Type Int64
+        }
+        It "Should have Cycle as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Cycle -Type SwitchParameter
+        }
+        It "Should have CacheSize as a parameter" {
+            $CommandUnderTest | Should -HaveParameter CacheSize -Type Int32
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[]
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+    Context "Command usage" {
+        BeforeAll {
+            . "$PSScriptRoot\constants.ps1"
+            $random = Get-Random
+            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $newDbName = "dbatoolsci_newdb_$random"
+            $newDb = New-DbaDatabase -SqlInstance $server -Name $newDbName
 
-    BeforeAll {
-        $random = Get-Random
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $newDbName = "dbatoolsci_newdb_$random"
-        $newDb = New-DbaDatabase -SqlInstance $server -Name $newDbName
+            $newSequence = New-DbaDbSequence -SqlInstance $server -Database $newDbName -Sequence "Sequence1_$random" -Schema "Schema_$random"
+        }
 
-        $newSequence = New-DbaDbSequence -SqlInstance $server -Database $newDbName -Sequence "Sequence1_$random" -Schema "Schema_$random"
-    }
-
-    AfterAll {
-        $null = $newDb | Remove-DbaDatabase -Confirm:$false
-    }
-
-    Context "commands work as expected" {
+        AfterAll {
+            $null = $newDb | Remove-DbaDatabase -Confirm:$false
+        }
 
         It "validates required Database param" {
             $sequence = Set-DbaDbSequence -SqlInstance $server -Sequence "Sequence1_$random" -Schema "Schema_$random" -Confirm:$false -ErrorVariable error

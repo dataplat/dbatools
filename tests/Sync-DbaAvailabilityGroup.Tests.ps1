@@ -1,19 +1,63 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Sync-DbaAvailabilityGroup" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Primary', 'PrimarySqlCredential', 'Secondary', 'SecondarySqlCredential', 'AvailabilityGroup', 'Exclude', 'Login', 'ExcludeLogin', 'Job', 'ExcludeJob', 'DisableJobOnDestination', 'InputObject', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Sync-DbaAvailabilityGroup
+        }
+        It "Should have Primary parameter" {
+            $CommandUnderTest | Should -HaveParameter Primary -Type DbaInstanceParameter
+        }
+        It "Should have PrimarySqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter PrimarySqlCredential -Type PSCredential
+        }
+        It "Should have Secondary parameter" {
+            $CommandUnderTest | Should -HaveParameter Secondary -Type DbaInstanceParameter[]
+        }
+        It "Should have SecondarySqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SecondarySqlCredential -Type PSCredential
+        }
+        It "Should have AvailabilityGroup parameter" {
+            $CommandUnderTest | Should -HaveParameter AvailabilityGroup -Type String
+        }
+        It "Should have Exclude parameter" {
+            $CommandUnderTest | Should -HaveParameter Exclude -Type String[]
+        }
+        It "Should have Login parameter" {
+            $CommandUnderTest | Should -HaveParameter Login -Type String[]
+        }
+        It "Should have ExcludeLogin parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeLogin -Type String[]
+        }
+        It "Should have Job parameter" {
+            $CommandUnderTest | Should -HaveParameter Job -Type String[]
+        }
+        It "Should have ExcludeJob parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeJob -Type String[]
+        }
+        It "Should have DisableJobOnDestination parameter" {
+            $CommandUnderTest | Should -HaveParameter DisableJobOnDestination -Type Switch
+        }
+        It "Should have InputObject parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type AvailabilityGroup[]
+        }
+        It "Should have Force parameter" {
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 }
+
 <#
-    Integration test are custom to the command you are writing for.
+    Integration tests are custom to the command you are writing for.
     Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence
+    for more guidance
 #>

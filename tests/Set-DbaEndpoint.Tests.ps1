@@ -1,14 +1,33 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Set-DbaEndpoint" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'EndPoint', 'Owner', 'Type', 'AllEndpoints', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Set-DbaEndpoint
+        }
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Endpoint parameter" {
+            $CommandUnderTest | Should -HaveParameter Endpoint -Type String[]
+        }
+        It "Should have Owner parameter" {
+            $CommandUnderTest | Should -HaveParameter Owner -Type String
+        }
+        It "Should have Type parameter" {
+            $CommandUnderTest | Should -HaveParameter Type -Type String
+        }
+        It "Should have AllEndpoints parameter" {
+            $CommandUnderTest | Should -HaveParameter AllEndpoints -Type SwitchParameter
+        }
+        It "Should have InputObject parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Endpoint[]
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
 }

@@ -1,21 +1,11 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'ComputerName', 'Credential', 'InputObject', 'ServiceName', 'Username', 'ServiceCredential', 'PreviousPassword', 'SecurePassword', 'NoRestart', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
-        }
-    }
-}
-
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-
+Describe "Update-DbaServiceAccount" {
     BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+
         $login = 'winLogin'
         $password = 'MyV3ry$ecur3P@ssw0rd'
         $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
@@ -69,7 +59,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
         #Do not continue with the test if current configuration cannot be rolled back
         if (!$isRevertable) {
-            Throw 'Current configuration cannot be rolled back - the test will not continue.'
+            throw 'Current configuration cannot be rolled back - the test will not continue.'
         }
     }
 
@@ -77,6 +67,42 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         #Cleanup
         $server.Logins[$winLogin].Drop()
         $computer.Delete('User', $login)
+    }
+
+    Context "Validate parameters" {
+        BeforeAll {
+            $CommandUnderTest = Get-Command Update-DbaServiceAccount
+        }
+        It "Should have ComputerName as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have Credential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Not -Mandatory
+        }
+        It "Should have ServiceName as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ServiceName -Type String[] -Not -Mandatory
+        }
+        It "Should have Username as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Username -Type String -Not -Mandatory
+        }
+        It "Should have ServiceCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ServiceCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have PreviousPassword as a parameter" {
+            $CommandUnderTest | Should -HaveParameter PreviousPassword -Type SecureString -Not -Mandatory
+        }
+        It "Should have SecurePassword as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SecurePassword -Type SecureString -Not -Mandatory
+        }
+        It "Should have NoRestart as a parameter" {
+            $CommandUnderTest | Should -HaveParameter NoRestart -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+        }
     }
 
     Context "Current configuration to be able to roll back" {
@@ -88,21 +114,19 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
     }
 
-
-
     Context "Set new service account for SQL Services" {
-
-
-        $errVar = $warnVar = $null
-        $cred = New-Object System.Management.Automation.PSCredential($login, $securePassword)
-        $results = Update-DbaServiceAccount -ComputerName $computerName -ServiceName $services.ServiceName -ServiceCredential $cred -ErrorVariable $errVar -WarningVariable $warnVar
+        BeforeAll {
+            $errVar = $warnVar = $null
+            $cred = New-Object System.Management.Automation.PSCredential($login, $securePassword)
+            $results = Update-DbaServiceAccount -ComputerName $computerName -ServiceName $services.ServiceName -ServiceCredential $cred -ErrorVariable errVar -WarningVariable warnVar
+        }
 
         It "Should return something" {
-            $results | Should -Not -Be $null
+            $results | Should -Not -BeNullOrEmpty
         }
         It "Should have no errors or warnings" {
-            $errVar | Should -Be $null
-            $warnVar | Should -Be $null
+            $errVar | Should -BeNullOrEmpty
+            $warnVar | Should -BeNullOrEmpty
         }
         It "Should be successful" {
             foreach ($result in $results) {
@@ -114,18 +138,20 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Change password of the service account" {
-        #Change the password
-        ([adsi]"WinNT://$computerName/$login,user").SetPassword($newPassword)
+        BeforeAll {
+            #Change the password
+            ([adsi]"WinNT://$computerName/$login,user").SetPassword($newPassword)
 
-        $errVar = $warnVar = $null
-        $results = $services | Sort-Object ServicePriority | Update-DbaServiceAccount -Password $newSecurePassword -ErrorVariable $errVar -WarningVariable $warnVar
+            $errVar = $warnVar = $null
+            $results = $services | Sort-Object ServicePriority | Update-DbaServiceAccount -Password $newSecurePassword -ErrorVariable errVar -WarningVariable warnVar
+        }
 
         It "Password change should return something" {
-            $results | Should -Not -Be $null
+            $results | Should -Not -BeNullOrEmpty
         }
         It "Should have no errors or warnings" {
-            $errVar | Should -Be $null
-            $warnVar | Should -Be $null
+            $errVar | Should -BeNullOrEmpty
+            $warnVar | Should -BeNullOrEmpty
         }
         It "Should be successful" {
             foreach ($result in $results) {
@@ -134,11 +160,9 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             }
         }
 
-        $results = Get-DbaService -ComputerName $computerName -ServiceName $services.ServiceName | Restart-DbaService
-        It "Service restart should return something" {
-            $results | Should -Not -Be $null
-        }
         It "Service restart should be successful" {
+            $results = Get-DbaService -ComputerName $computerName -ServiceName $services.ServiceName | Restart-DbaService
+            $results | Should -Not -BeNullOrEmpty
             foreach ($result in $results) {
                 $result.Status | Should -Be 'Successful'
                 $result.State | Should -Be 'Running'
@@ -147,15 +171,17 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Change agent service account to local system" {
-        $errVar = $warnVar = $null
-        $results = $services | Where-Object { $_.ServiceType -eq 'Agent' } | Update-DbaServiceAccount -Username 'NT AUTHORITY\LOCAL SYSTEM' -ErrorVariable $errVar -WarningVariable $warnVar
+        BeforeAll {
+            $errVar = $warnVar = $null
+            $results = $services | Where-Object { $_.ServiceType -eq 'Agent' } | Update-DbaServiceAccount -Username 'NT AUTHORITY\LOCAL SYSTEM' -ErrorVariable errVar -WarningVariable warnVar
+        }
 
         It "Should return something" {
-            $results | Should -Not -Be $null
+            $results | Should -Not -BeNullOrEmpty
         }
         It "Should have no errors or warnings" {
-            $errVar | Should -Be $null
-            $warnVar | Should -Be $null
+            $errVar | Should -BeNullOrEmpty
+            $warnVar | Should -BeNullOrEmpty
         }
         It "Should be successful" {
             foreach ($result in $results) {
@@ -165,16 +191,19 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             }
         }
     }
+
     Context "Revert SQL Agent service account changes ($currentAgentUser)" {
-        $errVar = $warnVar = $null
-        $results = $services | Where-Object { $_.ServiceType -eq 'Agent' } | Update-DbaServiceAccount -Username $currentAgentUser -ErrorVariable $errVar -WarningVariable $warnVar
+        BeforeAll {
+            $errVar = $warnVar = $null
+            $results = $services | Where-Object { $_.ServiceType -eq 'Agent' } | Update-DbaServiceAccount -Username $currentAgentUser -ErrorVariable errVar -WarningVariable warnVar
+        }
 
         It "Should return something" {
-            $results | Should -Not -Be $null
+            $results | Should -Not -BeNullOrEmpty
         }
         It "Should have no errors or warnings" {
-            $errVar | Should -Be $null
-            $warnVar | Should -Be $null
+            $errVar | Should -BeNullOrEmpty
+            $warnVar | Should -BeNullOrEmpty
         }
         It "Should be successful" {
             foreach ($result in $results) {
@@ -184,16 +213,19 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             }
         }
     }
+
     Context "Revert SQL Engine service account changes ($currentEngineUser)" {
-        $errVar = $warnVar = $null
-        $results = $services | Where-Object { $_.ServiceType -eq 'Engine' } | Update-DbaServiceAccount -Username $currentEngineUser -ErrorVariable $errVar -WarningVariable $warnVar
+        BeforeAll {
+            $errVar = $warnVar = $null
+            $results = $services | Where-Object { $_.ServiceType -eq 'Engine' } | Update-DbaServiceAccount -Username $currentEngineUser -ErrorVariable errVar -WarningVariable warnVar
+        }
 
         It "Should return something" {
-            $results | Should -Not -Be $null
+            $results | Should -Not -BeNullOrEmpty
         }
         It "Should have no errors or warnings" {
-            $errVar | Should -Be $null
-            $warnVar | Should -Be $null
+            $errVar | Should -BeNullOrEmpty
+            $warnVar | Should -BeNullOrEmpty
         }
         It "Should be successful" {
             foreach ($result in $results) {
@@ -202,7 +234,5 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 $result.StartName | Should -Be $currentEngineUser
             }
         }
-
     }
-
 }

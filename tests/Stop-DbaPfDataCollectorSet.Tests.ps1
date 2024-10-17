@@ -1,33 +1,43 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
-
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+param($ModuleName = 'dbatools')
+Describe "Stop-DbaPfDataCollectorSet" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'Credential', 'CollectorSet', 'InputObject', 'NoWait', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Stop-DbaPfDataCollectorSet
+        }
+        It "Should have ComputerName as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[]
+        }
+        It "Should have Credential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
+        }
+        It "Should have CollectorSet as a parameter" {
+            $CommandUnderTest | Should -HaveParameter CollectorSet -Type String[]
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[]
+        }
+        It "Should have NoWait as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter NoWait -Type Switch
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    BeforeAll {
-        $script:set = Get-DbaPfDataCollectorSet | Select-Object -First 1
-        $script:set | Start-DbaPfDataCollectorSet -WarningAction SilentlyContinue
-        Start-Sleep 2
-    }
-    AfterAll {
-        $script:set | Stop-DbaPfDataCollectorSet -WarningAction SilentlyContinue
-    }
-    Context "Verifying command works" {
+    Context "Integration Tests" {
+        BeforeAll {
+            $script:set = Get-DbaPfDataCollectorSet | Select-Object -First 1
+            $script:set | Start-DbaPfDataCollectorSet -WarningAction SilentlyContinue
+            Start-Sleep -Seconds 2
+        }
+        AfterAll {
+            $script:set | Stop-DbaPfDataCollectorSet -WarningAction SilentlyContinue
+        }
         It "returns a result with the right computername and name is not null" {
             $results = $script:set | Select-Object -First 1 | Stop-DbaPfDataCollectorSet -WarningAction SilentlyContinue -WarningVariable warn
             if (-not $warn) {
-                $results.ComputerName | Should Be $env:COMPUTERNAME
-                $results.Name | Should Not Be $null
+                $results.ComputerName | Should -Be $env:COMPUTERNAME
+                $results.Name | Should -Not -BeNullOrEmpty
             }
         }
     }

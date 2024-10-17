@@ -1,29 +1,49 @@
-$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tags "UnitTests" {
+Describe "Start-DbaEndpoint" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'EndPoint', 'AllEndpoints', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Start-DbaEndpoint
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Endpoint as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Endpoint -Type String[]
+        }
+        It "Should have AllEndpoints as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter AllEndpoints -Type SwitchParameter
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Endpoint[]
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
-    BeforeAll {
-        Get-DbaEndpoint -SqlInstance $script:instance2 -Endpoint 'TSQL Default TCP' | Stop-DbaEndpoint -Confirm:$false
-    }
-    AfterAll {
-        Get-DbaEndpoint -SqlInstance $script:instance2 -Endpoint 'TSQL Default TCP' | Start-DbaEndpoint -Confirm:$false
-    }
+    Context "Command usage" {
+        BeforeDiscovery {
+            # Run setup code to get script variables within scope of the discovery phase
+            . (Join-Path $PSScriptRoot 'constants.ps1')
+        }
 
-    It "starts the endpoint" {
-        $endpoint = Get-DbaEndpoint -SqlInstance $script:instance2 -Endpoint 'TSQL Default TCP'
-        $results = $endpoint | Start-DbaEndpoint -Confirm:$false
-        $results.EndpointState | Should -Be 'Started'
+        BeforeAll {
+            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $endpoint = Get-DbaEndpoint -SqlInstance $server -Endpoint 'TSQL Default TCP'
+            $endpoint | Stop-DbaEndpoint -Confirm:$false
+        }
+
+        AfterAll {
+            $endpoint | Start-DbaEndpoint -Confirm:$false
+        }
+
+        It "starts the endpoint" {
+            $results = $endpoint | Start-DbaEndpoint -Confirm:$false
+            $results.EndpointState | Should -Be 'Started'
+        }
     }
 }

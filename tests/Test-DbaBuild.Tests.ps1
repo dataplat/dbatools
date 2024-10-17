@@ -1,23 +1,46 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Test-DbaBuild" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'Build', 'MinimumBuild', 'MaxBehind', 'Latest', 'SqlInstance', 'SqlCredential', 'Update', 'Quiet', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Test-DbaBuild
+        }
+        It "Should have Build parameter" {
+            $CommandUnderTest | Should -HaveParameter Build -Type Version[] -Not -Mandatory
+        }
+        It "Should have MinimumBuild parameter" {
+            $CommandUnderTest | Should -HaveParameter MinimumBuild -Type Version -Not -Mandatory
+        }
+        It "Should have MaxBehind parameter" {
+            $CommandUnderTest | Should -HaveParameter MaxBehind -Type String -Not -Mandatory
+        }
+        It "Should have Latest parameter" {
+            $CommandUnderTest | Should -HaveParameter Latest -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Update parameter" {
+            $CommandUnderTest | Should -HaveParameter Update -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have Quiet parameter" {
+            $CommandUnderTest | Should -HaveParameter Quiet -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
+
     Context "Retired KBs" {
         It "Handles retired kbs" {
             $result = Test-DbaBuild -Build '13.0.5479' -Latest
             $result.Warning | Should -Be 'This version has been officially retired by Microsoft'
             $latestCUfor2019 = (Test-DbaBuild -Build '15.0.4003' -MaxBehind '0CU').CUTarget.Replace('CU', '')
             #CU7 for 2019 was retired
-            [int]$behindforCU7 = [int]$latestCUfor2019 - 7
+            $behindforCU7 = [int]$latestCUfor2019 - 7
             $goBackTo = "$($behindforCU7)CU"
             $result = Test-DbaBuild -Build '15.0.4003' -MaxBehind $goBackTo
             $result.CUTarget | Should -Be 'CU6'
@@ -37,17 +60,19 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $result2008R2.MatchType | Should -Be 'Exact'
         }
     }
-}
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+
     Context "Command actually works" {
+        BeforeDiscovery {
+            . (Join-Path $PSScriptRoot 'constants.ps1')
+        }
         It "Should return a result" {
             $results = Test-DbaBuild -Build "12.00.4502" -MinimumBuild "12.0.4511" -SqlInstance $script:instance2
-            $results | Should -Not -Be $null
+            $results | Should -Not -BeNullOrEmpty
         }
 
         It "Should return a result" {
             $results = Test-DbaBuild -Build "12.0.5540" -MaxBehind "1SP 1CU" -SqlInstance $script:instance2
-            $results | Should -Not -Be $null
+            $results | Should -Not -BeNullOrEmpty
         }
     }
 }

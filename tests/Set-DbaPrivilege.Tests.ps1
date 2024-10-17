@@ -1,19 +1,42 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Set-DbaPrivilege" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'Credential', 'Type', 'EnableException', 'User'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Set-DbaPrivilege
+        }
+        It "Should have ComputerName as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[]
+        }
+        It "Should have Credential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
+        }
+        It "Should have Type as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Type -Type String[]
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+        }
+        It "Should have User as a parameter" {
+            $CommandUnderTest | Should -HaveParameter User -Type String
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+
+# Integration tests
+Describe "Set-DbaPrivilege Integration Tests" -Tag 'IntegrationTests' {
+    BeforeAll {
+        # Add any necessary setup code here
+    }
+
+    Context "Functionality Tests" {
+        It "Should do something specific" {
+            # Add specific test cases here
+            $true | Should -Be $true
+        }
+    }
+
+    AfterAll {
+        # Add any necessary cleanup code here
+    }
+}

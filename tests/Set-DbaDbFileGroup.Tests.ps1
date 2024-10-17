@@ -1,20 +1,11 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'FileGroup', 'Default', 'ReadOnly', 'AutoGrowAllFiles', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
-        }
-    }
-}
-
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "Set-DbaDbFileGroup" {
     BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+
         $random = Get-Random
         $db1name = "dbatoolsci_filegroup_test_$random"
         $fileGroup1Name = "FG1"
@@ -30,12 +21,45 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $server.Query("ALTER DATABASE $db1name ADD FILE (NAME = test1, FILENAME = '$($server.MasterDBPath)\test1.ndf') TO FILEGROUP $fileGroup1Name")
         $server.Query("ALTER DATABASE $db1name ADD FILE (NAME = testRO, FILENAME = '$($server.MasterDBPath)\testRO.ndf') TO FILEGROUP $fileGroupROName")
     }
+
     AfterAll {
         $newDb1 | Remove-DbaDatabase -Confirm:$false
     }
 
-    Context "ensure command works" {
+    Context "Validate parameters" {
+        BeforeAll {
+            $CommandUnderTest = Get-Command Set-DbaDbFileGroup
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Not -Mandatory
+        }
+        It "Should have FileGroup as a parameter" {
+            $CommandUnderTest | Should -HaveParameter FileGroup -Type String[] -Not -Mandatory
+        }
+        It "Should have Default as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter Default -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have ReadOnly as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter ReadOnly -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have AutoGrowAllFiles as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter AutoGrowAllFiles -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Not -Mandatory
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+        }
+    }
 
+    Context "Command usage" {
         It "Sets the options for default, readonly, readwrite, autogrow all files, and not autogrow all files" {
             $results = Set-DbaDbFileGroup -SqlInstance $script:instance2 -Database $db1name -FileGroup $fileGroup1Name -Default -AutoGrowAllFiles -Confirm:$false
             $results.Name | Should -Be $fileGroup1Name

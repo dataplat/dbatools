@@ -1,33 +1,43 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tags "UnitTests" {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'FilePath', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
-        }
-    }
-}
-
-
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe "Test-DbaBackupEncrypted" {
     BeforeAll {
-        $PSDefaultParameterValues["*:Confirm"] = $false
-        $alldbs = @()
-        1..2 | ForEach-Object { $alldbs += New-DbaDatabase -SqlInstance $script:instance2 }
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
     }
 
-    AfterAll {
-        if ($alldbs) {
-            $alldbs | Remove-DbaDatabase
+    Context "Validate parameters" {
+        BeforeAll {
+            $CommandUnderTest = Get-Command Test-DbaBackupEncrypted
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have FilePath as a parameter" {
+            $CommandUnderTest | Should -HaveParameter FilePath -Type String[]
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
 
     Context "Command actually works" {
+        BeforeAll {
+            $PSDefaultParameterValues["*:Confirm"] = $false
+            $alldbs = @()
+            1..2 | ForEach-Object { $alldbs += New-DbaDatabase -SqlInstance $script:instance2 }
+        }
+
+        AfterAll {
+            if ($alldbs) {
+                $alldbs | Remove-DbaDatabase
+            }
+        }
+
         It "should detect encryption" {
             $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
             $splat = @{
@@ -41,19 +51,20 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results = $backups | Test-DbaBackupEncrypted -SqlInstance $script:instance2
             $results.Encrypted | Should -Be $true
         }
+
         It "should detect encryption from piped file" {
             $backups = $alldbs | Select-Object -First 1 | Backup-DbaDatabase -Path C:\temp
             $results = Test-DbaBackupEncrypted -SqlInstance $script:instance2 -FilePath $backups.BackupPath
             $results.Encrypted | Should -Be $true
         }
 
-        It "should say a non-encryted file is not encrypted" {
+        It "should say a non-encrypted file is not encrypted" {
             $backups = New-DbaDatabase -SqlInstance $script:instance2 | Backup-DbaDatabase -Path C:\temp
             $results = Test-DbaBackupEncrypted -SqlInstance $script:instance2 -FilePath $backups.BackupPath
             $results.Encrypted | Should -Be $false
         }
 
-        It "should say a non-encryted file is not encrypted" {
+        It "should say an encrypted file is encrypted" {
             $encryptor = (Get-DbaDbCertificate -SqlInstance $script:instance2 -Database master | Where-Object Name -notmatch "#" | Select-Object -First 1).Name
             $db = New-DbaDatabase -SqlInstance $script:instance2
             $backup = Backup-DbaDatabase -SqlInstance $script:instance2 -Path C:\temp -EncryptionAlgorithm AES192 -EncryptionCertificate $encryptor -Database $db.Name

@@ -1,30 +1,58 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Stop-DbaProcess" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Spid', 'ExcludeSpid', 'Database', 'Login', 'Hostname', 'Program', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Stop-DbaProcess
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Spid as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Spid -Type Int32[]
+        }
+        It "Should have ExcludeSpid as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeSpid -Type Int32[]
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String[]
+        }
+        It "Should have Login as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Login -Type String[]
+        }
+        It "Should have Hostname as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Hostname -Type String[]
+        }
+        It "Should have Program as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Program -Type String[]
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[]
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
-    Context "command works as expected" {
-        $fakeapp = Connect-DbaInstance -SqlInstance $script:instance1 -ClientName 'dbatoolsci test app'
-        $results = Stop-DbaProcess -SqlInstance $script:instance1 -Program 'dbatoolsci test app'
-        It "kills only this specific process" {
+    Context "Command works as expected" {
+        BeforeAll {
+            . "$PSScriptRoot\constants.ps1"
+        }
+
+        It "Kills only this specific process" {
+            $fakeapp = Connect-DbaInstance -SqlInstance $script:instance1 -ClientName 'dbatoolsci test app'
+            $results = Stop-DbaProcess -SqlInstance $script:instance1 -Program 'dbatoolsci test app'
             $results.Program.Count | Should -Be 1
             $results.Program | Should -Be 'dbatoolsci test app'
             $results.Status | Should -Be 'Killed'
         }
-        $fakeapp = Connect-DbaInstance -SqlInstance $script:instance1 -ClientName 'dbatoolsci test app'
-        $results = Get-DbaProcess -SqlInstance $script:instance1 -Program 'dbatoolsci test app' | Stop-DbaProcess
-        It "supports piping" {
+
+        It "Supports piping" {
+            $fakeapp = Connect-DbaInstance -SqlInstance $script:instance1 -ClientName 'dbatoolsci test app'
+            $results = Get-DbaProcess -SqlInstance $script:instance1 -Program 'dbatoolsci test app' | Stop-DbaProcess
             $results.Program.Count | Should -Be 1
             $results.Program | Should -Be 'dbatoolsci test app'
             $results.Status | Should -Be 'Killed'

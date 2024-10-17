@@ -1,19 +1,64 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Show-DbaDbList" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Title', 'Header', 'DefaultDb', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Show-DbaDbList
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Title as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Title -Type String
+        }
+        It "Should have Header as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Header -Type String
+        }
+        It "Should have DefaultDb as a parameter" {
+            $CommandUnderTest | Should -HaveParameter DefaultDb -Type String
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+        }
+    }
+
+    Context "Command usage" {
+        BeforeDiscovery {
+            # Run setup code to get script variables within scope of the discovery phase
+            . (Join-Path $PSScriptRoot 'constants.ps1')
+        }
+
+        Context "Connects and shows database list" -ForEach $script:instance1, $script:instance2 {
+            BeforeAll {
+                $server = Connect-DbaInstance -SqlInstance $_
+            }
+
+            It "Shows database list for server $_" {
+                $result = Show-DbaDbList -SqlInstance $server
+                $result | Should -Not -BeNullOrEmpty
+                $result.GetType().Name | Should -Be 'String'
+            }
+
+            It "Shows database list with custom title" {
+                $customTitle = "Custom Database List"
+                $result = Show-DbaDbList -SqlInstance $server -Title $customTitle
+                $result | Should -Match $customTitle
+            }
+
+            It "Shows database list with custom header" {
+                $customHeader = "Custom Header"
+                $result = Show-DbaDbList -SqlInstance $server -Header $customHeader
+                $result | Should -Match $customHeader
+            }
+
+            It "Shows database list with default database highlighted" {
+                $defaultDb = $server.Databases[0].Name
+                $result = Show-DbaDbList -SqlInstance $server -DefaultDb $defaultDb
+                $result | Should -Match $defaultDb
+            }
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>

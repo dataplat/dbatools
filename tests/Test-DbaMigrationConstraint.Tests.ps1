@@ -1,21 +1,11 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'Database', 'ExcludeDatabase', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
-        }
-    }
-}
-
-Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
+Describe "Test-DbaMigrationConstraint" {
     BeforeAll {
-        Get-DbaProcess -SqlInstance $script:instance1 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+
         $db1 = "dbatoolsci_testMigrationConstraint"
         $db2 = "dbatoolsci_testMigrationConstraint_2"
         Invoke-DbaQuery -SqlInstance $script:instance1 -Query "CREATE DATABASE $db1"
@@ -24,27 +14,57 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
         $setupright = $true
         if ($needed.Count -ne 2) {
             $setupright = $false
-            it "has failed setup" {
-                Set-TestInconclusive -message "Setup failed"
-            }
         }
     }
+
     AfterAll {
         if (-not $appveyor) {
             Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database $db1, $db2 -ErrorAction SilentlyContinue
         }
     }
+
+    Context "Validate parameters" {
+        BeforeAll {
+            $CommandUnderTest = Get-Command Test-DbaMigrationConstraint
+        }
+        It "Should have Source parameter" {
+            $CommandUnderTest | Should -HaveParameter Source -Type DbaInstanceParameter
+        }
+        It "Should have SourceSqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SourceSqlCredential -Type PSCredential
+        }
+        It "Should have Destination parameter" {
+            $CommandUnderTest | Should -HaveParameter Destination -Type DbaInstanceParameter
+        }
+        It "Should have DestinationSqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type PSCredential
+        }
+        It "Should have Database parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[]
+        }
+        It "Should have ExcludeDatabase parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[]
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+        }
+    }
+
     Context "Validate multiple databases" {
-        It 'Both databases are migratable' {
+        BeforeAll {
             $results = Test-DbaMigrationConstraint -Source $script:instance1 -Destination $script:instance2
+        }
+        It 'Both databases are migratable' {
             foreach ($result in $results) {
-                $result.IsMigratable | Should Be $true
+                $result.IsMigratable | Should -Be $true
             }
         }
     }
+
     Context "Validate single database" {
-        It 'Databases are migratable' {
-            (Test-DbaMigrationConstraint -Source $script:instance1 -Destination $script:instance2 -Database $db1).IsMigratable | Should Be $true
+        It 'Database is migratable' {
+            $result = Test-DbaMigrationConstraint -Source $script:instance1 -Destination $script:instance2 -Database $db1
+            $result.IsMigratable | Should -Be $true
         }
     }
 }

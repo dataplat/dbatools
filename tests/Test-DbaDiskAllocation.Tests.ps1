@@ -1,27 +1,45 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Test-DbaDiskAllocation" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'NoSqlCheck', 'SqlCredential', 'Credential', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Test-DbaDiskAllocation
+        }
+        It "Should have ComputerName as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type Object[] -Not -Mandatory
+        }
+        It "Should have NoSqlCheck as a parameter" {
+            $CommandUnderTest | Should -HaveParameter NoSqlCheck -Type Switch -Not -Mandatory
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Credential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
-}
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+
     Context "Command actually works" {
+        BeforeDiscovery {
+            $script:instance2 = $script:instance2 # Ensure this variable is in scope for discovery
+        }
         It "Should return a result" {
             $results = Test-DbaDiskAllocation -ComputerName $script:instance2
-            $results | Should -Not -Be $null
+            $results | Should -Not -BeNullOrEmpty
         }
 
         It "Should return a result not using sql" {
             $results = Test-DbaDiskAllocation -NoSqlCheck -ComputerName $script:instance2
-            $results | Should -Not -Be $null
+            $results | Should -Not -BeNullOrEmpty
         }
     }
 }

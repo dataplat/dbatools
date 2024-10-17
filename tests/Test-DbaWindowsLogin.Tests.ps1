@@ -1,39 +1,61 @@
-<#
-    The below statement stays in for every test you build.
-#>
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-<#
-    Unit test is required for any command added
-#>
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Test-DbaWindowsLogin" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Login', 'ExcludeLogin', 'FilterBy', 'IgnoreDomains', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Test-DbaWindowsLogin
+        }
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Login parameter" {
+            $CommandUnderTest | Should -HaveParameter Login -Type String[] -Not -Mandatory
+        }
+        It "Should have ExcludeLogin parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeLogin -Type String[] -Not -Mandatory
+        }
+        It "Should have FilterBy parameter" {
+            $CommandUnderTest | Should -HaveParameter FilterBy -Type String -Not -Mandatory
+        }
+        It "Should have IgnoreDomains parameter" {
+            $CommandUnderTest | Should -HaveParameter IgnoreDomains -Type String[] -Not -Mandatory
+        }
+        It "Should have InputObject parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Login[] -Not -Mandatory
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+        }
+    }
+
+    Context "Command actually works" {
+        BeforeDiscovery {
+            $script:skipIntegrationTests = [Environment]::GetEnvironmentVariable('DBA_TOOLS_SKIP_INTEGRATION_TESTS') -eq 'true'
+        }
+
+        It "Should return correct properties" -Skip:$script:skipIntegrationTests {
+            $results = Test-DbaWindowsLogin -SqlInstance $script:instance2
+            $ExpectedProps = 'AccountNotDelegated', 'AllowReversiblePasswordEncryption', 'CannotChangePassword', 'DisabledInSQLServer', 'Domain', 'Enabled', 'Found', 'LockedOut', 'Login', 'PasswordExpired', 'PasswordNeverExpires', 'PasswordNotRequired', 'Server', 'SmartcardLogonRequired', 'TrustedForDelegation', 'Type', 'UserAccountControl'
+            ($results[0].PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
+        }
+
+        It "Should return true if Account type is User" -Skip:$script:skipIntegrationTests {
+            $results = Test-DbaWindowsLogin -SqlInstance $script:instance2
+            ($results | Where-Object Type -match 'User').Count | Should -BeGreaterThan 0
+        }
+
+        It "Should return true if Account is Found" -Skip:$script:skipIntegrationTests {
+            $results = Test-DbaWindowsLogin -SqlInstance $script:instance2
+            ($results | Where-Object Found).Found | Should -Be $true
         }
     }
 }
-<#
-Did not include these tests yet as I was unsure if AppVeyor was capable of testing domain logins. Included these for future use.
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    Context "Command actually works" {
-        $results = Test-DbaWindowsLogin -SqlInstance $script:instance2
-        It "Should return correct properties" {
-            $ExpectedProps = 'AccountNotDelegated,AllowReversiblePasswordEncryption,CannotChangePassword,DisabledInSQLServer,Domain,Enabled,Found,LockedOut,Login,PasswordExpired,PasswordNeverExpires,PasswordNotRequired,Server,SmartcardLogonRequired,TrustedForDelegation,Type,UserAccountControl'.Split(',')
-            ($results[0].PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
-        }
-
-        $Type = 'User'
-        It "Should return true if Account type is: $Type" {
-            ($results | Where-Object Type -match $Type) | Should Be $true
-        }
-        It "Should return true if Account is Found" {
-            ($results | Where-Object Found).Found | Should Be $true
-        }
-    }
-}#>

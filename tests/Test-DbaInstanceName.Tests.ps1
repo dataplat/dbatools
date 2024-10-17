@@ -1,28 +1,42 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+param($ModuleName = 'dbatools')
+
+Describe "Test-DbaInstanceName" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'ExcludeSsrs', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Test-DbaInstanceName
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have ExcludeSsrs as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeSsrs -Type SwitchParameter
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
 
-
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Command tests servername" {
-        $results = Test-DbaInstanceName -SqlInstance $script:instance2
+        BeforeAll {
+            $results = Test-DbaInstanceName -SqlInstance $script:instance2
+        }
+
         It "should say rename is not required" {
             $results.RenameRequired | Should -Be $false
         }
 
         It "returns the correct properties" {
-            $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,ServerName,NewServerName,RenameRequired,Updatable,Warnings,Blockers'.Split(',')
-            ($results.PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
+            $ExpectedProps = 'ComputerName', 'InstanceName', 'SqlInstance', 'ServerName', 'NewServerName', 'RenameRequired', 'Updatable', 'Warnings', 'Blockers'
+            $results.PSObject.Properties.Name | Should -Be $ExpectedProps
         }
     }
 }

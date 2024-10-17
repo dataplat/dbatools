@@ -1,19 +1,78 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Set-DbaCmConnection" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'Credential', 'UseWindowsCredentials', 'OverrideExplicitCredential', 'OverrideConnectionPolicy', 'DisabledConnectionTypes', 'DisableBadCredentialCache', 'DisableCimPersistence', 'DisableCredentialAutoRegister', 'EnableCredentialFailover', 'WindowsCredentialsAreBad', 'CimWinRMOptions', 'CimDCOMOptions', 'AddBadCredential', 'RemoveBadCredential', 'ClearBadCredential', 'ClearCredential', 'ResetCredential', 'ResetConnectionStatus', 'ResetConfiguration', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Set-DbaCmConnection
+        }
+        It "Should have ComputerName parameter" {
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaCmConnectionParameter[] -Not -Mandatory
+        }
+        It "Should have Credential parameter" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have UseWindowsCredentials parameter" {
+            $CommandUnderTest | Should -HaveParameter UseWindowsCredentials -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have OverrideExplicitCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter OverrideExplicitCredential -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have OverrideConnectionPolicy parameter" {
+            $CommandUnderTest | Should -HaveParameter OverrideConnectionPolicy -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have DisabledConnectionTypes parameter" {
+            $CommandUnderTest | Should -HaveParameter DisabledConnectionTypes -Type ManagementConnectionType -Not -Mandatory
+        }
+        It "Should have DisableBadCredentialCache parameter" {
+            $CommandUnderTest | Should -HaveParameter DisableBadCredentialCache -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have DisableCimPersistence parameter" {
+            $CommandUnderTest | Should -HaveParameter DisableCimPersistence -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have DisableCredentialAutoRegister parameter" {
+            $CommandUnderTest | Should -HaveParameter DisableCredentialAutoRegister -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have EnableCredentialFailover parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableCredentialFailover -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have WindowsCredentialsAreBad parameter" {
+            $CommandUnderTest | Should -HaveParameter WindowsCredentialsAreBad -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have CimWinRMOptions parameter" {
+            $CommandUnderTest | Should -HaveParameter CimWinRMOptions -Type WSManSessionOptions -Not -Mandatory
+        }
+        It "Should have CimDCOMOptions parameter" {
+            $CommandUnderTest | Should -HaveParameter CimDCOMOptions -Type DComSessionOptions -Not -Mandatory
+        }
+        It "Should have AddBadCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter AddBadCredential -Type PSCredential[] -Not -Mandatory
+        }
+        It "Should have RemoveBadCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter RemoveBadCredential -Type PSCredential[] -Not -Mandatory
+        }
+        It "Should have ClearBadCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter ClearBadCredential -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have ClearCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter ClearCredential -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have ResetCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter ResetCredential -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have ResetConnectionStatus parameter" {
+            $CommandUnderTest | Should -HaveParameter ResetConnectionStatus -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have ResetConfiguration parameter" {
+            $CommandUnderTest | Should -HaveParameter ResetConfiguration -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
 }
+
 <#
     Integration test should appear below and are custom to the command you are writing.
     Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
+    for more guidance.
 #>

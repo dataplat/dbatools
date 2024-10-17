@@ -1,20 +1,35 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag "UnitTests" {
+Describe "Set-DbaResourceGovernor" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Enabled', 'Disabled', 'ClassifierFunction', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Set-DbaResourceGovernor
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Enabled as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter Enabled -Type switch
+        }
+        It "Should have Disabled as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter Disabled -Type switch
+        }
+        It "Should have ClassifierFunction as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ClassifierFunction -Type string
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type switch
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "Command actually works" {
+        BeforeDiscovery {
+            . (Join-Path $PSScriptRoot 'constants.ps1')
+        }
+
         BeforeAll {
             $classifierFunction = "dbatoolsci_fnRGClassifier"
 
@@ -28,6 +43,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             Invoke-DbaQuery -SqlInstance $script:instance2 -Query $createUDFQuery -Database "master"
             Set-DbaResourceGovernor -SqlInstance $script:instance2 -Disabled -Confirm:$false
         }
+
         It "enables resource governor" {
             $results = Set-DbaResourceGovernor -SqlInstance $script:instance2 -Enabled -Confirm:$false
             $results.Enabled | Should -Be $true
@@ -48,8 +64,9 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results = Set-DbaResourceGovernor -SqlInstance $script:instance2 -ClassifierFunction 'NULL' -Confirm:$false
             $results.ClassifierFunction | Should -Be ''
         }
+
         AfterAll {
-            $dropUDFQuery = "DROP FUNCTION $qualifiedClassifierFunction;"
+            $dropUDFQuery = "DROP FUNCTION [dbo].[$classifierFunction];"
             Invoke-DbaQuery -SqlInstance $script:instance2 -Query $dropUDFQuery -Database "master"
         }
     }

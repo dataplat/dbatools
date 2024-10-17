@@ -1,38 +1,48 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Remove-DbaXESession" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Session', 'AllSessions', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Remove-DbaXESession
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Session as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Session -Type Object[]
+        }
+        It "Should have AllSessions as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter AllSessions -Type switch
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Session[]
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type switch
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    BeforeAll {
-        $null = Get-DbaXESession -SqlInstance $script:instance2 -Session 'Profiler TSQL Duration' | Remove-DbaXESession
-    }
-    AfterAll {
-        $null = Get-DbaXESession -SqlInstance $script:instance2 -Session 'Profiler TSQL Duration' | Remove-DbaXESession
-    }
-    Context "Test Importing Session Template" {
-        $results = Import-DbaXESessionTemplate -SqlInstance $script:instance2 -Template 'Profiler TSQL Duration'
-
-        It "session should exist" {
-            $results.Name | Should Be 'Profiler TSQL Duration'
+    Context "Integration Tests" -Tag "IntegrationTests" {
+        BeforeAll {
+            . "$PSScriptRoot\constants.ps1"
+            $null = Get-DbaXESession -SqlInstance $script:instance2 -Session 'Profiler TSQL Duration' | Remove-DbaXESession
+        }
+        AfterAll {
+            $null = Get-DbaXESession -SqlInstance $script:instance2 -Session 'Profiler TSQL Duration' | Remove-DbaXESession
         }
 
-        $null = Get-DbaXESession -SqlInstance $script:instance2 -Session 'Profiler TSQL Duration' | Remove-DbaXESession
-        $results = Get-DbaXESession -SqlInstance $script:instance2 -Session 'Profiler TSQL Duration'
+        It "Imports and removes a session template" {
+            $results = Import-DbaXESessionTemplate -SqlInstance $script:instance2 -Template 'Profiler TSQL Duration'
+            $results.Name | Should -Be 'Profiler TSQL Duration'
 
-        It "session should no longer exist" {
-            $results.Name | Should Be $null
-            $results.Status | Should Be $null
+            $null = Get-DbaXESession -SqlInstance $script:instance2 -Session 'Profiler TSQL Duration' | Remove-DbaXESession
+            $results = Get-DbaXESession -SqlInstance $script:instance2 -Session 'Profiler TSQL Duration'
+
+            $results.Name | Should -BeNullOrEmpty
+            $results.Status | Should -BeNullOrEmpty
         }
     }
 }

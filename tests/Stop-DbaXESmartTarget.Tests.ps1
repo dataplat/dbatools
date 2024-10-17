@@ -1,19 +1,60 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Stop-DbaXESmartTarget" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Stop-DbaXESmartTarget
+        }
+        It "Accepts InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Not -Mandatory
+        }
+        It "Accepts EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+        }
+        It "Accepts Verbose as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Verbose -Type Switch -Not -Mandatory
+        }
+        It "Accepts Debug as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Debug -Type Switch -Not -Mandatory
+        }
+        It "Accepts ErrorAction as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ErrorAction -Type ActionPreference -Not -Mandatory
+        }
+        It "Accepts WarningAction as a parameter" {
+            $CommandUnderTest | Should -HaveParameter WarningAction -Type ActionPreference -Not -Mandatory
+        }
+        It "Accepts InformationAction as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InformationAction -Type ActionPreference -Not -Mandatory
+        }
+        It "Accepts ProgressAction as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ProgressAction -Type ActionPreference -Not -Mandatory
+        }
+        It "Accepts ErrorVariable as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ErrorVariable -Type String -Not -Mandatory
+        }
+        It "Accepts WarningVariable as a parameter" {
+            $CommandUnderTest | Should -HaveParameter WarningVariable -Type String -Not -Mandatory
+        }
+        It "Accepts InformationVariable as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InformationVariable -Type String -Not -Mandatory
+        }
+        It "Accepts OutVariable as a parameter" {
+            $CommandUnderTest | Should -HaveParameter OutVariable -Type String -Not -Mandatory
+        }
+        It "Accepts OutBuffer as a parameter" {
+            $CommandUnderTest | Should -HaveParameter OutBuffer -Type Int32 -Not -Mandatory
+        }
+        It "Accepts PipelineVariable as a parameter" {
+            $CommandUnderTest | Should -HaveParameter PipelineVariable -Type String -Not -Mandatory
+        }
+        It "Accepts WhatIf as a parameter" {
+            $CommandUnderTest | Should -HaveParameter WhatIf -Type Switch -Not -Mandatory
+        }
+        It "Accepts Confirm as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Confirm -Type Switch -Not -Mandatory
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+
+# Integration tests can be added below this line
+# Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests for more guidance

@@ -1,14 +1,35 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Save-DbaCommunitySoftware" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'Software', 'Branch', 'LocalFile', 'Url', 'LocalDirectory', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Save-DbaCommunitySoftware
+        }
+        It "Should have Software as a non-mandatory String parameter" {
+            $CommandUnderTest | Should -HaveParameter Software -Type String -Not -Mandatory
+        }
+        It "Should have Branch as a non-mandatory String parameter" {
+            $CommandUnderTest | Should -HaveParameter Branch -Type String -Not -Mandatory
+        }
+        It "Should have LocalFile as a non-mandatory String parameter" {
+            $CommandUnderTest | Should -HaveParameter LocalFile -Type String -Not -Mandatory
+        }
+        It "Should have Url as a non-mandatory String parameter" {
+            $CommandUnderTest | Should -HaveParameter Url -Type String -Not -Mandatory
+        }
+        It "Should have LocalDirectory as a non-mandatory String parameter" {
+            $CommandUnderTest | Should -HaveParameter LocalDirectory -Type String -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
+
+    # Add more contexts and tests as needed
 }

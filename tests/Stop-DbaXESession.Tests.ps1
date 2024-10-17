@@ -1,60 +1,69 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Stop-DbaXESession" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Session', 'AllSessions', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Stop-DbaXESession
+        }
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Session parameter" {
+            $CommandUnderTest | Should -HaveParameter Session -Type Object[] -Not -Mandatory
+        }
+        It "Should have AllSessions parameter" {
+            $CommandUnderTest | Should -HaveParameter AllSessions -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have InputObject parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Session[] -Not -Mandatory
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        # Create a valid session and start it
-        $server.Query("CREATE EVENT SESSION [dbatoolsci_session_valid] ON SERVER ADD EVENT sqlserver.lock_acquired;")
-        $dbatoolsciValid = Get-DbaXESession -SqlInstance $script:instance2 -Session dbatoolsci_session_valid
-        $dbatoolsciValid.Start()
-        # Record the Status of all sessions
-        $allSessions = Get-DbaXESession -SqlInstance $script:instance2
-    }
-    BeforeEach {
-        $dbatoolsciValid.Refresh()
-        if (-Not $dbatoolsciValid.IsRunning) {
+    Context "Command usage" {
+        BeforeAll {
+            . "$PSScriptRoot\constants.ps1"
+            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server.Query("CREATE EVENT SESSION [dbatoolsci_session_valid] ON SERVER ADD EVENT sqlserver.lock_acquired;")
+            $dbatoolsciValid = Get-DbaXESession -SqlInstance $script:instance2 -Session dbatoolsci_session_valid
             $dbatoolsciValid.Start()
+            $allSessions = Get-DbaXESession -SqlInstance $script:instance2
         }
-    }
-    AfterAll {
-        # Set the Status of all session back to what they were before the test
-        foreach ($session in $allSessions) {
-            $session.Refresh()
-            if ($session.Status -eq "Stopped") {
-                if ($session.IsRunning) {
-                    $session | Stop-DbaXESession
-                }
-            } else {
-                if (-Not $session.IsRunning) {
-                    $session | Start-DbaXESession
-                }
+
+        BeforeEach {
+            $dbatoolsciValid.Refresh()
+            if (-Not $dbatoolsciValid.IsRunning) {
+                $dbatoolsciValid.Start()
             }
         }
 
-        # Drop created objects
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $server.Query("IF EXISTS(SELECT * FROM sys.server_event_sessions WHERE name = 'dbatoolsci_session_valid') DROP EVENT SESSION [dbatoolsci_session_valid] ON SERVER;")
-    }
+        AfterAll {
+            foreach ($session in $allSessions) {
+                $session.Refresh()
+                if ($session.Status -eq "Stopped") {
+                    if ($session.IsRunning) {
+                        $session | Stop-DbaXESession
+                    }
+                } else {
+                    if (-Not $session.IsRunning) {
+                        $session | Start-DbaXESession
+                    }
+                }
+            }
 
-    Context "Verifying command works" {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        It "stops the system_health session" {
+            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server.Query("IF EXISTS(SELECT * FROM sys.server_event_sessions WHERE name = 'dbatoolsci_session_valid') DROP EVENT SESSION [dbatoolsci_session_valid] ON SERVER;")
+        }
+
+        It "stops the dbatoolsci_session_valid session" {
             $dbatoolsciValid | Stop-DbaXESession
             $dbatoolsciValid.Refresh()
-            $dbatoolsciValid.IsRunning | Should Be $false
+            $dbatoolsciValid.IsRunning | Should -Be $false
         }
 
         It "does not change state if XE session is already stopped" {
@@ -63,13 +72,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             }
             Stop-DbaXESession -SqlInstance $server -Session $dbatoolsciValid.Name -WarningAction SilentlyContinue
             $dbatoolsciValid.Refresh()
-            $dbatoolsciValid.IsRunning | Should Be $false
+            $dbatoolsciValid.IsRunning | Should -Be $false
         }
 
         It "stops all XE Sessions except the system ones if -AllSessions is used" {
             Stop-DbaXESession $server -AllSessions -WarningAction SilentlyContinue
             $dbatoolsciValid.Refresh()
-            $dbatoolsciValid.IsRunning | Should Be $false
+            $dbatoolsciValid.IsRunning | Should -Be $false
         }
     }
 }

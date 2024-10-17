@@ -1,68 +1,91 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Save-DbaKbUpdate" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'Name', 'Path', 'FilePath', 'InputObject', 'Architecture', 'Language', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Save-DbaKbUpdate
+        }
+        It "Should have Name as a non-mandatory String[] parameter" {
+            $CommandUnderTest | Should -HaveParameter Name -Type String[] -Not -Mandatory
+        }
+        It "Should have Path as a non-mandatory String parameter" {
+            $CommandUnderTest | Should -HaveParameter Path -Type String -Not -Mandatory
+        }
+        It "Should have FilePath as a non-mandatory String parameter" {
+            $CommandUnderTest | Should -HaveParameter FilePath -Type String -Not -Mandatory
+        }
+        It "Should have Architecture as a non-mandatory String parameter" {
+            $CommandUnderTest | Should -HaveParameter Architecture -Type String -Not -Mandatory
+        }
+        It "Should have Language as a non-mandatory String parameter" {
+            $CommandUnderTest | Should -HaveParameter Language -Type String -Not -Mandatory
+        }
+        It "Should have InputObject as a non-mandatory Object[] parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
-    It "downloads a small update" {
-        $results = Save-DbaKbUpdate -Name KB2992080 -Architecture All -Path C:\temp
-        $results.Name -match 'aspnet'
-        $results | Remove-Item -Confirm:$false
-    }
-    It "supports piping" {
-        $results = Get-DbaKbUpdate -Name KB2992080 | select -First 1 | Save-DbaKbUpdate -Architecture All -Path C:\temp
-        $results.Name -match 'aspnet'
-        $results | Remove-Item -Confirm:$false
-    }
-    It "Download multiple updates" {
-        $results = Save-DbaKbUpdate -Name KB2992080, KB4513696 -Architecture All -Path C:\temp
+    Context "Command usage" {
+        It "downloads a small update" {
+            $results = Save-DbaKbUpdate -Name KB2992080 -Architecture All -Path C:\temp
+            $results.Name | Should -Match 'aspnet'
+            $results | Remove-Item -Confirm:$false
+        }
 
-        # basic retry logic in case the first download didn't get all of the files
-        if ($null -eq $results -or $results.Count -ne 2) {
-            Write-Message -Level Warning -Message "Retrying..."
-            if ($results.Count -gt 0) {
-                $results | Remove-Item -Confirm:$false
-            }
-            Start-Sleep -s 30
+        It "supports piping" {
+            $results = Get-DbaKbUpdate -Name KB2992080 | Select-Object -First 1 | Save-DbaKbUpdate -Architecture All -Path C:\temp
+            $results.Name | Should -Match 'aspnet'
+            $results | Remove-Item -Confirm:$false
+        }
+
+        It "Download multiple updates" {
             $results = Save-DbaKbUpdate -Name KB2992080, KB4513696 -Architecture All -Path C:\temp
-        }
 
-        $results.Count | Should -Be 2
-        $results | Remove-Item -Confirm:$false
-
-        # download multiple updates via piping
-        $results = Get-DbaKbUpdate -Name KB2992080, KB4513696 | Save-DbaKbUpdate -Architecture All -Path C:\temp
-
-        # basic retry logic in case the first download didn't get all of the files
-        if ($null -eq $results -or $results.Count -ne 2) {
-            Write-Message -Level Warning -Message "Retrying..."
-            if ($results.Count -gt 0) {
-                $results | Remove-Item -Confirm:$false
+            # basic retry logic in case the first download didn't get all of the files
+            if ($null -eq $results -or $results.Count -ne 2) {
+                Write-Warning "Retrying..."
+                if ($results.Count -gt 0) {
+                    $results | Remove-Item -Confirm:$false
+                }
+                Start-Sleep -Seconds 30
+                $results = Save-DbaKbUpdate -Name KB2992080, KB4513696 -Architecture All -Path C:\temp
             }
-            Start-Sleep -s 30
+
+            $results.Count | Should -Be 2
+            $results | Remove-Item -Confirm:$false
+
+            # download multiple updates via piping
             $results = Get-DbaKbUpdate -Name KB2992080, KB4513696 | Save-DbaKbUpdate -Architecture All -Path C:\temp
+
+            # basic retry logic in case the first download didn't get all of the files
+            if ($null -eq $results -or $results.Count -ne 2) {
+                Write-Warning "Retrying..."
+                if ($results.Count -gt 0) {
+                    $results | Remove-Item -Confirm:$false
+                }
+                Start-Sleep -Seconds 30
+                $results = Get-DbaKbUpdate -Name KB2992080, KB4513696 | Save-DbaKbUpdate -Architecture All -Path C:\temp
+            }
+
+            $results.Count | Should -Be 2
+            $results | Remove-Item -Confirm:$false
         }
 
-        $results.Count | Should -Be 2
-        $results | Remove-Item -Confirm:$false
-    }
+        # see https://github.com/dataplat/dbatools/issues/6745
+        It "Ensuring that variable scope doesn't impact the command negatively" {
+            $filter = "SQLServer*-KB-*x64*.exe"
 
-    # see https://github.com/dataplat/dbatools/issues/6745
-    It "Ensuring that variable scope doesn't impact the command negatively" {
-        $filter = "SQLServer*-KB-*x64*.exe"
-
-        $results = Save-DbaKbUpdate -Name KB4513696 -Architecture All -Path C:\temp
-        $results.Count | Should -Be 1
-        $results | Remove-Item -Confirm:$false
+            $results = Save-DbaKbUpdate -Name KB4513696 -Architecture All -Path C:\temp
+            $results.Count | Should -Be 1
+            $results | Remove-Item -Confirm:$false
+        }
     }
 }

@@ -1,14 +1,63 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Set-DbatoolsPath" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'Name', 'Path', 'Register', 'Scope'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Set-DbatoolsPath
+        }
+        It "Should have Name as a non-mandatory String parameter" {
+            $CommandUnderTest | Should -HaveParameter Name -Type String -Not -Mandatory
+        }
+        It "Should have Path as a non-mandatory String parameter" {
+            $CommandUnderTest | Should -HaveParameter Path -Type String -Not -Mandatory
+        }
+        It "Should have Register as a non-mandatory SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter Register -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have Scope as a non-mandatory ConfigScope parameter" {
+            $CommandUnderTest | Should -HaveParameter Scope -Type ConfigScope -Not -Mandatory
+        }
+        It "Should have Verbose as a non-mandatory SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter Verbose -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have Debug as a non-mandatory SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter Debug -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have ErrorAction as a non-mandatory ActionPreference parameter" {
+            $CommandUnderTest | Should -HaveParameter ErrorAction -Type ActionPreference -Not -Mandatory
+        }
+        It "Should have WarningAction as a non-mandatory ActionPreference parameter" {
+            $CommandUnderTest | Should -HaveParameter WarningAction -Type ActionPreference -Not -Mandatory
+        }
+        It "Should have InformationAction as a non-mandatory ActionPreference parameter" {
+            $CommandUnderTest | Should -HaveParameter InformationAction -Type ActionPreference -Not -Mandatory
+        }
+        It "Should have ProgressAction as a non-mandatory ActionPreference parameter" {
+            $CommandUnderTest | Should -HaveParameter ProgressAction -Type ActionPreference -Not -Mandatory
+        }
+        It "Should have ErrorVariable as a non-mandatory String parameter" {
+            $CommandUnderTest | Should -HaveParameter ErrorVariable -Type String -Not -Mandatory
+        }
+        It "Should have WarningVariable as a non-mandatory String parameter" {
+            $CommandUnderTest | Should -HaveParameter WarningVariable -Type String -Not -Mandatory
+        }
+        It "Should have InformationVariable as a non-mandatory String parameter" {
+            $CommandUnderTest | Should -HaveParameter InformationVariable -Type String -Not -Mandatory
+        }
+        It "Should have OutVariable as a non-mandatory String parameter" {
+            $CommandUnderTest | Should -HaveParameter OutVariable -Type String -Not -Mandatory
+        }
+        It "Should have OutBuffer as a non-mandatory Int32 parameter" {
+            $CommandUnderTest | Should -HaveParameter OutBuffer -Type Int32 -Not -Mandatory
+        }
+        It "Should have PipelineVariable as a non-mandatory String parameter" {
+            $CommandUnderTest | Should -HaveParameter PipelineVariable -Type String -Not -Mandatory
         }
     }
 }

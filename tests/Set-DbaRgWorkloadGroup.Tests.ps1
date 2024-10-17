@@ -1,23 +1,63 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Set-DbaRgWorkloadGroup" {
+    BeforeAll {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'WorkloadGroup', 'ResourcePool', 'ResourcePoolType', 'Importance', 'RequestMaximumMemoryGrantPercentage', 'RequestMaximumCpuTimeInSeconds', 'RequestMemoryGrantTimeoutInSeconds', 'MaximumDegreeOfParallelism', 'GroupMaximumRequests', 'SkipReconfigure', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Set-DbaRgWorkloadGroup
+        }
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have WorkloadGroup parameter" {
+            $CommandUnderTest | Should -HaveParameter WorkloadGroup -Type String[] -Not -Mandatory
+        }
+        It "Should have ResourcePool parameter" {
+            $CommandUnderTest | Should -HaveParameter ResourcePool -Type String -Not -Mandatory
+        }
+        It "Should have ResourcePoolType parameter" {
+            $CommandUnderTest | Should -HaveParameter ResourcePoolType -Type String -Not -Mandatory
+        }
+        It "Should have Importance parameter" {
+            $CommandUnderTest | Should -HaveParameter Importance -Type String -Not -Mandatory
+        }
+        It "Should have RequestMaximumMemoryGrantPercentage parameter" {
+            $CommandUnderTest | Should -HaveParameter RequestMaximumMemoryGrantPercentage -Type Int32 -Not -Mandatory
+        }
+        It "Should have RequestMaximumCpuTimeInSeconds parameter" {
+            $CommandUnderTest | Should -HaveParameter RequestMaximumCpuTimeInSeconds -Type Int32 -Not -Mandatory
+        }
+        It "Should have RequestMemoryGrantTimeoutInSeconds parameter" {
+            $CommandUnderTest | Should -HaveParameter RequestMemoryGrantTimeoutInSeconds -Type Int32 -Not -Mandatory
+        }
+        It "Should have MaximumDegreeOfParallelism parameter" {
+            $CommandUnderTest | Should -HaveParameter MaximumDegreeOfParallelism -Type Int32 -Not -Mandatory
+        }
+        It "Should have GroupMaximumRequests parameter" {
+            $CommandUnderTest | Should -HaveParameter GroupMaximumRequests -Type Int32 -Not -Mandatory
+        }
+        It "Should have SkipReconfigure parameter" {
+            $CommandUnderTest | Should -HaveParameter SkipReconfigure -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have InputObject parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type WorkloadGroup[] -Not -Mandatory
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Functionality" {
         BeforeAll {
             $null = Set-DbaResourceGovernor -SqlInstance $script:instance2 -Enabled
         }
+
         It "Sets a workload group in default resource pool" {
             $wklGroupName = "dbatoolssci_wklgroupTest"
             $resourcePoolType = "Internal"
@@ -50,8 +90,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $result = Set-DbaRgWorkloadGroup @splatSetWorkloadGroup
             $resGov = Get-DbaResourceGovernor -SqlInstance $script:instance2
 
-            $newWorkloadGroup | Should -Not -Be $null
-            $resGov.ReconfigurePending | Should -Be $false
+            $newWorkloadGroup | Should -Not -BeNullOrEmpty
+            $resGov.ReconfigurePending | Should -BeFalse
             $result.Importance | Should -Be $splatSetWorkloadGroup.Importance
             $result.RequestMaximumMemoryGrantPercentage | Should -Be $splatSetWorkloadGroup.RequestMaximumMemoryGrantPercentage
             $result.RequestMaximumCpuTimeInSeconds | Should -Be $splatSetWorkloadGroup.RequestMaximumCpuTimeInSeconds
@@ -59,6 +99,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $result.MaximumDegreeOfParallelism | Should -Be $splatSetWorkloadGroup.MaximumDegreeOfParallelism
             $result.GroupMaximumRequests | Should -Be $splatSetWorkloadGroup.GroupMaximumRequests
         }
+
         It "Sets a workload group in a user defined resource pool" {
             $wklGroupName = "dbatoolssci_wklgroupTest"
             $resourcePoolName = "dbatoolssci_poolTest"
@@ -102,8 +143,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $null = Remove-DbaRgWorkloadGroup -SqlInstance $script:instance2 -WorkloadGroup $wklGroupName -ResourcePool $resourcePoolName
             $null = Remove-DbaRgResourcePool -SqlInstance $script:instance2 -ResourcePool $resourcePoolName -Type $resourcePoolType
 
-            $newWorkloadGroup | Should -Not -Be $null
-            $resGov.ReconfigurePending | Should -Be $false
+            $newWorkloadGroup | Should -Not -BeNullOrEmpty
+            $resGov.ReconfigurePending | Should -BeFalse
             $result.Importance | Should -Be $splatSetWorkloadGroup.Importance
             $result.RequestMaximumMemoryGrantPercentage | Should -Be $splatSetWorkloadGroup.RequestMaximumMemoryGrantPercentage
             $result.RequestMaximumCpuTimeInSeconds | Should -Be $splatSetWorkloadGroup.RequestMaximumCpuTimeInSeconds
@@ -111,9 +152,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $result.MaximumDegreeOfParallelism | Should -Be $splatSetWorkloadGroup.MaximumDegreeOfParallelism
             $result.GroupMaximumRequests | Should -Be $splatSetWorkloadGroup.GroupMaximumRequests
         }
+
         It "Sets multiple workload groups" {
             $wklGroupName = "dbatoolssci_wklgroupTest"
-            $wklGroupName2 = "dbatoolssci_wklgroupTest"
+            $wklGroupName2 = "dbatoolssci_wklgroupTest2"
             $splatNewWorkloadGroup = @{
                 SqlInstance                         = $script:instance2
                 WorkloadGroup                       = @($wklGroupName, $wklGroupName2)
@@ -140,19 +182,20 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $result = Set-DbaRgWorkloadGroup @splatSetWorkloadGroup
             $resGov = Get-DbaResourceGovernor -SqlInstance $script:instance2
 
-            $newWorkloadGroups | Should -Not -Be $null
-            $resGov.ReconfigurePending | Should -Be $false
-            $result.Foreach{ $_.Importance | Should -Be $splatSetWorkloadGroup.Importance }
-            $result.Foreach{ $_.RequestMaximumMemoryGrantPercentage | Should -Be $splatSetWorkloadGroup.RequestMaximumMemoryGrantPercentage }
-            $result.Foreach{ $_.RequestMaximumCpuTimeInSeconds | Should -Be $splatSetWorkloadGroup.RequestMaximumCpuTimeInSeconds }
-            $result.Foreach{ $_.RequestMemoryGrantTimeoutInSeconds | Should -Be $splatSetWorkloadGroup.RequestMemoryGrantTimeoutInSeconds }
-            $result.Foreach{ $_.MaximumDegreeOfParallelism | Should -Be $splatSetWorkloadGroup.MaximumDegreeOfParallelism }
-            $result.Foreach{ $_.GroupMaximumRequests | Should -Be $splatSetWorkloadGroup.GroupMaximumRequests }
+            $newWorkloadGroups | Should -Not -BeNullOrEmpty
+            $resGov.ReconfigurePending | Should -BeFalse
+            $result | ForEach-Object { $_.Importance | Should -Be $splatSetWorkloadGroup.Importance }
+            $result | ForEach-Object { $_.RequestMaximumMemoryGrantPercentage | Should -Be $splatSetWorkloadGroup.RequestMaximumMemoryGrantPercentage }
+            $result | ForEach-Object { $_.RequestMaximumCpuTimeInSeconds | Should -Be $splatSetWorkloadGroup.RequestMaximumCpuTimeInSeconds }
+            $result | ForEach-Object { $_.RequestMemoryGrantTimeoutInSeconds | Should -Be $splatSetWorkloadGroup.RequestMemoryGrantTimeoutInSeconds }
+            $result | ForEach-Object { $_.MaximumDegreeOfParallelism | Should -Be $splatSetWorkloadGroup.MaximumDegreeOfParallelism }
+            $result | ForEach-Object { $_.GroupMaximumRequests | Should -Be $splatSetWorkloadGroup.GroupMaximumRequests }
         }
+
         It "Sets a piped workload group" {
             $wklGroupName = "dbatoolssci_wklgroupTest"
             $oldGroupMaximumRequests = 10
-            $newGroupMaximumRequests = 10
+            $newGroupMaximumRequests = 20
             $splatNewWorkloadGroup = @{
                 SqlInstance          = $script:instance2
                 WorkloadGroup        = $wklGroupName
@@ -166,6 +209,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $result.GroupMaximumRequests | Should -Be $oldGroupMaximumRequests
             $result2.GroupMaximumRequests | Should -Be $newGroupMaximumRequests
         }
+
         It "Skips Resource Governor reconfiguration" {
             $wklGroupName = "dbatoolssci_wklgroupTest"
             $splatNewWorkloadGroup = @{
@@ -175,22 +219,23 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 Force           = $true
             }
             $splatSetWorkloadGroup = @{
-                SqlInstance     = $script:instance2
-                WorkloadGroup   = $wklGroupName
-                ResourcePool    = "default"
+                SqlInstance      = $script:instance2
+                WorkloadGroup    = $wklGroupName
+                ResourcePool     = "default"
                 ResourcePoolType = "Internal"
-                Importance      = "HIGH"
-                SkipReconfigure = $true
+                Importance       = "HIGH"
+                SkipReconfigure  = $true
             }
 
             $null = New-DbaRgWorkloadGroup @splatNewWorkloadGroup
             $result = Get-DbaResourceGovernor -SqlInstance $script:instance2
-            $result.ReconfigurePending | Should -Be $false
+            $result.ReconfigurePending | Should -BeFalse
 
             $null = Set-DbaRgWorkloadGroup @splatSetWorkloadGroup
             $result2 = Get-DbaResourceGovernor -SqlInstance $script:instance2
-            $result2.ReconfigurePending | Should -Be $true
+            $result2.ReconfigurePending | Should -BeTrue
         }
+
         AfterEach {
             $wklGroupName = "dbatoolssci_wklgroupTest"
             $wklGroupName2 = "dbatoolssci_wklgroupTest2"

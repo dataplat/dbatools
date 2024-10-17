@@ -1,54 +1,53 @@
-<#
-    The below statement stays in for every test you build.
-#>
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-<#
-    Unit test is required for any command added
-#>
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Test-DbaTempDbConfig" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Test-DbaTempDbConfig
+        }
+        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type switch -Not -Mandatory
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "Command actually works on $script:instance2" {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $results = Test-DbaTempdbConfig -SqlInstance $server
-        It "Should have correct properties" {
-            $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Rule,Recommended,CurrentSetting,IsBestPractice,Notes'.Split(',')
-            ($results[0].PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
+        BeforeAll {
+            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $results = Test-DbaTempDbConfig -SqlInstance $server
         }
 
-        $rule = 'File Location'
-        if ($server.Databases['tempdb'].FileGroups[0].Files[0].FileName.Substring(0,1) -eq 'C') {
-            $isBestPractice = $false
-        } else {
-            $isBestPractice = $true
+        It "Should have correct properties" {
+            $ExpectedProps = 'ComputerName', 'InstanceName', 'SqlInstance', 'Rule', 'Recommended', 'CurrentSetting', 'IsBestPractice', 'Notes'
+            ($results[0].PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
         }
-        It "Should return $isBestPractice for IsBestPractice with rule: $rule" {
+
+        It "Should return correct IsBestPractice for 'File Location' rule" {
+            $rule = 'File Location'
+            $isBestPractice = $server.Databases['tempdb'].FileGroups[0].Files[0].FileName.Substring(0, 1) -ne 'C'
             ($results | Where-Object Rule -match $rule).IsBestPractice | Should -Be $isBestPractice
         }
-        It "Should return $false for Recommended with rule: $rule" {
-            ($results | Where-Object Rule -match $rule).Recommended | Should Be $false
+
+        It "Should return false for Recommended with 'File Location' rule" {
+            $rule = 'File Location'
+            ($results | Where-Object Rule -match $rule).Recommended | Should -Be $false
         }
 
-        $rule = 'TF 1118 Enabled'
-        if ($server.VersionMajor -ge 13) {
-            $recommended = $false
-        } else {
-            $recommended = $true
-        }
-        It "Should return $recommended for IsBestPractice with rule: $rule" {
-            ($results | Where-Object Rule -match $rule).Recommended | Should Be $recommended
+        It "Should return correct Recommended for 'TF 1118 Enabled' rule" {
+            $rule = 'TF 1118 Enabled'
+            $recommended = $server.VersionMajor -lt 13
+            ($results | Where-Object Rule -match $rule).Recommended | Should -Be $recommended
         }
     }
 }

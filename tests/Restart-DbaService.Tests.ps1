@@ -1,38 +1,63 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Restart-DbaService" {
+    BeforeAll {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'InstanceName', 'SqlInstance', 'Type', 'InputObject', 'Timeout', 'Credential', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Restart-DbaService
+        }
+        It "Should have ComputerName as a non-mandatory parameter of type DbaInstanceParameter[]" {
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have InstanceName as a non-mandatory parameter of type String[]" {
+            $CommandUnderTest | Should -HaveParameter InstanceName -Type String[] -Not -Mandatory
+        }
+        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have Type as a non-mandatory parameter of type String[]" {
+            $CommandUnderTest | Should -HaveParameter Type -Type String[] -Not -Mandatory
+        }
+        It "Should have InputObject as a non-mandatory parameter of type Object[]" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Not -Mandatory
+        }
+        It "Should have Timeout as a non-mandatory parameter of type Int32" {
+            $CommandUnderTest | Should -HaveParameter Timeout -Type Int32 -Not -Mandatory
+        }
+        It "Should have Credential as a non-mandatory parameter of type PSCredential" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Force as a non-mandatory SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
-}
-
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Context "Command actually works" {
+        BeforeAll {
+            $instanceName = (Connect-DbaInstance -SqlInstance $script:instance2).ServiceName
+        }
 
-        $instanceName = (Connect-DbaInstance -SqlInstance $script:instance2).ServiceName
         It "restarts some services" {
             $services = Restart-DbaService -ComputerName $script:instance2 -InstanceName $instanceName -Type Agent
-            $services | Should Not Be $null
+            $services | Should -Not -BeNullOrEmpty
             foreach ($service in $services) {
-                $service.State | Should Be 'Running'
-                $service.Status | Should Be 'Successful'
+                $service.State | Should -Be 'Running'
+                $service.Status | Should -Be 'Successful'
             }
         }
 
         It "restarts some services through pipeline" {
             $services = Get-DbaService -ComputerName $script:instance2 -InstanceName $instanceName -Type Agent, Engine | Restart-DbaService
-            $services | Should Not Be $null
+            $services | Should -Not -BeNullOrEmpty
             foreach ($service in $services) {
-                $service.State | Should Be 'Running'
-                $service.Status | Should Be 'Successful'
+                $service.State | Should -Be 'Running'
+                $service.Status | Should -Be 'Successful'
             }
         }
     }

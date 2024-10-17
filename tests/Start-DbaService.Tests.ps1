@@ -1,62 +1,83 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Start-DbaService" {
+    BeforeAll {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'InstanceName', 'SqlInstance', 'Type', 'InputObject', 'Timeout', 'Credential', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Start-DbaService
+        }
+        It "Should have ComputerName parameter" {
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have InstanceName parameter" {
+            $CommandUnderTest | Should -HaveParameter InstanceName -Type String[] -Not -Mandatory
+        }
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have Type parameter" {
+            $CommandUnderTest | Should -HaveParameter Type -Type String[] -Not -Mandatory
+        }
+        It "Should have InputObject parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Not -Mandatory
+        }
+        It "Should have Timeout parameter" {
+            $CommandUnderTest | Should -HaveParameter Timeout -Type Int32 -Not -Mandatory
+        }
+        It "Should have Credential parameter" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command actually works" {
+        BeforeAll {
+            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $instanceName = $server.ServiceName
+            $computerName = $server.NetName
 
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $instanceName = $server.ServiceName
-        $computerName = $server.NetName
-
-
-        #Stop services using native cmdlets
-        if ($instanceName -eq 'MSSQLSERVER') {
-            $serviceName = "SQLSERVERAGENT"
-        } else {
-            $serviceName = "SqlAgent`$$instanceName"
+            # Stop services using native cmdlets
+            if ($instanceName -eq 'MSSQLSERVER') {
+                $serviceName = "SQLSERVERAGENT"
+            } else {
+                $serviceName = "SqlAgent`$$instanceName"
+            }
+            Get-Service -ComputerName $computerName -Name $serviceName | Stop-Service -WarningAction SilentlyContinue | Out-Null
         }
-        Get-Service -ComputerName $computerName -Name $serviceName | Stop-Service -WarningAction SilentlyContinue | Out-Null
 
         It "starts the services back" {
             $services = Start-DbaService -ComputerName $script:instance2 -Type Agent -InstanceName $instanceName
-            $services | Should Not Be $null
+            $services | Should -Not -BeNullOrEmpty
             foreach ($service in $services) {
-                $service.State | Should Be 'Running'
-                $service.Status | Should Be 'Successful'
+                $service.State | Should -Be 'Running'
+                $service.Status | Should -Be 'Successful'
             }
         }
 
-        #Stop services using native cmdlets
-        if ($instanceName -eq 'MSSQLSERVER') {
-            $serviceName = "SQLSERVERAGENT", "MSSQLSERVER"
-        } else {
-            $serviceName = "SqlAgent`$$instanceName", "MsSql`$$instanceName"
-        }
-        foreach ($sn in $servicename) { Get-Service -ComputerName $computerName -Name $sn | Stop-Service -WarningAction SilentlyContinue | Out-Null }
-
         It "starts the services back through pipeline" {
+            # Stop services using native cmdlets
+            if ($instanceName -eq 'MSSQLSERVER') {
+                $serviceName = "SQLSERVERAGENT", "MSSQLSERVER"
+            } else {
+                $serviceName = "SqlAgent`$$instanceName", "MsSql`$$instanceName"
+            }
+            foreach ($sn in $servicename) { Get-Service -ComputerName $computerName -Name $sn | Stop-Service -WarningAction SilentlyContinue | Out-Null }
+
             $services = Get-DbaService -ComputerName $script:instance2 -InstanceName $instanceName -Type Agent, Engine | Start-DbaService
-            $services | Should Not Be $null
+            $services | Should -Not -BeNullOrEmpty
             foreach ($service in $services) {
-                $service.State | Should Be 'Running'
-                $service.Status | Should Be 'Successful'
+                $service.State | Should -Be 'Running'
+                $service.Status | Should -Be 'Successful'
             }
         }
 
         It "errors when passing an invalid InstanceName" {
-            { Start-DbaService -ComputerName $script:instance2 -Type 'Agent' -InstanceName 'ThisIsInvalid' -EnableException } | Should Throw 'No SQL Server services found with current parameters.'
+            { Start-DbaService -ComputerName $script:instance2 -Type 'Agent' -InstanceName 'ThisIsInvalid' -EnableException } | Should -Throw 'No SQL Server services found with current parameters.'
         }
     }
 }

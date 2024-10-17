@@ -1,16 +1,30 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Resolve-DbaNetworkName Unit Tests" -Tag 'UnitTests' {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'Credential', 'Turbo', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Resolve-DbaNetworkName
+        }
+        It "Should have ComputerName as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[]
+        }
+        It "Should have Credential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
+        }
+        It "Should have Turbo as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter Turbo -Type switch
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type switch
         }
     }
+
     Context "Testing basic name resolution" {
         It "should test env:computername" {
             $result = Resolve-DbaNetworkName $env:computername -EnableException
@@ -24,6 +38,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                 $result.FullComputerName | Should -Be $env:computername
             }
         }
+
         It "should test localhost" {
             $result = Resolve-DbaNetworkName localhost -EnableException
             $result.InputName | Should -Be localhost
@@ -36,6 +51,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                 $result.FullComputerName | Should -Be $env:computername
             }
         }
+
         It "should test 127.0.0.1" {
             $result = Resolve-DbaNetworkName 127.0.0.1 -EnableException
             $result.InputName | Should -Be 127.0.0.1
@@ -48,24 +64,24 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                 $result.FullComputerName | Should -Be $env:computername
             }
         }
-        foreach ($turbo in $true, $false) {
-            It -Skip "should test 8.8.8.8 with Turbo = $turbo" {
-                $result = Resolve-DbaNetworkName 8.8.8.8 -EnableException -Turbo:$turbo
-                $result.InputName | Should -Be 8.8.8.8
-                $result.ComputerName | Should -Be google-public-dns-a
-                $result.IPAddress | Should -Be 8.8.8.8
-                $result.DNSHostName | Should -Be google-public-dns-a
-                $result.DNSDomain | Should -Be google.com
-                $result.Domain | Should -Be google.com
-                $result.DNSHostEntry | Should -Be google-public-dns-a.google.com
-                $result.FQDN | Should -Be google-public-dns-a.google.com
-                $result.FullComputerName | Should -Be 8.8.8.8
-            }
+
+        It "should test 8.8.8.8 with Turbo = <_>" -ForEach @($true, $false) -Skip {
+            $result = Resolve-DbaNetworkName 8.8.8.8 -EnableException -Turbo:$_
+            $result.InputName | Should -Be 8.8.8.8
+            $result.ComputerName | Should -Be google-public-dns-a
+            $result.IPAddress | Should -Be 8.8.8.8
+            $result.DNSHostName | Should -Be google-public-dns-a
+            $result.DNSDomain | Should -Be google.com
+            $result.Domain | Should -Be google.com
+            $result.DNSHostEntry | Should -Be google-public-dns-a.google.com
+            $result.FQDN | Should -Be google-public-dns-a.google.com
+            $result.FullComputerName | Should -Be 8.8.8.8
         }
     }
 }
+
 <#
     Integration test should appear below and are custom to the command you are writing.
     Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
+    for more guidance.
 #>

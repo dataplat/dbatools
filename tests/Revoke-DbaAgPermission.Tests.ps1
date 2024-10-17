@@ -1,28 +1,51 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Revoke-DbaAgPermission" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Login', 'AvailabilityGroup', 'Type', 'Permission', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Revoke-DbaAgPermission
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Login as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Login -Type String[]
+        }
+        It "Should have AvailabilityGroup as a parameter" {
+            $CommandUnderTest | Should -HaveParameter AvailabilityGroup -Type String[]
+        }
+        It "Should have Type as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Type -Type String[]
+        }
+        It "Should have Permission as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Permission -Type String[]
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Login[]
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
-    BeforeAll {
-        $null = Invoke-DbaQuery -SqlInstance $script:instance3 -InputFile $script:appveyorlabrepo\sql2008-scripts\logins.sql -ErrorAction SilentlyContinue
-        $agname = "dbatoolsci_ag_revoke"
-        $null = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Confirm:$false -Certificate dbatoolsci_AGCert
-    }
-    AfterAll {
-        $null = Remove-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup $agname -Confirm:$false
-    }
-    Context "revokes big perms" {
+    Context "Integration Tests" {
+        BeforeDiscovery {
+            . (Join-Path $PSScriptRoot 'constants.ps1')
+        }
+
+        BeforeAll {
+            $null = Invoke-DbaQuery -SqlInstance $script:instance3 -InputFile $script:appveyorlabrepo\sql2008-scripts\logins.sql -ErrorAction SilentlyContinue
+            $agname = "dbatoolsci_ag_revoke"
+            $null = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Confirm:$false -Certificate dbatoolsci_AGCert
+        }
+
+        AfterAll {
+            $null = Remove-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup $agname -Confirm:$false
+        }
+
         It "returns results with proper data" {
             $results = Get-DbaLogin -SqlInstance $script:instance3 -Login tester | Revoke-DbaAgPermission -Type EndPoint
             $results.Status | Should -Be 'Success'

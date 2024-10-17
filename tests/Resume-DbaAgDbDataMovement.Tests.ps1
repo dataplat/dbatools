@@ -1,36 +1,53 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$commandname Unit Tests" -Tag 'UnitTests' {
+Describe "Resume-DbaAgDbDataMovement" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'AvailabilityGroup', 'Database', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Resume-DbaAgDbDataMovement
+        }
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have AvailabilityGroup parameter" {
+            $CommandUnderTest | Should -HaveParameter AvailabilityGroup -Type String -Not -Mandatory
+        }
+        It "Should have Database parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Not -Mandatory
+        }
+        It "Should have InputObject parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type AvailabilityDatabase[] -Not -Mandatory
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
-    BeforeAll {
-        $null = Get-DbaProcess -SqlInstance $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
-        $server = Connect-DbaInstance -SqlInstance $script:instance3
-        $agname = "dbatoolsci_resumeagdb_agroup"
-        $dbname = "dbatoolsci_resumeagdb_agroupdb"
-        $server.Query("create database $dbname")
-        $null = Get-DbaDatabase -SqlInstance $script:instance3 -Database $dbname | Backup-DbaDatabase
-        $null = Get-DbaDatabase -SqlInstance $script:instance3 -Database $dbname | Backup-DbaDatabase -Type Log
-        $ag = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Database $dbname -Confirm:$false -Certificate dbatoolsci_AGCert -UseLastBackup
-        $null = Get-DbaAgDatabase -SqlInstance $script:instance3 -AvailabilityGroup $agname | Suspend-DbaAgDbDataMovement -Confirm:$false
-    }
-    AfterAll {
-        $null = Remove-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $agname -Confirm:$false
-        $null = Remove-DbaDatabase -SqlInstance $server -Database $dbname -Confirm:$false
-    }
-    Context "resumes  data movement" {
-        It "returns resumed results" {
+    Context "Command usage" {
+        BeforeDiscovery {
+            . (Join-Path $PSScriptRoot 'constants.ps1')
+        }
+
+        BeforeAll {
+            $null = Get-DbaProcess -SqlInstance $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
+            $server = Connect-DbaInstance -SqlInstance $script:instance3
+            $agname = "dbatoolsci_resumeagdb_agroup"
+            $dbname = "dbatoolsci_resumeagdb_agroupdb"
+            $server.Query("create database $dbname")
+            $null = Get-DbaDatabase -SqlInstance $script:instance3 -Database $dbname | Backup-DbaDatabase
+            $null = Get-DbaDatabase -SqlInstance $script:instance3 -Database $dbname | Backup-DbaDatabase -Type Log
+            $ag = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Database $dbname -Confirm:$false -Certificate dbatoolsci_AGCert -UseLastBackup
+            $null = Get-DbaAgDatabase -SqlInstance $script:instance3 -AvailabilityGroup $agname | Suspend-DbaAgDbDataMovement -Confirm:$false
+        }
+
+        AfterAll {
+            $null = Remove-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $agname -Confirm:$false
+            $null = Remove-DbaDatabase -SqlInstance $server -Database $dbname -Confirm:$false
+        }
+
+        It "resumes data movement" {
             $results = Resume-DbaAgDbDataMovement -SqlInstance $script:instance3 -Database $dbname -Confirm:$false
             $results.AvailabilityGroup | Should -Be $agname
             $results.Name | Should -Be $dbname

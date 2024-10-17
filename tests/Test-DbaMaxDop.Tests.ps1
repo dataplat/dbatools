@@ -1,49 +1,52 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
-        }
-    }
-}
-
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+Describe "Test-DbaMaxDop" {
     BeforeAll {
-        Get-DbaProcess -SqlInstance $script:instance2 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $db1 = "dbatoolsci_testMaxDop"
-        $server.Query("CREATE DATABASE dbatoolsci_testMaxDop")
-        $needed = Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1
-        $setupright = $true
-        if (-not $needed) {
-            $setupright = $false
-        }
-    }
-    AfterAll {
-        Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1 | Remove-DbaDatabase -Confirm:$false
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        . "$PSScriptRoot\constants.ps1"
     }
 
-    # Just not messin with this in appveyor
-    if ($setupright) {
-        Context "Command works on SQL Server 2016 or higher instances" {
+    Context "Validate parameters" {
+        BeforeAll {
+            $CommandUnderTest = Get-Command Test-DbaMaxDop
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+        }
+    }
+
+    Context "Command usage" {
+        BeforeDiscovery {
+            $script:instance2 = $script:instance2
+        }
+
+        BeforeAll {
+            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $db1 = "dbatoolsci_testMaxDop"
+            $server.Query("CREATE DATABASE $db1")
+            $needed = Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1
+            $setupright = $null -ne $needed
+        }
+
+        AfterAll {
+            Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1 | Remove-DbaDatabase -Confirm:$false
+        }
+
+        It "Command works on SQL Server 2016 or higher instances" -Skip:(-not $setupright) {
             $results = Test-DbaMaxDop -SqlInstance $script:instance2
 
-            It "Should have correct properties" {
-                $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Database,DatabaseMaxDop,CurrentInstanceMaxDop,RecommendedMaxDop,Notes'.Split(',')
-                foreach ($result in $results) {
-                    ($result.PSStandardMembers.DefaultDIsplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
-                }
+            $ExpectedProps = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'DatabaseMaxDop', 'CurrentInstanceMaxDop', 'RecommendedMaxDop', 'Notes'
+            $results | ForEach-Object {
+                $_.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object | Should -Be ($ExpectedProps | Sort-Object)
             }
 
-            It "Should have only one result for database name of dbatoolsci_testMaxDop" {
-                @($results | Where-Object Database -eq dbatoolsci_testMaxDop).Count | Should Be 1
-            }
+            ($results | Where-Object Database -eq $db1).Count | Should -Be 1
         }
     }
 }

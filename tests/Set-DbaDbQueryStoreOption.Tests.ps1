@@ -1,62 +1,121 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Set-DbaDbQueryStoreOption" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'AllDatabases', 'State', 'FlushInterval', 'CollectionInterval', 'MaxSize', 'CaptureMode', 'CleanupMode', 'StaleQueryThreshold', 'MaxPlansPerQuery', 'WaitStatsCaptureMode', 'EnableException', 'CustomCapturePolicyExecutionCount', 'CustomCapturePolicyTotalCompileCPUTimeMS', 'CustomCapturePolicyTotalExecutionCPUTimeMS', 'CustomCapturePolicyStaleThresholdHours'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Set-DbaDbQueryStoreOption
+        }
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Not -Mandatory
+        }
+        It "Should have ExcludeDatabase parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Not -Mandatory
+        }
+        It "Should have AllDatabases parameter" {
+            $CommandUnderTest | Should -HaveParameter AllDatabases -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have State parameter" {
+            $CommandUnderTest | Should -HaveParameter State -Type String[] -Not -Mandatory
+        }
+        It "Should have FlushInterval parameter" {
+            $CommandUnderTest | Should -HaveParameter FlushInterval -Type Int64 -Not -Mandatory
+        }
+        It "Should have CollectionInterval parameter" {
+            $CommandUnderTest | Should -HaveParameter CollectionInterval -Type Int64 -Not -Mandatory
+        }
+        It "Should have MaxSize parameter" {
+            $CommandUnderTest | Should -HaveParameter MaxSize -Type Int64 -Not -Mandatory
+        }
+        It "Should have CaptureMode parameter" {
+            $CommandUnderTest | Should -HaveParameter CaptureMode -Type String[] -Not -Mandatory
+        }
+        It "Should have CleanupMode parameter" {
+            $CommandUnderTest | Should -HaveParameter CleanupMode -Type String[] -Not -Mandatory
+        }
+        It "Should have StaleQueryThreshold parameter" {
+            $CommandUnderTest | Should -HaveParameter StaleQueryThreshold -Type Int64 -Not -Mandatory
+        }
+        It "Should have MaxPlansPerQuery parameter" {
+            $CommandUnderTest | Should -HaveParameter MaxPlansPerQuery -Type Int64 -Not -Mandatory
+        }
+        It "Should have WaitStatsCaptureMode parameter" {
+            $CommandUnderTest | Should -HaveParameter WaitStatsCaptureMode -Type String[] -Not -Mandatory
+        }
+        It "Should have CustomCapturePolicyExecutionCount parameter" {
+            $CommandUnderTest | Should -HaveParameter CustomCapturePolicyExecutionCount -Type Int64 -Not -Mandatory
+        }
+        It "Should have CustomCapturePolicyTotalCompileCPUTimeMS parameter" {
+            $CommandUnderTest | Should -HaveParameter CustomCapturePolicyTotalCompileCPUTimeMS -Type Int64 -Not -Mandatory
+        }
+        It "Should have CustomCapturePolicyTotalExecutionCPUTimeMS parameter" {
+            $CommandUnderTest | Should -HaveParameter CustomCapturePolicyTotalExecutionCPUTimeMS -Type Int64 -Not -Mandatory
+        }
+        It "Should have CustomCapturePolicyStaleThresholdHours parameter" {
+            $CommandUnderTest | Should -HaveParameter CustomCapturePolicyStaleThresholdHours -Type Int64 -Not -Mandatory
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    BeforeAll {
-        Get-DbaDatabase -SqlInstance $script:instance1, $script:instance2 | Where-Object Name -Match 'dbatoolsci' | Remove-DbaDatabase -Confirm:$false
-        New-DbaDatabase -SqlInstance $script:instance1, $script:instance2 -Name dbatoolsciqs
-    }
-    AfterAll {
-        Get-DbaDatabase -SqlInstance $script:instance1, $script:instance2 | Where-Object Name -Match 'dbatoolsci' | Remove-DbaDatabase -Confirm:$false
-    }
-    Context "Get some client protocols" {
-        foreach ($instance in ($script:instance1, $script:instance2)) {
-            $server = Connect-DbaInstance -SqlInstance $instance
-            $results = Get-DbaDbQueryStoreOption -SqlInstance $server -WarningVariable warning 3>&1
+    Context "Integration Tests" {
+        BeforeAll {
+            $script:instances = @($script:instance1, $script:instance2)
+            Get-DbaDatabase -SqlInstance $script:instances | Where-Object Name -Match 'dbatoolsci' | Remove-DbaDatabase -Confirm:$false
+            New-DbaDatabase -SqlInstance $script:instances -Name dbatoolsciqs
+        }
+        AfterAll {
+            Get-DbaDatabase -SqlInstance $script:instances | Where-Object Name -Match 'dbatoolsci' | Remove-DbaDatabase -Confirm:$false
+        }
 
-            if ($server.VersionMajor -lt 13) {
-                It "should warn" {
-                    $warning | Should Not Be $null
-                }
-            } else {
-                It "should return some valid results" {
+        Context "Get some client protocols" {
+            BeforeDiscovery {
+                $script:instances = @($script:instance1, $script:instance2)
+            }
+            It "Should return valid results for <_>" -ForEach $script:instances {
+                $server = Connect-DbaInstance -SqlInstance $_
+                $results = Get-DbaDbQueryStoreOption -SqlInstance $server -WarningVariable warning 3>&1
+
+                if ($server.VersionMajor -lt 13) {
+                    $warning | Should -Not -BeNullOrEmpty
+                } else {
                     $result = $results | Where-Object Database -eq dbatoolsciqs
                     if ($server.VersionMajor -lt 16) {
-                        $result.ActualState | Should Be 'Off'
+                        $result.ActualState | Should -Be 'Off'
                     } else {
-                        $result.ActualState | Should Be 'ReadWrite'
+                        $result.ActualState | Should -Be 'ReadWrite'
                     }
-                    $result.MaxStorageSizeInMB | Should BeGreaterThan 1
+                    $result.MaxStorageSizeInMB | Should -BeGreaterThan 1
                 }
+            }
 
-                It "should change the specified param to the new value" {
-                    $results = Set-DbaDbQueryStoreOption -SqlInstance $instance -Database dbatoolsciqs -FlushInterval 901 -State ReadWrite
-                    $results.DataFlushIntervalInSeconds | Should Be 901
-                }
+            It "Should change the specified param to the new value for <_>" -ForEach $script:instances {
+                $results = Set-DbaDbQueryStoreOption -SqlInstance $_ -Database dbatoolsciqs -FlushInterval 901 -State ReadWrite
+                $results.DataFlushIntervalInSeconds | Should -Be 901
+            }
 
-                It "should only get one database" {
-                    $results = Get-DbaDbQueryStoreOption -SqlInstance $instance -Database dbatoolsciqs
-                    $results.Count | Should Be 1
-                    $results.Database | Should Be 'dbatoolsciqs'
-                }
+            It "Should only get one database for <_>" -ForEach $script:instances {
+                $results = Get-DbaDbQueryStoreOption -SqlInstance $_ -Database dbatoolsciqs
+                $results.Count | Should -Be 1
+                $results.Database | Should -Be 'dbatoolsciqs'
+            }
 
-                It "should not get this one database" {
-                    $results = Get-DbaDbQueryStoreOption -SqlInstance $instance -ExcludeDatabase dbatoolsciqs
-                    $result = $results | Where-Object Database -eq dbatoolsciqs
-                    $result.Count | Should Be 0
-                }
+            It "Should not get this one database for <_>" -ForEach $script:instances {
+                $results = Get-DbaDbQueryStoreOption -SqlInstance $_ -ExcludeDatabase dbatoolsciqs
+                $result = $results | Where-Object Database -eq dbatoolsciqs
+                $result.Count | Should -Be 0
             }
         }
     }

@@ -1,23 +1,48 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Stop-DbaAgentJob" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Job', 'ExcludeJob', 'InputObject', 'Wait', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Stop-DbaAgentJob
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Job as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Job -Type String[]
+        }
+        It "Should have ExcludeJob as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeJob -Type String[]
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Job[]
+        }
+        It "Should have Wait as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter Wait -Type SwitchParameter
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    Context "executes and returns the accurate info" {
-        It -Skip "returns a CurrentRunStatus of Idle" {
-            $agent = Get-DbaAgentJob -SqlInstance $script:instance2 -Job 'DatabaseBackup - SYSTEM_DATABASES - FULL' | Start-DbaAgentJob | Stop-DbaAgentJob
-            $results.CurrentRunStatus -eq 'Idle' | Should Be $true
+    Context "Command execution" {
+        BeforeDiscovery {
+            . (Join-Path $PSScriptRoot 'constants.ps1')
+        }
+
+        It "Returns a CurrentRunStatus of Idle" -Skip:([Environment]::GetEnvironmentVariable('appveyor')) {
+            BeforeAll {
+                $jobName = 'DatabaseBackup - SYSTEM_DATABASES - FULL'
+                $server = Connect-DbaInstance -SqlInstance $script:instance2
+                $job = Get-DbaAgentJob -SqlInstance $server -Job $jobName
+            }
+
+            $job | Start-DbaAgentJob
+            $results = $job | Stop-DbaAgentJob
+            $results.CurrentRunStatus | Should -Be 'Idle'
         }
     }
 }

@@ -1,24 +1,50 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Watch-DbaXESession" {
+    BeforeAll {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Session', 'InputObject', 'Raw', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Watch-DbaXESession
+        }
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter
+        }
+        It "Should have SqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Session parameter" {
+            $CommandUnderTest | Should -HaveParameter Session -Type String
+        }
+        It "Should have InputObject parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Session[]
+        }
+        It "Should have Raw parameter" {
+            $CommandUnderTest | Should -HaveParameter Raw -Type SwitchParameter
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
 
-# This command is special and runs infinitely so don't actually try to run it
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command functions as expected" {
+        BeforeAll {
+            $script:instanceNotSupported = $true
+        }
+
         It "warns if SQL instance version is not supported" {
-            $results = Watch-DbaXESession -SqlInstance $script:instance1 -Session system_health -WarningAction SilentlyContinue -WarningVariable versionwarn
-            $versionwarn -join '' -match "SQL Server version 11 required" | Should Be $true
+            Mock Connect-DbaInstance {
+                [PSCustomObject]@{
+                    Version = New-Object System.Version(10, 0, 0, 0)
+                }
+            }
+
+            $warningMessage = ""
+            $null = Watch-DbaXESession -SqlInstance $script:instance1 -Session system_health -WarningAction SilentlyContinue -WarningVariable warningMessage
+
+            $warningMessage | Should -Match "SQL Server version 11 required"
         }
     }
 }

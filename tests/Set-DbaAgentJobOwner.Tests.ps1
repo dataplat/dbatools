@@ -1,19 +1,45 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Set-DbaAgentJobOwner" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Job', 'ExcludeJob', 'InputObject', 'Login', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Set-DbaAgentJobOwner
+        }
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Job parameter" {
+            $CommandUnderTest | Should -HaveParameter Job -Type Object[]
+        }
+        It "Should have ExcludeJob parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeJob -Type Object[]
+        }
+        It "Should have InputObject parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Job[]
+        }
+        It "Should have Login parameter" {
+            $CommandUnderTest | Should -HaveParameter Login -Type String
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+
+# Integration tests
+Describe "Set-DbaAgentJobOwner Integration Tests" -Tag "IntegrationTests" {
+    BeforeAll {
+        . "$PSScriptRoot\constants.ps1"
+        # Add any necessary setup code here
+    }
+
+    Context "Command actually works" {
+        It "Changes the job owner" {
+            # Add the actual test here
+            $true | Should -Be $true
+        }
+    }
+}

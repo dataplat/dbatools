@@ -1,57 +1,62 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Set-DbaPowerPlan" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'Credential', 'PowerPlan', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Set-DbaPowerPlan
+        }
+        It "Should have ComputerName as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[]
+        }
+        It "Should have Credential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
+        }
+        It "Should have PowerPlan as a parameter" {
+            $CommandUnderTest | Should -HaveParameter PowerPlan -Type String
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
 
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    BeforeAll {
-        $null = Set-DbaPowerPlan -ComputerName $env:COMPUTERNAME -CustomPowerPlan 'Balanced'
-    }
     Context "Command actually works" {
+        BeforeAll {
+            $null = Set-DbaPowerPlan -ComputerName $env:COMPUTERNAME -CustomPowerPlan 'Balanced'
+        }
+
         It "Should return result for the server" {
             $results = Set-DbaPowerPlan -ComputerName $env:COMPUTERNAME
-            $results | Should Not Be Null
-            $results.ActivePowerPlan | Should Be 'High Performance'
-            $results.IsChanged | Should Be $true
+            $results | Should -Not -BeNull
+            $results.ActivePowerPlan | Should -Be 'High Performance'
+            $results.IsChanged | Should -BeTrue
         }
+
         It "Should skip if already set" {
             $results = Set-DbaPowerPlan -ComputerName $env:COMPUTERNAME
-            $results.ActivePowerPlan | Should Be 'High Performance'
-            $results.IsChanged | Should Be $false
-            $results.ActivePowerPlan -eq $results.PreviousPowerPlan | Should Be $true
+            $results.ActivePowerPlan | Should -Be 'High Performance'
+            $results.IsChanged | Should -BeFalse
+            $results.ActivePowerPlan | Should -Be $results.PreviousPowerPlan
         }
+
         It "Should return result for the server when setting defined PowerPlan" {
             $results = Set-DbaPowerPlan -ComputerName $env:COMPUTERNAME -PowerPlan Balanced
-            $results | Should Not Be Null
-            $results.ActivePowerPlan | Should Be 'Balanced'
-            $results.IsChanged | Should Be $true
+            $results | Should -Not -BeNull
+            $results.ActivePowerPlan | Should -Be 'Balanced'
+            $results.IsChanged | Should -BeTrue
         }
+
         It "Should accept Piped input for ComputerName" {
             $results = $env:COMPUTERNAME | Set-DbaPowerPlan
-            $results | Should Not Be Null
-            $results.ActivePowerPlan | Should Be 'High Performance'
-            $results.IsChanged | Should Be $true
+            $results | Should -Not -BeNull
+            $results.ActivePowerPlan | Should -Be 'High Performance'
+            $results.IsChanged | Should -BeTrue
         }
+
         It "Should return result for the server when using the alias CustomPowerPlan" {
             $results = Set-DbaPowerPlan -ComputerName $env:COMPUTERNAME -CustomPowerPlan Balanced
-            $results | Should Not Be Null
-            $results.ActivePowerPlan | Should Be 'Balanced'
-            $results.IsChanged | Should Be $true
+            $results | Should -Not -BeNull
+            $results.ActivePowerPlan | Should -Be 'Balanced'
+            $results.IsChanged | Should -BeTrue
         }
     }
 }

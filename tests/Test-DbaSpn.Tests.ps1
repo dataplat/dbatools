@@ -1,43 +1,53 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Test-DbaSpn" {
+    BeforeAll {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'Credential', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Test-DbaSpn
+        }
+        It "Should have ComputerName as a non-mandatory parameter of type DbaInstanceParameter[]" {
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have Credential as a non-mandatory parameter of type PSCredential" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type switch -Not -Mandatory
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "gets spn information" {
-        Mock Resolve-DbaNetworkName {
-            [pscustomobject]@{
-                InputName        = $env:COMPUTERNAME
-                ComputerName     = $env:COMPUTERNAME
-                IPAddress        = "127.0.0.1"
-                DNSHostName      = $env:COMPUTERNAME
-                DNSDomain        = $env:COMPUTERNAME
-                Domain           = $env:COMPUTERNAME
-                DNSHostEntry     = $env:COMPUTERNAME
-                FQDN             = $env:COMPUTERNAME
-                FullComputerName = $env:COMPUTERNAME
+        BeforeAll {
+            Mock -ModuleName $ModuleName -CommandName Resolve-DbaNetworkName -MockWith {
+                [pscustomobject]@{
+                    InputName        = $env:COMPUTERNAME
+                    ComputerName     = $env:COMPUTERNAME
+                    IPAddress        = "127.0.0.1"
+                    DNSHostName      = $env:COMPUTERNAME
+                    DNSDomain        = $env:COMPUTERNAME
+                    Domain           = $env:COMPUTERNAME
+                    DNSHostEntry     = $env:COMPUTERNAME
+                    FQDN             = $env:COMPUTERNAME
+                    FullComputerName = $env:COMPUTERNAME
+                }
             }
+            $results = Test-DbaSpn -ComputerName $env:COMPUTERNAME -WarningAction SilentlyContinue
         }
-        $results = Test-DbaSpn -ComputerName $env:COMPUTERNAME -WarningAction SilentlyContinue
+
         It "returns some results" {
-            $null -ne $results.RequiredSPN | Should -Be $true
+            $results.RequiredSPN | Should -Not -BeNullOrEmpty
         }
-        foreach ($result in $results) {
-            It "has the right properties" {
-                $result.RequiredSPN -match 'MSSQLSvc' | Should -Be $true
-                $result.Cluster -eq $false | Should -Be $true
+
+        It "has the right properties for each result" {
+            foreach ($result in $results) {
+                $result.RequiredSPN | Should -Match 'MSSQLSvc'
+                $result.Cluster | Should -Be $false
                 $result.TcpEnabled | Should -Be $true
-                $result.IsSet -is [bool] | Should -Be $true
+                $result.IsSet | Should -BeOfType [bool]
             }
         }
     }

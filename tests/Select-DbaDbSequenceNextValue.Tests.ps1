@@ -1,19 +1,35 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Select-DbaDbSequenceNextValue" {
     Context "Validate parameters" {
-        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Sequence', 'Schema', 'InputObject', 'EnableException'
-        It "Should only contain our specific parameters" {
-            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
+        BeforeAll {
+            $CommandUnderTest = Get-Command Select-DbaDbSequenceNextValue
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String
+        }
+        It "Should have Sequence as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Sequence -Type String[]
+        }
+        It "Should have Schema as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Schema -Type String
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Database
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
-
+Describe "Select-DbaDbSequenceNextValue Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $random = Get-Random
         $server = Connect-DbaInstance -SqlInstance $script:instance2
@@ -28,7 +44,6 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "commands work as expected" {
-
         It "validates required Database param" {
             $sequenceValue = Select-DbaDbSequenceNextValue -SqlInstance $server -Sequence SequenceTest -ErrorVariable error
             $sequenceValue | Should -BeNullOrEmpty
