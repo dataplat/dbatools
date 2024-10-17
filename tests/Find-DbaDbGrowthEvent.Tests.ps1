@@ -30,16 +30,16 @@ Describe "Find-DbaDbGrowthEvent" {
             $CommandUnderTest | Should -HaveParameter FileType -Type String
         }
         It "Should have UseLocalTime as a parameter" {
-            $CommandUnderTest | Should -HaveParameter UseLocalTime -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter UseLocalTime -Type Switch
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Command actually works" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance1
+            $server = Connect-DbaInstance -SqlInstance $global:instance1
             $random = Get-Random
             $databaseName1 = "dbatoolsci1_$random"
             $db1 = New-DbaDatabase -SqlInstance $server -Name $databaseName1

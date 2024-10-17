@@ -18,13 +18,13 @@ Describe "Disable-DbaStartupProcedure" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
     Context "Command usage" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $random = Get-Random
             $startupProcName = "StartUpProc$random"
             $startupProc = "dbo.$startupProcName"
@@ -38,7 +38,7 @@ Describe "Disable-DbaStartupProcedure" {
         }
 
         It "Disables the startup procedure" {
-            $result = Disable-DbaStartupProcedure -SqlInstance $script:instance2 -StartupProcedure $startupProc -Confirm:$false
+            $result = Disable-DbaStartupProcedure -SqlInstance $global:instance2 -StartupProcedure $startupProc -Confirm:$false
             $result.Schema | Should -Be "dbo"
             $result.Name | Should -Be $startupProcName
             $result.Action | Should -Be "Disable"
@@ -47,7 +47,7 @@ Describe "Disable-DbaStartupProcedure" {
         }
 
         It "Returns correct output for already disabled procedure" {
-            $result = Disable-DbaStartupProcedure -SqlInstance $script:instance2 -StartupProcedure $startupProc -Confirm:$false
+            $result = Disable-DbaStartupProcedure -SqlInstance $global:instance2 -StartupProcedure $startupProc -Confirm:$false
             $result.Schema | Should -Be "dbo"
             $result.Name | Should -Be $startupProcName
             $result.Action | Should -Be "Disable"
@@ -56,8 +56,8 @@ Describe "Disable-DbaStartupProcedure" {
         }
 
         It "Disables startup procedure using piped input" {
-            $null = Enable-DbaStartupProcedure -SqlInstance $script:instance2 -StartupProcedure $startupProc -Confirm:$false
-            $result = Get-DbaStartupProcedure -SqlInstance $script:instance2 | Disable-DbaStartupProcedure -Confirm:$false
+            $null = Enable-DbaStartupProcedure -SqlInstance $global:instance2 -StartupProcedure $startupProc -Confirm:$false
+            $result = Get-DbaStartupProcedure -SqlInstance $global:instance2 | Disable-DbaStartupProcedure -Confirm:$false
             $result.Schema | Should -Be "dbo"
             $result.Name | Should -Be $startupProcName
             $result.Action | Should -Be "Disable"

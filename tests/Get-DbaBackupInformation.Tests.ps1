@@ -14,17 +14,17 @@ Describe "Get-DbaBackupInformation" {
         }
         $random = Get-Random
         $dbname = "dbatoolsci_Backuphistory_$random"
-        $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname | Remove-DbaDatabase -Confirm:$false
-        $null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $dbname -DestinationFilePrefix $dbname
-        $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname
+        $null = Get-DbaDatabase -SqlInstance $global:instance1 -Database $dbname | Remove-DbaDatabase -Confirm:$false
+        $null = Restore-DbaDatabase -SqlInstance $global:instance1 -Path $global:appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $dbname -DestinationFilePrefix $dbname
+        $db = Get-DbaDatabase -SqlInstance $global:instance1 -Database $dbname
         $db | Backup-DbaDatabase -Type Full -BackupDirectory $DestBackupDir
         $db | Backup-DbaDatabase -Type Differential -BackupDirectory $DestBackupDir
         $db | Backup-DbaDatabase -Type Log -BackupDirectory $DestBackupDir
 
         $dbname2 = "dbatoolsci_Backuphistory2_$random"
-        $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname2 | Remove-DbaDatabase -Confirm:$false
-        $null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $dbname2 -DestinationFilePrefix $dbname2
-        $db2 = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname2
+        $null = Get-DbaDatabase -SqlInstance $global:instance1 -Database $dbname2 | Remove-DbaDatabase -Confirm:$false
+        $null = Restore-DbaDatabase -SqlInstance $global:instance1 -Path $global:appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $dbname2 -DestinationFilePrefix $dbname2
+        $db2 = Get-DbaDatabase -SqlInstance $global:instance1 -Database $dbname2
         $db2 | Backup-DbaDatabase -Type Full -BackupDirectory $DestBackupDir
         $db2 | Backup-DbaDatabase -Type Differential -BackupDirectory $DestBackupDir
         $db2 | Backup-DbaDatabase -Type Log -BackupDirectory $DestBackupDir
@@ -42,16 +42,16 @@ Describe "Get-DbaBackupInformation" {
         }
 
         $dbname3 = "dbatoolsci_BackuphistoryOla_$random"
-        $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname3 | Remove-DbaDatabase -Confirm:$false
-        $null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $dbname3 -DestinationFilePrefix $dbname3
-        $db3 = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname3
+        $null = Get-DbaDatabase -SqlInstance $global:instance1 -Database $dbname3 | Remove-DbaDatabase -Confirm:$false
+        $null = Restore-DbaDatabase -SqlInstance $global:instance1 -Path $global:appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $dbname3 -DestinationFilePrefix $dbname3
+        $db3 = Get-DbaDatabase -SqlInstance $global:instance1 -Database $dbname3
         $db3 | Backup-DbaDatabase -Type Full -BackupDirectory "$DestBackupDirOla\FULL"
         $db3 | Backup-DbaDatabase -Type Differential -BackupDirectory "$DestBackupDirOla\Diff"
         $db3 | Backup-DbaDatabase -Type Log -BackupDirectory "$DestBackupDirOla\LOG"
     }
 
     AfterAll {
-        $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname, $dbname2, $dbname3 | Remove-DbaDatabase -Confirm:$false
+        $null = Get-DbaDatabase -SqlInstance $global:instance1 -Database $dbname, $dbname2, $dbname3 | Remove-DbaDatabase -Confirm:$false
     }
 
     Context "Validate parameters" {
@@ -74,25 +74,25 @@ Describe "Get-DbaBackupInformation" {
             $CommandUnderTest | Should -HaveParameter SourceInstance -Type String[] -Not -Mandatory
         }
         It "Should have NoXpDirTree parameter" {
-            $CommandUnderTest | Should -HaveParameter NoXpDirTree -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NoXpDirTree -Type Switch -Not -Mandatory
         }
         It "Should have NoXpDirRecurse parameter" {
-            $CommandUnderTest | Should -HaveParameter NoXpDirRecurse -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NoXpDirRecurse -Type Switch -Not -Mandatory
         }
         It "Should have DirectoryRecurse parameter" {
-            $CommandUnderTest | Should -HaveParameter DirectoryRecurse -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter DirectoryRecurse -Type Switch -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
         It "Should have MaintenanceSolution parameter" {
-            $CommandUnderTest | Should -HaveParameter MaintenanceSolution -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter MaintenanceSolution -Type Switch -Not -Mandatory
         }
         It "Should have IgnoreLogBackup parameter" {
-            $CommandUnderTest | Should -HaveParameter IgnoreLogBackup -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter IgnoreLogBackup -Type Switch -Not -Mandatory
         }
         It "Should have IgnoreDiffBackup parameter" {
-            $CommandUnderTest | Should -HaveParameter IgnoreDiffBackup -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter IgnoreDiffBackup -Type Switch -Not -Mandatory
         }
         It "Should have ExportPath parameter" {
             $CommandUnderTest | Should -HaveParameter ExportPath -Type String -Not -Mandatory
@@ -101,22 +101,22 @@ Describe "Get-DbaBackupInformation" {
             $CommandUnderTest | Should -HaveParameter AzureCredential -Type String -Not -Mandatory
         }
         It "Should have Import parameter" {
-            $CommandUnderTest | Should -HaveParameter Import -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Import -Type Switch -Not -Mandatory
         }
         It "Should have Anonymise parameter" {
-            $CommandUnderTest | Should -HaveParameter Anonymise -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Anonymise -Type Switch -Not -Mandatory
         }
         It "Should have NoClobber parameter" {
-            $CommandUnderTest | Should -HaveParameter NoClobber -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NoClobber -Type Switch -Not -Mandatory
         }
         It "Should have PassThru parameter" {
-            $CommandUnderTest | Should -HaveParameter PassThru -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter PassThru -Type Switch -Not -Mandatory
         }
     }
 
     Context "Get history for all database" {
         BeforeAll {
-            $results = Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $DestBackupDir
+            $results = Get-DbaBackupInformation -SqlInstance $global:instance1 -Path $DestBackupDir
         }
         It "Should be 6 backups returned" {
             $results.count | Should -Be 6
@@ -131,7 +131,7 @@ Describe "Get-DbaBackupInformation" {
 
     Context "Get history for one database" {
         BeforeAll {
-            $results = Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $DestBackupDir -DatabaseName $dbname2
+            $results = Get-DbaBackupInformation -SqlInstance $global:instance1 -Path $DestBackupDir -DatabaseName $dbname2
         }
         It "Should be 3 backups returned" {
             $results.count | Should -Be 3
@@ -149,7 +149,7 @@ Describe "Get-DbaBackupInformation" {
 
     Context "Check the export/import of backup history" {
         BeforeAll {
-            $results = Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $DestBackupDir -DatabaseName $dbname2 -ExportPath "$DestBackupDir\history.xml"
+            $results = Get-DbaBackupInformation -SqlInstance $global:instance1 -Path $DestBackupDir -DatabaseName $dbname2 -ExportPath "$DestBackupDir\history.xml"
         }
         It "Should restore cleanly" {
             ($results | Where-Object {$_.RestoreComplete -eq $false}).count | Should -Be 0
@@ -158,7 +158,7 @@ Describe "Get-DbaBackupInformation" {
 
     Context "Test Maintenance solution options" {
         BeforeAll {
-            $results = Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $DestBackupDirOla -MaintenanceSolution
+            $results = Get-DbaBackupInformation -SqlInstance $global:instance1 -Path $DestBackupDirOla -MaintenanceSolution
         }
         It "Should be 3 backups returned" {
             $results.count | Should -Be 3
@@ -172,10 +172,10 @@ Describe "Get-DbaBackupInformation" {
         It "Should only be backups of $dbname3" {
             ($results | Where-Object {$_.Database -ne $dbname3 }).count | Should -Be 0
         }
-        
+
         Context "Ignore Log Backup" {
             BeforeAll {
-                $ResultsSanLog = Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $DestBackupDirOla -MaintenanceSolution -IgnoreLogBackup
+                $ResultsSanLog = Get-DbaBackupInformation -SqlInstance $global:instance1 -Path $DestBackupDirOla -MaintenanceSolution -IgnoreLogBackup
             }
             It "Should be 2 backups returned" {
                 $ResultsSanLog.count | Should -Be 2
@@ -187,10 +187,10 @@ Describe "Get-DbaBackupInformation" {
                 ($resultsSanLog | Where-Object {$_.Type -eq 'Transaction Log'}).count | Should -Be 0
             }
         }
-        
+
         Context "Ignore Log Backup without MaintenanceSolution" {
             BeforeAll {
-                $ResultsSanLog = Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $DestBackupDirOla -IgnoreLogBackup -WarningVariable warnvar -WarningAction SilentlyContinue
+                $ResultsSanLog = Get-DbaBackupInformation -SqlInstance $global:instance1 -Path $DestBackupDirOla -IgnoreLogBackup -WarningVariable warnvar -WarningAction SilentlyContinue
             }
             It "Should Warn if IgnoreLogBackup without MaintenanceSolution" {
                 $warnVar | Should -Match "IgnoreLogBackup can only by used with MaintenanceSolution. Will not be used"

@@ -21,13 +21,13 @@ Describe "Set-DbaEndpoint" {
             $CommandUnderTest | Should -HaveParameter Type -Type String
         }
         It "Should have AllEndpoints parameter" {
-            $CommandUnderTest | Should -HaveParameter AllEndpoints -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter AllEndpoints -Type Switch
         }
         It "Should have InputObject parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Endpoint[]
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 }

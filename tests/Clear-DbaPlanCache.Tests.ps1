@@ -28,13 +28,13 @@ Describe "Clear-DbaPlanCache" {
 
     Context "Functionality" {
         It "doesn't clear plan cache when threshold is high" {
-            $results = Clear-DbaPlanCache -SqlInstance $script:instance1 -Threshold 10240
+            $results = Clear-DbaPlanCache -SqlInstance $global:instance1 -Threshold 10240
             $results.Size | Should -BeOfType [dbasize]
             $results.Status | Should -Match 'below'
         }
 
         It "supports piping" {
-            $results = Get-DbaPlanCache -SqlInstance $script:instance1 | Clear-DbaPlanCache -Threshold 10240
+            $results = Get-DbaPlanCache -SqlInstance $global:instance1 | Clear-DbaPlanCache -Threshold 10240
             $results.Size | Should -BeOfType [dbasize]
             $results.Status | Should -Match 'below'
         }

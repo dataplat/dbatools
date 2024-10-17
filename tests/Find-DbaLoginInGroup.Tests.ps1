@@ -15,13 +15,13 @@ Describe "Find-DbaLoginInGroup" {
             $CommandUnderTest | Should -HaveParameter Login -Type String[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
         It "Should have Verbose as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Verbose -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Verbose -Type Switch
         }
         It "Should have Debug as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Debug -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Debug -Type Switch
         }
         It "Should have ErrorAction as a parameter" {
             $CommandUnderTest | Should -HaveParameter ErrorAction -Type ActionPreference
@@ -65,7 +65,7 @@ Describe "Find-DbaLoginInGroup Integration Tests" -Tag "IntegrationTests" {
 
     Context "Command executes properly" {
         It "Should execute without throwing" {
-            { Find-DbaLoginInGroup -SqlInstance $script:instance1 } | Should -Not -Throw
+            { Find-DbaLoginInGroup -SqlInstance $global:instance1 } | Should -Not -Throw
         }
     }
 

@@ -24,7 +24,7 @@ Describe "Set-DbaAgentJobOwner" {
             $CommandUnderTest | Should -HaveParameter Login -Type String
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 }

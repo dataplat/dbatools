@@ -24,7 +24,7 @@ Describe "Invoke-DbaDbShrink Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Not -Mandatory
         }
         It "Should have AllUserDatabases parameter" {
-            $CommandUnderTest | Should -HaveParameter AllUserDatabases -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter AllUserDatabases -Type Switch -Not -Mandatory
         }
         It "Should have PercentFreeSpace parameter" {
             $CommandUnderTest | Should -HaveParameter PercentFreeSpace -Type Int32 -Not -Mandatory
@@ -42,20 +42,20 @@ Describe "Invoke-DbaDbShrink Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter StatementTimeout -Type Int32 -Not -Mandatory
         }
         It "Should have ExcludeIndexStats parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeIndexStats -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeIndexStats -Type Switch -Not -Mandatory
         }
         It "Should have ExcludeUpdateUsage parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeUpdateUsage -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeUpdateUsage -Type Switch -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 }
 
 Describe "Invoke-DbaDbShrink Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $env:instance2
         $defaultPath = $server | Get-DbaDefaultPath
     }
 

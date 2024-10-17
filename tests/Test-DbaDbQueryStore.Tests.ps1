@@ -21,7 +21,7 @@ Describe "Test-DbaDbQueryStore" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Object[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -29,20 +29,20 @@ Describe "Test-DbaDbQueryStore" {
         BeforeAll {
             . "$PSScriptRoot\constants.ps1"
             $dbname = "JESSdbatoolsci_querystore_$(Get-Random)"
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $env:instance2
             $db = New-DbaDatabase -SqlInstance $server -Name $dbname
 
-            $null = Set-DbaDbQueryStoreOption -SqlInstance $script:instance2 -Database $dbname -State ReadWrite
-            $null = Enable-DbaTraceFlag -SqlInstance $script:instance2 -TraceFlag 7745
+            $null = Set-DbaDbQueryStoreOption -SqlInstance $env:instance2 -Database $dbname -State ReadWrite
+            $null = Enable-DbaTraceFlag -SqlInstance $env:instance2 -TraceFlag 7745
         }
         AfterAll {
-            $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
-            $null = Disable-DbaTraceFlag -SqlInstance $script:instance2 -TraceFlag 7745
+            $null = Remove-DbaDatabase -SqlInstance $env:instance2 -Database $dbname -Confirm:$false
+            $null = Disable-DbaTraceFlag -SqlInstance $env:instance2 -TraceFlag 7745
         }
 
         Context 'Function works as expected' {
             BeforeAll {
-                $svr = Connect-DbaInstance -SqlInstance $script:instance2
+                $svr = Connect-DbaInstance -SqlInstance $env:instance2
                 $results = Test-DbaDbQueryStore -SqlInstance $svr -Database $dbname
             }
             It 'Should return results' {
@@ -67,8 +67,8 @@ Describe "Test-DbaDbQueryStore" {
 
         Context 'Exclude database works' {
             BeforeAll {
-                $svr = Connect-DbaInstance -SqlInstance $script:instance2
-                $results = Test-DbaDbQueryStore -SqlInstance $script:instance2 -ExcludeDatabase $dbname
+                $svr = Connect-DbaInstance -SqlInstance $env:instance2
+                $results = Test-DbaDbQueryStore -SqlInstance $env:instance2 -ExcludeDatabase $dbname
             }
             It 'Should return results' {
                 $results | Should -Not -BeNullOrEmpty
@@ -80,7 +80,7 @@ Describe "Test-DbaDbQueryStore" {
 
         Context 'Function works with piping smo server object' {
             BeforeAll {
-                $svr = Connect-DbaInstance -SqlInstance $script:instance2
+                $svr = Connect-DbaInstance -SqlInstance $env:instance2
                 $results = $svr | Test-DbaDbQueryStore
             }
             It 'Should return results' {

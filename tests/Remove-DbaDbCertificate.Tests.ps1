@@ -33,7 +33,7 @@ Describe "Remove-DbaDbCertificate Unit Tests" -Tag 'UnitTests' {
         }
 
         It "Should have EnableException parameter" {
-            $command | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 }
@@ -45,7 +45,7 @@ Describe "Remove-DbaDbCertificate Integration Tests" -Tag "IntegrationTests" {
 
     Context "Can remove a database certificate" -Skip:$SkipTests {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance1
+            $server = Connect-DbaInstance -SqlInstance $env:instance1
             if (-not (Get-DbaDbMasterKey -SqlInstance $server -Database master)) {
                 $masterkey = New-DbaDbMasterKey -SqlInstance $server -Database master -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
             }
@@ -53,8 +53,8 @@ Describe "Remove-DbaDbCertificate Integration Tests" -Tag "IntegrationTests" {
         }
 
         AfterAll {
-            if ($masterKey) { 
-                $masterkey | Remove-DbaDbMasterKey -Confirm:$false 
+            if ($masterKey) {
+                $masterkey | Remove-DbaDbMasterKey -Confirm:$false
             }
         }
 

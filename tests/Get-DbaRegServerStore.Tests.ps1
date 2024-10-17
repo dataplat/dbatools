@@ -18,13 +18,13 @@ Describe "Get-DbaRegServerStore" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
     Context "Components are properly retrieved" {
         It "Should return the right values" {
-            $results = Get-DbaRegServerStore -SqlInstance $script:instance2
+            $results = Get-DbaRegServerStore -SqlInstance $env:instance2
             $results.InstanceName | Should -Not -BeNullOrEmpty
             $results.DisplayName | Should -Be "Central Management Servers"
         }

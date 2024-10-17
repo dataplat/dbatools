@@ -32,8 +32,8 @@ Describe "Test-DbaDbCompression Unit Tests" -Tag 'UnitTests' {
         It "Should have FilterBy as a non-mandatory parameter of type String" {
             $CommandUnderTest | Should -HaveParameter FilterBy -Type String -Not -Mandatory
         }
-        It "Should have EnableException as a non-mandatory parameter of type SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+        It "Should have EnableException as a non-mandatory parameter of type Switch" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 }
@@ -45,7 +45,7 @@ Describe "Test-DbaDbCompression Integration Tests" -Tag "IntegrationTests" {
 
     BeforeAll {
         $dbname = "dbatoolsci_test_$(Get-Random)"
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $env:instance2
         $null = $server.Query("Create Database [$dbname]")
         $null = $server.Query("Create Schema test", $dbname)
         $null = $server.Query(@"
@@ -59,13 +59,13 @@ Describe "Test-DbaDbCompression Integration Tests" -Tag "IntegrationTests" {
     }
 
     AfterAll {
-        Get-DbaProcess -SqlInstance $script:instance2 -Database $dbname | Stop-DbaProcess -WarningAction SilentlyContinue
-        Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
+        Get-DbaProcess -SqlInstance $env:instance2 -Database $dbname | Stop-DbaProcess -WarningAction SilentlyContinue
+        Remove-DbaDatabase -SqlInstance $env:instance2 -Database $dbname -Confirm:$false
     }
 
     Context "Command gets suggestions" {
         BeforeAll {
-            $results = Test-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname
+            $results = Test-DbaDbCompression -SqlInstance $env:instance2 -Database $dbname
         }
 
         It "Should get results for $dbname" {
@@ -84,7 +84,7 @@ Describe "Test-DbaDbCompression Integration Tests" -Tag "IntegrationTests" {
 
     Context "Command makes right suggestions" {
         BeforeAll {
-            $results = Test-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname
+            $results = Test-DbaDbCompression -SqlInstance $env:instance2 -Database $dbname
         }
 
         It "Should suggest PAGE compression for a table with no updates or scans" {
@@ -98,7 +98,7 @@ Describe "Test-DbaDbCompression Integration Tests" -Tag "IntegrationTests" {
 
     Context "Command excludes results for specified database" {
         It "Shouldn't get any results for $dbname" {
-            $result = Test-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname -ExcludeDatabase $dbname
+            $result = Test-DbaDbCompression -SqlInstance $env:instance2 -Database $dbname -ExcludeDatabase $dbname
             $result.Database | Should -Not -Contain $dbname
         }
     }
@@ -106,7 +106,7 @@ Describe "Test-DbaDbCompression Integration Tests" -Tag "IntegrationTests" {
     Context "Command gets Schema suggestions" {
         BeforeAll {
             $schema = 'dbo'
-            $results = Test-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname -Schema $schema
+            $results = Test-DbaDbCompression -SqlInstance $env:instance2 -Database $dbname -Schema $schema
         }
 
         It "Should get results for Schema:$schema" {
@@ -117,7 +117,7 @@ Describe "Test-DbaDbCompression Integration Tests" -Tag "IntegrationTests" {
     Context "Command gets Table suggestions" {
         BeforeAll {
             $table = 'syscols'
-            $results = Test-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname -Table $table
+            $results = Test-DbaDbCompression -SqlInstance $env:instance2 -Database $dbname -Table $table
         }
 
         It "Should get results for table:$table" {
@@ -128,7 +128,7 @@ Describe "Test-DbaDbCompression Integration Tests" -Tag "IntegrationTests" {
     Context "Command gets limited output" {
         BeforeAll {
             $resultCount = 2
-            $results = Test-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname -ResultSize $resultCount -Rank TotalPages -FilterBy Partition
+            $results = Test-DbaDbCompression -SqlInstance $env:instance2 -Database $dbname -ResultSize $resultCount -Rank TotalPages -FilterBy Partition
         }
 
         It "Should get only $resultCount results" {
@@ -139,7 +139,7 @@ Describe "Test-DbaDbCompression Integration Tests" -Tag "IntegrationTests" {
     Context "Returns result for empty table (see #9469)" {
         BeforeAll {
             $table = 'testtable'
-            $results = Test-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname -Table $table
+            $results = Test-DbaDbCompression -SqlInstance $env:instance2 -Database $dbname -Table $table
         }
 
         It "Should get results for table:$table" {

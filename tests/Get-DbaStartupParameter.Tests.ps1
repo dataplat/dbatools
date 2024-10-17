@@ -15,15 +15,15 @@ Describe "Get-DbaStartupParameter" {
         It "Should have Credential as a non-mandatory parameter of type PSCredential" {
             $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Not -Mandatory
         }
-        It "Should have Simple as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter Simple -Type SwitchParameter -Not -Mandatory
+        It "Should have Simple as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter Simple -Type Switch -Not -Mandatory
         }
-        It "Should have EnableException as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+        It "Should have EnableException as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
         It "Should have common parameters" {
-            $CommandUnderTest | Should -HaveParameter Verbose -Type SwitchParameter -Not -Mandatory
-            $CommandUnderTest | Should -HaveParameter Debug -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Verbose -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Debug -Type Switch -Not -Mandatory
             $CommandUnderTest | Should -HaveParameter ErrorAction -Type ActionPreference -Not -Mandatory
             $CommandUnderTest | Should -HaveParameter WarningAction -Type ActionPreference -Not -Mandatory
             $CommandUnderTest | Should -HaveParameter InformationAction -Type ActionPreference -Not -Mandatory
@@ -39,7 +39,7 @@ Describe "Get-DbaStartupParameter" {
 
     Context "Command actually works" {
         BeforeAll {
-            $results = Get-DbaStartupParameter -SqlInstance $script:instance2
+            $results = Get-DbaStartupParameter -SqlInstance $env:instance2
         }
         It "Gets Results" {
             $results | Should -Not -BeNullOrEmpty

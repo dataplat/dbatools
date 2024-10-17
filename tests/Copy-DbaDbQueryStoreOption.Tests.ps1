@@ -27,17 +27,17 @@ Describe "Copy-DbaDbQueryStoreOption" {
             $CommandUnderTest | Should -HaveParameter Exclude -Type Object[]
         }
         It "Should have AllDatabases as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AllDatabases -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter AllDatabases -Type Switch
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 }
 
 Describe "Copy-DbaDbQueryStoreOption Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $server2 = Connect-DbaInstance -SqlInstance $script:instance2
+        $server2 = Connect-DbaInstance -SqlInstance $global:instance2
     }
 
     Context "Verifying query store options are copied" {

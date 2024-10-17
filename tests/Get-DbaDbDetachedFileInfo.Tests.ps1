@@ -15,7 +15,7 @@ Describe "Get-DbaDbDetachedFileInfo" {
             $CommandUnderTest | Should -HaveParameter Path -Type String[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -25,44 +25,44 @@ Describe "Get-DbaDbDetachedFileInfo" {
         }
 
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $versionName = $server.GetSqlServerVersionName()
             $random = Get-Random
             $dbname = "dbatoolsci_detatch_$random"
             $server.Query("CREATE DATABASE $dbname")
-            $path = (Get-DbaDbFile -SqlInstance $script:instance2 -Database $dbname | Where-Object {$_.PhysicalName -like '*.mdf'}).physicalname
-            Detach-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Force
+            $path = (Get-DbaDbFile -SqlInstance $global:instance2 -Database $dbname | Where-Object {$_.PhysicalName -like '*.mdf'}).physicalname
+            Detach-DbaDatabase -SqlInstance $global:instance2 -Database $dbname -Force
         }
 
         AfterAll {
             $server.Query("CREATE DATABASE $dbname
                 ON (FILENAME = '$path')
                 FOR ATTACH")
-            Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $global:instance2 -Database $dbname -Confirm:$false
         }
 
         It "Gets Results" {
-            $results = Get-DbaDbDetachedFileInfo -SqlInstance $script:instance2 -Path $path
+            $results = Get-DbaDbDetachedFileInfo -SqlInstance $global:instance2 -Path $path
             $results | Should -Not -BeNullOrEmpty
         }
 
         It "Should be created database" {
-            $results = Get-DbaDbDetachedFileInfo -SqlInstance $script:instance2 -Path $path
+            $results = Get-DbaDbDetachedFileInfo -SqlInstance $global:instance2 -Path $path
             $results.name | Should -Be $dbname
         }
 
         It "Should be the correct version" {
-            $results = Get-DbaDbDetachedFileInfo -SqlInstance $script:instance2 -Path $path
+            $results = Get-DbaDbDetachedFileInfo -SqlInstance $global:instance2 -Path $path
             $results.version | Should -Be $versionName
         }
 
         It "Should have Data files" {
-            $results = Get-DbaDbDetachedFileInfo -SqlInstance $script:instance2 -Path $path
+            $results = Get-DbaDbDetachedFileInfo -SqlInstance $global:instance2 -Path $path
             $results.DataFiles | Should -Not -BeNullOrEmpty
         }
 
         It "Should have Log files" {
-            $results = Get-DbaDbDetachedFileInfo -SqlInstance $script:instance2 -Path $path
+            $results = Get-DbaDbDetachedFileInfo -SqlInstance $global:instance2 -Path $path
             $results.LogFiles | Should -Not -BeNullOrEmpty
         }
     }

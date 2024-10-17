@@ -25,7 +25,7 @@ Describe "Get-DbaReplPublication" {
             $CommandUnderTest | Should -HaveParameter Type -Type Object[] -Not -Mandatory
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 

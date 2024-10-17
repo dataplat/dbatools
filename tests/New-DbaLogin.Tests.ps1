@@ -9,8 +9,8 @@ Describe "New-DbaLogin" {
         $password = 'MyV3ry$ecur3P@ssw0rd'
         $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
         $sid = '0xDBA700131337C0D30123456789ABCDEF'
-        $server1 = Connect-DbaInstance -SqlInstance $script:instance1
-        $server2 = Connect-DbaInstance -SqlInstance $script:instance2
+        $server1 = Connect-DbaInstance -SqlInstance $env:instance1
+        $server2 = Connect-DbaInstance -SqlInstance $env:instance2
         $servers = @($server1, $server2)
         $computerName = $server1.NetName
         $credLogin = 'credologino'
@@ -109,31 +109,31 @@ Describe "New-DbaLogin" {
             $Command | Should -HaveParameter Language -Type String -Not -Mandatory
         }
         It "Should have PasswordExpirationEnabled parameter" {
-            $Command | Should -HaveParameter PasswordExpirationEnabled -Type SwitchParameter -Not -Mandatory
+            $Command | Should -HaveParameter PasswordExpirationEnabled -Type Switch -Not -Mandatory
         }
         It "Should have PasswordPolicyEnforced parameter" {
-            $Command | Should -HaveParameter PasswordPolicyEnforced -Type SwitchParameter -Not -Mandatory
+            $Command | Should -HaveParameter PasswordPolicyEnforced -Type Switch -Not -Mandatory
         }
         It "Should have PasswordMustChange parameter" {
-            $Command | Should -HaveParameter PasswordMustChange -Type SwitchParameter -Not -Mandatory
+            $Command | Should -HaveParameter PasswordMustChange -Type Switch -Not -Mandatory
         }
         It "Should have Disabled parameter" {
-            $Command | Should -HaveParameter Disabled -Type SwitchParameter -Not -Mandatory
+            $Command | Should -HaveParameter Disabled -Type Switch -Not -Mandatory
         }
         It "Should have DenyWindowsLogin parameter" {
-            $Command | Should -HaveParameter DenyWindowsLogin -Type SwitchParameter -Not -Mandatory
+            $Command | Should -HaveParameter DenyWindowsLogin -Type Switch -Not -Mandatory
         }
         It "Should have NewSid parameter" {
-            $Command | Should -HaveParameter NewSid -Type SwitchParameter -Not -Mandatory
+            $Command | Should -HaveParameter NewSid -Type Switch -Not -Mandatory
         }
         It "Should have ExternalProvider parameter" {
-            $Command | Should -HaveParameter ExternalProvider -Type SwitchParameter -Not -Mandatory
+            $Command | Should -HaveParameter ExternalProvider -Type Switch -Not -Mandatory
         }
         It "Should have Force parameter" {
-            $Command | Should -HaveParameter Force -Type SwitchParameter -Not -Mandatory
+            $Command | Should -HaveParameter Force -Type Switch -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $Command | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $Command | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
@@ -232,8 +232,8 @@ Describe "New-DbaLogin" {
         }
 
         It "Should retain its same properties" {
-            $login1 = Get-DbaLogin -SqlInstance $script:instance1 -login tester
-            $login2 = Get-DbaLogin -SqlInstance $script:instance2 -login tester
+            $login1 = Get-DbaLogin -SqlInstance $env:instance1 -login tester
+            $login2 = Get-DbaLogin -SqlInstance $env:instance2 -login tester
 
             $login2 | Should -Not -BeNullOrEmpty
 
@@ -250,8 +250,8 @@ Describe "New-DbaLogin" {
         }
 
         It "Should not have same properties because of the overrides" {
-            $login1 = Get-DbaLogin -SqlInstance $script:instance1 -login claudio
-            $login2 = Get-DbaLogin -SqlInstance $script:instance2 -login withMustChange
+            $login1 = Get-DbaLogin -SqlInstance $env:instance1 -login claudio
+            $login2 = Get-DbaLogin -SqlInstance $env:instance2 -login withMustChange
 
             $login2 | Should -Not -BeNullOrEmpty
 
@@ -276,12 +276,12 @@ Describe "New-DbaLogin" {
         }
     }
 
-    Context "Connect with a new login" -Skip:((Connect-DbaInstance -SqlInstance $script:instance1).LoginMode -ne "Mixed") {
+    Context "Connect with a new login" -Skip:((Connect-DbaInstance -SqlInstance $env:instance1).LoginMode -ne "Mixed") {
         It "Should login with newly created Sql Login, get instance name and kill the process" {
             $cred = New-Object System.Management.Automation.PSCredential ("tester", $securePassword)
-            $s = Connect-DbaInstance -SqlInstance $script:instance1 -SqlCredential $cred
-            $s.Name | Should -Be $script:instance1
-            Stop-DbaProcess -SqlInstance $script:instance1 -Login tester
+            $s = Connect-DbaInstance -SqlInstance $env:instance1 -SqlCredential $cred
+            $s.Name | Should -Be $env:instance1
+            Stop-DbaProcess -SqlInstance $env:instance1 -Login tester
         }
     }
 
@@ -314,7 +314,7 @@ Describe "New-DbaLogin" {
         $server1.Credentials[$credLogin].Drop()
         $server1.Databases['master'].Certificates[$certificateName].Drop()
         if (!$mkey) {
-            $null = Remove-DbaDbMasterKey -SqlInstance $script:instance1 -Database master -Confirm:$false
+            $null = Remove-DbaDbMasterKey -SqlInstance $env:instance1 -Database master -Confirm:$false
         }
     }
 }

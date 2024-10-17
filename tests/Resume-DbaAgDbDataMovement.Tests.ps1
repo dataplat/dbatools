@@ -21,7 +21,7 @@ Describe "Resume-DbaAgDbDataMovement" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type AvailabilityDatabase[] -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
@@ -31,15 +31,15 @@ Describe "Resume-DbaAgDbDataMovement" {
         }
 
         BeforeAll {
-            $null = Get-DbaProcess -SqlInstance $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
-            $server = Connect-DbaInstance -SqlInstance $script:instance3
+            $null = Get-DbaProcess -SqlInstance $env:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
+            $server = Connect-DbaInstance -SqlInstance $env:instance3
             $agname = "dbatoolsci_resumeagdb_agroup"
             $dbname = "dbatoolsci_resumeagdb_agroupdb"
             $server.Query("create database $dbname")
-            $null = Get-DbaDatabase -SqlInstance $script:instance3 -Database $dbname | Backup-DbaDatabase
-            $null = Get-DbaDatabase -SqlInstance $script:instance3 -Database $dbname | Backup-DbaDatabase -Type Log
-            $ag = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Database $dbname -Confirm:$false -Certificate dbatoolsci_AGCert -UseLastBackup
-            $null = Get-DbaAgDatabase -SqlInstance $script:instance3 -AvailabilityGroup $agname | Suspend-DbaAgDbDataMovement -Confirm:$false
+            $null = Get-DbaDatabase -SqlInstance $env:instance3 -Database $dbname | Backup-DbaDatabase
+            $null = Get-DbaDatabase -SqlInstance $env:instance3 -Database $dbname | Backup-DbaDatabase -Type Log
+            $ag = New-DbaAvailabilityGroup -Primary $env:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Database $dbname -Confirm:$false -Certificate dbatoolsci_AGCert -UseLastBackup
+            $null = Get-DbaAgDatabase -SqlInstance $env:instance3 -AvailabilityGroup $agname | Suspend-DbaAgDbDataMovement -Confirm:$false
         }
 
         AfterAll {
@@ -48,10 +48,10 @@ Describe "Resume-DbaAgDbDataMovement" {
         }
 
         It "resumes data movement" {
-            $results = Resume-DbaAgDbDataMovement -SqlInstance $script:instance3 -Database $dbname -Confirm:$false
+            $results = Resume-DbaAgDbDataMovement -SqlInstance $env:instance3 -Database $dbname -Confirm:$false
             $results.AvailabilityGroup | Should -Be $agname
             $results.Name | Should -Be $dbname
             $results.SynchronizationState | Should -Be 'Synchronized'
         }
     }
-} #$script:instance2 for appveyor
+} #$env:instance2 for appveyor

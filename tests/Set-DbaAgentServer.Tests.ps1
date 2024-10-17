@@ -6,7 +6,7 @@ Describe "Set-DbaAgentServer" {
         Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
         . "$PSScriptRoot\constants.ps1"
 
-        $testServer = $script:instance2
+        $testServer = $env:instance2
         $random = Get-Random
         $mailProfileName = "dbatoolsci_$random"
         $mailProfile = New-DbaDbMailProfile -SqlInstance $testServer -Name $mailProfileName
@@ -91,7 +91,7 @@ Describe "Set-DbaAgentServer" {
             $CommandUnderTest | Should -HaveParameter WriteOemErrorLog -Type String -Not -Mandatory
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 

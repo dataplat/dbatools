@@ -24,12 +24,12 @@ Describe "Invoke-DbaDbDataMasking" {
                 GO
                 INSERT INTO people2 (fname, lname, dob) VALUES ('Layla','Schmoe','2/2/2000')
                 INSERT INTO people2 (fname, lname, dob) VALUES ('Eric','Schmee','2/2/1950')"
-        New-DbaDatabase -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Name $db
-        Invoke-DbaQuery -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Database $db -Query $sql
+        New-DbaDatabase -SqlInstance $env:instance2 -SqlCredential $env:SqlCredential -Name $db
+        Invoke-DbaQuery -SqlInstance $env:instance2 -SqlCredential $env:SqlCredential -Database $db -Query $sql
     }
 
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Database $db -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $env:instance2 -SqlCredential $env:SqlCredential -Database $db -Confirm:$false
         $file | Remove-Item -Confirm:$false -ErrorAction Ignore
     }
 
@@ -74,7 +74,7 @@ Describe "Invoke-DbaDbDataMasking" {
             $CommandUnderTest | Should -HaveParameter ModulusFactor -Type Int32
         }
         It "Should have ExactLength as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExactLength -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter ExactLength -Type Switch
         }
         It "Should have CommandTimeout as a parameter" {
             $CommandUnderTest | Should -HaveParameter CommandTimeout -Type Int32
@@ -92,27 +92,27 @@ Describe "Invoke-DbaDbDataMasking" {
             $CommandUnderTest | Should -HaveParameter DictionaryExportPath -Type String
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Command works" {
         It "starts with the right data" {
             $query = "select * from people where fname = 'Joe'"
-            $result = Invoke-DbaQuery -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Database $db -Query $query
+            $result = Invoke-DbaQuery -SqlInstance $env:instance2 -SqlCredential $env:SqlCredential -Database $db -Query $query
             $result | Should -Not -BeNullOrEmpty
         }
 
         It "starts with the right data (lname)" {
             $query = "select * from people where lname = 'Schmee'"
-            $result = Invoke-DbaQuery -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Database $db -Query $query
+            $result = Invoke-DbaQuery -SqlInstance $env:instance2 -SqlCredential $env:SqlCredential -Database $db -Query $query
             $result | Should -Not -BeNullOrEmpty
         }
 
         It "returns the proper output" {
-            $file = New-DbaDbMaskingConfig -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Database $db -Path C:\temp
+            $file = New-DbaDbMaskingConfig -SqlInstance $env:instance2 -SqlCredential $env:SqlCredential -Database $db -Path C:\temp
 
-            [array]$results = $file | Invoke-DbaDbDataMasking -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Database $db -Confirm:$false
+            [array]$results = $file | Invoke-DbaDbDataMasking -SqlInstance $env:instance2 -SqlCredential $env:SqlCredential -Database $db -Confirm:$false
 
             $results[0].Rows | Should -Be 2
             $results[0].Database | Should -Contain $db
@@ -123,15 +123,15 @@ Describe "Invoke-DbaDbDataMasking" {
 
         It "masks the data and does not delete it" {
             $query1 = "select * from people"
-            $result1 = Invoke-DbaQuery -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Database $db -Query $query1
+            $result1 = Invoke-DbaQuery -SqlInstance $env:instance2 -SqlCredential $env:SqlCredential -Database $db -Query $query1
             $result1 | Should -Not -BeNullOrEmpty
 
             $query2 = "select * from people where fname = 'Joe'"
-            $result2 = Invoke-DbaQuery -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Database $db -Query $query2
+            $result2 = Invoke-DbaQuery -SqlInstance $env:instance2 -SqlCredential $env:SqlCredential -Database $db -Query $query2
             $result2 | Should -BeNullOrEmpty
 
             $query3 = "select * from people where lname = 'Schmee'"
-            $result3 = Invoke-DbaQuery -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Database $db -Query $query3
+            $result3 = Invoke-DbaQuery -SqlInstance $env:instance2 -SqlCredential $env:SqlCredential -Database $db -Query $query3
             $result3 | Should -BeNullOrEmpty
         }
     }

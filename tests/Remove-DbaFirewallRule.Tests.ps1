@@ -18,7 +18,7 @@ Describe "Remove-DbaFirewallRule" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Object[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 }
@@ -30,8 +30,8 @@ Describe "Remove-DbaFirewallRule Integration Tests" -Tag "IntegrationTests" {
 
     Context "Command actually works" {
         BeforeAll {
-            $script:instance1 = $script:instance1
-            $script:instance2 = $script:instance2
+            $env:instance1 = $env:instance1
+            $env:instance2 = $env:instance2
         }
 
         It "Removes firewall rules" {

@@ -24,7 +24,7 @@ Describe "Get-DbaDbAsymmetricKey" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Database[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -36,15 +36,15 @@ Describe "Get-DbaDbAsymmetricKey" {
             $algorithm = 'Rsa4096'
             $dbuser = 'keyowner'
             $database = 'GetAsKey'
-            $newDB = New-DbaDatabase -SqlInstance $script:instance2 -Name $database
+            $newDB = New-DbaDatabase -SqlInstance $global:instance2 -Name $database
             $tPassword = ConvertTo-SecureString "ThisIsThePassword1" -AsPlainText -Force
-            New-DbaDbMasterKey -SqlInstance $script:instance2 -Database $database -SecurePassword $tPassword -Confirm:$false
-            New-DbaDbUser -SqlInstance $script:instance2 -Database $database -UserName $dbuser
-            $null = New-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Database $database -Name $keyname -Owner keyowner -Algorithm $algorithm -WarningVariable warnvar
+            New-DbaDbMasterKey -SqlInstance $global:instance2 -Database $database -SecurePassword $tPassword -Confirm:$false
+            New-DbaDbUser -SqlInstance $global:instance2 -Database $database -UserName $dbuser
+            $null = New-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Database $database -Name $keyname -Owner keyowner -Algorithm $algorithm -WarningVariable warnvar
         }
 
         It "Should Create new key in $database called $keyname" {
-            $results = Get-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Name $keyname -Database $database
+            $results = Get-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Name $keyname -Database $database
             $warnvar | Should -BeNullOrEmpty
             $results.database | Should -Be $database
             $results.DatabaseId | Should -Be $newDB.ID
@@ -54,7 +54,7 @@ Describe "Get-DbaDbAsymmetricKey" {
         }
 
         It "Should work with a piped database" {
-            $pipeResults = Get-DbaDatabase -SqlInstance $script:instance2 -Database $database | Get-DbaDbAsymmetricKey
+            $pipeResults = Get-DbaDatabase -SqlInstance $global:instance2 -Database $database | Get-DbaDbAsymmetricKey
             $pipeResults.database | Should -Be $database
             $pipeResults.name | Should -Be $keyname
             $pipeResults.Owner | Should -Be $dbuser
@@ -62,15 +62,15 @@ Describe "Get-DbaDbAsymmetricKey" {
         }
 
         It "Should return 2 keys" {
-            $null = New-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Database $database -Name $keyname2 -Owner keyowner -Algorithm $algorithm -WarningVariable warnvar
-            $multiResults = Get-DbaDatabase -SqlInstance $script:instance2 -Database $database | Get-DbaDbAsymmetricKey
+            $null = New-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Database $database -Name $keyname2 -Owner keyowner -Algorithm $algorithm -WarningVariable warnvar
+            $multiResults = Get-DbaDatabase -SqlInstance $global:instance2 -Database $database | Get-DbaDbAsymmetricKey
             $multiResults | Should -HaveCount 2
             $multiResults.name | Should -Contain $keyname
             $multiResults.name | Should -Contain $keyname2
         }
 
         AfterAll {
-            $drop = Remove-DbaDatabase -SqlInstance $script:instance2 -Database $database -Confirm:$false
+            $drop = Remove-DbaDatabase -SqlInstance $global:instance2 -Database $database -Confirm:$false
             $drop.Status | Should -Be 'Dropped'
         }
     }

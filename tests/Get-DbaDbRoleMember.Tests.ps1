@@ -44,7 +44,7 @@ Describe "Get-DbaDbRoleMember Integration Tests" -Tag "IntegrationTests" {
     }
 
     BeforeAll {
-        $instance = Connect-DbaInstance -SqlInstance $script:instance2
+        $instance = Connect-DbaInstance -SqlInstance $global:instance2
         $allDatabases = $instance.Databases
     }
 

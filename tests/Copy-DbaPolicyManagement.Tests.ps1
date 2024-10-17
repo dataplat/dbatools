@@ -30,10 +30,10 @@ Describe "Copy-DbaPolicyManagement" {
             $CommandUnderTest | Should -HaveParameter ExcludeCondition -Type Object[]
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 }

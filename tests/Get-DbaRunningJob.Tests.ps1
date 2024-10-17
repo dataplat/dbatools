@@ -63,7 +63,7 @@ Describe "Get-DbaRunningJob" {
 
         BeforeAll {
             # Setup code for all tests in this context
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $env:instance2
         }
 
         It "Returns running jobs" {

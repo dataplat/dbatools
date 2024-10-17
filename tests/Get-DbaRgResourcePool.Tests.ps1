@@ -22,13 +22,13 @@ Describe "Get-DbaRgResourcePool" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type ResourceGovernor[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Command actually works" {
         BeforeAll {
-            $results = Get-DbaRgResourcePool -SqlInstance $script:instance2
+            $results = Get-DbaRgResourcePool -SqlInstance $env:instance2
         }
         It "Gets Results" {
             $results | Should -Not -BeNullOrEmpty
@@ -37,7 +37,7 @@ Describe "Get-DbaRgResourcePool" {
 
     Context "Command actually works using -Type" {
         BeforeAll {
-            $results = Get-DbaRgResourcePool -SqlInstance $script:instance2 -Type Internal
+            $results = Get-DbaRgResourcePool -SqlInstance $env:instance2 -Type Internal
         }
         It "Gets Results" {
             $results | Should -Not -BeNullOrEmpty

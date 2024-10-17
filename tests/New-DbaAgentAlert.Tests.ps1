@@ -31,7 +31,7 @@ Describe "New-DbaAgentAlert" {
             $CommandUnderTest | Should -HaveParameter DelayBetweenResponses -Type Int32 -Not -Mandatory
         }
         It "Should have Disabled parameter" {
-            $CommandUnderTest | Should -HaveParameter Disabled -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Disabled -Type Switch -Not -Mandatory
         }
         It "Should have EventDescriptionKeyword parameter" {
             $CommandUnderTest | Should -HaveParameter EventDescriptionKeyword -Type String -Not -Mandatory
@@ -64,14 +64,14 @@ Describe "New-DbaAgentAlert" {
             $CommandUnderTest | Should -HaveParameter NotifyMethod -Type String -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
     Context "Creating a new SQL Server Agent alert" {
         BeforeAll {
-            $script:instance2 = "instance2"
-            $script:instance3 = "instance3"
+            $env:instance2 = "instance2"
+            $env:instance3 = "instance3"
         }
 
         BeforeEach {
@@ -104,7 +104,7 @@ Describe "New-DbaAgentAlert" {
 
         It 'Should create a new alert' {
             $parms = @{
-                SqlInstance           = $script:instance2
+                SqlInstance           = $env:instance2
                 Alert                 = "Test Alert"
                 DelayBetweenResponses = 60
                 Disabled              = $false
@@ -131,13 +131,13 @@ Describe "New-DbaAgentAlert" {
             $alert.Severity | Should -Be 17
 
             Should -Invoke Get-DbaAgentAlert -Times 1 -Exactly -ParameterFilter {
-                $SqlInstance -eq $script:instance2 -and $Alert -eq $parms.Alert
+                $SqlInstance -eq $env:instance2 -and $Alert -eq $parms.Alert
             }
         }
 
         It 'Should create another new alert' {
             $parms = @{
-                SqlInstance           = $script:instance3
+                SqlInstance           = $env:instance3
                 Alert                 = "Another Alert"
                 DelayBetweenResponses = 60
                 NotifyMethod          = "NotifyEmail"
@@ -165,7 +165,7 @@ Describe "New-DbaAgentAlert" {
             $alert.Severity | Should -Be 0
 
             Should -Invoke Get-DbaAgentAlert -Times 1 -Exactly -ParameterFilter {
-                $SqlInstance -eq $script:instance3 -and $Alert -eq $parms.Alert
+                $SqlInstance -eq $env:instance3 -and $Alert -eq $parms.Alert
             }
         }
     }

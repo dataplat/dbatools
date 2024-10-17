@@ -21,10 +21,10 @@ Describe "Invoke-DbaAdvancedRestore" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have OutputScriptOnly parameter" {
-            $CommandUnderTest | Should -HaveParameter OutputScriptOnly -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter OutputScriptOnly -Type Switch
         }
         It "Should have VerifyOnly parameter" {
-            $CommandUnderTest | Should -HaveParameter VerifyOnly -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter VerifyOnly -Type Switch
         }
         It "Should have RestoreTime parameter" {
             $CommandUnderTest | Should -HaveParameter RestoreTime -Type DateTime
@@ -33,7 +33,7 @@ Describe "Invoke-DbaAdvancedRestore" {
             $CommandUnderTest | Should -HaveParameter StandbyDirectory -Type String
         }
         It "Should have NoRecovery parameter" {
-            $CommandUnderTest | Should -HaveParameter NoRecovery -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter NoRecovery -Type Switch
         }
         It "Should have MaxTransferSize parameter" {
             $CommandUnderTest | Should -HaveParameter MaxTransferSize -Type Int32
@@ -45,19 +45,19 @@ Describe "Invoke-DbaAdvancedRestore" {
             $CommandUnderTest | Should -HaveParameter BufferCount -Type Int32
         }
         It "Should have Continue parameter" {
-            $CommandUnderTest | Should -HaveParameter Continue -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Continue -Type Switch
         }
         It "Should have AzureCredential parameter" {
             $CommandUnderTest | Should -HaveParameter AzureCredential -Type String
         }
         It "Should have WithReplace parameter" {
-            $CommandUnderTest | Should -HaveParameter WithReplace -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter WithReplace -Type Switch
         }
         It "Should have KeepReplication parameter" {
-            $CommandUnderTest | Should -HaveParameter KeepReplication -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter KeepReplication -Type Switch
         }
         It "Should have KeepCDC parameter" {
-            $CommandUnderTest | Should -HaveParameter KeepCDC -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter KeepCDC -Type Switch
         }
         It "Should have PageRestore parameter" {
             $CommandUnderTest | Should -HaveParameter PageRestore -Type Object[]
@@ -66,7 +66,7 @@ Describe "Invoke-DbaAdvancedRestore" {
             $CommandUnderTest | Should -HaveParameter ExecuteAs -Type String
         }
         It "Should have StopBefore parameter" {
-            $CommandUnderTest | Should -HaveParameter StopBefore -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter StopBefore -Type Switch
         }
         It "Should have StopMark parameter" {
             $CommandUnderTest | Should -HaveParameter StopMark -Type String
@@ -75,7 +75,7 @@ Describe "Invoke-DbaAdvancedRestore" {
             $CommandUnderTest | Should -HaveParameter StopAfterDate -Type DateTime
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 }

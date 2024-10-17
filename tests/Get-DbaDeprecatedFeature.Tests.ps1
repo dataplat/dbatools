@@ -58,7 +58,7 @@ Describe "Get-DbaDeprecatedFeature" {
 
     Context "Gets Deprecated Features" {
         BeforeAll {
-            $results = Get-DbaDeprecatedFeature -SqlInstance $script:instance1
+            $results = Get-DbaDeprecatedFeature -SqlInstance $global:instance1
         }
         It "Gets results" {
             $results | Should -Not -BeNullOrEmpty

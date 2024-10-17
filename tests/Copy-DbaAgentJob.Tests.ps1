@@ -48,39 +48,39 @@ Describe "Copy-DbaAgentJob" {
 
     Context "Command copies jobs properly" {
         BeforeAll {
-            $null = New-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_copyjob
-            $null = New-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_copyjob_disabled
-            $sourcejobs = Get-DbaAgentJob -SqlInstance $script:instance2
-            $destjobs = Get-DbaAgentJob -SqlInstance $script:instance3
+            $null = New-DbaAgentJob -SqlInstance $global:instance2 -Job dbatoolsci_copyjob
+            $null = New-DbaAgentJob -SqlInstance $global:instance2 -Job dbatoolsci_copyjob_disabled
+            $sourcejobs = Get-DbaAgentJob -SqlInstance $global:instance2
+            $destjobs = Get-DbaAgentJob -SqlInstance $global:instance3
         }
         AfterAll {
-            $null = Remove-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_copyjob, dbatoolsci_copyjob_disabled -Confirm:$false
-            $null = Remove-DbaAgentJob -SqlInstance $script:instance3 -Job dbatoolsci_copyjob, dbatoolsci_copyjob_disabled -Confirm:$false
+            $null = Remove-DbaAgentJob -SqlInstance $global:instance2 -Job dbatoolsci_copyjob, dbatoolsci_copyjob_disabled -Confirm:$false
+            $null = Remove-DbaAgentJob -SqlInstance $global:instance3 -Job dbatoolsci_copyjob, dbatoolsci_copyjob_disabled -Confirm:$false
         }
 
         It "returns one success" {
-            $results = Copy-DbaAgentJob -Source $script:instance2 -Destination $script:instance3 -Job dbatoolsci_copyjob
+            $results = Copy-DbaAgentJob -Source $global:instance2 -Destination $global:instance3 -Job dbatoolsci_copyjob
             $results.Name | Should -Be "dbatoolsci_copyjob"
             $results.Status | Should -Be "Successful"
         }
 
         It "did not copy dbatoolsci_copyjob_disabled" {
-            $job = Get-DbaAgentJob -SqlInstance $script:instance3 -Job dbatoolsci_copyjob_disabled
+            $job = Get-DbaAgentJob -SqlInstance $global:instance3 -Job dbatoolsci_copyjob_disabled
             $job | Should -BeNullOrEmpty
         }
 
         It "disables jobs when requested" {
-            $sourceJob = Get-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_copyjob_disabled
+            $sourceJob = Get-DbaAgentJob -SqlInstance $global:instance2 -Job dbatoolsci_copyjob_disabled
             $sourceJob.Enabled | Should -BeTrue
 
-            $results = Copy-DbaAgentJob -Source $script:instance2 -Destination $script:instance3 -Job dbatoolsci_copyjob_disabled -DisableOnSource -DisableOnDestination -Force
+            $results = Copy-DbaAgentJob -Source $global:instance2 -Destination $global:instance3 -Job dbatoolsci_copyjob_disabled -DisableOnSource -DisableOnDestination -Force
             $results.Name | Should -Be "dbatoolsci_copyjob_disabled"
             $results.Status | Should -Be "Successful"
 
-            $sourceJobAfter = Get-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_copyjob_disabled
+            $sourceJobAfter = Get-DbaAgentJob -SqlInstance $global:instance2 -Job dbatoolsci_copyjob_disabled
             $sourceJobAfter.Enabled | Should -BeFalse
 
-            $destJob = Get-DbaAgentJob -SqlInstance $script:instance3 -Job dbatoolsci_copyjob_disabled
+            $destJob = Get-DbaAgentJob -SqlInstance $global:instance3 -Job dbatoolsci_copyjob_disabled
             $destJob.Enabled | Should -BeFalse
         }
     }

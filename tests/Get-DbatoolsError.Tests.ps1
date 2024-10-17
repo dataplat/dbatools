@@ -15,7 +15,7 @@ Describe "Get-DbatoolsError" {
             $CommandUnderTest | Should -HaveParameter Skip -Type Int32
         }
         It "Accepts All as a parameter" {
-            $CommandUnderTest | Should -HaveParameter All -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter All -Type Switch
         }
     }
 

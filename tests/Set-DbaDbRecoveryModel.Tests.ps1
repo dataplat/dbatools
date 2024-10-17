@@ -25,10 +25,10 @@ Describe "Set-DbaDbRecoveryModel" {
             $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Not -Mandatory
         }
         It "Should have AllDatabases parameter" {
-            $CommandUnderTest | Should -HaveParameter AllDatabases -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter AllDatabases -Type Switch -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
         It "Should have InputObject parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Database[] -Not -Mandatory
@@ -37,28 +37,28 @@ Describe "Set-DbaDbRecoveryModel" {
 
     Context "Recovery model is correctly set" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $env:instance2
             $dbname = "dbatoolsci_recoverymodel"
             Get-DbaDatabase -SqlInstance $server -Database $dbname | Remove-DbaDatabase -Confirm:$false
             $server.Query("CREATE DATABASE $dbname")
         }
         AfterAll {
-            Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
+            Get-DbaDatabase -SqlInstance $env:instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
         }
 
         It "sets the proper recovery model" {
-            $results = Set-DbaDbRecoveryModel -SqlInstance $script:instance2 -Database $dbname -RecoveryModel BulkLogged -Confirm:$false
+            $results = Set-DbaDbRecoveryModel -SqlInstance $env:instance2 -Database $dbname -RecoveryModel BulkLogged -Confirm:$false
             $results.RecoveryModel | Should -Be "BulkLogged"
         }
 
         It "supports the pipeline" {
-            $results = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname | Set-DbaDbRecoveryModel -RecoveryModel Simple -Confirm:$false
+            $results = Get-DbaDatabase -SqlInstance $env:instance2 -Database $dbname | Set-DbaDbRecoveryModel -RecoveryModel Simple -Confirm:$false
             $results.RecoveryModel | Should -Be "Simple"
         }
 
         It "requires Database, ExcludeDatabase or AllDatabases" {
             $warn = $null
-            $results = Set-DbaDbRecoveryModel -SqlInstance $script:instance2 -RecoveryModel Simple -WarningAction SilentlyContinue -WarningVariable warn -Confirm:$false
+            $results = Set-DbaDbRecoveryModel -SqlInstance $env:instance2 -RecoveryModel Simple -WarningAction SilentlyContinue -WarningVariable warn -Confirm:$false
             $warn | Should -Match "AllDatabases"
         }
     }

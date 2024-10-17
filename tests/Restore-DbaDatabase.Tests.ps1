@@ -36,43 +36,43 @@ Describe "Restore-DbaDatabase Unit Tests" -Tag 'UnitTests' {
             $command | Should -HaveParameter RestoreTime -Type DateTime -Not -Mandatory
         }
         It "Should have NoRecovery parameter" {
-            $command | Should -HaveParameter NoRecovery -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter NoRecovery -Type Switch -Not -Mandatory
         }
         It "Should have WithReplace parameter" {
-            $command | Should -HaveParameter WithReplace -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter WithReplace -Type Switch -Not -Mandatory
         }
         It "Should have KeepReplication parameter" {
-            $command | Should -HaveParameter KeepReplication -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter KeepReplication -Type Switch -Not -Mandatory
         }
         It "Should have XpDirTree parameter" {
-            $command | Should -HaveParameter XpDirTree -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter XpDirTree -Type Switch -Not -Mandatory
         }
         It "Should have NoXpDirRecurse parameter" {
-            $command | Should -HaveParameter NoXpDirRecurse -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter NoXpDirRecurse -Type Switch -Not -Mandatory
         }
         It "Should have OutputScriptOnly parameter" {
-            $command | Should -HaveParameter OutputScriptOnly -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter OutputScriptOnly -Type Switch -Not -Mandatory
         }
         It "Should have VerifyOnly parameter" {
-            $command | Should -HaveParameter VerifyOnly -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter VerifyOnly -Type Switch -Not -Mandatory
         }
         It "Should have MaintenanceSolutionBackup parameter" {
-            $command | Should -HaveParameter MaintenanceSolutionBackup -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter MaintenanceSolutionBackup -Type Switch -Not -Mandatory
         }
         It "Should have FileMapping parameter" {
             $command | Should -HaveParameter FileMapping -Type Hashtable -Not -Mandatory
         }
         It "Should have IgnoreLogBackup parameter" {
-            $command | Should -HaveParameter IgnoreLogBackup -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter IgnoreLogBackup -Type Switch -Not -Mandatory
         }
         It "Should have IgnoreDiffBackup parameter" {
-            $command | Should -HaveParameter IgnoreDiffBackup -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter IgnoreDiffBackup -Type Switch -Not -Mandatory
         }
         It "Should have UseDestinationDefaultDirectories parameter" {
-            $command | Should -HaveParameter UseDestinationDefaultDirectories -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter UseDestinationDefaultDirectories -Type Switch -Not -Mandatory
         }
         It "Should have ReuseSourceFolderStructure parameter" {
-            $command | Should -HaveParameter ReuseSourceFolderStructure -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter ReuseSourceFolderStructure -Type Switch -Not -Mandatory
         }
         It "Should have DestinationFilePrefix parameter" {
             $command | Should -HaveParameter DestinationFilePrefix -Type String -Not -Mandatory
@@ -81,7 +81,7 @@ Describe "Restore-DbaDatabase Unit Tests" -Tag 'UnitTests' {
             $command | Should -HaveParameter RestoredDatabaseNamePrefix -Type String -Not -Mandatory
         }
         It "Should have TrustDbBackupHistory parameter" {
-            $command | Should -HaveParameter TrustDbBackupHistory -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter TrustDbBackupHistory -Type Switch -Not -Mandatory
         }
         It "Should have MaxTransferSize parameter" {
             $command | Should -HaveParameter MaxTransferSize -Type Int32 -Not -Mandatory
@@ -93,16 +93,16 @@ Describe "Restore-DbaDatabase Unit Tests" -Tag 'UnitTests' {
             $command | Should -HaveParameter BufferCount -Type Int32 -Not -Mandatory
         }
         It "Should have DirectoryRecurse parameter" {
-            $command | Should -HaveParameter DirectoryRecurse -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter DirectoryRecurse -Type Switch -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $command | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
         It "Should have StandbyDirectory parameter" {
             $command | Should -HaveParameter StandbyDirectory -Type String -Not -Mandatory
         }
         It "Should have Continue parameter" {
-            $command | Should -HaveParameter Continue -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter Continue -Type Switch -Not -Mandatory
         }
         It "Should have ExecuteAs parameter" {
             $command | Should -HaveParameter ExecuteAs -Type String -Not -Mandatory
@@ -111,40 +111,40 @@ Describe "Restore-DbaDatabase Unit Tests" -Tag 'UnitTests' {
             $command | Should -HaveParameter AzureCredential -Type String -Not -Mandatory
         }
         It "Should have ReplaceDbNameInFile parameter" {
-            $command | Should -HaveParameter ReplaceDbNameInFile -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter ReplaceDbNameInFile -Type Switch -Not -Mandatory
         }
         It "Should have DestinationFileSuffix parameter" {
             $command | Should -HaveParameter DestinationFileSuffix -Type String -Not -Mandatory
         }
         It "Should have Recover parameter" {
-            $command | Should -HaveParameter Recover -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter Recover -Type Switch -Not -Mandatory
         }
         It "Should have KeepCDC parameter" {
-            $command | Should -HaveParameter KeepCDC -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter KeepCDC -Type Switch -Not -Mandatory
         }
         It "Should have GetBackupInformation parameter" {
             $command | Should -HaveParameter GetBackupInformation -Type String -Not -Mandatory
         }
         It "Should have StopAfterGetBackupInformation parameter" {
-            $command | Should -HaveParameter StopAfterGetBackupInformation -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter StopAfterGetBackupInformation -Type Switch -Not -Mandatory
         }
         It "Should have SelectBackupInformation parameter" {
             $command | Should -HaveParameter SelectBackupInformation -Type String -Not -Mandatory
         }
         It "Should have StopAfterSelectBackupInformation parameter" {
-            $command | Should -HaveParameter StopAfterSelectBackupInformation -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter StopAfterSelectBackupInformation -Type Switch -Not -Mandatory
         }
         It "Should have FormatBackupInformation parameter" {
             $command | Should -HaveParameter FormatBackupInformation -Type String -Not -Mandatory
         }
         It "Should have StopAfterFormatBackupInformation parameter" {
-            $command | Should -HaveParameter StopAfterFormatBackupInformation -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter StopAfterFormatBackupInformation -Type Switch -Not -Mandatory
         }
         It "Should have TestBackupInformation parameter" {
             $command | Should -HaveParameter TestBackupInformation -Type String -Not -Mandatory
         }
         It "Should have StopAfterTestBackupInformation parameter" {
-            $command | Should -HaveParameter StopAfterTestBackupInformation -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter StopAfterTestBackupInformation -Type Switch -Not -Mandatory
         }
         It "Should have PageRestore parameter" {
             $command | Should -HaveParameter PageRestore -Type Object -Not -Mandatory
@@ -153,7 +153,7 @@ Describe "Restore-DbaDatabase Unit Tests" -Tag 'UnitTests' {
             $command | Should -HaveParameter PageRestoreTailFolder -Type String -Not -Mandatory
         }
         It "Should have StopBefore parameter" {
-            $command | Should -HaveParameter StopBefore -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter StopBefore -Type Switch -Not -Mandatory
         }
         It "Should have StopMark parameter" {
             $command | Should -HaveParameter StopMark -Type String -Not -Mandatory
@@ -169,8 +169,8 @@ Describe "Restore-DbaDatabase Unit Tests" -Tag 'UnitTests' {
 
 Describe "Restore-DbaDatabase Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $script:instance2 = "localhost"
-        $script:appveyorlabrepo = "C:\github\appveyor-lab"
+        $env:instance2 = "localhost"
+        $env:appveyorlabrepo = "C:\github\appveyor-lab"
         $DataFolder = 'C:\temp\datafiles'
         $LogFolder = 'C:\temp\logfiles'
         New-Item -ItemType Directory -Force -Path $DataFolder
@@ -179,11 +179,11 @@ Describe "Restore-DbaDatabase Integration Tests" -Tag "IntegrationTests" {
 
     Context "Properly restores a database on the local drive using Path" {
         BeforeAll {
-            Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
-            $results = Restore-DbaDatabase -SqlInstance $script:instance2 -Path "$script:appveyorlabrepo\singlerestore\singlerestore.bak"
+            Get-DbaDatabase -SqlInstance $env:instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
+            $results = Restore-DbaDatabase -SqlInstance $env:instance2 -Path "$env:appveyorlabrepo\singlerestore\singlerestore.bak"
         }
         It "Should return the proper backup file location" {
-            $results.BackupFile | Should -Be "$script:appveyorlabrepo\singlerestore\singlerestore.bak"
+            $results.BackupFile | Should -Be "$env:appveyorlabrepo\singlerestore\singlerestore.bak"
         }
         It "Should return successful restore" {
             $results.RestoreComplete | Should -Be $true
@@ -192,7 +192,7 @@ Describe "Restore-DbaDatabase Integration Tests" -Tag "IntegrationTests" {
 
     Context "Ensuring warning is thrown if database already exists" {
         BeforeAll {
-            $results = Restore-DbaDatabase -SqlInstance $script:instance2 -Path "$script:appveyorlabrepo\singlerestore\singlerestore.bak" -WarningVariable warning -WarningAction SilentlyContinue
+            $results = Restore-DbaDatabase -SqlInstance $env:instance2 -Path "$env:appveyorlabrepo\singlerestore\singlerestore.bak" -WarningVariable warning -WarningAction SilentlyContinue
         }
         It "Should warn" {
             $warning | Where-Object { $_ -like '*Test-DbaBackupInformation*Database*' } | Should -Match "exists, so WithReplace must be specified"
@@ -204,8 +204,8 @@ Describe "Restore-DbaDatabase Integration Tests" -Tag "IntegrationTests" {
 
     Context "Database is properly removed again after withreplace test" {
         BeforeAll {
-            Get-DbaProcess $script:instance2 -Database singlerestore | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
-            $results = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database singlerestore
+            Get-DbaProcess $env:instance2 -Database singlerestore | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
+            $results = Remove-DbaDatabase -Confirm:$false -SqlInstance $env:instance2 -Database singlerestore
         }
         It "Should say the status was dropped" {
             $results.Status -eq "Dropped" -or $results.Status -eq $null | Should -Be $true

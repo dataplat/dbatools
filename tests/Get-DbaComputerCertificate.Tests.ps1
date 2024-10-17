@@ -38,7 +38,7 @@ Describe "Get-DbaComputerCertificate" {
 
     Context "Integration Tests" -Tag "IntegrationTests" {
         BeforeAll {
-            $null = Add-DbaComputerCertificate -Path $script:appveyorlabrepo\certificates\localhost.crt -Confirm:$false
+            $null = Add-DbaComputerCertificate -Path $global:appveyorlabrepo\certificates\localhost.crt -Confirm:$false
             $thumbprint = "29C469578D6C6211076A09CEE5C5797EEA0C2713"
         }
         AfterAll {

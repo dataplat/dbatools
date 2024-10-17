@@ -15,16 +15,16 @@ Describe "Read-DbaBackupHeader" {
             $CommandUnderTest | Should -HaveParameter Path -Type Object[]
         }
         It "Should have Simple parameter" {
-            $CommandUnderTest | Should -HaveParameter Simple -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Simple -Type Switch
         }
         It "Should have FileList parameter" {
-            $CommandUnderTest | Should -HaveParameter FileList -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter FileList -Type Switch
         }
         It "Should have AzureCredential parameter" {
             $CommandUnderTest | Should -HaveParameter AzureCredential -Type String
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -46,7 +46,7 @@ Describe "Read-DbaBackupHeader" {
             # Add more specific assertions based on expected output
         }
 
-        It "Should read backup header from SQL Server" -ForEach @($script:instance1, $script:instance2) {
+        It "Should read backup header from SQL Server" -ForEach @($env:instance1, $env:instance2) {
             $result = Read-DbaBackupHeader -SqlInstance $_ -Path $backupFile
             $result | Should -Not -BeNullOrEmpty
             # Add more specific assertions based on expected output

@@ -33,16 +33,16 @@ Describe "Get-DbaAgentJobHistory Unit Tests" -Tag 'UnitTests' {
             $command | Should -HaveParameter OutcomeType -Type CompletionResult -Not -Mandatory
         }
         It "Should have ExcludeJobSteps parameter" {
-            $command | Should -HaveParameter ExcludeJobSteps -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter ExcludeJobSteps -Type Switch -Not -Mandatory
         }
         It "Should have WithOutputFile parameter" {
-            $command | Should -HaveParameter WithOutputFile -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter WithOutputFile -Type Switch -Not -Mandatory
         }
         It "Should have JobCollection parameter" {
             $command | Should -HaveParameter JobCollection -Type Job -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $command | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 }

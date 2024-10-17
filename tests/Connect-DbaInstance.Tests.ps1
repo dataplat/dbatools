@@ -22,7 +22,7 @@ Describe "Connect-DbaInstance" {
             $CommandUnderTest | Should -HaveParameter ApplicationIntent -Type String -Not -Mandatory
         }
         It "Should have AzureUnsupported as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AzureUnsupported -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter AzureUnsupported -Type Switch -Not -Mandatory
         }
         It "Should have BatchSeparator as a parameter" {
             $CommandUnderTest | Should -HaveParameter BatchSeparator -Type String -Not -Mandatory
@@ -34,7 +34,7 @@ Describe "Connect-DbaInstance" {
             $CommandUnderTest | Should -HaveParameter ConnectTimeout -Type Int32 -Not -Mandatory
         }
         It "Should have EncryptConnection as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EncryptConnection -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EncryptConnection -Type Switch -Not -Mandatory
         }
         It "Should have FailoverPartner as a parameter" {
             $CommandUnderTest | Should -HaveParameter FailoverPartner -Type String -Not -Mandatory
@@ -52,16 +52,16 @@ Describe "Connect-DbaInstance" {
             $CommandUnderTest | Should -HaveParameter MinimumVersion -Type Int32 -Not -Mandatory
         }
         It "Should have MultipleActiveResultSets as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MultipleActiveResultSets -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter MultipleActiveResultSets -Type Switch -Not -Mandatory
         }
         It "Should have MultiSubnetFailover as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MultiSubnetFailover -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter MultiSubnetFailover -Type Switch -Not -Mandatory
         }
         It "Should have NetworkProtocol as a parameter" {
             $CommandUnderTest | Should -HaveParameter NetworkProtocol -Type String -Not -Mandatory
         }
         It "Should have NonPooledConnection as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NonPooledConnection -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NonPooledConnection -Type Switch -Not -Mandatory
         }
         It "Should have PacketSize as a parameter" {
             $CommandUnderTest | Should -HaveParameter PacketSize -Type Int32 -Not -Mandatory
@@ -76,19 +76,19 @@ Describe "Connect-DbaInstance" {
             $CommandUnderTest | Should -HaveParameter StatementTimeout -Type Int32 -Not -Mandatory
         }
         It "Should have TrustServerCertificate as a parameter" {
-            $CommandUnderTest | Should -HaveParameter TrustServerCertificate -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter TrustServerCertificate -Type Switch -Not -Mandatory
         }
         It "Should have WorkstationId as a parameter" {
             $CommandUnderTest | Should -HaveParameter WorkstationId -Type String -Not -Mandatory
         }
         It "Should have AlwaysEncrypted as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AlwaysEncrypted -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter AlwaysEncrypted -Type Switch -Not -Mandatory
         }
         It "Should have AppendConnectionString as a parameter" {
             $CommandUnderTest | Should -HaveParameter AppendConnectionString -Type String -Not -Mandatory
         }
         It "Should have SqlConnectionOnly as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlConnectionOnly -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlConnectionOnly -Type Switch -Not -Mandatory
         }
         It "Should have AzureDomain as a parameter" {
             $CommandUnderTest | Should -HaveParameter AzureDomain -Type String -Not -Mandatory
@@ -100,10 +100,10 @@ Describe "Connect-DbaInstance" {
             $CommandUnderTest | Should -HaveParameter AccessToken -Type PSObject -Not -Mandatory
         }
         It "Should have DedicatedAdminConnection as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DedicatedAdminConnection -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter DedicatedAdminConnection -Type Switch -Not -Mandatory
         }
         It "Should have DisableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DisableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter DisableException -Type Switch -Not -Mandatory
         }
     }
 
@@ -116,7 +116,7 @@ Describe "Connect-DbaInstance" {
     Context "Connect to Azure" -Skip:($env:azuredbpasswd -ne "failstoooften") {
         BeforeAll {
             $securePassword = ConvertTo-SecureString $env:azuredbpasswd -AsPlainText -Force
-            $cred = New-Object System.Management.Automation.PSCredential ($script:azuresqldblogin, $securePassword)
+            $cred = New-Object System.Management.Automation.PSCredential ($global:azuresqldblogin, $securePassword)
         }
 
         It "Should login to Azure" {
@@ -149,11 +149,11 @@ Describe "Connect-DbaInstance" {
                 'StatementTimeout'         = 0
                 'ApplicationIntent'        = 'ReadOnly'
             }
-            $server = Connect-DbaInstance -SqlInstance $script:instance1 @params
+            $server = Connect-DbaInstance -SqlInstance $global:instance1 @params
         }
 
         It "Returns the proper name" {
-            $server.Name | Should -Be $script:instance1
+            $server.Name | Should -Be $global:instance1
         }
 
         It "Sets ConnectionContext parameters that are provided" {
@@ -187,11 +187,11 @@ Describe "Connect-DbaInstance" {
 
     Context "Connection is properly made using a connection string" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance "Data Source=$script:instance1;Initial Catalog=tempdb;Integrated Security=True"
+            $server = Connect-DbaInstance -SqlInstance "Data Source=$global:instance1;Initial Catalog=tempdb;Integrated Security=True"
         }
 
         It "Returns the proper name" {
-            $server.Name | Should -Be $script:instance1
+            $server.Name | Should -Be $global:instance1
         }
 
         It "Returns more than one database" {
@@ -204,9 +204,9 @@ Describe "Connect-DbaInstance" {
         }
     }
 
-    Context "Connection is properly made using a dot" -Skip:($script:instance1 -notmatch 'localhost') {
+    Context "Connection is properly made using a dot" -Skip:($global:instance1 -notmatch 'localhost') {
         BeforeAll {
-            $newinstance = $script:instance1.Replace("localhost", ".")
+            $newinstance = $global:instance1.Replace("localhost", ".")
             $server = Connect-DbaInstance -SqlInstance $newinstance
         }
 
@@ -226,13 +226,13 @@ Describe "Connect-DbaInstance" {
     Context "Connection is properly made using a connection object" {
         BeforeAll {
             Set-DbatoolsConfig -FullName commands.connect-dbainstance.smo.computername.source -Value 'instance.ComputerName'
-            [Microsoft.Data.SqlClient.SqlConnection]$sqlconnection = "Data Source=$script:instance1;Initial Catalog=tempdb;Integrated Security=True;Encrypt=False;Trust Server Certificate=True"
+            [Microsoft.Data.SqlClient.SqlConnection]$sqlconnection = "Data Source=$global:instance1;Initial Catalog=tempdb;Integrated Security=True;Encrypt=False;Trust Server Certificate=True"
             $server = Connect-DbaInstance -SqlInstance $sqlconnection
             Set-DbatoolsConfig -FullName commands.connect-dbainstance.smo.computername.source -Value $null
         }
 
         It "Returns the proper name" {
-            $server.Name | Should -Be $script:instance1
+            $server.Name | Should -Be $global:instance1
         }
 
         It "Returns more than one database" {
@@ -246,7 +246,7 @@ Describe "Connect-DbaInstance" {
 
     Context "Connection is properly cloned from an existing connection" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance1
+            $server = Connect-DbaInstance -SqlInstance $global:instance1
         }
 
         It "Clones when using parameter Database" {
@@ -281,7 +281,7 @@ Describe "Connect-DbaInstance" {
         }
 
         It "Clones when using Backup-DbaDatabase" {
-            $server = Connect-DbaInstance -SqlInstance $script:instance1 -Database tempdb
+            $server = Connect-DbaInstance -SqlInstance $global:instance1 -Database tempdb
             $null = Backup-DbaDatabase -SqlInstance $server -Database msdb
             $null = Backup-DbaDatabase -SqlInstance $server -Database msdb -WarningVariable warn
             $warn | Should -BeNullOrEmpty
@@ -290,20 +290,20 @@ Describe "Connect-DbaInstance" {
 
     Context "Multiple connections are properly made using strings" {
         It "Returns the proper names" {
-            $server = Connect-DbaInstance -SqlInstance $script:instance1, $script:instance2
-            $server[0].Name | Should -Be $script:instance1
-            $server[1].Name | Should -Be $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance1, $global:instance2
+            $server[0].Name | Should -Be $global:instance1
+            $server[1].Name | Should -Be $global:instance2
         }
     }
 
     Context "Multiple dedicated admin connections are properly made using strings" {
         It "Opens and closes the connections" {
-            $server = Connect-DbaInstance -SqlInstance $script:instance1, $script:instance2 -DedicatedAdminConnection
-            $server[0].Name | Should -Be "ADMIN:$script:instance1"
-            $server[1].Name | Should -Be "ADMIN:$script:instance2"
+            $server = Connect-DbaInstance -SqlInstance $global:instance1, $global:instance2 -DedicatedAdminConnection
+            $server[0].Name | Should -Be "ADMIN:$global:instance1"
+            $server[1].Name | Should -Be "ADMIN:$global:instance2"
             $null = $server | Disconnect-DbaInstance
             Start-Sleep -Seconds 10
-            $server = Connect-DbaInstance -SqlInstance $script:instance1, $script:instance2 -DedicatedAdminConnection
+            $server = Connect-DbaInstance -SqlInstance $global:instance1, $global:instance2 -DedicatedAdminConnection
             $server.Count | Should -Be 2
             $null = $server | Disconnect-DbaInstance
         }

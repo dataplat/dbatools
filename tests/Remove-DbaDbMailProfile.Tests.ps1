@@ -21,14 +21,14 @@ Describe "Remove-DbaDbMailProfile" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type MailProfile[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Command usage" {
         BeforeAll {
             . "$PSScriptRoot\constants.ps1"
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $env:instance2
             $profilename = "dbatoolsci_test_$(Get-Random)"
             $profilename2 = "dbatoolsci_test_$(Get-Random)"
 

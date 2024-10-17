@@ -15,7 +15,7 @@ Describe "Get-DbaAgentLog" {
             $CommandUnderTest | Should -HaveParameter LogNumber -Type Int32[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -24,7 +24,7 @@ Describe "Get-DbaAgentLog" {
             . (Join-Path $PSScriptRoot 'constants.ps1')
         }
         BeforeAll {
-            $results = Get-DbaAgentLog -SqlInstance $script:instance2
+            $results = Get-DbaAgentLog -SqlInstance $global:instance2
         }
         It "Results are not empty" {
             $results | Should -Not -BeNullOrEmpty
@@ -42,7 +42,7 @@ Describe "Get-DbaAgentLog" {
             . (Join-Path $PSScriptRoot 'constants.ps1')
         }
         BeforeAll {
-            $results = Get-DbaAgentLog -SqlInstance $script:instance2 -LogNumber 0
+            $results = Get-DbaAgentLog -SqlInstance $global:instance2 -LogNumber 0
         }
         It "Results are not empty" {
             $results | Should -Not -BeNullOrEmpty

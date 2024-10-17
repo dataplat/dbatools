@@ -49,7 +49,7 @@ Describe "Invoke-DbaDbLogShipping" {
             $CommandUnderTest | Should -HaveParameter BackupSchedule -Type String
         }
         It "Should have BackupScheduleDisabled as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BackupScheduleDisabled -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter BackupScheduleDisabled -Type Switch
         }
         It "Should have BackupScheduleFrequencyType as a parameter" {
             $CommandUnderTest | Should -HaveParameter BackupScheduleFrequencyType -Type Object
@@ -85,7 +85,7 @@ Describe "Invoke-DbaDbLogShipping" {
             $CommandUnderTest | Should -HaveParameter BackupThreshold -Type Int32
         }
         It "Should have CompressBackup as a parameter" {
-            $CommandUnderTest | Should -HaveParameter CompressBackup -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter CompressBackup -Type Switch
         }
         It "Should have CopyDestinationFolder as a parameter" {
             $CommandUnderTest | Should -HaveParameter CopyDestinationFolder -Type String
@@ -100,7 +100,7 @@ Describe "Invoke-DbaDbLogShipping" {
             $CommandUnderTest | Should -HaveParameter CopySchedule -Type String
         }
         It "Should have CopyScheduleDisabled as a parameter" {
-            $CommandUnderTest | Should -HaveParameter CopyScheduleDisabled -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter CopyScheduleDisabled -Type Switch
         }
         It "Should have CopyScheduleFrequencyType as a parameter" {
             $CommandUnderTest | Should -HaveParameter CopyScheduleFrequencyType -Type Object
@@ -133,22 +133,22 @@ Describe "Invoke-DbaDbLogShipping" {
             $CommandUnderTest | Should -HaveParameter CopyScheduleEndTime -Type String
         }
         It "Should have DisconnectUsers as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DisconnectUsers -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter DisconnectUsers -Type Switch
         }
         It "Should have FullBackupPath as a parameter" {
             $CommandUnderTest | Should -HaveParameter FullBackupPath -Type String
         }
         It "Should have GenerateFullBackup as a parameter" {
-            $CommandUnderTest | Should -HaveParameter GenerateFullBackup -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter GenerateFullBackup -Type Switch
         }
         It "Should have HistoryRetention as a parameter" {
             $CommandUnderTest | Should -HaveParameter HistoryRetention -Type Int32
         }
         It "Should have NoRecovery as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NoRecovery -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter NoRecovery -Type Switch
         }
         It "Should have NoInitialization as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NoInitialization -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter NoInitialization -Type Switch
         }
         It "Should have PrimaryMonitorServer as a parameter" {
             $CommandUnderTest | Should -HaveParameter PrimaryMonitorServer -Type String
@@ -160,7 +160,7 @@ Describe "Invoke-DbaDbLogShipping" {
             $CommandUnderTest | Should -HaveParameter PrimaryMonitorServerSecurityMode -Type Object
         }
         It "Should have PrimaryThresholdAlertEnabled as a parameter" {
-            $CommandUnderTest | Should -HaveParameter PrimaryThresholdAlertEnabled -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter PrimaryThresholdAlertEnabled -Type Switch
         }
         It "Should have RestoreDataFolder as a parameter" {
             $CommandUnderTest | Should -HaveParameter RestoreDataFolder -Type String
@@ -184,7 +184,7 @@ Describe "Invoke-DbaDbLogShipping" {
             $CommandUnderTest | Should -HaveParameter RestoreSchedule -Type String
         }
         It "Should have RestoreScheduleDisabled as a parameter" {
-            $CommandUnderTest | Should -HaveParameter RestoreScheduleDisabled -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter RestoreScheduleDisabled -Type Switch
         }
         It "Should have RestoreScheduleFrequencyType as a parameter" {
             $CommandUnderTest | Should -HaveParameter RestoreScheduleFrequencyType -Type Object
@@ -235,35 +235,35 @@ Describe "Invoke-DbaDbLogShipping" {
             $CommandUnderTest | Should -HaveParameter SecondaryMonitorServerSecurityMode -Type Object
         }
         It "Should have SecondaryThresholdAlertEnabled as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SecondaryThresholdAlertEnabled -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter SecondaryThresholdAlertEnabled -Type Switch
         }
         It "Should have Standby as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Standby -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Standby -Type Switch
         }
         It "Should have StandbyDirectory as a parameter" {
             $CommandUnderTest | Should -HaveParameter StandbyDirectory -Type String
         }
         It "Should have UseExistingFullBackup as a parameter" {
-            $CommandUnderTest | Should -HaveParameter UseExistingFullBackup -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter UseExistingFullBackup -Type Switch
         }
         It "Should have UseBackupFolder as a parameter" {
             $CommandUnderTest | Should -HaveParameter UseBackupFolder -Type String
         }
         It "Should have Force as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Command usage" {
         BeforeDiscovery {
-            $script:skipIntegrationTests = [Environment]::GetEnvironmentVariable('appveyor') -ne $true
+            $env:skipIntegrationTests = [Environment]::GetEnvironmentVariable('appveyor') -ne $true
         }
 
         It "returns success" -Skip:$skipIntegrationTests {
-            $results = Invoke-DbaDbLogShipping -SourceSqlInstance $script:instance2 -DestinationSqlInstance $script:instance -Database $dbname -BackupNetworkPath C:\temp -BackupLocalPath "C:\temp\logshipping\backup" -GenerateFullBackup -CompressBackup -SecondaryDatabaseSuffix "_LS" -Force
+            $results = Invoke-DbaDbLogShipping -SourceSqlInstance $env:instance2 -DestinationSqlInstance $env:instance -Database $dbname -BackupNetworkPath C:\temp -BackupLocalPath "C:\temp\logshipping\backup" -GenerateFullBackup -CompressBackup -SecondaryDatabaseSuffix "_LS" -Force
             $results.Status | Should -Be 'Success'
         }
     }

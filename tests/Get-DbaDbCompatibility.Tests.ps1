@@ -18,7 +18,7 @@ Describe "Get-DbaDbCompatibility" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Database[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -27,13 +27,13 @@ Describe "Get-DbaDbCompatibility" {
             . "$PSScriptRoot\constants.ps1"
         }
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance1
+            $server = Connect-DbaInstance -SqlInstance $global:instance1
             $compatibilityLevel = $server.Databases['master'].CompatibilityLevel
         }
 
         Context "Gets compatibility for multiple databases" {
             BeforeAll {
-                $results = Get-DbaDbCompatibility -SqlInstance $script:instance1
+                $results = Get-DbaDbCompatibility -SqlInstance $global:instance1
             }
             It "Gets results" {
                 $results | Should -Not -BeNullOrEmpty
@@ -43,20 +43,20 @@ Describe "Get-DbaDbCompatibility" {
                 if ($_.DatabaseId -le 4) {
                     $_.Compatibility | Should -Be $compatibilityLevel
                 }
-                $_.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $script:instance1 -Database $_.Database).Id
+                $_.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $global:instance1 -Database $_.Database).Id
             }
         }
 
         Context "Gets compatibility for one database" {
             BeforeAll {
-                $results = Get-DbaDbCompatibility -SqlInstance $script:instance1 -Database master
+                $results = Get-DbaDbCompatibility -SqlInstance $global:instance1 -Database master
             }
             It "Gets results" {
                 $results | Should -Not -BeNullOrEmpty
             }
             It "Should return correct compatibility level for master" {
                 $results.Compatibility | Should -Be $compatibilityLevel
-                $results.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $script:instance1 -Database master).Id
+                $results.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $global:instance1 -Database master).Id
             }
         }
     }

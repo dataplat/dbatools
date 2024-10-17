@@ -24,23 +24,23 @@ Describe "Invoke-DbaDbDbccCheckConstraint Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter Object -Type String -Not -Mandatory
         }
         It "Should have AllConstraints parameter" {
-            $CommandUnderTest | Should -HaveParameter AllConstraints -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter AllConstraints -Type Switch -Not -Mandatory
         }
         It "Should have AllErrorMessages parameter" {
-            $CommandUnderTest | Should -HaveParameter AllErrorMessages -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter AllErrorMessages -Type Switch -Not -Mandatory
         }
         It "Should have NoInformationalMessages parameter" {
-            $CommandUnderTest | Should -HaveParameter NoInformationalMessages -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NoInformationalMessages -Type Switch -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 }
 
 Describe "Invoke-DbaDbDbccCheckConstraint Integration Test" -Tag "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $env:instance2
         $random = Get-Random
         $tableName = "dbatools_CheckConstraintTbl1"
         $check1 = "chkTab1"
@@ -53,12 +53,12 @@ Describe "Invoke-DbaDbDbccCheckConstraint Integration Test" -Tag "IntegrationTes
     }
 
     AfterAll {
-        $null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
+        $null = Get-DbaDatabase -SqlInstance $env:instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
     }
 
     Context "Validate standard output" {
         BeforeAll {
-            $result = Invoke-DbaDbDbccCheckConstraint -SqlInstance $script:instance2 -Database $dbname -Object $tableName -Confirm:$false
+            $result = Invoke-DbaDbDbccCheckConstraint -SqlInstance $env:instance2 -Database $dbname -Object $tableName -Confirm:$false
         }
 
         It "Should return correct properties" {

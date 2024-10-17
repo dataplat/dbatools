@@ -6,7 +6,7 @@ Describe "Get-DbaDbIdentity" {
         Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
         . "$PSScriptRoot\constants.ps1"
 
-        $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database tempdb
+        $db = Get-DbaDatabase -SqlInstance $global:instance1 -Database tempdb
         $null = $db.Query("CREATE TABLE dbo.dbatoolsci_example (Id int NOT NULL IDENTITY (125, 1), Value varchar(5));
         INSERT INTO dbo.dbatoolsci_example(Value) Select 1;
         CREATE TABLE dbo.dbatoolsci_example2 (Id int NOT NULL IDENTITY (5, 1), Value varchar(5));
@@ -39,14 +39,14 @@ Describe "Get-DbaDbIdentity" {
             $CommandUnderTest | Should -HaveParameter Table -Type String[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Validate standard output" {
         BeforeAll {
             $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Table', 'Cmd', 'IdentityValue', 'ColumnValue', 'Output'
-            $result = Get-DbaDbIdentity -SqlInstance $script:instance1 -Database tempdb -Table 'dbo.dbatoolsci_example', 'dbo.dbatoolsci_example2'
+            $result = Get-DbaDbIdentity -SqlInstance $global:instance1 -Database tempdb -Table 'dbo.dbatoolsci_example', 'dbo.dbatoolsci_example2'
         }
 
         It "Should return property: <_>" -ForEach $props {

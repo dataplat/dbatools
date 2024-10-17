@@ -27,13 +27,13 @@ Describe "Test-DbaReplLatency" {
             $CommandUnderTest | Should -HaveParameter TimeToLive -Type Int32
         }
         It "Should have RetainToken parameter" {
-            $CommandUnderTest | Should -HaveParameter RetainToken -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter RetainToken -Type Switch
         }
         It "Should have DisplayTokenHistory parameter" {
-            $CommandUnderTest | Should -HaveParameter DisplayTokenHistory -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter DisplayTokenHistory -Type Switch
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 

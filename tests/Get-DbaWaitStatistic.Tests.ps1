@@ -21,16 +21,16 @@ Describe "Get-DbaWaitStatistic" {
             $CommandUnderTest | Should -HaveParameter Threshold -Type Int32 -Not -Mandatory
         }
         It "Should have IncludeIgnorable as a parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeIgnorable -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter IncludeIgnorable -Type Switch -Not -Mandatory
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
     Context "Command returns proper info" {
         BeforeAll {
-            $results = Get-DbaWaitStatistic -SqlInstance $script:instance2 -Threshold 100
+            $results = Get-DbaWaitStatistic -SqlInstance $env:instance2 -Threshold 100
         }
 
         It "returns results" {
@@ -47,7 +47,7 @@ Describe "Get-DbaWaitStatistic" {
     Context "Command returns proper info when using parameter IncludeIgnorable" {
         BeforeAll {
             $ignoredWaits = 'REQUEST_FOR_DEADLOCK_SEARCH', 'SLEEP_MASTERDBREADY', 'SLEEP_TASK', 'LAZYWRITER_SLEEP'
-            $results = Get-DbaWaitStatistic -SqlInstance $script:instance2 -Threshold 100 -IncludeIgnorable | Where-Object {
+            $results = Get-DbaWaitStatistic -SqlInstance $env:instance2 -Threshold 100 -IncludeIgnorable | Where-Object {
                 $ignoredWaits -contains $_.WaitType
             }
         }

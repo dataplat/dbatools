@@ -24,8 +24,8 @@ Describe "Get-DbatoolsLog" {
         It "Should have Last as a non-mandatory Int32 parameter" {
             $CommandUnderTest | Should -HaveParameter Last -Type Int32 -Not -Mandatory
         }
-        It "Should have LastError as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter LastError -Type SwitchParameter -Not -Mandatory
+        It "Should have LastError as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter LastError -Type Switch -Not -Mandatory
         }
         It "Should have Skip as a non-mandatory Int32 parameter" {
             $CommandUnderTest | Should -HaveParameter Skip -Type Int32 -Not -Mandatory
@@ -36,11 +36,11 @@ Describe "Get-DbatoolsLog" {
         It "Should have Level as a non-mandatory MessageLevel[] parameter" {
             $CommandUnderTest | Should -HaveParameter Level -Type MessageLevel[] -Not -Mandatory
         }
-        It "Should have Raw as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter Raw -Type SwitchParameter -Not -Mandatory
+        It "Should have Raw as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter Raw -Type Switch -Not -Mandatory
         }
-        It "Should have Errors as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter Errors -Type SwitchParameter -Not -Mandatory
+        It "Should have Errors as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter Errors -Type Switch -Not -Mandatory
         }
     }
 

@@ -12,10 +12,10 @@ Describe "ConvertTo-DbaXESession" {
             $CommandUnderTest | Should -HaveParameter Name -Type String
         }
         It "Accepts OutputScriptOnly as a parameter" {
-            $CommandUnderTest | Should -HaveParameter OutputScriptOnly -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter OutputScriptOnly -Type Switch
         }
         It "Accepts EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -102,20 +102,20 @@ exec sp_trace_setstatus @TraceID, 1
 -- display trace id for future references
 select TraceID=@TraceID
 "@
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $traceid = ($server.Query($sql)).TraceID
-            $script:name = "dbatoolsci-session"
+            $global:name = "dbatoolsci-session"
         }
 
         AfterAll {
-            $null = Remove-DbaXESession -SqlInstance $script:instance2 -Session $script:name
-            $null = Remove-DbaTrace -SqlInstance $script:instance2 -Id $traceid
+            $null = Remove-DbaXESession -SqlInstance $global:instance2 -Session $global:name
+            $null = Remove-DbaTrace -SqlInstance $global:instance2 -Id $traceid
             Remove-Item C:\windows\temp\temptrace.trc -ErrorAction SilentlyContinue
         }
 
         It "returns the right results" {
-            $results = Get-DbaTrace -SqlInstance $script:instance2 -Id $traceid | ConvertTo-DbaXESession -Name $script:name | Start-DbaXESession
-            $results.Name | Should -Be $script:name
+            $results = Get-DbaTrace -SqlInstance $global:instance2 -Id $traceid | ConvertTo-DbaXESession -Name $global:name | Start-DbaXESession
+            $results.Name | Should -Be $global:name
             $results.Status | Should -Be "Running"
             $results.Targets.Name | Should -Be "package0.event_file"
         }

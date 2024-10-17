@@ -12,31 +12,31 @@ Describe "Set-DbaCmConnection" {
             $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Not -Mandatory
         }
         It "Should have UseWindowsCredentials parameter" {
-            $CommandUnderTest | Should -HaveParameter UseWindowsCredentials -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter UseWindowsCredentials -Type Switch -Not -Mandatory
         }
         It "Should have OverrideExplicitCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter OverrideExplicitCredential -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter OverrideExplicitCredential -Type Switch -Not -Mandatory
         }
         It "Should have OverrideConnectionPolicy parameter" {
-            $CommandUnderTest | Should -HaveParameter OverrideConnectionPolicy -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter OverrideConnectionPolicy -Type Switch -Not -Mandatory
         }
         It "Should have DisabledConnectionTypes parameter" {
             $CommandUnderTest | Should -HaveParameter DisabledConnectionTypes -Type ManagementConnectionType -Not -Mandatory
         }
         It "Should have DisableBadCredentialCache parameter" {
-            $CommandUnderTest | Should -HaveParameter DisableBadCredentialCache -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter DisableBadCredentialCache -Type Switch -Not -Mandatory
         }
         It "Should have DisableCimPersistence parameter" {
-            $CommandUnderTest | Should -HaveParameter DisableCimPersistence -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter DisableCimPersistence -Type Switch -Not -Mandatory
         }
         It "Should have DisableCredentialAutoRegister parameter" {
-            $CommandUnderTest | Should -HaveParameter DisableCredentialAutoRegister -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter DisableCredentialAutoRegister -Type Switch -Not -Mandatory
         }
         It "Should have EnableCredentialFailover parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableCredentialFailover -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableCredentialFailover -Type Switch -Not -Mandatory
         }
         It "Should have WindowsCredentialsAreBad parameter" {
-            $CommandUnderTest | Should -HaveParameter WindowsCredentialsAreBad -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter WindowsCredentialsAreBad -Type Switch -Not -Mandatory
         }
         It "Should have CimWinRMOptions parameter" {
             $CommandUnderTest | Should -HaveParameter CimWinRMOptions -Type WSManSessionOptions -Not -Mandatory
@@ -51,22 +51,22 @@ Describe "Set-DbaCmConnection" {
             $CommandUnderTest | Should -HaveParameter RemoveBadCredential -Type PSCredential[] -Not -Mandatory
         }
         It "Should have ClearBadCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter ClearBadCredential -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ClearBadCredential -Type Switch -Not -Mandatory
         }
         It "Should have ClearCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter ClearCredential -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ClearCredential -Type Switch -Not -Mandatory
         }
         It "Should have ResetCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter ResetCredential -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ResetCredential -Type Switch -Not -Mandatory
         }
         It "Should have ResetConnectionStatus parameter" {
-            $CommandUnderTest | Should -HaveParameter ResetConnectionStatus -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ResetConnectionStatus -Type Switch -Not -Mandatory
         }
         It "Should have ResetConfiguration parameter" {
-            $CommandUnderTest | Should -HaveParameter ResetConfiguration -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ResetConfiguration -Type Switch -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 }

@@ -21,10 +21,10 @@ Describe "Get-DbaPbmPolicy" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type PSObject[]
         }
         It "Should have IncludeSystemObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeSystemObject -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter IncludeSystemObject -Type Switch
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -63,7 +63,7 @@ Describe "Get-DbaPbmPolicy" {
             EXEC msdb.dbo.sp_syspolicy_add_policy @name=N'dbatoolsci_TestPolicy', @condition_name=N'dbatoolsci_Condition', @policy_category=N'', @description=N'', @help_text=N'', @help_link=N'', @schedule_uid=N'00000000-0000-0000-0000-000000000000', @execution_mode=2, @is_enabled=True, @policy_id=@policy_id OUTPUT, @root_condition_name=N'', @object_set=N'dbatoolsci_TestPolicy_ObjectSet'
             SELECT @policy_id"
 
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $env:instance2
             $conditionid = $server.ConnectionContext.ExecuteScalar($sqlconditionid)
             $objectsetid = $server.ConnectionContext.ExecuteScalar($sqlobjectsetid)
             $policyid = $server.ConnectionContext.ExecuteScalar($sqlpolicyid)
@@ -76,17 +76,17 @@ Describe "Get-DbaPbmPolicy" {
         }
 
         It "returns the test policy" {
-            $results = Get-DbaPbmPolicy -SqlInstance $script:instance2
+            $results = Get-DbaPbmPolicy -SqlInstance $env:instance2
             $results.Name | Should -Contain 'dbatoolsci_TestPolicy'
         }
 
         It "returns only the test policy named dbatoolsci_TestPolicy" {
-            $results = Get-DbaPbmPolicy -SqlInstance $script:instance2 -Policy dbatoolsci_TestPolicy
+            $results = Get-DbaPbmPolicy -SqlInstance $env:instance2 -Policy dbatoolsci_TestPolicy
             $results.Name | Should -Be 'dbatoolsci_TestPolicy'
         }
 
         It "returns a policy with a condition named dbatoolsci_Condition" {
-            $results = Get-DbaPbmPolicy -SqlInstance $script:instance2 -Policy dbatoolsci_TestPolicy
+            $results = Get-DbaPbmPolicy -SqlInstance $env:instance2 -Policy dbatoolsci_TestPolicy
             $results.Condition | Should -Be 'dbatoolsci_Condition'
         }
     }

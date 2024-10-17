@@ -36,25 +36,25 @@ Describe "Export-DbaUser Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter Encoding -Type String -Not -Mandatory
         }
         It "Should have NoClobber parameter" {
-            $CommandUnderTest | Should -HaveParameter NoClobber -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NoClobber -Type Switch -Not -Mandatory
         }
         It "Should have Append parameter" {
-            $CommandUnderTest | Should -HaveParameter Append -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Append -Type Switch -Not -Mandatory
         }
         It "Should have Passthru parameter" {
-            $CommandUnderTest | Should -HaveParameter Passthru -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Passthru -Type Switch -Not -Mandatory
         }
         It "Should have Template parameter" {
-            $CommandUnderTest | Should -HaveParameter Template -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Template -Type Switch -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
         It "Should have ScriptingOptionsObject parameter" {
             $CommandUnderTest | Should -HaveParameter ScriptingOptionsObject -Type ScriptingOptions -Not -Mandatory
         }
         It "Should have ExcludeGoBatchSeparator parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeGoBatchSeparator -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeGoBatchSeparator -Type Switch -Not -Mandatory
         }
     }
 }
@@ -83,16 +83,16 @@ Describe "Export-DbaUser Integration Tests" -Tag "IntegrationTests" {
         $role02 = "dbatoolsci_exportdbauser_role02"
         $role03 = "dbatoolsci_exportdbauser_role03"
 
-        $server = Connect-DbaInstance -SqlInstance $script:instance1
+        $server = Connect-DbaInstance -SqlInstance $global:instance1
         $null = $server.Query("CREATE DATABASE [$dbname]")
 
         $securePassword = $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force)
-        $null = New-DbaLogin -SqlInstance $script:instance1 -Login $login -Password $securePassword
-        $null = New-DbaLogin -SqlInstance $script:instance1 -Login $login2 -Password $securePassword
-        $null = New-DbaLogin -SqlInstance $script:instance1 -Login $login01 -Password $securePassword
-        $null = New-DbaLogin -SqlInstance $script:instance1 -Login $login02 -Password $securePassword
+        $null = New-DbaLogin -SqlInstance $global:instance1 -Login $login -Password $securePassword
+        $null = New-DbaLogin -SqlInstance $global:instance1 -Login $login2 -Password $securePassword
+        $null = New-DbaLogin -SqlInstance $global:instance1 -Login $login01 -Password $securePassword
+        $null = New-DbaLogin -SqlInstance $global:instance1 -Login $login02 -Password $securePassword
 
-        $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname
+        $db = Get-DbaDatabase -SqlInstance $global:instance1 -Database $dbname
         $null = $db.Query("CREATE USER [$user] FOR LOGIN [$login]")
         $null = $db.Query("CREATE USER [$user2] FOR LOGIN [$login2]")
         $null = $db.Query("CREATE USER [$user01] FOR LOGIN [$login01]")
@@ -113,9 +113,9 @@ Describe "Export-DbaUser Integration Tests" -Tag "IntegrationTests" {
     }
 
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
-        Remove-DbaLogin -SqlInstance $script:instance1 -Login $login -Confirm:$false
-        Remove-DbaLogin -SqlInstance $script:instance1 -Login $login2 -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $global:instance1 -Database $dbname -Confirm:$false
+        Remove-DbaLogin -SqlInstance $global:instance1 -Login $login -Confirm:$false
+        Remove-DbaLogin -SqlInstance $global:instance1 -Login $login2 -Confirm:$false
         Remove-Item -Path $outputFile -ErrorAction SilentlyContinue
         Remove-Item -Path $outputFile2 -ErrorAction SilentlyContinue
         Remove-Item -Path $outputPath -Recurse -ErrorAction SilentlyContinue -Confirm:$false
@@ -123,9 +123,9 @@ Describe "Export-DbaUser Integration Tests" -Tag "IntegrationTests" {
 
     Context "Check if output file was created" {
         BeforeAll {
-            $userExists = Get-DbaDbUser -SqlInstance $script:instance1 -Database $dbname | Where-Object Name -eq $user
+            $userExists = Get-DbaDbUser -SqlInstance $global:instance1 -Database $dbname | Where-Object Name -eq $user
             if ($userExists) {
-                $null = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -User $user -FilePath $outputFile
+                $null = Export-DbaUser -SqlInstance $global:instance1 -Database $dbname -User $user -FilePath $outputFile
             }
         }
 
@@ -142,7 +142,7 @@ Describe "Export-DbaUser Integration Tests" -Tag "IntegrationTests" {
         It 'Excludes database context' {
             $scriptingOptions = New-DbaScriptingOption
             $scriptingOptions.IncludeDatabaseContext = $false
-            $null = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -ScriptingOptionsObject $scriptingOptions -FilePath $outputFile2 -WarningAction SilentlyContinue
+            $null = Export-DbaUser -SqlInstance $global:instance1 -Database $dbname -ScriptingOptionsObject $scriptingOptions -FilePath $outputFile2 -WarningAction SilentlyContinue
             $results = Get-Content -Path $outputFile2 -Raw
             $results | Should -Not -BeLike ('*USE `[' + $dbname + '`]*')
         }
@@ -150,19 +150,19 @@ Describe "Export-DbaUser Integration Tests" -Tag "IntegrationTests" {
         It 'Includes database context' {
             $scriptingOptions = New-DbaScriptingOption
             $scriptingOptions.IncludeDatabaseContext = $true
-            $null = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -ScriptingOptionsObject $scriptingOptions -FilePath $outputFile2 -WarningAction SilentlyContinue
+            $null = Export-DbaUser -SqlInstance $global:instance1 -Database $dbname -ScriptingOptionsObject $scriptingOptions -FilePath $outputFile2 -WarningAction SilentlyContinue
             $results = Get-Content -Path $outputFile2 -Raw
             $results | Should -BeLike ('*USE `[' + $dbname + '`]*')
         }
 
         It 'Defaults to include database context' {
-            $null = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -FilePath $outputFile2 -WarningAction SilentlyContinue
+            $null = Export-DbaUser -SqlInstance $global:instance1 -Database $dbname -FilePath $outputFile2 -WarningAction SilentlyContinue
             $results = Get-Content -Path $outputFile2 -Raw
             $results | Should -BeLike ('*USE `[' + $dbname + '`]*')
         }
 
         It 'Exports as template' {
-            $results = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -User $user -Template -DestinationVersion SQLServer2016 -WarningAction SilentlyContinue -Passthru
+            $results = Export-DbaUser -SqlInstance $global:instance1 -Database $dbname -User $user -Template -DestinationVersion SQLServer2016 -WarningAction SilentlyContinue -Passthru
             $results | Should -BeLike "*CREATE USER ``[{templateUser}``] FOR LOGIN ``[{templateLogin}``]*"
             $results | Should -BeLike "*GRANT SELECT ON OBJECT::``[dbo``].``[$table``] TO ``[{templateUser}``]*"
             $results | Should -BeLike "*ALTER ROLE ``[$role``] ADD MEMBER ``[{templateUser}``]*"
@@ -171,11 +171,11 @@ Describe "Export-DbaUser Integration Tests" -Tag "IntegrationTests" {
 
     Context "Check if one output file per user was created" {
         BeforeAll {
-            $null = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -Path $outputPath
+            $null = Export-DbaUser -SqlInstance $global:instance1 -Database $dbname -Path $outputPath
         }
 
         It "Exports files to the path" {
-            $userCount = (Get-DbaDbUser -SqlInstance $script:instance1 -Database $dbname | Where-Object { $_.Name -notin @("dbo", "guest", "sys", "INFORMATION_SCHEMA") } | Measure-Object).Count
+            $userCount = (Get-DbaDbUser -SqlInstance $global:instance1 -Database $dbname | Where-Object { $_.Name -notin @("dbo", "guest", "sys", "INFORMATION_SCHEMA") } | Measure-Object).Count
             (Get-ChildItem $outputPath).Count | Should -Be $userCount
         }
 
@@ -191,7 +191,7 @@ Describe "Export-DbaUser Integration Tests" -Tag "IntegrationTests" {
     Context "Check if the output scripts were self-contained" {
         BeforeAll {
             Remove-Item -Path $outputPath -Recurse -ErrorAction SilentlyContinue
-            $null = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -Path $outputPath
+            $null = Export-DbaUser -SqlInstance $global:instance1 -Database $dbname -Path $outputPath
         }
 
         It "Contains the CREATE ROLE and ALTER ROLE statements for its own roles" {

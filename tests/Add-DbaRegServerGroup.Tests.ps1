@@ -29,7 +29,7 @@ Describe "Add-DbaRegServerGroup" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type ServerGroup[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -41,35 +41,35 @@ Describe "Add-DbaRegServerGroup" {
             $descriptionUpdated = "group description updated"
         }
         AfterAll {
-            Get-DbaRegServerGroup -SqlInstance $script:instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
+            Get-DbaRegServerGroup -SqlInstance $global:instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
         }
 
         It "adds a registered server group" {
-            $results = Add-DbaRegServerGroup -SqlInstance $script:instance1 -Name $group
+            $results = Add-DbaRegServerGroup -SqlInstance $global:instance1 -Name $group
             $results.Name | Should -Be $group
             $results.SqlInstance | Should -Not -BeNullOrEmpty
         }
         It "adds a registered server group with extended properties" {
-            $results = Add-DbaRegServerGroup -SqlInstance $script:instance1 -Name $group2 -Description $description
+            $results = Add-DbaRegServerGroup -SqlInstance $global:instance1 -Name $group2 -Description $description
             $results.Name | Should -Be $group2
             $results.Description | Should -Be $description
             $results.SqlInstance | Should -Not -BeNullOrEmpty
         }
         It "supports hella pipe" {
-            $results = Get-DbaRegServerGroup -SqlInstance $script:instance1 -Id 1 | 
-                Add-DbaRegServerGroup -Name dbatoolsci-first | 
-                Add-DbaRegServerGroup -Name dbatoolsci-second | 
-                Add-DbaRegServerGroup -Name dbatoolsci-third | 
+            $results = Get-DbaRegServerGroup -SqlInstance $global:instance1 -Id 1 |
+                Add-DbaRegServerGroup -Name dbatoolsci-first |
+                Add-DbaRegServerGroup -Name dbatoolsci-second |
+                Add-DbaRegServerGroup -Name dbatoolsci-third |
                 Add-DbaRegServer -ServerName dbatoolsci-test -Description ridiculous
             $results.Group | Should -Be 'dbatoolsci-first\dbatoolsci-second\dbatoolsci-third'
         }
         It "adds a registered server group and sub-group when not exists" {
-            $results = Add-DbaRegServerGroup -SqlInstance $script:instance1 -Name "$group\$group2" -Description $description
+            $results = Add-DbaRegServerGroup -SqlInstance $global:instance1 -Name "$group\$group2" -Description $description
             $results.Name | Should -Be $group2
             $results.SqlInstance | Should -Not -BeNullOrEmpty
         }
         It "updates description of sub-group when it already exists" {
-            $results = Add-DbaRegServerGroup -SqlInstance $script:instance1 -Name "$group\$group2" -Description $descriptionUpdated
+            $results = Add-DbaRegServerGroup -SqlInstance $global:instance1 -Name "$group\$group2" -Description $descriptionUpdated
             $results.Name | Should -Be $group2
             $results.Description | Should -Be $descriptionUpdated
             $results.SqlInstance | Should -Not -BeNullOrEmpty

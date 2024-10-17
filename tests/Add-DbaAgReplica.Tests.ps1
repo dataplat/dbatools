@@ -47,7 +47,7 @@ Describe "Add-DbaAgReplica" {
             $CommandUnderTest | Should -HaveParameter EndpointUrl -Type String[]
         }
         It "Should have Passthru parameter" {
-            $CommandUnderTest | Should -HaveParameter Passthru -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Passthru -Type Switch
         }
         It "Should have ReadOnlyRoutingList parameter" {
             $CommandUnderTest | Should -HaveParameter ReadOnlyRoutingList -Type String[]
@@ -59,7 +59,7 @@ Describe "Add-DbaAgReplica" {
             $CommandUnderTest | Should -HaveParameter Certificate -Type String
         }
         It "Should have ConfigureXESession parameter" {
-            $CommandUnderTest | Should -HaveParameter ConfigureXESession -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter ConfigureXESession -Type Switch
         }
         It "Should have SessionTimeout parameter" {
             $CommandUnderTest | Should -HaveParameter SessionTimeout -Type Int32
@@ -68,32 +68,32 @@ Describe "Add-DbaAgReplica" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type AvailabilityGroup
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Command usage" {
         BeforeAll {
             $agname = "dbatoolsci_agroup"
-            $ag = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Certificate dbatoolsci_AGCert -Confirm:$false
+            $ag = New-DbaAvailabilityGroup -Primary $global:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Certificate dbatoolsci_AGCert -Confirm:$false
             $replicaName = $ag.PrimaryReplica
         }
         AfterAll {
-            Remove-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup $agname -Confirm:$false
+            Remove-DbaAvailabilityGroup -SqlInstance $global:instance3 -AvailabilityGroup $agname -Confirm:$false
         }
         It "gets ag replicas" {
             $agname = "dbatoolsci_add_replicagroup"
-            $ag = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Certificate dbatoolsci_AGCert -Confirm:$false
+            $ag = New-DbaAvailabilityGroup -Primary $global:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Certificate dbatoolsci_AGCert -Confirm:$false
             $replicaName = $ag.PrimaryReplica
 
-            $results = Get-DbaAgReplica -SqlInstance $script:instance3
+            $results = Get-DbaAgReplica -SqlInstance $global:instance3
             $results.AvailabilityGroup | Should -Contain $agname
             $results.Role | Should -Contain 'Primary'
             $results.AvailabilityMode | Should -Contain 'SynchronousCommit'
             $results.FailoverMode | Should -Contain 'Manual'
         }
         It "returns just one result" {
-            $results = Get-DbaAgReplica -SqlInstance $script:instance3 -Replica $replicaName -AvailabilityGroup $agname
+            $results = Get-DbaAgReplica -SqlInstance $global:instance3 -Replica $replicaName -AvailabilityGroup $agname
             $results.AvailabilityGroup | Should -Be $agname
             $results.Role | Should -Be 'Primary'
             $results.AvailabilityMode | Should -Be 'SynchronousCommit'
@@ -102,4 +102,4 @@ Describe "Add-DbaAgReplica" {
     }
 }
 
-#$script:instance2 for appveyor
+#$global:instance2 for appveyor

@@ -44,11 +44,11 @@ Describe "New-DbaComputerCertificate" {
         It "Should have Dns as a non-mandatory String[] parameter" {
             $CommandUnderTest | Should -HaveParameter Dns -Type String[] -Not -Mandatory
         }
-        It "Should have SelfSigned as a non-mandatory SwitchParameter parameter" {
-            $CommandUnderTest | Should -HaveParameter SelfSigned -Type SwitchParameter -Not -Mandatory
+        It "Should have SelfSigned as a non-mandatory Switch parameter" {
+            $CommandUnderTest | Should -HaveParameter SelfSigned -Type Switch -Not -Mandatory
         }
-        It "Should have EnableException as a non-mandatory SwitchParameter parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+        It "Should have EnableException as a non-mandatory Switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
         It "Should have HashAlgorithm as a non-mandatory String parameter" {
             $CommandUnderTest | Should -HaveParameter HashAlgorithm -Type String -Not -Mandatory
@@ -61,10 +61,10 @@ Describe "New-DbaComputerCertificate" {
 
 Describe "New-DbaComputerCertificate Integration Tests" -Tag "IntegrationTests" {
     BeforeDiscovery {
-        $script:skipIntegrationTests = $env:appveyor -eq $true
+        $env:skipIntegrationTests = $env:appveyor -eq $true
     }
 
-    Context "Can generate a new certificate" -Skip:$script:skipIntegrationTests {
+    Context "Can generate a new certificate" -Skip:$env:skipIntegrationTests {
         BeforeAll {
             $cert = New-DbaComputerCertificate -SelfSigned -EnableException
         }
@@ -86,7 +86,7 @@ Describe "New-DbaComputerCertificate Integration Tests" -Tag "IntegrationTests" 
         }
     }
 
-    Context "Can generate a new certificate with correct settings" -Skip:$script:skipIntegrationTests {
+    Context "Can generate a new certificate with correct settings" -Skip:$env:skipIntegrationTests {
         BeforeAll {
             $cert = New-DbaComputerCertificate -SelfSigned -HashAlgorithm "Sha256" -MonthsValid 60 -EnableException
         }

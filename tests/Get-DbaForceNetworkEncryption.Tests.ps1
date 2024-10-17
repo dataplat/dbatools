@@ -12,7 +12,7 @@ Describe "Get-DbaForceNetworkEncryption" {
             $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -23,7 +23,7 @@ Describe "Get-DbaForceNetworkEncryption" {
 
         Context "Integration Tests" -Skip:($env:appveyor) {
             BeforeAll {
-                $results = Get-DbaForceNetworkEncryption -SqlInstance $script:instance1 -EnableException
+                $results = Get-DbaForceNetworkEncryption -SqlInstance $global:instance1 -EnableException
             }
 
             It "returns true or false" {

@@ -18,11 +18,11 @@ Describe "New-DbaServiceMasterKey" {
             $CommandUnderTest | Should -HaveParameter SecurePassword -Type SecureString
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
         It "Should have common parameters" {
-            $CommandUnderTest | Should -HaveParameter Verbose -Type SwitchParameter
-            $CommandUnderTest | Should -HaveParameter Debug -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Verbose -Type Switch
+            $CommandUnderTest | Should -HaveParameter Debug -Type Switch
             $CommandUnderTest | Should -HaveParameter ErrorAction -Type ActionPreference
             $CommandUnderTest | Should -HaveParameter WarningAction -Type ActionPreference
             $CommandUnderTest | Should -HaveParameter InformationAction -Type ActionPreference
@@ -33,8 +33,8 @@ Describe "New-DbaServiceMasterKey" {
             $CommandUnderTest | Should -HaveParameter OutVariable -Type String
             $CommandUnderTest | Should -HaveParameter OutBuffer -Type Int32
             $CommandUnderTest | Should -HaveParameter PipelineVariable -Type String
-            $CommandUnderTest | Should -HaveParameter WhatIf -Type SwitchParameter
-            $CommandUnderTest | Should -HaveParameter Confirm -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter WhatIf -Type Switch
+            $CommandUnderTest | Should -HaveParameter Confirm -Type Switch
         }
     }
 }

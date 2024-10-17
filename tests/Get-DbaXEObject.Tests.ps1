@@ -15,13 +15,13 @@ Describe "Get-DbaXEObject" {
             $CommandUnderTest | Should -HaveParameter Type -Type String[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
         It "Should have Verbose as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Verbose -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Verbose -Type Switch
         }
         It "Should have Debug as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Debug -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Debug -Type Switch
         }
         It "Should have ErrorAction as a parameter" {
             $CommandUnderTest | Should -HaveParameter ErrorAction -Type ActionPreference
@@ -64,7 +64,7 @@ Describe "Get-DbaXEObject" {
         # Add your integration tests here
         # Example:
         # It "Should return XE objects" {
-        #     $results = Get-DbaXEObject -SqlInstance $script:instance1
+        #     $results = Get-DbaXEObject -SqlInstance $env:instance1
         #     $results | Should -Not -BeNullOrEmpty
         # }
     }

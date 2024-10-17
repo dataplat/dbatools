@@ -31,11 +31,11 @@ Describe "Get-DbaDbLogSpace" {
             $dbCreate = ("CREATE DATABASE [{0}]
             GO
             ALTER DATABASE [{0}] MODIFY FILE ( NAME = N'{0}_log', SIZE = 10MB )" -f $db1)
-            $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Database master -Query $dbCreate
-            $results = Get-DbaDbLogSpace -SqlInstance $script:instance2 -Database $db1
+            $null = Invoke-DbaQuery -SqlInstance $global:instance2 -Database master -Query $dbCreate
+            $results = Get-DbaDbLogSpace -SqlInstance $global:instance2 -Database $db1
         }
         AfterAll {
-            Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $db1
+            Remove-DbaDatabase -Confirm:$false -SqlInstance $global:instance2 -Database $db1
         }
 
         It "Should have correct properties" {
@@ -50,7 +50,7 @@ Describe "Get-DbaDbLogSpace" {
             ($results | Where-Object { $_.Database -eq $db1 }).LogSize.Kilobyte | Should -Be 10232
         }
 
-        It "Calculation for space used should work for servers < 2012" -Skip:((Connect-DbaInstance -SqlInstance $script:instance2 -SqlCredential $SqlCredential).versionMajor -ge 11) {
+        It "Calculation for space used should work for servers < 2012" -Skip:((Connect-DbaInstance -SqlInstance $global:instance2 -SqlCredential $SqlCredential).versionMajor -ge 11) {
             $db1Result = $results | Where-Object { $_.Database -eq $db1 }
             $db1Result.logspaceused | Should -Be ($db1Result.logsize * ($db1Result.LogSpaceUsedPercent / 100))
         }
@@ -58,7 +58,7 @@ Describe "Get-DbaDbLogSpace" {
 
     Context "System databases exclusions work" {
         BeforeAll {
-            $results = Get-DbaDbLogSpace -SqlInstance $script:instance2 -ExcludeSystemDatabase
+            $results = Get-DbaDbLogSpace -SqlInstance $global:instance2 -ExcludeSystemDatabase
         }
         It "Should exclude system databases" {
             $results.Database | Should -Not -BeIn @('model', 'master', 'tempdb', 'msdb')
@@ -70,7 +70,7 @@ Describe "Get-DbaDbLogSpace" {
 
     Context "User databases exclusions work" {
         BeforeAll {
-            $results = Get-DbaDbLogSpace -SqlInstance $script:instance2 -ExcludeDatabase $db1
+            $results = Get-DbaDbLogSpace -SqlInstance $global:instance2 -ExcludeDatabase $db1
         }
         It "Should include system databases" {
             @('model', 'master', 'tempdb', 'msdb') | Should -BeIn $results.Database
@@ -82,7 +82,7 @@ Describe "Get-DbaDbLogSpace" {
 
     Context "Piping servers works" {
         BeforeAll {
-            $results = $script:instance2 | Get-DbaDbLogSpace
+            $results = $global:instance2 | Get-DbaDbLogSpace
         }
         It "Should have database name of $db1" {
             $results.Database | Should -Contain $db1

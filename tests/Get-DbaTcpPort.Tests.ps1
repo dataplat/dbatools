@@ -21,21 +21,21 @@ Describe "Get-DbaTcpPort" {
             $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
         }
         It "Should have All as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter All -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter All -Type Switch
         }
         It "Should have ExcludeIpv6 as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeIpv6 -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter ExcludeIpv6 -Type Switch
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Command actually works" {
         BeforeAll {
-            $results = Get-DbaTcpPort -SqlInstance $script:instance2
-            $resultsIpv6 = Get-DbaTcpPort -SqlInstance $script:instance2 -All -ExcludeIpv6
-            $resultsAll = Get-DbaTcpPort -SqlInstance $script:instance2 -All
+            $results = Get-DbaTcpPort -SqlInstance $env:instance2
+            $resultsIpv6 = Get-DbaTcpPort -SqlInstance $env:instance2 -All -ExcludeIpv6
+            $resultsAll = Get-DbaTcpPort -SqlInstance $env:instance2 -All
         }
 
         It "Should Return a Result" {

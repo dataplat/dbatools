@@ -20,8 +20,8 @@ Describe "New-DbaConnectionStringBuilder" {
         It "Should have InitialCatalog as a non-mandatory String parameter" {
             $CommandUnderTest | Should -HaveParameter InitialCatalog -Type String -Not -Mandatory
         }
-        It "Should have IntegratedSecurity as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter IntegratedSecurity -Type SwitchParameter -Not -Mandatory
+        It "Should have IntegratedSecurity as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter IntegratedSecurity -Type Switch -Not -Mandatory
         }
         It "Should have UserName as a non-mandatory String parameter" {
             $CommandUnderTest | Should -HaveParameter UserName -Type String -Not -Mandatory
@@ -29,17 +29,17 @@ Describe "New-DbaConnectionStringBuilder" {
         It "Should have Password as a non-mandatory String parameter" {
             $CommandUnderTest | Should -HaveParameter Password -Type String -Not -Mandatory
         }
-        It "Should have MultipleActiveResultSets as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter MultipleActiveResultSets -Type SwitchParameter -Not -Mandatory
+        It "Should have MultipleActiveResultSets as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter MultipleActiveResultSets -Type Switch -Not -Mandatory
         }
         It "Should have ColumnEncryptionSetting as a non-mandatory String parameter" {
             $CommandUnderTest | Should -HaveParameter ColumnEncryptionSetting -Type String -Not -Mandatory
         }
-        It "Should have Legacy as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter Legacy -Type SwitchParameter -Not -Mandatory
+        It "Should have Legacy as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter Legacy -Type Switch -Not -Mandatory
         }
-        It "Should have NonPooledConnection as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter NonPooledConnection -Type SwitchParameter -Not -Mandatory
+        It "Should have NonPooledConnection as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter NonPooledConnection -Type Switch -Not -Mandatory
         }
         It "Should have WorkstationId as a non-mandatory String parameter" {
             $CommandUnderTest | Should -HaveParameter WorkstationId -Type String -Not -Mandatory

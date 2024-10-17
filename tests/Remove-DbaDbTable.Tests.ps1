@@ -28,7 +28,7 @@ Describe "Remove-DbaDbTable" {
     Context "Command usage" {
         BeforeAll {
             . "$PSScriptRoot\constants.ps1"
-            $instance2 = Connect-DbaInstance -SqlInstance $script:instance2
+            $instance2 = Connect-DbaInstance -SqlInstance $env:instance2
             $null = Get-DbaProcess -SqlInstance $instance2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false
             $dbname1 = "dbatoolsci_$(Get-Random)"
             $null = New-DbaDatabase -SqlInstance $instance2 -Name $dbname1

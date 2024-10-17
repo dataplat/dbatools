@@ -45,7 +45,7 @@ Describe "Get-DbaProcess" {
 
     Context "Testing Get-DbaProcess results" {
         BeforeAll {
-            $results = Get-DbaProcess -SqlInstance $script:instance1
+            $results = Get-DbaProcess -SqlInstance $env:instance1
         }
 
         It "matches self as a login at least once" {
@@ -54,14 +54,14 @@ Describe "Get-DbaProcess" {
         }
 
         It "returns only dbatools processes" {
-            $results = Get-DbaProcess -SqlInstance $script:instance1 -Program 'dbatools PowerShell module - dbatools.io'
+            $results = Get-DbaProcess -SqlInstance $env:instance1 -Program 'dbatools PowerShell module - dbatools.io'
             $results | ForEach-Object {
                 $_.Program | Should -Be 'dbatools PowerShell module - dbatools.io'
             }
         }
 
         It "returns only processes from master database" {
-            $results = Get-DbaProcess -SqlInstance $script:instance1 -Database master
+            $results = Get-DbaProcess -SqlInstance $env:instance1 -Database master
             $results | ForEach-Object {
                 $_.Database | Should -Be 'master'
             }

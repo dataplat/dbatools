@@ -24,13 +24,13 @@ Describe "Start-DbaAgentJob" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Job[]
         }
         It "Should have AllJobs parameter" {
-            $CommandUnderTest | Should -HaveParameter AllJobs -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter AllJobs -Type Switch
         }
         It "Should have Wait parameter" {
-            $CommandUnderTest | Should -HaveParameter Wait -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Wait -Type Switch
         }
         It "Should have Parallel parameter" {
-            $CommandUnderTest | Should -HaveParameter Parallel -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Parallel -Type Switch
         }
         It "Should have WaitPeriod parameter" {
             $CommandUnderTest | Should -HaveParameter WaitPeriod -Type Int32
@@ -39,7 +39,7 @@ Describe "Start-DbaAgentJob" {
             $CommandUnderTest | Should -HaveParameter SleepPeriod -Type Int32
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -49,16 +49,16 @@ Describe "Start-DbaAgentJob" {
             $jobs = "dbatoolsci_job_$(Get-Random)", "dbatoolsci_job_$(Get-Random)", "dbatoolsci_job_$(Get-Random)"
             $jobName1, $jobName2, $jobName3 = $jobs
             foreach ($job in $jobs) {
-                $null = New-DbaAgentJob -SqlInstance $script:instance2, $script:instance3 -Job $job
-                $null = New-DbaAgentJobStep -SqlInstance $script:instance2, $script:instance3 -Job $job -StepName "step1_$(Get-Random)" -Subsystem TransactSql -Command "WAITFOR DELAY '00:05:00'"
-                $null = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job $job -StepName "step2" -StepId 2 -Subsystem TransactSql -Command "WAITFOR DELAY '00:00:01'"
-                $null = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job $job -StepName "step3" -StepId 3 -Subsystem TransactSql -Command "SELECT 1"
+                $null = New-DbaAgentJob -SqlInstance $env:instance2, $env:instance3 -Job $job
+                $null = New-DbaAgentJobStep -SqlInstance $env:instance2, $env:instance3 -Job $job -StepName "step1_$(Get-Random)" -Subsystem TransactSql -Command "WAITFOR DELAY '00:05:00'"
+                $null = New-DbaAgentJobStep -SqlInstance $env:instance2 -Job $job -StepName "step2" -StepId 2 -Subsystem TransactSql -Command "WAITFOR DELAY '00:00:01'"
+                $null = New-DbaAgentJobStep -SqlInstance $env:instance2 -Job $job -StepName "step3" -StepId 3 -Subsystem TransactSql -Command "SELECT 1"
             }
 
-            $results = Get-DbaAgentJob -SqlInstance $script:instance2 -Job $jobName1 | Start-DbaAgentJob
+            $results = Get-DbaAgentJob -SqlInstance $env:instance2 -Job $jobName1 | Start-DbaAgentJob
         }
         AfterAll {
-            $null = Remove-DbaAgentJob -SqlInstance $script:instance2, $script:instance3 -Job $jobs -Confirm:$false
+            $null = Remove-DbaAgentJob -SqlInstance $env:instance2, $env:instance3 -Job $jobs -Confirm:$false
         }
 
         It "returns a CurrentRunStatus of not Idle and supports pipe" {
@@ -71,23 +71,23 @@ Describe "Start-DbaAgentJob" {
 
         It "does not run all jobs" {
             $warn = $null
-            $null = Start-DbaAgentJob -SqlInstance $script:instance2 -WarningAction SilentlyContinue -WarningVariable warn
+            $null = Start-DbaAgentJob -SqlInstance $env:instance2 -WarningAction SilentlyContinue -WarningVariable warn
             $warn | Should -Match 'use one of the job'
         }
 
         It "returns on multiple server inputs" {
-            $results2 = Start-DbaAgentJob -SqlInstance $script:instance2, $script:instance3 -Job $jobName2
+            $results2 = Start-DbaAgentJob -SqlInstance $env:instance2, $env:instance3 -Job $jobName2
             $results2.SqlInstance.Count | Should -Be 2
         }
 
         It "starts job at specified step" {
-            $null = Start-DbaAgentJob -SqlInstance $script:instance2 -Job $jobName3 -StepName 'step3'
-            $results3 = Get-DbaAgentJobHistory -SqlInstance $script:instance2 -Job $jobName3
+            $null = Start-DbaAgentJob -SqlInstance $env:instance2 -Job $jobName3 -StepName 'step3'
+            $results3 = Get-DbaAgentJobHistory -SqlInstance $env:instance2 -Job $jobName3
             $results3.SqlInstance.Count | Should -Be 2
         }
 
         It "do not start job if the step does not exist" {
-            $results4 = Start-DbaAgentJob -SqlInstance $script:instance2 -Job $jobName3 -StepName 'stepdoesnoteexist'
+            $results4 = Start-DbaAgentJob -SqlInstance $env:instance2 -Job $jobName3 -StepName 'stepdoesnoteexist'
             $results4.SqlInstance.Count | Should -Be 0
         }
     }

@@ -21,14 +21,14 @@ Describe "Remove-DbaComputerCertificate" {
             $CommandUnderTest | Should -HaveParameter Folder -Type String
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Can remove a certificate" {
         BeforeAll {
             . "$PSScriptRoot\constants.ps1"
-            $null = Add-DbaComputerCertificate -Path $script:appveyorlabrepo\certificates\localhost.crt -Confirm:$false
+            $null = Add-DbaComputerCertificate -Path $env:appveyorlabrepo\certificates\localhost.crt -Confirm:$false
             $thumbprint = "29C469578D6C6211076A09CEE5C5797EEA0C2713"
         }
 

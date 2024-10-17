@@ -18,13 +18,13 @@ Describe "Repair-DbaInstanceName" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have AutoFix parameter" {
-            $CommandUnderTest | Should -HaveParameter AutoFix -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter AutoFix -Type Switch
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 }

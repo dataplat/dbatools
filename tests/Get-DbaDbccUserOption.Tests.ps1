@@ -26,7 +26,7 @@ Describe "Get-DbaDbccUserOption" {
     Context "Command usage" {
         BeforeAll {
             $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'Option', 'Value'
-            $result = Get-DbaDbccUserOption -SqlInstance $script:instance2
+            $result = Get-DbaDbccUserOption -SqlInstance $global:instance2
         }
 
         It "Should return property: <_>" -ForEach $props {
@@ -38,7 +38,7 @@ Describe "Get-DbaDbccUserOption" {
         }
 
         It "Should accept an Option value" {
-            $optionResult = Get-DbaDbccUserOption -SqlInstance $script:instance2 -Option ansi_nulls
+            $optionResult = Get-DbaDbccUserOption -SqlInstance $global:instance2 -Option ansi_nulls
             $optionResult | Should -Not -BeNullOrEmpty
             $optionResult.Option | Should -Be 'ansi_nulls'
         }

@@ -24,13 +24,13 @@ Describe "Copy-DbaAgentAlert" {
             $CommandUnderTest | Should -HaveParameter ExcludeAlert -Type Object[]
         }
         It "Should have IncludeDefaults as a parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeDefaults -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter IncludeDefaults -Type Switch
         }
         It "Should have Force as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -42,7 +42,7 @@ Describe "Copy-DbaAgentAlert" {
             $alert2 = 'dbatoolsci test alert 2'
             $operatorName = 'Dan the man Levitan'
             $operatorEmail = 'levitan@dbatools.io'
-            $server = Connect-DbaInstance -SqlInstance $script:instance2 -Database master
+            $server = Connect-DbaInstance -SqlInstance $global:instance2 -Database master
 
             $server.Query("EXEC msdb.dbo.sp_add_alert @name=N'$($alert1)',
             @message_id=0,
@@ -71,34 +71,34 @@ Describe "Copy-DbaAgentAlert" {
         }
 
         AfterAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance2 -Database master
+            $server = Connect-DbaInstance -SqlInstance $global:instance2 -Database master
             $server.Query("EXEC msdb.dbo.sp_delete_alert @name=N'$($alert1)'")
             $server.Query("EXEC msdb.dbo.sp_delete_alert @name=N'$($alert2)'")
             $server.Query("EXEC msdb.dbo.sp_delete_operator @name = '$($operatorName)'")
 
-            $server = Connect-DbaInstance -SqlInstance $script:instance3 -Database master
+            $server = Connect-DbaInstance -SqlInstance $global:instance3 -Database master
             $server.Query("EXEC msdb.dbo.sp_delete_alert @name=N'$($alert1)'")
         }
 
         It "Copies the sample alert" {
-            $results = Copy-DbaAgentAlert -Source $script:instance2 -Destination $script:instance3 -Alert $alert1
+            $results = Copy-DbaAgentAlert -Source $global:instance2 -Destination $global:instance3 -Alert $alert1
             $results.Name | Should -Be @('dbatoolsci test alert', 'dbatoolsci test alert')
             $results.Status | Should -Be @('Successful', 'Successful')
         }
 
         It "Skips alerts where destination is missing the operator" {
-            $results = Copy-DbaAgentAlert -Source $script:instance2 -Destination $script:instance3 -Alert $alert2 -WarningAction SilentlyContinue
+            $results = Copy-DbaAgentAlert -Source $global:instance2 -Destination $global:instance3 -Alert $alert2 -WarningAction SilentlyContinue
             $results.Status | Should -Be @('Skipped', 'Skipped')
         }
 
         It "Doesn't overwrite existing alerts" {
-            $results = Copy-DbaAgentAlert -Source $script:instance2 -Destination $script:instance3 -Alert $alert1
+            $results = Copy-DbaAgentAlert -Source $global:instance2 -Destination $global:instance3 -Alert $alert1
             $results.Name | Should -Be 'dbatoolsci test alert'
             $results.Status | Should -Be 'Skipped'
         }
 
         It "The newly copied alert exists" {
-            $results = Get-DbaAgentAlert -SqlInstance $script:instance2
+            $results = Get-DbaAgentAlert -SqlInstance $global:instance2
             $results.Name | Should -Contain 'dbatoolsci test alert'
         }
     }

@@ -32,35 +32,35 @@ Describe "Set-DbatoolsConfig" {
         It "Should have Handler as a non-mandatory ScriptBlock parameter" {
             $CommandUnderTest | Should -HaveParameter Handler -Type ScriptBlock -Not -Mandatory
         }
-        It "Should have Hidden as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter Hidden -Type SwitchParameter -Not -Mandatory
+        It "Should have Hidden as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter Hidden -Type Switch -Not -Mandatory
         }
-        It "Should have Default as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter Default -Type SwitchParameter -Not -Mandatory
+        It "Should have Default as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter Default -Type Switch -Not -Mandatory
         }
-        It "Should have Initialize as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter Initialize -Type SwitchParameter -Not -Mandatory
+        It "Should have Initialize as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter Initialize -Type Switch -Not -Mandatory
         }
-        It "Should have SimpleExport as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter SimpleExport -Type SwitchParameter -Not -Mandatory
+        It "Should have SimpleExport as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter SimpleExport -Type Switch -Not -Mandatory
         }
-        It "Should have ModuleExport as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter ModuleExport -Type SwitchParameter -Not -Mandatory
+        It "Should have ModuleExport as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter ModuleExport -Type Switch -Not -Mandatory
         }
-        It "Should have DisableValidation as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter DisableValidation -Type SwitchParameter -Not -Mandatory
+        It "Should have DisableValidation as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter DisableValidation -Type Switch -Not -Mandatory
         }
-        It "Should have DisableHandler as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter DisableHandler -Type SwitchParameter -Not -Mandatory
+        It "Should have DisableHandler as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter DisableHandler -Type Switch -Not -Mandatory
         }
-        It "Should have PassThru as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter PassThru -Type SwitchParameter -Not -Mandatory
+        It "Should have PassThru as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter PassThru -Type Switch -Not -Mandatory
         }
-        It "Should have Register as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter Register -Type SwitchParameter -Not -Mandatory
+        It "Should have Register as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter Register -Type Switch -Not -Mandatory
         }
-        It "Should have EnableException as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+        It "Should have EnableException as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 }

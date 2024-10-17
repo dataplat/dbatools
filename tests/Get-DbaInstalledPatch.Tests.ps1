@@ -58,7 +58,7 @@ Describe "Get-DbaInstalledPatch" {
 
     Context "Command usage" {
         It "Returns output when run against a valid instance" {
-            $result = Get-DbaInstalledPatch -ComputerName $script:instance1
+            $result = Get-DbaInstalledPatch -ComputerName $global:instance1
             $result | Should -Not -BeNullOrEmpty
         }
     }

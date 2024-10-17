@@ -24,10 +24,10 @@ Describe "Remove-DbaLogin" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Login[] -Not -Mandatory
         }
         It "Should have Force as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Not -Mandatory
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
@@ -36,13 +36,13 @@ Describe "Remove-DbaLogin" {
             $login = "dbatoolsci_removelogin"
             $password = 'MyV3ry$ecur3P@ssw0rd'
             $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
-            $newlogin = New-DbaLogin -SqlInstance $script:instance1 -Login $login -Password $securePassword
+            $newlogin = New-DbaLogin -SqlInstance $env:instance1 -Login $login -Password $securePassword
         }
 
         It "removes the login" {
-            $results = Remove-DbaLogin -SqlInstance $script:instance1 -Login $login -Confirm:$false
+            $results = Remove-DbaLogin -SqlInstance $env:instance1 -Login $login -Confirm:$false
             $results.Status | Should -Be "Dropped"
-            $login1 = Get-DbaLogin -SqlInstance $script:instance1 -login $login
+            $login1 = Get-DbaLogin -SqlInstance $env:instance1 -login $login
             $login1 | Should -BeNullOrEmpty
         }
     }

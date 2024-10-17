@@ -40,28 +40,28 @@ Describe "Export-DbaXESession" {
             $CommandUnderTest | Should -HaveParameter Encoding -Type String
         }
         It "Should have Passthru parameter" {
-            $CommandUnderTest | Should -HaveParameter Passthru -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Passthru -Type Switch
         }
         It "Should have BatchSeparator parameter" {
             $CommandUnderTest | Should -HaveParameter BatchSeparator -Type String
         }
         It "Should have NoPrefix parameter" {
-            $CommandUnderTest | Should -HaveParameter NoPrefix -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter NoPrefix -Type Switch
         }
         It "Should have NoClobber parameter" {
-            $CommandUnderTest | Should -HaveParameter NoClobber -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter NoClobber -Type Switch
         }
         It "Should have Append parameter" {
-            $CommandUnderTest | Should -HaveParameter Append -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Append -Type Switch
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Check if output file was created" {
         BeforeAll {
-            $null = Export-DbaXESession -SqlInstance $script:instance2 -FilePath $outputFile
+            $null = Export-DbaXESession -SqlInstance $global:instance2 -FilePath $outputFile
         }
         It "Exports results to one sql file" {
             (Get-ChildItem $outputFile).Count | Should -Be 1
@@ -73,7 +73,7 @@ Describe "Export-DbaXESession" {
 
     Context "Check if session parameter is honored" {
         BeforeAll {
-            $null = Export-DbaXESession -SqlInstance $script:instance2 -FilePath $outputFile -Session system_health
+            $null = Export-DbaXESession -SqlInstance $global:instance2 -FilePath $outputFile -Session system_health
         }
         It "Exports results to one sql file" {
             (Get-ChildItem $outputFile).Count | Should -Be 1
@@ -85,7 +85,7 @@ Describe "Export-DbaXESession" {
 
     Context "Check if supports Pipeline input" {
         BeforeAll {
-            $null = Get-DbaXESession -SqlInstance $script:instance2 -Session system_health | Export-DbaXESession -FilePath $outputFile
+            $null = Get-DbaXESession -SqlInstance $global:instance2 -Session system_health | Export-DbaXESession -FilePath $outputFile
         }
         It "Exports results to one sql file" {
             (Get-ChildItem $outputFile).Count | Should -Be 1

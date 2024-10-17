@@ -19,14 +19,14 @@ Describe "Get-DbaDbDbccOpenTran" {
             $CommandUnderTest | Should -HaveParameter Database -Type String[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Gets results for Open Transactions" {
         BeforeAll {
             $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Cmd', 'Output', 'Field', 'Data'
-            $result = Get-DbaDbDbccOpenTran -SqlInstance $script:instance1
+            $result = Get-DbaDbDbccOpenTran -SqlInstance $global:instance1
         }
 
         It "returns results for DBCC OPENTRAN" {
@@ -44,8 +44,8 @@ Describe "Get-DbaDbDbccOpenTran" {
         }
 
         It "returns results for a specific database" {
-            $tempDB = Get-DbaDatabase -SqlInstance $script:instance1 -Database tempDB
-            $result = Get-DbaDbDbccOpenTran -SqlInstance $script:instance1 -Database tempDB
+            $tempDB = Get-DbaDatabase -SqlInstance $global:instance1 -Database tempDB
+            $result = Get-DbaDbDbccOpenTran -SqlInstance $global:instance1 -Database tempDB
 
             $result | Should -Not -BeNullOrEmpty
             $result.Database | Get-Unique | Should -Be 'tempDB'

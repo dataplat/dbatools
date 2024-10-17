@@ -16,7 +16,7 @@ Describe "Get-DbaOperatingSystem" {
             $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -29,7 +29,7 @@ Describe "Get-DbaOperatingSystem" {
 
     Context "Get-DbaOperatingSystem Integration Test" -Tag "IntegrationTests" {
         BeforeAll {
-            $result = Get-DbaOperatingSystem -ComputerName $script:instance1
+            $result = Get-DbaOperatingSystem -ComputerName $env:instance1
 
             $props = 'ComputerName', 'Manufacturer', 'Organization',
             'Architecture', 'Build', 'Version', 'InstallDate', 'LastBootTime', 'LocalDateTime',

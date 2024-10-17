@@ -23,8 +23,8 @@ Describe "New-DbaDbMailProfile" {
         It "Should have MailAccountPriority as a non-mandatory parameter of type Int32" {
             $CommandUnderTest | Should -HaveParameter MailAccountPriority -Type Int32 -Not -Mandatory
         }
-        It "Should have EnableException as a non-mandatory parameter of type SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+        It "Should have EnableException as a non-mandatory parameter of type Switch" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
@@ -32,7 +32,7 @@ Describe "New-DbaDbMailProfile" {
         BeforeAll {
             . "$PSScriptRoot\constants.ps1"
             $profilename = "dbatoolsci_test_$(Get-Random)"
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $env:instance2
             $description = 'Mail account for email alerts'
             $mailaccountname = 'dbatoolssci@dbatools.io'
             $mailaccountpriority = 1
@@ -47,7 +47,7 @@ Describe "New-DbaDbMailProfile" {
         }
 
         AfterAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $env:instance2
             $mailAccountSettings = "EXEC msdb.dbo.sysmail_delete_profile_sp @profile_name = '$profilename';"
             $server.Query($mailAccountSettings)
             $regularaccountsettings = "EXEC msdb.dbo.sysmail_delete_account_sp @account_name = '$mailaccountname';"
@@ -56,7 +56,7 @@ Describe "New-DbaDbMailProfile" {
 
         It "Sets DbMail Profile" {
             $splat = @{
-                SqlInstance         = $script:instance2
+                SqlInstance         = $env:instance2
                 Profile             = $profilename
                 Description         = $description
                 MailAccountName     = $mailaccountname

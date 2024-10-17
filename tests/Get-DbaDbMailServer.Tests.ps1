@@ -20,8 +20,8 @@ Describe "Get-DbaDbMailServer" {
         It "Should have InputObject as a non-mandatory parameter of type SqlMail[]" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type SqlMail[] -Not -Mandatory
         }
-        It "Should have EnableException as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+        It "Should have EnableException as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
@@ -32,7 +32,7 @@ Describe "Get-DbaDbMailServer" {
 
         BeforeAll {
             $accountname = "dbatoolsci_test_$(Get-Random)"
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $mailAccountSettings = "EXEC msdb.dbo.sysmail_add_account_sp
                 @account_name='$accountname',
                 @description='Mail account for email alerts',
@@ -44,7 +44,7 @@ Describe "Get-DbaDbMailServer" {
         }
 
         AfterAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $mailAccountSettings = "EXEC msdb.dbo.sysmail_delete_account_sp
                 @account_name = '$accountname';"
             $server.Query($mailAccountSettings)
@@ -52,7 +52,7 @@ Describe "Get-DbaDbMailServer" {
 
         Context "Gets DbMailServer" {
             BeforeAll {
-                $results = Get-DbaDbMailServer -SqlInstance $script:instance2 | Where-Object {$_.Account -eq $accountname}
+                $results = Get-DbaDbMailServer -SqlInstance $global:instance2 | Where-Object {$_.Account -eq $accountname}
             }
 
             It "Gets results" {
@@ -77,7 +77,7 @@ Describe "Get-DbaDbMailServer" {
 
         Context "Gets DbMailServer using -Server" {
             BeforeAll {
-                $results = Get-DbaDbMailServer -SqlInstance $script:instance2 -Server 'smtp.dbatools.io'
+                $results = Get-DbaDbMailServer -SqlInstance $global:instance2 -Server 'smtp.dbatools.io'
             }
 
             It "Gets results" {
@@ -87,7 +87,7 @@ Describe "Get-DbaDbMailServer" {
 
         Context "Gets DbMailServer using -Account" {
             BeforeAll {
-                $results = Get-DbaDbMailServer -SqlInstance $script:instance2 -Account $accountname
+                $results = Get-DbaDbMailServer -SqlInstance $global:instance2 -Account $accountname
             }
 
             It "Gets results" {

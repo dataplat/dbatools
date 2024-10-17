@@ -24,7 +24,7 @@ Describe "New-DbaDbMasterKey" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Database[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -32,18 +32,18 @@ Describe "New-DbaDbMasterKey" {
         BeforeAll {
             $PSDefaultParameterValues["*:Confirm"] = $false
             $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
-            $masterkey = Get-DbaDbMasterKey -SqlInstance $script:instance1 -Database master
+            $masterkey = Get-DbaDbMasterKey -SqlInstance $env:instance1 -Database master
             if (-not $masterkey) {
                 $delmasterkey = $true
-                $masterkey = New-DbaServiceMasterKey -SqlInstance $script:instance1 -SecurePassword $passwd
+                $masterkey = New-DbaServiceMasterKey -SqlInstance $env:instance1 -SecurePassword $passwd
             }
-            $mastercert = Get-DbaDbCertificate -SqlInstance $script:instance1 -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
+            $mastercert = Get-DbaDbCertificate -SqlInstance $env:instance1 -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
             if (-not $mastercert) {
                 $delmastercert = $true
-                $mastercert = New-DbaDbCertificate -SqlInstance $script:instance1
+                $mastercert = New-DbaDbCertificate -SqlInstance $env:instance1
             }
-            $db = New-DbaDatabase -SqlInstance $script:instance1
-            $db1 = New-DbaDatabase -SqlInstance $script:instance1
+            $db = New-DbaDatabase -SqlInstance $env:instance1
+            $db1 = New-DbaDatabase -SqlInstance $env:instance1
         }
 
         AfterAll {
@@ -69,7 +69,7 @@ Describe "New-DbaDbMasterKey" {
         }
 
         It "should create master key on a database" {
-            $results = New-DbaDbMasterKey -SqlInstance $script:instance1 -Database $db1.Name -SecurePassword $passwd
+            $results = New-DbaDbMasterKey -SqlInstance $env:instance1 -Database $db1.Name -SecurePassword $passwd
             $results.IsEncryptedByServer | Should -Be $true
         }
     }

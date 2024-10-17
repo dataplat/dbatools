@@ -12,13 +12,13 @@ Describe "Get-DbaIoLatency" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
         It "Should have Verbose as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Verbose -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Verbose -Type Switch -Not -Mandatory
         }
         It "Should have Debug as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Debug -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Debug -Type Switch -Not -Mandatory
         }
         It "Should have ErrorAction as a parameter" {
             $CommandUnderTest | Should -HaveParameter ErrorAction -Type ActionPreference -Not -Mandatory
@@ -58,7 +58,7 @@ Describe "Get-DbaIoLatency" {
         }
 
         It "returns results" {
-            $results = Get-DbaIoLatency -SqlInstance $script:instance2
+            $results = Get-DbaIoLatency -SqlInstance $global:instance2
             $results.Count | Should -BeGreaterThan 0
         }
     }

@@ -12,13 +12,13 @@ Describe "Get-DbaExternalProcess" {
             $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
         }
         It "Accepts EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Integration Tests" -Tag "IntegrationTests" {
         BeforeAll {
-            $null = Invoke-DbaQuery -SqlInstance $script:instance1 -Query @"
+            $null = Invoke-DbaQuery -SqlInstance $global:instance1 -Query @"
             -- To allow advanced options to be changed.
             EXECUTE sp_configure 'show advanced options', 1;
             GO
@@ -33,7 +33,7 @@ Describe "Get-DbaExternalProcess" {
             GO
 "@
             $query = "xp_cmdshell 'powershell -command ""sleep 20""'"
-            Start-Process -FilePath sqlcmd -ArgumentList "-S $script:instance1 -Q `"$query`"" -NoNewWindow -RedirectStandardOutput null
+            Start-Process -FilePath sqlcmd -ArgumentList "-S $global:instance1 -Q `"$query`"" -NoNewWindow -RedirectStandardOutput null
             Start-Sleep -Seconds 1
         }
 

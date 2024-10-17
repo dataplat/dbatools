@@ -23,14 +23,14 @@ Describe "Stop-DbaTrace Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Not -Mandatory
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 }
 
 Describe "Stop-DbaTrace Integration Tests" -Tag "IntegrationTests" {
     BeforeDiscovery {
-        $script:instance1 = "localhost"
+        $env:instance1 = "localhost"
     }
 
     BeforeAll {
@@ -113,26 +113,26 @@ exec sp_trace_setstatus @TraceID, 1
 -- display trace id for future references
 select TraceID=@TraceID
 "@
-        $server = Connect-DbaInstance -SqlInstance $script:instance1
-        $script:traceid = ($server.Query($sql)).TraceID
-        $null = Get-DbaTrace -SqlInstance $script:instance1 -Id $script:traceid | Start-DbaTrace
+        $server = Connect-DbaInstance -SqlInstance $env:instance1
+        $env:traceid = ($server.Query($sql)).TraceID
+        $null = Get-DbaTrace -SqlInstance $env:instance1 -Id $env:traceid | Start-DbaTrace
     }
 
     AfterAll {
-        $null = Remove-DbaTrace -SqlInstance $script:instance1 -Id $script:traceid
+        $null = Remove-DbaTrace -SqlInstance $env:instance1 -Id $env:traceid
         Remove-Item C:\windows\temp\temptrace.trc -ErrorAction SilentlyContinue
     }
 
     Context "Test Stopping Trace" {
         It "starts in a running state" {
-            $results = Get-DbaTrace -SqlInstance $script:instance1 -Id $script:traceid
-            $results.Id | Should -Be $script:traceid
+            $results = Get-DbaTrace -SqlInstance $env:instance1 -Id $env:traceid
+            $results.Id | Should -Be $env:traceid
             $results.IsRunning | Should -BeTrue
         }
 
         It "is now in a stopped state" {
-            $results = Get-DbaTrace -SqlInstance $script:instance1 -Id $script:traceid | Stop-DbaTrace
-            $results.Id | Should -Be $script:traceid
+            $results = Get-DbaTrace -SqlInstance $env:instance1 -Id $env:traceid | Stop-DbaTrace
+            $results.Id | Should -Be $env:traceid
             $results.IsRunning | Should -BeFalse
         }
     }

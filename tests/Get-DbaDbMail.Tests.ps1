@@ -22,7 +22,7 @@ Describe "Get-DbaDbMail" {
         }
 
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $mailSettings = @{
                 AccountRetryAttempts           = '1'
                 AccountRetryDelay              = '60'
@@ -39,7 +39,7 @@ Describe "Get-DbaDbMail" {
 
         Context "Gets DbMail Settings" {
             BeforeAll {
-                $results = Get-DbaDbMail -SqlInstance $script:instance2
+                $results = Get-DbaDbMail -SqlInstance $global:instance2
             }
 
             It "Gets results" {

@@ -35,36 +35,36 @@ Describe "Test-DbaDbLogShipStatus Unit Tests" -Tag "UnitTests" {
 
 Describe "Test-DbaDbLogShipStatus Integration Tests" -Tag "IntegrationTests" {
     BeforeDiscovery {
-        $script:skipIntegrationTests = $false
-        $script:instance1 = $null
-        $script:instance2 = $null
+        $env:skipIntegrationTests = $false
+        $env:instance1 = $null
+        $env:instance2 = $null
 
         try {
             . "$PSScriptRoot\constants.ps1"
-            $script:instance1 = $script:instance1
-            $script:instance2 = $script:instance2
+            $env:instance1 = $env:instance1
+            $env:instance2 = $env:instance2
         } catch {
-            $script:skipIntegrationTests = $true
+            $env:skipIntegrationTests = $true
         }
     }
 
     BeforeAll {
-        if (-not $script:skipIntegrationTests) {
-            $server = Connect-DbaInstance -SqlInstance $script:instance1
-            $script:skipExpressEdition = $server.Edition -notmatch 'Express'
+        if (-not $env:skipIntegrationTests) {
+            $server = Connect-DbaInstance -SqlInstance $env:instance1
+            $env:skipExpressEdition = $server.Edition -notmatch 'Express'
         }
     }
 
     Context "When testing SQL Server Express edition" {
-        It "Warns if SQL instance edition is not supported" -Skip:$script:skipIntegrationTests {
-            $null = Test-DbaDbLogShipStatus -SqlInstance $script:instance1 -WarningAction SilentlyContinue -WarningVariable editionwarn
+        It "Warns if SQL instance edition is not supported" -Skip:$env:skipIntegrationTests {
+            $null = Test-DbaDbLogShipStatus -SqlInstance $env:instance1 -WarningAction SilentlyContinue -WarningVariable editionwarn
             $editionwarn | Should -Match "Express"
         }
     }
 
     Context "When no log shipping is found" {
-        It "Warns if no log shipping found" -Skip:$script:skipIntegrationTests {
-            $null = Test-DbaDbLogShipStatus -SqlInstance $script:instance2 -Database 'master' -WarningAction SilentlyContinue -WarningVariable doesntexist
+        It "Warns if no log shipping found" -Skip:$env:skipIntegrationTests {
+            $null = Test-DbaDbLogShipStatus -SqlInstance $env:instance2 -Database 'master' -WarningAction SilentlyContinue -WarningVariable doesntexist
             $doesntexist | Should -Match "No information available"
         }
     }

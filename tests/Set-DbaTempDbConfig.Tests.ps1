@@ -8,7 +8,7 @@ Describe "Set-DbaTempDbConfig" {
 
         $random = Get-Random
 
-        $server = Connect-DbaInstance -SqlInstance $script:instance1
+        $server = Connect-DbaInstance -SqlInstance $env:instance1
 
         $tempdbDataFilePhysicalName = $server.Databases['tempdb'].Query('SELECT physical_name as PhysicalName FROM sys.database_files WHERE file_id = 1').PhysicalName
         $tempdbDataFilePath = Split-Path $tempdbDataFilePhysicalName
@@ -61,24 +61,24 @@ Describe "Set-DbaTempDbConfig" {
             $CommandUnderTest | Should -HaveParameter OutFile -Type String
         }
         It "Should have OutputScriptOnly as a parameter" {
-            $CommandUnderTest | Should -HaveParameter OutputScriptOnly -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter OutputScriptOnly -Type Switch
         }
         It "Should have DisableGrowth as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DisableGrowth -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter DisableGrowth -Type Switch
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Command actually works" {
         It "test with an invalid data dir" {
-            $result = Set-DbaTempDbConfig -SqlInstance $script:instance1 -DataFileSize 1024 -DataPath "$tempdbDataFilePath\invalidDir_$random" -OutputScriptOnly
+            $result = Set-DbaTempDbConfig -SqlInstance $env:instance1 -DataFileSize 1024 -DataPath "$tempdbDataFilePath\invalidDir_$random" -OutputScriptOnly
             $result | Should -BeNullOrEmpty
         }
 
         It "valid sql is produced with nearly all options set and a single data directory" {
-            $result = Set-DbaTempDbConfig -SqlInstance $script:instance1 -DataFileCount 8 -DataFileSize 2048 -LogFileSize 512 -DataFileGrowth 1024 -LogFileGrowth 512 -DataPath "$tempdbDataFilePath\DataDir0_$random" -LogPath "$tempdbDataFilePath\Log_$random" -OutputScriptOnly
+            $result = Set-DbaTempDbConfig -SqlInstance $env:instance1 -DataFileCount 8 -DataFileSize 2048 -LogFileSize 512 -DataFileGrowth 1024 -LogFileGrowth 512 -DataPath "$tempdbDataFilePath\DataDir0_$random" -LogPath "$tempdbDataFilePath\Log_$random" -OutputScriptOnly
             $sqlStatements = $result -Split ";" | Where-Object { $_ -ne "" }
 
             $sqlStatements.Count | Should -Be 9
@@ -87,7 +87,7 @@ Describe "Set-DbaTempDbConfig" {
         }
 
         It "valid sql is produced with -DisableGrowth" {
-            $result = Set-DbaTempDbConfig -SqlInstance $script:instance1 -DataFileCount 8 -DataFileSize 1024 -LogFileSize 512 -DisableGrowth -DataPath $tempdbDataFilePath -LogPath $tempdbDataFilePath -OutputScriptOnly
+            $result = Set-DbaTempDbConfig -SqlInstance $env:instance1 -DataFileCount 8 -DataFileSize 1024 -LogFileSize 512 -DisableGrowth -DataPath $tempdbDataFilePath -LogPath $tempdbDataFilePath -OutputScriptOnly
             $sqlStatements = $result -Split ";" | Where-Object { $_ -ne "" }
 
             $sqlStatements.Count | Should -Be 9
@@ -97,7 +97,7 @@ Describe "Set-DbaTempDbConfig" {
 
         It "multiple data directories are supported" {
             $dataDirLocations = "$tempdbDataFilePath\DataDir0_$random", "$tempdbDataFilePath\DataDir1_$random", "$tempdbDataFilePath\DataDir2_$random"
-            $result = Set-DbaTempDbConfig -SqlInstance $script:instance1 -DataFileCount 8 -DataFileSize 1024 -DataPath $dataDirLocations -OutputScriptOnly
+            $result = Set-DbaTempDbConfig -SqlInstance $env:instance1 -DataFileCount 8 -DataFileSize 1024 -DataPath $dataDirLocations -OutputScriptOnly
             $sqlStatements = $result -Split ";" | Where-Object { $_ -ne "" }
 
             # check the round robin assignment of files to data dir locations

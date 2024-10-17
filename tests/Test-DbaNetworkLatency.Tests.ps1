@@ -23,7 +23,7 @@ Describe "Test-DbaNetworkLatency" {
             $CommandUnderTest | Should -HaveParameter Count -Type Int32
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 

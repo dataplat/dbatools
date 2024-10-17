@@ -30,15 +30,15 @@ Describe "Test-DbaDiskAlignment" {
 
     Context "Command actually works" {
         BeforeAll {
-            $script:dbatoolsci_computer = $env:COMPUTERNAME  # This is a placeholder. Replace with actual value if different.
+            $env:dbatoolsci_computer = $env:COMPUTERNAME  # This is a placeholder. Replace with actual value if different.
         }
         It "Should return a result" {
-            $results = Test-DbaDiskAlignment -ComputerName $script:dbatoolsci_computer
+            $results = Test-DbaDiskAlignment -ComputerName $env:dbatoolsci_computer
             $results | Should -Not -BeNullOrEmpty
         }
 
         It "Should return a result not using sql" {
-            $results = Test-DbaDiskAlignment -NoSqlCheck -ComputerName $script:dbatoolsci_computer
+            $results = Test-DbaDiskAlignment -NoSqlCheck -ComputerName $env:dbatoolsci_computer
             $results | Should -Not -BeNullOrEmpty
         }
     }

@@ -51,7 +51,7 @@ Describe "New-DbaXESmartEmail" {
             $CommandUnderTest | Should -HaveParameter Filter -Type String
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 

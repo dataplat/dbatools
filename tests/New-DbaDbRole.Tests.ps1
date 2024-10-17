@@ -6,7 +6,7 @@ Describe "New-DbaDbRole" {
         Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
         . "$PSScriptRoot\constants.ps1"
 
-        $instance = Connect-DbaInstance -SqlInstance $script:instance2
+        $instance = Connect-DbaInstance -SqlInstance $env:instance2
         $dbname = "dbatoolsci_adddb_newrole"
         $instance.Query("create database $dbname")
         $roleExecutor = "dbExecuter"
@@ -44,7 +44,7 @@ Describe "New-DbaDbRole" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Database[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 

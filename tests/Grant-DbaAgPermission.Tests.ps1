@@ -27,7 +27,7 @@ Describe "Grant-DbaAgPermission" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Login[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 }
@@ -35,17 +35,17 @@ Describe "Grant-DbaAgPermission" {
 Describe "Grant-DbaAgPermission Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         . "$PSScriptRoot\constants.ps1"
-        $null = Invoke-DbaQuery -SqlInstance $script:instance3 -InputFile $script:appveyorlabrepo\sql2008-scripts\logins.sql -ErrorAction SilentlyContinue
+        $null = Invoke-DbaQuery -SqlInstance $env:instance3 -InputFile $env:appveyorlabrepo\sql2008-scripts\logins.sql -ErrorAction SilentlyContinue
         $agname = "dbatoolsci_ag_grant"
-        $null = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Confirm:$false -Certificate dbatoolsci_AGCert
+        $null = New-DbaAvailabilityGroup -Primary $env:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Confirm:$false -Certificate dbatoolsci_AGCert
     }
     AfterAll {
-        $null = Remove-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup $agname -Confirm:$false
+        $null = Remove-DbaAvailabilityGroup -SqlInstance $env:instance3 -AvailabilityGroup $agname -Confirm:$false
     }
     Context "grants big perms" {
         It "returns results with proper data" {
-            $results = Get-DbaLogin -SqlInstance $script:instance3 -Login tester | Grant-DbaAgPermission -Type EndPoint
+            $results = Get-DbaLogin -SqlInstance $env:instance3 -Login tester | Grant-DbaAgPermission -Type EndPoint
             $results.Status | Should -Be 'Success'
         }
     }
-} #$script:instance2 for appveyor
+} #$env:instance2 for appveyor

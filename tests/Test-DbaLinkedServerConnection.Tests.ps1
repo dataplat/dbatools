@@ -17,47 +17,47 @@ Describe "Test-DbaLinkedServerConnection" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
     Context "Command usage" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance1 -Database master
+            $server = Connect-DbaInstance -SqlInstance $env:instance1 -Database master
             $server.Query("EXEC master.dbo.sp_addlinkedserver @server = N'localhost', @srvproduct=N'SQL Server'")
         }
         AfterAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance1 -Database master
+            $server = Connect-DbaInstance -SqlInstance $env:instance1 -Database master
             $server.Query("EXEC master.dbo.sp_dropserver @server=N'localhost', @droplogins='droplogins'")
         }
 
         It "Function returns results" {
-            $results = Test-DbaLinkedServerConnection -SqlInstance $script:instance1 | Where-Object LinkedServerName -eq 'localhost'
+            $results = Test-DbaLinkedServerConnection -SqlInstance $env:instance1 | Where-Object LinkedServerName -eq 'localhost'
             $results | Should -Not -BeNullOrEmpty
         }
 
         It "Linked server name is localhost" {
-            $results = Test-DbaLinkedServerConnection -SqlInstance $script:instance1 | Where-Object LinkedServerName -eq 'localhost'
+            $results = Test-DbaLinkedServerConnection -SqlInstance $env:instance1 | Where-Object LinkedServerName -eq 'localhost'
             $results.LinkedServerName | Should -Be 'localhost'
         }
 
         It "Connectivity is true" {
-            $results = Test-DbaLinkedServerConnection -SqlInstance $script:instance1 | Where-Object LinkedServerName -eq 'localhost'
+            $results = Test-DbaLinkedServerConnection -SqlInstance $env:instance1 | Where-Object LinkedServerName -eq 'localhost'
             $results.Connectivity | Should -BeTrue
         }
 
         It "Piping from Get-DbaLinkedServer returns results" {
-            $pipeResults = Get-DbaLinkedServer -SqlInstance $script:instance1 | Test-DbaLinkedServerConnection
+            $pipeResults = Get-DbaLinkedServer -SqlInstance $env:instance1 | Test-DbaLinkedServerConnection
             $pipeResults | Should -Not -BeNullOrEmpty
         }
 
         It "Piped linked server name is localhost" {
-            $pipeResults = Get-DbaLinkedServer -SqlInstance $script:instance1 | Test-DbaLinkedServerConnection
+            $pipeResults = Get-DbaLinkedServer -SqlInstance $env:instance1 | Test-DbaLinkedServerConnection
             $pipeResults.LinkedServerName | Should -Be 'localhost'
         }
 
         It "Piped connectivity is true" {
-            $pipeResults = Get-DbaLinkedServer -SqlInstance $script:instance1 | Test-DbaLinkedServerConnection
+            $pipeResults = Get-DbaLinkedServer -SqlInstance $env:instance1 | Test-DbaLinkedServerConnection
             $pipeResults.Connectivity | Should -BeTrue
         }
     }

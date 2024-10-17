@@ -28,8 +28,8 @@ Describe "Save-DbaKbUpdate" {
         It "Should have InputObject as a non-mandatory Object[] parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Not -Mandatory
         }
-        It "Should have EnableException as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+        It "Should have EnableException as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 

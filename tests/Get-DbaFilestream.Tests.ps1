@@ -27,7 +27,7 @@ Describe "Get-DbaFilestream" {
 
     Context "Getting FileStream Level" {
         BeforeAll {
-            $results = Get-DbaFilestream -SqlInstance $script:instance2
+            $results = Get-DbaFilestream -SqlInstance $global:instance2
         }
         It "Should have changed the FileStream Level" {
             $results.InstanceAccess | Should -BeIn 'Disabled', 'T-SQL access enabled', 'Full access enabled'

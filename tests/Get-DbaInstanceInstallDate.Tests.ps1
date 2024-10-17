@@ -21,16 +21,16 @@ Describe "Get-DbaInstanceInstallDate" {
             $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
         }
         It "Should have IncludeWindows as a parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeWindows -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter IncludeWindows -Type Switch
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Gets SQL Server Install Date" {
         BeforeAll {
-            $results = Get-DbaInstanceInstallDate -SqlInstance $script:instance2
+            $results = Get-DbaInstanceInstallDate -SqlInstance $global:instance2
         }
         It "Gets results" {
             $results | Should -Not -BeNullOrEmpty
@@ -39,7 +39,7 @@ Describe "Get-DbaInstanceInstallDate" {
 
     Context "Gets SQL Server Install Date and Windows Install Date" {
         BeforeAll {
-            $results = Get-DbaInstanceInstallDate -SqlInstance $script:instance2 -IncludeWindows
+            $results = Get-DbaInstanceInstallDate -SqlInstance $global:instance2 -IncludeWindows
         }
         It "Gets results" {
             $results | Should -Not -BeNullOrEmpty

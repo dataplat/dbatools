@@ -7,12 +7,12 @@ Describe "Get-DbaDbExtentDiff" {
         . "$PSScriptRoot\constants.ps1"
 
         $dbname = "dbatoolsci_test_$(Get-Random)"
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $global:instance2
         $server.Query("Create Database [$dbname]")
     }
 
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $global:instance2 -Database $dbname -Confirm:$false
     }
 
     Context "Validate parameters" {
@@ -32,13 +32,13 @@ Describe "Get-DbaDbExtentDiff" {
             $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Gets Changed Extents for Multiple Databases" {
         BeforeAll {
-            $results = Get-DbaDbExtentDiff -SqlInstance $script:instance2
+            $results = Get-DbaDbExtentDiff -SqlInstance $global:instance2
         }
         It "Gets results" {
             $results | Should -Not -BeNullOrEmpty
@@ -53,7 +53,7 @@ Describe "Get-DbaDbExtentDiff" {
 
     Context "Gets Changed Extents for Single Database" {
         BeforeAll {
-            $results = Get-DbaDbExtentDiff -SqlInstance $script:instance2 -Database $dbname
+            $results = Get-DbaDbExtentDiff -SqlInstance $global:instance2 -Database $dbname
         }
         It "Gets results" {
             $results | Should -Not -BeNullOrEmpty

@@ -63,7 +63,7 @@ Describe "Get-DbaDatabase" {
 
     Context "Count system databases on localhost" {
         BeforeAll {
-            $results = Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeUser
+            $results = Get-DbaDatabase -SqlInstance $global:instance1 -ExcludeUser
         }
         It "reports the right number of databases" {
             $results.Count | Should -Be 4
@@ -72,7 +72,7 @@ Describe "Get-DbaDatabase" {
 
     Context "Check that tempdb database is in Simple recovery mode" {
         BeforeAll {
-            $results = Get-DbaDatabase -SqlInstance $script:instance1 -Database tempdb
+            $results = Get-DbaDatabase -SqlInstance $global:instance1 -Database tempdb
         }
         It "tempdb's recovery mode is Simple" {
             $results.RecoveryModel | Should -Be "Simple"
@@ -81,7 +81,7 @@ Describe "Get-DbaDatabase" {
 
     Context "Check that master database is accessible" {
         BeforeAll {
-            $results = Get-DbaDatabase -SqlInstance $script:instance1 -Database master
+            $results = Get-DbaDatabase -SqlInstance $global:instance1 -Database master
         }
         It "master is accessible" {
             $results.IsAccessible | Should -Be $true
@@ -93,19 +93,19 @@ Describe "Get-DbaDatabase" {
             $random = Get-Random
             $dbname1 = "dbatoolsci_Backup_$random"
             $dbname2 = "dbatoolsci_NoBackup_$random"
-            $null = New-DbaDatabase -SqlInstance $script:instance1 -Name $dbname1, $dbname2
-            $null = Backup-DbaDatabase -SqlInstance $script:instance1 -Type Full -FilePath nul -Database $dbname1
+            $null = New-DbaDatabase -SqlInstance $global:instance1 -Name $dbname1, $dbname2
+            $null = Backup-DbaDatabase -SqlInstance $global:instance1 -Type Full -FilePath nul -Database $dbname1
         }
         AfterAll {
-            $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname1, $dbname2 | Remove-DbaDatabase -Confirm:$false
+            $null = Get-DbaDatabase -SqlInstance $global:instance1 -Database $dbname1, $dbname2 | Remove-DbaDatabase -Confirm:$false
         }
 
         It "Should not report as database has full backup" {
-            $results = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname1 -NoFullBackup
+            $results = Get-DbaDatabase -SqlInstance $global:instance1 -Database $dbname1 -NoFullBackup
             $results.Count | Should -Be 0
         }
         It "Should report 1 database with no full backup" {
-            $results = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname2 -NoFullBackup
+            $results = Get-DbaDatabase -SqlInstance $global:instance1 -Database $dbname2 -NoFullBackup
             $results.Count | Should -Be 1
         }
     }

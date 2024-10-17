@@ -27,13 +27,13 @@ Describe "Remove-DbaDbMailAccount" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type MailAccount[] -Not -Mandatory
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
     Context "Command usage" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $env:instance2
             $accountname = "dbatoolsci_test_$(Get-Random)"
             $accountname2 = "dbatoolsci_test_$(Get-Random)"
 

@@ -6,20 +6,20 @@ Describe "Rename-DbaDatabase" {
         $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
         Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
-        $null = New-DbaDatabase -SqlInstance $script:instance2 -Name 'dbatoolsci_rename1'
-        $null = New-DbaDatabase -SqlInstance $script:instance2 -Name 'dbatoolsci_filemove'
-        $null = New-DbaDatabase -SqlInstance $script:instance2 -Name 'dbatoolsci_logicname'
-        $null = New-DbaDatabase -SqlInstance $script:instance2 -Name 'dbatoolsci_filegroupname'
+        $null = New-DbaDatabase -SqlInstance $env:instance2 -Name 'dbatoolsci_rename1'
+        $null = New-DbaDatabase -SqlInstance $env:instance2 -Name 'dbatoolsci_filemove'
+        $null = New-DbaDatabase -SqlInstance $env:instance2 -Name 'dbatoolsci_logicname'
+        $null = New-DbaDatabase -SqlInstance $env:instance2 -Name 'dbatoolsci_filegroupname'
         $FileGroupName = @"
         ALTER DATABASE dbatoolsci_filegroupname
         ADD FILEGROUP Dbatoolsci_filegroupname
 "@
-        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query $FileGroupName
+        $null = Invoke-DbaQuery -SqlInstance $env:instance2 -Query $FileGroupName
         $date = (Get-Date).ToString('yyyyMMdd')
     }
 
     AfterAll {
-        $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database "test_dbatoolsci_rename2_$($date)", "Dbatoolsci_filemove", "dbatoolsci_logicname", "dbatoolsci_filegroupname" -Confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $env:instance2 -Database "test_dbatoolsci_rename2_$($date)", "Dbatoolsci_filemove", "dbatoolsci_logicname", "dbatoolsci_filegroupname" -Confirm:$false
     }
 
     Context "Validate parameters" {
@@ -79,7 +79,7 @@ Describe "Rename-DbaDatabase" {
     Context "Should preview a rename of a database" {
         BeforeAll {
             $variables = @{
-                SqlInstance  = $script:instance2
+                SqlInstance  = $env:instance2
                 Database     = 'dbatoolsci_rename1'
                 DatabaseName = 'dbatoolsci_rename2'
                 Preview      = $true
@@ -98,7 +98,7 @@ Describe "Rename-DbaDatabase" {
     Context "Should rename a database" {
         BeforeAll {
             $variables = @{
-                SqlInstance  = $script:instance2
+                SqlInstance  = $env:instance2
                 Database     = 'dbatoolsci_rename1'
                 DatabaseName = 'dbatoolsci_rename2'
             }
@@ -122,7 +122,7 @@ Describe "Rename-DbaDatabase" {
     Context "Should rename a database with a prefix" {
         BeforeAll {
             $variables = @{
-                SqlInstance  = $script:instance2
+                SqlInstance  = $env:instance2
                 Database     = 'dbatoolsci_rename2'
                 DatabaseName = 'test_<DBN>'
             }
@@ -146,7 +146,7 @@ Describe "Rename-DbaDatabase" {
     Context "Should rename a database with a date" {
         BeforeAll {
             $variables = @{
-                SqlInstance  = $script:instance2
+                SqlInstance  = $env:instance2
                 Database     = 'test_dbatoolsci_rename2'
                 DatabaseName = '<DBN>_<DATE>'
             }
@@ -170,7 +170,7 @@ Describe "Rename-DbaDatabase" {
     Context "Should preview renaming database files" {
         BeforeAll {
             $variables = @{
-                SqlInstance = $script:instance2
+                SqlInstance = $env:instance2
                 Database    = "dbatoolsci_filemove"
                 FileName    = "<DBN>_<FGN>_<FNN>"
                 Preview     = $true
@@ -195,7 +195,7 @@ Describe "Rename-DbaDatabase" {
     Context "Should rename database files and move them" {
         BeforeAll {
             $variables = @{
-                SqlInstance = $script:instance2
+                SqlInstance = $env:instance2
                 Database    = "dbatoolsci_filemove"
                 FileName    = "<DBN>_<FGN>_<FNN>"
                 Move        = $true
@@ -220,7 +220,7 @@ Describe "Rename-DbaDatabase" {
     Context "Should rename database files and forces the move" {
         BeforeAll {
             $variables = @{
-                SqlInstance   = $script:instance2
+                SqlInstance   = $env:instance2
                 Database      = "dbatoolsci_filemove"
                 FileName      = "<FNN>_<FT>"
                 ReplaceBefore = $true
@@ -246,7 +246,7 @@ Describe "Rename-DbaDatabase" {
     Context "Should rename database files and set the database offline" {
         BeforeAll {
             $variables = @{
-                SqlInstance = $script:instance2
+                SqlInstance = $env:instance2
                 Database    = "dbatoolsci_filemove"
                 FileName    = "<FNN>_<LGN>_<DATE>"
                 SetOffline  = $true
@@ -274,7 +274,7 @@ Describe "Rename-DbaDatabase" {
     Context "Should rename the logical name" {
         BeforeAll {
             $variables = @{
-                SqlInstance = $script:instance2
+                SqlInstance = $env:instance2
                 Database    = "dbatoolsci_logicname"
                 LogicalName = "<LGN>_<DATE>_<DBN>"
             }
@@ -298,7 +298,7 @@ Describe "Rename-DbaDatabase" {
     Context "Should rename the filegroupname name" {
         BeforeAll {
             $variables = @{
-                SqlInstance   = $script:instance2
+                SqlInstance   = $env:instance2
                 Database      = "dbatoolsci_filegroupname"
                 FileGroupName = "<FGN>_<DATE>_<DBN>"
             }

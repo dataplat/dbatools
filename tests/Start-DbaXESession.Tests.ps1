@@ -2,7 +2,7 @@ param($ModuleName = 'dbatools')
 Describe "Start-DbaXESession" {
     BeforeAll {
         . "$PSScriptRoot\constants.ps1"
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $env:instance2
         $conn = $server.ConnectionContext
         # Get the systemhealth session
         $systemhealth = Get-DbaXESession -SqlInstance $server -Session system_health
@@ -34,7 +34,7 @@ Describe "Start-DbaXESession" {
         # Drop created objects
         $conn.ExecuteNonQuery("IF EXISTS(SELECT * FROM sys.server_event_sessions WHERE name = 'dbatoolsci_session_invalid') DROP EVENT SESSION [dbatoolsci_session_invalid] ON SERVER;")
         $conn.ExecuteNonQuery("IF EXISTS(SELECT * FROM sys.server_event_sessions WHERE name = 'dbatoolsci_session_valid') DROP EVENT SESSION [dbatoolsci_session_valid] ON SERVER;")
-        Get-DbaAgentSchedule -SqlInstance $script:instance2 -Schedule "XE Session START - dbatoolsci_session_valid", "XE Session STOP - dbatoolsci_session_valid" | Remove-DbaAgentSchedule -Force -Confirm:$false
+        Get-DbaAgentSchedule -SqlInstance $env:instance2 -Schedule "XE Session START - dbatoolsci_session_valid", "XE Session STOP - dbatoolsci_session_valid" | Remove-DbaAgentSchedule -Force -Confirm:$false
     }
 
     Context "Validate parameters" {
@@ -57,13 +57,13 @@ Describe "Start-DbaXESession" {
             $CommandUnderTest | Should -HaveParameter StopAt -Type DateTime
         }
         It "Should have AllSessions as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AllSessions -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter AllSessions -Type Switch
         }
         It "Should have InputObject as a parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Session[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -119,8 +119,8 @@ Describe "Start-DbaXESession" {
             Start-Sleep -Seconds 11
             $dbatoolsciValid.Refresh()
             $dbatoolsciValid.IsRunning | Should -Be $false
-            # Using $script:instance2 because the SMO $server is not updated after the job is removed
-            (Get-DbaAgentJob -SqlInstance $script:instance2 -Job "XE Session STOP - dbatoolsci_session_valid").Count | Should -Be 0
+            # Using $env:instance2 because the SMO $server is not updated after the job is removed
+            (Get-DbaAgentJob -SqlInstance $env:instance2 -Job "XE Session STOP - dbatoolsci_session_valid").Count | Should -Be 0
         }
 
         It "works when -StartAt is passed" {
@@ -136,8 +136,8 @@ Describe "Start-DbaXESession" {
             Start-Sleep -Seconds 11
             $dbatoolsciValid.Refresh()
             $dbatoolsciValid.IsRunning | Should -Be $true
-            # Using $script:instance2 because the SMO $server is not updated after the job is removed
-            (Get-DbaAgentJob -SqlInstance $script:instance2 -Job "XE Session STOP - dbatoolsci_session_valid").Count | Should -Be 0
+            # Using $env:instance2 because the SMO $server is not updated after the job is removed
+            (Get-DbaAgentJob -SqlInstance $env:instance2 -Job "XE Session STOP - dbatoolsci_session_valid").Count | Should -Be 0
         }
     }
 }

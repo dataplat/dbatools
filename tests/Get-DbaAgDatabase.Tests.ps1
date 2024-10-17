@@ -21,7 +21,7 @@ Describe "Get-DbaAgDatabase" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type AvailabilityGroup[] -Not -Mandatory
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 }
@@ -32,14 +32,14 @@ Describe "Get-DbaAgDatabase Integration Tests" -Tag "IntegrationTests" {
     }
 
     BeforeAll {
-        $null = Get-DbaProcess -SqlInstance $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
-        $server = Connect-DbaInstance -SqlInstance $script:instance3
+        $null = Get-DbaProcess -SqlInstance $global:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
+        $server = Connect-DbaInstance -SqlInstance $global:instance3
         $agname = "dbatoolsci_getagdb_agroup"
         $dbname = "dbatoolsci_getagdb_agroupdb"
         $server.Query("create database $dbname")
-        $null = Get-DbaDatabase -SqlInstance $script:instance3 -Database $dbname | Backup-DbaDatabase
-        $null = Get-DbaDatabase -SqlInstance $script:instance3 -Database $dbname | Backup-DbaDatabase -Type Log
-        $ag = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Database $dbname -Confirm:$false -Certificate dbatoolsci_AGCert -UseLastBackup
+        $null = Get-DbaDatabase -SqlInstance $global:instance3 -Database $dbname | Backup-DbaDatabase
+        $null = Get-DbaDatabase -SqlInstance $global:instance3 -Database $dbname | Backup-DbaDatabase -Type Log
+        $ag = New-DbaAvailabilityGroup -Primary $global:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Database $dbname -Confirm:$false -Certificate dbatoolsci_AGCert -UseLastBackup
     }
 
     AfterAll {
@@ -49,10 +49,10 @@ Describe "Get-DbaAgDatabase Integration Tests" -Tag "IntegrationTests" {
 
     Context "Gets AG database" {
         It "Returns results" {
-            $results = Get-DbaAgDatabase -SqlInstance $script:instance3 -Database $dbname
+            $results = Get-DbaAgDatabase -SqlInstance $global:instance3 -Database $dbname
             $results.AvailabilityGroup | Should -Be $agname
             $results.Name | Should -Be $dbname
             $results.LocalReplicaRole | Should -Not -BeNullOrEmpty
         }
     }
-} #$script:instance2 for appveyor
+} #$global:instance2 for appveyor

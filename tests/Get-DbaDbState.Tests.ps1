@@ -22,13 +22,13 @@ Describe "Get-DbaDbState" {
             $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Reading db statuses" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $db1 = "dbatoolsci_dbstate_online"
             $db2 = "dbatoolsci_dbstate_offline"
             $db3 = "dbatoolsci_dbstate_emergency"
@@ -37,7 +37,7 @@ Describe "Get-DbaDbState" {
             $db6 = "dbatoolsci_dbstate_multi"
             $db7 = "dbatoolsci_dbstate_rw"
             $db8 = "dbatoolsci_dbstate_ro"
-            Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8 | Remove-DbaDatabase -Confirm:$false
+            Get-DbaDatabase -SqlInstance $global:instance2 -Database $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8 | Remove-DbaDatabase -Confirm:$false
             $server.Query("CREATE DATABASE $db1")
             $server.Query("CREATE DATABASE $db2; ALTER DATABASE $db2 SET OFFLINE WITH ROLLBACK IMMEDIATE")
             $server.Query("CREATE DATABASE $db3; ALTER DATABASE $db3 SET EMERGENCY WITH ROLLBACK IMMEDIATE")
@@ -48,85 +48,85 @@ Describe "Get-DbaDbState" {
             $server.Query("CREATE DATABASE $db8; ALTER DATABASE $db8 SET READ_ONLY WITH ROLLBACK IMMEDIATE")
             $needed_ = $server.Query("select name from sys.databases")
             $needed = $needed_ | Where-Object name -in $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8
-            $script:setupright = $needed.Count -eq 8
+            $global:setupright = $needed.Count -eq 8
         }
 
         AfterAll {
-            $null = Set-DbaDbState -Sqlinstance $script:instance2 -Database $db2, $db3, $db4, $db5, $db7 -Online -ReadWrite -MultiUser -Force
-            Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8
+            $null = Set-DbaDbState -Sqlinstance $global:instance2 -Database $db2, $db3, $db4, $db5, $db7 -Online -ReadWrite -MultiUser -Force
+            Remove-DbaDatabase -Confirm:$false -SqlInstance $global:instance2 -Database $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8
         }
 
-        It "Honors the Database parameter" -Skip:(-not $script:setupright) {
-            $result = Get-DbaDbState -SqlInstance $script:instance2 -Database $db2
+        It "Honors the Database parameter" -Skip:(-not $global:setupright) {
+            $result = Get-DbaDbState -SqlInstance $global:instance2 -Database $db2
             $result.DatabaseName | Should -Be $db2
-            $results = Get-DbaDbState -SqlInstance $script:instance2 -Database $db1, $db2
+            $results = Get-DbaDbState -SqlInstance $global:instance2 -Database $db1, $db2
             $results.Count | Should -Be 2
         }
 
-        It "Honors the ExcludeDatabase parameter" -Skip:(-not $script:setupright) {
+        It "Honors the ExcludeDatabase parameter" -Skip:(-not $global:setupright) {
             $alldbs_ = $server.Query("select name from sys.databases")
             $alldbs = ($alldbs_ | Where-Object Name -notin @($db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8)).name
-            $results = Get-DbaDbState -SqlInstance $script:instance2 -ExcludeDatabase $alldbs
+            $results = Get-DbaDbState -SqlInstance $global:instance2 -ExcludeDatabase $alldbs
             $comparison = Compare-Object -ReferenceObject ($results.DatabaseName) -DifferenceObject (@($db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8))
             $comparison.Count | Should -Be 0
         }
 
-        It "Identifies online database" -Skip:(-not $script:setupright) {
-            $result = Get-DbaDbState -SqlInstance $script:instance2 -Database $db1
+        It "Identifies online database" -Skip:(-not $global:setupright) {
+            $result = Get-DbaDbState -SqlInstance $global:instance2 -Database $db1
             $result.DatabaseName | Should -Be $db1
             $result.Status | Should -Be "ONLINE"
         }
 
-        It "Identifies offline database" -Skip:(-not $script:setupright) {
-            $result = Get-DbaDbState -SqlInstance $script:instance2 -Database $db2
+        It "Identifies offline database" -Skip:(-not $global:setupright) {
+            $result = Get-DbaDbState -SqlInstance $global:instance2 -Database $db2
             $result.DatabaseName | Should -Be $db2
             $result.Status | Should -Be "OFFLINE"
         }
 
-        It "Identifies emergency database" -Skip:(-not $script:setupright) {
-            $result = Get-DbaDbState -SqlInstance $script:instance2 -Database $db3
+        It "Identifies emergency database" -Skip:(-not $global:setupright) {
+            $result = Get-DbaDbState -SqlInstance $global:instance2 -Database $db3
             $result.DatabaseName | Should -Be $db3
             $result.Status | Should -Be "EMERGENCY"
         }
 
-        It "Identifies single_user database" -Skip:(-not $script:setupright) {
-            $result = Get-DbaDbState -SqlInstance $script:instance2 -Database $db4
+        It "Identifies single_user database" -Skip:(-not $global:setupright) {
+            $result = Get-DbaDbState -SqlInstance $global:instance2 -Database $db4
             $result.DatabaseName | Should -Be $db4
             $result.Access | Should -Be "SINGLE_USER"
         }
 
-        It "Identifies restricted_user database" -Skip:(-not $script:setupright) {
-            $result = Get-DbaDbState -SqlInstance $script:instance2 -Database $db5
+        It "Identifies restricted_user database" -Skip:(-not $global:setupright) {
+            $result = Get-DbaDbState -SqlInstance $global:instance2 -Database $db5
             $result.DatabaseName | Should -Be $db5
             $result.Access | Should -Be "RESTRICTED_USER"
         }
 
-        It "Identifies multi_user database" -Skip:(-not $script:setupright) {
-            $result = Get-DbaDbState -SqlInstance $script:instance2 -Database $db6
+        It "Identifies multi_user database" -Skip:(-not $global:setupright) {
+            $result = Get-DbaDbState -SqlInstance $global:instance2 -Database $db6
             $result.DatabaseName | Should -Be $db6
             $result.Access | Should -Be "MULTI_USER"
         }
 
-        It "Identifies read_write database" -Skip:(-not $script:setupright) {
-            $result = Get-DbaDbState -SqlInstance $script:instance2 -Database $db7
+        It "Identifies read_write database" -Skip:(-not $global:setupright) {
+            $result = Get-DbaDbState -SqlInstance $global:instance2 -Database $db7
             $result.DatabaseName | Should -Be $db7
             $result.RW | Should -Be "READ_WRITE"
         }
 
-        It "Identifies read_only database" -Skip:(-not $script:setupright) {
-            $result = Get-DbaDbState -SqlInstance $script:instance2 -Database $db8
+        It "Identifies read_only database" -Skip:(-not $global:setupright) {
+            $result = Get-DbaDbState -SqlInstance $global:instance2 -Database $db8
             $result.DatabaseName | Should -Be $db8
             $result.RW | Should -Be "READ_ONLY"
         }
 
-        It "Has the correct properties" -Skip:(-not $script:setupright) {
-            $result = Get-DbaDbState -SqlInstance $script:instance2 -Database $db1
+        It "Has the correct properties" -Skip:(-not $global:setupright) {
+            $result = Get-DbaDbState -SqlInstance $global:instance2 -Database $db1
             $ExpectedProps = 'SqlInstance,InstanceName,ComputerName,DatabaseName,RW,Status,Access,Database'.Split(',')
             ($result.PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
         }
 
-        It "Has the correct default properties" -Skip:(-not $script:setupright) {
-            $result = Get-DbaDbState -SqlInstance $script:instance2 -Database $db1
+        It "Has the correct default properties" -Skip:(-not $global:setupright) {
+            $result = Get-DbaDbState -SqlInstance $global:instance2 -Database $db1
             $ExpectedPropsDefault = 'SqlInstance,InstanceName,ComputerName,DatabaseName,RW,Status,Access'.Split(',')
             ($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should -Be ($ExpectedPropsDefault | Sort-Object)
         }

@@ -32,29 +32,29 @@ Describe "Measure-DbaDbVirtualLogFile" {
 
     Context "Command actually works" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $env:instance2
             $db1 = "dbatoolsci_testvlf"
             $server.Query("CREATE DATABASE $db1")
-            $needed = Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1
+            $needed = Get-DbaDatabase -SqlInstance $env:instance2 -Database $db1
         }
 
         AfterAll {
-            Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $db1
+            Remove-DbaDatabase -Confirm:$false -SqlInstance $env:instance2 -Database $db1
         }
 
         It "Should have correct properties" {
-            $results = Measure-DbaDbVirtualLogFile -SqlInstance $script:instance2 -Database $db1
+            $results = Measure-DbaDbVirtualLogFile -SqlInstance $env:instance2 -Database $db1
             $ExpectedProps = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Total', 'TotalCount', 'Inactive', 'Active', 'LogFileName', 'LogFileGrowth', 'LogFileGrowthType'
             $results[0].PSObject.Properties.Name | Should -Be $ExpectedProps
         }
 
         It "Should have database name of $db1" {
-            $results = Measure-DbaDbVirtualLogFile -SqlInstance $script:instance2 -Database $db1
+            $results = Measure-DbaDbVirtualLogFile -SqlInstance $env:instance2 -Database $db1
             $results.Database | Should -Be $db1
         }
 
         It "Should have values for Total property" {
-            $results = Measure-DbaDbVirtualLogFile -SqlInstance $script:instance2 -Database $db1
+            $results = Measure-DbaDbVirtualLogFile -SqlInstance $env:instance2 -Database $db1
             $results.Total | Should -Not -BeNullOrEmpty
             $results.Total | Should -BeGreaterThan 0
         }

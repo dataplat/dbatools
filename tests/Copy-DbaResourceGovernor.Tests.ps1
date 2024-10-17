@@ -39,7 +39,7 @@ END;
 ALTER RESOURCE GOVERNOR with (CLASSIFIER_FUNCTION = dbo.dbatoolsci_fnRG);
 ALTER RESOURCE GOVERNOR RECONFIGURE;
 "@
-        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2 -Query $sql
+        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $global:instance2 -Query $sql
     }
 
     AfterAll {
@@ -57,8 +57,8 @@ ALTER RESOURCE GOVERNOR RECONFIGURE;
 DROP RESOURCE POOL [dbatoolsci_prod];
 ALTER RESOURCE GOVERNOR RECONFIGURE;
 "@
-        Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
-        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2, $script:instance3 -Query $cleanup
+        Get-DbaProcess -SqlInstance $global:instance2, $global:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
+        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $global:instance2, $global:instance3 -Query $cleanup
     }
 
     Context "Validate parameters" {
@@ -84,22 +84,22 @@ ALTER RESOURCE GOVERNOR RECONFIGURE;
             $CommandUnderTest | Should -HaveParameter ExcludeResourcePool -Type Object[]
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Command works" {
         It "copies the resource governor successfully" {
-            $results = Copy-DbaResourceGovernor -Source $script:instance2 -Destination $script:instance3 -Force -WarningAction SilentlyContinue
+            $results = Copy-DbaResourceGovernor -Source $global:instance2 -Destination $global:instance3 -Force -WarningAction SilentlyContinue
             $results.Status | Select-Object -Unique | Should -Be 'Successful'
             $results.Status.Count | Should -BeGreaterThan 3
             $results.Name | Should -Contain 'dbatoolsci_prod'
         }
         It "returns the proper classifier function" {
-            $results = Get-DbaRgClassifierFunction -SqlInstance $script:instance3
+            $results = Get-DbaRgClassifierFunction -SqlInstance $global:instance3
             $results.Name | Should -Be 'dbatoolsci_fnRG'
         }
     }

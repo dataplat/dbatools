@@ -15,7 +15,7 @@ Describe "Get-DbaNetworkConfiguration" {
             $CommandUnderTest | Should -HaveParameter OutputType -Type String
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -24,8 +24,8 @@ Describe "Get-DbaNetworkConfiguration" {
             . (Join-Path $PSScriptRoot 'constants.ps1')
         }
         BeforeAll {
-            $resultsFull = Get-DbaNetworkConfiguration -SqlInstance $script:instance2
-            $resultsTcpIpProperties = Get-DbaNetworkConfiguration -SqlInstance $script:instance2 -OutputType TcpIpProperties
+            $resultsFull = Get-DbaNetworkConfiguration -SqlInstance $env:instance2
+            $resultsTcpIpProperties = Get-DbaNetworkConfiguration -SqlInstance $env:instance2 -OutputType TcpIpProperties
         }
 
         It "Should Return a Result" {

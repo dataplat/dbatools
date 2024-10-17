@@ -11,19 +11,19 @@ Describe "Set-DbatoolsInsecureConnection" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbatoolsInsecureConnection
         }
-        It "Should have SessionOnly as a non-mandatory SwitchParameter" {
+        It "Should have SessionOnly as a non-mandatory Switch" {
             $CommandUnderTest | Should -HaveParameter SessionOnly -Type Switch -Not -Mandatory
         }
         It "Should have Scope as a non-mandatory ConfigScope parameter" {
             $CommandUnderTest | Should -HaveParameter Scope -Type ConfigScope -Not -Mandatory
         }
-        It "Should have Register as a non-mandatory SwitchParameter" {
+        It "Should have Register as a non-mandatory Switch" {
             $CommandUnderTest | Should -HaveParameter Register -Type Switch -Not -Mandatory
         }
-        It "Should have Verbose as a non-mandatory SwitchParameter" {
+        It "Should have Verbose as a non-mandatory Switch" {
             $CommandUnderTest | Should -HaveParameter Verbose -Type Switch -Not -Mandatory
         }
-        It "Should have Debug as a non-mandatory SwitchParameter" {
+        It "Should have Debug as a non-mandatory Switch" {
             $CommandUnderTest | Should -HaveParameter Debug -Type Switch -Not -Mandatory
         }
         It "Should have ErrorAction as a non-mandatory ActionPreference parameter" {

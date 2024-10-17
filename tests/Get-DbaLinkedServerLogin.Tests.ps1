@@ -7,8 +7,8 @@ Describe "Get-DbaLinkedServerLogin" {
         . "$PSScriptRoot\constants.ps1"
 
         $random = Get-Random
-        $server2 = Connect-DbaInstance -SqlInstance $script:instance2
-        $server3 = Connect-DbaInstance -SqlInstance $script:instance3
+        $server2 = Connect-DbaInstance -SqlInstance $env:instance2
+        $server3 = Connect-DbaInstance -SqlInstance $env:instance3
 
         $securePassword = ConvertTo-SecureString -String 's3cur3P4ssw0rd?' -AsPlainText -Force
         $localLogin1Name = "dbatoolscli_localLogin1_$random"
@@ -78,7 +78,7 @@ Describe "Get-DbaLinkedServerLogin" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Not -Mandatory
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 

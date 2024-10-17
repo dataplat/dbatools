@@ -18,7 +18,7 @@ Describe "Get-DbaDbMailLog" {
             $CommandUnderTest | Should -HaveParameter Type -Type String[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -29,7 +29,7 @@ Describe "Get-DbaDbMailLog" {
         }
 
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $server.Query("INSERT INTO msdb.[dbo].[sysmail_log]
             ([event_type]
             ,[log_date]
@@ -49,7 +49,7 @@ Describe "Get-DbaDbMailLog" {
 
         Context "Gets Db Mail Log" {
             BeforeAll {
-                $results = Get-DbaDbMailLog -SqlInstance $script:instance2 | Where-Object {$_.Login -eq 'dbatools\dbatoolssci'}
+                $results = Get-DbaDbMailLog -SqlInstance $global:instance2 | Where-Object {$_.Login -eq 'dbatools\dbatoolssci'}
             }
 
             It "Gets results" {
@@ -67,7 +67,7 @@ Describe "Get-DbaDbMailLog" {
 
         Context "Gets Db Mail Log using -Type" {
             BeforeAll {
-                $results = Get-DbaDbMailLog -SqlInstance $script:instance2 -Type Information
+                $results = Get-DbaDbMailLog -SqlInstance $global:instance2 -Type Information
             }
 
             It "Gets results" {
@@ -85,7 +85,7 @@ Describe "Get-DbaDbMailLog" {
 
         Context "Gets Db Mail History using -Since" {
             BeforeAll {
-                $results = Get-DbaDbMailLog -SqlInstance $script:instance2 -Since '2018-01-01'
+                $results = Get-DbaDbMailLog -SqlInstance $global:instance2 -Since '2018-01-01'
             }
 
             It "Gets results" {

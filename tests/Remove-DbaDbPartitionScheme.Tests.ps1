@@ -21,13 +21,13 @@ Describe "Remove-DbaDbPartitionScheme" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type PartitionScheme[] -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
         It "Should have Verbose parameter" {
-            $CommandUnderTest | Should -HaveParameter Verbose -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Verbose -Type Switch -Not -Mandatory
         }
         It "Should have Debug parameter" {
-            $CommandUnderTest | Should -HaveParameter Debug -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Debug -Type Switch -Not -Mandatory
         }
         It "Should have ErrorAction parameter" {
             $CommandUnderTest | Should -HaveParameter ErrorAction -Type ActionPreference -Not -Mandatory
@@ -60,17 +60,17 @@ Describe "Remove-DbaDbPartitionScheme" {
             $CommandUnderTest | Should -HaveParameter PipelineVariable -Type String -Not -Mandatory
         }
         It "Should have WhatIf parameter" {
-            $CommandUnderTest | Should -HaveParameter WhatIf -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter WhatIf -Type Switch -Not -Mandatory
         }
         It "Should have Confirm parameter" {
-            $CommandUnderTest | Should -HaveParameter Confirm -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Confirm -Type Switch -Not -Mandatory
         }
     }
 }
 
 Describe "Remove-DbaDbPartitionScheme Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $env:instance2
         $dbname1 = "dbatoolsci_$(Get-Random)"
         $dbname2 = "dbatoolsci_$(Get-Random)"
         $null = New-DbaDatabase -SqlInstance $server -Name $dbname1

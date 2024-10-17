@@ -9,10 +9,10 @@ Describe "Read-DbaAuditFile" {
             $CommandUnderTest | Should -HaveParameter Path -Type Object[] -Not -Mandatory
         }
         It "Should have Raw as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Raw -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Raw -Type Switch -Not -Mandatory
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
@@ -22,7 +22,7 @@ Describe "Read-DbaAuditFile" {
         }
 
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $env:instance2
             $path = $server.ErrorLogPath
             $sql = @"
 CREATE SERVER AUDIT LoginAudit
@@ -36,8 +36,8 @@ ALTER SERVER AUDIT LoginAudit WITH (STATE = ON)
 "@
             $server.Query($sql)
             # generate a login
-            $null = Get-DbaDatabase -SqlInstance $script:instance2
-            $null = Get-DbaDbFile -SqlInstance $script:instance2
+            $null = Get-DbaDatabase -SqlInstance $env:instance2
+            $null = Get-DbaDbFile -SqlInstance $env:instance2
             # Give it a chance to write
             Start-Sleep 2
         }
@@ -53,12 +53,12 @@ DROP SERVER AUDIT LoginAudit
         }
 
         It "returns some results when using -Raw parameter" {
-            $results = Get-DbaInstanceAudit -SqlInstance $script:instance2 -Audit LoginAudit | Read-DbaAuditFile -Raw -WarningAction SilentlyContinue
+            $results = Get-DbaInstanceAudit -SqlInstance $env:instance2 -Audit LoginAudit | Read-DbaAuditFile -Raw -WarningAction SilentlyContinue
             $results.Count | Should -BeGreaterThan 1
         }
 
         It "returns results with server_principal_name" {
-            $results = Get-DbaInstanceAudit -SqlInstance $script:instance2 -Audit LoginAudit | Read-DbaAuditFile | Select-Object -First 1
+            $results = Get-DbaInstanceAudit -SqlInstance $env:instance2 -Audit LoginAudit | Read-DbaAuditFile | Select-Object -First 1
             $results.server_principal_name | Should -Not -BeNullOrEmpty
         }
     }

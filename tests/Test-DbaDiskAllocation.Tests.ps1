@@ -30,15 +30,15 @@ Describe "Test-DbaDiskAllocation" {
 
     Context "Command actually works" {
         BeforeDiscovery {
-            $script:instance2 = $script:instance2 # Ensure this variable is in scope for discovery
+            $env:instance2 = $env:instance2 # Ensure this variable is in scope for discovery
         }
         It "Should return a result" {
-            $results = Test-DbaDiskAllocation -ComputerName $script:instance2
+            $results = Test-DbaDiskAllocation -ComputerName $env:instance2
             $results | Should -Not -BeNullOrEmpty
         }
 
         It "Should return a result not using sql" {
-            $results = Test-DbaDiskAllocation -NoSqlCheck -ComputerName $script:instance2
+            $results = Test-DbaDiskAllocation -NoSqlCheck -ComputerName $env:instance2
             $results | Should -Not -BeNullOrEmpty
         }
     }

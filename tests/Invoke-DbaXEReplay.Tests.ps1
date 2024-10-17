@@ -25,10 +25,10 @@ Describe "Invoke-DbaXEReplay" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Object
         }
         It "Should have Raw parameter" {
-            $CommandUnderTest | Should -HaveParameter Raw -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Raw -Type Switch
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 

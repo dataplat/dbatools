@@ -45,40 +45,40 @@ Describe "Invoke-DbaDbMirroring" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Database[]
         }
         It "Should have UseLastBackup parameter" {
-            $CommandUnderTest | Should -HaveParameter UseLastBackup -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter UseLastBackup -Type Switch
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Command usage" {
         BeforeAll {
-            $null = Get-DbaProcess -SqlInstance $script:instance2 | Where-Object Program -Match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $null = Get-DbaProcess -SqlInstance $env:instance2 | Where-Object Program -Match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
+            $server = Connect-DbaInstance -SqlInstance $env:instance2
             $db1 = "dbatoolsci_mirroring"
 
-            Remove-DbaDbMirror -SqlInstance $script:instance2 -Database $db1 -Confirm:$false
-            Remove-DbaDatabase -SqlInstance $script:instance2 -Database $db1 -Confirm:$false
-            $null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1 | Remove-DbaDatabase -Confirm:$false
+            Remove-DbaDbMirror -SqlInstance $env:instance2 -Database $db1 -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $env:instance2 -Database $db1 -Confirm:$false
+            $null = Get-DbaDatabase -SqlInstance $env:instance2 -Database $db1 | Remove-DbaDatabase -Confirm:$false
             $null = $server.Query("CREATE DATABASE $db1")
 
-            Get-DbaEndpoint -SqlInstance $script:instance2 -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
-            New-DbaEndpoint -SqlInstance $script:instance2 -Name dbatoolsci_MirroringEndpoint -Type DatabaseMirroring -Port 5022 -Owner sa
-            Get-DbaEndpoint -SqlInstance $script:instance3 -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
-            New-DbaEndpoint -SqlInstance $script:instance3 -Name dbatoolsci_MirroringEndpoint -Type DatabaseMirroring -Port 5023 -Owner sa
+            Get-DbaEndpoint -SqlInstance $env:instance2 -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
+            New-DbaEndpoint -SqlInstance $env:instance2 -Name dbatoolsci_MirroringEndpoint -Type DatabaseMirroring -Port 5022 -Owner sa
+            Get-DbaEndpoint -SqlInstance $env:instance3 -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
+            New-DbaEndpoint -SqlInstance $env:instance3 -Name dbatoolsci_MirroringEndpoint -Type DatabaseMirroring -Port 5023 -Owner sa
         }
 
         AfterAll {
-            $null = Remove-DbaDbMirror -SqlInstance $script:instance2, $script:instance3 -Database $db1 -Confirm:$false
-            $null = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2, $script:instance3 -Database $db1 -ErrorAction SilentlyContinue
+            $null = Remove-DbaDbMirror -SqlInstance $env:instance2, $env:instance3 -Database $db1 -Confirm:$false
+            $null = Remove-DbaDatabase -Confirm:$false -SqlInstance $env:instance2, $env:instance3 -Database $db1 -ErrorAction SilentlyContinue
         }
 
         It "returns success" {
-            $results = Invoke-DbaDbMirroring -Primary $script:instance2 -Mirror $script:instance3 -Database $db1 -Confirm:$false -Force -SharedPath C:\temp -WarningVariable warn
+            $results = Invoke-DbaDbMirroring -Primary $env:instance2 -Mirror $env:instance3 -Database $db1 -Confirm:$false -Force -SharedPath C:\temp -WarningVariable warn
             $warn | Should -BeNullOrEmpty
             $results.Status | Should -Be 'Success'
         }

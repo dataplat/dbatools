@@ -18,10 +18,10 @@ Describe "Remove-DbaLinkedServer" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Object[]
         }
         It "Should have Force as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -29,8 +29,8 @@ Describe "Remove-DbaLinkedServer" {
         BeforeAll {
             . "$PSScriptRoot\constants.ps1"
             $random = Get-Random
-            $instance2 = Connect-DbaInstance -SqlInstance $script:instance2
-            $instance3 = Connect-DbaInstance -SqlInstance $script:instance3
+            $instance2 = Connect-DbaInstance -SqlInstance $env:instance2
+            $instance3 = Connect-DbaInstance -SqlInstance $env:instance3
 
             $linkedServerName1 = "dbatoolscli_LS1_$random"
             $linkedServerName2 = "dbatoolscli_LS2_$random"
@@ -77,18 +77,18 @@ Describe "Remove-DbaLinkedServer" {
         It "Removes a linked server" {
             $results = Get-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServerName1
             $results.Length | Should -Be 1
-            Remove-DbaLinkedServer -SqlInstance $script:instance2 -LinkedServer $linkedServerName1 -Confirm:$false
+            Remove-DbaLinkedServer -SqlInstance $env:instance2 -LinkedServer $linkedServerName1 -Confirm:$false
             $results = Get-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServerName1
             $results | Should -BeNullOrEmpty
         }
 
         It "Tries to remove a non-existent linked server" {
-            Remove-DbaLinkedServer -SqlInstance $script:instance2 -LinkedServer $linkedServerName1 -Confirm:$false -WarningVariable warnings
+            Remove-DbaLinkedServer -SqlInstance $env:instance2 -LinkedServer $linkedServerName1 -Confirm:$false -WarningVariable warnings
             $warnings | Should -BeLike "*Linked server $linkedServerName1 does not exist on $($instance2.Name)"
         }
 
         It "Removes a linked server passed in via pipeline" {
-            $results = Get-DbaLinkedServer -SqlInstance $script:instance2 -LinkedServer $linkedServerName2
+            $results = Get-DbaLinkedServer -SqlInstance $env:instance2 -LinkedServer $linkedServerName2
             $results.Length | Should -Be 1
             Get-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServerName2 | Remove-DbaLinkedServer -Confirm:$false
             $results = Get-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServerName2
@@ -96,7 +96,7 @@ Describe "Remove-DbaLinkedServer" {
         }
 
         It "Removes a linked server using a server passed in via pipeline" {
-            $results = Get-DbaLinkedServer -SqlInstance $script:instance2 -LinkedServer $linkedServerName3
+            $results = Get-DbaLinkedServer -SqlInstance $env:instance2 -LinkedServer $linkedServerName3
             $results.Length | Should -Be 1
             $instance2 | Remove-DbaLinkedServer -LinkedServer $linkedServerName3 -Confirm:$false
             $results = Get-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServerName3

@@ -24,7 +24,7 @@ Describe "Get-DbaAgentJobOutputFile" {
             $CommandUnderTest | Should -HaveParameter ExcludeJob -Type Object[]
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 

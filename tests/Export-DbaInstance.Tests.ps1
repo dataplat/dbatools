@@ -24,13 +24,13 @@ Describe "Export-DbaInstance Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter Path -Type String -Not -Mandatory
         }
         It "Should have NoRecovery as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NoRecovery -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NoRecovery -Type Switch -Not -Mandatory
         }
         It "Should have AzureCredential as a parameter" {
             $CommandUnderTest | Should -HaveParameter AzureCredential -Type String -Not -Mandatory
         }
         It "Should have IncludeDbMasterKey as a parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeDbMasterKey -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter IncludeDbMasterKey -Type Switch -Not -Mandatory
         }
         It "Should have Exclude as a parameter" {
             $CommandUnderTest | Should -HaveParameter Exclude -Type String[] -Not -Mandatory
@@ -42,16 +42,16 @@ Describe "Export-DbaInstance Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter ScriptingOption -Type ScriptingOptions -Not -Mandatory
         }
         It "Should have NoPrefix as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NoPrefix -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NoPrefix -Type Switch -Not -Mandatory
         }
         It "Should have ExcludePassword as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludePassword -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludePassword -Type Switch -Not -Mandatory
         }
         It "Should have Force as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Not -Mandatory
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 }
@@ -65,7 +65,7 @@ Describe "Export-DbaInstance Integration Tests" -Tag "IntegrationTests" {
             $null = New-Item -Path $exportDir -ItemType Container
         }
 
-        $testServer = $script:instance2
+        $testServer = $global:instance2
         $server = Connect-DbaInstance -SqlInstance $testServer
         $srvName = "dbatoolsci-server1"
         $group = "dbatoolsci-group1"

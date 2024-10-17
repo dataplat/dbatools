@@ -29,7 +29,7 @@ Describe "Remove-DbaDbMasterKey Unit Tests" -Tag 'UnitTests' {
         }
 
         It "Should have All parameter" {
-            $command | Should -HaveParameter All -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter All -Type Switch -Not -Mandatory
         }
 
         It "Should have InputObject parameter" {
@@ -37,12 +37,12 @@ Describe "Remove-DbaDbMasterKey Unit Tests" -Tag 'UnitTests' {
         }
 
         It "Should have EnableException parameter" {
-            $command | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
 
         It "Should have common parameters" {
-            $command | Should -HaveParameter Verbose -Type SwitchParameter -Not -Mandatory
-            $command | Should -HaveParameter Debug -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter Verbose -Type Switch -Not -Mandatory
+            $command | Should -HaveParameter Debug -Type Switch -Not -Mandatory
             $command | Should -HaveParameter ErrorAction -Type ActionPreference -Not -Mandatory
             $command | Should -HaveParameter WarningAction -Type ActionPreference -Not -Mandatory
             $command | Should -HaveParameter InformationAction -Type ActionPreference -Not -Mandatory
@@ -53,8 +53,8 @@ Describe "Remove-DbaDbMasterKey Unit Tests" -Tag 'UnitTests' {
             $command | Should -HaveParameter OutVariable -Type String -Not -Mandatory
             $command | Should -HaveParameter OutBuffer -Type Int32 -Not -Mandatory
             $command | Should -HaveParameter PipelineVariable -Type String -Not -Mandatory
-            $command | Should -HaveParameter WhatIf -Type SwitchParameter -Not -Mandatory
-            $command | Should -HaveParameter Confirm -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter WhatIf -Type Switch -Not -Mandatory
+            $command | Should -HaveParameter Confirm -Type Switch -Not -Mandatory
         }
     }
 }

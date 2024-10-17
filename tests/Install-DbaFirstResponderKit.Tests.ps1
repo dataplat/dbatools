@@ -28,23 +28,23 @@ Describe "Install-DbaFirstResponderKit" {
             $CommandUnderTest | Should -HaveParameter OnlyScript -Type String[]
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Testing First Responder Kit installer with download" {
         BeforeAll {
             $database = "dbatoolsci_frk_$(Get-Random)"
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $env:instance2
             $server.Query("CREATE DATABASE $database")
 
-            $resultsDownload = Install-DbaFirstResponderKit -SqlInstance $script:instance2 -Database $database -Branch main -Force -Verbose:$false
+            $resultsDownload = Install-DbaFirstResponderKit -SqlInstance $env:instance2 -Database $database -Branch main -Force -Verbose:$false
         }
         AfterAll {
-            Remove-DbaDatabase -SqlInstance $script:instance2 -Database $database -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $env:instance2 -Database $database -Confirm:$false
         }
 
         It "Installs to specified database: $database" {
@@ -63,14 +63,14 @@ Describe "Install-DbaFirstResponderKit" {
             $result.PsObject.Properties.Name | Should -Be $ExpectedProps
         }
         It "Shows status of Updated" {
-            $resultsDownload = Install-DbaFirstResponderKit -SqlInstance $script:instance2 -Database $database -Verbose:$false
+            $resultsDownload = Install-DbaFirstResponderKit -SqlInstance $env:instance2 -Database $database -Verbose:$false
             $resultsDownload[0].Status | Should -Be 'Updated'
         }
         It "Shows status of Error" {
             $folder = Join-Path (Get-DbatoolsConfigValue -FullName Path.DbatoolsData) -Child "SQL-Server-First-Responder-Kit-main"
             $sqlScript = (Get-ChildItem $folder -Filter "sp_*.sql" | Select-Object -First 1).FullName
             Add-Content $sqlScript (New-Guid).ToString()
-            $result = Install-DbaFirstResponderKit -SqlInstance $script:instance2 -Database $database -Verbose:$false
+            $result = Install-DbaFirstResponderKit -SqlInstance $env:instance2 -Database $database -Verbose:$false
             $result[0].Status | Should -Be "Error"
         }
     }
@@ -78,7 +78,7 @@ Describe "Install-DbaFirstResponderKit" {
     Context "Testing First Responder Kit installer with LocalFile" {
         BeforeAll {
             $database = "dbatoolsci_frk_$(Get-Random)"
-            $server = Connect-DbaInstance -SqlInstance $script:instance3
+            $server = Connect-DbaInstance -SqlInstance $env:instance3
             $server.Query("CREATE DATABASE $database")
 
             $outfile = "SQL-Server-First-Responder-Kit-main.zip"
@@ -86,10 +86,10 @@ Describe "Install-DbaFirstResponderKit" {
             if (Test-Path $outfile) {
                 $fullOutfile = (Get-ChildItem $outfile).FullName
             }
-            $resultsLocalFile = Install-DbaFirstResponderKit -SqlInstance $script:instance3 -Database $database -Branch main -LocalFile $fullOutfile -Force
+            $resultsLocalFile = Install-DbaFirstResponderKit -SqlInstance $env:instance3 -Database $database -Branch main -LocalFile $fullOutfile -Force
         }
         AfterAll {
-            Remove-DbaDatabase -SqlInstance $script:instance3 -Database $database -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $env:instance3 -Database $database -Confirm:$false
         }
 
         It "Installs to specified database: $database" {
@@ -108,14 +108,14 @@ Describe "Install-DbaFirstResponderKit" {
             $result.PsObject.Properties.Name | Should -Be $ExpectedProps
         }
         It "Shows status of Updated" {
-            $resultsLocalFile = Install-DbaFirstResponderKit -SqlInstance $script:instance3 -Database $database
+            $resultsLocalFile = Install-DbaFirstResponderKit -SqlInstance $env:instance3 -Database $database
             $resultsLocalFile[0].Status | Should -Be 'Updated'
         }
         It "Shows status of Error" {
             $folder = Join-Path (Get-DbatoolsConfigValue -FullName Path.DbatoolsData) -Child "SQL-Server-First-Responder-Kit-main"
             $sqlScript = (Get-ChildItem $folder -Filter "sp_*.sql" | Select-Object -First 1).FullName
             Add-Content $sqlScript (New-Guid).ToString()
-            $result = Install-DbaFirstResponderKit -SqlInstance $script:instance3 -Database $database
+            $result = Install-DbaFirstResponderKit -SqlInstance $env:instance3 -Database $database
             $result[0].Status | Should -Be "Error"
         }
     }

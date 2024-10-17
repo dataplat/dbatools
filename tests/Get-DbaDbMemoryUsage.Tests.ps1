@@ -18,17 +18,17 @@ Describe "Get-DbaDbMemoryUsage" {
             $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[]
         }
         It "Should have IncludeSystemDb as a parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeSystemDb -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter IncludeSystemDb -Type Switch
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Integration Tests" {
         BeforeAll {
             . "$PSScriptRoot\constants.ps1"
-            $instance = Connect-DbaInstance -SqlInstance $script:instance2
+            $instance = Connect-DbaInstance -SqlInstance $global:instance2
         }
 
         It 'Returns data' {

@@ -32,17 +32,17 @@ Describe "Measure-DbaDiskSpaceRequirement" {
             $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Should Measure Disk Space Required" {
         BeforeAll {
-            $server1 = Connect-DbaInstance -SqlInstance $script:instance1
-            $server2 = Connect-DbaInstance -SqlInstance $script:instance2
+            $server1 = Connect-DbaInstance -SqlInstance $env:instance1
+            $server2 = Connect-DbaInstance -SqlInstance $env:instance2
             $Options = @{
-                Source              = $script:instance1
-                Destination         = $script:instance2
+                Source              = $env:instance1
+                Destination         = $env:instance2
                 Database            = "master"
                 DestinationDatabase = "Dbatoolsci_DestinationDB"
             }
@@ -57,7 +57,7 @@ Describe "Measure-DbaDiskSpaceRequirement" {
             $results.SourceDatabase | Should -Be $Options.Database
         }
 
-        It "Should be sourced from the instance $($script:instance1)" {
+        It "Should be sourced from the instance $($env:instance1)" {
             $results.SourceSqlInstance | Should -Be $server1.SqlInstance
         }
 
@@ -65,7 +65,7 @@ Describe "Measure-DbaDiskSpaceRequirement" {
             $results.DestinationDatabase | Should -Be $Options.DestinationDatabase
         }
 
-        It "Should be destined for the instance $($script:instance2)" {
+        It "Should be destined for the instance $($env:instance2)" {
             $results.DestinationSqlInstance | Should -Be $server2.SqlInstance
         }
 

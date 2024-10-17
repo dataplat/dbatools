@@ -8,9 +8,9 @@ Describe "Test-DbaMigrationConstraint" {
 
         $db1 = "dbatoolsci_testMigrationConstraint"
         $db2 = "dbatoolsci_testMigrationConstraint_2"
-        Invoke-DbaQuery -SqlInstance $script:instance1 -Query "CREATE DATABASE $db1"
-        Invoke-DbaQuery -SqlInstance $script:instance1 -Query "CREATE DATABASE $db2"
-        $needed = Get-DbaDatabase -SqlInstance $script:instance1 -Database $db1, $db2
+        Invoke-DbaQuery -SqlInstance $env:instance1 -Query "CREATE DATABASE $db1"
+        Invoke-DbaQuery -SqlInstance $env:instance1 -Query "CREATE DATABASE $db2"
+        $needed = Get-DbaDatabase -SqlInstance $env:instance1 -Database $db1, $db2
         $setupright = $true
         if ($needed.Count -ne 2) {
             $setupright = $false
@@ -19,7 +19,7 @@ Describe "Test-DbaMigrationConstraint" {
 
     AfterAll {
         if (-not $appveyor) {
-            Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database $db1, $db2 -ErrorAction SilentlyContinue
+            Remove-DbaDatabase -Confirm:$false -SqlInstance $env:instance1 -Database $db1, $db2 -ErrorAction SilentlyContinue
         }
     }
 
@@ -46,13 +46,13 @@ Describe "Test-DbaMigrationConstraint" {
             $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[]
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Validate multiple databases" {
         BeforeAll {
-            $results = Test-DbaMigrationConstraint -Source $script:instance1 -Destination $script:instance2
+            $results = Test-DbaMigrationConstraint -Source $env:instance1 -Destination $env:instance2
         }
         It 'Both databases are migratable' {
             foreach ($result in $results) {
@@ -63,7 +63,7 @@ Describe "Test-DbaMigrationConstraint" {
 
     Context "Validate single database" {
         It 'Database is migratable' {
-            $result = Test-DbaMigrationConstraint -Source $script:instance1 -Destination $script:instance2 -Database $db1
+            $result = Test-DbaMigrationConstraint -Source $env:instance1 -Destination $env:instance2 -Database $db1
             $result.IsMigratable | Should -Be $true
         }
     }

@@ -26,27 +26,27 @@ Describe "Get-DbaAgReplica" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type AvailabilityGroup[] -Not -Mandatory
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
     Context "Command usage" {
         BeforeAll {
             $agname = "dbatoolsci_agroup"
-            $ag = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Certificate dbatoolsci_AGCert -Confirm:$false
+            $ag = New-DbaAvailabilityGroup -Primary $global:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Certificate dbatoolsci_AGCert -Confirm:$false
             $replicaName = $ag.PrimaryReplica
         }
         AfterAll {
-            $null = Remove-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup $agname -Confirm:$false
+            $null = Remove-DbaAvailabilityGroup -SqlInstance $global:instance3 -AvailabilityGroup $agname -Confirm:$false
         }
         It "returns results with proper data" {
-            $results = Get-DbaAgReplica -SqlInstance $script:instance3
+            $results = Get-DbaAgReplica -SqlInstance $global:instance3
             $results.AvailabilityGroup | Should -Contain $agname
             $results.Role | Should -Contain 'Primary'
             $results.AvailabilityMode | Should -Contain 'SynchronousCommit'
         }
         It "returns just one result" {
-            $results = Get-DbaAgReplica -SqlInstance $script:instance3 -Replica $replicaName -AvailabilityGroup $agname
+            $results = Get-DbaAgReplica -SqlInstance $global:instance3 -Replica $replicaName -AvailabilityGroup $agname
             $results.AvailabilityGroup | Should -Be $agname
             $results.Role | Should -Be 'Primary'
             $results.AvailabilityMode | Should -Be 'SynchronousCommit'
@@ -60,4 +60,4 @@ Describe "Get-DbaAgReplica" {
             { Get-DbaAgReplica -SqlInstance invalidSQLHostName -EnableException } | Should -Throw
         }
     }
-} #$script:instance2 for appveyor
+} #$global:instance2 for appveyor

@@ -24,7 +24,7 @@ Describe "Remove-DbaPfDataCollectorSet" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Object[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 

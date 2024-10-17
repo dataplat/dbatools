@@ -27,7 +27,7 @@ Describe "Get-DbaDbMasterKey Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Database[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 }
@@ -35,18 +35,18 @@ Describe "Get-DbaDbMasterKey Unit Tests" -Tag 'UnitTests' {
 Describe "Get-DbaDbMasterKey Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $dbname = "dbatoolsci_test_$(Get-Random)"
-        $server = Connect-DbaInstance -SqlInstance $script:instance1
+        $server = Connect-DbaInstance -SqlInstance $global:instance1
         $null = $server.Query("Create Database [$dbname]")
-        $null = New-DbaDbMasterKey -SqlInstance $script:instance1 -Database $dbname -Password (ConvertTo-SecureString -AsPlainText -Force -String 'ThisIsAPassword!') -Confirm:$false
+        $null = New-DbaDbMasterKey -SqlInstance $global:instance1 -Database $dbname -Password (ConvertTo-SecureString -AsPlainText -Force -String 'ThisIsAPassword!') -Confirm:$false
     }
     AfterAll {
-        Remove-DbaDbMasterKey -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
-        Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
+        Remove-DbaDbMasterKey -SqlInstance $global:instance1 -Database $dbname -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $global:instance1 -Database $dbname -Confirm:$false
     }
 
     Context "Gets DbMasterKey" {
         BeforeAll {
-            $results = Get-DbaDbMasterKey -SqlInstance $script:instance1 | Where-Object {$_.Database -eq "$dbname"}
+            $results = Get-DbaDbMasterKey -SqlInstance $global:instance1 | Where-Object {$_.Database -eq "$dbname"}
         }
         It "Gets results" {
             $results | Should -Not -BeNullOrEmpty
@@ -61,7 +61,7 @@ Describe "Get-DbaDbMasterKey Integration Tests" -Tag "IntegrationTests" {
 
     Context "Gets DbMasterKey when using -database" {
         BeforeAll {
-            $results = Get-DbaDbMasterKey -SqlInstance $script:instance1 -Database $dbname
+            $results = Get-DbaDbMasterKey -SqlInstance $global:instance1 -Database $dbname
         }
         It "Gets results" {
             $results | Should -Not -BeNullOrEmpty
@@ -76,7 +76,7 @@ Describe "Get-DbaDbMasterKey Integration Tests" -Tag "IntegrationTests" {
 
     Context "Gets no DbMasterKey when using -ExcludeDatabase" {
         BeforeAll {
-            $results = Get-DbaDbMasterKey -SqlInstance $script:instance1 -ExcludeDatabase $dbname
+            $results = Get-DbaDbMasterKey -SqlInstance $global:instance1 -ExcludeDatabase $dbname
         }
         It "Gets no results" {
             $results | Should -BeNullOrEmpty

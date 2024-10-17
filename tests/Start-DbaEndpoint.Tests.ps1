@@ -15,13 +15,13 @@ Describe "Start-DbaEndpoint" {
             $CommandUnderTest | Should -HaveParameter Endpoint -Type String[]
         }
         It "Should have AllEndpoints as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter AllEndpoints -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter AllEndpoints -Type Switch
         }
         It "Should have InputObject as a parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Endpoint[]
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -32,7 +32,7 @@ Describe "Start-DbaEndpoint" {
         }
 
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $env:instance2
             $endpoint = Get-DbaEndpoint -SqlInstance $server -Endpoint 'TSQL Default TCP'
             $endpoint | Stop-DbaEndpoint -Confirm:$false
         }

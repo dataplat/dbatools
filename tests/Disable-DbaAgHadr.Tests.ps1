@@ -25,15 +25,15 @@ Describe "Disable-DbaAgHadr" {
 
     Context "Integration Tests" -Tag "IntegrationTests" {
         BeforeAll {
-            $script:instance3 = [Environment]::GetEnvironmentVariable('instance3')
+            $global:instance3 = [Environment]::GetEnvironmentVariable('instance3')
         }
 
         AfterAll {
-            Enable-DbaAgHadr -SqlInstance $script:instance3 -Confirm:$false -Force
+            Enable-DbaAgHadr -SqlInstance $global:instance3 -Confirm:$false -Force
         }
 
         It "disables hadr" {
-            $results = Disable-DbaAgHadr -SqlInstance $script:instance3 -Confirm:$false -Force
+            $results = Disable-DbaAgHadr -SqlInstance $global:instance3 -Confirm:$false -Force
             $results.IsHadrEnabled | Should -Be $false
         }
     }

@@ -33,22 +33,22 @@ Describe "Stop-DbaService" {
             $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Not -Mandatory
         }
         It "Should have Force as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Not -Mandatory
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
     Context "Command actually works" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $env:instance2
             $instanceName = $server.ServiceName
             $computerName = $server.NetName
         }
 
         It "stops some services" {
-            $services = Stop-DbaService -ComputerName $script:instance2 -InstanceName $instanceName -Type Agent
+            $services = Stop-DbaService -ComputerName $env:instance2 -InstanceName $instanceName -Type Agent
             $services | Should -Not -BeNullOrEmpty
             foreach ($service in $services) {
                 $service.State | Should -Be 'Stopped'
@@ -67,7 +67,7 @@ Describe "Stop-DbaService" {
                 Get-Service -ComputerName $computerName -Name $serviceName | Start-Service -WarningAction SilentlyContinue | Out-Null
             }
 
-            $services = Get-DbaService -ComputerName $script:instance2 -InstanceName $instanceName -Type Agent, Engine | Stop-DbaService
+            $services = Get-DbaService -ComputerName $env:instance2 -InstanceName $instanceName -Type Agent, Engine | Stop-DbaService
             $services | Should -Not -BeNullOrEmpty
             foreach ($service in $services) {
                 $service.State | Should -Be 'Stopped'
@@ -82,8 +82,8 @@ Describe "Stop-DbaService" {
             } else {
                 $serviceName = "MsSql`$$instanceName", "SqlAgent`$$instanceName"
             }
-            foreach ($sn in $servicename) { 
-                Get-Service -ComputerName $computerName -Name $sn | Start-Service -WarningAction SilentlyContinue | Out-Null 
+            foreach ($sn in $servicename) {
+                Get-Service -ComputerName $computerName -Name $sn | Start-Service -WarningAction SilentlyContinue | Out-Null
             }
         }
     }

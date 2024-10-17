@@ -14,8 +14,8 @@ Describe "Stop-DbaExternalProcess" {
         It "Should have ProcessId as a non-mandatory Int32" {
             $CommandUnderTest | Should -HaveParameter ProcessId -Type Int32 -Not -Mandatory
         }
-        It "Should have EnableException as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+        It "Should have EnableException as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 }
@@ -27,7 +27,7 @@ Describe "Stop-DbaExternalProcess Integration Tests" -Tag "IntegrationTests" {
 
     Context "Can stop an external process" {
         BeforeAll {
-            $null = Invoke-DbaQuery -SqlInstance $script:instance1 -Query @"
+            $null = Invoke-DbaQuery -SqlInstance $env:instance1 -Query @"
             -- To allow advanced options to be changed.
             EXECUTE sp_configure 'show advanced options', 1;
             GO
@@ -43,7 +43,7 @@ Describe "Stop-DbaExternalProcess Integration Tests" -Tag "IntegrationTests" {
 "@
 
             $query = "xp_cmdshell 'powershell -command ""sleep 20""'"
-            Start-Process -FilePath sqlcmd -ArgumentList "-S $script:instance1 -Q `"$query`"" -NoNewWindow -RedirectStandardOutput null
+            Start-Process -FilePath sqlcmd -ArgumentList "-S $env:instance1 -Q `"$query`"" -NoNewWindow -RedirectStandardOutput null
         }
 
         It "returns results" {

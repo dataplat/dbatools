@@ -45,27 +45,27 @@ Describe "New-DbaAgentOperator" {
             $CommandUnderTest | Should -HaveParameter WeekdayEndTime -Type String
         }
         It "Should have IsFailsafeOperator parameter" {
-            $CommandUnderTest | Should -HaveParameter IsFailsafeOperator -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter IsFailsafeOperator -Type Switch
         }
         It "Should have FailsafeNotificationMethod parameter" {
             $CommandUnderTest | Should -HaveParameter FailsafeNotificationMethod -Type String
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch
         }
         It "Should have InputObject parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Server[]
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "New Agent Operator is added properly" {
         BeforeAll {
             $random = Get-Random
-            $script:instance2 = $env:COMPUTERNAME
-            $server2 = Connect-DbaInstance -SqlInstance $script:instance2
+            $env:instance2 = $env:COMPUTERNAME
+            $server2 = Connect-DbaInstance -SqlInstance $env:instance2
             $email1 = "test1$($random)@test.com"
             $email2 = "test2$($random)@test.com"
             $email3 = "test3$($random)@test.com"

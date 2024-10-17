@@ -36,16 +36,16 @@ Describe "Get-DbaDbSpace" {
     Context "Command usage" {
         BeforeAll {
             $dbname = "dbatoolsci_test_$(Get-Random)"
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $null = $server.Query("Create Database [$dbname]")
         }
         AfterAll {
-            Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $global:instance2 -Database $dbname -Confirm:$false
         }
 
         Context "Gets DbSpace" {
             BeforeAll {
-                $results = Get-DbaDbSpace -SqlInstance $script:instance2 | Where-Object { $_.Database -eq "$dbname" }
+                $results = Get-DbaDbSpace -SqlInstance $global:instance2 | Where-Object { $_.Database -eq "$dbname" }
             }
             It "Gets results" {
                 $results | Should -Not -BeNullOrEmpty
@@ -65,7 +65,7 @@ Describe "Get-DbaDbSpace" {
 
         Context "Gets DbSpace when using -Database" {
             BeforeAll {
-                $results = Get-DbaDbSpace -SqlInstance $script:instance2 -Database $dbname
+                $results = Get-DbaDbSpace -SqlInstance $global:instance2 -Database $dbname
             }
             It "Gets results" {
                 $results | Should -Not -BeNullOrEmpty
@@ -85,7 +85,7 @@ Describe "Get-DbaDbSpace" {
 
         Context "Gets no DbSpace for specific database when using -ExcludeDatabase" {
             BeforeAll {
-                $results = Get-DbaDbSpace -SqlInstance $script:instance2 -ExcludeDatabase $dbname
+                $results = Get-DbaDbSpace -SqlInstance $global:instance2 -ExcludeDatabase $dbname
             }
             It "Gets no results for excluded database" {
                 $results.Database | Should -Not -Contain $dbname

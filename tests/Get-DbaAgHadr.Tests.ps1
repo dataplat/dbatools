@@ -16,17 +16,17 @@ Describe "Get-DbaAgHadr" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Command usage" -Skip:(-not $env:APPVEYOR) {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance3
+            $server = Connect-DbaInstance -SqlInstance $global:instance3
         }
 
         It "returns the correct properties" {
-            $results = Get-DbaAgHadr -SqlInstance $script:instance3
+            $results = Get-DbaAgHadr -SqlInstance $global:instance3
             $results.IsHadrEnabled | Should -Be $true
         }
     }

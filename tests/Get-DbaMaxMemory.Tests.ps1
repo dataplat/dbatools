@@ -17,7 +17,7 @@ Describe "Get-DbaMaxMemory" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
@@ -51,7 +51,7 @@ Describe "Get-DbaMaxMemory" {
 
     Context "Connects to multiple instances" -Skip:$env:CI {
         BeforeAll {
-            $instances = $script:instance1, $script:instance2
+            $instances = $env:instance1, $env:instance2
         }
 
         It 'Returns multiple objects' {
@@ -61,7 +61,7 @@ Describe "Get-DbaMaxMemory" {
 
         It 'Returns the right amount of memory' {
             $null = Set-DbaMaxMemory -SqlInstance $instances -Max 1024
-            $results = Get-DbaMaxMemory -SqlInstance $script:instance1
+            $results = Get-DbaMaxMemory -SqlInstance $env:instance1
             $results.MaxValue | Should -Be 1024
         }
     }

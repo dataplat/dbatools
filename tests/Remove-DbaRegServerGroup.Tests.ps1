@@ -18,7 +18,7 @@ Describe "Remove-DbaRegServerGroup" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type ServerGroup[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -29,21 +29,21 @@ Describe "Remove-DbaRegServerGroup" {
 
         BeforeAll {
             $group = "dbatoolsci-group1"
-            $newGroup = Add-DbaRegServerGroup -SqlInstance $script:instance1 -Name $group
+            $newGroup = Add-DbaRegServerGroup -SqlInstance $env:instance1 -Name $group
 
             $group2 = "dbatoolsci-group1a"
-            $newGroup2 = Add-DbaRegServerGroup -SqlInstance $script:instance1 -Name $group2
+            $newGroup2 = Add-DbaRegServerGroup -SqlInstance $env:instance1 -Name $group2
 
-            $hellagroup = Get-DbaRegServerGroup -SqlInstance $script:instance1 -Id 1 | 
-                Add-DbaRegServerGroup -Name dbatoolsci-first | 
-                Add-DbaRegServerGroup -Name dbatoolsci-second | 
-                Add-DbaRegServerGroup -Name dbatoolsci-third | 
+            $hellagroup = Get-DbaRegServerGroup -SqlInstance $env:instance1 -Id 1 |
+                Add-DbaRegServerGroup -Name dbatoolsci-first |
+                Add-DbaRegServerGroup -Name dbatoolsci-second |
+                Add-DbaRegServerGroup -Name dbatoolsci-third |
                 Add-DbaRegServer -ServerName dbatoolsci-test -Description ridiculous
         }
 
         AfterAll {
-            Get-DbaRegServerGroup -SqlInstance $script:instance1 | 
-                Where-Object Name -match dbatoolsci | 
+            Get-DbaRegServerGroup -SqlInstance $env:instance1 |
+                Where-Object Name -match dbatoolsci |
                 Remove-DbaRegServerGroup -Confirm:$false
         }
 
@@ -54,13 +54,13 @@ Describe "Remove-DbaRegServerGroup" {
         }
 
         It "supports dropping manually" {
-            $results = Remove-DbaRegServerGroup -Confirm:$false -SqlInstance $script:instance1 -Name $group2
+            $results = Remove-DbaRegServerGroup -Confirm:$false -SqlInstance $env:instance1 -Name $group2
             $results.Name | Should -Be $group2
             $results.Status | Should -Be 'Dropped'
         }
 
         It "supports hella long group name" {
-            $results = Get-DbaRegServerGroup -SqlInstance $script:instance1 -Group $hellagroup.Group
+            $results = Get-DbaRegServerGroup -SqlInstance $env:instance1 -Group $hellagroup.Group
             $results.Name | Should -Be 'dbatoolsci-third'
         }
     }

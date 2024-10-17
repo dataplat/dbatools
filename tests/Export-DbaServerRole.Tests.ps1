@@ -30,10 +30,10 @@ Describe "Export-DbaServerRole Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter ExcludeServerRole -Type String[] -Not -Mandatory
         }
         It "Should have ExcludeFixedRole parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeFixedRole -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeFixedRole -Type Switch -Not -Mandatory
         }
         It "Should have IncludeRoleMember parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeRoleMember -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter IncludeRoleMember -Type Switch -Not -Mandatory
         }
         It "Should have Path parameter" {
             $CommandUnderTest | Should -HaveParameter Path -Type String -Not -Mandatory
@@ -42,25 +42,25 @@ Describe "Export-DbaServerRole Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter FilePath -Type String -Not -Mandatory
         }
         It "Should have Passthru parameter" {
-            $CommandUnderTest | Should -HaveParameter Passthru -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Passthru -Type Switch -Not -Mandatory
         }
         It "Should have BatchSeparator parameter" {
             $CommandUnderTest | Should -HaveParameter BatchSeparator -Type String -Not -Mandatory
         }
         It "Should have NoClobber parameter" {
-            $CommandUnderTest | Should -HaveParameter NoClobber -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NoClobber -Type Switch -Not -Mandatory
         }
         It "Should have Append parameter" {
-            $CommandUnderTest | Should -HaveParameter Append -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Append -Type Switch -Not -Mandatory
         }
         It "Should have NoPrefix parameter" {
-            $CommandUnderTest | Should -HaveParameter NoPrefix -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NoPrefix -Type Switch -Not -Mandatory
         }
         It "Should have Encoding parameter" {
             $CommandUnderTest | Should -HaveParameter Encoding -Type String -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 }
@@ -76,7 +76,7 @@ Describe "Export-DbaServerRole Integration Tests" -Tag "IntegrationTests" {
         $login1 = "dbatoolsci_exportdbaserverrole_login1$random"
         $svRole = "dbatoolsci_ScriptPermissions$random"
 
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $global:instance2
         $null = $server.Query("CREATE LOGIN [$login1] WITH PASSWORD = 'GoodPass1234!'")
         $null = $server.Query("CREATE SERVER ROLE [$svRole] AUTHORIZATION [$login1]")
         $null = $server.Query("ALTER SERVER ROLE [dbcreator] ADD MEMBER [$svRole]")
@@ -87,14 +87,14 @@ Describe "Export-DbaServerRole Integration Tests" -Tag "IntegrationTests" {
     }
 
     AfterAll {
-        Remove-DbaServerRole -SqlInstance $script:instance2 -ServerRole $svRole -Confirm:$false
-        Remove-DbaLogin -SqlInstance $script:instance2 -Login $login1 -Confirm:$false
+        Remove-DbaServerRole -SqlInstance $global:instance2 -ServerRole $svRole -Confirm:$false
+        Remove-DbaLogin -SqlInstance $global:instance2 -Login $login1 -Confirm:$false
         Remove-Item -Path $outputFile -ErrorAction SilentlyContinue
     }
 
     Context "Check if output file was created" {
         BeforeAll {
-            $null = Export-DbaServerRole -SqlInstance $script:instance2 -FilePath $outputFile
+            $null = Export-DbaServerRole -SqlInstance $global:instance2 -FilePath $outputFile
         }
 
         It "Exports results to one sql file" {
@@ -108,9 +108,9 @@ Describe "Export-DbaServerRole Integration Tests" -Tag "IntegrationTests" {
 
     Context "Check using piped input created" {
         BeforeAll {
-            $role = Get-DbaServerRole -SqlInstance $script:instance2 -ServerRole $svRole
+            $role = Get-DbaServerRole -SqlInstance $global:instance2 -ServerRole $svRole
             $null = $role | Export-DbaServerRole -FilePath $outputFile
-            $script:results = $role | Export-DbaServerRole -Passthru
+            $global:results = $role | Export-DbaServerRole -Passthru
         }
 
         It "Exports results to one sql file" {
@@ -122,31 +122,31 @@ Describe "Export-DbaServerRole Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "should include the defined BatchSeparator" {
-            $script:results | Should -Match "GO"
+            $global:results | Should -Match "GO"
         }
 
         It "should include the role" {
-            $script:results | Should -Match "CREATE SERVER ROLE [$svRole]"
+            $global:results | Should -Match "CREATE SERVER ROLE [$svRole]"
         }
 
         It "should include ADD MEMBER" {
-            $script:results | Should -Match "ALTER SERVER ROLE [dbcreator] ADD MEMBER [$svRole]"
+            $global:results | Should -Match "ALTER SERVER ROLE [dbcreator] ADD MEMBER [$svRole]"
         }
 
         It "should include GRANT CREATE TRACE EVENT" {
-            $script:results | Should -Match "GRANT CREATE TRACE EVENT NOTIFICATION TO [$svRole]"
+            $global:results | Should -Match "GRANT CREATE TRACE EVENT NOTIFICATION TO [$svRole]"
         }
 
         It "should include DENY SELECT ALL USER SECURABLES" {
-            $script:results | Should -Match "DENY SELECT ALL USER SECURABLES TO [$svRole]"
+            $global:results | Should -Match "DENY SELECT ALL USER SECURABLES TO [$svRole]"
         }
 
         It "should include VIEW ANY DEFINITION" {
-            $script:results | Should -Match "GRANT VIEW ANY DEFINITION TO [$svRole];"
+            $global:results | Should -Match "GRANT VIEW ANY DEFINITION TO [$svRole];"
         }
 
         It "should include GRANT VIEW ANY DATABASE" {
-            $script:results | Should -Match "GRANT VIEW ANY DATABASE TO [$svRole];"
+            $global:results | Should -Match "GRANT VIEW ANY DATABASE TO [$svRole];"
         }
     }
 }

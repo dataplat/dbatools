@@ -16,13 +16,13 @@ Describe "Get-DbaInstanceUserOption" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Gets UserOptions for the Instance" {
         BeforeAll {
-            $results = Get-DbaInstanceUserOption -SqlInstance $script:instance2 | Where-Object {$_.name -eq 'AnsiNullDefaultOff'}
+            $results = Get-DbaInstanceUserOption -SqlInstance $global:instance2 | Where-Object {$_.name -eq 'AnsiNullDefaultOff'}
         }
         It "Gets results" {
             $results | Should -Not -BeNullOrEmpty

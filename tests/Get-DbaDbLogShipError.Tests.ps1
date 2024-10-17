@@ -31,13 +31,13 @@ Describe "Get-DbaDbLogShipError Unit Tests" -Tag 'UnitTests' {
             $CommandName | Should -HaveParameter DateTimeTo -Type DateTime -Not -Mandatory
         }
         It "Should have Primary as a parameter" {
-            $CommandName | Should -HaveParameter Primary -Type SwitchParameter -Not -Mandatory
+            $CommandName | Should -HaveParameter Primary -Type Switch -Not -Mandatory
         }
         It "Should have Secondary as a parameter" {
-            $CommandName | Should -HaveParameter Secondary -Type SwitchParameter -Not -Mandatory
+            $CommandName | Should -HaveParameter Secondary -Type Switch -Not -Mandatory
         }
         It "Should have EnableException as a parameter" {
-            $CommandName | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandName | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 }
@@ -50,7 +50,7 @@ Describe "Get-DbaDbLogShipError Integration Tests" -Tag "IntegrationTests" {
 
     Context "Return values" {
         It "Get the log shipping errors" {
-            $Results = Get-DbaDbLogShipError -SqlInstance $script:instance2
+            $Results = Get-DbaDbLogShipError -SqlInstance $global:instance2
             $Results.Count | Should -Be 0
         }
     }

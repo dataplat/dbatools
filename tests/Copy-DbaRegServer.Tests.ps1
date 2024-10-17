@@ -37,7 +37,7 @@ Describe "Copy-DbaRegServer" {
 
     Context "Integration Tests" {
         BeforeAll {
-            $server = Connect-DbaInstance $script:instance2
+            $server = Connect-DbaInstance $global:instance2
             $regstore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($server.ConnectionContext.SqlConnectionObject)
             $dbstore = $regstore.DatabaseEngineServerGroup
 
@@ -59,7 +59,7 @@ Describe "Copy-DbaRegServer" {
 
         AfterAll {
             $newgroup.Drop()
-            $server = Connect-DbaInstance $script:instance1
+            $server = Connect-DbaInstance $global:instance1
             $regstore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($server.ConnectionContext.SqlConnectionObject)
             $dbstore = $regstore.DatabaseEngineServerGroup
             $groupstore = $dbstore.ServerGroups[$group]
@@ -67,7 +67,7 @@ Describe "Copy-DbaRegServer" {
         }
 
         It "should copy registered servers successfully" {
-            $results = Copy-DbaRegServer -Source $script:instance2 -Destination $script:instance1 -Group $group -WarningAction SilentlyContinue
+            $results = Copy-DbaRegServer -Source $global:instance2 -Destination $global:instance1 -Group $group -WarningAction SilentlyContinue
             $results.Status | Should -Be @("Successful", "Successful")
         }
     }

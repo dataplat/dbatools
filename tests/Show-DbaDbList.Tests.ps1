@@ -21,7 +21,7 @@ Describe "Show-DbaDbList" {
             $CommandUnderTest | Should -HaveParameter DefaultDb -Type String
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -31,7 +31,7 @@ Describe "Show-DbaDbList" {
             . (Join-Path $PSScriptRoot 'constants.ps1')
         }
 
-        Context "Connects and shows database list" -ForEach $script:instance1, $script:instance2 {
+        Context "Connects and shows database list" -ForEach $env:instance1, $env:instance2 {
             BeforeAll {
                 $server = Connect-DbaInstance -SqlInstance $_
             }

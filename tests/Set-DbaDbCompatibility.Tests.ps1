@@ -21,7 +21,7 @@ Describe "Set-DbaDbCompatibility" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Database[]
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -31,12 +31,12 @@ Describe "Set-DbaDbCompatibility" {
         }
 
         BeforeAll {
-            $sqlCn = Connect-DbaInstance -SqlInstance $script:instance2
+            $sqlCn = Connect-DbaInstance -SqlInstance $env:instance2
             $sqlCn.Refresh()
             $dbNameNotMatches = "dbatoolscliCompatibilityLevelNotMatch_$(Get-Random -Minimum 600 -Maximum 1100)"
             $instanceLevel = $sqlCn.Databases['master'].CompatibilityLevel
             $previousCompatLevel = [int]($instanceLevel.ToString().Trim('Version')) - 10
-            Get-DbaProcess -SqlInstance $script:instance2 -Database model | Stop-DbaProcess -Confirm:$false
+            Get-DbaProcess -SqlInstance $env:instance2 -Database model | Stop-DbaProcess -Confirm:$false
             $queryNot = "CREATE DATABASE $dbNameNotMatches"
             $sqlCn.Query($queryNot)
             Start-Sleep 5
@@ -48,7 +48,7 @@ Describe "Set-DbaDbCompatibility" {
         }
 
         AfterAll {
-            $sqlCn = Connect-DbaInstance -SqlInstance $script:instance2
+            $sqlCn = Connect-DbaInstance -SqlInstance $env:instance2
             Remove-DbaDatabase -SqlInstance $sqlCn -Database $dbNameNotMatches -Confirm:$false
             $sqlCn.ConnectionContext.Disconnect()
         }

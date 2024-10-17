@@ -40,7 +40,7 @@ Describe "Export-DbaDbTableData" {
     Context "Command usage" {
         BeforeAll {
             . "$PSScriptRoot\constants.ps1"
-            $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database tempdb
+            $db = Get-DbaDatabase -SqlInstance $global:instance1 -Database tempdb
             $null = $db.Query("CREATE TABLE dbo.dbatoolsci_example (id int);
                 INSERT dbo.dbatoolsci_example
                 SELECT top 10 1
@@ -59,16 +59,16 @@ Describe "Export-DbaDbTableData" {
         It "exports the table data" {
             $escaped = [regex]::escape('INSERT [dbo].[dbatoolsci_example] ([id]) VALUES (1)')
             $secondescaped = [regex]::escape('INSERT [dbo].[dbatoolsci_temp] ([name], [database_id],')
-            $results = Get-DbaDbTable -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example | Export-DbaDbTableData -Passthru
+            $results = Get-DbaDbTable -SqlInstance $global:instance1 -Database tempdb -Table dbatoolsci_example | Export-DbaDbTableData -Passthru
             "$results" | Should -Match $escaped
-            $results = Get-DbaDbTable -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_temp | Export-DbaDbTableData -Passthru
+            $results = Get-DbaDbTable -SqlInstance $global:instance1 -Database tempdb -Table dbatoolsci_temp | Export-DbaDbTableData -Passthru
             "$results" | Should -Match $secondescaped
         }
 
         It "supports piping more than one table" {
             $escaped = [regex]::escape('INSERT [dbo].[dbatoolsci_example] ([id]) VALUES (1)')
             $secondescaped = [regex]::escape('INSERT [dbo].[dbatoolsci_temp] ([name], [database_id],')
-            $results = Get-DbaDbTable -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example, dbatoolsci_temp | Export-DbaDbTableData -Passthru
+            $results = Get-DbaDbTable -SqlInstance $global:instance1 -Database tempdb -Table dbatoolsci_example, dbatoolsci_temp | Export-DbaDbTableData -Passthru
             "$results" | Should -Match $escaped
             "$results" | Should -Match $secondescaped
         }

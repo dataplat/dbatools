@@ -47,15 +47,15 @@ CREATE RULE dbo.dbatoolsci_range_rule
 AS
 @range>= $1000 AND @range <$20000;
 "@
-        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query $Function
-        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query $TableFunction
-        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query $Rule
+        $null = Invoke-DbaQuery -SqlInstance $global:instance2 -Query $Function
+        $null = Invoke-DbaQuery -SqlInstance $global:instance2 -Query $TableFunction
+        $null = Invoke-DbaQuery -SqlInstance $global:instance2 -Query $Rule
     }
 
     AfterAll {
-        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "DROP FUNCTION dbo.dbatoolscs_ISOweek;"
-        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "DROP FUNCTION dbo.dbatoolsci_TableFunction;"
-        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "DROP RULE dbo.dbatoolsci_range_rule;"
+        $null = Invoke-DbaQuery -SqlInstance $global:instance2 -Query "DROP FUNCTION dbo.dbatoolscs_ISOweek;"
+        $null = Invoke-DbaQuery -SqlInstance $global:instance2 -Query "DROP FUNCTION dbo.dbatoolsci_TableFunction;"
+        $null = Invoke-DbaQuery -SqlInstance $global:instance2 -Query "DROP RULE dbo.dbatoolsci_range_rule;"
     }
 
     Context "Validate parameters" {
@@ -87,17 +87,17 @@ AS
 
     Context "Should Copy Objects to the same instance" {
         It "Should execute with default parameters" {
-            $results = Copy-DbaSystemDbUserObject -Source $script:instance2 -Destination $script:instance2
+            $results = Copy-DbaSystemDbUserObject -Source $global:instance2 -Destination $global:instance2
             $results | Should -Not -BeNullOrEmpty
         }
 
         It "Should execute with -Classic parameter" {
-            $results = Copy-DbaSystemDbUserObject -Source $script:instance2 -Destination $script:instance2 -Classic
+            $results = Copy-DbaSystemDbUserObject -Source $global:instance2 -Destination $global:instance2 -Classic
             $results | Should -Not -BeNullOrEmpty
         }
 
         It "Should execute with -Force parameter" {
-            $results = Copy-DbaSystemDbUserObject -Source $script:instance2 -Destination $script:instance2 -Force
+            $results = Copy-DbaSystemDbUserObject -Source $global:instance2 -Destination $global:instance2 -Force
             $results | Should -Not -BeNullOrEmpty
         }
     }

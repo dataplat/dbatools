@@ -32,7 +32,7 @@ Describe "Get-DbaDbMailAccount" {
 
         BeforeAll {
             $accountname = "dbatoolsci_test_$(Get-Random)"
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $mailAccountSettings = @"
                 EXEC msdb.dbo.sysmail_add_account_sp
                 @account_name='$accountname',
@@ -46,14 +46,14 @@ Describe "Get-DbaDbMailAccount" {
         }
 
         AfterAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $mailAccountSettings = "EXEC msdb.dbo.sysmail_delete_account_sp @account_name = '$accountname';"
             $server.Query($mailAccountSettings)
         }
 
         Context "Gets DbMail Account" {
             BeforeAll {
-                $results = Get-DbaDbMailAccount -SqlInstance $script:instance2 | Where-Object { $_.Name -eq $accountname }
+                $results = Get-DbaDbMailAccount -SqlInstance $global:instance2 | Where-Object { $_.Name -eq $accountname }
             }
 
             It "Gets results" {
@@ -83,7 +83,7 @@ Describe "Get-DbaDbMailAccount" {
 
         Context "Gets DbMail when using -Account" {
             BeforeAll {
-                $results = Get-DbaDbMailAccount -SqlInstance $script:instance2 -Account $accountname
+                $results = Get-DbaDbMailAccount -SqlInstance $global:instance2 -Account $accountname
             }
 
             It "Gets results" {
@@ -113,7 +113,7 @@ Describe "Get-DbaDbMailAccount" {
 
         Context "Gets no DbMail when using -ExcludeAccount" {
             BeforeAll {
-                $results = Get-DbaDbMailAccount -SqlInstance $script:instance2 -ExcludeAccount $accountname
+                $results = Get-DbaDbMailAccount -SqlInstance $global:instance2 -ExcludeAccount $accountname
             }
 
             It "Gets no results" {

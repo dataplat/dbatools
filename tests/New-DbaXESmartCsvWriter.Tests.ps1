@@ -14,7 +14,7 @@ Describe "New-DbaXESmartCsvWriter" {
         It "Should have OutputFile as a non-mandatory String parameter" {
             $CommandUnderTest | Should -HaveParameter OutputFile -Type String -Not -Mandatory
         }
-        It "Should have Overwrite as a non-mandatory SwitchParameter" {
+        It "Should have Overwrite as a non-mandatory Switch" {
             $CommandUnderTest | Should -HaveParameter Overwrite -Type Switch -Not -Mandatory
         }
         It "Should have Event as a non-mandatory String[] parameter" {
@@ -26,7 +26,7 @@ Describe "New-DbaXESmartCsvWriter" {
         It "Should have Filter as a non-mandatory String parameter" {
             $CommandUnderTest | Should -HaveParameter Filter -Type String -Not -Mandatory
         }
-        It "Should have EnableException as a non-mandatory SwitchParameter" {
+        It "Should have EnableException as a non-mandatory Switch" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }

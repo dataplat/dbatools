@@ -61,7 +61,7 @@ Describe "Get-DbaOleDbProvider" {
             . (Join-Path $PSScriptRoot 'constants.ps1')
         }
 
-        It "Returns output when executed against <_>" -ForEach $script:instance1, $script:instance2 {
+        It "Returns output when executed against <_>" -ForEach $env:instance1, $env:instance2 {
             $result = Get-DbaOleDbProvider -SqlInstance $_
             $result | Should -Not -BeNullOrEmpty
         }

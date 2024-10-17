@@ -22,16 +22,16 @@ Describe "Get-DbaServerRole" {
             $CommandUnderTest | Should -HaveParameter ExcludeServerRole -Type String[] -Not -Mandatory
         }
         It "Should have ExcludeFixedRole parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeFixedRole -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeFixedRole -Type Switch -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
     Context "Command actually works" {
         BeforeAll {
-            $results = Get-DbaServerRole -SqlInstance $script:instance2
+            $results = Get-DbaServerRole -SqlInstance $env:instance2
         }
 
         It "Should have correct properties" {
@@ -40,17 +40,17 @@ Describe "Get-DbaServerRole" {
         }
 
         It "Shows only one value with ServerRole parameter" {
-            $results = Get-DbaServerRole -SqlInstance $script:instance2 -ServerRole sysadmin
+            $results = Get-DbaServerRole -SqlInstance $env:instance2 -ServerRole sysadmin
             $results[0].Role | Should -Be "sysadmin"
         }
 
         It "Should exclude sysadmin from output" {
-            $results = Get-DbaServerRole -SqlInstance $script:instance2 -ExcludeServerRole sysadmin
+            $results = Get-DbaServerRole -SqlInstance $env:instance2 -ExcludeServerRole sysadmin
             $results.Role | Should -Not -Contain 'sysadmin'
         }
 
         It "Should exclude fixed server-level roles" {
-            $results = Get-DbaServerRole -SqlInstance $script:instance2 -ExcludeFixedRole
+            $results = Get-DbaServerRole -SqlInstance $env:instance2 -ExcludeFixedRole
             $results.Role | Should -Not -Contain 'sysadmin'
         }
     }

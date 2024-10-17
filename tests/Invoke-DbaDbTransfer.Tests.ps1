@@ -7,11 +7,11 @@ Describe "Invoke-DbaDbTransfer" {
         . "$PSScriptRoot\constants.ps1"
 
         $dbName = 'dbatools_transfer'
-        $source = Connect-DbaInstance -SqlInstance $script:instance2
-        $destination = Connect-DbaInstance -SqlInstance $script:instance3
-        Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbName -Confirm:$false
+        $source = Connect-DbaInstance -SqlInstance $env:instance2
+        $destination = Connect-DbaInstance -SqlInstance $env:instance3
+        Remove-DbaDatabase -SqlInstance $env:instance2 -Database $dbName -Confirm:$false
         $source.Query("CREATE DATABASE $dbName")
-        $db = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbName
+        $db = Get-DbaDatabase -SqlInstance $env:instance2 -Database $dbName
         $null = $db.Query("CREATE TABLE dbo.transfer_test (id int);
             INSERT dbo.transfer_test
             SELECT top 10 1
@@ -35,7 +35,7 @@ Describe "Invoke-DbaDbTransfer" {
         } catch {
             $null = 1
         }
-        Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbName -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $env:instance2 -Database $dbName -Confirm:$false
     }
 
     Context "Validate parameters" {
@@ -94,7 +94,7 @@ Describe "Invoke-DbaDbTransfer" {
 
     Context "Testing scripting invocation" {
         It "Should script all objects" {
-            $transfer = New-DbaDbTransfer -SqlInstance $script:instance2 -Database $dbName -CopyAllObjects
+            $transfer = New-DbaDbTransfer -SqlInstance $env:instance2 -Database $dbName -CopyAllObjects
             $scripts = $transfer | Invoke-DbaDbTransfer -ScriptOnly
             $script = $scripts -join "`n"
             $script | Should -BeLike '*CREATE TABLE `[dbo`].`[transfer_test`]*'
@@ -103,7 +103,7 @@ Describe "Invoke-DbaDbTransfer" {
             $script | Should -BeLike '*CREATE TABLE `[dbo`].`[transfer_test4`]*'
         }
         It "Should script all tables with schema only" {
-            $scripts = Invoke-DbaDbTransfer -SqlInstance $script:instance2 -Database $dbName -CopyAll Tables -SchemaOnly -ScriptOnly
+            $scripts = Invoke-DbaDbTransfer -SqlInstance $env:instance2 -Database $dbName -CopyAll Tables -SchemaOnly -ScriptOnly
             $script = $scripts -join "`n"
             $script | Should -BeLike '*CREATE TABLE `[dbo`].`[transfer_test`]*'
             $script | Should -BeLike '*CREATE TABLE `[dbo`].`[transfer_test2`]*'
@@ -114,40 +114,40 @@ Describe "Invoke-DbaDbTransfer" {
 
     Context "Testing object transfer" {
         BeforeEach {
-            Remove-DbaDatabase -SqlInstance $script:instance3 -Database $dbName -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $env:instance3 -Database $dbName -Confirm:$false
             $destination.Query("CREATE DATABASE $dbname")
-            $db2 = Get-DbaDatabase -SqlInstance $script:instance3 -Database $dbName
+            $db2 = Get-DbaDatabase -SqlInstance $env:instance3 -Database $dbName
         }
         AfterAll {
-            Remove-DbaDatabase -SqlInstance $script:instance3 -Database $dbName -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $env:instance3 -Database $dbName -Confirm:$false
         }
         It "Should transfer all tables" {
-            $result = Invoke-DbaDbTransfer -SqlInstance $script:instance2 -DestinationSqlInstance $script:instance3 -Database $dbName -CopyAll Tables
-            $tables = Get-DbaDbTable -SqlInstance $script:instance3 -Database $dbName -Table transfer_test, transfer_test2, transfer_test3, transfer_test4
+            $result = Invoke-DbaDbTransfer -SqlInstance $env:instance2 -DestinationSqlInstance $env:instance3 -Database $dbName -CopyAll Tables
+            $tables = Get-DbaDbTable -SqlInstance $env:instance3 -Database $dbName -Table transfer_test, transfer_test2, transfer_test3, transfer_test4
             $tables.Count | Should -Be 4
             $db.Query("select id from dbo.transfer_test").id | Should -Not -BeNullOrEmpty
             $db.Query("select id from dbo.transfer_test4").id | Should -Not -BeNullOrEmpty
             $db.Query("select id from dbo.transfer_test").id | Should -BeIn $db2.Query("select id from dbo.transfer_test").id
             $db.Query("select id from dbo.transfer_test4").id | Should -BeIn $db2.Query("select id from dbo.transfer_test4").id
-            $result.SourceInstance | Should -Be $script:instance2
+            $result.SourceInstance | Should -Be $env:instance2
             $result.SourceDatabase | Should -Be $dbName
-            $result.DestinationInstance | Should -Be $script:instance3
+            $result.DestinationInstance | Should -Be $env:instance3
             $result.DestinationDatabase | Should -Be $dbName
             $result.Elapsed.TotalMilliseconds | Should -BeGreaterThan 0
             $result.Status | Should -Be 'Success'
             $result.Log -join "`n" | Should -BeLike '*CREATE TABLE `[dbo`].`[transfer_test`]*'
         }
         It "Should transfer select tables piping the transfer object" {
-            $sourceTables = Get-DbaDbTable -SqlInstance $script:instance2 -Database $dbName -Table transfer_test, transfer_test2
-            $transfer = $sourceTables | New-DbaDbTransfer -SqlInstance $script:instance2 -DestinationSqlInstance $script:instance3 -Database $dbName
+            $sourceTables = Get-DbaDbTable -SqlInstance $env:instance2 -Database $dbName -Table transfer_test, transfer_test2
+            $transfer = $sourceTables | New-DbaDbTransfer -SqlInstance $env:instance2 -DestinationSqlInstance $env:instance3 -Database $dbName
             $result = $transfer | Invoke-DbaDbTransfer
-            $tables = Get-DbaDbTable -SqlInstance $script:instance3 -Database $dbName -Table transfer_test, transfer_test2
+            $tables = Get-DbaDbTable -SqlInstance $env:instance3 -Database $dbName -Table transfer_test, transfer_test2
             $tables.Count | Should -Be 2
             $db.Query("select id from dbo.transfer_test").id | Should -Not -BeNullOrEmpty
             $db.Query("select id from dbo.transfer_test").id | Should -BeIn $db2.Query("select id from dbo.transfer_test").id
-            $result.SourceInstance | Should -Be $script:instance2
+            $result.SourceInstance | Should -Be $env:instance2
             $result.SourceDatabase | Should -Be $dbName
-            $result.DestinationInstance | Should -Be $script:instance3
+            $result.DestinationInstance | Should -Be $env:instance3
             $result.DestinationDatabase | Should -Be $dbName
             $result.Elapsed.TotalMilliseconds | Should -BeGreaterThan 0
             $result.Status | Should -Be 'Success'

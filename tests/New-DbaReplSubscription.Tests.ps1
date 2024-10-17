@@ -38,13 +38,13 @@ Describe "New-DbaReplSubscription" {
             $CommandUnderTest | Should -HaveParameter Type -Type String
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
         It "Should have Verbose parameter" {
-            $CommandUnderTest | Should -HaveParameter Verbose -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Verbose -Type Switch
         }
         It "Should have Debug parameter" {
-            $CommandUnderTest | Should -HaveParameter Debug -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Debug -Type Switch
         }
         It "Should have ErrorAction parameter" {
             $CommandUnderTest | Should -HaveParameter ErrorAction -Type ActionPreference
@@ -77,10 +77,10 @@ Describe "New-DbaReplSubscription" {
             $CommandUnderTest | Should -HaveParameter PipelineVariable -Type String
         }
         It "Should have WhatIf parameter" {
-            $CommandUnderTest | Should -HaveParameter WhatIf -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter WhatIf -Type Switch
         }
         It "Should have Confirm parameter" {
-            $CommandUnderTest | Should -HaveParameter Confirm -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Confirm -Type Switch
         }
     }
 }

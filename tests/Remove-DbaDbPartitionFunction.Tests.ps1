@@ -21,14 +21,14 @@ Describe "Remove-DbaDbPartitionFunction" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type PartitionFunction[] -Not -Mandatory
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
     Context "Command usage" {
         BeforeAll {
             . "$PSScriptRoot\constants.ps1"
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $env:instance2
             $dbname1 = "dbatoolsci_$(Get-Random)"
             $dbname2 = "dbatoolsci_$(Get-Random)"
             $null = New-DbaDatabase -SqlInstance $server -Name $dbname1

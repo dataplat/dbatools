@@ -24,19 +24,19 @@ Describe "Get-DbaDbRole" {
             $CommandUnderTest | Should -HaveParameter ExcludeRole -Type String[] -Not -Mandatory
         }
         It "Should have ExcludeFixedRole parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeFixedRole -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeFixedRole -Type Switch -Not -Mandatory
         }
         It "Should have InputObject parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Database[] -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
     Context "Functionality" {
         BeforeAll {
-            $instance = Connect-DbaInstance -SqlInstance $script:instance2
+            $instance = Connect-DbaInstance -SqlInstance $global:instance2
             $allDatabases = $instance.Databases
         }
 

@@ -21,7 +21,7 @@ Describe "Remove-DbaDbBackupRestoreHistory" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Database[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -33,7 +33,7 @@ Describe "Remove-DbaDbBackupRestoreHistory" {
 
         BeforeAll {
             # Setup code for all tests in this context
-            $server = Connect-DbaInstance -SqlInstance $script:instance1
+            $server = Connect-DbaInstance -SqlInstance $env:instance1
             $randomDb = "dbatoolsci_$(Get-Random)"
             $null = New-DbaDatabase -SqlInstance $server -Name $randomDb
         }

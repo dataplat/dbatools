@@ -31,13 +31,13 @@ Describe "Start-DbaService" {
             $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
     Context "Command actually works" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $env:instance2
             $instanceName = $server.ServiceName
             $computerName = $server.NetName
 
@@ -51,7 +51,7 @@ Describe "Start-DbaService" {
         }
 
         It "starts the services back" {
-            $services = Start-DbaService -ComputerName $script:instance2 -Type Agent -InstanceName $instanceName
+            $services = Start-DbaService -ComputerName $env:instance2 -Type Agent -InstanceName $instanceName
             $services | Should -Not -BeNullOrEmpty
             foreach ($service in $services) {
                 $service.State | Should -Be 'Running'
@@ -68,7 +68,7 @@ Describe "Start-DbaService" {
             }
             foreach ($sn in $servicename) { Get-Service -ComputerName $computerName -Name $sn | Stop-Service -WarningAction SilentlyContinue | Out-Null }
 
-            $services = Get-DbaService -ComputerName $script:instance2 -InstanceName $instanceName -Type Agent, Engine | Start-DbaService
+            $services = Get-DbaService -ComputerName $env:instance2 -InstanceName $instanceName -Type Agent, Engine | Start-DbaService
             $services | Should -Not -BeNullOrEmpty
             foreach ($service in $services) {
                 $service.State | Should -Be 'Running'
@@ -77,7 +77,7 @@ Describe "Start-DbaService" {
         }
 
         It "errors when passing an invalid InstanceName" {
-            { Start-DbaService -ComputerName $script:instance2 -Type 'Agent' -InstanceName 'ThisIsInvalid' -EnableException } | Should -Throw 'No SQL Server services found with current parameters.'
+            { Start-DbaService -ComputerName $env:instance2 -Type 'Agent' -InstanceName 'ThisIsInvalid' -EnableException } | Should -Throw 'No SQL Server services found with current parameters.'
         }
     }
 }

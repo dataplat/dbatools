@@ -27,10 +27,10 @@ Describe "Export-DbaDbRole Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter ExcludeRole -Type Object[] -Not -Mandatory
         }
         It "Should have ExcludeFixedRole parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeFixedRole -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeFixedRole -Type Switch -Not -Mandatory
         }
         It "Should have IncludeRoleMember parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeRoleMember -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter IncludeRoleMember -Type Switch -Not -Mandatory
         }
         It "Should have Path parameter" {
             $CommandUnderTest | Should -HaveParameter Path -Type String -Not -Mandatory
@@ -39,25 +39,25 @@ Describe "Export-DbaDbRole Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter FilePath -Type String -Not -Mandatory
         }
         It "Should have Passthru parameter" {
-            $CommandUnderTest | Should -HaveParameter Passthru -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Passthru -Type Switch -Not -Mandatory
         }
         It "Should have BatchSeparator parameter" {
             $CommandUnderTest | Should -HaveParameter BatchSeparator -Type String -Not -Mandatory
         }
         It "Should have NoClobber parameter" {
-            $CommandUnderTest | Should -HaveParameter NoClobber -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NoClobber -Type Switch -Not -Mandatory
         }
         It "Should have Append parameter" {
-            $CommandUnderTest | Should -HaveParameter Append -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Append -Type Switch -Not -Mandatory
         }
         It "Should have NoPrefix parameter" {
-            $CommandUnderTest | Should -HaveParameter NoPrefix -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NoPrefix -Type Switch -Not -Mandatory
         }
         It "Should have Encoding parameter" {
             $CommandUnderTest | Should -HaveParameter Encoding -Type String -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 }
@@ -72,7 +72,7 @@ Describe "Export-DbaDbRole Integration Tests" -Tag "IntegrationTests" {
         $user1 = "dbatoolsci_exportdbadbrole_user1$random"
         $dbRole = "dbatoolsci_SpExecute$random"
 
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $global:instance2
         $null = $server.Query("CREATE DATABASE [$dbname1]")
         $null = $server.Query("CREATE LOGIN [$login1] WITH PASSWORD = 'GoodPass1234!'")
         $server.Databases[$dbname1].ExecuteNonQuery("CREATE USER [$user1] FOR LOGIN [$login1]")
@@ -85,14 +85,14 @@ Describe "Export-DbaDbRole Integration Tests" -Tag "IntegrationTests" {
     }
 
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname1 -Confirm:$false
-        Remove-DbaLogin -SqlInstance $script:instance2 -Login $login1 -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $global:instance2 -Database $dbname1 -Confirm:$false
+        Remove-DbaLogin -SqlInstance $global:instance2 -Login $login1 -Confirm:$false
         Remove-Item -Path $outputFile1 -ErrorAction SilentlyContinue
     }
 
     Context "Check if output file was created" {
         BeforeAll {
-            $null = Export-DbaDbRole -SqlInstance $script:instance2 -Database msdb -FilePath $outputFile1
+            $null = Export-DbaDbRole -SqlInstance $global:instance2 -Database msdb -FilePath $outputFile1
         }
 
         It "Exports results to one sql file" {
@@ -106,9 +106,9 @@ Describe "Export-DbaDbRole Integration Tests" -Tag "IntegrationTests" {
 
     Context "Check piping support" {
         BeforeAll {
-            $role = Get-DbaDbRole -SqlInstance $script:instance2 -Database $dbname1 -Role $dbRole
+            $role = Get-DbaDbRole -SqlInstance $global:instance2 -Database $dbname1 -Role $dbRole
             $null = $role | Export-DbaDbRole -FilePath $outputFile1
-            $script:results = $role | Export-DbaDbRole -Passthru
+            $global:results = $role | Export-DbaDbRole -Passthru
         }
 
         It "Exports results to one sql file" {
@@ -120,27 +120,27 @@ Describe "Export-DbaDbRole Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "should include the defined BatchSeparator" {
-            $script:results | Should -Match "GO"
+            $global:results | Should -Match "GO"
         }
 
         It "should include the role" {
-            $script:results | Should -Match "CREATE ROLE [$dbRole]"
+            $global:results | Should -Match "CREATE ROLE [$dbRole]"
         }
 
         It "should include GRANT EXECUTE ON SCHEMA" {
-            $script:results | Should -Match "GRANT EXECUTE ON SCHEMA::\[dbo\] TO \[$dbRole\];"
+            $global:results | Should -Match "GRANT EXECUTE ON SCHEMA::\[dbo\] TO \[$dbRole\];"
         }
 
         It "should include GRANT SELECT ON SCHEMA" {
-            $script:results | Should -Match "GRANT SELECT ON SCHEMA::\[dbo\] TO \[$dbRole\];"
+            $global:results | Should -Match "GRANT SELECT ON SCHEMA::\[dbo\] TO \[$dbRole\];"
         }
 
         It "should include GRANT VIEW DEFINITION ON SCHEMA" {
-            $script:results | Should -Match "GRANT VIEW DEFINITION ON SCHEMA::\[dbo\] TO \[$dbRole\];"
+            $global:results | Should -Match "GRANT VIEW DEFINITION ON SCHEMA::\[dbo\] TO \[$dbRole\];"
         }
 
         It "should include ALTER ROLE ADD MEMBER" {
-            $script:results | Should -Match "ALTER ROLE \[$dbRole\] ADD MEMBER \[$user1\];"
+            $global:results | Should -Match "ALTER ROLE \[$dbRole\] ADD MEMBER \[$user1\];"
         }
     }
 }

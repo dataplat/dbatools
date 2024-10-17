@@ -18,13 +18,13 @@ Describe "Get-DbaDefaultPath" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
     Context "Integration Tests" {
         BeforeAll {
-            $results = Get-DbaDefaultPath -SqlInstance $script:instance1
+            $results = Get-DbaDefaultPath -SqlInstance $global:instance1
         }
 
         It "Data returns a value that contains :\" {

@@ -9,13 +9,13 @@ Describe "Remove-DbaExtendedProperty" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type ExtendedProperty[]
         }
         It "Accepts EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
         It "Accepts Verbose as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Verbose -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Verbose -Type Switch
         }
         It "Accepts Debug as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Debug -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Debug -Type Switch
         }
         It "Accepts ErrorAction as a parameter" {
             $CommandUnderTest | Should -HaveParameter ErrorAction -Type ActionPreference
@@ -48,17 +48,17 @@ Describe "Remove-DbaExtendedProperty" {
             $CommandUnderTest | Should -HaveParameter PipelineVariable -Type String
         }
         It "Accepts WhatIf as a parameter" {
-            $CommandUnderTest | Should -HaveParameter WhatIf -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter WhatIf -Type Switch
         }
         It "Accepts Confirm as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Confirm -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Confirm -Type Switch
         }
     }
 
     Context "Command usage" {
         BeforeAll {
             $random = Get-Random
-            $instance2 = Connect-DbaInstance -SqlInstance $script:instance2
+            $instance2 = Connect-DbaInstance -SqlInstance $env:instance2
             $null = Get-DbaProcess -SqlInstance $instance2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false
             $newDbName = "dbatoolsci_newdb_$random"
             $db = New-DbaDatabase -SqlInstance $instance2 -Name $newDbName

@@ -16,13 +16,13 @@ Describe "Enable-DbaForceNetworkEncryption" {
             $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Not -Mandatory
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
     Context "Integration Tests" -Tag "IntegrationTests" {
         BeforeAll {
-            $results = Enable-DbaForceNetworkEncryption -SqlInstance $script:instance1 -EnableException
+            $results = Enable-DbaForceNetworkEncryption -SqlInstance $global:instance1 -EnableException
         }
 
         It "returns true" {

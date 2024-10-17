@@ -21,13 +21,13 @@ Describe "Get-DbaLatchStatistic" {
             $CommandUnderTest | Should -HaveParameter Threshold -Type Int32 -Not -Mandatory
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
     Context "Command returns proper info" {
         BeforeAll {
-            $results = Get-DbaLatchStatistic -SqlInstance $script:instance2 -Threshold 100
+            $results = Get-DbaLatchStatistic -SqlInstance $env:instance2 -Threshold 100
         }
 
         It "returns results" {

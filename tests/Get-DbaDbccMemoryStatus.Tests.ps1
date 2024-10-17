@@ -12,7 +12,7 @@ Describe "Get-DbaDbccMemoryStatus" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
@@ -23,7 +23,7 @@ Describe "Get-DbaDbccMemoryStatus" {
 
         BeforeAll {
             $props = 'ComputerName', 'InstanceName', 'RecordSet', 'RowId', 'RecordSetId', 'Type', 'Name', 'Value', 'ValueType'
-            $result = Get-DbaDbccMemoryStatus -SqlInstance $script:instance2
+            $result = Get-DbaDbccMemoryStatus -SqlInstance $global:instance2
         }
 
         It "Should return property: <_>" -ForEach $props {

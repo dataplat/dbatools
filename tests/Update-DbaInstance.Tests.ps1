@@ -841,9 +841,9 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
     }
     Context "WhatIf upgrade target instance to latest SPCU" {
         It "Should whatif-upgrade to latest SPCU" {
-            $server = Connect-DbaInstance -SqlInstance $script:instance1
+            $server = Connect-DbaInstance -SqlInstance $env:instance1
             $instance = $server.ServiceName
-            $null = Update-DbaInstance -ComputerName $script:instance1 -Path $exeDir -Restart -EnableException -WhatIf -InstanceName $instance 3>$null
+            $null = Update-DbaInstance -ComputerName $env:instance1 -Path $exeDir -Restart -EnableException -WhatIf -InstanceName $instance 3>$null
             $testBuild = Test-DbaBuild -SqlInstance $server -MaxBehind 0CU
             Assert-MockCalled -CommandName Test-PendingReboot -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Test-ElevationRequirement -Scope It -ModuleName dbatools

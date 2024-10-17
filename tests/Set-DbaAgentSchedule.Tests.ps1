@@ -25,10 +25,10 @@ Describe "Set-DbaAgentSchedule" {
             $CommandUnderTest | Should -HaveParameter NewName -Type String -Not -Mandatory
         }
         It "Should have Enabled parameter" {
-            $CommandUnderTest | Should -HaveParameter Enabled -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Enabled -Type Switch -Not -Mandatory
         }
         It "Should have Disabled parameter" {
-            $CommandUnderTest | Should -HaveParameter Disabled -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Disabled -Type Switch -Not -Mandatory
         }
         It "Should have FrequencyType parameter" {
             $CommandUnderTest | Should -HaveParameter FrequencyType -Type Object -Not -Mandatory
@@ -61,30 +61,30 @@ Describe "Set-DbaAgentSchedule" {
             $CommandUnderTest | Should -HaveParameter EndTime -Type String -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Not -Mandatory
         }
     }
 
     Context "Integration Tests" {
         BeforeAll {
-            $null = New-DbaAgentJob -SqlInstance $script:instance2 -Job 'dbatoolsci_setschedule1' -OwnerLogin 'sa'
-            $null = New-DbaAgentJob -SqlInstance $script:instance2 -Job 'dbatoolsci_setschedule2' -OwnerLogin 'sa'
+            $null = New-DbaAgentJob -SqlInstance $env:instance2 -Job 'dbatoolsci_setschedule1' -OwnerLogin 'sa'
+            $null = New-DbaAgentJob -SqlInstance $env:instance2 -Job 'dbatoolsci_setschedule2' -OwnerLogin 'sa'
             $start = (Get-Date).AddDays(2).ToString('yyyyMMdd')
             $end = (Get-Date).AddDays(4).ToString('yyyyMMdd')
             $altstart = (Get-Date).AddDays(3).ToString('yyyyMMdd')
             $altend = (Get-Date).AddDays(5).ToString('yyyyMMdd')
         }
         AfterAll {
-            $null = Remove-DbaAgentJob -SqlInstance $script:instance2 -Job 'dbatoolsci_setschedule1', 'dbatoolsci_setschedule2' -Confirm:$false
+            $null = Remove-DbaAgentJob -SqlInstance $env:instance2 -Job 'dbatoolsci_setschedule1', 'dbatoolsci_setschedule2' -Confirm:$false
         }
 
         Context "Should rename schedule" {
             BeforeAll {
                 $variables = @{
-                    SqlInstance               = $script:instance2
+                    SqlInstance               = $env:instance2
                     Schedule                  = 'dbatoolsci_oldname'
                     Job                       = 'dbatoolsci_setschedule1'
                     FrequencyRecurrenceFactor = '1'
@@ -99,15 +99,15 @@ Describe "Set-DbaAgentSchedule" {
                 $null = New-DbaAgentSchedule @variables
             }
             AfterAll {
-                $null = Get-DbaAgentSchedule -SqlInstance $script:instance2 |
+                $null = Get-DbaAgentSchedule -SqlInstance $env:instance2 |
                     Where-Object { $_.name -like 'dbatools*' } |
                     Remove-DbaAgentSchedule -Confirm:$false -Force
             }
 
             It "Should rename the schedule" {
-                $schedules = Get-DbaAgentSchedule -SqlInstance $script:instance2 | Where-Object { $_.name -like 'dbatools*' }
+                $schedules = Get-DbaAgentSchedule -SqlInstance $env:instance2 | Where-Object { $_.name -like 'dbatools*' }
                 $variables = @{
-                    SqlInstance               = $script:instance2
+                    SqlInstance               = $env:instance2
                     Schedule                  = "dbatoolsci_oldname"
                     NewName                   = "dbatoolsci_newname"
                     Job                       = 'dbatoolsci_setschedule1'
@@ -120,7 +120,7 @@ Describe "Set-DbaAgentSchedule" {
                 }
 
                 $null = Set-DbaAgentSchedule @variables
-                $results = Get-DbaAgentSchedule -SqlInstance $script:instance2 | Where-Object { $_.name -like 'dbatools*' }
+                $results = Get-DbaAgentSchedule -SqlInstance $env:instance2 | Where-Object { $_.name -like 'dbatools*' }
 
                 $results | Should -Not -BeNullOrEmpty
                 foreach ($r in $results) {
@@ -133,7 +133,7 @@ Describe "Set-DbaAgentSchedule" {
             BeforeAll {
                 foreach ($frequency in ('Once', 'AgentStart', 'IdleComputer')) {
                     $variables = @{
-                        SqlInstance               = $script:instance2
+                        SqlInstance               = $env:instance2
                         Schedule                  = "dbatoolsci_$frequency"
                         Job                       = 'dbatoolsci_setschedule1'
                         FrequencyType             = $frequency
@@ -148,17 +148,17 @@ Describe "Set-DbaAgentSchedule" {
                 }
             }
             AfterAll {
-                $null = Get-DbaAgentSchedule -SqlInstance $script:instance2 |
+                $null = Get-DbaAgentSchedule -SqlInstance $env:instance2 |
                     Where-Object { $_.name -like 'dbatools*' } |
                     Remove-DbaAgentSchedule -Confirm:$false -Force
             }
 
             It "Should set schedules to OnIdle and Enabled" {
-                $schedules = Get-DbaAgentSchedule -SqlInstance $script:instance2 | Where-Object { $_.name -like 'dbatools*' }
+                $schedules = Get-DbaAgentSchedule -SqlInstance $env:instance2 | Where-Object { $_.name -like 'dbatools*' }
                 foreach ($schedule in $schedules) {
                     foreach ($frequency in ('Once', '1' , 'AgentStart', '64', 'IdleComputer', '128')) {
                         $variables = @{
-                            SqlInstance               = $script:instance2
+                            SqlInstance               = $env:instance2
                             Schedule                  = "$($schedule.name)"
                             Job                       = 'dbatoolsci_setschedule1'
                             FrequencyType             = $frequency
@@ -172,7 +172,7 @@ Describe "Set-DbaAgentSchedule" {
                         }
                     }
                 }
-                $results = Get-DbaAgentSchedule -SqlInstance $script:instance2 | Where-Object { $_.name -like 'dbatools*' }
+                $results = Get-DbaAgentSchedule -SqlInstance $env:instance2 | Where-Object { $_.name -like 'dbatools*' }
 
                 $results | Should -Not -BeNullOrEmpty
                 foreach ($r in $results) {
@@ -186,7 +186,7 @@ Describe "Set-DbaAgentSchedule" {
             BeforeAll {
                 foreach ($frequency in ('Daily', 'Weekly', 'Monthly', 'MonthlyRelative')) {
                     $variables = @{
-                        SqlInstance               = $script:instance2
+                        SqlInstance               = $env:instance2
                         Schedule                  = "dbatoolsci_$frequency"
                         Job                       = 'dbatoolsci_setschedule2'
                         FrequencyType             = $frequency
@@ -203,17 +203,17 @@ Describe "Set-DbaAgentSchedule" {
                 }
             }
             AfterAll {
-                $null = Get-DbaAgentSchedule -SqlInstance $script:instance2 |
+                $null = Get-DbaAgentSchedule -SqlInstance $env:instance2 |
                     Where-Object { $_.name -like 'dbatools*' } |
                     Remove-DbaAgentSchedule -Confirm:$false -Force
             }
 
             It "Should set schedules to MonthlyRelative with updated times" {
-                $schedules = Get-DbaAgentSchedule -SqlInstance $script:instance2 | Where-Object { $_.name -like 'dbatools*' }
+                $schedules = Get-DbaAgentSchedule -SqlInstance $env:instance2 | Where-Object { $_.name -like 'dbatools*' }
                 foreach ($schedule in $schedules) {
                     foreach ($frequency in ('Daily', '4', 'Weekly', '8', 'Monthly', '16', 'MonthlyRelative', '32')) {
                         $variables = @{
-                            SqlInstance               = $script:instance2
+                            SqlInstance               = $env:instance2
                             Schedule                  = "$($schedule.name)"
                             Job                       = 'dbatoolsci_setschedule2'
                             FrequencyType             = $frequency
@@ -229,7 +229,7 @@ Describe "Set-DbaAgentSchedule" {
                         $null = Set-DbaAgentSchedule @variables
                     }
                 }
-                $results = Get-DbaAgentSchedule -SqlInstance $script:instance2 | Where-Object { $_.name -like 'dbatools*' }
+                $results = Get-DbaAgentSchedule -SqlInstance $env:instance2 | Where-Object { $_.name -like 'dbatools*' }
 
                 $results | Should -Not -BeNullOrEmpty
                 foreach ($r in $results) {
@@ -243,7 +243,7 @@ Describe "Set-DbaAgentSchedule" {
             BeforeAll {
                 foreach ($FrequencySubdayType in ('Once', 'Time', 'Seconds', 'Second', 'Minutes', 'Minute', 'Hours', 'Hour')) {
                     $variables = @{
-                        SqlInstance               = $script:instance2
+                        SqlInstance               = $env:instance2
                         Schedule                  = "dbatoolsci_$FrequencySubdayType"
                         Job                       = 'dbatoolsci_setschedule1'
                         FrequencyRecurrenceFactor = '1'
@@ -259,17 +259,17 @@ Describe "Set-DbaAgentSchedule" {
                 }
             }
             AfterAll {
-                $null = Get-DbaAgentSchedule -SqlInstance $script:instance2 |
+                $null = Get-DbaAgentSchedule -SqlInstance $env:instance2 |
                     Where-Object { $_.name -like 'dbatools*' } |
                     Remove-DbaAgentSchedule -Confirm:$false -Force
             }
 
             It "Should set schedules with updated EndDate" {
-                $schedules = Get-DbaAgentSchedule -SqlInstance $script:instance2 | Where-Object { $_.name -like 'dbatools*' }
+                $schedules = Get-DbaAgentSchedule -SqlInstance $env:instance2 | Where-Object { $_.name -like 'dbatools*' }
                 foreach ($schedule in $schedules) {
                     foreach ($FrequencySubdayType in ('Once', 'Time', 'Seconds', 'Second', 'Minutes', 'Minute', 'Hours', 'Hour')) {
                         $variables = @{
-                            SqlInstance               = $script:instance2
+                            SqlInstance               = $env:instance2
                             Schedule                  = "$schedule"
                             Job                       = 'dbatoolsci_setschedule1'
                             FrequencyRecurrenceFactor = '6'
@@ -284,7 +284,7 @@ Describe "Set-DbaAgentSchedule" {
                         $null = Set-DbaAgentSchedule @variables
                     }
                 }
-                $results = Get-DbaAgentSchedule -SqlInstance $script:instance2 | Where-Object { $_.name -like 'dbatools*' }
+                $results = Get-DbaAgentSchedule -SqlInstance $env:instance2 | Where-Object { $_.name -like 'dbatools*' }
 
                 $results | Should -Not -BeNullOrEmpty
                 foreach ($r in $results) {
@@ -297,7 +297,7 @@ Describe "Set-DbaAgentSchedule" {
             BeforeAll {
                 foreach ($FrequencyRelativeInterval in ('Unused', 'First', 'Second', 'Third', 'Fourth', 'Last')) {
                     $variables = @{
-                        SqlInstance               = $script:instance2
+                        SqlInstance               = $env:instance2
                         Schedule                  = "dbatoolsci_$FrequencyRelativeInterval"
                         Job                       = 'dbatoolsci_setschedule2'
                         FrequencyRecurrenceFactor = '1'
@@ -312,17 +312,17 @@ Describe "Set-DbaAgentSchedule" {
                 }
             }
             AfterAll {
-                $null = Get-DbaAgentSchedule -SqlInstance $script:instance2 |
+                $null = Get-DbaAgentSchedule -SqlInstance $env:instance2 |
                     Where-Object { $_.name -like 'dbatools*' } |
                     Remove-DbaAgentSchedule -Confirm:$false -Force
             }
 
             It "Should set schedules with updated EndTime" {
-                $schedules = Get-DbaAgentSchedule -SqlInstance $script:instance2 | Where-Object { $_.name -like 'dbatools*' }
+                $schedules = Get-DbaAgentSchedule -SqlInstance $env:instance2 | Where-Object { $_.name -like 'dbatools*' }
                 foreach ($schedule in $schedules) {
                     foreach ($FrequencyRelativeInterval in ('Unused', 'First', 'Second', 'Third', 'Fourth', 'Last')) {
                         $variables = @{
-                            SqlInstance               = $script:instance2
+                            SqlInstance               = $env:instance2
                             Schedule                  = "$schedule"
                             Job                       = 'dbatoolsci_setschedule2'
                             FrequencyRecurrenceFactor = '4'
@@ -336,7 +336,7 @@ Describe "Set-DbaAgentSchedule" {
                         $null = Set-DbaAgentSchedule @variables
                     }
                 }
-                $results = Get-DbaAgentSchedule -SqlInstance $script:instance2 | Where-Object { $_.name -like 'dbatools*' }
+                $results = Get-DbaAgentSchedule -SqlInstance $env:instance2 | Where-Object { $_.name -like 'dbatools*' }
 
                 $results | Should -Not -BeNullOrEmpty
                 foreach ($r in $results) {

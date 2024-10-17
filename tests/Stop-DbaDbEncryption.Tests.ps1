@@ -12,7 +12,7 @@ Describe "Stop-DbaDbEncryption" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
@@ -20,18 +20,18 @@ Describe "Stop-DbaDbEncryption" {
         BeforeAll {
             $PSDefaultParameterValues["*:Confirm"] = $false
             $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
-            $masterkey = Get-DbaDbMasterKey -SqlInstance $script:instance2 -Database master
+            $masterkey = Get-DbaDbMasterKey -SqlInstance $env:instance2 -Database master
             if (-not $masterkey) {
                 $delmasterkey = $true
-                $masterkey = New-DbaServiceMasterKey -SqlInstance $script:instance2 -SecurePassword $passwd
+                $masterkey = New-DbaServiceMasterKey -SqlInstance $env:instance2 -SecurePassword $passwd
             }
-            $mastercert = Get-DbaDbCertificate -SqlInstance $script:instance2 -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
+            $mastercert = Get-DbaDbCertificate -SqlInstance $env:instance2 -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
             if (-not $mastercert) {
                 $delmastercert = $true
-                $mastercert = New-DbaDbCertificate -SqlInstance $script:instance2
+                $mastercert = New-DbaDbCertificate -SqlInstance $env:instance2
             }
 
-            $db = New-DbaDatabase -SqlInstance $script:instance2
+            $db = New-DbaDatabase -SqlInstance $env:instance2
             $db | New-DbaDbMasterKey -SecurePassword $passwd
             $db | New-DbaDbCertificate
             $db | New-DbaDbEncryptionKey -Force
@@ -54,7 +54,7 @@ Describe "Stop-DbaDbEncryption" {
         }
 
         It "should disable encryption on a database" {
-            $results = Stop-DbaDbEncryption -SqlInstance $script:instance2
+            $results = Stop-DbaDbEncryption -SqlInstance $env:instance2
             $results | ForEach-Object {
                 $_.EncryptionEnabled | Should -Be $false
             }

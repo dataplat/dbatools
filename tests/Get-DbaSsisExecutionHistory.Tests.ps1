@@ -27,7 +27,7 @@ Describe "Get-DbaSsisExecutionHistory" {
             $CommandUnderTest | Should -HaveParameter Environment -Type String[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 }

@@ -18,14 +18,14 @@ Describe "Get-DbaDbMailHistory" {
             $CommandUnderTest | Should -HaveParameter Status -Type String
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Command usage" {
         BeforeAll {
             . "$PSScriptRoot\constants.ps1"
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $server.Query("INSERT INTO msdb.[dbo].[sysmail_profile]
                ([name]
                ,[description]
@@ -77,7 +77,7 @@ Describe "Get-DbaDbMailHistory" {
 
         Context "Gets Db Mail History" {
             BeforeAll {
-                $results = Get-DbaDbMailHistory -SqlInstance $script:instance2 | Where-Object {$_.Subject -eq 'Test Job'}
+                $results = Get-DbaDbMailHistory -SqlInstance $global:instance2 | Where-Object {$_.Subject -eq 'Test Job'}
             }
             It "Gets results" {
                 $results | Should -Not -BeNullOrEmpty
@@ -91,7 +91,7 @@ Describe "Get-DbaDbMailHistory" {
         }
         Context "Gets Db Mail History using -Status" {
             BeforeAll {
-                $results = Get-DbaDbMailHistory -SqlInstance $script:instance2 -Status Sent
+                $results = Get-DbaDbMailHistory -SqlInstance $global:instance2 -Status Sent
             }
             It "Gets results" {
                 $results | Should -Not -BeNullOrEmpty
@@ -108,7 +108,7 @@ Describe "Get-DbaDbMailHistory" {
         }
         Context "Gets Db Mail History using -Since" {
             BeforeAll {
-                $results = Get-DbaDbMailHistory -SqlInstance $script:instance2 -Since '2018-01-01'
+                $results = Get-DbaDbMailHistory -SqlInstance $global:instance2 -Since '2018-01-01'
             }
             It "Gets results" {
                 $results | Should -Not -BeNullOrEmpty

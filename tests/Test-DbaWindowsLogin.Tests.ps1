@@ -33,28 +33,28 @@ Describe "Test-DbaWindowsLogin" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Login[] -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
     Context "Command actually works" {
         BeforeDiscovery {
-            $script:skipIntegrationTests = [Environment]::GetEnvironmentVariable('DBA_TOOLS_SKIP_INTEGRATION_TESTS') -eq 'true'
+            $env:skipIntegrationTests = [Environment]::GetEnvironmentVariable('DBA_TOOLS_SKIP_INTEGRATION_TESTS') -eq 'true'
         }
 
-        It "Should return correct properties" -Skip:$script:skipIntegrationTests {
-            $results = Test-DbaWindowsLogin -SqlInstance $script:instance2
+        It "Should return correct properties" -Skip:$env:skipIntegrationTests {
+            $results = Test-DbaWindowsLogin -SqlInstance $env:instance2
             $ExpectedProps = 'AccountNotDelegated', 'AllowReversiblePasswordEncryption', 'CannotChangePassword', 'DisabledInSQLServer', 'Domain', 'Enabled', 'Found', 'LockedOut', 'Login', 'PasswordExpired', 'PasswordNeverExpires', 'PasswordNotRequired', 'Server', 'SmartcardLogonRequired', 'TrustedForDelegation', 'Type', 'UserAccountControl'
             ($results[0].PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
         }
 
-        It "Should return true if Account type is User" -Skip:$script:skipIntegrationTests {
-            $results = Test-DbaWindowsLogin -SqlInstance $script:instance2
+        It "Should return true if Account type is User" -Skip:$env:skipIntegrationTests {
+            $results = Test-DbaWindowsLogin -SqlInstance $env:instance2
             ($results | Where-Object Type -match 'User').Count | Should -BeGreaterThan 0
         }
 
-        It "Should return true if Account is Found" -Skip:$script:skipIntegrationTests {
-            $results = Test-DbaWindowsLogin -SqlInstance $script:instance2
+        It "Should return true if Account is Found" -Skip:$env:skipIntegrationTests {
+            $results = Test-DbaWindowsLogin -SqlInstance $env:instance2
             ($results | Where-Object Found).Found | Should -Be $true
         }
     }

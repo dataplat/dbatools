@@ -30,21 +30,21 @@ Describe "Restart-DbaService" {
         It "Should have Credential as a non-mandatory parameter of type PSCredential" {
             $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Not -Mandatory
         }
-        It "Should have Force as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter -Not -Mandatory
+        It "Should have Force as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Not -Mandatory
         }
-        It "Should have EnableException as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+        It "Should have EnableException as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
     Context "Command actually works" {
         BeforeAll {
-            $instanceName = (Connect-DbaInstance -SqlInstance $script:instance2).ServiceName
+            $instanceName = (Connect-DbaInstance -SqlInstance $env:instance2).ServiceName
         }
 
         It "restarts some services" {
-            $services = Restart-DbaService -ComputerName $script:instance2 -InstanceName $instanceName -Type Agent
+            $services = Restart-DbaService -ComputerName $env:instance2 -InstanceName $instanceName -Type Agent
             $services | Should -Not -BeNullOrEmpty
             foreach ($service in $services) {
                 $service.State | Should -Be 'Running'
@@ -53,7 +53,7 @@ Describe "Restart-DbaService" {
         }
 
         It "restarts some services through pipeline" {
-            $services = Get-DbaService -ComputerName $script:instance2 -InstanceName $instanceName -Type Agent, Engine | Restart-DbaService
+            $services = Get-DbaService -ComputerName $env:instance2 -InstanceName $instanceName -Type Agent, Engine | Restart-DbaService
             $services | Should -Not -BeNullOrEmpty
             foreach ($service in $services) {
                 $service.State | Should -Be 'Running'

@@ -18,7 +18,7 @@ Describe "Find-DbaDbUnusedIndex" {
             $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[]
         }
         It "Should have IgnoreUptime parameter" {
-            $CommandUnderTest | Should -HaveParameter IgnoreUptime -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter IgnoreUptime -Type Switch
         }
         It "Should have Seeks parameter" {
             $CommandUnderTest | Should -HaveParameter Seeks -Type Int32
@@ -33,7 +33,7 @@ Describe "Find-DbaDbUnusedIndex" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Database[]
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 }
@@ -41,10 +41,10 @@ Describe "Find-DbaDbUnusedIndex" {
 Describe "Find-DbaDbUnusedIndex Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         . "$PSScriptRoot\constants.ps1"
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $global:instance2
         $random = Get-Random
         $dbName = "dbatoolsci_$random"
-        $null = New-DbaDatabase -SqlInstance $script:instance2 -Name $dbName
+        $null = New-DbaDatabase -SqlInstance $global:instance2 -Name $dbName
 
         $indexName = "dbatoolsci_index_$random"
         $tableName = "dbatoolsci_table_$random"
@@ -60,11 +60,11 @@ WAITFOR DELAY '00:00:05';
     }
 
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbName -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $global:instance2 -Database $dbName -Confirm:$false
     }
 
     It "Should find the 'unused' index" {
-        $results = Find-DbaDbUnusedIndex -SqlInstance $script:instance2 -Database $dbName -IgnoreUptime -Seeks 10 -Scans 10 -Lookups 10
+        $results = Find-DbaDbUnusedIndex -SqlInstance $global:instance2 -Database $dbName -IgnoreUptime -Seeks 10 -Scans 10 -Lookups 10
         $results.Database | Should -Be $dbName
         $results.IndexName | Should -Contain $indexName
     }
@@ -72,7 +72,7 @@ WAITFOR DELAY '00:00:05';
     It "Should return the expected columns" {
         $expectedColumns = @('CompressionDescription', 'ComputerName', 'Database', 'DatabaseId', 'IndexId', 'IndexName', 'IndexSizeMB', 'InstanceName', 'LastSystemLookup', 'LastSystemScan', 'LastSystemSeek', 'LastSystemUpdate', 'LastUserLookup', 'LastUserScan', 'LastUserSeek', 'LastUserUpdate', 'ObjectId', 'RowCount', 'Schema', 'SqlInstance', 'SystemLookup', 'SystemScans', 'SystemSeeks', 'SystemUpdates', 'Table', 'TypeDesc', 'UserLookups', 'UserScans', 'UserSeeks', 'UserUpdates')
 
-        $results = Find-DbaDbUnusedIndex -SqlInstance $script:instance2 -Database $dbName -IgnoreUptime -Seeks 10 -Scans 10 -Lookups 10
+        $results = Find-DbaDbUnusedIndex -SqlInstance $global:instance2 -Database $dbName -IgnoreUptime -Seeks 10 -Scans 10 -Lookups 10
         $resultColumns = $results | Get-Member -MemberType Property | Select-Object -ExpandProperty Name
 
         $missingColumns = $expectedColumns | Where-Object { $_ -notin $resultColumns }

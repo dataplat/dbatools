@@ -17,15 +17,15 @@ Describe "New-DbaDacOption" {
         It "Should have Property as a non-mandatory Hashtable parameter" {
             $CommandUnderTest | Should -HaveParameter Property -Type Hashtable -Not -Mandatory
         }
-        It "Should have EnableException as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+        It "Should have EnableException as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
     Context "Command usage" {
         BeforeAll {
             . "$PSScriptRoot\constants.ps1"
-            $publishprofile = New-DbaDacProfile -SqlInstance $script:instance1 -Database whatever -Path C:\temp
+            $publishprofile = New-DbaDacProfile -SqlInstance $env:instance1 -Database whatever -Path C:\temp
         }
         AfterAll {
             Remove-Item -Confirm:$false -Path $publishprofile.FileName -ErrorAction SilentlyContinue

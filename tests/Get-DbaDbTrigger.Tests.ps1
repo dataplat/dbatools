@@ -21,7 +21,7 @@ Describe "Get-DbaDbTrigger Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Database[] -Not -Mandatory
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 }
@@ -29,7 +29,7 @@ Describe "Get-DbaDbTrigger Unit Tests" -Tag 'UnitTests' {
 Describe "Get-DbaDbTrigger Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         . "$PSScriptRoot\constants.ps1"
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $global:instance2
         $trigger = @"
 CREATE TRIGGER dbatoolsci_safety
     ON DATABASE
@@ -44,14 +44,14 @@ CREATE TRIGGER dbatoolsci_safety
     }
 
     AfterAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $global:instance2
         $trigger = "DROP TRIGGER dbatoolsci_safety ON DATABASE;"
         $server.Query("$trigger")
     }
 
     Context "Gets Database Trigger" {
         BeforeAll {
-            $results = Get-DbaDbTrigger -SqlInstance $script:instance2 | Where-Object {$_.name -eq "dbatoolsci_safety"}
+            $results = Get-DbaDbTrigger -SqlInstance $global:instance2 | Where-Object {$_.name -eq "dbatoolsci_safety"}
         }
 
         It "Gets results" {
@@ -69,7 +69,7 @@ CREATE TRIGGER dbatoolsci_safety
 
     Context "Gets Database Trigger when using -Database" {
         BeforeAll {
-            $results = Get-DbaDbTrigger -SqlInstance $script:instance2 -Database Master
+            $results = Get-DbaDbTrigger -SqlInstance $global:instance2 -Database Master
         }
 
         It "Gets results" {
@@ -87,7 +87,7 @@ CREATE TRIGGER dbatoolsci_safety
 
     Context "Gets no Database Trigger when using -ExcludeDatabase" {
         BeforeAll {
-            $results = Get-DbaDbTrigger -SqlInstance $script:instance2 -ExcludeDatabase Master
+            $results = Get-DbaDbTrigger -SqlInstance $global:instance2 -ExcludeDatabase Master
         }
 
         It "Gets no results" {

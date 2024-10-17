@@ -36,13 +36,13 @@ Describe "Add-DbaComputerCertificate" {
             $CommandUnderTest | Should -HaveParameter Flag -Type String[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Certificate is added properly" {
         BeforeAll {
-            $results = Add-DbaComputerCertificate -Path $script:appveyorlabrepo\certificates\localhost.crt -Confirm:$false
+            $results = Add-DbaComputerCertificate -Path $global:appveyorlabrepo\certificates\localhost.crt -Confirm:$false
         }
 
         It "Should show the proper thumbprint has been added" {

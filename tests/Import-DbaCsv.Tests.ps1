@@ -6,15 +6,15 @@ Describe "Import-DbaCsv" {
         Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
         . "$PSScriptRoot\constants.ps1"
 
-        $path = "$script:appveyorlabrepo\csv\SuperSmall.csv"
-        $CommaSeparatedWithHeader = "$script:appveyorlabrepo\csv\CommaSeparatedWithHeader.csv"
-        $col1 = "$script:appveyorlabrepo\csv\cols.csv"
-        $col2 = "$script:appveyorlabrepo\csv\col2.csv"
-        $pipe3 = "$script:appveyorlabrepo\csv\pipe3.psv"
+        $path = "$env:appveyorlabrepo\csv\SuperSmall.csv"
+        $CommaSeparatedWithHeader = "$env:appveyorlabrepo\csv\CommaSeparatedWithHeader.csv"
+        $col1 = "$env:appveyorlabrepo\csv\cols.csv"
+        $col2 = "$env:appveyorlabrepo\csv\col2.csv"
+        $pipe3 = "$env:appveyorlabrepo\csv\pipe3.psv"
     }
 
     AfterAll {
-        Invoke-DbaQuery -SqlInstance $script:instance1, $script:instance2 -Database tempdb -Query "drop table SuperSmall; drop table CommaSeparatedWithHeader"
+        Invoke-DbaQuery -SqlInstance $env:instance1, $env:instance2 -Database tempdb -Query "drop table SuperSmall; drop table CommaSeparatedWithHeader"
     }
 
     Context "Validate parameters" {
@@ -40,13 +40,13 @@ Describe "Import-DbaCsv" {
             $CommandUnderTest | Should -HaveParameter Schema -Type String -Not -Mandatory
         }
         It "Should have Truncate parameter" {
-            $CommandUnderTest | Should -HaveParameter Truncate -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Truncate -Type Switch
         }
         It "Should have Delimiter parameter" {
             $CommandUnderTest | Should -HaveParameter Delimiter -Type Char -Not -Mandatory
         }
         It "Should have SingleColumn parameter" {
-            $CommandUnderTest | Should -HaveParameter SingleColumn -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter SingleColumn -Type Switch
         }
         It "Should have BatchSize parameter" {
             $CommandUnderTest | Should -HaveParameter BatchSize -Type Int32 -Not -Mandatory
@@ -55,19 +55,19 @@ Describe "Import-DbaCsv" {
             $CommandUnderTest | Should -HaveParameter NotifyAfter -Type Int32 -Not -Mandatory
         }
         It "Should have TableLock parameter" {
-            $CommandUnderTest | Should -HaveParameter TableLock -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter TableLock -Type Switch
         }
         It "Should have CheckConstraints parameter" {
-            $CommandUnderTest | Should -HaveParameter CheckConstraints -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter CheckConstraints -Type Switch
         }
         It "Should have FireTriggers parameter" {
-            $CommandUnderTest | Should -HaveParameter FireTriggers -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter FireTriggers -Type Switch
         }
         It "Should have KeepIdentity parameter" {
-            $CommandUnderTest | Should -HaveParameter KeepIdentity -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter KeepIdentity -Type Switch
         }
         It "Should have KeepNulls parameter" {
-            $CommandUnderTest | Should -HaveParameter KeepNulls -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter KeepNulls -Type Switch
         }
         It "Should have Column parameter" {
             $CommandUnderTest | Should -HaveParameter Column -Type String[] -Not -Mandatory
@@ -76,19 +76,19 @@ Describe "Import-DbaCsv" {
             $CommandUnderTest | Should -HaveParameter ColumnMap -Type Hashtable -Not -Mandatory
         }
         It "Should have KeepOrdinalOrder parameter" {
-            $CommandUnderTest | Should -HaveParameter KeepOrdinalOrder -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter KeepOrdinalOrder -Type Switch
         }
         It "Should have AutoCreateTable parameter" {
-            $CommandUnderTest | Should -HaveParameter AutoCreateTable -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter AutoCreateTable -Type Switch
         }
         It "Should have NoProgress parameter" {
-            $CommandUnderTest | Should -HaveParameter NoProgress -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter NoProgress -Type Switch
         }
         It "Should have NoHeaderRow parameter" {
-            $CommandUnderTest | Should -HaveParameter NoHeaderRow -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter NoHeaderRow -Type Switch
         }
         It "Should have UseFileNameForSchema parameter" {
-            $CommandUnderTest | Should -HaveParameter UseFileNameForSchema -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter UseFileNameForSchema -Type Switch
         }
         It "Should have Quote parameter" {
             $CommandUnderTest | Should -HaveParameter Quote -Type Char -Not -Mandatory
@@ -118,42 +118,42 @@ Describe "Import-DbaCsv" {
             $CommandUnderTest | Should -HaveParameter MaxQuotedFieldLength -Type Int32 -Not -Mandatory
         }
         It "Should have SkipEmptyLine parameter" {
-            $CommandUnderTest | Should -HaveParameter SkipEmptyLine -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter SkipEmptyLine -Type Switch
         }
         It "Should have SupportsMultiline parameter" {
-            $CommandUnderTest | Should -HaveParameter SupportsMultiline -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter SupportsMultiline -Type Switch
         }
         It "Should have UseColumnDefault parameter" {
-            $CommandUnderTest | Should -HaveParameter UseColumnDefault -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter UseColumnDefault -Type Switch
         }
         It "Should have NoTransaction parameter" {
-            $CommandUnderTest | Should -HaveParameter NoTransaction -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter NoTransaction -Type Switch
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Command usage" {
         It "accepts piped input and doesn't add rows if the table does not exist" {
-            $results = $path | Import-DbaCsv -SqlInstance $script:instance1 -Database tempdb -Delimiter `t -NotifyAfter 50000 -WarningVariable warn
+            $results = $path | Import-DbaCsv -SqlInstance $env:instance1 -Database tempdb -Delimiter `t -NotifyAfter 50000 -WarningVariable warn
             $results | Should -BeNullOrEmpty
         }
 
         It "creates the right columnmap (#7630), handles pipe delimiters (#7806)" {
-            $null = Import-DbaCsv -SqlInstance $script:instance1 -Path $col1 -Database tempdb -AutoCreateTable -Table cols
-            $null = Import-DbaCsv -SqlInstance $script:instance1 -Path $col2 -Database tempdb -Table cols
-            $null = Import-DbaCsv -SqlInstance $script:instance1 -Path $pipe3 -Database tempdb -Table cols2 -Delimiter "|" -AutoCreateTable
-            $results = Invoke-DbaQuery -SqlInstance $script:instance1 -Database tempdb -Query "select * from cols"
+            $null = Import-DbaCsv -SqlInstance $env:instance1 -Path $col1 -Database tempdb -AutoCreateTable -Table cols
+            $null = Import-DbaCsv -SqlInstance $env:instance1 -Path $col2 -Database tempdb -Table cols
+            $null = Import-DbaCsv -SqlInstance $env:instance1 -Path $pipe3 -Database tempdb -Table cols2 -Delimiter "|" -AutoCreateTable
+            $results = Invoke-DbaQuery -SqlInstance $env:instance1 -Database tempdb -Query "select * from cols"
             $results | Where-Object third -notmatch "three" | Should -BeNullOrEmpty
             $results | Where-Object firstcol -notmatch "one" | Should -BeNullOrEmpty
-            $results = Invoke-DbaQuery -SqlInstance $script:instance1 -Database tempdb -Query "select * from cols2"
+            $results = Invoke-DbaQuery -SqlInstance $env:instance1 -Database tempdb -Query "select * from cols2"
             $results | Where-Object third -notmatch "three" | Should -BeNullOrEmpty
             $results | Where-Object firstcol -notmatch "one" | Should -BeNullOrEmpty
         }
 
         It "performs 4 imports" -Skip:($env:appveyor) {
-            $results = Import-DbaCsv -Path $path, $path -SqlInstance $script:instance1, $script:instance2 -Database tempdb -Delimiter `t -NotifyAfter 50000 -WarningVariable warn2 -AutoCreateTable
+            $results = Import-DbaCsv -Path $path, $path -SqlInstance $env:instance1, $env:instance2 -Database tempdb -Delimiter `t -NotifyAfter 50000 -WarningVariable warn2 -AutoCreateTable
             $results.Count | Should -Be 4
 
             foreach ($result in $results) {
@@ -164,25 +164,25 @@ Describe "Import-DbaCsv" {
         }
 
         It "doesn't break when truncate is passed" -Skip:($env:appveyor) {
-            $result = Import-DbaCsv -Path $path -SqlInstance $script:instance1 -Database tempdb -Delimiter `t -Table SuperSmall -Truncate
+            $result = Import-DbaCsv -Path $path -SqlInstance $env:instance1 -Database tempdb -Delimiter `t -Table SuperSmall -Truncate
             $result.RowsCopied | Should -Be 999
             $result.Database | Should -Be tempdb
             $result.Table | Should -Be SuperSmall
         }
 
         It "works with NoTransaction" -Skip:($env:appveyor) {
-            $result = Import-DbaCsv -Path $path -SqlInstance $script:instance1 -Database tempdb -Delimiter `t -Table SuperSmall -Truncate -NoTransaction
+            $result = Import-DbaCsv -Path $path -SqlInstance $env:instance1 -Database tempdb -Delimiter `t -Table SuperSmall -Truncate -NoTransaction
             $result.RowsCopied | Should -Be 999
             $result.Database | Should -Be tempdb
             $result.Table | Should -Be SuperSmall
         }
 
         It "Catches the scenario where the database param does not match the server object passed into the command" {
-            $server = Connect-DbaInstance $script:instance1 -Database tempdb
+            $server = Connect-DbaInstance $env:instance1 -Database tempdb
             $result = Import-DbaCsv -Path $path -SqlInstance $server -Database InvalidDB -Delimiter `t -Table SuperSmall -Truncate -AutoCreateTable
             $result | Should -BeNullOrEmpty
 
-            $server = Connect-DbaInstance $script:instance1 -Database tempdb
+            $server = Connect-DbaInstance $env:instance1 -Database tempdb
             $result = Import-DbaCsv -Path $path -SqlInstance $server -Database tempdb -Delimiter `t -Table SuperSmall -Truncate -AutoCreateTable
             $result.RowsCopied | Should -Be 999
             $result.Database | Should -Be tempdb
@@ -190,7 +190,7 @@ Describe "Import-DbaCsv" {
         }
 
         It "Catches the scenario where the header is not properly parsed causing param errors" {
-            $server = Connect-DbaInstance $script:instance1 -Database tempdb
+            $server = Connect-DbaInstance $env:instance1 -Database tempdb
             $null = Import-DbaCsv -Path $CommaSeparatedWithHeader -SqlInstance $server -Database tempdb -AutoCreateTable
 
             $result = Import-DbaCsv -Path $CommaSeparatedWithHeader -SqlInstance $server -Database tempdb -Truncate
@@ -201,7 +201,7 @@ Describe "Import-DbaCsv" {
         }
 
         It "works with NoHeaderRow" {
-            $server = Connect-DbaInstance $script:instance1 -Database tempdb
+            $server = Connect-DbaInstance $env:instance1 -Database tempdb
             Invoke-DbaQuery -SqlInstance $server -Query 'CREATE TABLE NoHeaderRow (c1 VARCHAR(50), c2 VARCHAR(50), c3 VARCHAR(50))'
             $result = Import-DbaCsv -Path $col1 -NoHeaderRow -SqlInstance $server -Database tempdb -Table 'NoHeaderRow' -WarningVariable warnNoHeaderRow
             $data = Invoke-DbaQuery -SqlInstance $server -Query 'SELECT * FROM NoHeaderRow' -As PSObject
@@ -214,7 +214,7 @@ Describe "Import-DbaCsv" {
         }
 
         It "works with tables which have non-varchar types (date)" {
-            $server = Connect-DbaInstance $script:instance1 -Database tempdb
+            $server = Connect-DbaInstance $env:instance1 -Database tempdb
             Invoke-DbaQuery -SqlInstance $server -Query 'CREATE TABLE WithTypes ([date] DATE, col1 VARCHAR(50), col2 VARCHAR(50))'
             $result = Import-DbaCsv -Path $CommaSeparatedWithHeader -SqlInstance $server -Database tempdb -Table 'WithTypes'
             Invoke-DbaQuery -SqlInstance $server -Query 'DROP TABLE WithTypes'
@@ -225,7 +225,7 @@ Describe "Import-DbaCsv" {
 
         It "works with tables which have non-varchar types (guid, bit)" {
             $filePath = '.\foo.csv'
-            $server = Connect-DbaInstance $script:instance1 -Database tempdb
+            $server = Connect-DbaInstance $env:instance1 -Database tempdb
             Invoke-DbaQuery -SqlInstance $server -Query 'CREATE TABLE WithGuidsAndBits (one_guid UNIQUEIDENTIFIER, one_bit BIT)'
             $row = [pscustomobject]@{
                 one_guid = (New-Guid).Guid

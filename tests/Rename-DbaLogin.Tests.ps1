@@ -18,10 +18,10 @@ Describe "Rename-DbaLogin" {
             $CommandUnderTest | Should -HaveParameter NewLogin -Type String
         }
         It "Should have Force as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -32,19 +32,19 @@ Describe "Rename-DbaLogin" {
             $renamed = "dbatoolsci_renamelogin2"
             $password = 'MyV3ry$ecur3P@ssw0rd'
             $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
-            $newlogin = New-DbaLogin -SqlInstance $script:instance1 -Login $login -Password $securePassword
+            $newlogin = New-DbaLogin -SqlInstance $env:instance1 -Login $login -Password $securePassword
         }
         AfterAll {
-            $null = Stop-DbaProcess -SqlInstance $script:instance1 -Login $renamed
-            $null = Remove-DbaLogin -SqlInstance $script:instance1 -Login $renamed -Confirm:$false
+            $null = Stop-DbaProcess -SqlInstance $env:instance1 -Login $renamed
+            $null = Remove-DbaLogin -SqlInstance $env:instance1 -Login $renamed -Confirm:$false
         }
 
         It "renames the login" {
-            $results = Rename-DbaLogin -SqlInstance $script:instance1 -Login $login -NewLogin $renamed
+            $results = Rename-DbaLogin -SqlInstance $env:instance1 -Login $login -NewLogin $renamed
             $results.Status | Should -Be "Successful"
             $results.PreviousLogin | Should -Be $login
             $results.NewLogin | Should -Be $renamed
-            Get-DbaLogin -SqlInstance $script:instance1 -login $renamed | Should -Not -BeNullOrEmpty
+            Get-DbaLogin -SqlInstance $env:instance1 -login $renamed | Should -Not -BeNullOrEmpty
         }
     }
 }

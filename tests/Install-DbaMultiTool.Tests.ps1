@@ -21,10 +21,10 @@ Describe "Install-DbaMultiTool" {
             $CommandUnderTest | Should -HaveParameter LocalFile -Type String
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -33,13 +33,13 @@ Describe "Install-DbaMultiTool" {
             . "$PSScriptRoot\constants.ps1"
             $branch = "main"
             $database = "dbatoolsci_multitool_$(Get-Random)"
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $env:instance2
             $server.Query("CREATE DATABASE $database")
 
-            $resultsDownload = Install-DbaMultiTool -SqlInstance $script:instance2 -Database $database -Branch $branch -Force -Verbose:$false
+            $resultsDownload = Install-DbaMultiTool -SqlInstance $env:instance2 -Database $database -Branch $branch -Force -Verbose:$false
         }
         AfterAll {
-            Remove-DbaDatabase -SqlInstance $script:instance2 -Database $database -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $env:instance2 -Database $database -Confirm:$false
         }
 
         It "Installs to specified database: $database" {
@@ -60,14 +60,14 @@ Describe "Install-DbaMultiTool" {
             $result.PsObject.Properties.Name | Should -Be $ExpectedProps
         }
         It "Shows status of Updated" {
-            $resultsDownload = Install-DbaMultiTool -SqlInstance $script:instance2 -Database $database -Verbose:$false
+            $resultsDownload = Install-DbaMultiTool -SqlInstance $env:instance2 -Database $database -Verbose:$false
             $resultsDownload[0].Status | Should -Be 'Updated'
         }
         It "Shows status of Error" {
             $folder = Join-Path (Get-DbatoolsConfigValue -FullName Path.DbatoolsData) -Child "dba-multitool-$branch"
             $sqlScript = Get-ChildItem $folder -Filter "sp_*.sql" | Select-Object -First 1
             Add-Content $sqlScript.FullName (New-Guid).ToString()
-            $result = Install-DbaMultiTool -SqlInstance $script:instance2 -Database $database -Verbose:$false
+            $result = Install-DbaMultiTool -SqlInstance $env:instance2 -Database $database -Verbose:$false
             $result = $result | Where-Object Name -eq $sqlScript.BaseName
             $result.Status | Should -Be "Error"
         }
@@ -78,7 +78,7 @@ Describe "Install-DbaMultiTool" {
             . "$PSScriptRoot\constants.ps1"
             $branch = "main"
             $database = "dbatoolsci_multitool_$(Get-Random)"
-            $server = Connect-DbaInstance -SqlInstance $script:instance3
+            $server = Connect-DbaInstance -SqlInstance $env:instance3
             $server.Query("CREATE DATABASE $database")
 
             $outfile = "dba-multitool-$branch.zip"
@@ -86,10 +86,10 @@ Describe "Install-DbaMultiTool" {
             if (Test-Path $outfile) {
                 $fullOutfile = (Get-ChildItem $outfile).FullName
             }
-            $resultsLocalFile = Install-DbaMultiTool -SqlInstance $script:instance3 -Database $database -Branch $branch -LocalFile $fullOutfile -Force
+            $resultsLocalFile = Install-DbaMultiTool -SqlInstance $env:instance3 -Database $database -Branch $branch -LocalFile $fullOutfile -Force
         }
         AfterAll {
-            Remove-DbaDatabase -SqlInstance $script:instance3 -Database $database -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $env:instance3 -Database $database -Confirm:$false
         }
 
         It "Installs to specified database: $database" {
@@ -110,14 +110,14 @@ Describe "Install-DbaMultiTool" {
             $result.PsObject.Properties.Name | Should -Be $ExpectedProps
         }
         It "Shows status of Updated" {
-            $resultsLocalFile = Install-DbaMultiTool -SqlInstance $script:instance3 -Database $database
+            $resultsLocalFile = Install-DbaMultiTool -SqlInstance $env:instance3 -Database $database
             $resultsLocalFile[0].Status | Should -Be 'Updated'
         }
         It "Shows status of Error" {
             $folder = Join-Path (Get-DbatoolsConfigValue -FullName Path.DbatoolsData) -Child "dba-multitool-$branch"
             $sqlScript = Get-ChildItem $folder -Filter "sp_*.sql" | Select-Object -First 1
             Add-Content $sqlScript.FullName (New-Guid).ToString()
-            $result = Install-DbaMultiTool -SqlInstance $script:instance3 -Database $database -Verbose:$false
+            $result = Install-DbaMultiTool -SqlInstance $env:instance3 -Database $database -Verbose:$false
             $result = $result | Where-Object Name -eq $sqlScript.BaseName
             $result.Status | Should -Be "Error"
         }

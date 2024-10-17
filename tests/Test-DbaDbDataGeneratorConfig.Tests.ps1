@@ -13,7 +13,7 @@ Describe "Test-DbaDbDataGeneratorConfig" {
         It "Should have FilePath as a non-mandatory String parameter" {
             $CommandUnderTest | Should -HaveParameter FilePath -Type String -Not -Mandatory
         }
-        It "Should have EnableException as a non-mandatory SwitchParameter" {
+        It "Should have EnableException as a non-mandatory Switch" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
@@ -23,7 +23,7 @@ Describe "Test-DbaDbDataGeneratorConfig" {
             $dbname = "dbatools_datagentest"
             $query = "CREATE DATABASE [$dbname]"
 
-            Invoke-DbaQuery -SqlInstance $script:instance1 -Database master -Query $query
+            Invoke-DbaQuery -SqlInstance $env:instance1 -Database master -Query $query
 
             $query = @"
             CREATE TABLE [dbo].[Customer](
@@ -39,13 +39,13 @@ Describe "Test-DbaDbDataGeneratorConfig" {
             ) ON [PRIMARY]
 "@
 
-            Invoke-DbaQuery -SqlInstance $script:instance1 -Database $dbname -Query $query
+            Invoke-DbaQuery -SqlInstance $env:instance1 -Database $dbname -Query $query
 
-            $file = New-DbaDbDataGeneratorConfig -SqlInstance $script:instance1 -Database $dbname -Table Customer -Path "C:\temp\datageneration"
+            $file = New-DbaDbDataGeneratorConfig -SqlInstance $env:instance1 -Database $dbname -Table Customer -Path "C:\temp\datageneration"
         }
 
         AfterAll {
-            Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $env:instance1 -Database $dbname -Confirm:$false
         }
 
         It "gives no errors with a correct json file" {

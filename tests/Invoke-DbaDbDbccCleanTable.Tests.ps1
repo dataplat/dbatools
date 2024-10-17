@@ -21,17 +21,17 @@ Describe "Invoke-DbaDbDbccCleanTable" {
             $CommandUnderTest | Should -HaveParameter BatchSize -Type Int32 -Not -Mandatory
         }
         It "Should have NoInformationalMessages parameter" {
-            $CommandUnderTest | Should -HaveParameter NoInformationalMessages -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NoInformationalMessages -Type Switch -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
     Context "Command usage" {
         BeforeAll {
             . (Join-Path $PSScriptRoot 'constants.ps1')
-            $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database tempdb
+            $db = Get-DbaDatabase -SqlInstance $env:instance1 -Database tempdb
             $null = $db.Query("CREATE TABLE dbo.dbatoolct_example (object_id int, [definition] nvarchar(max),Document varchar(2000));
             INSERT INTO dbo.dbatoolct_example([object_id], [definition], Document) Select [object_id], [definition], REPLICATE('ab', 800) from master.sys.sql_modules;
             ALTER TABLE dbo.dbatoolct_example DROP COLUMN Definition, Document;")
@@ -47,7 +47,7 @@ Describe "Invoke-DbaDbDbccCleanTable" {
         Context "Validate standard output" {
             BeforeAll {
                 $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Object', 'Cmd', 'Output'
-                $result = Invoke-DbaDbDbccCleanTable -SqlInstance $script:instance1 -Database 'tempdb' -Object 'dbo.dbatoolct_example' -Confirm:$false
+                $result = Invoke-DbaDbDbccCleanTable -SqlInstance $env:instance1 -Database 'tempdb' -Object 'dbo.dbatoolct_example' -Confirm:$false
             }
             It "Should return property: <_>" -ForEach $props {
                 $result[0].PSObject.Properties[$_] | Should -Not -BeNullOrEmpty
@@ -61,7 +61,7 @@ Describe "Invoke-DbaDbDbccCleanTable" {
 
         Context "Validate BatchSize parameter" {
             BeforeAll {
-                $result = Invoke-DbaDbDbccCleanTable -SqlInstance $script:instance1 -Database 'tempdb' -Object 'dbo.dbatoolct_example' -BatchSize 1000 -Confirm:$false
+                $result = Invoke-DbaDbDbccCleanTable -SqlInstance $env:instance1 -Database 'tempdb' -Object 'dbo.dbatoolct_example' -BatchSize 1000 -Confirm:$false
             }
             It "Returns results for table" {
                 $result.Cmd | Should -Be "DBCC CLEANTABLE('tempdb', 'dbo.dbatoolct_example', 1000)"
@@ -71,7 +71,7 @@ Describe "Invoke-DbaDbDbccCleanTable" {
 
         Context "Validate NoInformationalMessages parameter" {
             BeforeAll {
-                $result = Invoke-DbaDbDbccCleanTable -SqlInstance $script:instance1 -Database 'tempdb' -Object 'dbo.dbatoolct_example' -NoInformationalMessages -Confirm:$false
+                $result = Invoke-DbaDbDbccCleanTable -SqlInstance $env:instance1 -Database 'tempdb' -Object 'dbo.dbatoolct_example' -NoInformationalMessages -Confirm:$false
             }
             It "Returns results for table" {
                 $result.Cmd | Should -Be "DBCC CLEANTABLE('tempdb', 'dbo.dbatoolct_example') WITH NO_INFOMSGS"

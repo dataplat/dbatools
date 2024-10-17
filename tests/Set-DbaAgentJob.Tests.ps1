@@ -87,7 +87,7 @@ Describe "Set-DbaAgentJob Integration Tests" -Tag "IntegrationTests" {
 
     Context "Command actually works" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $env:instance2
             $jobName = "dbatoolsci_test_job"
             $newJobName = "dbatoolsci_test_job_renamed"
             $null = New-DbaAgentJob -SqlInstance $server -Job $jobName

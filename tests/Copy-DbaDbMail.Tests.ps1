@@ -6,7 +6,7 @@ Describe "Copy-DbaDbMail" {
         Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
         . "$PSScriptRoot\constants.ps1"
 
-        $servers = Connect-DbaInstance -SqlInstance $script:instance2, $script:instance3
+        $servers = Connect-DbaInstance -SqlInstance $global:instance2, $global:instance3
         foreach ($s in $servers) {
             if ( (Get-DbaSpConfigure -SqlInstance $s -Name 'Database Mail XPs').RunningValue -ne 1 ) {
                 Set-DbaSpConfigure -SqlInstance $s -Name 'Database Mail XPs' -Value 1
@@ -25,7 +25,7 @@ Describe "Copy-DbaDbMail" {
         $mailaccountpriority = 1
 
         $splat1 = @{
-            SqlInstance    = $script:instance2
+            SqlInstance    = $global:instance2
             Name           = $accountName
             Description    = $account_description
             EmailAddress   = $email_address
@@ -36,7 +36,7 @@ Describe "Copy-DbaDbMail" {
         $null = New-DbaDbMailAccount @splat1 -Force
 
         $splat2 = @{
-            SqlInstance         = $script:instance2
+            SqlInstance         = $global:instance2
             Name                = $profilename
             Description         = $profile_description
             MailAccountName     = $email_address
@@ -46,7 +46,7 @@ Describe "Copy-DbaDbMail" {
     }
 
     AfterAll {
-        $servers = Connect-DbaInstance -SqlInstance $script:instance2, $script:instance3
+        $servers = Connect-DbaInstance -SqlInstance $global:instance2, $global:instance3
 
         foreach ($s in $servers) {
             $mailAccountSettings = "EXEC msdb.dbo.sysmail_delete_account_sp @account_name = '$accountname';"
@@ -76,60 +76,60 @@ Describe "Copy-DbaDbMail" {
             $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type PSCredential
         }
         It "Should have Force as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
-    Context "Copy DbMail to $script:instance3" {
+    Context "Copy DbMail to $global:instance3" {
         BeforeAll {
-            $results = Copy-DbaDbMail -Source $script:instance2 -Destination $script:instance3
+            $results = Copy-DbaDbMail -Source $global:instance2 -Destination $global:instance3
         }
 
         It "Should have copied database mailitems" {
             $results | Should -Not -BeNullOrEmpty
         }
 
-        It "Should have copied Mail Configuration from $script:instance2 to $script:instance3" {
+        It "Should have copied Mail Configuration from $global:instance2 to $global:instance3" {
             $results | Where-Object { $_.Type -eq 'Mail Configuration' } | Should -Not -BeNullOrEmpty
             $results | Where-Object { $_.Type -eq 'Mail Configuration' } | ForEach-Object {
-                $_.SourceServer | Should -Be "$script:instance2"
-                $_.DestinationServer | Should -Be "$script:instance3"
+                $_.SourceServer | Should -Be "$global:instance2"
+                $_.DestinationServer | Should -Be "$global:instance3"
             }
         }
 
-        It "Should have copied Mail Account from $script:instance2 to $script:instance3" {
+        It "Should have copied Mail Account from $global:instance2 to $global:instance3" {
             $results | Where-Object { $_.Type -eq 'Mail Account' } | Should -Not -BeNullOrEmpty
             $results | Where-Object { $_.Type -eq 'Mail Account' } | ForEach-Object {
-                $_.SourceServer | Should -Be "$script:instance2"
-                $_.DestinationServer | Should -Be "$script:instance3"
+                $_.SourceServer | Should -Be "$global:instance2"
+                $_.DestinationServer | Should -Be "$global:instance3"
             }
         }
 
-        It "Should have copied Mail Profile from $script:instance2 to $script:instance3" {
+        It "Should have copied Mail Profile from $global:instance2 to $global:instance3" {
             $results | Where-Object { $_.Type -eq 'Mail Profile' } | Should -Not -BeNullOrEmpty
             $results | Where-Object { $_.Type -eq 'Mail Profile' } | ForEach-Object {
-                $_.SourceServer | Should -Be "$script:instance2"
-                $_.DestinationServer | Should -Be "$script:instance3"
+                $_.SourceServer | Should -Be "$global:instance2"
+                $_.DestinationServer | Should -Be "$global:instance3"
             }
         }
     }
 
     Context "Copy MailServers specifically" {
         BeforeAll {
-            $results = Copy-DbaDbMail -Source $script:instance2 -Destination $script:instance3 -Type MailServers
+            $results = Copy-DbaDbMail -Source $global:instance2 -Destination $global:instance3 -Type MailServers
         }
 
         It "Should have copied database mailitems" {
             $results | Should -Not -BeNullOrEmpty
         }
 
-        It "Should have skipped MailServers from $script:instance2 to $script:instance3" {
+        It "Should have skipped MailServers from $global:instance2 to $global:instance3" {
             $results | ForEach-Object {
-                $_.SourceServer | Should -Be "$script:instance2"
-                $_.DestinationServer | Should -Be "$script:instance3"
+                $_.SourceServer | Should -Be "$global:instance2"
+                $_.DestinationServer | Should -Be "$global:instance3"
                 $_.Status | Should -Be 'Skipped'
             }
         }

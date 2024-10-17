@@ -22,7 +22,7 @@ Describe "Export-DbaSpConfigure" {
             $CommandUnderTest | Should -HaveParameter FilePath -Type String -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 

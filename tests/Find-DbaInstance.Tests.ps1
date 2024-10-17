@@ -42,7 +42,7 @@ Describe "Find-DbaInstance" {
             . (Join-Path $PSScriptRoot 'constants.ps1')
         }
         BeforeAll {
-            $results = Find-DbaInstance -ComputerName $script:instance3 -ScanType Browser, SqlConnect | Select-Object -First 1
+            $results = Find-DbaInstance -ComputerName $global:instance3 -ScanType Browser, SqlConnect | Select-Object -First 1
         }
         It "Returns an object type of [Dataplat.Dbatools.Discovery.DbaInstanceReport]" {
             $results | Should -BeOfType [Dataplat.Dbatools.Discovery.DbaInstanceReport]
@@ -50,7 +50,7 @@ Describe "Find-DbaInstance" {
         It "FullName is populated" {
             $results.FullName | Should -Not -BeNullOrEmpty
         }
-        It "TcpConnected is true" -Skip:([DbaInstanceParameter]$script:instance3).IsLocalHost {
+        It "TcpConnected is true" -Skip:([DbaInstanceParameter]$global:instance3).IsLocalHost {
             $results.TcpConnected | Should -Be $true
         }
         It "successfully connects" {

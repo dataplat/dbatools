@@ -30,10 +30,10 @@ Describe "Remove-DbaAgentSchedule Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter InputObject -Type ScheduleBase[] -Not -Mandatory
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
         It "Should have Force as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Not -Mandatory
         }
     }
 }
@@ -45,7 +45,7 @@ Describe "Remove-DbaAgentSchedule Integration Tests" -Tag "IntegrationTests" {
 
         foreach ($FrequencySubdayType in ('Time', 'Seconds', 'Minutes', 'Hours')) {
             $variables = @{
-                SqlInstance                = $script:instance2
+                SqlInstance                = $env:instance2
                 Schedule                   = "dbatoolsci_$FrequencySubdayType"
                 FrequencyRecurrenceFactor  = '1'
                 FrequencySubdayInterval    = '1'
@@ -61,19 +61,19 @@ Describe "Remove-DbaAgentSchedule Integration Tests" -Tag "IntegrationTests" {
 
     Context "Should remove schedules" {
         It "Should find all created schedules" {
-            $results = Get-DbaAgentSchedule -SqlInstance $script:instance2 | Where-Object { $_.name -like 'dbatools*' }
+            $results = Get-DbaAgentSchedule -SqlInstance $env:instance2 | Where-Object { $_.name -like 'dbatools*' }
             $results | Should -Not -BeNullOrEmpty
         }
 
         It "Should remove dbatoolsci_Minutes schedule" {
-            Remove-DbaAgentSchedule -SqlInstance $script:instance2 -Schedule dbatoolsci_Minutes -Confirm:$false
-            $results = Get-DbaAgentSchedule -SqlInstance $script:instance2 -Schedule dbatoolsci_Minutes
+            Remove-DbaAgentSchedule -SqlInstance $env:instance2 -Schedule dbatoolsci_Minutes -Confirm:$false
+            $results = Get-DbaAgentSchedule -SqlInstance $env:instance2 -Schedule dbatoolsci_Minutes
             $results | Should -BeNullOrEmpty
         }
 
         It "Should remove all remaining created schedules" {
-            Get-DbaAgentSchedule -SqlInstance $script:instance2 | Where-Object { $_.name -like 'dbatools*' } | Remove-DbaAgentSchedule -Confirm:$false -Force
-            $results = Get-DbaAgentSchedule -SqlInstance $script:instance2 | Where-Object { $_.name -like 'dbatools*' }
+            Get-DbaAgentSchedule -SqlInstance $env:instance2 | Where-Object { $_.name -like 'dbatools*' } | Remove-DbaAgentSchedule -Confirm:$false -Force
+            $results = Get-DbaAgentSchedule -SqlInstance $env:instance2 | Where-Object { $_.name -like 'dbatools*' }
             $results | Should -BeNullOrEmpty
         }
     }

@@ -27,7 +27,7 @@ Describe "Get-DbaDbMailProfile Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter InputObject -Type SqlMail[] -Not -Mandatory
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 }
@@ -38,7 +38,7 @@ Describe "Get-DbaDbMailProfile Integration Tests" -Tag "IntegrationTests" {
     }
 
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2, $script:instance3
+        $server = Connect-DbaInstance -SqlInstance $global:instance2, $global:instance3
         $mailProfile = "EXEC msdb.dbo.sysmail_add_profile_sp
             @profile_name='$profilename',
             @description='Profile for system email';"
@@ -46,7 +46,7 @@ Describe "Get-DbaDbMailProfile Integration Tests" -Tag "IntegrationTests" {
     }
 
     AfterAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2, $script:instance3
+        $server = Connect-DbaInstance -SqlInstance $global:instance2, $global:instance3
         $mailProfile = "EXEC msdb.dbo.sysmail_delete_profile_sp
             @profile_name='$profilename';"
         $server.Query($mailProfile)
@@ -54,17 +54,17 @@ Describe "Get-DbaDbMailProfile Integration Tests" -Tag "IntegrationTests" {
 
     Context "Gets DbMail Profile" {
         It "Gets results" {
-            $results = Get-DbaDbMailProfile -SqlInstance $script:instance2 | Where-Object { $_.Name -eq $profilename }
+            $results = Get-DbaDbMailProfile -SqlInstance $global:instance2 | Where-Object { $_.Name -eq $profilename }
             $results | Should -Not -BeNullOrEmpty
         }
 
         It "Should have Name of $profilename" {
-            $results = Get-DbaDbMailProfile -SqlInstance $script:instance2 | Where-Object { $_.Name -eq $profilename }
+            $results = Get-DbaDbMailProfile -SqlInstance $global:instance2 | Where-Object { $_.Name -eq $profilename }
             $results.Name | Should -Be $profilename
         }
 
         It "Should have Description of 'Profile for system email'" {
-            $results = Get-DbaDbMailProfile -SqlInstance $script:instance2 | Where-Object { $_.Name -eq $profilename }
+            $results = Get-DbaDbMailProfile -SqlInstance $global:instance2 | Where-Object { $_.Name -eq $profilename }
             $results.Description | Should -Be 'Profile for system email'
         }
 
@@ -77,24 +77,24 @@ Describe "Get-DbaDbMailProfile Integration Tests" -Tag "IntegrationTests" {
 
     Context "Gets DbMailProfile when using -Profile" {
         It "Gets results" {
-            $results = Get-DbaDbMailProfile -SqlInstance $script:instance2 -Profile $profilename
+            $results = Get-DbaDbMailProfile -SqlInstance $global:instance2 -Profile $profilename
             $results | Should -Not -BeNullOrEmpty
         }
 
         It "Should have Name of $profilename" {
-            $results = Get-DbaDbMailProfile -SqlInstance $script:instance2 -Profile $profilename
+            $results = Get-DbaDbMailProfile -SqlInstance $global:instance2 -Profile $profilename
             $results.Name | Should -Be $profilename
         }
 
         It "Should have Description of 'Profile for system email'" {
-            $results = Get-DbaDbMailProfile -SqlInstance $script:instance2 -Profile $profilename
+            $results = Get-DbaDbMailProfile -SqlInstance $global:instance2 -Profile $profilename
             $results.Description | Should -Be 'Profile for system email'
         }
     }
 
     Context "Gets no DbMailProfile when using -ExcludeProfile" {
         It "Gets no results" {
-            $results = Get-DbaDbMailProfile -SqlInstance $script:instance2 -ExcludeProfile $profilename
+            $results = Get-DbaDbMailProfile -SqlInstance $global:instance2 -ExcludeProfile $profilename
             $results | Should -Not -Contain $profilename
         }
     }

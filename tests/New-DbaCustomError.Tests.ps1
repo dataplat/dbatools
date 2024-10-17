@@ -37,8 +37,8 @@ Describe "New-DbaCustomError" {
 
     Context "Command usage" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance1
-            $server2 = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $env:instance1
+            $server2 = Connect-DbaInstance -SqlInstance $env:instance2
         }
         AfterAll {
             $server.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = 70000) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = 70000, @lang = 'all'; END")

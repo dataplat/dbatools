@@ -26,7 +26,7 @@ Describe "Save-DbaCommunitySoftware" {
         It "Should have LocalDirectory as a non-mandatory String parameter" {
             $CommandUnderTest | Should -HaveParameter LocalDirectory -Type String -Not -Mandatory
         }
-        It "Should have EnableException as a non-mandatory SwitchParameter" {
+        It "Should have EnableException as a non-mandatory Switch" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }

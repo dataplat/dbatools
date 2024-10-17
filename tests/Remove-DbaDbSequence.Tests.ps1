@@ -24,14 +24,14 @@ Describe "Remove-DbaDbSequence" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Sequence[] -Not -Mandatory
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
     Context "Command usage" {
         BeforeAll {
             $random = Get-Random
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $env:instance2
             $newDbName = "dbatoolsci_newdb_$random"
             $null = New-DbaDatabase -SqlInstance $server -Name $newDbName
 

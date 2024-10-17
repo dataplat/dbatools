@@ -33,7 +33,7 @@ Describe "Stop-DbaProcess" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Object[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -43,16 +43,16 @@ Describe "Stop-DbaProcess" {
         }
 
         It "Kills only this specific process" {
-            $fakeapp = Connect-DbaInstance -SqlInstance $script:instance1 -ClientName 'dbatoolsci test app'
-            $results = Stop-DbaProcess -SqlInstance $script:instance1 -Program 'dbatoolsci test app'
+            $fakeapp = Connect-DbaInstance -SqlInstance $env:instance1 -ClientName 'dbatoolsci test app'
+            $results = Stop-DbaProcess -SqlInstance $env:instance1 -Program 'dbatoolsci test app'
             $results.Program.Count | Should -Be 1
             $results.Program | Should -Be 'dbatoolsci test app'
             $results.Status | Should -Be 'Killed'
         }
 
         It "Supports piping" {
-            $fakeapp = Connect-DbaInstance -SqlInstance $script:instance1 -ClientName 'dbatoolsci test app'
-            $results = Get-DbaProcess -SqlInstance $script:instance1 -Program 'dbatoolsci test app' | Stop-DbaProcess
+            $fakeapp = Connect-DbaInstance -SqlInstance $env:instance1 -ClientName 'dbatoolsci test app'
+            $results = Get-DbaProcess -SqlInstance $env:instance1 -Program 'dbatoolsci test app' | Stop-DbaProcess
             $results.Program.Count | Should -Be 1
             $results.Program | Should -Be 'dbatoolsci test app'
             $results.Status | Should -Be 'Killed'

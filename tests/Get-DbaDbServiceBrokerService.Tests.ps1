@@ -18,16 +18,16 @@ Describe "Get-DbaDbServiceBrokerService" {
             $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[]
         }
         It "Should have ExcludeSystemService as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSystemService -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter ExcludeSystemService -Type Switch
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Command usage" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $procname = ("dbatools_{0}" -f $(Get-Random))
             $server.Query("CREATE PROCEDURE $procname AS SELECT 1", 'tempdb')
             $queuename = ("dbatools_{0}" -f $(Get-Random))
@@ -43,7 +43,7 @@ Describe "Get-DbaDbServiceBrokerService" {
         }
 
         It "Gets the service broker service" {
-            $results = Get-DbaDbServiceBrokerService -SqlInstance $script:instance2 -Database tempdb -ExcludeSystemService
+            $results = Get-DbaDbServiceBrokerService -SqlInstance $global:instance2 -Database tempdb -ExcludeSystemService
             $results | Should -Not -BeNullOrEmpty
             $results.Name | Should -Be $servicename
             $results.Owner | Should -Be "dbo"

@@ -28,30 +28,30 @@ Describe "Remove-DbaAgentAlertCategory" {
         }
 
         It "Should remove newly created Agent Alert Categories" {
-            $results = New-DbaAgentAlertCategory -SqlInstance $script:instance2 -Category CategoryTest1, CategoryTest2, CategoryTest3
+            $results = New-DbaAgentAlertCategory -SqlInstance $env:instance2 -Category CategoryTest1, CategoryTest2, CategoryTest3
             $results.Count | Should -Be 3
             $results[0].Name | Should -Be "CategoryTest1"
             $results[1].Name | Should -Be "CategoryTest2"
             $results[2].Name | Should -Be "CategoryTest3"
 
-            $newResults = Get-DbaAgentAlertCategory -SqlInstance $script:instance2 -Category CategoryTest1, CategoryTest2, CategoryTest3
+            $newResults = Get-DbaAgentAlertCategory -SqlInstance $env:instance2 -Category CategoryTest1, CategoryTest2, CategoryTest3
             $newResults.Count | Should -Be 3
 
-            Remove-DbaAgentAlertCategory -SqlInstance $script:instance2 -Category CategoryTest1, CategoryTest2, CategoryTest3 -Confirm:$false
+            Remove-DbaAgentAlertCategory -SqlInstance $env:instance2 -Category CategoryTest1, CategoryTest2, CategoryTest3 -Confirm:$false
 
-            $finalResults = Get-DbaAgentAlertCategory -SqlInstance $script:instance2 -Category CategoryTest1, CategoryTest2, CategoryTest3
+            $finalResults = Get-DbaAgentAlertCategory -SqlInstance $env:instance2 -Category CategoryTest1, CategoryTest2, CategoryTest3
             $finalResults.Count | Should -Be 0
         }
 
         It "Should support piping SQL Agent alert category" {
             $categoryName = "dbatoolsci_test_$(Get-Random)"
-            $null = New-DbaAgentAlertCategory -SqlInstance $script:instance2 -Category $categoryName
-            $category = Get-DbaAgentAlertCategory -SqlInstance $script:instance2 -Category $categoryName
+            $null = New-DbaAgentAlertCategory -SqlInstance $env:instance2 -Category $categoryName
+            $category = Get-DbaAgentAlertCategory -SqlInstance $env:instance2 -Category $categoryName
             $category | Should -Not -BeNullOrEmpty
 
             $category | Remove-DbaAgentAlertCategory -Confirm:$false
 
-            $removedCategory = Get-DbaAgentAlertCategory -SqlInstance $script:instance2 -Category $categoryName
+            $removedCategory = Get-DbaAgentAlertCategory -SqlInstance $env:instance2 -Category $categoryName
             $removedCategory | Should -BeNullOrEmpty
         }
     }

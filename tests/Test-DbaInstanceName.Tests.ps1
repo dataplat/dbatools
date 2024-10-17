@@ -18,16 +18,16 @@ Describe "Test-DbaInstanceName" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have ExcludeSsrs as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSsrs -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter ExcludeSsrs -Type Switch
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Command tests servername" {
         BeforeAll {
-            $results = Test-DbaInstanceName -SqlInstance $script:instance2
+            $results = Test-DbaInstanceName -SqlInstance $env:instance2
         }
 
         It "should say rename is not required" {

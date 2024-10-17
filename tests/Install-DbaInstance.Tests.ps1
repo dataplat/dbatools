@@ -122,16 +122,16 @@ Describe "Install-DbaInstance" {
             $command | Should -HaveParameter SaveConfiguration -Type String -Not -Mandatory
         }
         It "Should have PerformVolumeMaintenanceTasks parameter" {
-            $command | Should -HaveParameter PerformVolumeMaintenanceTasks -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter PerformVolumeMaintenanceTasks -Type Switch -Not -Mandatory
         }
         It "Should have Restart parameter" {
-            $command | Should -HaveParameter Restart -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter Restart -Type Switch -Not -Mandatory
         }
         It "Should have NoPendingRenameCheck parameter" {
-            $command | Should -HaveParameter NoPendingRenameCheck -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter NoPendingRenameCheck -Type Switch -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $command | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 

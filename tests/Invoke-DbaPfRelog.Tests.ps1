@@ -20,11 +20,11 @@ Describe "Invoke-DbaPfRelog Unit Tests" -Tag 'UnitTests' {
         It "Should have Type as a non-mandatory String parameter" {
             $CommandUnderTest | Should -HaveParameter Type -Type String -Not -Mandatory
         }
-        It "Should have Append as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter Append -Type SwitchParameter -Not -Mandatory
+        It "Should have Append as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter Append -Type Switch -Not -Mandatory
         }
-        It "Should have AllowClobber as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter AllowClobber -Type SwitchParameter -Not -Mandatory
+        It "Should have AllowClobber as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter AllowClobber -Type Switch -Not -Mandatory
         }
         It "Should have PerformanceCounter as a non-mandatory String[] parameter" {
             $CommandUnderTest | Should -HaveParameter PerformanceCounter -Type String[] -Not -Mandatory
@@ -44,23 +44,23 @@ Describe "Invoke-DbaPfRelog Unit Tests" -Tag 'UnitTests' {
         It "Should have ConfigPath as a non-mandatory String parameter" {
             $CommandUnderTest | Should -HaveParameter ConfigPath -Type String -Not -Mandatory
         }
-        It "Should have Summary as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter Summary -Type SwitchParameter -Not -Mandatory
+        It "Should have Summary as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter Summary -Type Switch -Not -Mandatory
         }
         It "Should have InputObject as a non-mandatory Object[] parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Not -Mandatory
         }
-        It "Should have Multithread as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter Multithread -Type SwitchParameter -Not -Mandatory
+        It "Should have Multithread as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter Multithread -Type Switch -Not -Mandatory
         }
-        It "Should have AllTime as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter AllTime -Type SwitchParameter -Not -Mandatory
+        It "Should have AllTime as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter AllTime -Type Switch -Not -Mandatory
         }
-        It "Should have Raw as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter Raw -Type SwitchParameter -Not -Mandatory
+        It "Should have Raw as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter Raw -Type Switch -Not -Mandatory
         }
-        It "Should have EnableException as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+        It "Should have EnableException as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 }

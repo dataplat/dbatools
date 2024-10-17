@@ -24,10 +24,10 @@ Describe "Reset-DbaAdmin" {
             $CommandUnderTest | Should -HaveParameter SecurePassword -Type SecureString
         }
         It "Should have Force as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -38,12 +38,12 @@ Describe "Reset-DbaAdmin" {
         }
 
         AfterAll {
-            Get-DbaProcess -SqlInstance $script:instance2 -Login dbatoolsci_resetadmin | Stop-DbaProcess -WarningAction SilentlyContinue
-            Get-DbaLogin -SqlInstance $script:instance2 -Login dbatoolsci_resetadmin | Remove-DbaLogin -Confirm:$false
+            Get-DbaProcess -SqlInstance $env:instance2 -Login dbatoolsci_resetadmin | Stop-DbaProcess -WarningAction SilentlyContinue
+            Get-DbaLogin -SqlInstance $env:instance2 -Login dbatoolsci_resetadmin | Remove-DbaLogin -Confirm:$false
         }
 
         It "adds the login as sysadmin" {
-            $results = Reset-DbaAdmin -SqlInstance $script:instance2 -Login dbatoolsci_resetadmin -SecurePassword $password -Confirm:$false
+            $results = Reset-DbaAdmin -SqlInstance $env:instance2 -Login dbatoolsci_resetadmin -SecurePassword $password -Confirm:$false
             $results.Name | Should -Be 'dbatoolsci_resetadmin'
             $results.IsMember("sysadmin") | Should -Be $true
         }

@@ -20,7 +20,7 @@ Describe "Get-DbaRandomizedDataset" {
         It "Should have InputObject as a non-mandatory parameter of type Object[]" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Not -Mandatory
         }
-        It "Should have EnableException as a non-mandatory SwitchParameter" {
+        It "Should have EnableException as a non-mandatory Switch" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }

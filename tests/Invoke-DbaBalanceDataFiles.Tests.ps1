@@ -18,13 +18,13 @@ Describe "Invoke-DbaBalanceDataFiles" {
             $CommandUnderTest | Should -HaveParameter Table -Type Object[] -Not -Mandatory
         }
         It "Should have RebuildOffline parameter" {
-            $CommandUnderTest | Should -HaveParameter RebuildOffline -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter RebuildOffline -Type Switch -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Not -Mandatory
         }
     }
 }
@@ -35,7 +35,7 @@ Describe "Invoke-DbaBalanceDataFiles Integration Tests" -Tag "IntegrationTests" 
     }
 
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $env:instance2
         $defaultdata = (Get-DbaDefaultPath -SqlInstance $server).Data
         $dbname = "dbatoolscsi_balance"
 

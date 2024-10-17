@@ -24,13 +24,13 @@ Describe "Get-DbaCpuUsage" {
             $CommandUnderTest | Should -HaveParameter Threshold -Type Int32
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Gets the CPU Usage" {
         BeforeAll {
-            $results = Get-DbaCPUUsage -SqlInstance $script:instance2
+            $results = Get-DbaCPUUsage -SqlInstance $global:instance2
         }
         It "Results are not empty" {
             $results | Should -Not -BeNullOrEmpty

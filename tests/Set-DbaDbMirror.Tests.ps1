@@ -36,7 +36,7 @@ Describe "Set-DbaDbMirror" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Database[] -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 }

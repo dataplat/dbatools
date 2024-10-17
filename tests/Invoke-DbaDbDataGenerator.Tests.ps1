@@ -45,13 +45,13 @@ Describe "Invoke-DbaDbDataGenerator" {
             $CommandUnderTest | Should -HaveParameter MaxValue -Type Int32 -Not -Mandatory
         }
         It "Should have ExactLength parameter" {
-            $CommandUnderTest | Should -HaveParameter ExactLength -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExactLength -Type Switch -Not -Mandatory
         }
         It "Should have ModulusFactor parameter" {
             $CommandUnderTest | Should -HaveParameter ModulusFactor -Type Int32 -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
@@ -63,24 +63,24 @@ Describe "Invoke-DbaDbDataGenerator" {
                         [LastName] [varchar](50) NULL,
                         [City] [varchar](100) NULL
                     ) ON [PRIMARY];"
-            New-DbaDatabase -SqlInstance $script:instance2 -Name $db
-            Invoke-DbaQuery -SqlInstance $script:instance2 -Database $db -Query $sql
+            New-DbaDatabase -SqlInstance $env:instance2 -Name $db
+            Invoke-DbaQuery -SqlInstance $env:instance2 -Database $db -Query $sql
         }
 
         AfterAll {
-            Remove-DbaDatabase -SqlInstance $script:instance2 -Database $db -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $env:instance2 -Database $db -Confirm:$false
             $file | Remove-Item -Confirm:$false -ErrorAction Ignore
         }
 
         It "Starts with the right data" {
-            $result = Invoke-DbaQuery -SqlInstance $script:instance2 -Database $db -Query "select * from people"
+            $result = Invoke-DbaQuery -SqlInstance $env:instance2 -Database $db -Query "select * from people"
             $result | Should -BeNullOrEmpty
         }
 
         It "Returns the proper output" {
-            $file = New-DbaDbDataGeneratorConfig -SqlInstance $script:instance2 -Database $db -Path C:\temp -Rows 10
+            $file = New-DbaDbDataGeneratorConfig -SqlInstance $env:instance2 -Database $db -Path C:\temp -Rows 10
 
-            $results = Invoke-DbaDbDataGenerator -SqlInstance $script:instance2 -Database $db -Confirm:$false -FilePath $file.FullName
+            $results = Invoke-DbaDbDataGenerator -SqlInstance $env:instance2 -Database $db -Confirm:$false -FilePath $file.FullName
 
             foreach ($result in $results) {
                 $result.Rows | Should -Be 10
@@ -89,7 +89,7 @@ Describe "Invoke-DbaDbDataGenerator" {
         }
 
         It "Generates the data" {
-            $result = Invoke-DbaQuery -SqlInstance $script:instance2 -Database $db -Query "select * from people"
+            $result = Invoke-DbaQuery -SqlInstance $env:instance2 -Database $db -Query "select * from people"
             $result | Should -Not -BeNullOrEmpty
         }
     }

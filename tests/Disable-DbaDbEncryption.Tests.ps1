@@ -18,10 +18,10 @@ Describe "Disable-DbaDbEncryption" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Database[]
         }
         It "Should have NoEncryptionKeyDrop as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NoEncryptionKeyDrop -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter NoEncryptionKeyDrop -Type Switch
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -29,18 +29,18 @@ Describe "Disable-DbaDbEncryption" {
         BeforeAll {
             $PSDefaultParameterValues["*:Confirm"] = $false
             $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
-            $masterkey = Get-DbaDbMasterKey -SqlInstance $script:instance2 -Database master
+            $masterkey = Get-DbaDbMasterKey -SqlInstance $global:instance2 -Database master
             if (-not $masterkey) {
                 $delmasterkey = $true
-                $masterkey = New-DbaServiceMasterKey -SqlInstance $script:instance2 -SecurePassword $passwd
+                $masterkey = New-DbaServiceMasterKey -SqlInstance $global:instance2 -SecurePassword $passwd
             }
-            $mastercert = Get-DbaDbCertificate -SqlInstance $script:instance2 -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
+            $mastercert = Get-DbaDbCertificate -SqlInstance $global:instance2 -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
             if (-not $mastercert) {
                 $delmastercert = $true
-                $mastercert = New-DbaDbCertificate -SqlInstance $script:instance2
+                $mastercert = New-DbaDbCertificate -SqlInstance $global:instance2
             }
 
-            $db = New-DbaDatabase -SqlInstance $script:instance2
+            $db = New-DbaDatabase -SqlInstance $global:instance2
             $db | New-DbaDbMasterKey -SecurePassword $passwd
             $db | New-DbaDbCertificate
             $db | New-DbaDbEncryptionKey -Force
@@ -70,7 +70,7 @@ Describe "Disable-DbaDbEncryption" {
             $null = $db | Enable-DbaDbEncryption -EncryptorName $mastercert.Name -Force
             # Give it time to finish encrypting or it'll error
             Start-Sleep 10
-            $results = Disable-DbaDbEncryption -SqlInstance $script:instance2 -Database $db.Name
+            $results = Disable-DbaDbEncryption -SqlInstance $global:instance2 -Database $db.Name
             $results.EncryptionEnabled | Should -Be $false
         }
     }

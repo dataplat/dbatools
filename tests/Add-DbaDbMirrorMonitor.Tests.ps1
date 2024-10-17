@@ -18,13 +18,13 @@ Describe "Add-DbaDbMirrorMonitor" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
         It "Should have Verbose as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Verbose -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Verbose -Type Switch
         }
         It "Should have Debug as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Debug -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Debug -Type Switch
         }
         It "Should have ErrorAction as a parameter" {
             $CommandUnderTest | Should -HaveParameter ErrorAction -Type ActionPreference
@@ -57,23 +57,23 @@ Describe "Add-DbaDbMirrorMonitor" {
             $CommandUnderTest | Should -HaveParameter PipelineVariable -Type String
         }
         It "Should have WhatIf as a parameter" {
-            $CommandUnderTest | Should -HaveParameter WhatIf -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter WhatIf -Type Switch
         }
         It "Should have Confirm as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Confirm -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Confirm -Type Switch
         }
     }
 
     Context "Command usage" {
         BeforeAll {
-            $null = Remove-DbaDbMirrorMonitor -SqlInstance $script:instance2 -WarningAction SilentlyContinue
+            $null = Remove-DbaDbMirrorMonitor -SqlInstance $global:instance2 -WarningAction SilentlyContinue
         }
         AfterAll {
-            $null = Remove-DbaDbMirrorMonitor -SqlInstance $script:instance2 -WarningAction SilentlyContinue
+            $null = Remove-DbaDbMirrorMonitor -SqlInstance $global:instance2 -WarningAction SilentlyContinue
         }
 
         It "adds the mirror monitor" {
-            $results = Add-DbaDbMirrorMonitor -SqlInstance $script:instance2 -WarningAction SilentlyContinue
+            $results = Add-DbaDbMirrorMonitor -SqlInstance $global:instance2 -WarningAction SilentlyContinue
             $results.MonitorStatus | Should -Be 'Added'
         }
     }

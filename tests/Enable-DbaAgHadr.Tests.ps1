@@ -16,20 +16,20 @@ Describe "Enable-DbaAgHadr" {
             $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Not -Mandatory
         }
         It "Should have Force as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Not -Mandatory
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
     Context "Integration Tests" -Tag "IntegrationTests" {
         BeforeAll {
-            $null = Disable-DbaAgHadr -SqlInstance $script:instance3 -Confirm:$false -Force
+            $null = Disable-DbaAgHadr -SqlInstance $global:instance3 -Confirm:$false -Force
         }
 
         It "enables hadr" {
-            $results = Enable-DbaAgHadr -SqlInstance $script:instance3 -Confirm:$false -Force
+            $results = Enable-DbaAgHadr -SqlInstance $global:instance3 -Confirm:$false -Force
             $results.IsHadrEnabled | Should -Be $true
         }
     }

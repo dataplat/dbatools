@@ -8,7 +8,7 @@ Describe "Start-DbaDbEncryption" {
 
         $PSDefaultParameterValues["*:Confirm"] = $false
         $alldbs = @()
-        1..5 | ForEach-Object { $alldbs += New-DbaDatabase -SqlInstance $script:instance2 }
+        1..5 | ForEach-Object { $alldbs += New-DbaDatabase -SqlInstance $env:instance2 }
     }
 
     AfterAll {
@@ -52,7 +52,7 @@ Describe "Start-DbaDbEncryption" {
             $CommandUnderTest | Should -HaveParameter CertificateExpirationDate -Type DateTime
         }
         It "Should have CertificateActiveForServiceBrokerDialog as a parameter" {
-            $CommandUnderTest | Should -HaveParameter CertificateActiveForServiceBrokerDialog -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter CertificateActiveForServiceBrokerDialog -Type Switch
         }
         It "Should have BackupSecurePassword as a parameter" {
             $CommandUnderTest | Should -HaveParameter BackupSecurePassword -Type SecureString
@@ -61,13 +61,13 @@ Describe "Start-DbaDbEncryption" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Database[]
         }
         It "Should have AllUserDatabases as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AllUserDatabases -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter AllUserDatabases -Type Switch
         }
         It "Should have Force as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -75,7 +75,7 @@ Describe "Start-DbaDbEncryption" {
         It "should mass enable encryption" {
             $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
             $splat = @{
-                SqlInstance             = $script:instance2
+                SqlInstance             = $env:instance2
                 Database                = $alldbs.Name
                 MasterKeySecurePassword = $passwd
                 BackupSecurePassword    = $passwd

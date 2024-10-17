@@ -22,16 +22,16 @@ Describe "Watch-DbaXESession" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Session[]
         }
         It "Should have Raw parameter" {
-            $CommandUnderTest | Should -HaveParameter Raw -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Raw -Type Switch
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Command functions as expected" {
         BeforeAll {
-            $script:instanceNotSupported = $true
+            $env:instanceNotSupported = $true
         }
 
         It "warns if SQL instance version is not supported" {
@@ -42,7 +42,7 @@ Describe "Watch-DbaXESession" {
             }
 
             $warningMessage = ""
-            $null = Watch-DbaXESession -SqlInstance $script:instance1 -Session system_health -WarningAction SilentlyContinue -WarningVariable warningMessage
+            $null = Watch-DbaXESession -SqlInstance $env:instance1 -Session system_health -WarningAction SilentlyContinue -WarningVariable warningMessage
 
             $warningMessage | Should -Match "SQL Server version 11 required"
         }

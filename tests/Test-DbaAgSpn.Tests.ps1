@@ -28,13 +28,13 @@ Describe "Test-DbaAgSpn" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type AvailabilityGroup[] -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
         It "Should have Verbose parameter" {
-            $CommandUnderTest | Should -HaveParameter Verbose -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Verbose -Type Switch -Not -Mandatory
         }
         It "Should have Debug parameter" {
-            $CommandUnderTest | Should -HaveParameter Debug -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Debug -Type Switch -Not -Mandatory
         }
         It "Should have ErrorAction parameter" {
             $CommandUnderTest | Should -HaveParameter ErrorAction -Type ActionPreference -Not -Mandatory

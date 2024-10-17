@@ -64,7 +64,7 @@ Describe "New-DbaAgentJobStep" {
             $CommandUnderTest | Should -HaveParameter OutputFileName -Type String
         }
         It "Should have Insert parameter" {
-            $CommandUnderTest | Should -HaveParameter Insert -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Insert -Type Switch
         }
         It "Should have Flag parameter" {
             $CommandUnderTest | Should -HaveParameter Flag -Type String[]
@@ -73,33 +73,33 @@ Describe "New-DbaAgentJobStep" {
             $CommandUnderTest | Should -HaveParameter ProxyName -Type String
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "New Agent Job Step is added properly" {
         BeforeAll {
             $random = Get-Random
-            $job = New-DbaAgentJob -SqlInstance $script:instance2 -Job "dbatoolsci_job_1_$random" -Description "Just another job"
-            $jobTwo = New-DbaAgentJob -SqlInstance $script:instance2 -Job "dbatoolsci_job_2_$random" -Description "Just another job"
-            $jobThree = New-DbaAgentJob -SqlInstance $script:instance2 -Job "dbatoolsci_job_3_$random" -Description "Just another job"
+            $job = New-DbaAgentJob -SqlInstance $env:instance2 -Job "dbatoolsci_job_1_$random" -Description "Just another job"
+            $jobTwo = New-DbaAgentJob -SqlInstance $env:instance2 -Job "dbatoolsci_job_2_$random" -Description "Just another job"
+            $jobThree = New-DbaAgentJob -SqlInstance $env:instance2 -Job "dbatoolsci_job_3_$random" -Description "Just another job"
         }
 
         AfterAll {
-            Remove-DbaAgentJob -SqlInstance $script:instance2 -Job "dbatoolsci_job_1_$random", "dbatoolsci_job_2_$random", "dbatoolsci_job_3_$random" -Confirm:$false
+            Remove-DbaAgentJob -SqlInstance $env:instance2 -Job "dbatoolsci_job_1_$random", "dbatoolsci_job_2_$random", "dbatoolsci_job_3_$random" -Confirm:$false
         }
 
         It "Should have the right name and description" {
-            $results = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job $job -StepName "Step One"
+            $results = New-DbaAgentJobStep -SqlInstance $env:instance2 -Job $job -StepName "Step One"
             $results.Name | Should -Be "Step One"
         }
 
         It "Should have the right properties" {
             $jobStep = @{
-                SqlInstance    = $script:instance2
+                SqlInstance    = $env:instance2
                 Job            = $jobTwo
                 StepName       = "Step X"
                 Subsystem      = "TransactSql"
@@ -120,40 +120,40 @@ Describe "New-DbaAgentJobStep" {
         }
 
         It "Should actually for sure exist" {
-            $newresults = Get-DbaAgentJob -SqlInstance $script:instance2 -Job "dbatoolsci_job_1_$random"
+            $newresults = Get-DbaAgentJob -SqlInstance $env:instance2 -Job "dbatoolsci_job_1_$random"
             $newresults.JobSteps.Name | Should -Be "Step One"
         }
 
         It "Should not write over existing job steps" {
             $warn = $null
-            New-DbaAgentJobStep -SqlInstance $script:instance2 -Job "dbatoolsci_job_1_$random" -StepName "Step One" -WarningAction SilentlyContinue -WarningVariable warn
+            New-DbaAgentJobStep -SqlInstance $env:instance2 -Job "dbatoolsci_job_1_$random" -StepName "Step One" -WarningAction SilentlyContinue -WarningVariable warn
             $warn -match "already exists" | Should -Be $true
-            $newresults = Get-DbaAgentJob -SqlInstance $script:instance2 -Job "dbatoolsci_job_1_$random"
+            $newresults = Get-DbaAgentJob -SqlInstance $env:instance2 -Job "dbatoolsci_job_1_$random"
             $newresults.JobSteps.Name | Should -Be "Step One"
             $newresults.JobSteps | Where-Object Id -eq 1 | Select-Object -ExpandProperty Name | Should -Be "Step One"
         }
 
         It "Force should replace the job step" {
-            $results = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job "dbatoolsci_job_1_$random" -StepName "New Step One" -StepId 1 -Force
+            $results = New-DbaAgentJobStep -SqlInstance $env:instance2 -Job "dbatoolsci_job_1_$random" -StepName "New Step One" -StepId 1 -Force
             $results.Name | Should -Be "New Step One"
-            $newresults = Get-DbaAgentJob -SqlInstance $script:instance2 -Job "dbatoolsci_job_1_$random"
+            $newresults = Get-DbaAgentJob -SqlInstance $env:instance2 -Job "dbatoolsci_job_1_$random"
             $newresults.JobSteps | Where-Object Id -eq 1 | Select-Object -ExpandProperty Name | Should -Be "New Step One"
         }
 
         It "Insert should insert jobstep and update IDs" {
-            $results = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job "dbatoolsci_job_1_$random" -StepName "New Step Three" -StepId 1 -Insert
+            $results = New-DbaAgentJobStep -SqlInstance $env:instance2 -Job "dbatoolsci_job_1_$random" -StepName "New Step Three" -StepId 1 -Insert
             $results.Name | Should -Be "New Step Three"
-            $newresults = Get-DbaAgentJob -SqlInstance $script:instance2 -Job "dbatoolsci_job_1_$random"
+            $newresults = Get-DbaAgentJob -SqlInstance $env:instance2 -Job "dbatoolsci_job_1_$random"
             $newresults.JobSteps | Where-Object Id -eq 1 | Select-Object -ExpandProperty Name | Should -Be "New Step Three"
             $newresults.JobSteps | Where-Object Id -eq 2 | Select-Object -ExpandProperty Name | Should -Be "New Step One"
         }
 
         It "Job is refreshed from the server" {
-            $agentStep1 = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job $jobThree -StepName "Error collection" -OnFailAction QuitWithFailure -OnSuccessAction QuitWithFailure
-            $agentStep2 = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job $jobThree -StepName "Step 1" -OnFailAction GoToStep -OnFailStepId 1 -OnSuccessAction GoToNextStep
-            $agentStep3 = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job $jobThree -StepName "Step 2" -OnFailAction GoToStep -OnFailStepId 1 -OnSuccessAction GoToNextStep
-            $agentStep4 = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job $jobThree -StepName "Step 3" -OnFailAction GoToStep -OnFailStepId 1 -OnSuccessAction GoToNextStep
-            $agentStep5 = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job $jobThree -StepName "Step 4" -OnFailAction GoToStep -OnFailStepId 1 -OnSuccessAction GoToNextStep
+            $agentStep1 = New-DbaAgentJobStep -SqlInstance $env:instance2 -Job $jobThree -StepName "Error collection" -OnFailAction QuitWithFailure -OnSuccessAction QuitWithFailure
+            $agentStep2 = New-DbaAgentJobStep -SqlInstance $env:instance2 -Job $jobThree -StepName "Step 1" -OnFailAction GoToStep -OnFailStepId 1 -OnSuccessAction GoToNextStep
+            $agentStep3 = New-DbaAgentJobStep -SqlInstance $env:instance2 -Job $jobThree -StepName "Step 2" -OnFailAction GoToStep -OnFailStepId 1 -OnSuccessAction GoToNextStep
+            $agentStep4 = New-DbaAgentJobStep -SqlInstance $env:instance2 -Job $jobThree -StepName "Step 3" -OnFailAction GoToStep -OnFailStepId 1 -OnSuccessAction GoToNextStep
+            $agentStep5 = New-DbaAgentJobStep -SqlInstance $env:instance2 -Job $jobThree -StepName "Step 4" -OnFailAction GoToStep -OnFailStepId 1 -OnSuccessAction GoToNextStep
 
             $agentStep1.Name | Should -Be "Error collection"
             $agentStep2.Name | Should -Be "Step 1"
@@ -161,7 +161,7 @@ Describe "New-DbaAgentJobStep" {
             $agentStep4.Name | Should -Be "Step 3"
             $agentStep5.Name | Should -Be "Step 4"
 
-            $results = Get-DbaAgentJob -SqlInstance $script:instance2 -Job $jobThree
+            $results = Get-DbaAgentJob -SqlInstance $env:instance2 -Job $jobThree
             $results.JobSteps | Where-Object Id -eq 1 | Select-Object -ExpandProperty Name | Should -Be "Error collection"
             $results.JobSteps | Where-Object Id -eq 2 | Select-Object -ExpandProperty Name | Should -Be "Step 1"
             $results.JobSteps | Where-Object Id -eq 3 | Select-Object -ExpandProperty Name | Should -Be "Step 2"

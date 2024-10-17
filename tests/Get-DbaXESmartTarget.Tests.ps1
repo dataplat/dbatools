@@ -5,13 +5,13 @@ Describe "Get-DbaXESmartTarget" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaXESmartTarget
         }
-        It "Should have EnableException as a SwitchParameter that is not mandatory" {
+        It "Should have EnableException as a Switch that is not mandatory" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type switch -Not -Mandatory
         }
-        It "Should have Verbose as a SwitchParameter that is not mandatory" {
+        It "Should have Verbose as a Switch that is not mandatory" {
             $CommandUnderTest | Should -HaveParameter Verbose -Type switch -Not -Mandatory
         }
-        It "Should have Debug as a SwitchParameter that is not mandatory" {
+        It "Should have Debug as a Switch that is not mandatory" {
             $CommandUnderTest | Should -HaveParameter Debug -Type switch -Not -Mandatory
         }
         It "Should have ErrorAction as an ActionPreference that is not mandatory" {

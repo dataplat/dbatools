@@ -53,17 +53,17 @@ Describe "Add-DbaAgListener" {
         BeforeAll {
             $agname = "dbatoolsci_ag_newlistener"
             $listenerName = 'dbatoolsci_listener'
-            $ag = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Confirm:$false -Certificate dbatoolsci_AGCert
+            $ag = New-DbaAvailabilityGroup -Primary $global:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Confirm:$false -Certificate dbatoolsci_AGCert
         }
         AfterEach {
-            $null = Remove-DbaAgListener -SqlInstance $script:instance3 -Listener $listenerName -AvailabilityGroup $agname -Confirm:$false
+            $null = Remove-DbaAgListener -SqlInstance $global:instance3 -Listener $listenerName -AvailabilityGroup $agname -Confirm:$false
         }
         AfterAll {
-            $null = Remove-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup $agname -Confirm:$false
+            $null = Remove-DbaAvailabilityGroup -SqlInstance $global:instance3 -AvailabilityGroup $agname -Confirm:$false
         }
         It "creates a listener and returns results with proper data" {
             $results = $ag | Add-DbaAgListener -Name $listenerName -IPAddress 127.0.20.1 -Port 14330 -Confirm:$false
             $results.PortNumber | Should -Be 14330
         }
     }
-} #$script:instance2 for appveyor
+} #$global:instance2 for appveyor

@@ -44,7 +44,7 @@ Describe "New-DbaDbMailAccount" {
 
         BeforeAll {
             $accountName = "dbatoolsci_test_$(Get-Random)"
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $env:instance2
             $description = 'Mail account for email alerts'
             $email_address = 'dbatoolssci@dbatools.net'
             $display_name = 'dbatoolsci mail alerts'
@@ -57,14 +57,14 @@ Describe "New-DbaDbMailAccount" {
         }
 
         AfterAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $env:instance2
             $mailAccountSettings = "EXEC msdb.dbo.sysmail_delete_account_sp @account_name = '$accountName';"
             $server.Query($mailAccountSettings)
         }
 
         It "Creates a new DbMail Account" {
             $splat = @{
-                SqlInstance    = $script:instance2
+                SqlInstance    = $env:instance2
                 Account        = $accountName
                 Description    = $description
                 EmailAddress   = $email_address

@@ -11,19 +11,19 @@ Describe "Update-Dbatools" {
         BeforeAll {
             $CommandUnderTest = Get-Command Update-Dbatools
         }
-        It "Should have Development as a SwitchParameter" {
+        It "Should have Development as a Switch" {
             $CommandUnderTest | Should -HaveParameter Development -Type switch
         }
-        It "Should have Cleanup as a SwitchParameter" {
+        It "Should have Cleanup as a Switch" {
             $CommandUnderTest | Should -HaveParameter Cleanup -Type switch
         }
-        It "Should have EnableException as a SwitchParameter" {
+        It "Should have EnableException as a Switch" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type switch
         }
-        It "Should have Verbose as a SwitchParameter" {
+        It "Should have Verbose as a Switch" {
             $CommandUnderTest | Should -HaveParameter Verbose -Type switch
         }
-        It "Should have Debug as a SwitchParameter" {
+        It "Should have Debug as a Switch" {
             $CommandUnderTest | Should -HaveParameter Debug -Type switch
         }
         It "Should have ErrorAction as an ActionPreference" {
@@ -56,10 +56,10 @@ Describe "Update-Dbatools" {
         It "Should have PipelineVariable as a String" {
             $CommandUnderTest | Should -HaveParameter PipelineVariable -Type string
         }
-        It "Should have WhatIf as a SwitchParameter" {
+        It "Should have WhatIf as a Switch" {
             $CommandUnderTest | Should -HaveParameter WhatIf -Type switch
         }
-        It "Should have Confirm as a SwitchParameter" {
+        It "Should have Confirm as a Switch" {
             $CommandUnderTest | Should -HaveParameter Confirm -Type switch
         }
     }

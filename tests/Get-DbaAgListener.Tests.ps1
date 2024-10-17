@@ -27,7 +27,7 @@ Describe "Get-DbaAgListener Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter InputObject -Type AvailabilityGroup[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 }
@@ -40,21 +40,21 @@ Describe "Get-DbaAgListener Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         if (-not $SkipIntegrationTests) {
             $agname = "dbatoolsci_ag_listener"
-            $ag = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Certificate dbatoolsci_AGCert -Confirm:$false
+            $ag = New-DbaAvailabilityGroup -Primary $global:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Certificate dbatoolsci_AGCert -Confirm:$false
             $ag | Add-DbaAgListener -IPAddress 127.0.20.1 -Port 14330 -Confirm:$false
         }
     }
 
     AfterAll {
         if (-not $SkipIntegrationTests) {
-            $null = Remove-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup $agname -Confirm:$false
+            $null = Remove-DbaAvailabilityGroup -SqlInstance $global:instance3 -AvailabilityGroup $agname -Confirm:$false
         }
     }
 
     Context "Gets availability group listeners" -Skip:$SkipIntegrationTests {
         It "Returns results with proper data" {
-            $results = Get-DbaAgListener -SqlInstance $script:instance3
+            $results = Get-DbaAgListener -SqlInstance $global:instance3
             $results.PortNumber | Should -Contain 14330
         }
     }
-} #$script:instance2 for appveyor
+} #$global:instance2 for appveyor

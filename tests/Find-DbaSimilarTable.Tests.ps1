@@ -40,7 +40,7 @@ Describe "Find-DbaSimilarTable" {
     Context "Testing if similar tables are discovered" {
         BeforeAll {
             . "$PSScriptRoot\constants.ps1"
-            $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database tempdb
+            $db = Get-DbaDatabase -SqlInstance $global:instance1 -Database tempdb
             $db.Query("CREATE TABLE dbatoolsci_table1 (id int identity, fname varchar(20), lname char(5), lol bigint, whatever datetime)")
             $db.Query("CREATE TABLE dbatoolsci_table2 (id int identity, fname varchar(20), lname char(5), lol bigint, whatever datetime)")
         }
@@ -50,7 +50,7 @@ Describe "Find-DbaSimilarTable" {
         }
 
         It "returns at least two rows with correct database IDs and 100% match" {
-            $results = Find-DbaSimilarTable -SqlInstance $script:instance1 -Database tempdb | Where-Object Table -Match dbatoolsci
+            $results = Find-DbaSimilarTable -SqlInstance $global:instance1 -Database tempdb | Where-Object Table -Match dbatoolsci
             $results.Count | Should -BeGreaterOrEqual 2
             $results.OriginalDatabaseId | Should -Be $db.ID, $db.ID
             $results.MatchingDatabaseId | Should -Be $db.ID, $db.ID

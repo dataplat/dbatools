@@ -30,7 +30,7 @@ Describe "Get-DbaDbObjectTrigger Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Object[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 }
@@ -61,7 +61,7 @@ CREATE TRIGGER $triggerviewname
         SELECT 'TRIGGER on $viewname view'
     END
 "@
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $global:instance2
         $server.Query("create database $dbname")
 
         $server.Query("CREATE TABLE $tablename (id int);", $dbname)
@@ -70,16 +70,16 @@ CREATE TRIGGER $triggerviewname
         $server.Query("CREATE VIEW $viewname AS SELECT * FROM $tablename;", $dbname)
         $server.Query("$triggerview", $dbname)
 
-        $systemDbs = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeUser
+        $systemDbs = Get-DbaDatabase -SqlInstance $global:instance2 -ExcludeUser
     }
 
     AfterAll {
-        $null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
+        $null = Get-DbaDatabase -SqlInstance $global:instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
     }
 
     Context "Gets Table Trigger" {
         BeforeAll {
-            $results = Get-DbaDbObjectTrigger -SqlInstance $script:instance2 -ExcludeDatabase $systemDbs.Name | Where-Object { $_.name -eq "dbatoolsci_triggerontable" }
+            $results = Get-DbaDbObjectTrigger -SqlInstance $global:instance2 -ExcludeDatabase $systemDbs.Name | Where-Object { $_.name -eq "dbatoolsci_triggerontable" }
         }
         It "Gets results" {
             $results | Should -Not -BeNullOrEmpty
@@ -94,7 +94,7 @@ CREATE TRIGGER $triggerviewname
 
     Context "Gets Table Trigger when using -Database" {
         BeforeAll {
-            $results = Get-DbaDbObjectTrigger -SqlInstance $script:instance2 -Database $dbname | Where-Object { $_.name -eq "dbatoolsci_triggerontable" }
+            $results = Get-DbaDbObjectTrigger -SqlInstance $global:instance2 -Database $dbname | Where-Object { $_.name -eq "dbatoolsci_triggerontable" }
         }
         It "Gets results" {
             $results | Should -Not -BeNullOrEmpty
@@ -109,7 +109,7 @@ CREATE TRIGGER $triggerviewname
 
     Context "Gets Table Trigger passing table object using pipeline" {
         BeforeAll {
-            $results = Get-DbaDbTable -SqlInstance $script:instance2 -Database $dbname -Table "dbatoolsci_trigger" | Get-DbaDbObjectTrigger
+            $results = Get-DbaDbTable -SqlInstance $global:instance2 -Database $dbname -Table "dbatoolsci_trigger" | Get-DbaDbObjectTrigger
         }
         It "Gets results" {
             $results | Should -Not -BeNullOrEmpty
@@ -124,7 +124,7 @@ CREATE TRIGGER $triggerviewname
 
     Context "Gets View Trigger" {
         BeforeAll {
-            $results = Get-DbaDbObjectTrigger -SqlInstance $script:instance2 -ExcludeDatabase $systemDbs.Name | Where-Object { $_.name -eq "dbatoolsci_triggeronview" }
+            $results = Get-DbaDbObjectTrigger -SqlInstance $global:instance2 -ExcludeDatabase $systemDbs.Name | Where-Object { $_.name -eq "dbatoolsci_triggeronview" }
         }
         It "Gets results" {
             $results | Should -Not -BeNullOrEmpty
@@ -139,7 +139,7 @@ CREATE TRIGGER $triggerviewname
 
     Context "Gets View Trigger when using -Database" {
         BeforeAll {
-            $results = Get-DbaDbObjectTrigger -SqlInstance $script:instance2 -Database $dbname | Where-Object { $_.name -eq "dbatoolsci_triggeronview" }
+            $results = Get-DbaDbObjectTrigger -SqlInstance $global:instance2 -Database $dbname | Where-Object { $_.name -eq "dbatoolsci_triggeronview" }
         }
         It "Gets results" {
             $results | Should -Not -BeNullOrEmpty
@@ -154,7 +154,7 @@ CREATE TRIGGER $triggerviewname
 
     Context "Gets View Trigger passing table object using pipeline" {
         BeforeAll {
-            $results = Get-DbaDbView -SqlInstance $script:instance2 -Database $dbname -ExcludeSystemView | Get-DbaDbObjectTrigger
+            $results = Get-DbaDbView -SqlInstance $global:instance2 -Database $dbname -ExcludeSystemView | Get-DbaDbObjectTrigger
         }
         It "Gets results" {
             $results | Should -Not -BeNullOrEmpty
@@ -169,8 +169,8 @@ CREATE TRIGGER $triggerviewname
 
     Context "Gets Table and View Trigger passing both objects using pipeline" {
         BeforeAll {
-            $tableResults = Get-DbaDbTable -SqlInstance $script:instance2 -Database $dbname -Table "dbatoolsci_trigger"
-            $viewResults = Get-DbaDbView -SqlInstance $script:instance2 -Database $dbname -ExcludeSystemView
+            $tableResults = Get-DbaDbTable -SqlInstance $global:instance2 -Database $dbname -Table "dbatoolsci_trigger"
+            $viewResults = Get-DbaDbView -SqlInstance $global:instance2 -Database $dbname -ExcludeSystemView
             $results = $tableResults, $viewResults | Get-DbaDbObjectTrigger
         }
         It "Gets results" {
@@ -183,7 +183,7 @@ CREATE TRIGGER $triggerviewname
 
     Context "Gets All types Trigger when using -Type" {
         BeforeAll {
-            $results = Get-DbaDbObjectTrigger -SqlInstance $script:instance2 -Database $dbname -Type All
+            $results = Get-DbaDbObjectTrigger -SqlInstance $global:instance2 -Database $dbname -Type All
         }
         It "Gets results" {
             $results | Should -Not -BeNullOrEmpty
@@ -195,7 +195,7 @@ CREATE TRIGGER $triggerviewname
 
     Context "Gets only Table Trigger when using -Type" {
         BeforeAll {
-            $results = Get-DbaDbObjectTrigger -SqlInstance $script:instance2 -Database $dbname -Type Table
+            $results = Get-DbaDbObjectTrigger -SqlInstance $global:instance2 -Database $dbname -Type Table
         }
         It "Gets results" {
             $results | Should -Not -BeNullOrEmpty
@@ -210,7 +210,7 @@ CREATE TRIGGER $triggerviewname
 
     Context "Gets only View Trigger when using -Type" {
         BeforeAll {
-            $results = Get-DbaDbObjectTrigger -SqlInstance $script:instance2 -Database $dbname -Type View
+            $results = Get-DbaDbObjectTrigger -SqlInstance $global:instance2 -Database $dbname -Type View
         }
         It "Gets results" {
             $results | Should -Not -BeNullOrEmpty

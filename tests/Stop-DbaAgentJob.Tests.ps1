@@ -21,10 +21,10 @@ Describe "Stop-DbaAgentJob" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Job[]
         }
         It "Should have Wait as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Wait -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Wait -Type Switch
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -36,7 +36,7 @@ Describe "Stop-DbaAgentJob" {
         It "Returns a CurrentRunStatus of Idle" -Skip:([Environment]::GetEnvironmentVariable('appveyor')) {
             BeforeAll {
                 $jobName = 'DatabaseBackup - SYSTEM_DATABASES - FULL'
-                $server = Connect-DbaInstance -SqlInstance $script:instance2
+                $server = Connect-DbaInstance -SqlInstance $env:instance2
                 $job = Get-DbaAgentJob -SqlInstance $server -Job $jobName
             }
 

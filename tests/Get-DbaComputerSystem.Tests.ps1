@@ -32,7 +32,7 @@ Describe "Get-DbaComputerSystem" {
 
     Context "Validate output" -Skip:$env:CI {
         BeforeAll {
-            $result = Get-DbaComputerSystem -ComputerName $script:instance1
+            $result = Get-DbaComputerSystem -ComputerName $global:instance1
 
             $props = 'ComputerName', 'Domain', 'IsDaylightSavingsTime', 'Manufacturer', 'Model', 'NumberLogicalProcessors',
             'NumberProcessors', 'IsHyperThreading', 'SystemFamily', 'SystemSkuNumber', 'SystemType', 'IsSystemManagedPageFile', 'TotalPhysicalMemory'

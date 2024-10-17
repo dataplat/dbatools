@@ -20,11 +20,11 @@ Describe "Enable-DbaDbEncryption" {
         It "Should have InputObject as a non-mandatory parameter of type Database[]" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Database[] -Not -Mandatory
         }
-        It "Should have Force as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter -Not -Mandatory
+        It "Should have Force as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Not -Mandatory
         }
-        It "Should have EnableException as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+        It "Should have EnableException as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
@@ -32,18 +32,18 @@ Describe "Enable-DbaDbEncryption" {
         BeforeAll {
             $PSDefaultParameterValues["*:Confirm"] = $false
             $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
-            $masterkey = Get-DbaDbMasterKey -SqlInstance $script:instance2 -Database master
+            $masterkey = Get-DbaDbMasterKey -SqlInstance $global:instance2 -Database master
             if (-not $masterkey) {
                 $delmasterkey = $true
-                $masterkey = New-DbaServiceMasterKey -SqlInstance $script:instance2 -SecurePassword $passwd
+                $masterkey = New-DbaServiceMasterKey -SqlInstance $global:instance2 -SecurePassword $passwd
             }
-            $mastercert = Get-DbaDbCertificate -SqlInstance $script:instance2 -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
+            $mastercert = Get-DbaDbCertificate -SqlInstance $global:instance2 -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
             if (-not $mastercert) {
                 $delmastercert = $true
-                $mastercert = New-DbaDbCertificate -SqlInstance $script:instance2
+                $mastercert = New-DbaDbCertificate -SqlInstance $global:instance2
             }
 
-            $db = New-DbaDatabase -SqlInstance $script:instance2
+            $db = New-DbaDatabase -SqlInstance $global:instance2
             $db | New-DbaDbMasterKey -SecurePassword $passwd
             $db | New-DbaDbCertificate
             $db | New-DbaDbEncryptionKey -Force
@@ -67,8 +67,8 @@ Describe "Enable-DbaDbEncryption" {
         }
 
         It "should enable encryption on a database" {
-            $null = Disable-DbaDbEncryption -SqlInstance $script:instance2 -Database $db.Name
-            $results = Enable-DbaDbEncryption -SqlInstance $script:instance2 -EncryptorName $mastercert.Name -Database $db.Name -Force
+            $null = Disable-DbaDbEncryption -SqlInstance $global:instance2 -Database $db.Name
+            $results = Enable-DbaDbEncryption -SqlInstance $global:instance2 -EncryptorName $mastercert.Name -Database $db.Name -Force
             $results.EncryptionEnabled | Should -Be $true
         }
     }

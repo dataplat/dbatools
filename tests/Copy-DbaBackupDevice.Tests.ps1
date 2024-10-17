@@ -27,26 +27,26 @@ Describe "Copy-DbaBackupDevice" {
             $CommandUnderTest | Should -HaveParameter BackupDevice -Type Object[]
         }
         It "Should have Force as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Integration Tests" -Skip:($env:appveyor) {
         BeforeAll {
             $devicename = "dbatoolsci-backupdevice"
-            $backupdir = (Get-DbaDefaultPath -SqlInstance $script:instance1).Backup
+            $backupdir = (Get-DbaDefaultPath -SqlInstance $global:instance1).Backup
             $backupfilename = "$backupdir\$devicename.bak"
-            $server = Connect-DbaInstance -SqlInstance $script:instance1
+            $server = Connect-DbaInstance -SqlInstance $global:instance1
             $server.Query("EXEC master.dbo.sp_addumpdevice  @devtype = N'disk', @logicalname = N'$devicename',@physicalname = N'$backupfilename'")
             $server.Query("BACKUP DATABASE master TO DISK = '$backupfilename'")
         }
 
         AfterAll {
             $server.Query("EXEC master.dbo.sp_dropdevice @logicalname = N'$devicename'")
-            $server1 = Connect-DbaInstance -SqlInstance $script:instance2
+            $server1 = Connect-DbaInstance -SqlInstance $global:instance2
             try {
                 $server1.Query("EXEC master.dbo.sp_dropdevice @logicalname = N'$devicename'")
             } catch {
@@ -56,17 +56,17 @@ Describe "Copy-DbaBackupDevice" {
         }
 
         It "Should copy the backup device with a warning" {
-            $results = Copy-DbaBackupDevice -Source $script:instance1 -Destination $script:instance2 -WarningVariable warn -WarningAction SilentlyContinue
+            $results = Copy-DbaBackupDevice -Source $global:instance1 -Destination $global:instance2 -WarningVariable warn -WarningAction SilentlyContinue
             $warn | Should -Match "backup device to destination"
         }
 
         It "Should report success when copying the backup device" {
-            $results = Copy-DbaBackupDevice -Source $script:instance1 -Destination $script:instance2 -WarningAction SilentlyContinue
+            $results = Copy-DbaBackupDevice -Source $global:instance1 -Destination $global:instance2 -WarningAction SilentlyContinue
             $results.Status | Should -Be "Successful"
         }
 
         It "Should skip copying when the backup device already exists" {
-            $results = Copy-DbaBackupDevice -Source $script:instance1 -Destination $script:instance2
+            $results = Copy-DbaBackupDevice -Source $global:instance1 -Destination $global:instance2
             $results.Status | Should -Not -Be "Successful"
         }
     }

@@ -21,7 +21,7 @@ Describe "Get-DbaDbCompression" {
             $CommandUnderTest | Should -HaveParameter Table -Type String[] -Not -Mandatory
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
@@ -29,7 +29,7 @@ Describe "Get-DbaDbCompression" {
         BeforeAll {
             . "$PSScriptRoot\constants.ps1"
             $dbname = "dbatoolsci_test_$(Get-Random)"
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $null = $server.Query("Create Database [$dbname]")
             $null = $server.Query("select * into syscols from sys.all_columns
                                     select * into sysallparams from sys.all_parameters
@@ -37,13 +37,13 @@ Describe "Get-DbaDbCompression" {
                                     create nonclustered index NC_syscols on syscols (precision) include (collation_name)", $dbname)
         }
         AfterAll {
-            Get-DbaProcess -SqlInstance $script:instance2 -Database $dbname | Stop-DbaProcess -WarningAction SilentlyContinue
-            Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
+            Get-DbaProcess -SqlInstance $global:instance2 -Database $dbname | Stop-DbaProcess -WarningAction SilentlyContinue
+            Remove-DbaDatabase -SqlInstance $global:instance2 -Database $dbname -Confirm:$false
         }
 
         Context "Command handles heaps and clustered indexes" {
             BeforeAll {
-                $results = Get-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname
+                $results = Get-DbaDbCompression -SqlInstance $global:instance2 -Database $dbname
             }
             It "Gets results" {
                 $results | Should -Not -BeNullOrEmpty
@@ -61,7 +61,7 @@ Describe "Get-DbaDbCompression" {
 
         Context "Command handles nonclustered indexes" {
             BeforeAll {
-                $results = Get-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname
+                $results = Get-DbaDbCompression -SqlInstance $global:instance2 -Database $dbname
             }
             It "Gets results" {
                 $results | Should -Not -BeNullOrEmpty
@@ -76,7 +76,7 @@ Describe "Get-DbaDbCompression" {
 
         Context "Command excludes results for specified database" {
             It "Shouldn't get any results for $dbname" {
-                $result = Get-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname -ExcludeDatabase $dbname
+                $result = Get-DbaDbCompression -SqlInstance $global:instance2 -Database $dbname -ExcludeDatabase $dbname
                 $result | Should -Not -Contain $dbname
             }
         }

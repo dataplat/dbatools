@@ -30,7 +30,7 @@ Describe "Get-DbaDbSequence Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Database[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 }
@@ -38,7 +38,7 @@ Describe "Get-DbaDbSequence Unit Tests" -Tag 'UnitTests' {
 Describe "Get-DbaDbSequence Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $random = Get-Random
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $global:instance2
         $newDbName = "dbatoolsci_newdb_$random"
         $newDbName2 = "dbatoolsci_newdb2_$random"
         $newDb, $newDb2 = New-DbaDatabase -SqlInstance $server -Name $newDbName, $newDbName2

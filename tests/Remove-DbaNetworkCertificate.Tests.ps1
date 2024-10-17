@@ -12,13 +12,13 @@ Describe "Remove-DbaNetworkCertificate" {
             $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Not -Mandatory
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
         It "Should have Verbose as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Verbose -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Verbose -Type Switch -Not -Mandatory
         }
         It "Should have Debug as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Debug -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Debug -Type Switch -Not -Mandatory
         }
         It "Should have ErrorAction as a parameter" {
             $CommandUnderTest | Should -HaveParameter ErrorAction -Type ActionPreference -Not -Mandatory
@@ -51,10 +51,10 @@ Describe "Remove-DbaNetworkCertificate" {
             $CommandUnderTest | Should -HaveParameter PipelineVariable -Type String -Not -Mandatory
         }
         It "Should have WhatIf as a parameter" {
-            $CommandUnderTest | Should -HaveParameter WhatIf -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter WhatIf -Type Switch -Not -Mandatory
         }
         It "Should have Confirm as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Confirm -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Confirm -Type Switch -Not -Mandatory
         }
     }
 }

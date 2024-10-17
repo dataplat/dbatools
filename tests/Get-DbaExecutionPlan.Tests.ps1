@@ -24,13 +24,13 @@ Describe "Get-DbaExecutionPlan" {
             $CommandUnderTest | Should -HaveParameter SinceLastExecution -Type DateTime
         }
         It "Should have ExcludeEmptyQueryPlan as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeEmptyQueryPlan -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter ExcludeEmptyQueryPlan -Type Switch
         }
         It "Should have Force as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -41,7 +41,7 @@ Describe "Get-DbaExecutionPlan" {
 
         Context "Gets Execution Plan" {
             BeforeAll {
-                $results = Get-DbaExecutionPlan -SqlInstance $script:instance2 | Where-Object {$_.statementtype -eq 'SELECT'} | Select-Object -First 1
+                $results = Get-DbaExecutionPlan -SqlInstance $global:instance2 | Where-Object {$_.statementtype -eq 'SELECT'} | Select-Object -First 1
             }
             It "Gets results" {
                 $results | Should -Not -BeNullOrEmpty
@@ -50,7 +50,7 @@ Describe "Get-DbaExecutionPlan" {
 
         Context "Gets Execution Plan when using -Database" {
             BeforeAll {
-                $results = Get-DbaExecutionPlan -SqlInstance $script:instance2 -Database Master | Select-Object -First 1
+                $results = Get-DbaExecutionPlan -SqlInstance $global:instance2 -Database Master | Select-Object -First 1
             }
             It "Gets results" {
                 $results | Should -Not -BeNullOrEmpty
@@ -62,7 +62,7 @@ Describe "Get-DbaExecutionPlan" {
 
         Context "Gets no Execution Plan when using -ExcludeDatabase" {
             BeforeAll {
-                $results = Get-DbaExecutionPlan -SqlInstance $script:instance2 -ExcludeDatabase Master | Select-Object -First 1
+                $results = Get-DbaExecutionPlan -SqlInstance $global:instance2 -ExcludeDatabase Master | Select-Object -First 1
             }
             It "Gets results" {
                 $results | Should -Not -BeNullOrEmpty
@@ -74,7 +74,7 @@ Describe "Get-DbaExecutionPlan" {
 
         Context "Gets Execution Plan when using -SinceCreation" {
             BeforeAll {
-                $results = Get-DbaExecutionPlan -SqlInstance $script:instance2 -Database Master -SinceCreation '01-01-2000' | Select-Object -First 1
+                $results = Get-DbaExecutionPlan -SqlInstance $global:instance2 -Database Master -SinceCreation '01-01-2000' | Select-Object -First 1
             }
             It "Gets results" {
                 $results | Should -Not -BeNullOrEmpty
@@ -89,7 +89,7 @@ Describe "Get-DbaExecutionPlan" {
 
         Context "Gets Execution Plan when using -SinceLastExecution" {
             BeforeAll {
-                $results = Get-DbaExecutionPlan -SqlInstance $script:instance2 -Database Master -SinceLastExecution '01-01-2000' | Select-Object -First 1
+                $results = Get-DbaExecutionPlan -SqlInstance $global:instance2 -Database Master -SinceLastExecution '01-01-2000' | Select-Object -First 1
             }
             It "Gets results" {
                 $results | Should -Not -BeNullOrEmpty
@@ -104,7 +104,7 @@ Describe "Get-DbaExecutionPlan" {
 
         Context "Gets Execution Plan when using -ExcludeEmptyQueryPlan" {
             BeforeAll {
-                $results = Get-DbaExecutionPlan -SqlInstance $script:instance2 -ExcludeEmptyQueryPlan
+                $results = Get-DbaExecutionPlan -SqlInstance $global:instance2 -ExcludeEmptyQueryPlan
             }
             It "Gets results" {
                 $results | Should -Not -BeNullOrEmpty

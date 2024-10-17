@@ -27,7 +27,7 @@ Describe "Measure-DbaBackupThroughput" {
             $CommandUnderTest | Should -HaveParameter Since -Type DateTime -Not -Mandatory
         }
         It "Should have Last parameter" {
-            $CommandUnderTest | Should -HaveParameter Last -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Last -Type Switch -Not -Mandatory
         }
         It "Should have Type parameter" {
             $CommandUnderTest | Should -HaveParameter Type -Type String -Not -Mandatory
@@ -36,23 +36,23 @@ Describe "Measure-DbaBackupThroughput" {
             $CommandUnderTest | Should -HaveParameter DeviceType -Type String[] -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
     Context "Returns output for single database" {
         BeforeAll {
-            $null = Get-DbaProcess -SqlInstance $script:instance2 | Where-Object Program -Match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
+            $null = Get-DbaProcess -SqlInstance $env:instance2 | Where-Object Program -Match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
             $random = Get-Random
             $db = "dbatoolsci_measurethruput$random"
-            $null = New-DbaDatabase -SqlInstance $script:instance2 -Database $db | Backup-DbaDatabase
+            $null = New-DbaDatabase -SqlInstance $env:instance2 -Database $db | Backup-DbaDatabase
         }
         AfterAll {
-            $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database $db
+            $null = Remove-DbaDatabase -SqlInstance $env:instance2 -Database $db
         }
 
         It "Should return results" {
-            $results = Measure-DbaBackupThroughput -SqlInstance $script:instance2 -Database $db
+            $results = Measure-DbaBackupThroughput -SqlInstance $env:instance2 -Database $db
             $results.Database | Should -Be $db
             $results.BackupCount | Should -Be 1
         }

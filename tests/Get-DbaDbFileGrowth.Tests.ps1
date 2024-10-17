@@ -64,12 +64,12 @@ Describe "Get-DbaDbFileGrowth" {
 
     Context "Command usage" {
         It "Should return file information" {
-            $result = Get-DbaDbFileGrowth -SqlInstance $script:instance2
+            $result = Get-DbaDbFileGrowth -SqlInstance $global:instance2
             $result.Database | Should -Contain "msdb"
         }
 
         It "Should return file information for only msdb" {
-            $result = Get-DbaDbFileGrowth -SqlInstance $script:instance2 -Database msdb | Select-Object -First 1
+            $result = Get-DbaDbFileGrowth -SqlInstance $global:instance2 -Database msdb | Select-Object -First 1
             $result.Database | Should -Be "msdb"
         }
     }

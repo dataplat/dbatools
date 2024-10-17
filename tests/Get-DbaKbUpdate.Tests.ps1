@@ -13,14 +13,14 @@ Describe "Get-DbaKbUpdate" {
         It "Should have Name as a non-mandatory String[] parameter" {
             $CommandUnderTest | Should -HaveParameter Name -Type String[] -Not -Mandatory
         }
-        It "Should have Simple as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter Simple -Type SwitchParameter -Not -Mandatory
+        It "Should have Simple as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter Simple -Type Switch -Not -Mandatory
         }
         It "Should have Language as a non-mandatory String parameter" {
             $CommandUnderTest | Should -HaveParameter Language -Type String -Not -Mandatory
         }
-        It "Should have EnableException as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+        It "Should have EnableException as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 

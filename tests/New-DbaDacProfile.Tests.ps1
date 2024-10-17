@@ -24,25 +24,25 @@ Describe "New-DbaDacProfile" {
             $CommandUnderTest | Should -HaveParameter PublishOptions -Type Hashtable
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Integration Tests" {
         BeforeAll {
             $dbname = "dbatoolsci_publishprofile"
-            $db = New-DbaDatabase -SqlInstance $script:instance1 -Name $dbname
+            $db = New-DbaDatabase -SqlInstance $env:instance1 -Name $dbname
             $null = $db.Query("CREATE TABLE dbo.example (id int);
                 INSERT dbo.example
                 SELECT top 100 1
                 FROM sys.objects")
         }
         AfterAll {
-            Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $env:instance1 -Database $dbname -Confirm:$false
         }
 
         It "returns the right results" {
-            $publishprofile = New-DbaDacProfile -SqlInstance $script:instance1 -Database $dbname
+            $publishprofile = New-DbaDacProfile -SqlInstance $env:instance1 -Database $dbname
             $publishprofile.FileName | Should -Match 'publish.xml'
             Remove-Item -Confirm:$false -Path $publishprofile.FileName -ErrorAction SilentlyContinue
         }

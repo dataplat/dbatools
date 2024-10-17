@@ -24,34 +24,34 @@ Describe "Get-DbaSpConfigure" {
             $CommandUnderTest | Should -HaveParameter ExcludeName -Type String[] -Not -Mandatory
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
     Context "Get configuration" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance1
+            $server = Connect-DbaInstance -SqlInstance $env:instance1
             $configs = $server.Query("sp_configure")
             $remotequerytimeout = $configs | Where-Object name -match 'remote query timeout'
         }
 
         It "returns equal to results of the straight T-SQL query" {
-            $results = Get-DbaSpConfigure -SqlInstance $script:instance1
+            $results = Get-DbaSpConfigure -SqlInstance $env:instance1
             $results.count | Should -Be $configs.count
         }
 
         It "returns two results" {
-            $results = Get-DbaSpConfigure -SqlInstance $script:instance1 -Name RemoteQueryTimeout, AllowUpdates
+            $results = Get-DbaSpConfigure -SqlInstance $env:instance1 -Name RemoteQueryTimeout, AllowUpdates
             $results.Count | Should -Be 2
         }
 
         It "returns two results less than all data" {
-            $results = Get-DbaSpConfigure -SqlInstance $script:instance1 -ExcludeName "remote query timeout (s)", AllowUpdates
+            $results = Get-DbaSpConfigure -SqlInstance $env:instance1 -ExcludeName "remote query timeout (s)", AllowUpdates
             $results.Count | Should -Be ($configs.count - 2)
         }
 
         It "matches the output of sp_configure " {
-            $results = Get-DbaSpConfigure -SqlInstance $script:instance1 -Name RemoteQueryTimeout
+            $results = Get-DbaSpConfigure -SqlInstance $env:instance1 -Name RemoteQueryTimeout
             $results.ConfiguredValue | Should -Be $remotequerytimeout.config_value
             $results.RunningValue | Should -Be $remotequerytimeout.run_value
         }

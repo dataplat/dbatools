@@ -18,13 +18,13 @@ Describe "Get-DbaInstanceTrigger Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
         It "Should have Verbose as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Verbose -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Verbose -Type Switch -Not -Mandatory
         }
         It "Should have Debug as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Debug -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Debug -Type Switch -Not -Mandatory
         }
         It "Should have ErrorAction as a parameter" {
             $CommandUnderTest | Should -HaveParameter ErrorAction -Type ActionPreference -Not -Mandatory
@@ -61,7 +61,7 @@ Describe "Get-DbaInstanceTrigger Unit Tests" -Tag 'UnitTests' {
 
 Describe "Get-DbaInstanceTrigger Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $instance = Connect-DbaInstance -SqlInstance $script:instance2
+        $instance = Connect-DbaInstance -SqlInstance $global:instance2
         $random = Get-Random
         $trigger1 = "dbatoolsci_trigger1_$random"
         $trigger2 = "dbatoolsci_trigger2_$random"
@@ -78,7 +78,7 @@ Describe "Get-DbaInstanceTrigger Integration Tests" -Tag "IntegrationTests" {
 
     Context "Command actually works" {
         BeforeAll {
-            $results = Get-DbaInstanceTrigger -SqlInstance $script:instance2
+            $results = Get-DbaInstanceTrigger -SqlInstance $global:instance2
         }
 
         It "Should return results" {

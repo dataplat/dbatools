@@ -30,7 +30,7 @@ Describe "New-DbaAzAccessToken" {
         It "Should have Store as a non-mandatory String parameter" {
             $CommandUnderTest | Should -HaveParameter Store -Type String -Not -Mandatory
         }
-        It "Should have EnableException as a non-mandatory SwitchParameter" {
+        It "Should have EnableException as a non-mandatory Switch" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }

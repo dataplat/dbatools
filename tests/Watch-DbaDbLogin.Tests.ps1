@@ -27,7 +27,7 @@ Describe "Watch-DbaDbLogin" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Server[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -39,44 +39,44 @@ Describe "Watch-DbaDbLogin" {
             $tableName2 = 'dbatoolsciwatchdblogin2'
             $tableName3 = 'dbatoolsciwatchdblogin3'
             $databaseName = "dbatoolsci_$random"
-            $newDb = New-DbaDatabase -SqlInstance $script:instance1 -Name $databaseName
+            $newDb = New-DbaDatabase -SqlInstance $env:instance1 -Name $databaseName
 
             $testFile = 'C:\temp\Servers_$random.txt'
             if (Test-Path $testFile) {
                 Remove-Item $testFile -Force
             }
 
-            $script:instance1, $script:instance2 | Out-File $testFile
+            $env:instance1, $env:instance2 | Out-File $testFile
 
-            $server1 = Connect-DbaInstance -SqlInstance $script:instance1
-            $server2 = Connect-DbaInstance -SqlInstance $script:instance2
+            $server1 = Connect-DbaInstance -SqlInstance $env:instance1
+            $server2 = Connect-DbaInstance -SqlInstance $env:instance2
 
-            $regServer1 = Add-DbaRegServer -SqlInstance $script:instance1 -ServerName $script:instance1 -Name "dbatoolsci_instance1_$random"
-            $regServer2 = Add-DbaRegServer -SqlInstance $script:instance1 -ServerName $script:instance2 -Name "dbatoolsci_instance2_$random"
+            $regServer1 = Add-DbaRegServer -SqlInstance $env:instance1 -ServerName $env:instance1 -Name "dbatoolsci_instance1_$random"
+            $regServer2 = Add-DbaRegServer -SqlInstance $env:instance1 -ServerName $env:instance2 -Name "dbatoolsci_instance2_$random"
         }
 
         AfterAll {
             $null = $newDb | Remove-DbaDatabase -Confirm:$false
-            Get-DbaRegServer -SqlInstance $script:instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegServer -Confirm:$false
+            Get-DbaRegServer -SqlInstance $env:instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegServer -Confirm:$false
         }
 
         It "ServersFromFile" {
-            Watch-DbaDbLogin -SqlInstance $script:instance1 -Database $databaseName -Table $tableName1 -ServersFromFile $testFile -EnableException
-            $result = Get-DbaDbTable -SqlInstance $script:instance1 -Database $databaseName -Table $tableName1 -IncludeSystemDBs
+            Watch-DbaDbLogin -SqlInstance $env:instance1 -Database $databaseName -Table $tableName1 -ServersFromFile $testFile -EnableException
+            $result = Get-DbaDbTable -SqlInstance $env:instance1 -Database $databaseName -Table $tableName1 -IncludeSystemDBs
             $result.Name | Should -Be $tableName1
             $result.Count | Should -BeGreaterThan 0
         }
 
         It "Pipeline of instances" {
-            $server1, $server2 | Watch-DbaDbLogin -SqlInstance $script:instance1 -Database $databaseName -Table $tableName2 -EnableException
-            $result = Get-DbaDbTable -SqlInstance $script:instance1 -Database $databaseName -Table $tableName2 -IncludeSystemDBs
+            $server1, $server2 | Watch-DbaDbLogin -SqlInstance $env:instance1 -Database $databaseName -Table $tableName2 -EnableException
+            $result = Get-DbaDbTable -SqlInstance $env:instance1 -Database $databaseName -Table $tableName2 -IncludeSystemDBs
             $result.Name | Should -Be $tableName2
             $result.Count | Should -BeGreaterThan 0
         }
 
         It "ServersFromCMS" {
-            Watch-DbaDbLogin -SqlInstance $script:instance1 -Database $databaseName -Table $tableName3 -SqlCms $script:instance1 -EnableException
-            $result = Get-DbaDbTable -SqlInstance $script:instance1 -Database $databaseName -Table $tableName3 -IncludeSystemDBs
+            Watch-DbaDbLogin -SqlInstance $env:instance1 -Database $databaseName -Table $tableName3 -SqlCms $env:instance1 -EnableException
+            $result = Get-DbaDbTable -SqlInstance $env:instance1 -Database $databaseName -Table $tableName3 -IncludeSystemDBs
             $result.Name | Should -Be $tableName3
             $result.Count | Should -BeGreaterThan 0
         }

@@ -34,10 +34,10 @@ Describe "Get-DbaDbVirtualLogFile Unit Tests" -Tag 'UnitTests' {
 
 Describe "Get-DbaDbVirtualLogFile Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $global:instance2
         $db1 = "dbatoolsci_getvlf"
         $server.Query("CREATE DATABASE $db1")
-        $needed = Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1
+        $needed = Get-DbaDatabase -SqlInstance $global:instance2 -Database $db1
         $setupright = $true
         if ($needed.Count -ne 1) {
             $setupright = $false
@@ -46,12 +46,12 @@ Describe "Get-DbaDbVirtualLogFile Integration Tests" -Tag "IntegrationTests" {
     }
 
     AfterAll {
-        Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $db1
+        Remove-DbaDatabase -Confirm:$false -SqlInstance $global:instance2 -Database $db1
     }
 
     Context "Command actually works" {
         BeforeAll {
-            $results = Get-DbaDbVirtualLogFile -SqlInstance $script:instance2 -Database $db1
+            $results = Get-DbaDbVirtualLogFile -SqlInstance $global:instance2 -Database $db1
         }
 
         It "Should have correct properties" {

@@ -45,16 +45,16 @@ Describe "Export-DbaBinaryFile" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Table[] -Not -Mandatory
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
     Context "Integration Tests" {
         BeforeAll {
-            $db = Get-DbaDatabase -SqlInstance $script:instance2 -Database tempdb
+            $db = Get-DbaDatabase -SqlInstance $global:instance2 -Database tempdb
             $null = $db.Query("CREATE TABLE [dbo].[BunchOFilezz]([FileName123] [nvarchar](50) NULL, [TheFile123] [image] NULL)")
-            $null = Import-DbaBinaryFile -SqlInstance $script:instance2 -Database tempdb -Table BunchOFilezz -FilePath $script:appveyorlabrepo\azure\adalsql.msi
-            $null = Get-ChildItem $script:appveyorlabrepo\certificates | Import-DbaBinaryFile -SqlInstance $script:instance2 -Database tempdb -Table BunchOFilezz
+            $null = Import-DbaBinaryFile -SqlInstance $global:instance2 -Database tempdb -Table BunchOFilezz -FilePath $global:appveyorlabrepo\azure\adalsql.msi
+            $null = Get-ChildItem $global:appveyorlabrepo\certificates | Import-DbaBinaryFile -SqlInstance $global:instance2 -Database tempdb -Table BunchOFilezz
         }
 
         AfterAll {
@@ -67,13 +67,13 @@ Describe "Export-DbaBinaryFile" {
         }
 
         It "exports the table data to file" {
-            $results = Export-DbaBinaryFile -SqlInstance $script:instance2 -Database tempdb -Path C:\temp\exports
+            $results = Export-DbaBinaryFile -SqlInstance $global:instance2 -Database tempdb -Path C:\temp\exports
             $results.Name.Count | Should -Be 3
             $results.Name | Should -Be @('adalsql.msi', 'localhost.crt', 'localhost.pfx')
         }
 
         It "exports the table data to file using pipeline" {
-            $results = Get-DbaBinaryFileTable -SqlInstance $script:instance2 -Database tempdb | Export-DbaBinaryFile -Path C:\temp\exports
+            $results = Get-DbaBinaryFileTable -SqlInstance $global:instance2 -Database tempdb | Export-DbaBinaryFile -Path C:\temp\exports
             $results.Name.Count | Should -Be 3
             $results.Name | Should -Be @('adalsql.msi', 'localhost.crt', 'localhost.pfx')
         }

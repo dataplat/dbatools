@@ -29,7 +29,7 @@ Describe "Get-DbaConnectedInstance" {
 
     Context "Command usage" {
         BeforeAll {
-            $null = Get-DbaDatabase -SqlInstance $script:instance1
+            $null = Get-DbaDatabase -SqlInstance $global:instance1
         }
 
         It "returns some results" {

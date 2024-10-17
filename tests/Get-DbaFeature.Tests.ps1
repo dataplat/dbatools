@@ -12,7 +12,7 @@ Describe "Get-DbaFeature" {
             $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 

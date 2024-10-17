@@ -33,7 +33,7 @@ Describe "Set-DbaDbSequence" {
             $CommandUnderTest | Should -HaveParameter MaxValue -Type Int64
         }
         It "Should have Cycle as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Cycle -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Cycle -Type Switch
         }
         It "Should have CacheSize as a parameter" {
             $CommandUnderTest | Should -HaveParameter CacheSize -Type Int32
@@ -42,7 +42,7 @@ Describe "Set-DbaDbSequence" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Database[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -50,7 +50,7 @@ Describe "Set-DbaDbSequence" {
         BeforeAll {
             . "$PSScriptRoot\constants.ps1"
             $random = Get-Random
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $env:instance2
             $newDbName = "dbatoolsci_newdb_$random"
             $newDb = New-DbaDatabase -SqlInstance $server -Name $newDbName
 

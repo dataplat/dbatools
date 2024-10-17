@@ -30,21 +30,21 @@ Describe "Remove-DbaDbUser Unit Tests" -Tag 'UnitTests' {
             $command | Should -HaveParameter InputObject -Type User[] -Not -Mandatory
         }
         It "Should have Force parameter" {
-            $command | Should -HaveParameter Force -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter Force -Type Switch -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $command | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 }
 
 Describe "Remove-DbaDbUser Integration Tests" -Tag "IntegrationTests" {
     BeforeDiscovery {
-        $script:instance1 = "localhost"
+        $env:instance1 = "localhost"
     }
 
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance1
+        $server = Connect-DbaInstance -SqlInstance $env:instance1
         $db = Get-DbaDatabase $server -Database tempdb
         $securePassword = ConvertTo-SecureString "password" -AsPlainText -Force
         $loginTest = New-DbaLogin $server -Login dbatoolsci_remove_dba_db_user -Password $securePassword -Force

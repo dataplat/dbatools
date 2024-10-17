@@ -35,11 +35,11 @@ Describe "Export-DbatoolsConfig" {
         It "Should have OutPath as a non-mandatory String parameter" {
             $CommandUnderTest | Should -HaveParameter OutPath -Type String -Not -Mandatory
         }
-        It "Should have SkipUnchanged as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter SkipUnchanged -Type SwitchParameter -Not -Mandatory
+        It "Should have SkipUnchanged as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter SkipUnchanged -Type Switch -Not -Mandatory
         }
-        It "Should have EnableException as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+        It "Should have EnableException as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 }

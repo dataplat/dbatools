@@ -15,7 +15,7 @@ Describe "Get-DbaCpuRingBuffer" {
             $CommandUnderTest | Should -HaveParameter CollectionMinutes -Type Int32
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -24,7 +24,7 @@ Describe "Get-DbaCpuRingBuffer" {
             . (Join-Path $PSScriptRoot 'constants.ps1')
         }
         BeforeAll {
-            $results = Get-DbaCpuRingBuffer -SqlInstance $script:instance2 -CollectionMinutes 100
+            $results = Get-DbaCpuRingBuffer -SqlInstance $global:instance2 -CollectionMinutes 100
         }
         It "Returns results" {
             $results.Count | Should -BeGreaterThan 0

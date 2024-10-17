@@ -26,7 +26,7 @@ Describe "Invoke-DbaDbccDropCleanBuffer" {
 
     Context "Validate standard output" {
         BeforeAll {
-            $result = Invoke-DbaDbccDropCleanBuffer -SqlInstance $script:instance1 -Confirm:$false
+            $result = Invoke-DbaDbccDropCleanBuffer -SqlInstance $env:instance1 -Confirm:$false
         }
 
         It "Should return property: ComputerName" {
@@ -48,12 +48,12 @@ Describe "Invoke-DbaDbccDropCleanBuffer" {
 
     Context "Works correctly" {
         It "returns results" {
-            $result = Invoke-DbaDbccDropCleanBuffer -SqlInstance $script:instance1 -Confirm:$false
+            $result = Invoke-DbaDbccDropCleanBuffer -SqlInstance $env:instance1 -Confirm:$false
             $result.Output | Should -Match 'DBCC execution completed. If DBCC printed error messages, contact your system administrator.'
         }
 
         It "returns the right results for -NoInformationalMessages" {
-            $result = Invoke-DbaDbccDropCleanBuffer -SqlInstance $script:instance1 -NoInformationalMessages -Confirm:$false
+            $result = Invoke-DbaDbccDropCleanBuffer -SqlInstance $env:instance1 -NoInformationalMessages -Confirm:$false
             $result.Cmd | Should -Match 'DBCC DROPCLEANBUFFERS WITH NO_INFOMSGS'
             $result.Output | Should -BeNullOrEmpty
         }

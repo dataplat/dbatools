@@ -15,16 +15,16 @@ Describe "Find-DbaDbDuplicateIndex" {
             $CommandUnderTest | Should -HaveParameter Database -Type Object[]
         }
         It "Should have IncludeOverlapping as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeOverlapping -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter IncludeOverlapping -Type Switch
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Integration Tests" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance1
+            $server = Connect-DbaInstance -SqlInstance $global:instance1
             $sql = "CREATE DATABASE [dbatools_dupeindex]"
             $server.Query($sql)
             $sql = @"
@@ -57,11 +57,11 @@ ALTER TABLE [dbatools_dupeindex].[dbo].[WABehaviorEvent] ADD UNIQUE NONCLUSTERED
         }
 
         AfterAll {
-            Remove-DbaDatabase -SqlInstance $script:instance1 -Database dbatools_dupeindex -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $global:instance1 -Database dbatools_dupeindex -Confirm:$false
         }
 
         It "Returns at least two results" {
-            $results = Find-DbaDbDuplicateIndex -SqlInstance $script:instance1 -Database dbatools_dupeindex
+            $results = Find-DbaDbDuplicateIndex -SqlInstance $global:instance1 -Database dbatools_dupeindex
             $results.Count | Should -BeGreaterOrEqual 2
         }
     }

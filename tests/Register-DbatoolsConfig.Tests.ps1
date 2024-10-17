@@ -21,7 +21,7 @@ Describe "Register-DbatoolsConfig" {
             $CommandUnderTest | Should -HaveParameter Scope -Type ConfigScope
         }
         It "Accepts EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 

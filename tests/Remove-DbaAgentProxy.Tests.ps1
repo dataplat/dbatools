@@ -21,13 +21,13 @@ Describe "Remove-DbaAgentProxy" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type ProxyAccount[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Command usage" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $env:instance2
             $null = Invoke-DbaQuery -SqlInstance $server -Query "CREATE CREDENTIAL proxyCred WITH IDENTITY = 'NT AUTHORITY\SYSTEM',  SECRET = 'G31o)lkJ8HNd!';"
         }
 
@@ -36,7 +36,7 @@ Describe "Remove-DbaAgentProxy" {
         }
 
         BeforeEach {
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $env:instance2
             $proxyName = "dbatoolsci_test_$(Get-Random)"
             $proxyName2 = "dbatoolsci_test_$(Get-Random)"
 

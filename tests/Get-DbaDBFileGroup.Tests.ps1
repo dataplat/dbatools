@@ -8,14 +8,14 @@ Describe "Get-DbaDbFileGroup" {
 
         $random = Get-Random
         $multifgdb = "dbatoolsci_multifgdb$random"
-        Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $multifgdb
+        Remove-DbaDatabase -Confirm:$false -SqlInstance $global:instance2 -Database $multifgdb
 
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $global:instance2
         $server.Query("CREATE DATABASE $multifgdb; ALTER DATABASE $multifgdb ADD FILEGROUP [Test1]; ALTER DATABASE $multifgdb ADD FILEGROUP [Test2];")
     }
 
     AfterAll {
-        Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $multifgdb
+        Remove-DbaDatabase -Confirm:$false -SqlInstance $global:instance2 -Database $multifgdb
     }
 
     Context "Validate parameters" {
@@ -38,13 +38,13 @@ Describe "Get-DbaDbFileGroup" {
             $CommandUnderTest | Should -HaveParameter FileGroup -Type String[] -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
     Context "Returns values for Instance" {
         BeforeAll {
-            $results = Get-DbaDbFileGroup -SqlInstance $script:instance2
+            $results = Get-DbaDbFileGroup -SqlInstance $global:instance2
         }
         It "Results are not empty" {
             $results | Should -Not -BeNullOrEmpty
@@ -56,19 +56,19 @@ Describe "Get-DbaDbFileGroup" {
 
     Context "Accepts database and filegroup input" {
         It "Reports the right number of filegroups" {
-            $results = Get-DbaDbFileGroup -SqlInstance $script:instance2 -Database $multifgdb
+            $results = Get-DbaDbFileGroup -SqlInstance $global:instance2 -Database $multifgdb
             $results.Count | Should -Be 3
         }
 
         It "Reports the right number of filegroups when filtering" {
-            $results = Get-DbaDbFileGroup -SqlInstance $script:instance2 -Database $multifgdb -FileGroup Test1
+            $results = Get-DbaDbFileGroup -SqlInstance $global:instance2 -Database $multifgdb -FileGroup Test1
             $results.Count | Should -Be 1
         }
     }
 
     Context "Accepts piped input" {
         BeforeAll {
-            $results = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeUser | Get-DbaDbFileGroup
+            $results = Get-DbaDatabase -SqlInstance $global:instance2 -ExcludeUser | Get-DbaDbFileGroup
         }
         It "Reports the right number of filegroups" {
             $results.Count | Should -Be 4

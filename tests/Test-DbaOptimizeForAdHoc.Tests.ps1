@@ -18,13 +18,13 @@ Describe "Test-DbaOptimizeForAdHoc" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Command actually works" {
         BeforeAll {
-            $results = Test-DbaOptimizeForAdHoc -SqlInstance $script:instance2
+            $results = Test-DbaOptimizeForAdHoc -SqlInstance $env:instance2
         }
         It "Should return result for the server" {
             $results | Should -Not -BeNullOrEmpty

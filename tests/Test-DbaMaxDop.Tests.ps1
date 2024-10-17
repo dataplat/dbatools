@@ -17,29 +17,29 @@ Describe "Test-DbaMaxDop" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
     Context "Command usage" {
         BeforeDiscovery {
-            $script:instance2 = $script:instance2
+            $env:instance2 = $env:instance2
         }
 
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $env:instance2
             $db1 = "dbatoolsci_testMaxDop"
             $server.Query("CREATE DATABASE $db1")
-            $needed = Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1
+            $needed = Get-DbaDatabase -SqlInstance $env:instance2 -Database $db1
             $setupright = $null -ne $needed
         }
 
         AfterAll {
-            Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1 | Remove-DbaDatabase -Confirm:$false
+            Get-DbaDatabase -SqlInstance $env:instance2 -Database $db1 | Remove-DbaDatabase -Confirm:$false
         }
 
         It "Command works on SQL Server 2016 or higher instances" -Skip:(-not $setupright) {
-            $results = Test-DbaMaxDop -SqlInstance $script:instance2
+            $results = Test-DbaMaxDop -SqlInstance $env:instance2
 
             $ExpectedProps = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'DatabaseMaxDop', 'CurrentInstanceMaxDop', 'RecommendedMaxDop', 'Notes'
             $results | ForEach-Object {

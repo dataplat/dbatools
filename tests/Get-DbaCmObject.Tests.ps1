@@ -29,14 +29,14 @@ Describe "Get-DbaCmObject" {
         It "Should have DoNotUse as a non-mandatory ManagementConnectionType[] parameter" {
             $CommandUnderTest | Should -HaveParameter DoNotUse -Type ManagementConnectionType[] -Not -Mandatory
         }
-        It "Should have Force as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter -Not -Mandatory
+        It "Should have Force as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Not -Mandatory
         }
-        It "Should have SilentlyContinue as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter SilentlyContinue -Type SwitchParameter -Not -Mandatory
+        It "Should have SilentlyContinue as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter SilentlyContinue -Type Switch -Not -Mandatory
         }
-        It "Should have EnableException as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+        It "Should have EnableException as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 

@@ -15,14 +15,14 @@ Describe "Get-DbaStartupProcedure" {
             $CommandUnderTest | Should -HaveParameter StartupProcedure -Type String[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Command usage" {
         BeforeAll {
             . "$PSScriptRoot\constants.ps1"
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $env:instance2
             $random = Get-Random
             $startupProc = "dbo.StartUpProc$random"
             $dbname = 'master'
@@ -35,19 +35,19 @@ Describe "Get-DbaStartupProcedure" {
         }
 
         It "returns correct results" {
-            $result = Get-DbaStartupProcedure -SqlInstance $script:instance2
+            $result = Get-DbaStartupProcedure -SqlInstance $env:instance2
             $result.Schema | Should -Be 'dbo'
             $result.Name | Should -Be "StartUpProc$random"
         }
 
         It "returns correct results for StartupProcedure parameter" {
-            $result = Get-DbaStartupProcedure -SqlInstance $script:instance2 -StartupProcedure $startupProc
+            $result = Get-DbaStartupProcedure -SqlInstance $env:instance2 -StartupProcedure $startupProc
             $result.Schema | Should -Be 'dbo'
             $result.Name | Should -Be "StartUpProc$random"
         }
 
         It "returns null for incorrect StartupProcedure parameter" {
-            $result = Get-DbaStartupProcedure -SqlInstance $script:instance2 -StartupProcedure 'Not.Here'
+            $result = Get-DbaStartupProcedure -SqlInstance $env:instance2 -StartupProcedure 'Not.Here'
             $result | Should -BeNullOrEmpty
         }
     }

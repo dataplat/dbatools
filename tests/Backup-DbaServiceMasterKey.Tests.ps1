@@ -74,7 +74,7 @@ Describe "Backup-DbaServiceMasterKey" {
     Context "Can backup a service master key" {
         BeforeAll {
             $securePassword = ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force
-            $results = Backup-DbaServiceMasterKey -SqlInstance $script:instance1 -Confirm:$false -SecurePassword $securePassword
+            $results = Backup-DbaServiceMasterKey -SqlInstance $global:instance1 -Confirm:$false -SecurePassword $securePassword
         }
 
         AfterAll {

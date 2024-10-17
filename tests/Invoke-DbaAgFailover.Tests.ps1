@@ -22,14 +22,14 @@ Describe "Invoke-DbaAgFailover" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type AvailabilityGroup[] -Not -Mandatory
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
         It "Should have common parameters" {
-            $CommandUnderTest | Should -HaveParameter Verbose -Type SwitchParameter -Not -Mandatory
-            $CommandUnderTest | Should -HaveParameter Debug -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Verbose -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Debug -Type Switch -Not -Mandatory
             $CommandUnderTest | Should -HaveParameter ErrorAction -Type ActionPreference -Not -Mandatory
             $CommandUnderTest | Should -HaveParameter WarningAction -Type ActionPreference -Not -Mandatory
             $CommandUnderTest | Should -HaveParameter InformationAction -Type ActionPreference -Not -Mandatory
@@ -40,8 +40,8 @@ Describe "Invoke-DbaAgFailover" {
             $CommandUnderTest | Should -HaveParameter OutVariable -Type String -Not -Mandatory
             $CommandUnderTest | Should -HaveParameter OutBuffer -Type Int32 -Not -Mandatory
             $CommandUnderTest | Should -HaveParameter PipelineVariable -Type String -Not -Mandatory
-            $CommandUnderTest | Should -HaveParameter WhatIf -Type SwitchParameter -Not -Mandatory
-            $CommandUnderTest | Should -HaveParameter Confirm -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter WhatIf -Type Switch -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Confirm -Type Switch -Not -Mandatory
         }
     }
 
@@ -51,11 +51,11 @@ Describe "Invoke-DbaAgFailover" {
     #     BeforeAll {
     #         # Setup mock SQL Server environment or use constants for testing
     #     }
-    #     
+    #
     #     It "Successfully fails over an availability group" {
     #         # Test code here
     #     }
-    #     
+    #
     #     It "Handles errors appropriately" {
     #         # Test code here
     #     }

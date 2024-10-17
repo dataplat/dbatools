@@ -12,7 +12,7 @@ Describe "Get-DbaAvailableCollation" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -24,7 +24,7 @@ Describe "Get-DbaAvailableCollation" {
             . "$PSScriptRoot\constants.ps1"
         }
         It "Finds a collation that matches Slovenian" {
-            $results = Get-DbaAvailableCollation -SqlInstance $script:instance2
+            $results = Get-DbaAvailableCollation -SqlInstance $global:instance2
             ($results.Name -match 'Slovenian').Count | Should -BeGreaterThan 10
         }
     }

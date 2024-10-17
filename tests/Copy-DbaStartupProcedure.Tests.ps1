@@ -6,7 +6,7 @@ Describe "Copy-DbaStartupProcedure" {
         Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
         . "$PSScriptRoot\constants.ps1"
 
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $global:instance2
         $procName = "dbatoolsci_test_startup"
         $server.Query("CREATE OR ALTER PROCEDURE $procName
                         AS
@@ -18,7 +18,7 @@ Describe "Copy-DbaStartupProcedure" {
     }
 
     AfterAll {
-        Invoke-DbaQuery -SqlInstance $script:instance2, $script:instance3 -Database "master" -Query "DROP PROCEDURE dbatoolsci_test_startup"
+        Invoke-DbaQuery -SqlInstance $global:instance2, $global:instance3 -Database "master" -Query "DROP PROCEDURE dbatoolsci_test_startup"
     }
 
     Context "Validate parameters" {
@@ -44,16 +44,16 @@ Describe "Copy-DbaStartupProcedure" {
             $CommandUnderTest | Should -HaveParameter ExcludeProcedure -Type String[]
         }
         It "Should have Force as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Command actually works" {
         BeforeAll {
-            $results = Copy-DbaStartupProcedure -Source $script:instance2 -Destination $script:instance3
+            $results = Copy-DbaStartupProcedure -Source $global:instance2 -Destination $global:instance3
         }
         It "Should include test procedure: $procName" {
             ($results | Where-Object Name -eq $procName).Name | Should -Be $procName

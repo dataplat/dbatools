@@ -23,13 +23,13 @@ Describe "Invoke-DbaDbccFreeCache" {
             $CommandUnderTest | Should -HaveParameter InputValue -Type String
         }
         It "Should have NoInformationalMessages as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NoInformationalMessages -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter NoInformationalMessages -Type Switch
         }
         It "Should have MarkInUseForRemoval as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MarkInUseForRemoval -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter MarkInUseForRemoval -Type Switch
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -39,7 +39,7 @@ Describe "Invoke-DbaDbccFreeCache" {
         }
 
         It "returns the right results for FREESYSTEMCACHE" {
-            $result = Invoke-DbaDbccFreeCache -SqlInstance $script:instance2 -Operation FreeSystemCache -Confirm:$false
+            $result = Invoke-DbaDbccFreeCache -SqlInstance $env:instance2 -Operation FreeSystemCache -Confirm:$false
             $result.Operation | Should -Match 'FREESYSTEMCACHE'
             $result.Output | Should -Match 'DBCC execution completed. If DBCC printed error messages, contact your system administrator.'
             foreach ($prop in $props) {
@@ -48,19 +48,19 @@ Describe "Invoke-DbaDbccFreeCache" {
         }
 
         It "returns the right results for FREESESSIONCACHE" {
-            $result = Invoke-DbaDbccFreeCache -SqlInstance $script:instance2 -Operation FreeSessionCache -Confirm:$false
+            $result = Invoke-DbaDbccFreeCache -SqlInstance $env:instance2 -Operation FreeSessionCache -Confirm:$false
             $result.Operation | Should -Match 'FREESESSIONCACHE'
             $result.Output | Should -Match 'DBCC execution completed. If DBCC printed error messages, contact your system administrator.'
         }
 
         It "returns the right results for FREEPROCCACHE" {
-            $result = Invoke-DbaDbccFreeCache -SqlInstance $script:instance2 -Operation FREEPROCCACHE -Confirm:$false
+            $result = Invoke-DbaDbccFreeCache -SqlInstance $env:instance2 -Operation FREEPROCCACHE -Confirm:$false
             $result.Operation | Should -Match 'FREEPROCCACHE'
             $result.Output | Should -Match 'DBCC execution completed. If DBCC printed error messages, contact your system administrator.'
         }
 
         It "returns the right results for FREESESSIONCACHE and using NoInformationalMessages" {
-            $result = Invoke-DbaDbccFreeCache -SqlInstance $script:instance2 -Operation FreeSessionCache -NoInformationalMessages -Confirm:$false
+            $result = Invoke-DbaDbccFreeCache -SqlInstance $env:instance2 -Operation FreeSessionCache -NoInformationalMessages -Confirm:$false
             $result.Operation | Should -Match 'FREESESSIONCACHE'
             $result.Output | Should -BeNullOrEmpty
         }

@@ -18,18 +18,18 @@ Describe "Get-DbaBackupDevice" {
 
     Context "Integration Tests" -Tag "IntegrationTests" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $sql = "EXEC sp_addumpdevice 'tape', 'dbatoolsci_tape', '\\.\tape0';"
             $server.Query($sql)
         }
         AfterAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $sql = "EXEC sp_dropdevice 'dbatoolsci_tape';"
             $server.Query($sql)
         }
 
         It "Gets the backup devices" {
-            $results = Get-DbaBackupDevice -SqlInstance $script:instance2
+            $results = Get-DbaBackupDevice -SqlInstance $global:instance2
             $results | Should -Not -BeNullOrEmpty
             $results.Name | Should -Be "dbatoolsci_tape"
             $results.BackupDeviceType | Should -Be "Tape"

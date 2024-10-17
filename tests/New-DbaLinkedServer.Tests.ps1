@@ -7,8 +7,8 @@ Describe "New-DbaLinkedServer" {
         . "$PSScriptRoot\constants.ps1"
 
         $random = Get-Random
-        $instance2 = Connect-DbaInstance -SqlInstance $script:instance2
-        $instance3 = Connect-DbaInstance -SqlInstance $script:instance3
+        $instance2 = Connect-DbaInstance -SqlInstance $env:instance2
+        $instance3 = Connect-DbaInstance -SqlInstance $env:instance3
 
         $securePassword = ConvertTo-SecureString -String 'securePassword!' -AsPlainText -Force
         $loginName = "dbatoolscli_test_$random"
@@ -70,7 +70,7 @@ Describe "New-DbaLinkedServer" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Server[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 

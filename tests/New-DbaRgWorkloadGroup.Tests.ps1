@@ -45,31 +45,31 @@ Describe "New-DbaRgWorkloadGroup" {
             $CommandUnderTest | Should -HaveParameter GroupMaximumRequests -Type Int32
         }
         It "Should have SkipReconfigure parameter" {
-            $CommandUnderTest | Should -HaveParameter SkipReconfigure -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter SkipReconfigure -Type Switch
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Functionality" {
         BeforeAll {
-            $null = Set-DbaResourceGovernor -SqlInstance $script:instance2 -Enabled
+            $null = Set-DbaResourceGovernor -SqlInstance $env:instance2 -Enabled
         }
 
         It "Creates a workload group in default resource pool" {
             $wklGroupName = "dbatoolssci_wklgroupTest"
             $splatNewWorkloadGroup = @{
-                SqlInstance   = $script:instance2
+                SqlInstance   = $env:instance2
                 WorkloadGroup = $wklGroupName
                 Force         = $true
             }
-            $result = Get-DbaRgWorkloadGroup -SqlInstance $script:instance2 | Where-Object Name -eq $wklGroupName
+            $result = Get-DbaRgWorkloadGroup -SqlInstance $env:instance2 | Where-Object Name -eq $wklGroupName
             $newWorkloadGroup = New-DbaRgWorkloadGroup @splatNewWorkloadGroup
-            $result2 = Get-DbaRgWorkloadGroup -SqlInstance $script:instance2 | Where-Object Name -eq $wklGroupName
+            $result2 = Get-DbaRgWorkloadGroup -SqlInstance $env:instance2 | Where-Object Name -eq $wklGroupName
 
             $newWorkloadGroup | Should -Not -BeNullOrEmpty
             $result2.Count | Should -BeGreaterThan $result.Count
@@ -79,7 +79,7 @@ Describe "New-DbaRgWorkloadGroup" {
         It "Does nothing without -Force if workload group exists" {
             $wklGroupName = "dbatoolssci_wklgroupTest"
             $splatNewWorkloadGroup = @{
-                SqlInstance   = $script:instance2
+                SqlInstance   = $env:instance2
                 WorkloadGroup = $wklGroupName
             }
             $result1 = New-DbaRgWorkloadGroup @splatNewWorkloadGroup
@@ -94,13 +94,13 @@ Describe "New-DbaRgWorkloadGroup" {
             $resourcePoolName = "dbatoolssci_poolTest"
             $resourcePoolType = "Internal"
             $splatNewResourcePool = @{
-                SqlInstance  = $script:instance2
+                SqlInstance  = $env:instance2
                 ResourcePool = $resourcePoolName
                 Type         = $resourcePoolType
                 Force        = $true
             }
             $splatNewWorkloadGroup = @{
-                SqlInstance                         = $script:instance2
+                SqlInstance                         = $env:instance2
                 WorkloadGroup                       = $wklGroupName
                 ResourcePool                        = $resourcePoolName
                 ResourcePoolType                    = $resourcePoolType
@@ -115,8 +115,8 @@ Describe "New-DbaRgWorkloadGroup" {
             $null = New-DbaRgResourcePool @splatNewResourcePool
             $newWorkloadGroup = New-DbaRgWorkloadGroup @splatNewWorkloadGroup
 
-            $null = Remove-DbaRgWorkloadGroup -SqlInstance $script:instance2 -WorkloadGroup $wklGroupName -ResourcePool $resourcePoolName
-            $null = Remove-DbaRgResourcePool -SqlInstance $script:instance2 -ResourcePool $resourcePoolName -Type $resourcePoolType
+            $null = Remove-DbaRgWorkloadGroup -SqlInstance $env:instance2 -WorkloadGroup $wklGroupName -ResourcePool $resourcePoolName
+            $null = Remove-DbaRgResourcePool -SqlInstance $env:instance2 -ResourcePool $resourcePoolName -Type $resourcePoolType
 
             $newWorkloadGroup.Parent.Name | Should -Be $resourcePoolName
             $newWorkloadGroup.Parent.GetType().Name | Should -Be "ResourcePool"
@@ -132,12 +132,12 @@ Describe "New-DbaRgWorkloadGroup" {
             $wklGroupName = "dbatoolssci_wklgroupTest"
             $wklGroupName2 = "dbatoolssci_wklgroupTest2"
             $splatNewWorkloadGroup = @{
-                SqlInstance   = $script:instance2
+                SqlInstance   = $env:instance2
                 Force         = $true
             }
-            $result = Get-DbaRgWorkloadGroup -SqlInstance $script:instance2 | Where-Object Name -in $wklGroupName, $wklGroupName2
+            $result = Get-DbaRgWorkloadGroup -SqlInstance $env:instance2 | Where-Object Name -in $wklGroupName, $wklGroupName2
             $newWorkloadGroups = New-DbaRgWorkloadGroup @splatNewWorkloadGroup -WorkloadGroup $wklGroupName, $wklGroupName2
-            $result2 = Get-DbaRgWorkloadGroup -SqlInstance $script:instance2 | Where-Object Name -in $wklGroupName, $wklGroupName2
+            $result2 = Get-DbaRgWorkloadGroup -SqlInstance $env:instance2 | Where-Object Name -in $wklGroupName, $wklGroupName2
 
             $newWorkloadGroups | Should -Not -BeNullOrEmpty
             $result2.Count | Should -Be 2
@@ -147,14 +147,14 @@ Describe "New-DbaRgWorkloadGroup" {
         It "Skips Resource Governor reconfiguration" {
             $wklGroupName = "dbatoolssci_wklgroupTest"
             $splatNewWorkloadGroup = @{
-                SqlInstance     = $script:instance2
+                SqlInstance     = $env:instance2
                 WorkloadGroup   = $wklGroupName
                 SkipReconfigure = $true
                 Force           = $true
             }
 
             $null = New-DbaRgWorkloadGroup @splatNewWorkloadGroup
-            $result = Get-DbaResourceGovernor -SqlInstance $script:instance2
+            $result = Get-DbaResourceGovernor -SqlInstance $env:instance2
 
             $result.ReconfigurePending | Should -BeTrue
         }
@@ -162,7 +162,7 @@ Describe "New-DbaRgWorkloadGroup" {
         AfterEach {
             $wklGroupName = "dbatoolssci_wklgroupTest"
             $wklGroupName2 = "dbatoolssci_wklgroupTest2"
-            $null = Remove-DbaRgWorkloadGroup -SqlInstance $script:instance2 -WorkloadGroup $wklGroupName, $wklGroupName2
+            $null = Remove-DbaRgWorkloadGroup -SqlInstance $env:instance2 -WorkloadGroup $wklGroupName, $wklGroupName2
         }
     }
 }

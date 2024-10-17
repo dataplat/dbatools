@@ -59,36 +59,36 @@ Describe "Remove-DbaDatabaseSafely" {
         BeforeAll {
             $db1 = "dbatoolsci_safely"
             $db2 = "dbatoolsci_safely_otherInstance"
-            $server3 = Connect-DbaInstance -SqlInstance $script:instance3
+            $server3 = Connect-DbaInstance -SqlInstance $env:instance3
             $server3.Query("CREATE DATABASE $db1")
-            $server2 = Connect-DbaInstance -SqlInstance $script:instance2
+            $server2 = Connect-DbaInstance -SqlInstance $env:instance2
             $server2.Query("CREATE DATABASE $db1")
             $server2.Query("CREATE DATABASE $db2")
-            $server1 = Connect-DbaInstance -SqlInstance $script:instance1
+            $server1 = Connect-DbaInstance -SqlInstance $env:instance1
         }
 
         AfterAll {
-            $null = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $db1, $db2
-            $null = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance3 -Database $db1
-            $null = Remove-DbaAgentJob -Confirm:$false -SqlInstance $script:instance2 -Job 'Rationalised Database Restore Script for dbatoolsci_safely'
-            $null = Remove-DbaAgentJob -Confirm:$false -SqlInstance $script:instance3 -Job 'Rationalised Database Restore Script for dbatoolsci_safely_otherInstance'
+            $null = Remove-DbaDatabase -Confirm:$false -SqlInstance $env:instance2 -Database $db1, $db2
+            $null = Remove-DbaDatabase -Confirm:$false -SqlInstance $env:instance3 -Database $db1
+            $null = Remove-DbaAgentJob -Confirm:$false -SqlInstance $env:instance2 -Job 'Rationalised Database Restore Script for dbatoolsci_safely'
+            $null = Remove-DbaAgentJob -Confirm:$false -SqlInstance $env:instance3 -Job 'Rationalised Database Restore Script for dbatoolsci_safely_otherInstance'
         }
 
         It "Should have database name of $db1" {
-            $results = Remove-DbaDatabaseSafely -SqlInstance $script:instance2 -Database $db1 -BackupFolder C:\temp -NoDbccCheckDb
+            $results = Remove-DbaDatabaseSafely -SqlInstance $env:instance2 -Database $db1 -BackupFolder C:\temp -NoDbccCheckDb
             foreach ($result in $results) {
                 $result.DatabaseName | Should -Be $db1
             }
         }
 
         It "Should warn and quit on Express Edition" -Skip:($server1.EngineEdition -notmatch "Express") {
-            $results = Remove-DbaDatabaseSafely -SqlInstance $script:instance1 -Database $db1 -BackupFolder C:\temp -NoDbccCheckDb -WarningAction SilentlyContinue -WarningVariable warn
+            $results = Remove-DbaDatabaseSafely -SqlInstance $env:instance1 -Database $db1 -BackupFolder C:\temp -NoDbccCheckDb -WarningAction SilentlyContinue -WarningVariable warn
             $results | Should -BeNullOrEmpty
             $warn | Should -Match 'Express Edition'
         }
 
         It "Should restore to another server" {
-            $results = Remove-DbaDatabaseSafely -SqlInstance $script:instance2 -Database $db2 -BackupFolder c:\temp -NoDbccCheckDb -Destination $script:instance3
+            $results = Remove-DbaDatabaseSafely -SqlInstance $env:instance2 -Database $db2 -BackupFolder c:\temp -NoDbccCheckDb -Destination $env:instance3
             foreach ($result in $results) {
                 $result.SqlInstance | Should -Be $server2.SqlInstance
                 $result.TestingInstance | Should -Be $server3.SqlInstance

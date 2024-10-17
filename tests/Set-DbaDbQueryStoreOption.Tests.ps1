@@ -24,7 +24,7 @@ Describe "Set-DbaDbQueryStoreOption" {
             $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Not -Mandatory
         }
         It "Should have AllDatabases parameter" {
-            $CommandUnderTest | Should -HaveParameter AllDatabases -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter AllDatabases -Type Switch -Not -Mandatory
         }
         It "Should have State parameter" {
             $CommandUnderTest | Should -HaveParameter State -Type String[] -Not -Mandatory
@@ -66,25 +66,25 @@ Describe "Set-DbaDbQueryStoreOption" {
             $CommandUnderTest | Should -HaveParameter CustomCapturePolicyStaleThresholdHours -Type Int64 -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
     Context "Integration Tests" {
         BeforeAll {
-            $script:instances = @($script:instance1, $script:instance2)
-            Get-DbaDatabase -SqlInstance $script:instances | Where-Object Name -Match 'dbatoolsci' | Remove-DbaDatabase -Confirm:$false
-            New-DbaDatabase -SqlInstance $script:instances -Name dbatoolsciqs
+            $env:instances = @($env:instance1, $env:instance2)
+            Get-DbaDatabase -SqlInstance $env:instances | Where-Object Name -Match 'dbatoolsci' | Remove-DbaDatabase -Confirm:$false
+            New-DbaDatabase -SqlInstance $env:instances -Name dbatoolsciqs
         }
         AfterAll {
-            Get-DbaDatabase -SqlInstance $script:instances | Where-Object Name -Match 'dbatoolsci' | Remove-DbaDatabase -Confirm:$false
+            Get-DbaDatabase -SqlInstance $env:instances | Where-Object Name -Match 'dbatoolsci' | Remove-DbaDatabase -Confirm:$false
         }
 
         Context "Get some client protocols" {
             BeforeDiscovery {
-                $script:instances = @($script:instance1, $script:instance2)
+                $env:instances = @($env:instance1, $env:instance2)
             }
-            It "Should return valid results for <_>" -ForEach $script:instances {
+            It "Should return valid results for <_>" -ForEach $env:instances {
                 $server = Connect-DbaInstance -SqlInstance $_
                 $results = Get-DbaDbQueryStoreOption -SqlInstance $server -WarningVariable warning 3>&1
 
@@ -101,18 +101,18 @@ Describe "Set-DbaDbQueryStoreOption" {
                 }
             }
 
-            It "Should change the specified param to the new value for <_>" -ForEach $script:instances {
+            It "Should change the specified param to the new value for <_>" -ForEach $env:instances {
                 $results = Set-DbaDbQueryStoreOption -SqlInstance $_ -Database dbatoolsciqs -FlushInterval 901 -State ReadWrite
                 $results.DataFlushIntervalInSeconds | Should -Be 901
             }
 
-            It "Should only get one database for <_>" -ForEach $script:instances {
+            It "Should only get one database for <_>" -ForEach $env:instances {
                 $results = Get-DbaDbQueryStoreOption -SqlInstance $_ -Database dbatoolsciqs
                 $results.Count | Should -Be 1
                 $results.Database | Should -Be 'dbatoolsciqs'
             }
 
-            It "Should not get this one database for <_>" -ForEach $script:instances {
+            It "Should not get this one database for <_>" -ForEach $env:instances {
                 $results = Get-DbaDbQueryStoreOption -SqlInstance $_ -ExcludeDatabase dbatoolsciqs
                 $result = $results | Where-Object Database -eq dbatoolsciqs
                 $result.Count | Should -Be 0

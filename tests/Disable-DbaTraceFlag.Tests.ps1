@@ -15,7 +15,7 @@ Describe "Disable-DbaTraceFlag" {
             $CommandUnderTest | Should -HaveParameter TraceFlag -Type Int32[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -25,7 +25,7 @@ Describe "Disable-DbaTraceFlag" {
         }
 
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance1
+            $server = Connect-DbaInstance -SqlInstance $global:instance1
             $startingtfs = Get-DbaTraceFlag -SqlInstance $server
             $safetraceflag = 3226
 

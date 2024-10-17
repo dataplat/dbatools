@@ -35,7 +35,7 @@ Describe "Expand-DbaDbLogFile" {
             $CommandUnderTest | Should -HaveParameter LogFileId -Type Int32
         }
         It "Should have ShrinkLogFile parameter" {
-            $CommandUnderTest | Should -HaveParameter ShrinkLogFile -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter ShrinkLogFile -Type Switch
         }
         It "Should have ShrinkSize parameter" {
             $CommandUnderTest | Should -HaveParameter ShrinkSize -Type Int32
@@ -44,21 +44,21 @@ Describe "Expand-DbaDbLogFile" {
             $CommandUnderTest | Should -HaveParameter BackupDirectory -Type String
         }
         It "Should have ExcludeDiskSpaceValidation parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDiskSpaceValidation -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter ExcludeDiskSpaceValidation -Type Switch
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Ensure command functionality" {
         BeforeAll {
-            $db1 = New-DbaDatabase -SqlInstance $script:instance1 -Name $db1Name
-            $results = Expand-DbaDbLogFile -SqlInstance $script:instance1 -Database $db1 -TargetLogSize 128
+            $db1 = New-DbaDatabase -SqlInstance $global:instance1 -Name $db1Name
+            $results = Expand-DbaDbLogFile -SqlInstance $global:instance1 -Database $db1 -TargetLogSize 128
         }
 
         AfterAll {
-            Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database $db1Name
+            Remove-DbaDatabase -Confirm:$false -SqlInstance $global:instance1 -Database $db1Name
         }
 
         It "Should have correct properties" {

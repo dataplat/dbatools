@@ -25,18 +25,18 @@ Describe "Remove-DbaAgentAlert Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Alert[] -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 }
 
 Describe "Remove-DbaAgentAlert Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $script:instance2 = "localhost"
+        $env:instance2 = "localhost"
     }
 
     BeforeEach {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $env:instance2
         $alertName = "dbatoolsci_test_$(Get-Random)"
         $alertName2 = "dbatoolsci_test_$(Get-Random)"
 

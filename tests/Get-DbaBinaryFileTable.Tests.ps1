@@ -6,10 +6,10 @@ Describe "Get-DbaBinaryFileTable" {
         Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
         . "$PSScriptRoot\constants.ps1"
 
-        $db = Get-DbaDatabase -SqlInstance $script:instance2 -Database tempdb
+        $db = Get-DbaDatabase -SqlInstance $global:instance2 -Database tempdb
         $null = $db.Query("CREATE TABLE [dbo].[BunchOFilez]([FileName123] [nvarchar](50) NULL, [TheFile123] [image] NULL)")
-        $null = Import-DbaBinaryFile -SqlInstance $script:instance2 -Database tempdb -Table BunchOFilez -FilePath $script:appveyorlabrepo\azure\adalsql.msi
-        $null = Get-ChildItem $script:appveyorlabrepo\certificates | Import-DbaBinaryFile -SqlInstance $script:instance2 -Database tempdb -Table BunchOFilez
+        $null = Import-DbaBinaryFile -SqlInstance $global:instance2 -Database tempdb -Table BunchOFilez -FilePath $global:appveyorlabrepo\azure\adalsql.msi
+        $null = Get-ChildItem $global:appveyorlabrepo\certificates | Import-DbaBinaryFile -SqlInstance $global:instance2 -Database tempdb -Table BunchOFilez
     }
 
     AfterAll {
@@ -43,18 +43,18 @@ Describe "Get-DbaBinaryFileTable" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Table[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Command usage" {
         It "returns a table" {
-            $results = Get-DbaBinaryFileTable -SqlInstance $script:instance2 -Database tempdb
+            $results = Get-DbaBinaryFileTable -SqlInstance $global:instance2 -Database tempdb
             $results.Name.Count | Should -BeGreaterOrEqual 1
         }
 
         It "supports piping" {
-            $results = Get-DbaDbTable -SqlInstance $script:instance2 -Database tempdb | Get-DbaBinaryFileTable
+            $results = Get-DbaDbTable -SqlInstance $global:instance2 -Database tempdb | Get-DbaBinaryFileTable
             $results.Name.Count | Should -BeGreaterOrEqual 1
         }
     }

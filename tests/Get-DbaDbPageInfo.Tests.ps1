@@ -32,8 +32,8 @@ Describe "Get-DbaDbPageInfo" {
         BeforeAll {
             $random = Get-Random
             $dbname = "dbatoolsci_pageinfo_$random"
-            Get-DbaProcess -SqlInstance $script:instance2 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            Get-DbaProcess -SqlInstance $global:instance2 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $server.Query("CREATE DATABASE $dbname;")
             $server.Databases[$dbname].Query('CREATE TABLE [dbo].[TestTable](TestText VARCHAR(MAX) NOT NULL)')
             $query = "
@@ -52,11 +52,11 @@ Describe "Get-DbaDbPageInfo" {
         }
 
         AfterAll {
-            Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $global:instance2 -Database $dbname -Confirm:$false
         }
 
         It "returns the proper results" {
-            $result = Get-DbaDbPageInfo -SqlInstance $script:instance2 -Database $dbname
+            $result = Get-DbaDbPageInfo -SqlInstance $global:instance2 -Database $dbname
             $result.Count | Should -Be 9
             ($result | Where-Object { $_.IsAllocated -eq $false }).Count | Should -Be 5
             ($result | Where-Object { $_.IsAllocated -eq $true }).Count | Should -Be 4

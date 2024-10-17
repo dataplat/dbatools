@@ -36,7 +36,7 @@ Describe "Add-DbaReplArticle" {
             $CommandUnderTest | Should -HaveParameter CreationScriptOptions -Type PSObject
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 }

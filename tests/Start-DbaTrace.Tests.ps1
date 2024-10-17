@@ -18,7 +18,7 @@ Describe "Start-DbaTrace" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Object[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -104,25 +104,25 @@ exec sp_trace_setstatus @TraceID, 1
 -- display trace id for future references
 select TraceID=@TraceID
 "@
-            $server = Connect-DbaInstance -SqlInstance $script:instance1
+            $server = Connect-DbaInstance -SqlInstance $env:instance1
             $traceid = ($server.Query($sql)).TraceID
-            $null = Get-DbaTrace -SqlInstance $script:instance1 -Id $traceid | Stop-DbaTrace
+            $null = Get-DbaTrace -SqlInstance $env:instance1 -Id $traceid | Stop-DbaTrace
         }
 
         AfterAll {
-            $null = Remove-DbaTrace -SqlInstance $script:instance1 -Id $traceid
+            $null = Remove-DbaTrace -SqlInstance $env:instance1 -Id $traceid
             Remove-Item C:\windows\temp\temptrace.trc -ErrorAction SilentlyContinue
         }
 
         Context "Test Starting Trace" {
             It "starts in a stopped state" {
-                $results = Get-DbaTrace -SqlInstance $script:instance1 -Id $traceid
+                $results = Get-DbaTrace -SqlInstance $env:instance1 -Id $traceid
                 $results.Id | Should -Be $traceid
                 $results.IsRunning | Should -Be $false
             }
 
             It "is now running" {
-                $results = Get-DbaTrace -SqlInstance $script:instance1 -Id $traceid | Start-DbaTrace
+                $results = Get-DbaTrace -SqlInstance $env:instance1 -Id $traceid | Start-DbaTrace
                 $results.Id | Should -Be $traceid
                 $results.IsRunning | Should -Be $true
             }

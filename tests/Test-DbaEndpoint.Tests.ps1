@@ -22,7 +22,7 @@ Describe "Test-DbaEndpoint" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Endpoint[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -33,7 +33,7 @@ Describe "Test-DbaEndpoint" {
         }
 
         It "Returns success" -Skip {
-            $results = Test-DbaEndpoint -SqlInstance $script:instance3
+            $results = Test-DbaEndpoint -SqlInstance $env:instance3
             $results | Select-Object -First 1 -ExpandProperty Connection | Should -Be 'Success'
         }
     }

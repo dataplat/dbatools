@@ -6,7 +6,7 @@ Describe "Get-DbaRegServer" {
         Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
         . "$PSScriptRoot\constants.ps1"
 
-        $server = Connect-DbaInstance $script:instance1
+        $server = Connect-DbaInstance $env:instance1
         $regStore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($server.ConnectionContext.SqlConnectionObject)
         $dbStore = $regStore.DatabaseEngineServerGroup
 
@@ -52,8 +52,8 @@ Describe "Get-DbaRegServer" {
     }
 
     AfterAll {
-        Get-DbaRegServer -SqlInstance $script:instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegServer -Confirm:$false
-        Get-DbaRegServerGroup -SqlInstance $script:instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
+        Get-DbaRegServer -SqlInstance $env:instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegServer -Confirm:$false
+        Get-DbaRegServerGroup -SqlInstance $env:instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
     }
 
     Context "Validate parameters" {
@@ -97,7 +97,7 @@ Describe "Get-DbaRegServer" {
 
     Context "Command usage" {
         It "Should return multiple objects" {
-            $results = Get-DbaRegServer -SqlInstance $script:instance1 -Group $group
+            $results = Get-DbaRegServer -SqlInstance $env:instance1 -Group $group
             $results.Count | Should -Be 2
             $results[0].ParentServer | Should -Not -BeNullOrEmpty
             $results[0].ComputerName | Should -Not -BeNullOrEmpty
@@ -110,17 +110,17 @@ Describe "Get-DbaRegServer" {
         }
 
         It "Should allow searching subgroups" {
-            $results = Get-DbaRegServer -SqlInstance $script:instance1 -Group "$group\$group2"
+            $results = Get-DbaRegServer -SqlInstance $env:instance1 -Group "$group\$group2"
             $results.Count | Should -Be 1
         }
 
         It "Should return the root server when excluding (see #3529)" {
-            $results = Get-DbaRegServer -SqlInstance $script:instance1 -ExcludeGroup "$group\$group2"
+            $results = Get-DbaRegServer -SqlInstance $env:instance1 -ExcludeGroup "$group\$group2"
             @($results | Where-Object Name -eq $srvName3).Count | Should -Be 1
         }
 
         It "Should filter subgroups" {
-            $results = Get-DbaRegServer -SqlInstance $script:instance1 -Group $group -ExcludeGroup "$group\$group2"
+            $results = Get-DbaRegServer -SqlInstance $env:instance1 -Group $group -ExcludeGroup "$group\$group2"
             $results.Count | Should -Be 1
             $results.Group | Should -Be $group
         }

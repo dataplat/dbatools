@@ -40,14 +40,14 @@ Describe "Stop-Function" {
         It "Should have Exception as a non-mandatory Exception parameter" {
             $CommandUnderTest | Should -HaveParameter Exception -Type Exception -Not -Mandatory
         }
-        It "Should have OverrideExceptionMessage as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter OverrideExceptionMessage -Type SwitchParameter -Not -Mandatory
+        It "Should have OverrideExceptionMessage as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter OverrideExceptionMessage -Type Switch -Not -Mandatory
         }
-        It "Should have Continue as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter Continue -Type SwitchParameter -Not -Mandatory
+        It "Should have Continue as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter Continue -Type Switch -Not -Mandatory
         }
-        It "Should have SilentlyContinue as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter SilentlyContinue -Type SwitchParameter -Not -Mandatory
+        It "Should have SilentlyContinue as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter SilentlyContinue -Type Switch -Not -Mandatory
         }
         It "Should have ContinueLabel as a non-mandatory String parameter" {
             $CommandUnderTest | Should -HaveParameter ContinueLabel -Type String -Not -Mandatory

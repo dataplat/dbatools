@@ -13,10 +13,10 @@ Describe "Get-DirectoryRestoreFile" {
         It "Should have Path as a non-mandatory String parameter" {
             $CommandUnderTest | Should -HaveParameter Path -Type String -Not -Mandatory
         }
-        It "Should have Recurse as a non-mandatory SwitchParameter" {
+        It "Should have Recurse as a non-mandatory Switch" {
             $CommandUnderTest | Should -HaveParameter Recurse -Type Switch -Not -Mandatory
         }
-        It "Should have EnableException as a non-mandatory SwitchParameter" {
+        It "Should have EnableException as a non-mandatory Switch" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }

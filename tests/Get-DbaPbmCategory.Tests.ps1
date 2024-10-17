@@ -24,16 +24,16 @@ Describe "Get-DbaPbmCategory" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type PSObject[] -Not -Mandatory
         }
         It "Should have ExcludeSystemObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSystemObject -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeSystemObject -Type Switch -Not -Mandatory
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
     Context "Command actually works" {
         BeforeAll {
-            $results = Get-DbaPbmCategory -SqlInstance $script:instance2
+            $results = Get-DbaPbmCategory -SqlInstance $env:instance2
         }
         It "Gets Results" {
             $results | Should -Not -BeNullOrEmpty
@@ -42,7 +42,7 @@ Describe "Get-DbaPbmCategory" {
 
     Context "Command actually works using -Category" {
         BeforeAll {
-            $results = Get-DbaPbmCategory -SqlInstance $script:instance2 -Category 'Availability database errors'
+            $results = Get-DbaPbmCategory -SqlInstance $env:instance2 -Category 'Availability database errors'
         }
         It "Gets Results" {
             $results | Should -Not -BeNullOrEmpty
@@ -51,7 +51,7 @@ Describe "Get-DbaPbmCategory" {
 
     Context "Command actually works using -ExcludeSystemObject" {
         BeforeAll {
-            $results = Get-DbaPbmCategory -SqlInstance $script:instance2 -ExcludeSystemObject
+            $results = Get-DbaPbmCategory -SqlInstance $env:instance2 -ExcludeSystemObject
         }
         It "Gets Results" {
             $results | Should -Not -BeNullOrEmpty

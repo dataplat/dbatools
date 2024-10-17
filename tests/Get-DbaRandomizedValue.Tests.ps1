@@ -41,8 +41,8 @@ Describe "Get-DbaRandomizedValue" {
         It "Should have Locale as a non-mandatory String parameter" {
             $CommandUnderTest | Should -HaveParameter Locale -Type String -Not -Mandatory
         }
-        It "Should have EnableException as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+        It "Should have EnableException as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 

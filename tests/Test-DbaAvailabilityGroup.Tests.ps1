@@ -30,10 +30,10 @@ Describe "Test-DbaAvailabilityGroup" {
             $CommandUnderTest | Should -HaveParameter SharedPath -Type String
         }
         It "Should have UseLastBackup as a parameter" {
-            $CommandUnderTest | Should -HaveParameter UseLastBackup -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter UseLastBackup -Type Switch
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 

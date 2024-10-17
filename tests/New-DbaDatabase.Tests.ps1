@@ -7,8 +7,8 @@ Describe "New-DbaDatabase" {
         . "$PSScriptRoot\constants.ps1"
 
         $random = Get-Random
-        $instance2 = Connect-DbaInstance -SqlInstance $script:instance2
-        $instance3 = Connect-DbaInstance -SqlInstance $script:instance3
+        $instance2 = Connect-DbaInstance -SqlInstance $env:instance2
+        $instance3 = Connect-DbaInstance -SqlInstance $env:instance3
         $null = Get-DbaProcess -SqlInstance $instance2, $instance3 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false
         $randomDb = New-DbaDatabase -SqlInstance $instance2
         $newDbName = "dbatoolsci_newdb_$random"
@@ -101,7 +101,7 @@ Describe "New-DbaDatabase" {
             $CommandUnderTest | Should -HaveParameter SecondaryDataFileSuffix -Type String -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 

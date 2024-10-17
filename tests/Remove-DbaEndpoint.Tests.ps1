@@ -15,13 +15,13 @@ Describe "Remove-DbaEndpoint" {
             $CommandUnderTest | Should -HaveParameter Endpoint -Type String[]
         }
         It "Should have AllEndpoints as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter AllEndpoints -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter AllEndpoints -Type Switch
         }
         It "Should have InputObject as a parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Endpoint[]
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -31,20 +31,20 @@ Describe "Remove-DbaEndpoint" {
         }
 
         BeforeAll {
-            $endpoint = Get-DbaEndpoint -SqlInstance $script:instance2 | Where-Object EndpointType -eq DatabaseMirroring
+            $endpoint = Get-DbaEndpoint -SqlInstance $env:instance2 | Where-Object EndpointType -eq DatabaseMirroring
             $create = $endpoint | Export-DbaScript -Passthru
             $null = $endpoint | Remove-DbaEndpoint -Confirm:$false
-            $results = New-DbaEndpoint -SqlInstance $script:instance2 -Type DatabaseMirroring -Role Partner -Name Mirroring -Confirm:$false | Start-DbaEndpoint -Confirm:$false
+            $results = New-DbaEndpoint -SqlInstance $env:instance2 -Type DatabaseMirroring -Role Partner -Name Mirroring -Confirm:$false | Start-DbaEndpoint -Confirm:$false
         }
 
         AfterAll {
             if ($create) {
-                Invoke-DbaQuery -SqlInstance $script:instance2 -Query "$create"
+                Invoke-DbaQuery -SqlInstance $env:instance2 -Query "$create"
             }
         }
 
         It "removes an endpoint" {
-            $results = Get-DbaEndpoint -SqlInstance $script:instance2 | Where-Object EndpointType -eq DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
+            $results = Get-DbaEndpoint -SqlInstance $env:instance2 | Where-Object EndpointType -eq DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
             $results.Status | Should -Be 'Removed'
         }
     }

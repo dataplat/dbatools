@@ -50,7 +50,7 @@ Describe "Get-DbaHelpIndex Unit Tests" -Tag 'UnitTests' {
 
 Describe "Get-DbaHelpIndex Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $global:instance2
         $random = Get-Random
         $dbname = "dbatoolsci_$random"
         $server.Query("CREATE DATABASE $dbname")
@@ -65,12 +65,12 @@ Describe "Get-DbaHelpIndex Integration Tests" -Tags "IntegrationTests" {
     }
 
     AfterAll {
-        $null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
+        $null = Get-DbaDatabase -SqlInstance $global:instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
     }
 
     Context "Command works for indexes" {
         BeforeAll {
-            $results = Get-DbaHelpIndex -SqlInstance $script:instance2 -Database $dbname -ObjectName Test
+            $results = Get-DbaHelpIndex -SqlInstance $global:instance2 -Database $dbname -ObjectName Test
         }
 
         It 'Results should be returned' {
@@ -92,7 +92,7 @@ Describe "Get-DbaHelpIndex Integration Tests" -Tags "IntegrationTests" {
 
     Context "Command works when including statistics" {
         BeforeAll {
-            $results = Get-DbaHelpIndex -SqlInstance $script:instance2 -Database $dbname -ObjectName Test -IncludeStats | Where-Object { $_.Statistics }
+            $results = Get-DbaHelpIndex -SqlInstance $global:instance2 -Database $dbname -ObjectName Test -IncludeStats | Where-Object { $_.Statistics }
         }
 
         It 'Results should be returned' {
@@ -106,7 +106,7 @@ Describe "Get-DbaHelpIndex Integration Tests" -Tags "IntegrationTests" {
 
     Context "Command output includes data types" {
         BeforeAll {
-            $results = Get-DbaHelpIndex -SqlInstance $script:instance2 -Database $dbname -ObjectName Test -IncludeDataTypes
+            $results = Get-DbaHelpIndex -SqlInstance $global:instance2 -Database $dbname -ObjectName Test -IncludeDataTypes
         }
 
         It 'Results should be returned' {
@@ -120,7 +120,7 @@ Describe "Get-DbaHelpIndex Integration Tests" -Tags "IntegrationTests" {
 
     Context "Formatting is correct" {
         BeforeAll {
-            $results = Get-DbaHelpIndex -SqlInstance $script:instance2 -Database $dbname -ObjectName Test -IncludeFragmentation
+            $results = Get-DbaHelpIndex -SqlInstance $global:instance2 -Database $dbname -ObjectName Test -IncludeFragmentation
         }
 
         It 'Formatted as strings' {
@@ -136,7 +136,7 @@ Describe "Get-DbaHelpIndex Integration Tests" -Tags "IntegrationTests" {
 
     Context "Formatting is correct for raw" {
         BeforeAll {
-            $results = Get-DbaHelpIndex -SqlInstance $script:instance2 -Database $dbname -ObjectName Test -raw -IncludeFragmentation
+            $results = Get-DbaHelpIndex -SqlInstance $global:instance2 -Database $dbname -ObjectName Test -raw -IncludeFragmentation
         }
 
         It 'Formatted as Long' {
@@ -154,7 +154,7 @@ Describe "Get-DbaHelpIndex Integration Tests" -Tags "IntegrationTests" {
 
     Context "Result is correct for tables having the indexes with the same names" {
         BeforeAll {
-            $results = Get-DbaHelpIndex -SqlInstance $script:instance2 -Database $dbname
+            $results = Get-DbaHelpIndex -SqlInstance $global:instance2 -Database $dbname
         }
 
         It 'Table t1 has correct index key columns and included columns' {

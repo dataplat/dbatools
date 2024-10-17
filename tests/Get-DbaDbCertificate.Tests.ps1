@@ -27,7 +27,7 @@ Describe "Get-DbaDbCertificate" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Database[] -Not -Mandatory
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
@@ -35,15 +35,15 @@ Describe "Get-DbaDbCertificate" {
         BeforeAll {
             . "$PSScriptRoot\constants.ps1"
 
-            if (-not (Get-DbaDbMasterKey -SqlInstance $script:instance1 -Database master)) {
-                $masterkey = New-DbaDbMasterKey -SqlInstance $script:instance1 -Database master -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
+            if (-not (Get-DbaDbMasterKey -SqlInstance $global:instance1 -Database master)) {
+                $masterkey = New-DbaDbMasterKey -SqlInstance $global:instance1 -Database master -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
             }
 
-            $tempdbmasterkey = New-DbaDbMasterKey -SqlInstance $script:instance1 -Database tempdb -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
+            $tempdbmasterkey = New-DbaDbMasterKey -SqlInstance $global:instance1 -Database tempdb -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
             $certificateName1 = "Cert_$(Get-Random)"
             $certificateName2 = "Cert_$(Get-Random)"
-            $cert1 = New-DbaDbCertificate -SqlInstance $script:instance1 -Name $certificateName1 -Confirm:$false
-            $cert2 = New-DbaDbCertificate -SqlInstance $script:instance1 -Name $certificateName2 -Database "tempdb" -Confirm:$false
+            $cert1 = New-DbaDbCertificate -SqlInstance $global:instance1 -Name $certificateName1 -Confirm:$false
+            $cert2 = New-DbaDbCertificate -SqlInstance $global:instance1 -Name $certificateName2 -Database "tempdb" -Confirm:$false
         }
 
         AfterAll {
@@ -54,19 +54,19 @@ Describe "Get-DbaDbCertificate" {
         }
 
         It "returns database certificate created in default, master database" {
-            $cert = Get-DbaDbCertificate -SqlInstance $script:instance1 -Certificate $certificateName1
+            $cert = Get-DbaDbCertificate -SqlInstance $global:instance1 -Certificate $certificateName1
             $cert.Database | Should -Match 'master'
-            $cert.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $script:instance1 -Database master).Id
+            $cert.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $global:instance1 -Database master).Id
         }
 
         It "returns database certificate created in tempdb database, looked up by certificate name" {
-            $cert = Get-DbaDbCertificate -SqlInstance $script:instance1 -Database tempdb
+            $cert = Get-DbaDbCertificate -SqlInstance $global:instance1 -Database tempdb
             $cert.Name | Should -Match $certificateName2
-            $cert.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $script:instance1 -Database tempdb).Id
+            $cert.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $global:instance1 -Database tempdb).Id
         }
 
         It "returns database certificates excluding those in the master database" {
-            $cert = Get-DbaDbCertificate -SqlInstance $script:instance1 -ExcludeDatabase master
+            $cert = Get-DbaDbCertificate -SqlInstance $global:instance1 -ExcludeDatabase master
             $cert.Database | Should -Not -Match 'master'
         }
     }

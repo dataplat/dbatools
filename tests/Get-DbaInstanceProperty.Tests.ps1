@@ -29,7 +29,7 @@ Describe "Get-DbaInstanceProperty" {
 
     Context "Command actually works" {
         BeforeAll {
-            $results = Get-DbaInstanceProperty -SqlInstance $script:instance2
+            $results = Get-DbaInstanceProperty -SqlInstance $global:instance2
         }
         It "Should have correct properties" {
             $ExpectedProps = 'ComputerName', 'InstanceName', 'PropertyType', 'SqlInstance'
@@ -43,15 +43,15 @@ Describe "Get-DbaInstanceProperty" {
             ($results | Where-Object { $_.Name -eq 'DisableDefaultConstraintCheck' }).Value | Should -Be $false
         }
         It "Should get the correct DefaultFile location" {
-            $defaultFiles = Get-DbaDefaultPath -SqlInstance $script:instance2
+            $defaultFiles = Get-DbaDefaultPath -SqlInstance $global:instance2
             ($results | Where-Object { $_.Name -eq 'DefaultFile' }).Value | Should -BeLike "$($defaultFiles.Data)*"
         }
     }
 
     Context "Property filters work" {
         BeforeAll {
-            $resultInclude = Get-DbaInstanceProperty -SqlInstance $script:instance2 -InstanceProperty DefaultFile
-            $resultExclude = Get-DbaInstanceProperty -SqlInstance $script:instance2 -ExcludeInstanceProperty DefaultFile
+            $resultInclude = Get-DbaInstanceProperty -SqlInstance $global:instance2 -InstanceProperty DefaultFile
+            $resultExclude = Get-DbaInstanceProperty -SqlInstance $global:instance2 -ExcludeInstanceProperty DefaultFile
         }
         It "Should only return DefaultFile property" {
             $resultInclude.Name | Should -Contain 'DefaultFile'
@@ -63,7 +63,7 @@ Describe "Get-DbaInstanceProperty" {
 
     Context "Command can handle multiple instances" {
         It "Should have results for 2 instances" {
-            $results = Get-DbaInstanceProperty -SqlInstance $script:instance1, $script:instance2
+            $results = Get-DbaInstanceProperty -SqlInstance $global:instance1, $global:instance2
             ($results | Select-Object -Unique SqlInstance).Count | Should -Be 2
         }
     }

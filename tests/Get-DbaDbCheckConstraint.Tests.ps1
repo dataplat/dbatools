@@ -18,10 +18,10 @@ Describe "Get-DbaDbCheckConstraint Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Not -Mandatory
         }
         It "Should have ExcludeSystemTable as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSystemTable -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ExcludeSystemTable -Type Switch -Not -Mandatory
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 }
@@ -32,7 +32,7 @@ Describe "Get-DbaDbCheckConstraint Integration Tests" -Tag "IntegrationTests" {
     }
 
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $global:instance2
         $random = Get-Random
         $tableName = "dbatools_getdbtbl1"
         $tableName2 = "dbatools_getdbtbl2"
@@ -45,25 +45,25 @@ Describe "Get-DbaDbCheckConstraint Integration Tests" -Tag "IntegrationTests" {
     }
 
     AfterAll {
-        $null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
+        $null = Get-DbaDatabase -SqlInstance $global:instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
     }
 
     Context "Command actually works" {
         It "returns no check constraints from excluded DB with -ExcludeDatabase" {
-            $results = Get-DbaDbCheckConstraint -SqlInstance $script:instance2 -ExcludeDatabase master
+            $results = Get-DbaDbCheckConstraint -SqlInstance $global:instance2 -ExcludeDatabase master
             $results.where( { $_.Database -eq 'master' }).count | Should -Be 0
         }
         It "returns only check constraints from selected DB with -Database" {
-            $results = Get-DbaDbCheckConstraint -SqlInstance $script:instance2 -Database $dbname
+            $results = Get-DbaDbCheckConstraint -SqlInstance $global:instance2 -Database $dbname
             $results.where( { $_.Database -ne 'master' }).count | Should -Be 1
-            $results.DatabaseId | Get-Unique | Should -Be (Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname).Id
+            $results.DatabaseId | Get-Unique | Should -Be (Get-DbaDatabase -SqlInstance $global:instance2 -Database $dbname).Id
         }
         It "Should include test check constraint: $ckName" {
-            $results = Get-DbaDbCheckConstraint -SqlInstance $script:instance2 -Database $dbname -ExcludeSystemTable
+            $results = Get-DbaDbCheckConstraint -SqlInstance $global:instance2 -Database $dbname -ExcludeSystemTable
             ($results | Where-Object Name -eq $ckName).Name | Should -Be $ckName
         }
         It "Should exclude system tables" {
-            $results = Get-DbaDbCheckConstraint -SqlInstance $script:instance2 -Database master -ExcludeSystemTable
+            $results = Get-DbaDbCheckConstraint -SqlInstance $global:instance2 -Database master -ExcludeSystemTable
             ($results | Where-Object Name -eq 'spt_fallback_db') | Should -BeNullOrEmpty
         }
     }

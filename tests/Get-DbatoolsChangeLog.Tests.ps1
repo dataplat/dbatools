@@ -5,16 +5,16 @@ Describe "Get-DbatoolsChangeLog" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbatoolsChangeLog
         }
-        It "Should have Local as a SwitchParameter" {
+        It "Should have Local as a Switch" {
             $CommandUnderTest | Should -HaveParameter Local -Type switch
         }
-        It "Should have EnableException as a SwitchParameter" {
+        It "Should have EnableException as a Switch" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type switch
         }
-        It "Should have Verbose as a SwitchParameter" {
+        It "Should have Verbose as a Switch" {
             $CommandUnderTest | Should -HaveParameter Verbose -Type switch
         }
-        It "Should have Debug as a SwitchParameter" {
+        It "Should have Debug as a Switch" {
             $CommandUnderTest | Should -HaveParameter Debug -Type switch
         }
         It "Should have ErrorAction as an ActionPreference" {

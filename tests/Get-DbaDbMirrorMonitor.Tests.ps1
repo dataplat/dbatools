@@ -24,13 +24,13 @@ Describe "Get-DbaDbMirrorMonitor" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Database[] -Not -Mandatory
         }
         It "Should have Update parameter" {
-            $CommandUnderTest | Should -HaveParameter Update -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Update -Type Switch -Not -Mandatory
         }
         It "Should have LimitResults parameter" {
             $CommandUnderTest | Should -HaveParameter LimitResults -Type String -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 }

@@ -22,13 +22,13 @@ Describe "New-DbaServerRole" {
             $CommandUnderTest | Should -HaveParameter Owner -Type String
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Integration Tests" {
         BeforeAll {
-            $instance = Connect-DbaInstance -SqlInstance $script:instance2
+            $instance = Connect-DbaInstance -SqlInstance $env:instance2
             $roleExecutor = "serverExecuter"
             $roleMaster = "serverMaster"
             $owner = "sa"

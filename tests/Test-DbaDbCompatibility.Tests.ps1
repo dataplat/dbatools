@@ -18,7 +18,7 @@ Describe "Test-DbaDbCompatibility" {
             $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -28,17 +28,17 @@ Describe "Test-DbaDbCompatibility" {
         }
 
         It "Should return a result" {
-            $results = Test-DbaDbCompatibility -SqlInstance $script:instance2
+            $results = Test-DbaDbCompatibility -SqlInstance $env:instance2
             $results | Should -Not -BeNullOrEmpty
         }
 
         It "Should return a result for a database" {
-            $results = Test-DbaDbCompatibility -Database Master -SqlInstance $script:instance2
+            $results = Test-DbaDbCompatibility -Database Master -SqlInstance $env:instance2
             $results | Should -Not -BeNullOrEmpty
         }
 
         It "Should return a result excluding one database" {
-            $results = Test-DbaDbCompatibility -ExcludeDatabase Master -SqlInstance $script:instance2
+            $results = Test-DbaDbCompatibility -ExcludeDatabase Master -SqlInstance $env:instance2
             $results | Should -Not -BeNullOrEmpty
         }
     }

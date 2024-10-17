@@ -22,13 +22,13 @@ Describe "Get-DbaDbQueryStoreOption" {
             $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
         It "Should have Verbose as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Verbose -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Verbose -Type Switch
         }
         It "Should have Debug as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Debug -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Debug -Type Switch
         }
         It "Should have ErrorAction as a parameter" {
             $CommandUnderTest | Should -HaveParameter ErrorAction -Type ActionPreference
@@ -66,18 +66,18 @@ Describe "Get-DbaDbQueryStoreOption" {
     # For example:
     # Context "Integration Tests" {
     #     BeforeAll {
-    #         $server = Connect-DbaInstance -SqlInstance $script:instance2
+    #         $server = Connect-DbaInstance -SqlInstance $global:instance2
     #         $randomDb = "dbatoolsci_$(Get-Random)"
     #         $server.Query("CREATE DATABASE $randomDb")
     #         $server.Query("ALTER DATABASE $randomDb SET QUERY_STORE = ON")
     #     }
-    #     
+    #
     #     AfterAll {
     #         $server.Query("DROP DATABASE $randomDb")
     #     }
-    #     
+    #
     #     It "Returns query store options" {
-    #         $results = Get-DbaDbQueryStoreOption -SqlInstance $script:instance2 -Database $randomDb
+    #         $results = Get-DbaDbQueryStoreOption -SqlInstance $global:instance2 -Database $randomDb
     #         $results | Should -Not -BeNullOrEmpty
     #         $results.Database | Should -Be $randomDb
     #         $results.ActualState | Should -Be "ReadWrite"

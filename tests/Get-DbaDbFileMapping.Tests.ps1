@@ -24,13 +24,13 @@ Describe "Get-DbaDbFileMapping" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Database[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
         It "Should have Verbose as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Verbose -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Verbose -Type Switch
         }
         It "Should have Debug as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Debug -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Debug -Type Switch
         }
         It "Should have ErrorAction as a parameter" {
             $CommandUnderTest | Should -HaveParameter ErrorAction -Type ActionPreference
@@ -66,17 +66,17 @@ Describe "Get-DbaDbFileMapping" {
 
     Context "Command usage" -Tag "IntegrationTests" {
         BeforeAll {
-            $script:instance1 = $script:instance1 # Assuming this is defined in constants.ps1
+            $global:instance1 = $global:instance1 # Assuming this is defined in constants.ps1
         }
 
         It "Should return file information for multiple databases" {
-            $results = Get-DbaDbFileMapping -SqlInstance $script:instance1
+            $results = Get-DbaDbFileMapping -SqlInstance $global:instance1
             $results.Database | Should -Contain "tempdb"
             $results.Database | Should -Contain "master"
         }
 
         It "Should return file information for a single database" {
-            $results = Get-DbaDbFileMapping -SqlInstance $script:instance1 -Database tempdb
+            $results = Get-DbaDbFileMapping -SqlInstance $global:instance1 -Database tempdb
             $results.Database | Should -Contain "tempdb"
             $results.Database | Should -Not -Contain "master"
         }

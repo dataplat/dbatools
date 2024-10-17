@@ -18,7 +18,7 @@ Describe "Get-DbaEstimatedCompletionTime" {
             $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
@@ -28,22 +28,22 @@ Describe "Get-DbaEstimatedCompletionTime" {
         }
 
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $null = Get-DbaDatabase -SqlInstance $server -Database checkdbTestDatabase | Remove-DbaDatabase -Confirm:$false
-            $null = Restore-DbaDatabase -SqlInstance $server -Path $script:appveyorlabrepo\sql2008-backups\db1\SQL2008_db1_FULL_20170518_041738.bak -DatabaseName checkdbTestDatabase
+            $null = Restore-DbaDatabase -SqlInstance $server -Path $global:appveyorlabrepo\sql2008-backups\db1\SQL2008_db1_FULL_20170518_041738.bak -DatabaseName checkdbTestDatabase
             $null = New-DbaAgentJob -SqlInstance $server -Job checkdbTestJob
             $null = New-DbaAgentJobStep -SqlInstance $server -Job checkdbTestJob -StepName checkdb -Subsystem TransactSql -Command "DBCC CHECKDB('checkdbTestDatabase')"
         }
 
         AfterAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $null = Remove-DbaAgentJob -SqlInstance $server -Job checkdbTestJob -Confirm:$false
             $null = Get-DbaDatabase -SqlInstance $server -Database checkdbTestDatabase | Remove-DbaDatabase -Confirm:$false
         }
 
         Context "Gets Query Estimated Completion" {
             BeforeAll {
-                $server = Connect-DbaInstance -SqlInstance $script:instance2
+                $server = Connect-DbaInstance -SqlInstance $global:instance2
                 $null = Start-DbaAgentJob -SqlInstance $server -Job checkdbTestJob
                 $results = Get-DbaEstimatedCompletionTime -SqlInstance $server
                 $null = Remove-DbaAgentJob -SqlInstance $server -Job checkdb -Confirm:$false
@@ -63,7 +63,7 @@ Describe "Get-DbaEstimatedCompletionTime" {
 
         Context "Gets Query Estimated Completion when using -Database" {
             BeforeAll {
-                $server = Connect-DbaInstance -SqlInstance $script:instance2
+                $server = Connect-DbaInstance -SqlInstance $global:instance2
                 $null = Start-DbaAgentJob -SqlInstance $server -Job checkdbTestJob
                 $results = Get-DbaEstimatedCompletionTime -SqlInstance $server -Database checkdbTestDatabase
                 Start-Sleep -Seconds 5
@@ -82,7 +82,7 @@ Describe "Get-DbaEstimatedCompletionTime" {
 
         Context "Gets no Query Estimated Completion when using -ExcludeDatabase" {
             BeforeAll {
-                $server = Connect-DbaInstance -SqlInstance $script:instance2
+                $server = Connect-DbaInstance -SqlInstance $global:instance2
                 $null = Start-DbaAgentJob -SqlInstance $server -Job checkdbTestJob
                 $results = Get-DbaEstimatedCompletionTime -SqlInstance $server -ExcludeDatabase checkdbTestDatabase
                 Start-Sleep -Seconds 5

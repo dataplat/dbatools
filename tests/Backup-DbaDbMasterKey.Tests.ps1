@@ -41,7 +41,7 @@ Describe "Backup-DbaDbMasterKey" {
 
         BeforeAll {
             $password = ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force
-            $server = Connect-DbaInstance -SqlInstance $script:instance1
+            $server = Connect-DbaInstance -SqlInstance $global:instance1
             if (-not (Get-DbaDbMasterKey -SqlInstance $server -Database tempdb)) {
                 $null = New-DbaDbMasterKey -SqlInstance $server -Database tempdb -Password $password -Confirm:$false
             }

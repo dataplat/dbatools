@@ -15,7 +15,7 @@ Describe "Test-DbaBuild" {
             $CommandUnderTest | Should -HaveParameter MaxBehind -Type String -Not -Mandatory
         }
         It "Should have Latest parameter" {
-            $CommandUnderTest | Should -HaveParameter Latest -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Latest -Type Switch -Not -Mandatory
         }
         It "Should have SqlInstance parameter" {
             $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
@@ -24,13 +24,13 @@ Describe "Test-DbaBuild" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
         }
         It "Should have Update parameter" {
-            $CommandUnderTest | Should -HaveParameter Update -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Update -Type Switch -Not -Mandatory
         }
         It "Should have Quiet parameter" {
-            $CommandUnderTest | Should -HaveParameter Quiet -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Quiet -Type Switch -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
@@ -66,12 +66,12 @@ Describe "Test-DbaBuild" {
             . (Join-Path $PSScriptRoot 'constants.ps1')
         }
         It "Should return a result" {
-            $results = Test-DbaBuild -Build "12.00.4502" -MinimumBuild "12.0.4511" -SqlInstance $script:instance2
+            $results = Test-DbaBuild -Build "12.00.4502" -MinimumBuild "12.0.4511" -SqlInstance $env:instance2
             $results | Should -Not -BeNullOrEmpty
         }
 
         It "Should return a result" {
-            $results = Test-DbaBuild -Build "12.0.5540" -MaxBehind "1SP 1CU" -SqlInstance $script:instance2
+            $results = Test-DbaBuild -Build "12.0.5540" -MaxBehind "1SP 1CU" -SqlInstance $env:instance2
             $results | Should -Not -BeNullOrEmpty
         }
     }

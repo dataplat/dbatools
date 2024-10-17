@@ -62,7 +62,7 @@ Describe "Disconnect-DbaInstance" {
         }
 
         BeforeAll {
-            $null = Connect-DbaInstance -SqlInstance $script:instance1
+            $null = Connect-DbaInstance -SqlInstance $global:instance1
         }
 
         It "disconnects and returns some results" {

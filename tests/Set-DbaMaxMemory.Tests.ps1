@@ -6,13 +6,13 @@ Describe "Set-DbaMaxMemory" {
         Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
         . "$PSScriptRoot\constants.ps1"
 
-        $inst1CurrentMaxValue = (Get-DbaMaxMemory -SqlInstance $script:instance1).MaxValue
-        $inst2CurrentMaxValue = (Get-DbaMaxMemory -SqlInstance $script:instance2).MaxValue
+        $inst1CurrentMaxValue = (Get-DbaMaxMemory -SqlInstance $env:instance1).MaxValue
+        $inst2CurrentMaxValue = (Get-DbaMaxMemory -SqlInstance $env:instance2).MaxValue
     }
 
     AfterAll {
-        $null = Set-DbaMaxMemory -SqlInstance $script:instance1 -Max $inst1CurrentMaxValue
-        $null = Set-DbaMaxMemory -SqlInstance $script:instance2 -Max $inst2CurrentMaxValue
+        $null = Set-DbaMaxMemory -SqlInstance $env:instance1 -Max $inst1CurrentMaxValue
+        $null = Set-DbaMaxMemory -SqlInstance $env:instance2 -Max $inst2CurrentMaxValue
     }
 
     Context "Validate parameters" {
@@ -32,13 +32,13 @@ Describe "Set-DbaMaxMemory" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type PSObject[] -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
     Context "Connects to multiple instances" {
         BeforeAll {
-            $results = Set-DbaMaxMemory -SqlInstance $script:instance1, $script:instance2 -Max 1024
+            $results = Set-DbaMaxMemory -SqlInstance $env:instance1, $env:instance2 -Max 1024
         }
         It 'Returns 1024 for each instance' {
             foreach ($result in $results) {

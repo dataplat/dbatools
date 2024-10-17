@@ -25,16 +25,16 @@ Describe "Read-DbaXEFile" {
 
     Context "Verifying command output" {
         BeforeDiscovery {
-            $script:skipIntegrationTests = [Environment]::GetEnvironmentVariable('DBA_TOOLS_SKIP_INTEGRATION_TESTS') -eq $true
+            $env:skipIntegrationTests = [Environment]::GetEnvironmentVariable('DBA_TOOLS_SKIP_INTEGRATION_TESTS') -eq $true
         }
 
         It "returns some results using Raw parameter" -Skip:$skipIntegrationTests {
-            $results = Get-DbaXESession -SqlInstance $script:instance2 | Read-DbaXEFile -Raw -WarningAction SilentlyContinue
+            $results = Get-DbaXESession -SqlInstance $env:instance2 | Read-DbaXEFile -Raw -WarningAction SilentlyContinue
             [System.Linq.Enumerable]::Count($results) | Should -BeGreaterThan 1
         }
 
         It "returns some results without Raw parameter" -Skip:$skipIntegrationTests {
-            $results = Get-DbaXESession -SqlInstance $script:instance2 | Read-DbaXEFile -WarningAction SilentlyContinue
+            $results = Get-DbaXESession -SqlInstance $env:instance2 | Read-DbaXEFile -WarningAction SilentlyContinue
             $results.Count | Should -BeGreaterThan 1
         }
     }

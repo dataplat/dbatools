@@ -24,7 +24,7 @@ Describe "Invoke-DbaDbCorruption" {
             $CommandUnderTest | Should -HaveParameter Table -Type String
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -38,36 +38,36 @@ Describe "Invoke-DbaDbCorruption" {
     Context "Integration Tests" {
         BeforeAll {
             $dbname = "dbatoolsci_InvokeDbaDatabaseCorruptionTest"
-            $Server = Connect-DbaInstance -SqlInstance $script:instance2
+            $Server = Connect-DbaInstance -SqlInstance $env:instance2
             $TableName = "Example"
             # Need a clean empty database
             $null = $Server.Query("Create Database [$dbname]")
-            $db = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname
+            $db = Get-DbaDatabase -SqlInstance $env:instance2 -Database $dbname
         }
 
         AfterAll {
             # Cleanup
-            Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $env:instance2 -Database $dbname -Confirm:$false
         }
 
         Context "Validating Database Input" {
             It "Should not allow you to corrupt system databases." {
                 $systemwarn = $null
-                Invoke-DbaDbCorruption -SqlInstance $script:instance2 -Database "master" -WarningAction SilentlyContinue -WarningVariable systemwarn
+                Invoke-DbaDbCorruption -SqlInstance $env:instance2 -Database "master" -WarningAction SilentlyContinue -WarningVariable systemwarn
                 $systemwarn | Should -Match 'may not corrupt system databases'
             }
 
             It "Should fail if more than one database is specified" {
-                { Invoke-DbaDbCorruption -SqlInstance $script:instance2 -Database "Database1", "Database2" -EnableException } | Should -Throw
+                { Invoke-DbaDbCorruption -SqlInstance $env:instance2 -Database "Database1", "Database2" -EnableException } | Should -Throw
             }
         }
 
         It "Require at least a single table in the database specified" {
-            { Invoke-DbaDbCorruption -SqlInstance $script:instance2 -Database $dbname -EnableException } | Should -Throw
+            { Invoke-DbaDbCorruption -SqlInstance $env:instance2 -Database $dbname -EnableException } | Should -Throw
         }
 
         It "Fail if the specified table does not exist" {
-            { Invoke-DbaDbCorruption -SqlInstance $script:instance2 -Database $dbname -Table "DoesntExist$(New-Guid)" -EnableException } | Should -Throw
+            { Invoke-DbaDbCorruption -SqlInstance $env:instance2 -Database $dbname -Table "DoesntExist$(New-Guid)" -EnableException } | Should -Throw
         }
 
         It "Corrupt a single database" {
@@ -77,7 +77,7 @@ Describe "Invoke-DbaDbCorruption" {
                 SELECT top 1000 1
                 FROM sys.objects")
 
-            $result = Invoke-DbaDbCorruption -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
+            $result = Invoke-DbaDbCorruption -SqlInstance $env:instance2 -Database $dbname -Confirm:$false
             $result.Status | Should -Be "Corrupted"
         }
 

@@ -16,17 +16,17 @@ Describe "New-DbatoolsSupportPackage" {
         It "Should have Variables as a non-mandatory String[] parameter" {
             $CommandUnderTest | Should -HaveParameter Variables -Type String[] -Not -Mandatory
         }
-        It "Should have PassThru as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter PassThru -Type SwitchParameter -Not -Mandatory
+        It "Should have PassThru as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter PassThru -Type Switch -Not -Mandatory
         }
-        It "Should have EnableException as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+        It "Should have EnableException as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
-        It "Should have Verbose as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter Verbose -Type SwitchParameter -Not -Mandatory
+        It "Should have Verbose as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter Verbose -Type Switch -Not -Mandatory
         }
-        It "Should have Debug as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter Debug -Type SwitchParameter -Not -Mandatory
+        It "Should have Debug as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter Debug -Type Switch -Not -Mandatory
         }
         It "Should have ErrorAction as a non-mandatory ActionPreference parameter" {
             $CommandUnderTest | Should -HaveParameter ErrorAction -Type ActionPreference -Not -Mandatory
@@ -58,11 +58,11 @@ Describe "New-DbatoolsSupportPackage" {
         It "Should have PipelineVariable as a non-mandatory String parameter" {
             $CommandUnderTest | Should -HaveParameter PipelineVariable -Type String -Not -Mandatory
         }
-        It "Should have WhatIf as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter WhatIf -Type SwitchParameter -Not -Mandatory
+        It "Should have WhatIf as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter WhatIf -Type Switch -Not -Mandatory
         }
-        It "Should have Confirm as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter Confirm -Type SwitchParameter -Not -Mandatory
+        It "Should have Confirm as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter Confirm -Type Switch -Not -Mandatory
         }
     }
 

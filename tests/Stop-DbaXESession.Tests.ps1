@@ -15,24 +15,24 @@ Describe "Stop-DbaXESession" {
             $CommandUnderTest | Should -HaveParameter Session -Type Object[] -Not -Mandatory
         }
         It "Should have AllSessions parameter" {
-            $CommandUnderTest | Should -HaveParameter AllSessions -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter AllSessions -Type Switch -Not -Mandatory
         }
         It "Should have InputObject parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Session[] -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
     Context "Command usage" {
         BeforeAll {
             . "$PSScriptRoot\constants.ps1"
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $env:instance2
             $server.Query("CREATE EVENT SESSION [dbatoolsci_session_valid] ON SERVER ADD EVENT sqlserver.lock_acquired;")
-            $dbatoolsciValid = Get-DbaXESession -SqlInstance $script:instance2 -Session dbatoolsci_session_valid
+            $dbatoolsciValid = Get-DbaXESession -SqlInstance $env:instance2 -Session dbatoolsci_session_valid
             $dbatoolsciValid.Start()
-            $allSessions = Get-DbaXESession -SqlInstance $script:instance2
+            $allSessions = Get-DbaXESession -SqlInstance $env:instance2
         }
 
         BeforeEach {
@@ -56,7 +56,7 @@ Describe "Stop-DbaXESession" {
                 }
             }
 
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $env:instance2
             $server.Query("IF EXISTS(SELECT * FROM sys.server_event_sessions WHERE name = 'dbatoolsci_session_valid') DROP EVENT SESSION [dbatoolsci_session_valid] ON SERVER;")
         }
 

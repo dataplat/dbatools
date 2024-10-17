@@ -21,14 +21,14 @@ Describe "Remove-DbaDbView" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type View[] -Not -Mandatory
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
     Context "Command usage" {
         BeforeAll {
             . "$PSScriptRoot\constants.ps1"
-            $instance2 = Connect-DbaInstance -SqlInstance $script:instance2
+            $instance2 = Connect-DbaInstance -SqlInstance $env:instance2
             $null = Get-DbaProcess -SqlInstance $instance2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false
             $dbname1 = "dbatoolsci_$(Get-Random)"
             $null = New-DbaDatabase -SqlInstance $instance2 -Name $dbname1

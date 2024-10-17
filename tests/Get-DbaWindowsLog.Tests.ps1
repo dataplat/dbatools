@@ -30,13 +30,13 @@ Describe "Get-DbaWindowsLog" {
             $CommandUnderTest | Should -HaveParameter MaxRemoteThreads -Type Int32
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Command returns proper info" {
         BeforeAll {
-            $results = Get-DbaWindowsLog -SqlInstance $script:instance2
+            $results = Get-DbaWindowsLog -SqlInstance $env:instance2
         }
         It "returns results" {
             $results.Count | Should -BeGreaterThan 0

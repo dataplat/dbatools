@@ -21,10 +21,10 @@ Describe "Get-DbaPfDataCollectorCounterSample" {
             $CommandUnderTest | Should -HaveParameter Counter -Type String[]
         }
         It "Should have Continuous as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Continuous -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Continuous -Type Switch
         }
         It "Should have ListSet as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ListSet -Type SwitchParameter[]
+            $CommandUnderTest | Should -HaveParameter ListSet -Type Switch[]
         }
         It "Should have MaxSamples as a parameter" {
             $CommandUnderTest | Should -HaveParameter MaxSamples -Type Int32
@@ -36,7 +36,7 @@ Describe "Get-DbaPfDataCollectorCounterSample" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Object[]
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 

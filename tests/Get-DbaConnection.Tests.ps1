@@ -22,7 +22,7 @@ Describe "Get-DbaConnection" {
 
     Context "Integration Tests" {
         BeforeAll {
-            $results = Get-DbaConnection -SqlInstance $script:instance1
+            $results = Get-DbaConnection -SqlInstance $global:instance1
         }
 
         It "Returns the proper authentication scheme" {

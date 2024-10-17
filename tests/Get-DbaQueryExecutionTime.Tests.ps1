@@ -40,7 +40,7 @@ Describe "Get-DbaQueryExecutionTime" {
             . (Join-Path $PSScriptRoot 'constants.ps1')
         }
 
-        Context "Connects and retrieves query execution times" -ForEach $script:instance1, $script:instance2 {
+        Context "Connects and retrieves query execution times" -ForEach $env:instance1, $env:instance2 {
             BeforeAll {
                 $server = Connect-DbaInstance -SqlInstance $_
             }

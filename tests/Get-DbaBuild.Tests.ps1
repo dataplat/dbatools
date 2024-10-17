@@ -36,10 +36,10 @@ Describe "Get-DbaBuild" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
         }
         It "Should have Update parameter" {
-            $CommandUnderTest | Should -HaveParameter Update -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Update -Type Switch -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
@@ -169,7 +169,7 @@ Describe "Get-DbaBuild" {
             $result.Warning | Should -Be 'This version has been officially retired by Microsoft'
         }
     }
-    
+
     Context "Recognizes version 'aliases', see #8915" {
         It 'works with versions with the minor being either not 0 or 50' {
             $result2016 = Get-DbaBuild -Build '13.3.6300'
@@ -227,8 +227,8 @@ Describe "Get-DbaBuild" {
 
 Describe "Get-DbaBuild Integration Tests" -Tag 'IntegrationTests' {
     BeforeAll {
-        $server1 = Connect-DbaInstance -SqlInstance $script:instance1
-        $server2 = Connect-DbaInstance -SqlInstance $script:instance2
+        $server1 = Connect-DbaInstance -SqlInstance $global:instance1
+        $server2 = Connect-DbaInstance -SqlInstance $global:instance2
     }
 
     Context "piping and params" {
@@ -243,7 +243,7 @@ Describe "Get-DbaBuild Integration Tests" -Tag 'IntegrationTests' {
 
     Context "Test retrieving version from instances" {
         BeforeAll {
-            $results = Get-DbaBuild -SqlInstance $script:instance1, $script:instance2
+            $results = Get-DbaBuild -SqlInstance $global:instance1, $global:instance2
         }
 
         It "Should return an exact match" {

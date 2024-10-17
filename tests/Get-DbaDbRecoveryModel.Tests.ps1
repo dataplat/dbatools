@@ -27,13 +27,13 @@ Describe "Get-DbaDbRecoveryModel" {
             $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Not -Mandatory
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
     Context "Recovery model is correctly identified" {
         BeforeAll {
-            $results = Get-DbaDbRecoveryModel -SqlInstance $script:instance2 -Database master
+            $results = Get-DbaDbRecoveryModel -SqlInstance $global:instance2 -Database master
         }
 
         It "returns a single database" {
@@ -45,30 +45,30 @@ Describe "Get-DbaDbRecoveryModel" {
         }
 
         It "returns accurate number of results" {
-            $allResults = Get-DbaDbRecoveryModel -SqlInstance $script:instance2
+            $allResults = Get-DbaDbRecoveryModel -SqlInstance $global:instance2
             $allResults.Count | Should -BeGreaterOrEqual 4
         }
     }
 
     Context "RecoveryModel parameter works" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $dbname = "dbatoolsci_getrecoverymodel"
             Get-DbaDatabase -SqlInstance $server -Database $dbname | Remove-DbaDatabase -Confirm:$false
             $server.Query("CREATE DATABASE $dbname; ALTER DATABASE $dbname SET RECOVERY BULK_LOGGED WITH NO_WAIT;")
         }
 
         AfterAll {
-            Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
+            Get-DbaDatabase -SqlInstance $global:instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
         }
 
         It "gets the newly created database with the correct recovery model" {
-            $results = Get-DbaDbRecoveryModel -SqlInstance $script:instance2 -Database $dbname
+            $results = Get-DbaDbRecoveryModel -SqlInstance $global:instance2 -Database $dbname
             $results.RecoveryModel | Should -Be 'BulkLogged'
         }
 
         It "honors the RecoveryModel parameter filter" {
-            $results = Get-DbaDbRecoveryModel -SqlInstance $script:instance2 -RecoveryModel BulkLogged
+            $results = Get-DbaDbRecoveryModel -SqlInstance $global:instance2 -RecoveryModel BulkLogged
             $results.Name | Should -Contain $dbname
         }
     }

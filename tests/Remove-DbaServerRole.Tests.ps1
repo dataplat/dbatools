@@ -18,7 +18,7 @@ Describe "Remove-DbaServerRole Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter InputObject -Type ServerRole[] -Not -Mandatory
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 }
@@ -29,7 +29,7 @@ Describe "Remove-DbaServerRole Integration Tests" -Tag "IntegrationTests" {
     }
 
     BeforeAll {
-        $instance = Connect-DbaInstance -SqlInstance $script:instance2
+        $instance = Connect-DbaInstance -SqlInstance $env:instance2
         $roleExecutor = "serverExecuter"
         $null = New-DbaServerRole -SqlInstance $instance -ServerRole $roleExecutor
     }

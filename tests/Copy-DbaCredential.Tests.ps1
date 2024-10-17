@@ -11,13 +11,13 @@ Describe "Copy-DbaCredential" {
         $plaintext = "BigOlPassword!"
         $password = ConvertTo-SecureString $plaintext -AsPlainText -Force
 
-        $server2 = Connect-DbaInstance -SqlInstance $script:instance2
-        $server3 = Connect-DbaInstance -SqlInstance $script:instance3
+        $server2 = Connect-DbaInstance -SqlInstance $global:instance2
+        $server3 = Connect-DbaInstance -SqlInstance $global:instance3
 
         # Add user
         foreach ($login in $logins) {
-            $null = Invoke-Command2 -ScriptBlock { net user $args[0] $args[1] /add *>&1 } -ArgumentList $login, $plaintext -ComputerName $script:instance2
-            $null = Invoke-Command2 -ScriptBlock { net user $args[0] $args[1] /add *>&1 } -ArgumentList $login, $plaintext -ComputerName $script:instance3
+            $null = Invoke-Command2 -ScriptBlock { net user $args[0] $args[1] /add *>&1 } -ArgumentList $login, $plaintext -ComputerName $global:instance2
+            $null = Invoke-Command2 -ScriptBlock { net user $args[0] $args[1] /add *>&1 } -ArgumentList $login, $plaintext -ComputerName $global:instance3
         }
 
         # check to see if a crypto provider is present on the instances
@@ -32,8 +32,8 @@ Describe "Copy-DbaCredential" {
         (Get-DbaCredential -SqlInstance $server3 -Identity dbatoolsci_thor, dbatoolsci_thorsmomma, dbatoolsci_thor_crypto -ErrorAction Stop -WarningAction SilentlyContinue).Drop()
 
         foreach ($login in $logins) {
-            $null = Invoke-Command2 -ScriptBlock { net user $args /delete *>&1 } -ArgumentList $login -ComputerName $script:instance2
-            $null = Invoke-Command2 -ScriptBlock { net user $args /delete *>&1 } -ArgumentList $login -ComputerName $script:instance3
+            $null = Invoke-Command2 -ScriptBlock { net user $args /delete *>&1 } -ArgumentList $login -ComputerName $global:instance2
+            $null = Invoke-Command2 -ScriptBlock { net user $args /delete *>&1 } -ArgumentList $login -ComputerName $global:instance3
         }
     }
 
@@ -69,10 +69,10 @@ Describe "Copy-DbaCredential" {
             $CommandUnderTest | Should -HaveParameter ExcludeIdentity -Type String[]
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -120,7 +120,7 @@ Describe "Copy-DbaCredential" {
 
     Context "Crypto provider cred" {
         BeforeDiscovery {
-            $script:skipCryptoTests = -not $cryptoProvider
+            $global:skipCryptoTests = -not $cryptoProvider
         }
 
         It "ensure copied credential is using the same crypto provider" -Skip:$skipCryptoTests {

@@ -24,19 +24,19 @@ Describe "Find-DbaDbDisabledIndex" {
             $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Not -Mandatory
         }
         It "Should have NoClobber as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NoClobber -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NoClobber -Type Switch -Not -Mandatory
         }
         It "Should have Append as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Append -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Append -Type Switch -Not -Mandatory
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
     Context "Command actually works" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance1
+            $server = Connect-DbaInstance -SqlInstance $global:instance1
             $random = Get-Random
             $databaseName1 = "dbatoolsci1_$random"
             $databaseName2 = "dbatoolsci2_$random"
@@ -55,19 +55,19 @@ Describe "Find-DbaDbDisabledIndex" {
         }
 
         It "Should find disabled index: $indexName" {
-            $results = Find-DbaDbDisabledIndex -SqlInstance $script:instance1
+            $results = Find-DbaDbDisabledIndex -SqlInstance $global:instance1
             ($results | Where-Object { $_.IndexName -eq $indexName }).Count | Should -Be 2
             ($results | Where-Object { $_.DatabaseName -in $databaseName1, $databaseName2 }).Count | Should -Be 2
             ($results | Where-Object { $_.DatabaseId -in $db1.Id, $db2.Id }).Count | Should -Be 2
         }
         It "Should find disabled index: $indexName for specific database" {
-            $results = Find-DbaDbDisabledIndex -SqlInstance $script:instance1 -Database $databaseName1
+            $results = Find-DbaDbDisabledIndex -SqlInstance $global:instance1 -Database $databaseName1
             $results.IndexName | Should -Be $indexName
             $results.DatabaseName | Should -Be $databaseName1
             $results.DatabaseId | Should -Be $db1.Id
         }
         It "Should exclude specific database" {
-            $results = Find-DbaDbDisabledIndex -SqlInstance $script:instance1 -ExcludeDatabase $databaseName1
+            $results = Find-DbaDbDisabledIndex -SqlInstance $global:instance1 -ExcludeDatabase $databaseName1
             $results.IndexName | Should -Be $indexName
             $results.DatabaseName | Should -Be $databaseName2
             $results.DatabaseId | Should -Be $db2.Id

@@ -21,13 +21,13 @@ Describe "Read-DbaTransactionLog" {
             $CommandUnderTest | Should -HaveParameter Database -Type Object
         }
         It "Should have IgnoreLimit parameter" {
-            $CommandUnderTest | Should -HaveParameter IgnoreLimit -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter IgnoreLimit -Type Switch
         }
         It "Should have RowLimit parameter" {
             $CommandUnderTest | Should -HaveParameter RowLimit -Type Int32
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 }

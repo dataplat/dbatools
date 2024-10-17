@@ -32,7 +32,7 @@ Describe "Install-DbaAgentAdminAlert" {
             $CommandUnderTest | Should -HaveParameter DelayBetweenResponses -Type Int32
         }
         It "Should have Disabled as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Disabled -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Disabled -Type Switch
         }
         It "Should have EventDescriptionKeyword as a parameter" {
             $CommandUnderTest | Should -HaveParameter EventDescriptionKeyword -Type String
@@ -56,17 +56,17 @@ Describe "Install-DbaAgentAdminAlert" {
             $CommandUnderTest | Should -HaveParameter NotifyMethod -Type String
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Integration Tests" {
         BeforeAll {
-            $script:instances = @($script:instance2, $script:instance3)
+            $env:instances = @($env:instance2, $env:instance3)
         }
 
         BeforeEach {
-            foreach ($instance in $script:instances) {
+            foreach ($instance in $env:instances) {
                 Get-DbaAgentAlert -SqlInstance $instance | Remove-DbaAgentAlert -Confirm:$false
             }
         }
@@ -74,7 +74,7 @@ Describe "Install-DbaAgentAdminAlert" {
         Context 'Creating a new SQL Server Agent alert' {
             It 'Should create a bunch of new alerts on instance2' {
                 $parms = @{
-                    SqlInstance           = $script:instance2
+                    SqlInstance           = $env:instance2
                     DelayBetweenResponses = 60
                     Disabled              = $false
                     NotifyMethod          = "NotifyEmail"
@@ -94,7 +94,7 @@ Describe "Install-DbaAgentAdminAlert" {
 
             It 'Should create a bunch of new alerts on instance3' {
                 $parms = @{
-                    SqlInstance           = $script:instance3
+                    SqlInstance           = $env:instance3
                     DelayBetweenResponses = 60
                     Disabled              = $false
                     NotifyMethod          = "NotifyEmail"
@@ -108,7 +108,7 @@ Describe "Install-DbaAgentAdminAlert" {
                 $alerts = Install-DbaAgentAdminAlert @parms
 
                 $alerts.Severity | Should -Not -Contain 17
-                Get-DbaAgentAlert -SqlInstance $script:instance3 | Should -Not -BeNullOrEmpty
+                Get-DbaAgentAlert -SqlInstance $env:instance3 | Should -Not -BeNullOrEmpty
             }
         }
     }

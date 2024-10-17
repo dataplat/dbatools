@@ -47,11 +47,11 @@ Describe "Invoke-DbaAdvancedUpdate" {
         It "Should have ArgumentList as a non-mandatory String[] parameter" {
             $CommandUnderTest | Should -HaveParameter ArgumentList -Type String[] -Not -Mandatory
         }
-        It "Should have NoPendingRenameCheck as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter NoPendingRenameCheck -Type SwitchParameter -Not -Mandatory
+        It "Should have NoPendingRenameCheck as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter NoPendingRenameCheck -Type Switch -Not -Mandatory
         }
-        It "Should have EnableException as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+        It "Should have EnableException as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 

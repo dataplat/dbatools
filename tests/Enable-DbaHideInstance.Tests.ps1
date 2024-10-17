@@ -16,13 +16,13 @@ Describe "Enable-DbaHideInstance" {
             $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Integration Tests" -Tag "IntegrationTests" {
         BeforeAll {
-            $instance = $script:instance1
+            $instance = $global:instance1
         }
 
         AfterAll {

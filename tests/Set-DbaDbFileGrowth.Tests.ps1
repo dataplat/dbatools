@@ -27,7 +27,7 @@ Describe "Set-DbaDbFileGrowth" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Database[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 }
@@ -38,7 +38,7 @@ Describe "Set-DbaDbFileGrowth Integration Tests" -Tag "IntegrationTests" {
     }
 
     BeforeAll {
-        $newdb = New-DbaDatabase -SqlInstance $script:instance2 -Name newdb
+        $newdb = New-DbaDatabase -SqlInstance $env:instance2 -Name newdb
     }
 
     AfterAll {
@@ -47,7 +47,7 @@ Describe "Set-DbaDbFileGrowth Integration Tests" -Tag "IntegrationTests" {
 
     Context "Should return file information for only newdb" {
         It "returns the proper info" {
-            $result = Set-DbaDbFileGrowth -SqlInstance $script:instance2 -Database newdb | Select-Object -First 1
+            $result = Set-DbaDbFileGrowth -SqlInstance $env:instance2 -Database newdb | Select-Object -First 1
             $result.Database | Should -Be "newdb"
             $result.GrowthType | Should -Be "kb"
         }
@@ -55,7 +55,7 @@ Describe "Set-DbaDbFileGrowth Integration Tests" -Tag "IntegrationTests" {
 
     Context "Supports piping" {
         It "returns only newdb files" {
-            $result = Get-DbaDatabase $script:instance2 -Database newdb | Set-DbaDbFileGrowth | Select-Object -First 1
+            $result = Get-DbaDatabase $env:instance2 -Database newdb | Set-DbaDbFileGrowth | Select-Object -First 1
             $result.Database | Should -Be "newdb"
         }
     }

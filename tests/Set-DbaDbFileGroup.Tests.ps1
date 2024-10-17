@@ -12,8 +12,8 @@ Describe "Set-DbaDbFileGroup" {
         $fileGroup2Name = "FG2"
         $fileGroupROName = "FG1RO"
 
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $newDb1 = New-DbaDatabase -SqlInstance $script:instance2 -Name $db1name
+        $server = Connect-DbaInstance -SqlInstance $env:instance2
+        $newDb1 = New-DbaDatabase -SqlInstance $env:instance2 -Name $db1name
 
         $server.Query("ALTER DATABASE $db1name ADD FILEGROUP $fileGroup1Name")
         $server.Query("ALTER DATABASE $db1name ADD FILEGROUP $fileGroup2Name")
@@ -43,52 +43,52 @@ Describe "Set-DbaDbFileGroup" {
             $CommandUnderTest | Should -HaveParameter FileGroup -Type String[] -Not -Mandatory
         }
         It "Should have Default as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Default -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Default -Type Switch -Not -Mandatory
         }
         It "Should have ReadOnly as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ReadOnly -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter ReadOnly -Type Switch -Not -Mandatory
         }
         It "Should have AutoGrowAllFiles as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter AutoGrowAllFiles -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter AutoGrowAllFiles -Type Switch -Not -Mandatory
         }
         It "Should have InputObject as a parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Not -Mandatory
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
     Context "Command usage" {
         It "Sets the options for default, readonly, readwrite, autogrow all files, and not autogrow all files" {
-            $results = Set-DbaDbFileGroup -SqlInstance $script:instance2 -Database $db1name -FileGroup $fileGroup1Name -Default -AutoGrowAllFiles -Confirm:$false
+            $results = Set-DbaDbFileGroup -SqlInstance $env:instance2 -Database $db1name -FileGroup $fileGroup1Name -Default -AutoGrowAllFiles -Confirm:$false
             $results.Name | Should -Be $fileGroup1Name
             $results.AutogrowAllFiles | Should -Be $true
             $results.IsDefault | Should -Be $true
 
-            $results = Set-DbaDbFileGroup -SqlInstance $script:instance2 -Database $db1name -FileGroup $fileGroup1Name -AutoGrowAllFiles:$false -Confirm:$false
+            $results = Set-DbaDbFileGroup -SqlInstance $env:instance2 -Database $db1name -FileGroup $fileGroup1Name -AutoGrowAllFiles:$false -Confirm:$false
             $results.Name | Should -Be $fileGroup1Name
             $results.AutogrowAllFiles | Should -Be $false
 
-            $results = Set-DbaDbFileGroup -SqlInstance $script:instance2 -Database $db1name -FileGroup $fileGroupROName -ReadOnly -Confirm:$false
+            $results = Set-DbaDbFileGroup -SqlInstance $env:instance2 -Database $db1name -FileGroup $fileGroupROName -ReadOnly -Confirm:$false
             $results.Name | Should -Be $fileGroupROName
             $results.AutogrowAllFiles | Should -Be $false
             $results.IsDefault | Should -Be $false
             $results.ReadOnly | Should -Be $true
 
-            $results = Set-DbaDbFileGroup -SqlInstance $script:instance2 -Database $db1name -FileGroup $fileGroup1Name, $fileGroupROName -ReadOnly:$false -Confirm:$false
+            $results = Set-DbaDbFileGroup -SqlInstance $env:instance2 -Database $db1name -FileGroup $fileGroup1Name, $fileGroupROName -ReadOnly:$false -Confirm:$false
             $results.Name | Should -Be $fileGroup1Name, $fileGroupROName
             $results.ReadOnly | Should -Be $false, $false
         }
 
         It "A warning is returned when trying to set the options for a filegroup that doesn't exist" {
-            $results = Set-DbaDbFileGroup -SqlInstance $script:instance2 -Database $db1name -FileGroup invalidFileGroupName -Default -AutoGrowAllFiles -Confirm:$false -WarningVariable warnings
-            $warnings | Should -BeLike "*Filegroup invalidFileGroupName does not exist in the database $db1name on $($script:instance2)"
+            $results = Set-DbaDbFileGroup -SqlInstance $env:instance2 -Database $db1name -FileGroup invalidFileGroupName -Default -AutoGrowAllFiles -Confirm:$false -WarningVariable warnings
+            $warnings | Should -BeLike "*Filegroup invalidFileGroupName does not exist in the database $db1name on $($env:instance2)"
         }
 
         It "A warning is returned when trying to set the options for an empty filegroup" {
-            $results = Set-DbaDbFileGroup -SqlInstance $script:instance2 -Database $db1name -FileGroup $fileGroup2Name -Default -AutoGrowAllFiles -Confirm:$false -WarningVariable warnings
-            $warnings | Should -BeLike "*Filegroup $fileGroup2Name is empty on $db1name on $($script:instance2). Before the options can be set there must be at least one file in the filegroup."
+            $results = Set-DbaDbFileGroup -SqlInstance $env:instance2 -Database $db1name -FileGroup $fileGroup2Name -Default -AutoGrowAllFiles -Confirm:$false -WarningVariable warnings
+            $warnings | Should -BeLike "*Filegroup $fileGroup2Name is empty on $db1name on $($env:instance2). Before the options can be set there must be at least one file in the filegroup."
         }
 
         It "Sets the filegroup options using a database from a pipeline and a filegroup from a pipeline" {
@@ -96,11 +96,11 @@ Describe "Set-DbaDbFileGroup" {
             $results.Name | Should -Be Primary
             $results.IsDefault | Should -Be $true
 
-            $results = Get-DbaDbFileGroup -SqlInstance $script:instance2 -Database $db1name -FileGroup $fileGroup1Name | Set-DbaDbFileGroup -Default -Confirm:$false
+            $results = Get-DbaDbFileGroup -SqlInstance $env:instance2 -Database $db1name -FileGroup $fileGroup1Name | Set-DbaDbFileGroup -Default -Confirm:$false
             $results.Name | Should -Be $fileGroup1Name
             $results.IsDefault | Should -Be $true
 
-            $fg1 = Get-DbaDbFileGroup -SqlInstance $script:instance2 -Database $db1name -FileGroup $fileGroup1Name
+            $fg1 = Get-DbaDbFileGroup -SqlInstance $env:instance2 -Database $db1name -FileGroup $fileGroup1Name
             $results = $fg1, $newDb1 | Set-DbaDbFileGroup -FileGroup Primary -AutoGrowAllFiles -Confirm:$false
             $results.Name | Should -Be $fileGroup1Name, Primary
             $results.AutoGrowAllFiles | Should -Be $true, $true

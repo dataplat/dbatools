@@ -15,7 +15,7 @@ Describe "Set-DbaPrivilege" {
             $CommandUnderTest | Should -HaveParameter Type -Type String[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
         It "Should have User as a parameter" {
             $CommandUnderTest | Should -HaveParameter User -Type String

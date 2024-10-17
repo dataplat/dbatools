@@ -30,24 +30,24 @@ Describe "Get-DbaLinkedServer" {
 
     Context "Integration Tests" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $env:instance2
             $null = $server.Query("EXEC master.dbo.sp_addlinkedserver
-                @server = N'$script:instance3',
+                @server = N'$env:instance3',
                 @srvproduct=N'SQL Server' ;")
         }
         AfterAll {
-            $null = $server.Query("EXEC master.dbo.sp_dropserver '$script:instance3', 'droplogins';  ")
+            $null = $server.Query("EXEC master.dbo.sp_dropserver '$env:instance3', 'droplogins';  ")
         }
 
         Context "Gets Linked Servers" {
             BeforeAll {
-                $results = Get-DbaLinkedServer -SqlInstance $script:instance2 | Where-Object {$_.name -eq "$script:instance3"}
+                $results = Get-DbaLinkedServer -SqlInstance $env:instance2 | Where-Object {$_.name -eq "$env:instance3"}
             }
             It "Gets results" {
                 $results | Should -Not -BeNullOrEmpty
             }
-            It "Should have Remote Server of $script:instance3" {
-                $results.RemoteServer | Should -Be "$script:instance3"
+            It "Should have Remote Server of $env:instance3" {
+                $results.RemoteServer | Should -Be "$env:instance3"
             }
             It "Should have a product name of SQL Server" {
                 $results.productname | Should -Be 'SQL Server'
@@ -59,13 +59,13 @@ Describe "Get-DbaLinkedServer" {
 
         Context "Gets Linked Servers using -LinkedServer" {
             BeforeAll {
-                $results = Get-DbaLinkedServer -SqlInstance $script:instance2 -LinkedServer "$script:instance3"
+                $results = Get-DbaLinkedServer -SqlInstance $env:instance2 -LinkedServer "$env:instance3"
             }
             It "Gets results" {
                 $results | Should -Not -BeNullOrEmpty
             }
-            It "Should have Remote Server of $script:instance3" {
-                $results.RemoteServer | Should -Be "$script:instance3"
+            It "Should have Remote Server of $env:instance3" {
+                $results.RemoteServer | Should -Be "$env:instance3"
             }
             It "Should have a product name of SQL Server" {
                 $results.productname | Should -Be 'SQL Server'
@@ -77,7 +77,7 @@ Describe "Get-DbaLinkedServer" {
 
         Context "Gets Linked Servers using -ExcludeLinkedServer" {
             BeforeAll {
-                $results = Get-DbaLinkedServer -SqlInstance $script:instance2 -ExcludeLinkedServer "$script:instance3"
+                $results = Get-DbaLinkedServer -SqlInstance $env:instance2 -ExcludeLinkedServer "$env:instance3"
             }
             It "Gets results" {
                 $results | Should -BeNullOrEmpty

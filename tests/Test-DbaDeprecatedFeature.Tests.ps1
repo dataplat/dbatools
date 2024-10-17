@@ -26,18 +26,18 @@ Describe "Test-DbaDeprecatedFeature" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Database[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Command actually works" {
         It "Should return a result" {
-            $results = Test-DbaDeprecatedFeature -SqlInstance $script:instance2
+            $results = Test-DbaDeprecatedFeature -SqlInstance $env:instance2
             $results | Should -Not -BeNullOrEmpty
         }
 
         It "Should return a result for a database" {
-            $results = Test-DbaDeprecatedFeature -SqlInstance $script:instance2 -Database Master
+            $results = Test-DbaDeprecatedFeature -SqlInstance $env:instance2 -Database Master
             $results | Should -Not -BeNullOrEmpty
         }
     }

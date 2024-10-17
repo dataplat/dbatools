@@ -36,21 +36,21 @@ Describe "Import-DbaXESessionTemplate" {
             $CommandUnderTest | Should -HaveParameter StartUpState -Type String
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Test Importing Session Template" {
         BeforeAll {
-            $script:instanceName = $script:instance2
+            $env:instanceName = $env:instance2
         }
 
         AfterAll {
-            $null = Get-DbaXESession -SqlInstance $script:instanceName -Session 'Overly Complex Queries' | Remove-DbaXESession
+            $null = Get-DbaXESession -SqlInstance $env:instanceName -Session 'Overly Complex Queries' | Remove-DbaXESession
         }
 
         It "Session imports with proper name and non-default target file location" -Skip {
-            $result = Import-DbaXESessionTemplate -SqlInstance $script:instanceName -Template 'Overly Complex Queries' -TargetFilePath C:\temp
+            $result = Import-DbaXESessionTemplate -SqlInstance $env:instanceName -Template 'Overly Complex Queries' -TargetFilePath C:\temp
             $result.Name | Should -Be "Overly Complex Queries"
             $result.TargetFile | Should -Match 'C:\\temp'
         }

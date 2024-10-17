@@ -12,7 +12,7 @@ Describe "Export-DbaSysDbUserObject" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have IncludeDependencies as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeDependencies -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter IncludeDependencies -Type Switch
         }
         It "Should have BatchSeparator as a string parameter" {
             $CommandUnderTest | Should -HaveParameter BatchSeparator -Type String
@@ -24,19 +24,19 @@ Describe "Export-DbaSysDbUserObject" {
             $CommandUnderTest | Should -HaveParameter FilePath -Type String
         }
         It "Should have NoPrefix as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoPrefix -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter NoPrefix -Type Switch
         }
         It "Should have ScriptingOptionsObject as a ScriptingOptions parameter" {
             $CommandUnderTest | Should -HaveParameter ScriptingOptionsObject -Type ScriptingOptions
         }
         It "Should have NoClobber as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoClobber -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter NoClobber -Type Switch
         }
         It "Should have PassThru as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter PassThru -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter PassThru -Type Switch
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -51,7 +51,7 @@ Describe "Export-DbaSysDbUserObject" {
             $tableFunctionName = "[dbatoolsci_TableFunction_$random]"
             $scalarFunctionName = "[dbatoolsci_ScalarFunction_$random]"
             $ruleName = "[dbatoolsci_Rule_$random]"
-            $server = Connect-DbaInstance -SqlInstance $script:instance2 -SqlCredential $SqlCredential
+            $server = Connect-DbaInstance -SqlInstance $global:instance2 -SqlCredential $SqlCredential
             $server.Query("CREATE TABLE dbo.$tableName (Col1 int);", "master")
             $server.Query("CREATE VIEW dbo.$viewName AS SELECT 1 as Col1;", "master")
             $server.Query("CREATE PROCEDURE dbo.$procName as select 1;", "master")
@@ -62,7 +62,7 @@ Describe "Export-DbaSysDbUserObject" {
         }
 
         AfterAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance2 -SqlCredential $SqlCredential
+            $server = Connect-DbaInstance -SqlInstance $global:instance2 -SqlCredential $SqlCredential
             $server.Query("DROP TABLE dbo.$tableName", "master")
             $server.Query("DROP VIEW dbo.$viewName", "master")
             $server.Query("DROP PROCEDURE dbo.$procName", "master")
@@ -74,7 +74,7 @@ Describe "Export-DbaSysDbUserObject" {
 
         Context "works as expected with passthru" {
             BeforeAll {
-                $script = Export-DbaSysDbUserObject -SqlInstance $script:instance2 -PassThru | Out-String
+                $script = Export-DbaSysDbUserObject -SqlInstance $global:instance2 -PassThru | Out-String
             }
 
             It "should export text matching table name '$tableName'" {
@@ -102,7 +102,7 @@ Describe "Export-DbaSysDbUserObject" {
 
         Context "works as expected with filename" {
             BeforeAll {
-                $null = Export-DbaSysDbUserObject -SqlInstance $script:instance2 -FilePath "C:\Temp\objects_$random.sql"
+                $null = Export-DbaSysDbUserObject -SqlInstance $global:instance2 -FilePath "C:\Temp\objects_$random.sql"
                 $file = Get-Content "C:\Temp\objects_$random.sql" | Out-String
             }
 

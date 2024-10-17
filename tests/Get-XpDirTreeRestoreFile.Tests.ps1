@@ -18,11 +18,11 @@ Describe "Get-XpDirTreeRestoreFile" {
         It "Should have SqlCredential as a non-mandatory PSCredential parameter" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
         }
-        It "Should have EnableException as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+        It "Should have EnableException as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
-        It "Should have NoRecurse as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter NoRecurse -Type SwitchParameter -Not -Mandatory
+        It "Should have NoRecurse as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter NoRecurse -Type Switch -Not -Mandatory
         }
     }
 

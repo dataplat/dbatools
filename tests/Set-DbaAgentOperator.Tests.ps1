@@ -54,7 +54,7 @@ Describe "Set-DbaAgentOperator" {
             $CommandUnderTest | Should -HaveParameter WeekdayEndTime -Type String
         }
         It "Should have IsFailsafeOperator as a parameter" {
-            $CommandUnderTest | Should -HaveParameter IsFailsafeOperator -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter IsFailsafeOperator -Type Switch
         }
         It "Should have FailsafeNotificationMethod as a parameter" {
             $CommandUnderTest | Should -HaveParameter FailsafeNotificationMethod -Type String[]
@@ -63,13 +63,13 @@ Describe "Set-DbaAgentOperator" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Operator[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Command usage" {
         BeforeAll {
-            $instance2 = Connect-DbaInstance -SqlInstance $script:instance2 -Database msdb
+            $instance2 = Connect-DbaInstance -SqlInstance $env:instance2 -Database msdb
             $instance2.Invoke("EXEC msdb.dbo.sp_add_operator @name=N'dbatools dba', @enabled=1, @pager_days=0")
         }
 

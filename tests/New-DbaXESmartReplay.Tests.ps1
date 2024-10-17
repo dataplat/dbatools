@@ -30,27 +30,27 @@ Describe "New-DbaXESmartReplay" {
             $CommandUnderTest | Should -HaveParameter DelaySeconds -Type Int32 -Not -Mandatory
         }
         It "Should have StopOnError parameter" {
-            $CommandUnderTest | Should -HaveParameter StopOnError -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter StopOnError -Type Switch -Not -Mandatory
         }
         It "Should have ReplayIntervalSeconds parameter" {
             $CommandUnderTest | Should -HaveParameter ReplayIntervalSeconds -Type Int32 -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 }
 
 Describe "New-DbaXESmartReplay Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $script:instance2 = [Environment]::GetEnvironmentVariable("instance2")
+        $env:instance2 = [Environment]::GetEnvironmentVariable("instance2")
     }
 
     Context "Creates a smart object" {
         It "returns the object with all of the correct properties" {
             $columns = "cpu_time", "duration", "physical_reads", "logical_reads", "writes", "row_count", "batch_text"
-            $results = New-DbaXESmartTableWriter -SqlInstance $script:instance2 -Database dbadb -Table deadlocktracker -OutputColumn $columns -Filter "duration > 10000"
-            $results.ServerName | Should -Be $script:instance2
+            $results = New-DbaXESmartTableWriter -SqlInstance $env:instance2 -Database dbadb -Table deadlocktracker -OutputColumn $columns -Filter "duration > 10000"
+            $results.ServerName | Should -Be $env:instance2
             $results.DatabaseName | Should -Be 'dbadb'
             $results.Password | Should -BeNullOrEmpty
             $results.TableName | Should -Be 'deadlocktracker'

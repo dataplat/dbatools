@@ -33,7 +33,7 @@ Describe "Remove-DbaAgentJobCategory Integration Tests" -Tag "IntegrationTests" 
 
     Context "New Agent Job Category is changed properly" {
         BeforeAll {
-            $results = New-DbaAgentJobCategory -SqlInstance $script:instance2 -Category CategoryTest1, CategoryTest2, CategoryTest3
+            $results = New-DbaAgentJobCategory -SqlInstance $env:instance2 -Category CategoryTest1, CategoryTest2, CategoryTest3
         }
 
         It "Should have the right name and category type" {
@@ -46,21 +46,21 @@ Describe "Remove-DbaAgentJobCategory Integration Tests" -Tag "IntegrationTests" 
         }
 
         It "Should actually for sure exist" {
-            $newresults = Get-DbaAgentJobCategory -SqlInstance $script:instance2 -Category CategoryTest1, CategoryTest2, CategoryTest3
+            $newresults = Get-DbaAgentJobCategory -SqlInstance $env:instance2 -Category CategoryTest1, CategoryTest2, CategoryTest3
             $newresults.Count | Should -Be 3
         }
 
         It "Remove the job categories" {
-            Remove-DbaAgentJobCategory -SqlInstance $script:instance2 -Category CategoryTest1, CategoryTest2, Categorytest3 -Confirm:$false
+            Remove-DbaAgentJobCategory -SqlInstance $env:instance2 -Category CategoryTest1, CategoryTest2, Categorytest3 -Confirm:$false
 
-            $newresults = Get-DbaAgentJobCategory -SqlInstance $script:instance2 -Category CategoryTest1, CategoryTest2, CategoryTest3
+            $newresults = Get-DbaAgentJobCategory -SqlInstance $env:instance2 -Category CategoryTest1, CategoryTest2, CategoryTest3
 
             $newresults.Count | Should -Be 0
         }
 
         AfterAll {
             # Cleanup any remaining test categories
-            Remove-DbaAgentJobCategory -SqlInstance $script:instance2 -Category CategoryTest1, CategoryTest2, CategoryTest3 -Confirm:$false -ErrorAction SilentlyContinue
+            Remove-DbaAgentJobCategory -SqlInstance $env:instance2 -Category CategoryTest1, CategoryTest2, CategoryTest3 -Confirm:$false -ErrorAction SilentlyContinue
         }
     }
 }

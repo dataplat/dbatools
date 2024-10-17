@@ -29,7 +29,7 @@ Describe "New-DbaReplPublication" {
             $CommandUnderTest | Should -HaveParameter LogReaderAgentCredential -Type PSCredential
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 }

@@ -6,7 +6,7 @@ Describe "Write-DbaDbTableData" {
         Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
         . "$PSScriptRoot\constants.ps1"
 
-        $server = Connect-DbaInstance -SqlInstance $script:instance1
+        $server = Connect-DbaInstance -SqlInstance $env:instance1
         $random = Get-Random
         $db = "dbatoolsci_writedbadaatable$random"
         $server.Query("CREATE DATABASE $db")
@@ -45,25 +45,25 @@ Describe "Write-DbaDbTableData" {
             $CommandUnderTest | Should -HaveParameter NotifyAfter -Type Int32
         }
         It "Should have AutoCreateTable parameter" {
-            $CommandUnderTest | Should -HaveParameter AutoCreateTable -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter AutoCreateTable -Type Switch
         }
         It "Should have NoTableLock parameter" {
-            $CommandUnderTest | Should -HaveParameter NoTableLock -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter NoTableLock -Type Switch
         }
         It "Should have CheckConstraints parameter" {
-            $CommandUnderTest | Should -HaveParameter CheckConstraints -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter CheckConstraints -Type Switch
         }
         It "Should have FireTriggers parameter" {
-            $CommandUnderTest | Should -HaveParameter FireTriggers -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter FireTriggers -Type Switch
         }
         It "Should have KeepIdentity parameter" {
-            $CommandUnderTest | Should -HaveParameter KeepIdentity -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter KeepIdentity -Type Switch
         }
         It "Should have KeepNulls parameter" {
-            $CommandUnderTest | Should -HaveParameter KeepNulls -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter KeepNulls -Type Switch
         }
         It "Should have Truncate parameter" {
-            $CommandUnderTest | Should -HaveParameter Truncate -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Truncate -Type Switch
         }
         It "Should have BulkCopyTimeOut parameter" {
             $CommandUnderTest | Should -HaveParameter BulkCopyTimeOut -Type Int32
@@ -72,17 +72,17 @@ Describe "Write-DbaDbTableData" {
             $CommandUnderTest | Should -HaveParameter ColumnMap -Type Hashtable
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
         It "Should have UseDynamicStringLength parameter" {
-            $CommandUnderTest | Should -HaveParameter UseDynamicStringLength -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter UseDynamicStringLength -Type Switch
         }
     }
 
     Context "Command usage" {
         It "defaults to dbo if no schema is specified" {
             $results = Get-ChildItem | ConvertTo-DbaDataTable
-            $results | Write-DbaDbTableData -SqlInstance $script:instance1 -Database $db -Table 'childitem' -AutoCreateTable
+            $results | Write-DbaDbTableData -SqlInstance $env:instance1 -Database $db -Table 'childitem' -AutoCreateTable
 
             ($server.Databases[$db].Tables | Where-Object { $_.Schema -eq 'dbo' -and $_.Name -eq 'childitem' }).Count | Should -Be 1
         }

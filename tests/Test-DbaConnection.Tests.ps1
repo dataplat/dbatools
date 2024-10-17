@@ -28,7 +28,7 @@ Describe "Test-DbaConnection" {
 
     Context "Testing if command works" {
         BeforeAll {
-            $results = Test-DbaConnection -SqlInstance $script:instance1
+            $results = Test-DbaConnection -SqlInstance $env:instance1
             $whoami = whoami
         }
 

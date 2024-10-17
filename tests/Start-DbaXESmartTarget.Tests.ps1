@@ -18,7 +18,7 @@ Describe "Start-DbaXESmartTarget" {
             $CommandUnderTest | Should -HaveParameter Session -Type String -Not -Mandatory
         }
         It "Should have FailOnProcessingError parameter" {
-            $CommandUnderTest | Should -HaveParameter FailOnProcessingError -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter FailOnProcessingError -Type Switch -Not -Mandatory
         }
         It "Should have Responder parameter" {
             $CommandUnderTest | Should -HaveParameter Responder -Type Object[] -Not -Mandatory
@@ -27,10 +27,10 @@ Describe "Start-DbaXESmartTarget" {
             $CommandUnderTest | Should -HaveParameter Template -Type String[] -Not -Mandatory
         }
         It "Should have NotAsJob parameter" {
-            $CommandUnderTest | Should -HaveParameter NotAsJob -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NotAsJob -Type Switch -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 }

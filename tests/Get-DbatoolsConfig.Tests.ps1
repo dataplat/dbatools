@@ -14,8 +14,8 @@ Describe "Get-DbatoolsConfig" {
         It "Should have parameter Module of type String" {
             $CommandUnderTest | Should -HaveParameter Module -Type String -Not -Mandatory
         }
-        It "Should have parameter Force of type SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter -Not -Mandatory
+        It "Should have parameter Force of type Switch" {
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Not -Mandatory
         }
     }
 

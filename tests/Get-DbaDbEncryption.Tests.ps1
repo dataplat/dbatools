@@ -31,15 +31,15 @@ Describe "Get-DbaDbEncryption" {
             $random = Get-Random
             $cert = "dbatoolsci_getcert$random"
             $password = ConvertTo-SecureString -String (Get-Random) -AsPlainText -Force
-            New-DbaDbCertificate -SqlInstance $script:instance1 -Name $cert -Password $password
+            New-DbaDbCertificate -SqlInstance $global:instance1 -Name $cert -Password $password
         }
 
         AfterAll {
-            Get-DbaDbCertificate -SqlInstance $script:instance1 -Certificate $cert | Remove-DbaDbCertificate -Confirm:$false
+            Get-DbaDbCertificate -SqlInstance $global:instance1 -Certificate $cert | Remove-DbaDbCertificate -Confirm:$false
         }
 
         It "Should find a certificate named $cert" {
-            $results = Get-DbaDbEncryption -SqlInstance $script:instance1
+            $results = Get-DbaDbEncryption -SqlInstance $global:instance1
             ($results.Name -match 'dbatoolsci').Count | Should -BeGreaterThan 0
         }
     }

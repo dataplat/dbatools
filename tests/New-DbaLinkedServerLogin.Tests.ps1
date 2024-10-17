@@ -24,13 +24,13 @@ Describe "New-DbaLinkedServerLogin" {
             $CommandUnderTest | Should -HaveParameter RemoteUserPassword -Type SecureString -Not -Mandatory
         }
         It "Should have Impersonate parameter" {
-            $CommandUnderTest | Should -HaveParameter Impersonate -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Impersonate -Type Switch -Not -Mandatory
         }
         It "Should have InputObject parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type LinkedServer[] -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 }
@@ -38,8 +38,8 @@ Describe "New-DbaLinkedServerLogin" {
 Describe "New-DbaLinkedServerLogin Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $random = Get-Random
-        $instance2 = Connect-DbaInstance -SqlInstance $script:instance2
-        $instance3 = Connect-DbaInstance -SqlInstance $script:instance3
+        $instance2 = Connect-DbaInstance -SqlInstance $env:instance2
+        $instance3 = Connect-DbaInstance -SqlInstance $env:instance3
 
         $securePassword = ConvertTo-SecureString -String 'securePassword' -AsPlainText -Force
         $localLogin1Name = "dbatoolscli_localLogin1_$random"

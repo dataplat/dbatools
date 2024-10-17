@@ -24,17 +24,17 @@ Describe "Get-DbaDbccStatistic" {
             $CommandUnderTest | Should -HaveParameter Option -Type String
         }
         It "Should have NoInformationalMessages parameter" {
-            $CommandUnderTest | Should -HaveParameter NoInformationalMessages -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter NoInformationalMessages -Type Switch
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Command usage" {
         BeforeAll {
             . (Join-Path $PSScriptRoot 'constants.ps1')
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $random = Get-Random
             $tableName = "dbatools_getdbtbl1"
             $tableName2 = "dbatools_getdbtbl2"
@@ -53,12 +53,12 @@ Describe "Get-DbaDbccStatistic" {
         }
 
         AfterAll {
-            $null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
+            $null = Get-DbaDatabase -SqlInstance $global:instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
         }
 
         Context "Validate standard output for StatHeader option" {
             BeforeAll {
-                $result = Get-DbaDbccStatistic -SqlInstance $script:instance2 -Database $dbname -Option StatHeader
+                $result = Get-DbaDbccStatistic -SqlInstance $global:instance2 -Database $dbname -Option StatHeader
             }
 
             It "returns correct number of results" {
@@ -73,7 +73,7 @@ Describe "Get-DbaDbccStatistic" {
 
         Context "Validate standard output for DensityVector option" {
             BeforeAll {
-                $result = Get-DbaDbccStatistic -SqlInstance $script:instance2 -Database $dbname -Option DensityVector
+                $result = Get-DbaDbccStatistic -SqlInstance $global:instance2 -Database $dbname -Option DensityVector
             }
 
             It "returns results" {
@@ -88,7 +88,7 @@ Describe "Get-DbaDbccStatistic" {
 
         Context "Validate standard output for Histogram option" {
             BeforeAll {
-                $result = Get-DbaDbccStatistic -SqlInstance $script:instance2 -Database $dbname -Option Histogram
+                $result = Get-DbaDbccStatistic -SqlInstance $global:instance2 -Database $dbname -Option Histogram
             }
 
             It "returns results" {
@@ -103,7 +103,7 @@ Describe "Get-DbaDbccStatistic" {
 
         Context "Validate standard output for StatsStream option" {
             BeforeAll {
-                $result = Get-DbaDbccStatistic -SqlInstance $script:instance2 -Database $dbname -Option StatsStream
+                $result = Get-DbaDbccStatistic -SqlInstance $global:instance2 -Database $dbname -Option StatsStream
             }
 
             It "returns results" {
@@ -118,7 +118,7 @@ Describe "Get-DbaDbccStatistic" {
 
         Context "Validate returns results for single Object" {
             BeforeAll {
-                $result = Get-DbaDbccStatistic -SqlInstance $script:instance2 -Database $dbname -Object $tableName2 -Option StatsStream
+                $result = Get-DbaDbccStatistic -SqlInstance $global:instance2 -Database $dbname -Object $tableName2 -Option StatsStream
             }
 
             It "returns results" {
@@ -128,7 +128,7 @@ Describe "Get-DbaDbccStatistic" {
 
         Context "Validate returns results for single Object and Target" {
             BeforeAll {
-                $result = Get-DbaDbccStatistic -SqlInstance $script:instance2 -Database $dbname -Object $tableName2 -Target 'TestStat2' -Option DensityVector
+                $result = Get-DbaDbccStatistic -SqlInstance $global:instance2 -Database $dbname -Object $tableName2 -Target 'TestStat2' -Option DensityVector
             }
 
             It "returns results" {

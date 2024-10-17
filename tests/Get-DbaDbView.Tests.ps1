@@ -24,7 +24,7 @@ Describe "Get-DbaDbView Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[]
         }
         It "Should have ExcludeSystemView as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSystemView -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter ExcludeSystemView -Type Switch
         }
         It "Should have View as a parameter" {
             $CommandUnderTest | Should -HaveParameter View -Type String[]
@@ -36,7 +36,7 @@ Describe "Get-DbaDbView Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Database[]
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 }
@@ -47,7 +47,7 @@ Describe "Get-DbaDbView Integration Tests" -Tag "IntegrationTests" {
     }
 
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $global:instance2
         $viewName = ("dbatoolsci_{0}" -f $(Get-Random))
         $viewNameWithSchema = ("dbatoolsci_{0}" -f $(Get-Random))
         $server.Query("CREATE VIEW $viewName AS (SELECT 1 as col1)", 'tempdb')
@@ -63,7 +63,7 @@ Describe "Get-DbaDbView Integration Tests" -Tag "IntegrationTests" {
 
     Context "Command actually works" {
         BeforeAll {
-            $results = Get-DbaDbView -SqlInstance $script:instance2 -Database tempdb
+            $results = Get-DbaDbView -SqlInstance $global:instance2 -Database tempdb
         }
         It "Should have standard properties" {
             $ExpectedProps = 'ComputerName', 'InstanceName', 'SqlInstance'
@@ -79,29 +79,29 @@ Describe "Get-DbaDbView Integration Tests" -Tag "IntegrationTests" {
 
     Context "Exclusions work correctly" {
         It "Should contain no views from master database" {
-            $results = Get-DbaDbView -SqlInstance $script:instance2 -ExcludeDatabase master
+            $results = Get-DbaDbView -SqlInstance $global:instance2 -ExcludeDatabase master
             $results.Database | Should -Not -Contain 'master'
         }
         It "Should exclude system views" {
-            $results = Get-DbaDbView -SqlInstance $script:instance2 -Database master -ExcludeSystemView
+            $results = Get-DbaDbView -SqlInstance $global:instance2 -Database master -ExcludeSystemView
             $results | Where-Object IsSystemObject -eq $true | Should -BeNullOrEmpty
         }
     }
 
     Context "Piping works" {
         It "Should allow piping from string" {
-            $results = $script:instance2 | Get-DbaDbView -Database tempdb
+            $results = $global:instance2 | Get-DbaDbView -Database tempdb
             $results | Where-Object Name -eq $viewName | Select-Object -ExpandProperty Name | Should -Be $viewName
         }
         It "Should allow piping from Get-DbaDatabase" {
-            $results = Get-DbaDatabase -SqlInstance $script:instance2 -Database tempdb | Get-DbaDbView
+            $results = Get-DbaDatabase -SqlInstance $global:instance2 -Database tempdb | Get-DbaDbView
             $results | Where-Object Name -eq $viewName | Select-Object -ExpandProperty Name | Should -Be $viewName
         }
     }
-    
+
     Context "Schema parameter (see #9445)" {
         It "Should return just one view with schema 'someschema'" {
-            $results = $script:instance2 | Get-DbaDbView -Database tempdb -Schema 'someschema'
+            $results = $global:instance2 | Get-DbaDbView -Database tempdb -Schema 'someschema'
             $results | Where-Object Name -eq $viewNameWithSchema | Select-Object -ExpandProperty Name | Should -Be $viewNameWithSchema
             $results | Where-Object Schema -ne 'someschema' | Should -BeNullOrEmpty
         }

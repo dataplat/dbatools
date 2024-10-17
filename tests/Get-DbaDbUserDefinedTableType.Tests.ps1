@@ -21,13 +21,13 @@ Describe "Get-DbaDbUserDefinedTableType" {
             $CommandUnderTest | Should -HaveParameter Type -Type String[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Command usage" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $tabletypename = ("dbatools_{0}" -f $(Get-Random))
             $tabletypename1 = ("dbatools_{0}" -f $(Get-Random))
             $server.Query("CREATE TYPE $tabletypename AS TABLE([column1] INT NULL)", 'tempdb')
@@ -40,7 +40,7 @@ Describe "Get-DbaDbUserDefinedTableType" {
 
         Context "Gets a Db User Defined Table Type" {
             BeforeAll {
-                $results = Get-DbaDbUserDefinedTableType -SqlInstance $script:instance2 -Database tempdb -Type $tabletypename
+                $results = Get-DbaDbUserDefinedTableType -SqlInstance $global:instance2 -Database tempdb -Type $tabletypename
             }
             It "Gets results" {
                 $results | Should -Not -BeNullOrEmpty
@@ -58,7 +58,7 @@ Describe "Get-DbaDbUserDefinedTableType" {
 
         Context "Gets all the Db User Defined Table Type" {
             BeforeAll {
-                $results = Get-DbaDbUserDefinedTableType -SqlInstance $script:instance2 -Database tempdb
+                $results = Get-DbaDbUserDefinedTableType -SqlInstance $global:instance2 -Database tempdb
             }
             It "Gets results" {
                 $results | Should -Not -BeNullOrEmpty

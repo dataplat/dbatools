@@ -174,7 +174,7 @@ ALTER PROC dbo.sp_WhoIsActive
 
     AfterAll {
         Remove-Item -Path $testfilepath, $testzippath, "$testtemp\who_MOCKED_is_active_v11_32.sql", "$DbatoolsData\spwhoisactive.zip" -Force -ErrorAction SilentlyContinue
-        Invoke-DbaQuery -SqlInstance $script:instance1 -Database Master -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
+        Invoke-DbaQuery -SqlInstance $env:instance1 -Database Master -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
     }
 
     Context "Validate parameters" {
@@ -204,22 +204,22 @@ ALTER PROC dbo.sp_WhoIsActive
         }
         It "Should have EnableException parameter" {
             $ParameterList['EnableException'] | Should -Not -BeNullOrEmpty
-            $ParameterList['EnableException'].ParameterType.Name | Should -Be 'SwitchParameter'
+            $ParameterList['EnableException'].ParameterType.Name | Should -Be 'Switch'
             $ParameterList['EnableException'].IsMandatory | Should -Be $false
         }
         It "Should have Force parameter" {
             $ParameterList['Force'] | Should -Not -BeNullOrEmpty
-            $ParameterList['Force'].ParameterType.Name | Should -Be 'SwitchParameter'
+            $ParameterList['Force'].ParameterType.Name | Should -Be 'Switch'
             $ParameterList['Force'].IsMandatory | Should -Be $false
         }
     }
 
     Context "Should Install SPWhoisActive with Mock" {
         BeforeAll {
-            $results = Install-DbaWhoIsActive -SqlInstance $script:instance1 -Database Master
+            $results = Install-DbaWhoIsActive -SqlInstance $env:instance1 -Database Master
         }
         AfterAll {
-            Invoke-DbaQuery -SqlInstance $script:instance1 -Database Master -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
+            Invoke-DbaQuery -SqlInstance $env:instance1 -Database Master -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
         }
         It "Should simulate install from internet" {
             $results | Should -Not -BeNullOrEmpty
@@ -228,10 +228,10 @@ ALTER PROC dbo.sp_WhoIsActive
 
     Context "Should Install SPWhoisActive from File" {
         BeforeAll {
-            $results = Install-DbaWhoIsActive -SqlInstance $script:instance1 -LocalFile $testfilepath -Database Master
+            $results = Install-DbaWhoIsActive -SqlInstance $env:instance1 -LocalFile $testfilepath -Database Master
         }
         AfterAll {
-            Invoke-DbaQuery -SqlInstance $script:instance1 -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
+            Invoke-DbaQuery -SqlInstance $env:instance1 -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
         }
         It "Should install against .sql file" {
             $results | Should -Not -BeNullOrEmpty
@@ -240,10 +240,10 @@ ALTER PROC dbo.sp_WhoIsActive
 
     Context "Should Install SPWhoisActive from Zip" {
         BeforeAll {
-            $results = Install-DbaWhoIsActive -SqlInstance $script:instance1 -LocalFile $testzippath -Database tempdb
+            $results = Install-DbaWhoIsActive -SqlInstance $env:instance1 -LocalFile $testzippath -Database tempdb
         }
         AfterAll {
-            Invoke-DbaQuery -SqlInstance $script:instance1 -Database tempdb -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
+            Invoke-DbaQuery -SqlInstance $env:instance1 -Database tempdb -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
         }
         It "Should install against ZIP" {
             $results | Should -Not -BeNullOrEmpty

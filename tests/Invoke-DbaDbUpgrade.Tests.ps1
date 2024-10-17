@@ -22,28 +22,28 @@ Describe "Invoke-DbaDbUpgrade" {
             $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Not -Mandatory
         }
         It "Should have NoCheckDb parameter" {
-            $CommandUnderTest | Should -HaveParameter NoCheckDb -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NoCheckDb -Type Switch -Not -Mandatory
         }
         It "Should have NoUpdateUsage parameter" {
-            $CommandUnderTest | Should -HaveParameter NoUpdateUsage -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NoUpdateUsage -Type Switch -Not -Mandatory
         }
         It "Should have NoUpdateStats parameter" {
-            $CommandUnderTest | Should -HaveParameter NoUpdateStats -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NoUpdateStats -Type Switch -Not -Mandatory
         }
         It "Should have NoRefreshView parameter" {
-            $CommandUnderTest | Should -HaveParameter NoRefreshView -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter NoRefreshView -Type Switch -Not -Mandatory
         }
         It "Should have AllUserDatabases parameter" {
-            $CommandUnderTest | Should -HaveParameter AllUserDatabases -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter AllUserDatabases -Type Switch -Not -Mandatory
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Not -Mandatory
         }
         It "Should have InputObject parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Database[] -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 }

@@ -22,7 +22,7 @@ Describe "Get-DbaInstanceProtocol" {
 
     Context "Command actually works" {
         BeforeAll {
-            $results = Get-DbaInstanceProtocol -ComputerName $script:instance1, $script:instance2
+            $results = Get-DbaInstanceProtocol -ComputerName $global:instance1, $global:instance2
         }
 
         It "shows some services" {

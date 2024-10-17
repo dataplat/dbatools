@@ -43,7 +43,7 @@ Describe "Export-DbaDiagnosticQuery" {
             Get-Item $testPath | Remove-Item -ErrorAction Ignore
         }
         It "exports results to one file and creates directory if required" {
-            $null = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -QueryName 'Memory Clerk Usage' | Export-DbaDiagnosticQuery -Path $testPath
+            $null = Invoke-DbaDiagnosticQuery -SqlInstance $global:instance2 -QueryName 'Memory Clerk Usage' | Export-DbaDiagnosticQuery -Path $testPath
             (Get-ChildItem $testPath).Count | Should -Be 1
         }
     }

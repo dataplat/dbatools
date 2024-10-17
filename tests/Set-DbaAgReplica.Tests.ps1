@@ -56,34 +56,34 @@ Describe "Set-DbaAgReplica" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type AvailabilityReplica
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Command usage" {
         BeforeAll {
             $agname = "dbatoolsci_arepgroup"
-            $ag = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Certificate dbatoolsci_AGCert -Confirm:$false
+            $ag = New-DbaAvailabilityGroup -Primary $env:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Certificate dbatoolsci_AGCert -Confirm:$false
             $replicaName = $ag.PrimaryReplica
         }
         AfterAll {
-            Remove-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup $agname -Confirm:$false
+            Remove-DbaAvailabilityGroup -SqlInstance $env:instance3 -AvailabilityGroup $agname -Confirm:$false
         }
         It "returns modified results for BackupPriority" {
-            $results = Set-DbaAgReplica -SqlInstance $script:instance3 -AvailabilityGroup $agname -Replica $replicaName -BackupPriority 100 -Confirm:$false
+            $results = Set-DbaAgReplica -SqlInstance $env:instance3 -AvailabilityGroup $agname -Replica $replicaName -BackupPriority 100 -Confirm:$false
             $results.AvailabilityGroup | Should -Be $agname
             $results.BackupPriority | Should -Be 100
         }
         It "returns modified results for SeedingMode" {
-            $results = Set-DbaAgReplica -SqlInstance $script:instance3 -AvailabilityGroup $agname -Replica $replicaName -SeedingMode Automatic -Confirm:$false
+            $results = Set-DbaAgReplica -SqlInstance $env:instance3 -AvailabilityGroup $agname -Replica $replicaName -SeedingMode Automatic -Confirm:$false
             $results.AvailabilityGroup | Should -Be $agname
             $results.SeedingMode | Should -Be Automatic
         }
         It "attempts to add a ReadOnlyRoutingList" {
-            $null = Get-DbaAgReplica -SqlInstance $script:instance3 -AvailabilityGroup $agname | 
-                Select-Object -First 1 | 
+            $null = Get-DbaAgReplica -SqlInstance $env:instance3 -AvailabilityGroup $agname |
+                Select-Object -First 1 |
                 Set-DbaAgReplica -ReadOnlyRoutingList nondockersql -WarningAction SilentlyContinue -WarningVariable warn -Confirm:$false
             $warn | Should -Match "does not exist. Only availability"
         }
     }
-} #$script:instance2 for appveyor
+} #$env:instance2 for appveyor

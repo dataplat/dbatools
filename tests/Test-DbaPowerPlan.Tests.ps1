@@ -21,17 +21,17 @@ Describe "Test-DbaPowerPlan" {
             $CommandUnderTest | Should -HaveParameter PowerPlan -Type String
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Command actually works" {
         BeforeAll {
-            $null = Set-DbaPowerPlan -ComputerName $script:instance2 -PowerPlan 'Balanced'
+            $null = Set-DbaPowerPlan -ComputerName $env:instance2 -PowerPlan 'Balanced'
         }
 
         It "Should return result for the server" {
-            $results = Test-DbaPowerPlan -ComputerName $script:instance2
+            $results = Test-DbaPowerPlan -ComputerName $env:instance2
             $results | Should -Not -BeNull
             $results.ActivePowerPlan | Should -Be 'Balanced'
             $results.RecommendedPowerPlan | Should -Be 'High performance'
@@ -40,7 +40,7 @@ Describe "Test-DbaPowerPlan" {
         }
 
         It "Use 'Balanced' plan as best practice" {
-            $results = Test-DbaPowerPlan -ComputerName $script:instance2 -PowerPlan 'Balanced'
+            $results = Test-DbaPowerPlan -ComputerName $env:instance2 -PowerPlan 'Balanced'
             $results.IsBestPractice | Should -BeTrue
         }
     }

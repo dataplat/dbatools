@@ -24,7 +24,7 @@ Describe "Select-DbaDbSequenceNextValue" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Database
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 }
@@ -32,7 +32,7 @@ Describe "Select-DbaDbSequenceNextValue" {
 Describe "Select-DbaDbSequenceNextValue Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $random = Get-Random
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $env:instance2
         $newDbName = "dbatoolsci_newdb_$random"
         $newDb = New-DbaDatabase -SqlInstance $server -Name $newDbName
 

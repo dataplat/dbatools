@@ -24,13 +24,13 @@ Describe "Get-DbaInstanceAudit" {
             $CommandUnderTest | Should -HaveParameter ExcludeAudit -Type String[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Command usage" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $sql = "CREATE SERVER AUDIT LoginAudit
                     TO FILE (FILEPATH = N'C:\temp',MAXSIZE = 10 MB,MAX_ROLLOVER_FILES = 1,RESERVE_DISK_SPACE = OFF)
                     WITH (QUEUE_DELAY = 1000, ON_FAILURE = CONTINUE)
@@ -49,11 +49,11 @@ Describe "Get-DbaInstanceAudit" {
             $server.Query($sql)
         }
         It "returns some results" {
-            $results = Get-DbaInstanceAudit -SqlInstance $script:instance2
+            $results = Get-DbaInstanceAudit -SqlInstance $global:instance2
             $results | Should -Not -BeNullOrEmpty
         }
         It "returns LoginAudit results" {
-            $results = Get-DbaInstanceAudit -SqlInstance $script:instance2 -Audit LoginAudit
+            $results = Get-DbaInstanceAudit -SqlInstance $global:instance2 -Audit LoginAudit
             $results.Name | Should -Be 'LoginAudit'
             $results.Enabled | Should -BeTrue
         }

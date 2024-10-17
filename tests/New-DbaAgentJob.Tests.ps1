@@ -25,7 +25,7 @@ Describe "New-DbaAgentJob" {
             $CommandUnderTest | Should -HaveParameter ScheduleId -Type Int32[] -Not -Mandatory
         }
         It "Should have Disabled parameter" {
-            $CommandUnderTest | Should -HaveParameter Disabled -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Disabled -Type Switch -Not -Mandatory
         }
         It "Should have Description parameter" {
             $CommandUnderTest | Should -HaveParameter Description -Type String -Not -Mandatory
@@ -61,10 +61,10 @@ Describe "New-DbaAgentJob" {
             $CommandUnderTest | Should -HaveParameter DeleteLevel -Type Object -Not -Mandatory
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Not -Mandatory
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
@@ -76,24 +76,24 @@ Describe "New-DbaAgentJob" {
 
         AfterAll {
             # Cleanup and ignore all output
-            Remove-DbaAgentJob -SqlInstance $script:instance2 -Job $jobName -Confirm:$false *> $null
+            Remove-DbaAgentJob -SqlInstance $env:instance2 -Job $jobName -Confirm:$false *> $null
         }
 
         It "Should create a new job with the right name and description" {
-            $results = New-DbaAgentJob -SqlInstance $script:instance2 -Job $jobName -Description $jobDescription
+            $results = New-DbaAgentJob -SqlInstance $env:instance2 -Job $jobName -Description $jobDescription
             $results.Name | Should -Be $jobName
             $results.Description | Should -Be $jobDescription
         }
 
         It "Should verify the job exists" {
-            $newResults = Get-DbaAgentJob -SqlInstance $script:instance2 -Job $jobName
+            $newResults = Get-DbaAgentJob -SqlInstance $env:instance2 -Job $jobName
             $newResults.Name | Should -Be $jobName
             $newResults.Description | Should -Be $jobDescription
         }
 
         It "Should not overwrite existing jobs" {
             $warn = $null
-            $results = New-DbaAgentJob -SqlInstance $script:instance2 -Job $jobName -Description $jobDescription -WarningAction SilentlyContinue -WarningVariable warn
+            $results = New-DbaAgentJob -SqlInstance $env:instance2 -Job $jobName -Description $jobDescription -WarningAction SilentlyContinue -WarningVariable warn
             $warn | Should -Match "already exists"
         }
     }

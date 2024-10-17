@@ -32,14 +32,14 @@ Describe "Get-DbaMemoryUsage" {
             $CommandUnderTest | Should -HaveParameter SSISCounterRegex -Type String
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Command actually works" {
         BeforeAll {
-            $results = Get-DbaMemoryUsage -ComputerName $script:instance1
-            $resultsSimple = Get-DbaMemoryUsage -ComputerName $script:instance1
+            $results = Get-DbaMemoryUsage -ComputerName $env:instance1
+            $resultsSimple = Get-DbaMemoryUsage -ComputerName $env:instance1
         }
 
         It "returns results" {

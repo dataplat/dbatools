@@ -15,7 +15,7 @@ Describe "Get-DbaRgClassifierFunction" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type ResourceGovernor[] -Not -Mandatory
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 
@@ -29,16 +29,16 @@ Describe "Get-DbaRgClassifierFunction" {
                          RETURN N'gOffHoursProcessing'
                     END"
 
-            Invoke-DbaQuery -SqlInstance $script:instance2 -Query $sql
-            Invoke-DbaQuery -SqlInstance $script:instance2 -Query "ALTER RESOURCE GOVERNOR with (CLASSIFIER_FUNCTION = dbo.dbatoolsci_fnRG); ALTER RESOURCE GOVERNOR RECONFIGURE"
+            Invoke-DbaQuery -SqlInstance $env:instance2 -Query $sql
+            Invoke-DbaQuery -SqlInstance $env:instance2 -Query "ALTER RESOURCE GOVERNOR with (CLASSIFIER_FUNCTION = dbo.dbatoolsci_fnRG); ALTER RESOURCE GOVERNOR RECONFIGURE"
         }
         AfterAll {
-            Invoke-DbaQuery -SqlInstance $script:instance2 -Query "ALTER RESOURCE GOVERNOR WITH (CLASSIFIER_FUNCTION = NULL); ALTER RESOURCE GOVERNOR RECONFIGURE"
-            Invoke-DbaQuery -SqlInstance $script:instance2 -Query "DROP FUNCTION [dbo].[dbatoolsci_fnRG]"
+            Invoke-DbaQuery -SqlInstance $env:instance2 -Query "ALTER RESOURCE GOVERNOR WITH (CLASSIFIER_FUNCTION = NULL); ALTER RESOURCE GOVERNOR RECONFIGURE"
+            Invoke-DbaQuery -SqlInstance $env:instance2 -Query "DROP FUNCTION [dbo].[dbatoolsci_fnRG]"
         }
 
         It "returns the proper classifier function" {
-            $results = Get-DbaRgClassifierFunction -SqlInstance $script:instance2
+            $results = Get-DbaRgClassifierFunction -SqlInstance $env:instance2
             $results.Name | Should -Be 'dbatoolsci_fnRG'
         }
     }

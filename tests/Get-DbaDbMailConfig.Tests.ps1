@@ -25,7 +25,7 @@ Describe "Get-DbaDbMailConfig" {
     Context "Command usage" {
         BeforeAll {
             . "$PSScriptRoot\constants.ps1"
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $mailSettings = @{
                 AccountRetryAttempts           = '1'
                 AccountRetryDelay              = '60'
@@ -42,7 +42,7 @@ Describe "Get-DbaDbMailConfig" {
 
         Context "Gets DbMail Settings" {
             BeforeAll {
-                $results = Get-DbaDbMailConfig -SqlInstance $script:instance2
+                $results = Get-DbaDbMailConfig -SqlInstance $global:instance2
             }
             It "Gets results" {
                 $results | Should -Not -BeNullOrEmpty
@@ -57,7 +57,7 @@ Describe "Get-DbaDbMailConfig" {
 
         Context "Gets DbMail Settings when using -Name" {
             BeforeAll {
-                $results = Get-DbaDbMailConfig -SqlInstance $script:instance2 -Name "ProhibitedExtensions"
+                $results = Get-DbaDbMailConfig -SqlInstance $global:instance2 -Name "ProhibitedExtensions"
             }
             It "Gets results" {
                 $results | Should -Not -BeNullOrEmpty

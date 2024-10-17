@@ -24,41 +24,41 @@ Describe "Set-DbaTcpPort" {
             $CommandUnderTest | Should -HaveParameter IpAddress -Type IPAddress[]
         }
         It "Should have Force as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Command actually works" {
         BeforeAll {
-            $oldPort = (Get-DbaTcpPort -SqlInstance $script:instance2).Port
+            $oldPort = (Get-DbaTcpPort -SqlInstance $env:instance2).Port
             $newPort = $oldPort + 1000
-            $instance = [DbaInstance]$script:instance2
+            $instance = [DbaInstance]$env:instance2
         }
 
         It "Should change the port" {
-            $result = Set-DbaTcpPort -SqlInstance $script:instance2 -Port $newPort -Confirm:$false
+            $result = Set-DbaTcpPort -SqlInstance $env:instance2 -Port $newPort -Confirm:$false
             $result.Changes | Should -Match 'Changed TcpPort'
             $result.RestartNeeded | Should -Be $true
             $result.Restarted | Should -Be $false
 
             $null = Restart-DbaService -ComputerName $instance.ComputerName -InstanceName $instance.InstanceName -Type Engine -Force
 
-            $setPort = (Get-DbaTcpPort -SqlInstance $script:instance2).Port
+            $setPort = (Get-DbaTcpPort -SqlInstance $env:instance2).Port
             $setPort | Should -Be $newPort
         }
 
         It "Should change the port back to the old value" {
-            $result = Set-DbaTcpPort -SqlInstance $script:instance2 -Port $oldPort -Confirm:$false
+            $result = Set-DbaTcpPort -SqlInstance $env:instance2 -Port $oldPort -Confirm:$false
             $result.Changes | Should -Match 'Changed TcpPort'
             $result.RestartNeeded | Should -Be $true
             $result.Restarted | Should -Be $false
 
             $null = Restart-DbaService -ComputerName $instance.ComputerName -InstanceName $instance.InstanceName -Type Engine -Force
 
-            $setPort = (Get-DbaTcpPort -SqlInstance $script:instance2).Port
+            $setPort = (Get-DbaTcpPort -SqlInstance $env:instance2).Port
             $setPort | Should -Be $oldPort
         }
     }

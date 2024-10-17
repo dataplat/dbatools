@@ -21,7 +21,7 @@ Describe "Get-DbaDbFeatureUsage" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Database[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -33,7 +33,7 @@ Describe "Get-DbaDbFeatureUsage" {
 
         BeforeAll {
             $dbname = "dbatoolsci_test_$(Get-Random)"
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
             $server.Query("Create Database [$dbname]")
             $server.Query("Create Table [$dbname].dbo.TestCompression
                 (Column1 nvarchar(10),
@@ -47,18 +47,18 @@ Describe "Get-DbaDbFeatureUsage" {
         }
 
         It "Gets Feature Usage" {
-            $results = Get-DbaDbFeatureUsage -SqlInstance $script:instance2
+            $results = Get-DbaDbFeatureUsage -SqlInstance $global:instance2
             $results | Should -Not -BeNullOrEmpty
         }
 
         It "Gets Feature Usage using -Database" {
-            $results = Get-DbaDbFeatureUsage -SqlInstance $script:instance2 -Database $dbname
+            $results = Get-DbaDbFeatureUsage -SqlInstance $global:instance2 -Database $dbname
             $results | Should -Not -BeNullOrEmpty
             $results.Feature | Should -Be "Compression"
         }
 
         It "Gets Feature Usage using -ExcludeDatabase" {
-            $results = Get-DbaDbFeatureUsage -SqlInstance $script:instance2 -ExcludeDatabase $dbname
+            $results = Get-DbaDbFeatureUsage -SqlInstance $global:instance2 -ExcludeDatabase $dbname
             $results.database | Should -Not -Contain $dbname
         }
     }

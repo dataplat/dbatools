@@ -18,11 +18,11 @@ Describe "Join-DbaPath" {
         It "Should have Child as a non-mandatory String[] parameter" {
             $CommandUnderTest | Should -HaveParameter Child -Type String[] -Not -Mandatory
         }
-        It "Should have Verbose as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter Verbose -Type SwitchParameter -Not -Mandatory
+        It "Should have Verbose as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter Verbose -Type Switch -Not -Mandatory
         }
-        It "Should have Debug as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter Debug -Type SwitchParameter -Not -Mandatory
+        It "Should have Debug as a non-mandatory Switch" {
+            $CommandUnderTest | Should -HaveParameter Debug -Type Switch -Not -Mandatory
         }
         It "Should have ErrorAction as a non-mandatory ActionPreference parameter" {
             $CommandUnderTest | Should -HaveParameter ErrorAction -Type ActionPreference -Not -Mandatory

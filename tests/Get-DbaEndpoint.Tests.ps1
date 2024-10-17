@@ -24,23 +24,23 @@ Describe "Get-DbaEndpoint" {
             $CommandUnderTest | Should -HaveParameter Type -Type String[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
     Context "Command usage" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
         }
 
         It "gets some endpoints" {
-            $results = Get-DbaEndpoint -SqlInstance $script:instance2
+            $results = Get-DbaEndpoint -SqlInstance $global:instance2
             $results.Count | Should -BeGreaterThan 1
             $results.Name | Should -Contain 'TSQL Default TCP'
         }
 
         It "gets one endpoint" {
-            $results = Get-DbaEndpoint -SqlInstance $script:instance2 -Endpoint 'TSQL Default TCP'
+            $results = Get-DbaEndpoint -SqlInstance $global:instance2 -Endpoint 'TSQL Default TCP'
             $results.Name | Should -Be 'TSQL Default TCP'
             $results.Count | Should -Be 1
         }

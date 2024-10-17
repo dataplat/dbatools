@@ -22,10 +22,10 @@ Describe "Set-DbaNetworkCertificate" {
             $CommandUnderTest | Should -HaveParameter Thumbprint -Type String
         }
         It "Should have RestartService as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter RestartService -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter RestartService -Type Switch
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 
@@ -35,11 +35,11 @@ Describe "Set-DbaNetworkCertificate" {
     #     BeforeAll {
     #         # Setup code for integration tests
     #     }
-    #     
+    #
     #     It "Should set network certificate correctly" {
     #         # Test implementation
     #     }
-    #     
+    #
     #     AfterAll {
     #         # Cleanup code for integration tests
     #     }

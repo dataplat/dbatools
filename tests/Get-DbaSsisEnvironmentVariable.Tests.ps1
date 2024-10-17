@@ -24,7 +24,7 @@ Describe "Get-DbaSsisEnvironmentVariable" {
             $CommandUnderTest | Should -HaveParameter FolderExclude -Type Object[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 }
