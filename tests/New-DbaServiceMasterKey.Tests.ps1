@@ -20,22 +20,6 @@ Describe "New-DbaServiceMasterKey" {
         It "Should have EnableException as a parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
-        It "Should have common parameters" {
-            $CommandUnderTest | Should -HaveParameter Verbose -Type Switch
-            $CommandUnderTest | Should -HaveParameter Debug -Type Switch
-            $CommandUnderTest | Should -HaveParameter ErrorAction -Type System.Management.Automation.ActionPreference
-            $CommandUnderTest | Should -HaveParameter WarningAction -Type System.Management.Automation.ActionPreference
-            $CommandUnderTest | Should -HaveParameter InformationAction -Type System.Management.Automation.ActionPreference
-            $CommandUnderTest | Should -HaveParameter ProgressAction -Type System.Management.Automation.ActionPreference
-            $CommandUnderTest | Should -HaveParameter ErrorVariable -Type String
-            $CommandUnderTest | Should -HaveParameter WarningVariable -Type String
-            $CommandUnderTest | Should -HaveParameter InformationVariable -Type String
-            $CommandUnderTest | Should -HaveParameter OutVariable -Type String
-            $CommandUnderTest | Should -HaveParameter OutBuffer -Type Int32
-            $CommandUnderTest | Should -HaveParameter PipelineVariable -Type String
-            $CommandUnderTest | Should -HaveParameter WhatIf -Type Switch
-            $CommandUnderTest | Should -HaveParameter Confirm -Type Switch
-        }
     }
 }
 

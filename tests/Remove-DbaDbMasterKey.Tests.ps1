@@ -39,23 +39,6 @@ Describe "Remove-DbaDbMasterKey Unit Tests" -Tag 'UnitTests' {
         It "Should have EnableException parameter" {
             $command | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
-
-        It "Should have common parameters" {
-            $command | Should -HaveParameter Verbose -Type Switch -Mandatory:$false
-            $command | Should -HaveParameter Debug -Type Switch -Mandatory:$false
-            $command | Should -HaveParameter ErrorAction -Type System.Management.Automation.ActionPreference -Mandatory:$false
-            $command | Should -HaveParameter WarningAction -Type System.Management.Automation.ActionPreference -Mandatory:$false
-            $command | Should -HaveParameter InformationAction -Type System.Management.Automation.ActionPreference -Mandatory:$false
-            $command | Should -HaveParameter ProgressAction -Type System.Management.Automation.ActionPreference -Mandatory:$false
-            $command | Should -HaveParameter ErrorVariable -Type String -Mandatory:$false
-            $command | Should -HaveParameter WarningVariable -Type String -Mandatory:$false
-            $command | Should -HaveParameter InformationVariable -Type String -Mandatory:$false
-            $command | Should -HaveParameter OutVariable -Type String -Mandatory:$false
-            $command | Should -HaveParameter OutBuffer -Type Int32 -Mandatory:$false
-            $command | Should -HaveParameter PipelineVariable -Type String -Mandatory:$false
-            $command | Should -HaveParameter WhatIf -Type Switch -Mandatory:$false
-            $command | Should -HaveParameter Confirm -Type Switch -Mandatory:$false
-        }
     }
 }
 

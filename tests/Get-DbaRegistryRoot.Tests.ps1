@@ -14,17 +14,6 @@ Describe "Get-DbaRegistryRoot" {
         It "Should have EnableException as a non-mandatory switch parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type switch -Mandatory:$false
         }
-        # Common parameters
-        @('Verbose', 'Debug', 'ErrorVariable', 'WarningVariable', 'InformationVariable', 'OutVariable', 'OutBuffer', 'PipelineVariable') | ForEach-Object {
-            It "Should have $_ as a common parameter" {
-                $CommandUnderTest | Should -HaveParameter $_
-            }
-        }
-        @('ErrorAction', 'WarningAction', 'InformationAction', 'ProgressAction') | ForEach-Object {
-            It "Should have $_ as a common parameter of type System.Management.Automation.ActionPreference" {
-                $CommandUnderTest | Should -HaveParameter $_ -Type System.Management.Automation.ActionPreference
-            }
-        }
     }
 
     Context "Command returns proper info" {

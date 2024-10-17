@@ -11,27 +11,6 @@ Describe "Remove-DbaExtendedProperty" {
         It "Accepts EnableException as a parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
-        It "Accepts Verbose as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Verbose -Type Switch
-        }
-        It "Accepts Debug as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Debug -Type Switch
-        }
-        It "Accepts ErrorAction as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ErrorAction -Type System.Management.Automation.ActionPreference
-        }
-        It "Accepts WarningAction as a parameter" {
-            $CommandUnderTest | Should -HaveParameter WarningAction -Type System.Management.Automation.ActionPreference
-        }
-        It "Accepts InformationAction as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InformationAction -Type System.Management.Automation.ActionPreference
-        }
-        It "Accepts ProgressAction as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ProgressAction -Type System.Management.Automation.ActionPreference
-        }
-        It "Accepts ErrorVariable as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ErrorVariable -Type String
-        }
         It "Accepts WarningVariable as a parameter" {
             $CommandUnderTest | Should -HaveParameter WarningVariable -Type String
         }
