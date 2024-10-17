@@ -1,19 +1,36 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "New-DbaXESmartCsvWriter" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'OutputFile', 'Overwrite', 'Event', 'OutputColumn', 'Filter', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command New-DbaXESmartCsvWriter
+        }
+        It "Should have OutputFile as a non-mandatory String parameter" {
+            $CommandUnderTest | Should -HaveParameter OutputFile -Type String -Not -Mandatory
+        }
+        It "Should have Overwrite as a non-mandatory SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter Overwrite -Type Switch -Not -Mandatory
+        }
+        It "Should have Event as a non-mandatory String[] parameter" {
+            $CommandUnderTest | Should -HaveParameter Event -Type String[] -Not -Mandatory
+        }
+        It "Should have OutputColumn as a non-mandatory String[] parameter" {
+            $CommandUnderTest | Should -HaveParameter OutputColumn -Type String[] -Not -Mandatory
+        }
+        It "Should have Filter as a non-mandatory String parameter" {
+            $CommandUnderTest | Should -HaveParameter Filter -Type String -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Creates a smart object" {
         It "returns the object with all of the correct properties" {
             $results = New-DbaXESmartCsvWriter -Event abc -OutputColumn one, two -Filter What -OutputFile C:\temp\abc.csv

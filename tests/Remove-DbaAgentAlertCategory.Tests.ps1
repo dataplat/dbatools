@@ -1,47 +1,58 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Remove-DbaAgentAlertCategory" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Category', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Remove-DbaAgentAlertCategory
+        }
+        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Category as a non-mandatory parameter of type String[]" {
+            $CommandUnderTest | Should -HaveParameter Category -Type String[] -Not -Mandatory
+        }
+        It "Should have InputObject as a non-mandatory parameter of type AlertCategory[]" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type AlertCategory[] -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    Context "New Agent Alert Category is changed properly" {
+    Context "Integration Tests" {
+        BeforeAll {
+            . "$PSScriptRoot\constants.ps1"
+        }
 
-        It "Should have the right name" {
+        It "Should remove newly created Agent Alert Categories" {
             $results = New-DbaAgentAlertCategory -SqlInstance $script:instance2 -Category CategoryTest1, CategoryTest2, CategoryTest3
-            $results[0].Name | Should Be "CategoryTest1"
-            $results[1].Name | Should Be "CategoryTest2"
-            $results[2].Name | Should Be "CategoryTest3"
+            $results.Count | Should -Be 3
+            $results[0].Name | Should -Be "CategoryTest1"
+            $results[1].Name | Should -Be "CategoryTest2"
+            $results[2].Name | Should -Be "CategoryTest3"
+
+            $newResults = Get-DbaAgentAlertCategory -SqlInstance $script:instance2 -Category CategoryTest1, CategoryTest2, CategoryTest3
+            $newResults.Count | Should -Be 3
+
+            Remove-DbaAgentAlertCategory -SqlInstance $script:instance2 -Category CategoryTest1, CategoryTest2, CategoryTest3 -Confirm:$false
+
+            $finalResults = Get-DbaAgentAlertCategory -SqlInstance $script:instance2 -Category CategoryTest1, CategoryTest2, CategoryTest3
+            $finalResults.Count | Should -Be 0
         }
 
-        It "Should actually for sure exist" {
-            $newresults = Get-DbaAgentAlertCategory -SqlInstance $script:instance2 -Category CategoryTest1, CategoryTest2, CategoryTest3
-            $newresults.Count | Should Be 3
-        }
-
-        It "Remove the alert categories" {
-            Remove-DbaAgentAlertCategory -SqlInstance $script:instance2 -Category CategoryTest1, CategoryTest2, Categorytest3 -Confirm:$false
-
-            $newresults = Get-DbaAgentAlertCategory -SqlInstance $script:instance2 -Category CategoryTest1, CategoryTest2, CategoryTest3
-
-            $newresults.Count | Should Be 0
-        }
-
-        It "supports piping SQL Agent alert category" {
-            $categoryName = "dbatoolsci_test_$(get-random)"
+        It "Should support piping SQL Agent alert category" {
+            $categoryName = "dbatoolsci_test_$(Get-Random)"
             $null = New-DbaAgentAlertCategory -SqlInstance $script:instance2 -Category $categoryName
-            (Get-DbaAgentAlertCategory -SqlInstance $script:instance2 -Category $categoryName ) | Should -Not -BeNullOrEmpty
-            Get-DbaAgentAlertCategory -SqlInstance $script:instance2 -Category $categoryName | Remove-DbaAgentAlertCategory -Confirm:$false
-            (Get-DbaAgentAlertCategory -SqlInstance $script:instance2 -Category $categoryName ) | Should -BeNullOrEmpty
+            $category = Get-DbaAgentAlertCategory -SqlInstance $script:instance2 -Category $categoryName
+            $category | Should -Not -BeNullOrEmpty
+
+            $category | Remove-DbaAgentAlertCategory -Confirm:$false
+
+            $removedCategory = Get-DbaAgentAlertCategory -SqlInstance $script:instance2 -Category $categoryName
+            $removedCategory | Should -BeNullOrEmpty
         }
     }
 }

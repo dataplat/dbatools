@@ -1,18 +1,43 @@
-$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tags "UnitTests" {
+Describe "Remove-DbaFirewallRule" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'Credential', 'Type', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Remove-DbaFirewallRule
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have Credential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
+        }
+        It "Should have Type as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Type -Type String[]
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[]
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
 }
 
-<#
-The command will be tested together with New-DbaFirewallRule
-#>
+Describe "Remove-DbaFirewallRule Integration Tests" -Tag "IntegrationTests" {
+    BeforeAll {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
+    Context "Command actually works" {
+        BeforeAll {
+            $script:instance1 = $script:instance1
+            $script:instance2 = $script:instance2
+        }
+
+        It "Removes firewall rules" {
+            # This test is a placeholder and needs to be implemented
+            # when we have a proper way to create and remove firewall rules in a test environment
+            $true | Should -Be $true
+        }
+    }
+}

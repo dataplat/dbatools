@@ -1,41 +1,53 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "New-DbaSsisCatalog" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Credential', 'SecurePassword', 'SsisCatalog', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command New-DbaSsisCatalog
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Credential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
+        }
+        It "Should have SecurePassword as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SecurePassword -Type SecureString
+        }
+        It "Should have SsisCatalog as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SsisCatalog -Type String
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Catalog is added properly" {
-        # database name is currently fixed
-        $database = "SSISDB"
-        $db = Get-DbaDatabase -SqlInstance $ssisserver -Database $database
+        BeforeAll {
+            . "$PSScriptRoot\constants.ps1"
+            $database = "SSISDB"
+            $db = Get-DbaDatabase -SqlInstance $ssisserver -Database $database
+        }
 
-        if (-not $db) {
+        It "Creates the catalog when it doesn't exist" -Skip:($db -ne $null) {
             $password = ConvertTo-SecureString MyVisiblePassWord -AsPlainText -Force
-            $results = New-DbaSsisCatalog -SqlInstance $ssisserver -Password $password -WarningAction SilentlyContinue -WarningVariable warn
+            $results = New-DbaSsisCatalog -SqlInstance $ssisserver -SecurePassword $password -WarningAction SilentlyContinue -WarningVariable warn
 
-            # Run the tests only if it worked (this could be more accurate but w/e, it's hard to test on appveyor)
             if ($warn -match "not running") {
                 if (-not $env:APPVEYOR_REPO_BRANCH) {
-                    Write-Warning "$warn"
+                    Set-ItResult -Skipped -Because "SSIS is not running: $warn"
                 }
             } else {
-                It "uses the specified database" {
-                    $results.SsisCatalog | Should Be $database
-                }
+                $results.SsisCatalog | Should -Be $database
+                $results.Created | Should -Be $true
+            }
+        }
 
-                It "creates the catalog" {
-                    $results.Created | Should Be $true
-                }
+        AfterAll {
+            if ($db -eq $null) {
                 Remove-DbaDatabase -Confirm:$false -SqlInstance $ssisserver -Database $database
             }
         }

@@ -1,40 +1,53 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Remove-DbaDbCheckConstraint" {
     Context "Validate parameters" {
-        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'ExcludeSystemTable', 'InputObject', 'EnableException'
-        It "Should only contain our specific parameters" {
-            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
+        BeforeAll {
+            $CommandUnderTest = Get-Command Remove-DbaDbCheckConstraint
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Not -Mandatory
+        }
+        It "Should have ExcludeDatabase as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Not -Mandatory
+        }
+        It "Should have ExcludeSystemTable as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeSystemTable -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Check[] -Not -Mandatory
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+    Context "Command usage" {
+        BeforeAll {
+            . (Join-Path $PSScriptRoot 'constants.ps1')
+            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $dbname1 = "dbatoolsci_$(Get-Random)"
+            $dbname2 = "dbatoolsci_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $server -Name $dbname1
+            $null = New-DbaDatabase -SqlInstance $server -Name $dbname2
 
-    BeforeAll {
+            $chkc1 = "dbatoolssci_chkc1_$(Get-Random)"
+            $chkc2 = "dbatoolssci_chkc2_$(Get-Random)"
+            $null = $server.Query("CREATE TABLE dbo.checkconstraint1(col int CONSTRAINT $chkc1 CHECK(col > 0));", $dbname1)
+            $null = $server.Query("CREATE TABLE dbo.checkconstraint2(col int CONSTRAINT $chkc2 CHECK(col > 0));", $dbname2)
+        }
 
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $dbname1 = "dbatoolsci_$(Get-Random)"
-        $dbname2 = "dbatoolsci_$(Get-Random)"
-        $null = New-DbaDatabase -SqlInstance $server -Name $dbname1
-        $null = New-DbaDatabase -SqlInstance $server -Name $dbname2
+        AfterAll {
+            $null = Remove-DbaDatabase -SqlInstance $server -Database $dbname1, $dbname2 -Confirm:$false
+        }
 
-        $chkc1 = "dbatoolssci_chkc1_$(Get-Random)"
-        $chkc2 = "dbatoolssci_chkc2_$(Get-Random)"
-        $null = $server.Query("CREATE TABLE dbo.checkconstraint1(col int CONSTRAINT $chkc1 CHECK(col > 0));" , $dbname1)
-        $null = $server.Query("CREATE TABLE dbo.checkconstraint2(col int CONSTRAINT $chkc2 CHECK(col > 0));" , $dbname2)
-    }
-
-    AfterAll {
-        $null = Remove-DbaDatabase -SqlInstance $server -Database $dbname1, $dbname2 -Confirm:$false
-    }
-
-    Context "commands work as expected" {
-
-        It "removes an check constraint" {
+        It "removes a check constraint" {
             Get-DbaDbCheckConstraint -SqlInstance $server -Database $dbname1 | Should -Not -BeNullOrEmpty
             Remove-DbaDbCheckConstraint -SqlInstance $server -Database $dbname1 -Confirm:$false
             Get-DbaDbCheckConstraint -SqlInstance $server -Database $dbname1 | Should -BeNullOrEmpty

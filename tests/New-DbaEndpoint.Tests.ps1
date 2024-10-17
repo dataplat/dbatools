@@ -1,37 +1,85 @@
-$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tags "UnitTests" {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Name', 'Type', 'Protocol', 'Role', 'EndpointEncryption', 'IPAddress', 'EncryptionAlgorithm', 'AuthenticationOrder', 'Certificate', 'Port', 'SslPort', 'Owner', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
-        }
-    }
-}
-
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+Describe "New-DbaEndpoint" {
     BeforeAll {
-        $endpoint = Get-DbaEndpoint -SqlInstance $script:instance2 | Where-Object EndpointType -eq DatabaseMirroring
-        $create = $endpoint | Export-DbaScript -Passthru
-        Get-DbaEndpoint -SqlInstance $script:instance2 | Where-Object EndpointType -eq DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
+        $commandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
     }
-    AfterAll {
-        Get-DbaEndpoint -SqlInstance $script:instance2 | Where-Object EndpointType -eq DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
-        if ($create) {
-            Invoke-DbaQuery -SqlInstance $script:instance2 -Query "$create"
+
+    Context "Validate parameters" {
+        BeforeAll {
+            $CommandUnderTest = Get-Command New-DbaEndpoint
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Name as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Name -Type String
+        }
+        It "Should have Type as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Type -Type String
+        }
+        It "Should have Protocol as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Protocol -Type String
+        }
+        It "Should have Role as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Role -Type String
+        }
+        It "Should have EndpointEncryption as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EndpointEncryption -Type String
+        }
+        It "Should have EncryptionAlgorithm as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EncryptionAlgorithm -Type String
+        }
+        It "Should have AuthenticationOrder as a parameter" {
+            $CommandUnderTest | Should -HaveParameter AuthenticationOrder -Type String
+        }
+        It "Should have Certificate as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Certificate -Type String
+        }
+        It "Should have IPAddress as a parameter" {
+            $CommandUnderTest | Should -HaveParameter IPAddress -Type IPAddress
+        }
+        It "Should have Port as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Port -Type Int32
+        }
+        It "Should have SslPort as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SslPort -Type Int32
+        }
+        It "Should have Owner as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Owner -Type String
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-    $results = New-DbaEndpoint -SqlInstance $script:instance2 -Type DatabaseMirroring -Role Partner -Name Mirroring -Confirm:$false | Start-DbaEndpoint -Confirm:$false
 
-    It "creates an endpoint of the db mirroring type" {
-        $results.EndpointType | Should -Be 'DatabaseMirroring'
-    }
-    It "creates it with the right owner" {
-        $sa = Get-SaLoginName -SqlInstance $script:instance2
-        $results.Owner | Should -Be $sa
+    Context "Command usage" {
+        BeforeAll {
+            $endpoint = Get-DbaEndpoint -SqlInstance $script:instance2 | Where-Object EndpointType -eq DatabaseMirroring
+            $create = $endpoint | Export-DbaScript -Passthru
+            Get-DbaEndpoint -SqlInstance $script:instance2 | Where-Object EndpointType -eq DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
+        }
+        AfterAll {
+            Get-DbaEndpoint -SqlInstance $script:instance2 | Where-Object EndpointType -eq DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
+            if ($create) {
+                Invoke-DbaQuery -SqlInstance $script:instance2 -Query "$create"
+            }
+        }
+
+        It "creates an endpoint of the db mirroring type" {
+            $results = New-DbaEndpoint -SqlInstance $script:instance2 -Type DatabaseMirroring -Role Partner -Name Mirroring -Confirm:$false | Start-DbaEndpoint -Confirm:$false
+            $results.EndpointType | Should -Be 'DatabaseMirroring'
+        }
+
+        It "creates it with the right owner" {
+            $results = New-DbaEndpoint -SqlInstance $script:instance2 -Type DatabaseMirroring -Role Partner -Name Mirroring -Confirm:$false | Start-DbaEndpoint -Confirm:$false
+            $sa = Get-SaLoginName -SqlInstance $script:instance2
+            $results.Owner | Should -Be $sa
+        }
     }
 }

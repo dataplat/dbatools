@@ -1,20 +1,11 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Sequence', 'Schema', 'IntegerType', 'StartWith', 'IncrementBy', 'MinValue', 'MaxValue', 'Cycle', 'CacheSize', 'InputObject', 'EnableException'
-        It "Should only contain our specific parameters" {
-            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
-        }
-    }
-}
-
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
-
+Describe "New-DbaDbSequence" {
     BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+
         $random = Get-Random
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $newDbName = "dbatoolsci_newdb_$random"
@@ -29,8 +20,55 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $null = $newDb | Remove-DbaDatabase -Confirm:$false
     }
 
-    Context "commands work as expected" {
+    Context "Validate parameters" {
+        BeforeAll {
+            $CommandUnderTest = Get-Command New-DbaDbSequence
+        }
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Database parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String[]
+        }
+        It "Should have Sequence parameter" {
+            $CommandUnderTest | Should -HaveParameter Sequence -Type String[]
+        }
+        It "Should have Schema parameter" {
+            $CommandUnderTest | Should -HaveParameter Schema -Type String
+        }
+        It "Should have IntegerType parameter" {
+            $CommandUnderTest | Should -HaveParameter IntegerType -Type String
+        }
+        It "Should have StartWith parameter" {
+            $CommandUnderTest | Should -HaveParameter StartWith -Type Int64
+        }
+        It "Should have IncrementBy parameter" {
+            $CommandUnderTest | Should -HaveParameter IncrementBy -Type Int64
+        }
+        It "Should have MinValue parameter" {
+            $CommandUnderTest | Should -HaveParameter MinValue -Type Int64
+        }
+        It "Should have MaxValue parameter" {
+            $CommandUnderTest | Should -HaveParameter MaxValue -Type Int64
+        }
+        It "Should have Cycle parameter" {
+            $CommandUnderTest | Should -HaveParameter Cycle -Type SwitchParameter
+        }
+        It "Should have CacheSize parameter" {
+            $CommandUnderTest | Should -HaveParameter CacheSize -Type Int32
+        }
+        It "Should have InputObject parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[]
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+        }
+    }
 
+    Context "Command usage" {
         It "validates required Database param" {
             $sequence = New-DbaDbSequence -SqlInstance $server -Name SequenceTest -ErrorVariable error
             $sequence | Should -BeNullOrEmpty

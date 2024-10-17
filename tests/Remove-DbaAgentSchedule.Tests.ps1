@@ -1,54 +1,80 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Remove-DbaAgentSchedule Unit Tests" -Tag 'UnitTests' {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Schedule', 'ScheduleUid', 'id', 'InputObject', 'EnableException', 'Force'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Remove-DbaAgentSchedule
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Schedule as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Schedule -Type String[] -Not -Mandatory
+        }
+        It "Should have ScheduleUid as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ScheduleUid -Type String[] -Not -Mandatory
+        }
+        It "Should have Id as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Id -Type Int32[] -Not -Mandatory
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type ScheduleBase[] -Not -Mandatory
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have Force as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter -Not -Mandatory
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "Remove-DbaAgentSchedule Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $start = (Get-Date).AddDays(2).ToString('yyyyMMdd')
         $end = (Get-Date).AddDays(4).ToString('yyyyMMdd')
 
         foreach ($FrequencySubdayType in ('Time', 'Seconds', 'Minutes', 'Hours')) {
-            $variables = @{SqlInstance    = $script:instance2
-                Schedule                  = "dbatoolsci_$FrequencySubdayType"
-                FrequencyRecurrenceFactor = '1'
-                FrequencySubdayInterval   = '1'
-                FrequencySubdayType       = $FrequencySubdayType
-                StartDate                 = $start
-                StartTime                 = '010000'
-                EndDate                   = $end
-                EndTime                   = '020000'
+            $variables = @{
+                SqlInstance                = $script:instance2
+                Schedule                   = "dbatoolsci_$FrequencySubdayType"
+                FrequencyRecurrenceFactor  = '1'
+                FrequencySubdayInterval    = '1'
+                FrequencySubdayType        = $FrequencySubdayType
+                StartDate                  = $start
+                StartTime                  = '010000'
+                EndDate                    = $end
+                EndTime                    = '020000'
             }
             $null = New-DbaAgentSchedule @variables
         }
     }
 
     Context "Should remove schedules" {
-        $results = Get-DbaAgentSchedule -SqlInstance $script:instance2 | Where-Object { $_.name -like 'dbatools*' }
-        It "Should find all created schedule" {
-            $results | Should Not BeNullOrEmpty
+        It "Should find all created schedules" {
+            $results = Get-DbaAgentSchedule -SqlInstance $script:instance2 | Where-Object { $_.name -like 'dbatools*' }
+            $results | Should -Not -BeNullOrEmpty
         }
 
-        $null = Remove-DbaAgentSchedule -SqlInstance $script:instance2 -Schedule dbatoolsci_Minutes -Confirm:$false
-        $results = Get-DbaAgentSchedule -SqlInstance $script:instance2 -Schedule dbatoolsci_Minutes
-        It "Should not find dbatoolsci_Minutes" {
-            $results | Should BeNullOrEmpty
+        It "Should remove dbatoolsci_Minutes schedule" {
+            Remove-DbaAgentSchedule -SqlInstance $script:instance2 -Schedule dbatoolsci_Minutes -Confirm:$false
+            $results = Get-DbaAgentSchedule -SqlInstance $script:instance2 -Schedule dbatoolsci_Minutes
+            $results | Should -BeNullOrEmpty
         }
 
-        $null = Get-DbaAgentSchedule -SqlInstance $script:instance2 | Where-Object { $_.name -like 'dbatools*' } | Remove-DbaAgentSchedule -Confirm:$false -Force
-        $results = Get-DbaAgentSchedule -SqlInstance $script:instance2 | Where-Object { $_.name -like 'dbatools*' }
-        It "Should not find any created schedule" {
-            $results | Should BeNullOrEmpty
+        It "Should remove all remaining created schedules" {
+            Get-DbaAgentSchedule -SqlInstance $script:instance2 | Where-Object { $_.name -like 'dbatools*' } | Remove-DbaAgentSchedule -Confirm:$false -Force
+            $results = Get-DbaAgentSchedule -SqlInstance $script:instance2 | Where-Object { $_.name -like 'dbatools*' }
+            $results | Should -BeNullOrEmpty
         }
     }
 }

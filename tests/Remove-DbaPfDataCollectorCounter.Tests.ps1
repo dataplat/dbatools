@@ -1,20 +1,35 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
-
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+param($ModuleName = 'dbatools')
+Describe "Remove-DbaPfDataCollectorCounter" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'Credential', 'CollectorSet', 'Collector', 'Counter', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Remove-DbaPfDataCollectorCounter
+        }
+        It "Should have ComputerName as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[]
+        }
+        It "Should have Credential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
+        }
+        It "Should have CollectorSet as a parameter" {
+            $CommandUnderTest | Should -HaveParameter CollectorSet -Type String[]
+        }
+        It "Should have Collector as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Collector -Type String[]
+        }
+        It "Should have Counter as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Counter -Type Object[]
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[]
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    BeforeEach {
+Describe "Remove-DbaPfDataCollectorCounter Integration Tests" -Tag "IntegrationTests" {
+    BeforeAll {
         $null = Get-DbaPfDataCollectorSetTemplate -Template 'Long Running Queries' | Import-DbaPfDataCollectorSetTemplate
     }
     AfterAll {
@@ -25,9 +40,9 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results = Get-DbaPfDataCollectorSet -CollectorSet 'Long Running Queries' | Get-DbaPfDataCollector |
                 Get-DbaPfDataCollectorCounter -Counter '\LogicalDisk(*)\Avg. Disk Queue Length' |
                 Remove-DbaPfDataCollectorCounter -Counter '\LogicalDisk(*)\Avg. Disk Queue Length' -Confirm:$false
-            $results.DataCollectorSet | Should Be 'Long Running Queries'
-            $results.Name | Should Be '\LogicalDisk(*)\Avg. Disk Queue Length'
-            $results.Status | Should Be 'Removed'
+            $results.DataCollectorSet | Should -Be 'Long Running Queries'
+            $results.Name | Should -Be '\LogicalDisk(*)\Avg. Disk Queue Length'
+            $results.Status | Should -Be 'Removed'
         }
     }
 }

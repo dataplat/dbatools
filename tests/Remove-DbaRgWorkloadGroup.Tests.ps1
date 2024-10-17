@@ -1,23 +1,45 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Remove-DbaRgWorkloadGroup" {
+    BeforeAll {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'WorkloadGroup', 'ResourcePool', 'ResourcePoolType', 'SkipReconfigure', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Remove-DbaRgWorkloadGroup
+        }
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have WorkloadGroup parameter" {
+            $CommandUnderTest | Should -HaveParameter WorkloadGroup -Type String[] -Not -Mandatory
+        }
+        It "Should have ResourcePool parameter" {
+            $CommandUnderTest | Should -HaveParameter ResourcePool -Type String -Not -Mandatory
+        }
+        It "Should have ResourcePoolType parameter" {
+            $CommandUnderTest | Should -HaveParameter ResourcePoolType -Type String -Not -Mandatory
+        }
+        It "Should have SkipReconfigure parameter" {
+            $CommandUnderTest | Should -HaveParameter SkipReconfigure -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have InputObject parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type WorkloadGroup[] -Not -Mandatory
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Functionality" {
         BeforeAll {
             $null = Set-DbaResourceGovernor -SqlInstance $script:instance2 -Enabled
         }
+
         It "Removes a workload group in default resource pool" {
             $wklGroupName = "dbatoolssci_wklgroupTest"
             $splatNewWorkloadGroup = @{
@@ -30,12 +52,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $result2 = Remove-DbaRgWorkloadGroup -SqlInstance $script:instance2 -WorkloadGroup $wklGroupName
             $result3 = Get-DbaRgWorkloadGroup -SqlInstance $script:instance2 | Where-Object Name -eq $wklGroupName
 
-            $newWorkloadGroup | Should -Not -Be $null
+            $newWorkloadGroup | Should -Not -BeNullOrEmpty
             $result.Count | Should -BeGreaterThan $result3.Count
             $result2.Status | Should -Be "Dropped"
-            $result2.IsRemoved | Should -Be $true
-            $result3 | Should -Be $null
+            $result2.IsRemoved | Should -BeTrue
+            $result3 | Should -BeNullOrEmpty
         }
+
         It "Removes a workload group in a user defined resource pool" {
             $wklGroupName = "dbatoolssci_wklgroupTest"
             $resourcePoolName = "dbatoolssci_poolTest"
@@ -61,15 +84,16 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
             $null = Remove-DbaRgResourcePool -SqlInstance $script:instance2 -ResourcePool $resourcePoolName -Type $resourcePoolType
 
-            $newWorkloadGroup | Should -Not -Be $null
+            $newWorkloadGroup | Should -Not -BeNullOrEmpty
             $result.Count | Should -BeGreaterThan $result3.Count
             $result2.Status | Should -Be "Dropped"
-            $result2.IsRemoved | Should -Be $true
-            $result3 | Should -Be $null
+            $result2.IsRemoved | Should -BeTrue
+            $result3 | Should -BeNullOrEmpty
         }
+
         It "Removes multiple workload groups" {
             $wklGroupName = "dbatoolssci_wklgroupTest"
-            $wklGroupName2 = "dbatoolssci_wklgroupTest"
+            $wklGroupName2 = "dbatoolssci_wklgroupTest2"
             $splatNewWorkloadGroup = @{
                 SqlInstance   = $script:instance2
                 WorkloadGroup = @($wklGroupName, $wklGroupName2)
@@ -81,12 +105,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $result2 = Remove-DbaRgWorkloadGroup -SqlInstance $script:instance2 -WorkloadGroup $wklGroupName, $wklGroupName2
             $result3 = Get-DbaRgWorkloadGroup -SqlInstance $script:instance2 | Where-Object Name -in $wklGroupName, $wklGroupName2
 
-            $newWorkloadGroups | Should -Not -Be $null
+            $newWorkloadGroups | Should -Not -BeNullOrEmpty
             $result.Count | Should -BeGreaterThan $result3.Count
             $result2.Status | Should -Be "Dropped"
-            $result2.IsRemoved | Should -Be $true
-            $result3 | Should -Be $null
+            $result2.IsRemoved | Should -BeTrue
+            $result3 | Should -BeNullOrEmpty
         }
+
         It "Removes a piped workload group" {
             $wklGroupName = "dbatoolssci_wklgroupTest"
             $splatNewWorkloadGroup = @{
@@ -99,11 +124,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $result2 = $newWorkloadGroup | Remove-DbaRgWorkloadGroup
             $result3 = Get-DbaRgWorkloadGroup -SqlInstance $script:instance2 | Where-Object Name -eq $wklGroupName
 
-            $newWorkloadGroup | Should -Not -Be $null
+            $newWorkloadGroup | Should -Not -BeNullOrEmpty
             $result.Count | Should -BeGreaterThan $result3.Count
             $result2.Status | Should -Be "Dropped"
-            $result2.IsRemoved | Should -Be $true
-            $result3 | Should -Be $null
+            $result2.IsRemoved | Should -BeTrue
+            $result3 | Should -BeNullOrEmpty
         }
     }
 }

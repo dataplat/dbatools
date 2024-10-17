@@ -1,19 +1,10 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
-
-Describe "$CommandName Unit Tests" -Tags "UnitTests" {
-    Context "Validate parameters" {
-        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'BatchSize', 'Table', 'DeleteSql', 'InputObject', 'LogBackupPath', 'LogBackupTimeStampFormat', 'AzureBaseUrl', 'AzureCredential', 'EnableException'
-        It "Should only contain our specific parameters" {
-            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
-        }
-    }
-}
-
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+param($ModuleName = 'dbatools')
+Describe "Remove-DbaDbTableData" {
     BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $server2 = Connect-DbaInstance -SqlInstance $script:instance3
 
@@ -53,8 +44,51 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                     SET @loopCounter = @loopCounter + 1;
                 END;"
     }
+
     AfterAll {
         $newDbSimpleModel, $newDbFullModel, $newDbBulkLoggedModel, $newDbSimpleModelServer2 | Remove-DbaDatabase -Confirm:$false
+    }
+
+    Context "Validate parameters" {
+        BeforeAll {
+            $CommandUnderTest = Get-Command Remove-DbaDbTableData
+        }
+        It "Should have SqlInstance as a DbaInstanceParameter[] parameter that is not mandatory" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a PSCredential parameter that is not mandatory" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database as a String[] parameter that is not mandatory" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Not -Mandatory
+        }
+        It "Should have BatchSize as an Int32 parameter that is not mandatory" {
+            $CommandUnderTest | Should -HaveParameter BatchSize -Type Int32 -Not -Mandatory
+        }
+        It "Should have Table as a String parameter that is not mandatory" {
+            $CommandUnderTest | Should -HaveParameter Table -Type String -Not -Mandatory
+        }
+        It "Should have DeleteSql as a String parameter that is not mandatory" {
+            $CommandUnderTest | Should -HaveParameter DeleteSql -Type String -Not -Mandatory
+        }
+        It "Should have LogBackupPath as a String parameter that is not mandatory" {
+            $CommandUnderTest | Should -HaveParameter LogBackupPath -Type String -Not -Mandatory
+        }
+        It "Should have LogBackupTimeStampFormat as a String parameter that is not mandatory" {
+            $CommandUnderTest | Should -HaveParameter LogBackupTimeStampFormat -Type String -Not -Mandatory
+        }
+        It "Should have AzureBaseUrl as a String[] parameter that is not mandatory" {
+            $CommandUnderTest | Should -HaveParameter AzureBaseUrl -Type String[] -Not -Mandatory
+        }
+        It "Should have AzureCredential as a String parameter that is not mandatory" {
+            $CommandUnderTest | Should -HaveParameter AzureCredential -Type String -Not -Mandatory
+        }
+        It "Should have InputObject as an Object[] parameter that is not mandatory" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Not -Mandatory
+        }
+        It "Should have EnableException as a SwitchParameter that is not mandatory" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+        }
     }
 
     Context "Param validation" {

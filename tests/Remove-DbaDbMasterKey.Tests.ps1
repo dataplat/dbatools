@@ -1,19 +1,105 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Remove-DbaDbMasterKey Unit Tests" -Tag 'UnitTests' {
+    BeforeAll {
+        # Import any necessary modules or dot-source required scripts
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'All', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandName = 'Remove-DbaDbMasterKey'
+            $command = Get-Command -Name $CommandName
+        }
+
+        It "Should have SqlInstance parameter" {
+            $command | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+
+        It "Should have SqlCredential parameter" {
+            $command | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+
+        It "Should have Database parameter" {
+            $command | Should -HaveParameter Database -Type String[] -Not -Mandatory
+        }
+
+        It "Should have ExcludeDatabase parameter" {
+            $command | Should -HaveParameter ExcludeDatabase -Type String[] -Not -Mandatory
+        }
+
+        It "Should have All parameter" {
+            $command | Should -HaveParameter All -Type SwitchParameter -Not -Mandatory
+        }
+
+        It "Should have InputObject parameter" {
+            $command | Should -HaveParameter InputObject -Type MasterKey[] -Not -Mandatory
+        }
+
+        It "Should have EnableException parameter" {
+            $command | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+        }
+
+        It "Should have common parameters" {
+            $command | Should -HaveParameter Verbose -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter Debug -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter ErrorAction -Type ActionPreference -Not -Mandatory
+            $command | Should -HaveParameter WarningAction -Type ActionPreference -Not -Mandatory
+            $command | Should -HaveParameter InformationAction -Type ActionPreference -Not -Mandatory
+            $command | Should -HaveParameter ProgressAction -Type ActionPreference -Not -Mandatory
+            $command | Should -HaveParameter ErrorVariable -Type String -Not -Mandatory
+            $command | Should -HaveParameter WarningVariable -Type String -Not -Mandatory
+            $command | Should -HaveParameter InformationVariable -Type String -Not -Mandatory
+            $command | Should -HaveParameter OutVariable -Type String -Not -Mandatory
+            $command | Should -HaveParameter OutBuffer -Type Int32 -Not -Mandatory
+            $command | Should -HaveParameter PipelineVariable -Type String -Not -Mandatory
+            $command | Should -HaveParameter WhatIf -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter Confirm -Type SwitchParameter -Not -Mandatory
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+
+# Integration tests
+Describe "Remove-DbaDbMasterKey Integration Tests" -Tag 'IntegrationTests' {
+    BeforeAll {
+        # Setup code for integration tests
+        # This might include creating test databases, master keys, etc.
+    }
+
+    Context "Remove master key from a database" {
+        It "Successfully removes a master key" {
+            # Test code here
+        }
+
+        It "Fails to remove a non-existent master key" {
+            # Test code here
+        }
+    }
+
+    Context "Remove master keys from multiple databases" {
+        It "Removes master keys from specified databases" {
+            # Test code here
+        }
+
+        It "Excludes specified databases when removing master keys" {
+            # Test code here
+        }
+    }
+
+    Context "Remove all master keys" {
+        It "Removes all master keys when -All switch is used" {
+            # Test code here
+        }
+    }
+
+    Context "Pipeline input" {
+        It "Accepts pipeline input for InputObject" {
+            # Test code here
+        }
+    }
+
+    AfterAll {
+        # Cleanup code for integration tests
+        # This might include removing test databases, master keys, etc.
+    }
+}

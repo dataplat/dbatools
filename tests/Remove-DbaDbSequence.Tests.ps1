@@ -1,45 +1,62 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Remove-DbaDbSequence" {
     Context "Validate parameters" {
-        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Sequence', 'Schema', 'InputObject', 'EnableException'
-        It "Should only contain our specific parameters" {
-            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
+        BeforeAll {
+            $CommandUnderTest = Get-Command Remove-DbaDbSequence
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Not -Mandatory
+        }
+        It "Should have Sequence as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Sequence -Type String[] -Not -Mandatory
+        }
+        It "Should have Schema as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Schema -Type String[] -Not -Mandatory
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Sequence[] -Not -Mandatory
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+    Context "Command usage" {
+        BeforeAll {
+            $random = Get-Random
+            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $newDbName = "dbatoolsci_newdb_$random"
+            $null = New-DbaDatabase -SqlInstance $server -Name $newDbName
 
-    BeforeAll {
-        $random = Get-Random
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $newDbName = "dbatoolsci_newdb_$random"
-        $null = New-DbaDatabase -SqlInstance $server -Name $newDbName
+            $null = New-DbaDbSequence -SqlInstance $server -Database $newDbName -Sequence "Sequence1_$random" -Schema "Schema_$random"
+            $null = New-DbaDbSequence -SqlInstance $server -Database $newDbName -Sequence "Sequence2_$random" -Schema "Schema_$random"
+        }
 
-        $null = New-DbaDbSequence -SqlInstance $server -Database $newDbName -Sequence "Sequence1_$random" -Schema "Schema_$random"
-        $null = New-DbaDbSequence -SqlInstance $server -Database $newDbName -Sequence "Sequence2_$random" -Schema "Schema_$random"
-    }
-
-    AfterAll {
-        $null = Remove-DbaDatabase -Confirm:$false -SqlInstance $server -Database $newDbName
-    }
-
-    Context "commands work as expected" {
+        AfterAll {
+            $null = Remove-DbaDatabase -Confirm:$false -SqlInstance $server -Database $newDbName
+        }
 
         It "removes a sequence" {
-            (Get-DbaDbSequence -SqlInstance $server -Database $newDbName -Sequence "Sequence1_$random" -Schema "Schema_$random") | Should -Not -BeNullOrEmpty
+            $sequence = Get-DbaDbSequence -SqlInstance $server -Database $newDbName -Sequence "Sequence1_$random" -Schema "Schema_$random"
+            $sequence | Should -Not -BeNullOrEmpty
             Remove-DbaDbSequence -SqlInstance $server -Database $newDbName -Sequence "Sequence1_$random" -Schema "Schema_$random" -Confirm:$false
-            (Get-DbaDbSequence -SqlInstance $server -Database $newDbName -Sequence "Sequence1_$random" -Schema "Schema_$random") | Should -BeNullOrEmpty
+            $removedSequence = Get-DbaDbSequence -SqlInstance $server -Database $newDbName -Sequence "Sequence1_$random" -Schema "Schema_$random"
+            $removedSequence | Should -BeNullOrEmpty
         }
 
         It "supports piping sequences" {
-            (Get-DbaDbSequence -SqlInstance $server -Database $newDbName -Sequence "Sequence2_$random" -Schema "Schema_$random") | Should -Not -BeNullOrEmpty
-            Get-DbaDbSequence -SqlInstance $server -Database $newDbName -Sequence "Sequence2_$random" -Schema "Schema_$random" | Remove-DbaDbSequence -Confirm:$false
-            (Get-DbaDbSequence -SqlInstance $server -Database $newDbName -Sequence "Sequence2_$random" -Schema "Schema_$random") | Should -BeNullOrEmpty
+            $sequence = Get-DbaDbSequence -SqlInstance $server -Database $newDbName -Sequence "Sequence2_$random" -Schema "Schema_$random"
+            $sequence | Should -Not -BeNullOrEmpty
+            $sequence | Remove-DbaDbSequence -Confirm:$false
+            $removedSequence = Get-DbaDbSequence -SqlInstance $server -Database $newDbName -Sequence "Sequence2_$random" -Schema "Schema_$random"
+            $removedSequence | Should -BeNullOrEmpty
         }
     }
 }

@@ -1,20 +1,11 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'LinkedServer', 'ServerProduct', 'Provider', 'DataSource', 'Location', 'ProviderString', 'Catalog', 'SecurityContext', 'SecurityContextRemoteUser', 'SecurityContextRemoteUserPassword', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
-        }
-    }
-}
-
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "New-DbaLinkedServer" {
     BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+
         $random = Get-Random
         $instance2 = Connect-DbaInstance -SqlInstance $script:instance2
         $instance3 = Connect-DbaInstance -SqlInstance $script:instance3
@@ -23,6 +14,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $loginName = "dbatoolscli_test_$random"
         New-DbaLogin -SqlInstance $instance3 -Login $loginName -SecurePassword $securePassword
     }
+
     AfterAll {
         Remove-DbaLinkedServer -SqlInstance $instance2 -LinkedServer "dbatoolscli_LS1_$random" -Confirm:$false -Force
         Remove-DbaLinkedServer -SqlInstance $instance2 -LinkedServer "dbatoolscli_LS2_$random" -Confirm:$false -Force
@@ -34,8 +26,55 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         Remove-DbaLogin -SqlInstance $instance3 -Login $loginName -Confirm:$false
     }
 
-    Context "ensure command works" {
+    Context "Validate parameters" {
+        BeforeAll {
+            $CommandUnderTest = Get-Command New-DbaLinkedServer
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have LinkedServer as a parameter" {
+            $CommandUnderTest | Should -HaveParameter LinkedServer -Type String
+        }
+        It "Should have ServerProduct as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ServerProduct -Type String
+        }
+        It "Should have Provider as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Provider -Type String
+        }
+        It "Should have DataSource as a parameter" {
+            $CommandUnderTest | Should -HaveParameter DataSource -Type String
+        }
+        It "Should have Location as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Location -Type String
+        }
+        It "Should have ProviderString as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ProviderString -Type String
+        }
+        It "Should have Catalog as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Catalog -Type String
+        }
+        It "Should have SecurityContext as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SecurityContext -Type String
+        }
+        It "Should have SecurityContextRemoteUser as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SecurityContextRemoteUser -Type String
+        }
+        It "Should have SecurityContextRemoteUserPassword as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SecurityContextRemoteUserPassword -Type SecureString
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Server[]
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+        }
+    }
 
+    Context "Command usage" {
         It "Creates a linked server" {
             $results = New-DbaLinkedServer -SqlInstance $instance2 -LinkedServer "dbatoolscli_LS1_$random" -ServerProduct product1 -Provider provider1 -DataSource dataSource1 -Location location1 -ProviderString providerString1 -Catalog catalog1
             $results.Parent.Name | Should -Be $instance2.Name

@@ -1,19 +1,32 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Remove-DbaDbFileGroup Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'FileGroup', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Remove-DbaDbFileGroup
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Not -Mandatory
+        }
+        It "Should have FileGroup as a parameter" {
+            $CommandUnderTest | Should -HaveParameter FileGroup -Type String[] -Not -Mandatory
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Not -Mandatory
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "Remove-DbaDbFileGroup Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $random = Get-Random
         $db1name = "dbatoolsci_filegroup_test_$random"
@@ -41,12 +54,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $server.Query("ALTER DATABASE $db1name ADD FILEGROUP $fileGroup6Name;")
         $server.Query("ALTER DATABASE $db1name ADD FILE (NAME = test1, FILENAME = '$($server.MasterDBPath)\test1.ndf') TO FILEGROUP $fileGroup2Name;")
     }
+
     AfterAll {
         $newDb1, $newDb2, $newDb3 | Remove-DbaDatabase -Confirm:$false
     }
 
-    Context "ensure command works" {
-
+    Context "Command works" {
         It "Removes filegroups" {
             $results = Get-DbaDbFileGroup -SqlInstance $script:instance2 -Database $db1name, $db3name -FileGroup $fileGroup1Name, $fileGroup3Name
             $results.Length | Should -Be 3

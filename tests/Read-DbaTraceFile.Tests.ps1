@@ -1,28 +1,71 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('WhatIf', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Path', 'Database', 'Login', 'Spid', 'EventClass', 'ObjectType', 'ErrorId', 'EventSequence', 'TextData', 'ApplicationName', 'ObjectName', 'Where', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
-        }
-    }
-}
-
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+Describe "Read-DbaTraceFile" {
     BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+
         $configs = $script:instance1, $script:instance2 | Get-DbaSpConfigure -Name DefaultTraceEnabled
         $configs | Set-DbaSpConfigure -Value $true -WarningAction SilentlyContinue
     }
+
     AfterAll {
         foreach ($config in $configs) {
             if (-not $config.DefaultTraceEnabled) {
                 $config | Set-DbaSpConfigure -Value $false -WarningAction SilentlyContinue
             }
+        }
+    }
+
+    Context "Validate parameters" {
+        BeforeAll {
+            $CommandUnderTest = Get-Command Read-DbaTraceFile
+        }
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Path parameter" {
+            $CommandUnderTest | Should -HaveParameter Path -Type String[]
+        }
+        It "Should have Database parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String[]
+        }
+        It "Should have Login parameter" {
+            $CommandUnderTest | Should -HaveParameter Login -Type String[]
+        }
+        It "Should have Spid parameter" {
+            $CommandUnderTest | Should -HaveParameter Spid -Type Int32[]
+        }
+        It "Should have EventClass parameter" {
+            $CommandUnderTest | Should -HaveParameter EventClass -Type String[]
+        }
+        It "Should have ObjectType parameter" {
+            $CommandUnderTest | Should -HaveParameter ObjectType -Type String[]
+        }
+        It "Should have ErrorId parameter" {
+            $CommandUnderTest | Should -HaveParameter ErrorId -Type Int32[]
+        }
+        It "Should have EventSequence parameter" {
+            $CommandUnderTest | Should -HaveParameter EventSequence -Type Int32[]
+        }
+        It "Should have TextData parameter" {
+            $CommandUnderTest | Should -HaveParameter TextData -Type String[]
+        }
+        It "Should have ApplicationName parameter" {
+            $CommandUnderTest | Should -HaveParameter ApplicationName -Type String[]
+        }
+        It "Should have ObjectName parameter" {
+            $CommandUnderTest | Should -HaveParameter ObjectName -Type String[]
+        }
+        It "Should have Where parameter" {
+            $CommandUnderTest | Should -HaveParameter Where -Type String
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
 
@@ -42,22 +85,27 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                     and ApplicationName not like 'Microsoft SQL Server Management Studio%'"
 
             # Collect the results into a variable so that the bulk import is super fast
+            $warn = $null
             Get-DbaTrace -SqlInstance $script:instance2 -Id 1 | Read-DbaTraceFile -Where $where -WarningAction SilentlyContinue -WarningVariable warn > $null
-            $warn | Should -Be $null
+            $warn | Should -BeNullOrEmpty
         }
     }
+
     Context "Verify Parameter Use" {
         It "Should execute using parameters Database, Login, Spid" {
+            $warn = $null
             $results = Get-DbaTrace -SqlInstance $script:instance2 -Id 1 | Read-DbaTraceFile -Database Master -Login sa -Spid 7 -WarningAction SilentlyContinue -WarningVariable warn
-            $warn | Should -Be $null
+            $warn | Should -BeNullOrEmpty
         }
         It "Should execute using parameters EventClass, ObjectType, ErrorId" {
+            $warn = $null
             $results = Get-DbaTrace -SqlInstance $script:instance2 -Id 1 | Read-DbaTraceFile -EventClass 4 -ObjectType 4 -ErrorId 4 -WarningAction SilentlyContinue -WarningVariable warn
-            $warn | Should -Be $null
+            $warn | Should -BeNullOrEmpty
         }
         It "Should execute using parameters EventSequence, TextData, ApplicationName, ObjectName" {
+            $warn = $null
             $results = Get-DbaTrace -SqlInstance $script:instance2 -Id 1 | Read-DbaTraceFile -EventSequence 4 -TextData "Text" -ApplicationName "Application" -ObjectName "Name" -WarningAction SilentlyContinue -WarningVariable warn
-            $warn | Should -Be $null
+            $warn | Should -BeNullOrEmpty
         }
     }
 }

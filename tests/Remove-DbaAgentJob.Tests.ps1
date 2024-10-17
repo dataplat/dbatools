@@ -1,19 +1,39 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Remove-DbaAgentJob Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Job', 'KeepHistory', 'KeepUnusedSchedule', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Remove-DbaAgentJob
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Job as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Job -Type Object[] -Not -Mandatory
+        }
+        It "Should have KeepHistory as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter KeepHistory -Type switch -Not -Mandatory
+        }
+        It "Should have KeepUnusedSchedule as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter KeepUnusedSchedule -Type switch -Not -Mandatory
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Job[] -Not -Mandatory
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type switch -Not -Mandatory
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+Describe "Remove-DbaAgentJob Integration Tests" -Tag "IntegrationTests" {
+    BeforeDiscovery {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Command removes jobs" {
         BeforeAll {
             $null = New-DbaAgentSchedule -SqlInstance $script:instance3 -Schedule dbatoolsci_daily -FrequencyType Daily -FrequencyInterval Everyday -Force
@@ -22,19 +42,22 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $null = Start-DbaAgentJob -SqlInstance $script:instance3 -Job dbatoolsci_testjob
         }
         AfterAll {
-            if (Get-DbaAgentSchedule -SqlInstance $script:instance3 -Schedule dbatoolsci_daily) { Remove-DbaAgentSchedule -SqlInstance $script:instance3 -Schedule dbatoolsci_daily -Confirm:$false }
+            if (Get-DbaAgentSchedule -SqlInstance $script:instance3 -Schedule dbatoolsci_daily) {
+                Remove-DbaAgentSchedule -SqlInstance $script:instance3 -Schedule dbatoolsci_daily -Confirm:$false
+            }
         }
-        $null = Remove-DbaAgentJob -SqlInstance $script:instance3 -Job dbatoolsci_testjob -Confirm:$false
         It "Should have deleted job: dbatoolsci_testjob" {
-            (Get-DbaAgentJob -SqlInstance $script:instance3 -Job dbatoolsci_testjob) | Should BeNullOrEmpty
+            Remove-DbaAgentJob -SqlInstance $script:instance3 -Job dbatoolsci_testjob -Confirm:$false
+            Get-DbaAgentJob -SqlInstance $script:instance3 -Job dbatoolsci_testjob | Should -BeNullOrEmpty
         }
         It "Should have deleted schedule: dbatoolsci_daily" {
-            (Get-DbaAgentSchedule -SqlInstance $script:instance3 -Schedule dbatoolsci_daily) | Should BeNullOrEmpty
+            Get-DbaAgentSchedule -SqlInstance $script:instance3 -Schedule dbatoolsci_daily | Should -BeNullOrEmpty
         }
         It "Should have deleted history: dbatoolsci_daily" {
-            (Get-DbaAgentJobHistory -SqlInstance $script:instance3 -Job dbatoolsci_testjob) | Should BeNullOrEmpty
+            Get-DbaAgentJobHistory -SqlInstance $script:instance3 -Job dbatoolsci_testjob | Should -BeNullOrEmpty
         }
     }
+
     Context "Command removes job but not schedule" {
         BeforeAll {
             $null = New-DbaAgentSchedule -SqlInstance $script:instance3 -Schedule dbatoolsci_weekly -FrequencyType Weekly -FrequencyInterval Everyday -Force
@@ -42,16 +65,19 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $null = New-DbaAgentJobStep -SqlInstance $script:instance3 -Job dbatoolsci_testjob_schedule -StepId 1 -StepName dbatoolsci_step1 -Subsystem TransactSql -Command 'select 1'
         }
         AfterAll {
-            if (Get-DbaAgentSchedule -SqlInstance $script:instance3 -Schedule dbatoolsci_weekly) { Remove-DbaAgentSchedule -SqlInstance $script:instance3 -Schedule dbatoolsci_weekly -Confirm:$false }
+            if (Get-DbaAgentSchedule -SqlInstance $script:instance3 -Schedule dbatoolsci_weekly) {
+                Remove-DbaAgentSchedule -SqlInstance $script:instance3 -Schedule dbatoolsci_weekly -Confirm:$false
+            }
         }
-        $null = Remove-DbaAgentJob -SqlInstance $script:instance3 -Job dbatoolsci_testjob_schedule -KeepUnusedSchedule -Confirm:$false
         It "Should have deleted job: dbatoolsci_testjob_schedule" {
-            (Get-DbaAgentJob -SqlInstance $script:instance3 -Job dbatoolsci_testjob_schedule) | Should BeNullOrEmpty
+            Remove-DbaAgentJob -SqlInstance $script:instance3 -Job dbatoolsci_testjob_schedule -KeepUnusedSchedule -Confirm:$false
+            Get-DbaAgentJob -SqlInstance $script:instance3 -Job dbatoolsci_testjob_schedule | Should -BeNullOrEmpty
         }
         It "Should not have deleted schedule: dbatoolsci_weekly" {
-            (Get-DbaAgentSchedule -SqlInstance $script:instance3 -Schedule dbatoolsci_weekly) | Should Not BeNullOrEmpty
+            Get-DbaAgentSchedule -SqlInstance $script:instance3 -Schedule dbatoolsci_weekly | Should -Not -BeNullOrEmpty
         }
     }
+
     Context "Command removes job but not history and supports piping" {
         BeforeAll {
             $jobId = New-DbaAgentJob -SqlInstance $script:instance3 -Job dbatoolsci_testjob_history | Select-Object -ExpandProperty JobId
@@ -60,11 +86,11 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $server = Connect-DbaInstance -SqlInstance $script:instance3
         }
         It "Should have deleted job: dbatoolsci_testjob_history" {
-            $null = Get-DbaAgentJob -SqlInstance $script:instance3 -Job dbatoolsci_testjob_history | Remove-DbaAgentJob -KeepHistory -Confirm:$false
-            (Get-DbaAgentJob -SqlInstance $script:instance3 -Job dbatoolsci_testjob_history) | Should BeNullOrEmpty
+            Get-DbaAgentJob -SqlInstance $script:instance3 -Job dbatoolsci_testjob_history | Remove-DbaAgentJob -KeepHistory -Confirm:$false
+            Get-DbaAgentJob -SqlInstance $script:instance3 -Job dbatoolsci_testjob_history | Should -BeNullOrEmpty
         }
-        It -Skip "Should not have deleted history: dbatoolsci_testjob_history" {
-            ($server.Query("select 1 from sysjobhistory where job_id = '$jobId'", "msdb")) | Should Not BeNullOrEmpty
+        It "Should not have deleted history: dbatoolsci_testjob_history" -Skip {
+            $server.Query("select 1 from sysjobhistory where job_id = '$jobId'", "msdb") | Should -Not -BeNullOrEmpty
         }
         AfterAll {
             $server.Query("delete from sysjobhistory where job_id = '$jobId'", "msdb")

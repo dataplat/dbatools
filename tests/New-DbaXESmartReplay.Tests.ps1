@@ -1,28 +1,61 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "New-DbaXESmartReplay" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Event', 'Filter', 'DelaySeconds', 'StopOnError', 'ReplayIntervalSeconds', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command New-DbaXESmartReplay
+        }
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String -Not -Mandatory
+        }
+        It "Should have Event parameter" {
+            $CommandUnderTest | Should -HaveParameter Event -Type String[] -Not -Mandatory
+        }
+        It "Should have Filter parameter" {
+            $CommandUnderTest | Should -HaveParameter Filter -Type String -Not -Mandatory
+        }
+        It "Should have DelaySeconds parameter" {
+            $CommandUnderTest | Should -HaveParameter DelaySeconds -Type Int32 -Not -Mandatory
+        }
+        It "Should have StopOnError parameter" {
+            $CommandUnderTest | Should -HaveParameter StopOnError -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have ReplayIntervalSeconds parameter" {
+            $CommandUnderTest | Should -HaveParameter ReplayIntervalSeconds -Type Int32 -Not -Mandatory
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
 }
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+
+Describe "New-DbaXESmartReplay Integration Tests" -Tag "IntegrationTests" {
+    BeforeAll {
+        $script:instance2 = [Environment]::GetEnvironmentVariable("instance2")
+    }
+
     Context "Creates a smart object" {
         It "returns the object with all of the correct properties" {
             $columns = "cpu_time", "duration", "physical_reads", "logical_reads", "writes", "row_count", "batch_text"
             $results = New-DbaXESmartTableWriter -SqlInstance $script:instance2 -Database dbadb -Table deadlocktracker -OutputColumn $columns -Filter "duration > 10000"
             $results.ServerName | Should -Be $script:instance2
-            $results.DatabaseName | Should -be 'dbadb'
-            $results.Password | Should -Be $null
+            $results.DatabaseName | Should -Be 'dbadb'
+            $results.Password | Should -BeNullOrEmpty
             $results.TableName | Should -Be 'deadlocktracker'
-            $results.IsSingleEvent | Should -Be $true
-            $results.FailOnSingleEventViolation | Should -Be $false
+            $results.IsSingleEvent | Should -BeTrue
+            $results.FailOnSingleEventViolation | Should -BeFalse
         }
     }
 }

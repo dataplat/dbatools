@@ -1,7 +1,7 @@
 param($ModuleName = 'dbatools')
 
 Describe "Measure-DbatoolsImport" {
-    BeforeDiscovery {
+    BeforeAll {
         . "$PSScriptRoot\constants.ps1"
     }
 

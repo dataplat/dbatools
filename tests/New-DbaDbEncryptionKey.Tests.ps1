@@ -1,20 +1,41 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tags "UnitTests" {
+Describe "New-DbaDbEncryptionKey Unit Tests" -Tag "UnitTests" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'InputObject', 'EnableException', 'EncryptorName', 'EncryptionAlgorithm', 'Force', 'Type'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command New-DbaDbEncryptionKey
+        }
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Not -Mandatory
+        }
+        It "Should have EncryptorName parameter" {
+            $CommandUnderTest | Should -HaveParameter EncryptorName -Type String -Not -Mandatory
+        }
+        It "Should have Type parameter" {
+            $CommandUnderTest | Should -HaveParameter Type -Type String -Not -Mandatory
+        }
+        It "Should have EncryptionAlgorithm parameter" {
+            $CommandUnderTest | Should -HaveParameter EncryptionAlgorithm -Type String -Not -Mandatory
+        }
+        It "Should have InputObject parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[] -Not -Mandatory
+        }
+        It "Should have Force parameter" {
+            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
 }
 
-
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe "New-DbaDbEncryptionKey Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $PSDefaultParameterValues["*:Confirm"] = $false
         $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
@@ -59,9 +80,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 }
 
-
-
-Describe "$CommandName Integration Tests for Async" -Tags "IntegrationTests" {
+Describe "New-DbaDbEncryptionKey Integration Tests for Async" -Tag "IntegrationTests" {
     BeforeAll {
         $PSDefaultParameterValues["*:Confirm"] = $false
         $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
@@ -95,14 +114,10 @@ Describe "$CommandName Integration Tests for Async" -Tags "IntegrationTests" {
         }
     }
 
-    # TODO: I think I need some background on this. Was the intention to create the key or not to creeate the key?
-    # Currently $warn is:
-    # [09:49:20][New-DbaDbEncryptionKey] Failed to create encryption key in random-1299050584 on localhost\sql2016 | Cannot decrypt or encrypt using the specified asymmetric key, either because it has no private key or because the password provided for the private key is incorrect.
-    # Will leave it skipped for now.
     Context "Command does not work but warns" {
-        # this works on docker, not sure what's up
-        It -Skip "should warn that it cant create an encryption key" {
-            ($null = $db | New-DbaDbEncryptionKey -Force -Type AsymmetricKey -EncryptorName $masterasym.Name -WarningVariable warn) *> $null
+        It "should warn that it can't create an encryption key" -Skip {
+            $warn = $null
+            $null = $db | New-DbaDbEncryptionKey -Force -Type AsymmetricKey -EncryptorName $masterasym.Name -WarningVariable warn -WarningAction SilentlyContinue
             $warn | Should -Match "n order to encrypt the database encryption key with an as"
         }
     }

@@ -1,19 +1,22 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
+Describe "New-DbaReplCreationScriptOptions" {
+    BeforeAll {
+        . "$PSScriptRoot\constants.ps1"
+        Add-ReplicationLibrary
+    }
 
-Add-ReplicationLibrary
-
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Options', 'NoDefaults'
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command New-DbaReplCreationScriptOptions
+        }
+        It "Should have Options as a non-mandatory parameter of type String[]" {
+            $CommandUnderTest | Should -HaveParameter Options -Type String[] -Not -Mandatory
+        }
+        It "Should have NoDefaults as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter NoDefaults -Type Switch -Not -Mandatory
         }
     }
 }
-<#
-    Integration tests for replication are in GitHub Actions and run from \tests\gh-actions-repl-*.ps1.ps1
-#>
+
+# Integration tests for replication are in GitHub Actions and run from \tests\gh-actions-repl-*.ps1

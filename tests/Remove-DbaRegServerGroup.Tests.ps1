@@ -1,20 +1,32 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tags "UnitTests" {
+Describe "Remove-DbaRegServerGroup" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Name', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Remove-DbaRegServerGroup
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Name as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Name -Type String[]
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type ServerGroup[]
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
-    Context "Setup" {
+    Context "Command usage" {
+        BeforeDiscovery {
+            . (Join-Path $PSScriptRoot 'constants.ps1')
+        }
+
         BeforeAll {
             $group = "dbatoolsci-group1"
             $newGroup = Add-DbaRegServerGroup -SqlInstance $script:instance1 -Name $group
@@ -22,10 +34,17 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $group2 = "dbatoolsci-group1a"
             $newGroup2 = Add-DbaRegServerGroup -SqlInstance $script:instance1 -Name $group2
 
-            $hellagroup = Get-DbaRegServerGroup -SqlInstance $script:instance1 -Id 1 | Add-DbaRegServerGroup -Name dbatoolsci-first | Add-DbaRegServerGroup -Name dbatoolsci-second | Add-DbaRegServerGroup -Name dbatoolsci-third | Add-DbaRegServer -ServerName dbatoolsci-test -Description ridiculous
+            $hellagroup = Get-DbaRegServerGroup -SqlInstance $script:instance1 -Id 1 | 
+                Add-DbaRegServerGroup -Name dbatoolsci-first | 
+                Add-DbaRegServerGroup -Name dbatoolsci-second | 
+                Add-DbaRegServerGroup -Name dbatoolsci-third | 
+                Add-DbaRegServer -ServerName dbatoolsci-test -Description ridiculous
         }
+
         AfterAll {
-            Get-DbaRegServerGroup -SqlInstance $script:instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
+            Get-DbaRegServerGroup -SqlInstance $script:instance1 | 
+                Where-Object Name -match dbatoolsci | 
+                Remove-DbaRegServerGroup -Confirm:$false
         }
 
         It "supports dropping via the pipeline" {

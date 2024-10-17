@@ -1,23 +1,42 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Remove-DbaRgResourcePool" {
+    BeforeAll {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'ResourcePool', 'Type', 'SkipReconfigure', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Remove-DbaRgResourcePool
+        }
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have ResourcePool parameter" {
+            $CommandUnderTest | Should -HaveParameter ResourcePool -Type String[] -Not -Mandatory
+        }
+        It "Should have Type parameter" {
+            $CommandUnderTest | Should -HaveParameter Type -Type String -Not -Mandatory
+        }
+        It "Should have SkipReconfigure parameter" {
+            $CommandUnderTest | Should -HaveParameter SkipReconfigure -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have InputObject parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Not -Mandatory
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Functionality" {
         BeforeAll {
             $null = Set-DbaResourceGovernor -SqlInstance $script:instance2 -Enabled
         }
+
         It "Removes a resource pool" {
             $resourcePoolName = "dbatoolssci_poolTest"
             $splatNewResourcePool = @{
@@ -37,6 +56,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $result.Count | Should -BeGreaterThan $result2.Count
             $result2.Name | Should -Not -Contain $resourcePoolName
         }
+
         It "Works using -Type Internal" {
             $resourcePoolName = "dbatoolssci_poolTest"
             $splatNewResourcePool = @{
@@ -57,6 +77,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $result.Count | Should -BeGreaterThan $result2.Count
             $result2.Name | Should -Not -Contain $resourcePoolName
         }
+
         It "Works using -Type External" {
             $resourcePoolName = "dbatoolssci_poolTest"
             $splatNewResourcePool = @{
@@ -77,6 +98,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $result.Count | Should -BeGreaterThan $result2.Count
             $result2.Name | Should -Not -Contain $resourcePoolName
         }
+
         It "Accepts a list of resource pools" {
             $resourcePoolName = "dbatoolssci_poolTest"
             $resourcePoolName2 = "dbatoolssci_poolTest2"
@@ -98,6 +120,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $result2.Name | Should -Not -Contain $resourcePoolName
             $result2.Name | Should -Not -Contain $resourcePoolName2
         }
+
         It "Accepts input from Get-DbaRgResourcePool" {
             $resourcePoolName = "dbatoolssci_poolTest"
             $resourcePoolName2 = "dbatoolssci_poolTest2"
@@ -119,6 +142,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $result2.Name | Should -Not -Contain $resourcePoolName
             $result2.Name | Should -Not -Contain $resourcePoolName2
         }
+
         It "Skips Resource Governor reconfiguration" {
             $resourcePoolName = "dbatoolssci_poolTest"
             $splatNewResourcePool = @{

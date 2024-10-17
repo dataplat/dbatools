@@ -1,61 +1,72 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "New-DbaDbMailProfile" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Profile', 'Description', 'MailAccountName', 'MailAccountPriority', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command New-DbaDbMailProfile
+        }
+        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Profile as a non-mandatory parameter of type String" {
+            $CommandUnderTest | Should -HaveParameter Profile -Type String -Not -Mandatory
+        }
+        It "Should have Description as a non-mandatory parameter of type String" {
+            $CommandUnderTest | Should -HaveParameter Description -Type String -Not -Mandatory
+        }
+        It "Should have MailAccountName as a non-mandatory parameter of type String" {
+            $CommandUnderTest | Should -HaveParameter MailAccountName -Type String -Not -Mandatory
+        }
+        It "Should have MailAccountPriority as a non-mandatory parameter of type Int32" {
+            $CommandUnderTest | Should -HaveParameter MailAccountPriority -Type Int32 -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory parameter of type SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    BeforeAll {
-        $profilename = "dbatoolsci_test_$(get-random)"
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $description = 'Mail account for email alerts'
-        $mailaccountname = 'dbatoolssci@dbatools.io'
-        $mailaccountpriority = 1
+    Context "Command usage" {
+        BeforeAll {
+            . "$PSScriptRoot\constants.ps1"
+            $profilename = "dbatoolsci_test_$(Get-Random)"
+            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $description = 'Mail account for email alerts'
+            $mailaccountname = 'dbatoolssci@dbatools.io'
+            $mailaccountpriority = 1
 
-        $sql = "EXECUTE msdb.dbo.sysmail_add_account_sp
-        @account_name = '$mailaccountname',
-        @description = 'Mail account for administrative e-mail.',
-        @email_address = 'dba@ad.local',
-        @display_name = 'Automated Mailer',
-        @mailserver_name = 'smtp.ad.local'"
-        $server.Query($sql)
-    }
-    AfterAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $mailAccountSettings = "EXEC msdb.dbo.sysmail_delete_profile_sp @profile_name = '$profilename';"
-        $server.query($mailAccountSettings)
-        $regularaccountsettings = "EXEC msdb.dbo.sysmail_delete_account_sp @account_name = '$mailaccountname';"
-        $server.query($regularaccountsettings)
-    }
-
-    Context "Sets DbMail Profile" {
-
-        $splat = @{
-            SqlInstance         = $script:instance2
-            Profile             = $profilename
-            Description         = $description
-            MailAccountName     = $mailaccountname
-            MailAccountPriority = $mailaccountpriority
+            $sql = "EXECUTE msdb.dbo.sysmail_add_account_sp
+            @account_name = '$mailaccountname',
+            @description = 'Mail account for administrative e-mail.',
+            @email_address = 'dba@ad.local',
+            @display_name = 'Automated Mailer',
+            @mailserver_name = 'smtp.ad.local'"
+            $server.Query($sql)
         }
-        $results = New-DbaDbMailProfile @splat
 
-        It "Gets results" {
-            $results | Should Not Be $null
+        AfterAll {
+            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $mailAccountSettings = "EXEC msdb.dbo.sysmail_delete_profile_sp @profile_name = '$profilename';"
+            $server.Query($mailAccountSettings)
+            $regularaccountsettings = "EXEC msdb.dbo.sysmail_delete_account_sp @account_name = '$mailaccountname';"
+            $server.Query($regularaccountsettings)
         }
-        It "Should have Name of $profilename" {
-            $results.name | Should Be $profilename
-        }
-        It "Should have Description of $description " {
-            $results.description | Should Be $description
+
+        It "Sets DbMail Profile" {
+            $splat = @{
+                SqlInstance         = $script:instance2
+                Profile             = $profilename
+                Description         = $description
+                MailAccountName     = $mailaccountname
+                MailAccountPriority = $mailaccountpriority
+            }
+            $results = New-DbaDbMailProfile @splat
+
+            $results | Should -Not -BeNullOrEmpty
+            $results.Name | Should -Be $profilename
+            $results.Description | Should -Be $description
         }
     }
 }

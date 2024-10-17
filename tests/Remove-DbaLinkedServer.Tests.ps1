@@ -1,66 +1,78 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Remove-DbaLinkedServer" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'LinkedServer', 'InputObject', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Remove-DbaLinkedServer
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have LinkedServer as a parameter" {
+            $CommandUnderTest | Should -HaveParameter LinkedServer -Type String[]
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[]
+        }
+        It "Should have Force as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    BeforeAll {
-        $random = Get-Random
-        $instance2 = Connect-DbaInstance -SqlInstance $script:instance2
-        $instance3 = Connect-DbaInstance -SqlInstance $script:instance3
+    Context "Command usage" {
+        BeforeAll {
+            . "$PSScriptRoot\constants.ps1"
+            $random = Get-Random
+            $instance2 = Connect-DbaInstance -SqlInstance $script:instance2
+            $instance3 = Connect-DbaInstance -SqlInstance $script:instance3
 
-        $linkedServerName1 = "dbatoolscli_LS1_$random"
-        $linkedServerName2 = "dbatoolscli_LS2_$random"
-        $linkedServerName3 = "dbatoolscli_LS3_$random"
-        $linkedServerName4 = "dbatoolscli_LS4_$random"
+            $linkedServerName1 = "dbatoolscli_LS1_$random"
+            $linkedServerName2 = "dbatoolscli_LS2_$random"
+            $linkedServerName3 = "dbatoolscli_LS3_$random"
+            $linkedServerName4 = "dbatoolscli_LS4_$random"
 
-        $linkedServer1 = New-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServerName1
-        $linkedServer2 = New-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServerName2
-        $linkedServer3 = New-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServerName3
-        $linkedServer4 = New-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServerName4
+            $linkedServer1 = New-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServerName1
+            $linkedServer2 = New-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServerName2
+            $linkedServer3 = New-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServerName3
+            $linkedServer4 = New-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServerName4
 
-        $securePassword = ConvertTo-SecureString -String 's3cur3P4ssw0rd?' -AsPlainText -Force
-        $loginName = "dbatoolscli_test_$random"
-        New-DbaLogin -SqlInstance $instance2, $instance3 -Login $loginName -SecurePassword $securePassword
+            $securePassword = ConvertTo-SecureString -String 's3cur3P4ssw0rd?' -AsPlainText -Force
+            $loginName = "dbatoolscli_test_$random"
+            New-DbaLogin -SqlInstance $instance2, $instance3 -Login $loginName -SecurePassword $securePassword
 
-        $newLinkedServerLogin = New-Object Microsoft.SqlServer.Management.Smo.LinkedServerLogin
-        $newLinkedServerLogin.Parent = $linkedServer4
-        $newLinkedServerLogin.Name = $loginName
-        $newLinkedServerLogin.RemoteUser = $loginName
-        $newLinkedServerLogin.SetRemotePassword(($securePassword | ConvertFrom-SecurePass))
-        $newLinkedServerLogin.Create()
-    }
-    AfterAll {
-        if ($instance2.LinkedServers.Name -contains $linkedServerName1) {
-            $instance2.LinkedServers[$linkedServerName1].Drop()
+            $newLinkedServerLogin = New-Object Microsoft.SqlServer.Management.Smo.LinkedServerLogin
+            $newLinkedServerLogin.Parent = $linkedServer4
+            $newLinkedServerLogin.Name = $loginName
+            $newLinkedServerLogin.RemoteUser = $loginName
+            $newLinkedServerLogin.SetRemotePassword(($securePassword | ConvertFrom-SecurePass))
+            $newLinkedServerLogin.Create()
         }
 
-        if ($instance2.LinkedServers.Name -contains $linkedServerName2) {
-            $instance2.LinkedServers[$linkedServerName2].Drop()
+        AfterAll {
+            if ($instance2.LinkedServers.Name -contains $linkedServerName1) {
+                $instance2.LinkedServers[$linkedServerName1].Drop()
+            }
+
+            if ($instance2.LinkedServers.Name -contains $linkedServerName2) {
+                $instance2.LinkedServers[$linkedServerName2].Drop()
+            }
+
+            if ($instance2.LinkedServers.Name -contains $linkedServerName3) {
+                $instance2.LinkedServers[$linkedServerName3].Drop()
+            }
+
+            if ($instance2.LinkedServers.Name -contains $linkedServerName4) {
+                $instance2.LinkedServers[$linkedServerName4].Drop($true)
+            }
+
+            Remove-DbaLogin -SqlInstance $instance2, $instance3 -Login $loginName -Confirm:$false
         }
-
-        if ($instance2.LinkedServers.Name -contains $linkedServerName3) {
-            $instance2.LinkedServers[$linkedServerName3].Drop()
-        }
-
-        if ($instance2.LinkedServers.Name -contains $linkedServerName4) {
-            $instance2.LinkedServers[$linkedServerName4].Drop($true)
-        }
-
-        Remove-DbaLogin -SqlInstance $instance2, $instance3 -Login $loginName -Confirm:$false
-    }
-
-    Context "ensure command works" {
 
         It "Removes a linked server" {
             $results = Get-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServerName1

@@ -1,20 +1,11 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tags "UnitTests" {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('WhatIf', 'Confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'ServerRole', 'Login', 'Role', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should -Be 0
-        }
-    }
-}
-
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe "Remove-DbaServerRoleMember" {
     BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $login1 = "dbatoolsci_login1_$(Get-Random)"
         $login2 = "dbatoolsci_login2_$(Get-Random)"
@@ -25,9 +16,37 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $null = New-DbaServerRole -SqlInstance $script:instance2 -ServerRole $customServerRole -Owner sa
         Add-DbaServerRoleMember -SqlInstance $server -ServerRole $fixedServerRoles[0] -Login $login1, $login2 -Confirm:$false
     }
+
     AfterAll {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $null = Remove-DbaLogin -SqlInstance $script:instance2 -Login $login1, $login2 -Confirm:$false
+    }
+
+    Context "Validate parameters" {
+        BeforeAll {
+            $CommandUnderTest = Get-Command Remove-DbaServerRoleMember
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have ServerRole as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ServerRole -Type String[]
+        }
+        It "Should have Login as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Login -Type String[]
+        }
+        It "Should have Role as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Role -Type String[]
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[]
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+        }
     }
 
     Context "Functionality" {
@@ -48,7 +67,6 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $roleDBAfter.Count | Should -Be $serverRoles.Count
             $roleDBAfter.Login -contains $login1 | Should -Be $false
             $roleDBAfter.Login -contains $login2 | Should -Be $true
-
         }
 
         It 'Removes Custom Server-Level Role Membership' {

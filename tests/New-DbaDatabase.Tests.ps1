@@ -1,20 +1,11 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Name', 'Collation', 'Recoverymodel', 'Owner', 'DataFilePath', 'LogFilePath', 'PrimaryFilesize', 'PrimaryFileGrowth', 'PrimaryFileMaxSize', 'LogSize', 'LogGrowth', 'LogMaxSize', 'SecondaryFilesize', 'SecondaryFileGrowth', 'SecondaryFileMaxSize', 'SecondaryFileCount', 'DefaultFileGroup', 'EnableException', 'SecondaryDataFileSuffix', 'LogFileSuffix', 'DataFileSuffix'
-        It "Should only contain our specific parameters" {
-            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
-        }
-    }
-}
-
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
-
+Describe "New-DbaDatabase" {
     BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+
         $random = Get-Random
         $instance2 = Connect-DbaInstance -SqlInstance $script:instance2
         $instance3 = Connect-DbaInstance -SqlInstance $script:instance3
@@ -39,8 +30,82 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $null = Remove-DbaDatabase -SqlInstance $instance3 -Database $newDbName, $newDb1Name, $newDb2Name, $secondaryFileTestDbName, $secondaryFileCountTestDbName, $primaryFileGroupDbName, $secondaryFileGroupDbName -Confirm:$false
     }
 
-    Context "commands work as expected" {
+    Context "Validate parameters" {
+        BeforeAll {
+            $CommandUnderTest = Get-Command New-DbaDatabase
+        }
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Name parameter" {
+            $CommandUnderTest | Should -HaveParameter Name -Type String[] -Not -Mandatory
+        }
+        It "Should have Collation parameter" {
+            $CommandUnderTest | Should -HaveParameter Collation -Type String -Not -Mandatory
+        }
+        It "Should have RecoveryModel parameter" {
+            $CommandUnderTest | Should -HaveParameter RecoveryModel -Type String -Not -Mandatory
+        }
+        It "Should have Owner parameter" {
+            $CommandUnderTest | Should -HaveParameter Owner -Type String -Not -Mandatory
+        }
+        It "Should have DataFilePath parameter" {
+            $CommandUnderTest | Should -HaveParameter DataFilePath -Type String -Not -Mandatory
+        }
+        It "Should have LogFilePath parameter" {
+            $CommandUnderTest | Should -HaveParameter LogFilePath -Type String -Not -Mandatory
+        }
+        It "Should have PrimaryFilesize parameter" {
+            $CommandUnderTest | Should -HaveParameter PrimaryFilesize -Type Int32 -Not -Mandatory
+        }
+        It "Should have PrimaryFileGrowth parameter" {
+            $CommandUnderTest | Should -HaveParameter PrimaryFileGrowth -Type Int32 -Not -Mandatory
+        }
+        It "Should have PrimaryFileMaxSize parameter" {
+            $CommandUnderTest | Should -HaveParameter PrimaryFileMaxSize -Type Int32 -Not -Mandatory
+        }
+        It "Should have LogSize parameter" {
+            $CommandUnderTest | Should -HaveParameter LogSize -Type Int32 -Not -Mandatory
+        }
+        It "Should have LogGrowth parameter" {
+            $CommandUnderTest | Should -HaveParameter LogGrowth -Type Int32 -Not -Mandatory
+        }
+        It "Should have LogMaxSize parameter" {
+            $CommandUnderTest | Should -HaveParameter LogMaxSize -Type Int32 -Not -Mandatory
+        }
+        It "Should have SecondaryFilesize parameter" {
+            $CommandUnderTest | Should -HaveParameter SecondaryFilesize -Type Int32 -Not -Mandatory
+        }
+        It "Should have SecondaryFileGrowth parameter" {
+            $CommandUnderTest | Should -HaveParameter SecondaryFileGrowth -Type Int32 -Not -Mandatory
+        }
+        It "Should have SecondaryFileMaxSize parameter" {
+            $CommandUnderTest | Should -HaveParameter SecondaryFileMaxSize -Type Int32 -Not -Mandatory
+        }
+        It "Should have SecondaryFileCount parameter" {
+            $CommandUnderTest | Should -HaveParameter SecondaryFileCount -Type Int32 -Not -Mandatory
+        }
+        It "Should have DefaultFileGroup parameter" {
+            $CommandUnderTest | Should -HaveParameter DefaultFileGroup -Type String -Not -Mandatory
+        }
+        It "Should have DataFileSuffix parameter" {
+            $CommandUnderTest | Should -HaveParameter DataFileSuffix -Type String -Not -Mandatory
+        }
+        It "Should have LogFileSuffix parameter" {
+            $CommandUnderTest | Should -HaveParameter LogFileSuffix -Type String -Not -Mandatory
+        }
+        It "Should have SecondaryDataFileSuffix parameter" {
+            $CommandUnderTest | Should -HaveParameter SecondaryDataFileSuffix -Type String -Not -Mandatory
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+        }
+    }
 
+    Context "commands work as expected" {
         It "creates one new randomly named database" {
             $randomDb.Name | Should -Match random
         }
@@ -109,7 +174,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
         It "collation is validated" {
             $collationDb = New-DbaDatabase -SqlInstance $instance2 -Name $collationDbName -Collation "invalid_collation"
-            $collationDb | Should -BeNull
+            $collationDb | Should -BeNullOrEmpty
 
             $collationDb = New-DbaDatabase -SqlInstance $instance2 -Name $collationDbName -Collation $instance2.Databases["model"].Collation
             $instance2.Databases[$collationDbName].Collation | Should -Be $instance2.Databases["model"].Collation

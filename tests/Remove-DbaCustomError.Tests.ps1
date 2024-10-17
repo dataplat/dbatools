@@ -1,19 +1,10 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'MessageID', 'Language', 'EnableException'
-        It "Should only contain our specific parameters" {
-            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
-        }
-    }
-}
-
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "Remove-DbaCustomError" {
     BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        . "$PSScriptRoot\constants.ps1"
+
         $server = Connect-DbaInstance -SqlInstance $script:instance1
         $server2 = Connect-DbaInstance -SqlInstance $script:instance2
 
@@ -34,6 +25,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
         $results = New-DbaCustomError -SqlInstance $server -MessageID 70004 -Severity 1 -MessageText "test_70004" -Language "English"
     }
+
     AfterAll {
         $server.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = 70000) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = 70000, @lang = 'all'; END")
         $server.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = 70001) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = 70001, @lang = 'all'; END")
@@ -45,11 +37,31 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $server2.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = 70002) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = 70002, @lang = 'all'; END")
     }
 
-    Context "Validate params" {
+    Context "Validate parameters" {
+        BeforeAll {
+            $CommandUnderTest = Get-Command Remove-DbaCustomError
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have MessageID as a parameter" {
+            $CommandUnderTest | Should -HaveParameter MessageID -Type Int32
+        }
+        It "Should have Language as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Language -Type String
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+        }
+    }
 
+    Context "Validate params" {
         It "Message ID" {
-            { $results = Remove-DbaCustomError -SqlInstance $server -MessageID 1 -Language English } | Should -Throw
-            { $results = Remove-DbaCustomError -SqlInstance $server -MessageID 2147483648 -Language English } | Should -Throw
+            { Remove-DbaCustomError -SqlInstance $server -MessageID 1 -Language English } | Should -Throw
+            { Remove-DbaCustomError -SqlInstance $server -MessageID 2147483648 -Language English } | Should -Throw
 
             $results = Remove-DbaCustomError -SqlInstance $server -MessageID 70000
             ($server.UserDefinedMessages | Where-Object ID -eq 70000).Count | Should -Be 0
@@ -74,7 +86,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Supports multiple server inputs" {
-
         It "Preconnected servers" {
             $results = ([DbaInstanceParameter[]]$server, $server2 | Remove-DbaCustomError -MessageID 70001)
             ($server.UserDefinedMessages | Where-Object ID -eq 70001).Count | Should -Be 0
@@ -91,8 +102,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
 
-    Context "Simulate an update " {
-
+    Context "Simulate an update" {
         It "Use the existing commands to simulate an update" {
             $results = New-DbaCustomError -SqlInstance $server -MessageID 70000 -Severity 1 -MessageText "test_70000"
             $results.IsLogged | Should -Be $false

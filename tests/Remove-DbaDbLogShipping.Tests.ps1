@@ -1,23 +1,45 @@
-$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
+Describe "Remove-DbaDbLogShipping Unit Tests" -Tag "UnitTests" {
+    BeforeAll {
+        # Import module or set up environment if needed
+    }
 
-Describe "$CommandName Unit Tests" -Tags "UnitTests" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'PrimarySqlInstance', 'SecondarySqlInstance', 'PrimarySqlCredential', 'SecondarySqlCredential', 'Database', 'RemoveSecondaryDatabase', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Remove-DbaDbLogShipping
+        }
+        It "Should have PrimarySqlInstance as a non-mandatory DbaInstanceParameter" {
+            $CommandUnderTest | Should -HaveParameter PrimarySqlInstance -Type DbaInstanceParameter -Not -Mandatory
+        }
+        It "Should have SecondarySqlInstance as a non-mandatory DbaInstanceParameter" {
+            $CommandUnderTest | Should -HaveParameter SecondarySqlInstance -Type DbaInstanceParameter -Not -Mandatory
+        }
+        It "Should have PrimarySqlCredential as a non-mandatory PSCredential" {
+            $CommandUnderTest | Should -HaveParameter PrimarySqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have SecondarySqlCredential as a non-mandatory PSCredential" {
+            $CommandUnderTest | Should -HaveParameter SecondarySqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database as a non-mandatory Object[]" {
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Not -Mandatory
+        }
+        It "Should have RemoveSecondaryDatabase as a non-mandatory SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter RemoveSecondaryDatabase -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
 }
 
-<# Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    # This is a placeholder until we decide on sql2016/sql2017
+Describe "Remove-DbaDbLogShipping Integration Tests" -Tag "IntegrationTests" {
+    BeforeDiscovery {
+        # Run setup code to get script variables within scope of the discovery phase
+        . (Join-Path $PSScriptRoot 'constants.ps1')
+    }
+
     BeforeAll {
         $dbname = "dbatoolsci_logshipping"
-
         $localPath = 'C:\temp\logshipping'
         $networkPath = '\\localhost\c$\temp\logshipping'
 
@@ -35,21 +57,23 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
         }
     }
 
-    Context "Remove database from log shipping with remove secondary database" {
-        $params = @{
-            SourceSqlInstance       = $script:instance2
-            DestinationSqlInstance  = $script:instance2
-            Database                = $dbname
-            BackupNetworkPath       = $networkPath
-            BackupLocalPath         = $localPath
-            GenerateFullBackup      = $true
-            CompressBackup          = $true
-            SecondaryDatabaseSuffix = "_LS"
-            Force                   = $true
-        }
+    Context "Remove database from log shipping without removing secondary database" {
+        BeforeAll {
+            $params = @{
+                SourceSqlInstance       = $script:instance2
+                DestinationSqlInstance  = $script:instance2
+                Database                = $dbname
+                BackupNetworkPath       = $networkPath
+                BackupLocalPath         = $localPath
+                GenerateFullBackup      = $true
+                CompressBackup          = $true
+                SecondaryDatabaseSuffix = "_LS"
+                Force                   = $true
+            }
 
-        # Run the log shipping
-        Invoke-DbaDbLogShipping @params
+            # Run the log shipping
+            Invoke-DbaDbLogShipping @params
+        }
 
         It "Should have the database information" {
             $query = "SELECT pd.primary_database AS PrimaryDatabase,
@@ -61,27 +85,23 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
                 WHERE pd.[primary_database] = '$dbname';"
 
             $results = Invoke-DbaQuery -SqlInstance $script:instance2 -Database master -Query $query
-
             $results.PrimaryDatabase | Should -Be $dbname
         }
 
-        # Remove the log shipping
-        $params = @{
-            PrimarySqlInstance   = $script:instance2
-            SecondarySqlInstance = $script:instance2
-            Database             = $dbname
-        }
+        It "Should remove log shipping without removing secondary database" {
+            $params = @{
+                PrimarySqlInstance   = $script:instance2
+                SecondarySqlInstance = $script:instance2
+                Database             = $dbname
+            }
 
-        Remove-DbaDbLogShipping @params
+            Remove-DbaDbLogShipping @params
 
-        $primaryServer.Databases.Refresh()
-        $secondaryserver = Connect-DbaInstance -SqlInstance $script:instance2
+            $primaryServer.Databases.Refresh()
+            $secondaryserver = Connect-DbaInstance -SqlInstance $script:instance2
 
-        It "Should still have the secondary database" {
             "$($dbname)_LS" | Should -BeIn $secondaryserver.Databases.Name
-        }
 
-        It "Should no longer have log shipping information" {
             $query = "SELECT pd.primary_database AS PrimaryDatabase,
                     ps.secondary_server AS SecondaryServer,
                     ps.secondary_database AS SecondaryDatabase
@@ -91,25 +111,26 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
                 WHERE pd.[primary_database] = '$dbname';"
 
             $results = Invoke-DbaQuery -SqlInstance $script:instance2 -Database master -Query $query
-
-            $results.PrimaryDatabase | Should -Be $null
+            $results.PrimaryDatabase | Should -BeNullOrEmpty
         }
     }
 
-    Context "Remove database from log shipping with remove secondary database" {
-        $params = @{
-            SourceSqlInstance       = $script:instance2
-            DestinationSqlInstance  = $script:instance2
-            Database                = $dbname
-            BackupNetworkPath       = $networkPath
-            BackupLocalPath         = $localPath
-            GenerateFullBackup      = $true
-            CompressBackup          = $true
-            SecondaryDatabaseSuffix = "_LS"
-            Force                   = $true
-        }
+    Context "Remove database from log shipping with removing secondary database" {
+        BeforeAll {
+            $params = @{
+                SourceSqlInstance       = $script:instance2
+                DestinationSqlInstance  = $script:instance2
+                Database                = $dbname
+                BackupNetworkPath       = $networkPath
+                BackupLocalPath         = $localPath
+                GenerateFullBackup      = $true
+                CompressBackup          = $true
+                SecondaryDatabaseSuffix = "_LS"
+                Force                   = $true
+            }
 
-        $results = Invoke-DbaDbLogShipping @params
+            Invoke-DbaDbLogShipping @params
+        }
 
         It "Should have the database information" {
             $query = "SELECT pd.primary_database AS PrimaryDatabase,
@@ -121,28 +142,24 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
                 WHERE pd.[primary_database] = '$dbname';"
 
             $results = Invoke-DbaQuery -SqlInstance $script:instance2 -Database master -Query $query
-
             $results.PrimaryDatabase | Should -Be $dbname
         }
 
-        # Remove the log shipping
-        $params = @{
-            PrimarySqlInstance      = $script:instance2
-            SecondarySqlInstance    = $script:instance2
-            Database                = $dbname
-            RemoveSecondaryDatabase = $true
-        }
+        It "Should remove log shipping and secondary database" {
+            $params = @{
+                PrimarySqlInstance      = $script:instance2
+                SecondarySqlInstance    = $script:instance2
+                Database                = $dbname
+                RemoveSecondaryDatabase = $true
+            }
 
-        Remove-DbaDbLogShipping @params
+            Remove-DbaDbLogShipping @params
 
-        $primaryServer.Databases.Refresh()
-        $secondaryserver = Connect-DbaInstance -SqlInstance $script:instance2
+            $primaryServer.Databases.Refresh()
+            $secondaryserver = Connect-DbaInstance -SqlInstance $script:instance2
 
-        It "Should no longer have the secondary database" {
             "$($dbname)_LS" | Should -Not -BeIn $secondaryserver.Databases.Name
-        }
 
-        It "Should no longer have log shipping information" {
             $query = "SELECT pd.primary_database AS PrimaryDatabase,
                     ps.secondary_server AS SecondaryServer,
                     ps.secondary_database AS SecondaryDatabase
@@ -152,8 +169,20 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
                 WHERE pd.[primary_database] = '$dbname';"
 
             $results = Invoke-DbaQuery -SqlInstance $script:instance2 -Database master -Query $query
-
-            $results.PrimaryDatabase | Should -Be $null
+            $results.PrimaryDatabase | Should -BeNullOrEmpty
         }
     }
-} #>
+
+    AfterAll {
+        # Cleanup
+        if ($primaryServer.Databases[$dbname]) {
+            $primaryServer.Databases[$dbname].Drop()
+        }
+        if ($secondaryserver.Databases["$($dbname)_LS"]) {
+            $secondaryserver.Databases["$($dbname)_LS"].Drop()
+        }
+        if (Test-Path -Path $localPath) {
+            Remove-Item -Path $localPath -Recurse -Force
+        }
+    }
+}

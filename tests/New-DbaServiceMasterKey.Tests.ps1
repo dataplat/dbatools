@@ -1,19 +1,46 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "New-DbaServiceMasterKey" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Credential', 'SecurePassword', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command New-DbaServiceMasterKey
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Credential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
+        }
+        It "Should have SecurePassword as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SecurePassword -Type SecureString
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+        }
+        It "Should have common parameters" {
+            $CommandUnderTest | Should -HaveParameter Verbose -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Debug -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter ErrorAction -Type ActionPreference
+            $CommandUnderTest | Should -HaveParameter WarningAction -Type ActionPreference
+            $CommandUnderTest | Should -HaveParameter InformationAction -Type ActionPreference
+            $CommandUnderTest | Should -HaveParameter ProgressAction -Type ActionPreference
+            $CommandUnderTest | Should -HaveParameter ErrorVariable -Type String
+            $CommandUnderTest | Should -HaveParameter WarningVariable -Type String
+            $CommandUnderTest | Should -HaveParameter InformationVariable -Type String
+            $CommandUnderTest | Should -HaveParameter OutVariable -Type String
+            $CommandUnderTest | Should -HaveParameter OutBuffer -Type Int32
+            $CommandUnderTest | Should -HaveParameter PipelineVariable -Type String
+            $CommandUnderTest | Should -HaveParameter WhatIf -Type SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Confirm -Type SwitchParameter
         }
     }
 }
+
 <#
     Integration test should appear below and are custom to the command you are writing.
     Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
+    for more guidance.
 #>

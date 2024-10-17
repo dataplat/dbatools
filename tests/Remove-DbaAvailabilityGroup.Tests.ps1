@@ -1,32 +1,49 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$commandname Unit Tests" -Tag 'UnitTests' {
+Describe "Remove-DbaAvailabilityGroup" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'AvailabilityGroup', 'AllAvailabilityGroups', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Remove-DbaAvailabilityGroup
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have AvailabilityGroup as a parameter" {
+            $CommandUnderTest | Should -HaveParameter AvailabilityGroup -Type String[]
+        }
+        It "Should have AllAvailabilityGroups as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter AllAvailabilityGroups -Type SwitchParameter
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type AvailabilityGroup[]
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
-    BeforeAll {
-        $agname = "dbatoolsci_removewholegroup"
-        $null = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Confirm:$false
-    }
-    Context "removes the newly created ag" {
-        It "removes the ag" {
+    Context "Command usage" {
+        BeforeDiscovery {
+            . (Join-Path $PSScriptRoot 'constants.ps1')
+        }
+
+        BeforeAll {
+            $agname = "dbatoolsci_removewholegroup"
+            $null = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Confirm:$false
+        }
+
+        It "removes the newly created ag" {
             $results = Remove-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup $agname -Confirm:$false
             $results.Status | Should -Be 'Removed'
             $results.AvailabilityGroup | Should -Be $agname
         }
+
         It "really removed the ag" {
             $results = Get-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup $agname
-            $results | Should -BeNullorEmpty
+            $results | Should -BeNullOrEmpty
         }
     }
 } #$script:instance2 for appveyor

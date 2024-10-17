@@ -1,19 +1,38 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Register-DbatoolsConfig" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Config', 'FullName', 'Module', 'Name', 'Scope', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Register-DbatoolsConfig
+        }
+        It "Accepts Config as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Config -Type Config[]
+        }
+        It "Accepts FullName as a parameter" {
+            $CommandUnderTest | Should -HaveParameter FullName -Type String[]
+        }
+        It "Accepts Module as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Module -Type String
+        }
+        It "Accepts Name as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Name -Type String
+        }
+        It "Accepts Scope as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Scope -Type ConfigScope
+        }
+        It "Accepts EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+        }
+    }
+
+    Context "Command usage" {
+        BeforeAll {
+            # Add any necessary setup code here
+        }
+
+        It "Should do something" {
+            # Add actual test cases here
+            $true | Should -Be $true
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>

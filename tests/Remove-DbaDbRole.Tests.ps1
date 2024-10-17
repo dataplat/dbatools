@@ -1,19 +1,41 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tags "UnitTests" {
+Describe "Remove-DbaDbRole Unit Tests" -Tag "UnitTests" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Role', 'ExcludeRole', 'IncludeSystemDbs', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Remove-DbaDbRole
+        }
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Not -Mandatory
+        }
+        It "Should have ExcludeDatabase parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type String[] -Not -Mandatory
+        }
+        It "Should have Role parameter" {
+            $CommandUnderTest | Should -HaveParameter Role -Type String[] -Not -Mandatory
+        }
+        It "Should have ExcludeRole parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeRole -Type String[] -Not -Mandatory
+        }
+        It "Should have IncludeSystemDbs parameter" {
+            $CommandUnderTest | Should -HaveParameter IncludeSystemDbs -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have InputObject parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Not -Mandatory
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe "Remove-DbaDbRole Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $role1 = "dbatoolssci_role1_$(Get-Random)"
@@ -22,7 +44,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $null = New-DbaDatabase -SqlInstance $script:instance2 -Name $dbname1 -Owner sa
     }
     AfterAll {
-        $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname1 -confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname1 -Confirm:$false
     }
 
     Context "Functionality" {
@@ -30,52 +52,53 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $null = $server.Query("CREATE ROLE $role1", $dbname1)
             $null = $server.Query("CREATE ROLE $role2", $dbname1)
             $result0 = Get-DbaDbRole -SqlInstance $script:instance2 -Database $dbname1
-            Remove-DbaDbRole -SqlInstance $script:instance2 -Database $dbname1 -confirm:$false
+            Remove-DbaDbRole -SqlInstance $script:instance2 -Database $dbname1 -Confirm:$false
             $result1 = Get-DbaDbRole -SqlInstance $script:instance2 -Database $dbname1
 
-            $result0.Count | Should BeGreaterThan $result1.Count
-            $result1.Name -contains $role1  | Should Be $false
-            $result1.Name -contains $role2  | Should Be $false
+            $result0.Count | Should -BeGreaterThan $result1.Count
+            $result1.Name | Should -Not -Contain $role1
+            $result1.Name | Should -Not -Contain $role2
         }
 
         It 'Accepts a list of roles' {
             $null = $server.Query("CREATE ROLE $role1", $dbname1)
             $null = $server.Query("CREATE ROLE $role2", $dbname1)
             $result0 = Get-DbaDbRole -SqlInstance $script:instance2 -Database $dbname1
-            Remove-DbaDbRole -SqlInstance $script:instance2 -Database $dbname1 -Role $role1 -confirm:$false
+            Remove-DbaDbRole -SqlInstance $script:instance2 -Database $dbname1 -Role $role1 -Confirm:$false
             $result1 = Get-DbaDbRole -SqlInstance $script:instance2 -Database $dbname1
 
-            $result0.Count | Should BeGreaterThan $result1.Count
-            $result1.Name -contains $role1  | Should Be $false
-            $result1.Name -contains $role2  | Should Be $true
+            $result0.Count | Should -BeGreaterThan $result1.Count
+            $result1.Name | Should -Not -Contain $role1
+            $result1.Name | Should -Contain $role2
         }
+
         It 'Excludes databases Roles' {
             $null = $server.Query("CREATE ROLE $role1", $dbname1)
             $result0 = Get-DbaDbRole -SqlInstance $script:instance2 -Database $dbname1
-            Remove-DbaDbRole -SqlInstance $script:instance2 -Database $dbname1 -ExcludeRole $role1 -confirm:$false
+            Remove-DbaDbRole -SqlInstance $script:instance2 -Database $dbname1 -ExcludeRole $role1 -Confirm:$false
             $result1 = Get-DbaDbRole -SqlInstance $script:instance2 -Database $dbname1
 
-            $result0.Count | Should BeGreaterThan $result1.Count
-            $result1.Name -contains $role1  | Should Be $true
-            $result1.Name -contains $role2  | Should Be $false
+            $result0.Count | Should -BeGreaterThan $result1.Count
+            $result1.Name | Should -Contain $role1
+            $result1.Name | Should -Not -Contain $role2
         }
 
-        It 'Excepts input from Get-DbaDbRole' {
+        It 'Accepts input from Get-DbaDbRole' {
             $result0 = Get-DbaDbRole -SqlInstance $script:instance2 -Database $dbname1 -Role $role2
-            $result0 | Remove-DbaDbRole -confirm:$false
+            $result0 | Remove-DbaDbRole -Confirm:$false
             $result1 = Get-DbaDbRole -SqlInstance $script:instance2 -Database $dbname1
 
-            $result1.Name -contains $role2  | Should Be $false
+            $result1.Name | Should -Not -Contain $role2
         }
 
         It 'Removes roles in System DB' {
             $null = $server.Query("CREATE ROLE $role1", 'msdb')
             $result0 = Get-DbaDbRole -SqlInstance $script:instance2 -Database msdb
-            Remove-DbaDbRole -SqlInstance $script:instance2 -Database msdb -Role $role1 -IncludeSystemDbs -confirm:$false
+            Remove-DbaDbRole -SqlInstance $script:instance2 -Database msdb -Role $role1 -IncludeSystemDbs -Confirm:$false
             $result1 = Get-DbaDbRole -SqlInstance $script:instance2 -Database msdb
 
-            $result0.Count | Should BeGreaterThan $result1.Count
-            $result1.Name -contains $role1  | Should Be $false
+            $result0.Count | Should -BeGreaterThan $result1.Count
+            $result1.Name | Should -Not -Contain $role1
         }
     }
 }
