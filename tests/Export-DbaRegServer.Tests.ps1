@@ -21,7 +21,7 @@ Describe "Export-DbaRegServer" {
             $CommandUnderTest | Should -HaveParameter Path -Type String
         }
         It "Should have FilePath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FilePath -Type FileInfo
+            $CommandUnderTest | Should -HaveParameter FilePath -Type System.IO.FileInfo
         }
         It "Should have CredentialPersistenceType as a parameter" {
             $CommandUnderTest | Should -HaveParameter CredentialPersistenceType -Type String

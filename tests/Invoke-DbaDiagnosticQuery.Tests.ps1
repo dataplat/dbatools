@@ -54,7 +54,7 @@ Describe "Invoke-DbaDiagnosticQuery" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type FileInfo
+            $CommandUnderTest | Should -HaveParameter Path -Type System.IO.FileInfo
         }
         It "Should have QueryName as a parameter" {
             $CommandUnderTest | Should -HaveParameter QueryName -Type String[]

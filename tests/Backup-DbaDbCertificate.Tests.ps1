@@ -27,13 +27,13 @@ Describe "Backup-DbaDbCertificate" {
             $CommandUnderTest | Should -HaveParameter DecryptionPassword -Type SecureString
         }
         It "Should have Path parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type FileInfo
+            $CommandUnderTest | Should -HaveParameter Path -Type System.IO.FileInfo
         }
         It "Should have Suffix parameter" {
             $CommandUnderTest | Should -HaveParameter Suffix -Type String
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Certificate[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Certificate[]
         }
         It "Should have EnableException parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch

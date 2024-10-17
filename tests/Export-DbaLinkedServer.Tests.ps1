@@ -30,7 +30,7 @@ Describe "Export-DbaLinkedServer" {
             $CommandUnderTest | Should -HaveParameter Append -Type Switch
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type LinkedServer[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.LinkedServer[]
         }
         It "Should have EnableException as a switch parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch

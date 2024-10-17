@@ -18,7 +18,7 @@ Describe "Export-DbaDiagnosticQuery" {
             $CommandUnderTest | Should -HaveParameter ConvertTo -Type String -Mandatory:$false
         }
         It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type FileInfo -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Path -Type System.IO.FileInfo -Mandatory:$false
         }
         It "Should have Suffix as a parameter" {
             $CommandUnderTest | Should -HaveParameter Suffix -Type String -Mandatory:$false

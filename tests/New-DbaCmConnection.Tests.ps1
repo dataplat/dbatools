@@ -18,7 +18,7 @@ Describe "New-DbaCmConnection" {
             $CommandUnderTest | Should -HaveParameter OverrideExplicitCredential -Type switch
         }
         It "Should have DisabledConnectionTypes as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DisabledConnectionTypes -Type ManagementConnectionType
+            $CommandUnderTest | Should -HaveParameter DisabledConnectionTypes -Type Dataplat.Dbatools.Connection.ManagementConnectionType
         }
         It "Should have DisableBadCredentialCache as a switch parameter" {
             $CommandUnderTest | Should -HaveParameter DisableBadCredentialCache -Type switch

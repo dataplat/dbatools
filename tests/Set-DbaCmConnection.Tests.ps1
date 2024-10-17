@@ -21,7 +21,7 @@ Describe "Set-DbaCmConnection" {
             $CommandUnderTest | Should -HaveParameter OverrideConnectionPolicy -Type Switch -Mandatory:$false
         }
         It "Should have DisabledConnectionTypes parameter" {
-            $CommandUnderTest | Should -HaveParameter DisabledConnectionTypes -Type ManagementConnectionType -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter DisabledConnectionTypes -Type Dataplat.Dbatools.Connection.ManagementConnectionType -Mandatory:$false
         }
         It "Should have DisableBadCredentialCache parameter" {
             $CommandUnderTest | Should -HaveParameter DisableBadCredentialCache -Type Switch -Mandatory:$false

@@ -27,7 +27,7 @@ Describe "Get-DbaCmObject" {
             $CommandUnderTest | Should -HaveParameter Namespace -Type String -Mandatory:$false
         }
         It "Should have DoNotUse as a non-mandatory ManagementConnectionType[] parameter" {
-            $CommandUnderTest | Should -HaveParameter DoNotUse -Type ManagementConnectionType[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter DoNotUse -Type Dataplat.Dbatools.Connection.ManagementConnectionType[] -Mandatory:$false
         }
         It "Should have Force as a non-mandatory Switch" {
             $CommandUnderTest | Should -HaveParameter Force -Type Switch -Mandatory:$false

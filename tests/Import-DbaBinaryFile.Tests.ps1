@@ -53,10 +53,10 @@ Describe "Import-DbaBinaryFile" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type [Microsoft.SqlServer.Management.Smo.Table[]]
         }
         It "Should have FilePath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FilePath -Type FileInfo[]
+            $CommandUnderTest | Should -HaveParameter FilePath -Type System.IO.FileInfo[]
         }
         It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type FileInfo[]
+            $CommandUnderTest | Should -HaveParameter Path -Type System.IO.FileInfo[]
         }
         It "Should have EnableException as a switch parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch

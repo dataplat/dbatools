@@ -29,7 +29,7 @@ Describe "Remove-DbaDbCertificate Unit Tests" -Tag 'UnitTests' {
         }
 
         It "Should have InputObject parameter" {
-            $command | Should -HaveParameter InputObject -Type Certificate[] -Mandatory:$false
+            $command | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Certificate[] -Mandatory:$false
         }
 
         It "Should have EnableException parameter" {

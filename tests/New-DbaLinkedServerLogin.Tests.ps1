@@ -27,7 +27,7 @@ Describe "New-DbaLinkedServerLogin" {
             $CommandUnderTest | Should -HaveParameter Impersonate -Type Switch -Mandatory:$false
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type LinkedServer[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.LinkedServer[] -Mandatory:$false
         }
         It "Should have EnableException parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false

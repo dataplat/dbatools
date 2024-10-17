@@ -18,7 +18,7 @@ Describe "Test-DbaCmConnection" {
             $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
         }
         It "Should have Type as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Type -Type ManagementConnectionType[]
+            $CommandUnderTest | Should -HaveParameter Type -Type Dataplat.Dbatools.Connection.ManagementConnectionType[]
         }
         It "Should have Force as a switch parameter" {
             $CommandUnderTest | Should -HaveParameter Force -Type switch

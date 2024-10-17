@@ -9,7 +9,7 @@ Describe "Find-DbaInstance" {
             $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have DiscoveryType as a non-mandatory parameter of type DbaInstanceDiscoveryType" {
-            $CommandUnderTest | Should -HaveParameter DiscoveryType -Type DbaInstanceDiscoveryType -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter DiscoveryType -Type Dataplat.Dbatools.Types.DbaInstanceDiscoveryType -Mandatory:$false
         }
         It "Should have Credential as a non-mandatory parameter of type PSCredential" {
             $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Mandatory:$false
@@ -18,7 +18,7 @@ Describe "Find-DbaInstance" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have ScanType as a non-mandatory parameter of type DbaInstanceScanType[]" {
-            $CommandUnderTest | Should -HaveParameter ScanType -Type DbaInstanceScanType[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ScanType -Type Dataplat.Dbatools.Types.DbaInstanceScanType[] -Mandatory:$false
         }
         It "Should have IpAddress as a non-mandatory parameter of type String[]" {
             $CommandUnderTest | Should -HaveParameter IpAddress -Type String[] -Mandatory:$false
@@ -30,7 +30,7 @@ Describe "Find-DbaInstance" {
             $CommandUnderTest | Should -HaveParameter TCPPort -Type Int32[] -Mandatory:$false
         }
         It "Should have MinimumConfidence as a non-mandatory parameter of type DbaInstanceConfidenceLevel" {
-            $CommandUnderTest | Should -HaveParameter MinimumConfidence -Type DbaInstanceConfidenceLevel -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter MinimumConfidence -Type Dataplat.Dbatools.Types.DbaInstanceConfidenceLevel -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
