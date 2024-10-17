@@ -12,6 +12,8 @@ Import-Module /workspace/dbatools.psm1
 $promptTemplate = Get-Content /workspace/.aider/prompts/template.md
 $commands = Get-Command -Module dbatools -Type Function, Cmdlet | Select-Object -First $First -Skip $Skip
 
+$commonParameters = [System.Management.Automation.PSCmdlet]::CommonParameters
+
 foreach ($command in $commands) {
     $cmdName = $command.Name
     $filename = "/workspace/tests/$cmdName.Tests.ps1"
@@ -34,6 +36,11 @@ foreach ($command in $commands) {
     foreach ($param in $parameters) {
         $paramName = $param.Name
         $paramType = $param.ParameterType.FullName
+
+         # Ignore common parameters
+        if ($paramName -in $commonParameters) {
+            continue
+        }
 
         if ($param.IsMandatory) {
             $isMandatory = "is"
