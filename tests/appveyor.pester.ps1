@@ -201,7 +201,7 @@ if (-not $Finalize) {
         }
         #get if this test should run on pester 4 or pester 5
         $pesterVersionToUse = Get-PesterTestVersion -testFilePath $f.FullName
-        if ($pesterTestVersionToUse -eq '5') {
+        if ($pesterVersionToUse -eq '5') {
             # we're in the "region" of pester 4, so skip
             continue
         }
@@ -247,7 +247,7 @@ if (-not $Finalize) {
         
         #get if this test should run on pester 4 or pester 5
         $pesterVersionToUse = Get-PesterTestVersion -testFilePath $f.FullName
-        if ($pesterTestVersionToUse -eq '4') {
+        if ($pesterVersionToUse -eq '4') {
             # we're in the "region" of pester 5, so skip
             continue
         }
