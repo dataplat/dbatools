@@ -18,7 +18,7 @@ Describe "Stop-DbaXESession" {
             $CommandUnderTest | Should -HaveParameter AllSessions -Type Switch -Mandatory:$false
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Session[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.XEvent.Session[] -Mandatory:$false
         }
         It "Should have EnableException parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false

@@ -18,7 +18,7 @@ Describe "Remove-DbaXESession" {
             $CommandUnderTest | Should -HaveParameter AllSessions -Type switch
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Session[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.XEvent.Session[]
         }
         It "Should have EnableException as a switch parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type switch

@@ -18,7 +18,7 @@ Describe "Get-DbaXESessionTarget" {
             $CommandUnderTest | Should -HaveParameter Target -Type String[] -Mandatory:$false
         }
         It "Should have InputObject as a non-mandatory parameter of type Session[]" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Session[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.XEvent.Session[] -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type switch -Mandatory:$false

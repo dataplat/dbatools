@@ -19,7 +19,7 @@ Describe "Watch-DbaXESession" {
             $CommandUnderTest | Should -HaveParameter Session -Type String
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Session[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.XEvent.Session[]
         }
         It "Should have Raw parameter" {
             $CommandUnderTest | Should -HaveParameter Raw -Type Switch

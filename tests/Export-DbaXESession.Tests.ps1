@@ -25,7 +25,7 @@ Describe "Export-DbaXESession" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Session[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.XEvent.Session[]
         }
         It "Should have Session parameter" {
             $CommandUnderTest | Should -HaveParameter Session -Type String[]
