@@ -161,7 +161,7 @@ function Get-CodecovReport($Results, $ModuleBase) {
 
 function Get-PesterTestVersion($testFilePath) {
     $testFileContent = Get-Content -Path $testFilePath -Raw
-    if ($testFileContent -Like '#pester5')
+    if ($testFileContent -Like '*#pester5*')
     {
         return '5'
     }
