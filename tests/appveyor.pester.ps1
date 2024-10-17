@@ -159,6 +159,15 @@ function Get-CodecovReport($Results, $ModuleBase) {
     $newreport
 }
 
+function Get-PesterTestVersion($testFilePath) {
+    $testFileContent = Get-Content -Path $testFilePath -Raw
+    if ($testFileContent -Like '#pester5')
+    {
+        return '5'
+    }
+    return '4'
+}
+
 
 if (-not $Finalize) {
     # Invoke appveyor.common.ps1 to know which tests to run
@@ -169,15 +178,19 @@ if (-not $Finalize) {
 #Run a test with the current version of PowerShell
 #Make things faster by removing most output
 if (-not $Finalize) {
-    Import-Module Pester
-    Write-Host -Object "appveyor.pester: Running with Pester Version $((Get-Command Invoke-Pester -ErrorAction SilentlyContinue).Version)" -ForegroundColor DarkGreen
     Set-Variable ProgressPreference -Value SilentlyContinue
     if ($AllScenarioTests.Count -eq 0) {
         Write-Host -ForegroundColor DarkGreen "Nothing to do in this scenario"
         return
     }
+    # Remove any previously loaded pester module
+    Remove-Module -Name pester
+    # Import pester 4
+    Import-Module pester -RequiredVersion 4.4.2
+    Write-Host -Object "appveyor.pester: Running with Pester Version $((Get-Command Invoke-Pester -ErrorAction SilentlyContinue).Version)" -ForegroundColor DarkGreen
     # invoking a single invoke-pester consumes too much memory, let's go file by file
     $AllTestsWithinScenario = Get-ChildItem -File -Path $AllScenarioTests
+    #start the round for pester 4 tests
     $Counter = 0
     foreach ($f in $AllTestsWithinScenario) {
         $Counter += 1
@@ -186,6 +199,13 @@ if (-not $Finalize) {
             'Show'     = 'None'
             'PassThru' = $true
         }
+        #get if this test should run on pester 4 or pester 5
+        $pesterVersionToUse = Get-PesterTestVersion -testFilePath $f.FullName
+        if ($pesterTestVersionToUse -eq '5') {
+            # we're in the "region" of pester 4, so skip
+            continue
+        }
+        
         #opt-in
         if ($IncludeCoverage) {
             $CoverFiles = Get-CoverageIndications -Path $f -ModuleBase $ModuleBase
@@ -199,7 +219,7 @@ if (-not $Finalize) {
             if ($trialNo -eq 1) {
                 $appvTestName = $f.Name
             } else {
-                $appvTestName = "$f.Name, attempt #$trialNo"
+                $appvTestName = "$($f.Name), attempt #$trialNo"
             }
             Add-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome Running
             $PesterRun = Invoke-Pester @PesterSplat
@@ -214,7 +234,57 @@ if (-not $Finalize) {
             }
         }
     }
-    # Gather support package as an artifact
+    
+    #start the round for pester 5 tests
+    # Remove any previously loaded pester module
+    Remove-Module -Name pester
+    # Import pester 4
+    Import-Module pester -RequiredVersion 5.6.1
+    Write-Host -Object "appveyor.pester: Running with Pester Version $((Get-Command Invoke-Pester -ErrorAction SilentlyContinue).Version)" -ForegroundColor DarkGreen
+    $Counter = 0
+    foreach ($f in $AllTestsWithinScenario) {
+        $Counter += 1
+        
+        #get if this test should run on pester 4 or pester 5
+        $pesterVersionToUse = Get-PesterTestVersion -testFilePath $f.FullName
+        if ($pesterTestVersionToUse -eq '4') {
+            # we're in the "region" of pester 5, so skip
+            continue
+        }
+        $pester5Config = New-PesterConfiguration
+        $pester5Config.Run.Path = $f.FullName
+        $pester5config.Run.PassThru = $true
+        #opt-in
+        if ($IncludeCoverage) {
+            $CoverFiles = Get-CoverageIndications -Path $f -ModuleBase $ModuleBase
+            $pester5Config.CodeCoverage.Enabled = $true
+            $pester5Config.CodeCoverage.Path = $CoverFiles
+            $pester5Config.CodeCoverage.OutputFormat = 'JaCoCo'
+            $pester5Config.CodeCoverage.OutputPath = "$ModuleBase\Pester5Coverage$PSVersion$Counter.xml"
+        }
+        
+        $trialNo = 1
+        while ($trialNo -le 3) {
+            if ($trialNo -eq 1) {
+                $appvTestName = $f.Name
+            } else {
+                $appvTestName = "$($f.Name), attempt #$trialNo"
+            }
+            Add-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome Running
+            $PesterRun = Invoke-Pester -Configuration $pester5config
+            $PesterRun | Export-Clixml -Path "$ModuleBase\Pester5Results$PSVersion$Counter.xml"
+            $outcome = "Passed"
+            if ($PesterRun.FailedCount -gt 0) {
+                $trialno += 1
+                Update-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome "Failed" -Duration $PesterRun.Time.TotalMilliseconds
+            } else {
+                Update-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome "Passed" -Duration $PesterRun.Time.TotalMilliseconds
+                break
+            }
+        }
+    }
+    
+	# Gather support package as an artifact
     # New-DbatoolsSupportPackage -Path $ModuleBase - turns out to be too heavy
     try {
         $msgFile = "$ModuleBase\dbatools_messages.xml"
@@ -262,9 +332,10 @@ if (-not $Finalize) {
     #$totalcount = $results | Select-Object -ExpandProperty TotalCount | Measure-Object -Sum | Select-Object -ExpandProperty Sum
     $failedcount = $results | Select-Object -ExpandProperty FailedCount | Measure-Object -Sum | Select-Object -ExpandProperty Sum
     if ($failedcount -gt 0) {
+        # pester 4 output
         $faileditems = $results | Select-Object -ExpandProperty TestResult | Where-Object { $_.Passed -notlike $True }
         if ($faileditems) {
-            Write-Warning "Failed tests summary:"
+            Write-Warning "Failed tests summary (pester 4):"
             $faileditems | ForEach-Object {
                 $name = $_.Name
                 [pscustomobject]@{
@@ -278,8 +349,30 @@ if (-not $Finalize) {
             throw "$failedcount tests failed."
         }
     }
+
+
+    $results5 = @(Get-ChildItem -Path "$ModuleBase\Pester5Results*.xml" | Import-Clixml)
+    # pester 5 output
+    $faileditems = $results5 | Select-Object -ExpandProperty Tests | Where-Object { $_.Passed -notlike $True }
+    if ($faileditems) {
+        Write-Warning "Failed tests summary (pester 5):"
+        $faileditems | ForEach-Object {
+            $name = $_.Name
+            [pscustomobject]@{
+                Path = $_.Path -Join '/'
+                Name     = "It $name"
+                Result   = $_.Result
+                Message  = $_.ErrorRecord -Join ""
+            }
+        } | Sort-Object Path, Name, Result, Message | Format-List
+        throw "$failedcount tests failed."
+    }
+
     #opt-in
     if ($IncludeCoverage) {
+        # for now, this manages recreating a codecov-ingestable format for pester 4. Pester 5 uses JaCoCo natively, which
+        # codecov accepts ... there's only the small matter that we generate one coverage per run, and there's a run per test file
+        # and there's no native-powershelly-way to merge JaCoCo reports. Let's start small, and complicate our lives farther down the line.
         $CodecovReport = Get-CodecovReport -Results $results -ModuleBase $ModuleBase
         $CodecovReport | ConvertTo-Json -Depth 4 -Compress | Out-File -FilePath "$ModuleBase\PesterResultsCoverage.json" -Encoding utf8
     }
