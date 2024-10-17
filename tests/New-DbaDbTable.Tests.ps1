@@ -40,7 +40,7 @@ Describe "New-DbaDbTable" {
             $CommandUnderTest | Should -HaveParameter Schema -Type String
         }
         It "Should have ColumnMap as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ColumnMap -Type Hashtable[]
+            $CommandUnderTest | Should -HaveParameter ColumnMap -Type Hash[Microsoft.SqlServer.Management.Smo.Table[]]
         }
         It "Should have ColumnObject as a parameter" {
             $CommandUnderTest | Should -HaveParameter ColumnObject -Type Column[]

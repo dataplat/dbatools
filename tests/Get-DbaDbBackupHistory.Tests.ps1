@@ -48,7 +48,7 @@ Describe "Get-DbaDbBackupHistory Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter Raw -Type switch -Mandatory:$false
         }
         It "Should have LastLsn as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LastLsn -Type BigInteger -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter LastLsn -Type BigInt -Mandatory:$false
         }
         It "Should have IncludeMirror as a switch parameter" {
             $CommandUnderTest | Should -HaveParameter IncludeMirror -Type switch -Mandatory:$false

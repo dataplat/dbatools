@@ -18,16 +18,16 @@ Describe "Get-DbatoolsChangeLog" {
             $CommandUnderTest | Should -HaveParameter Debug -Type switch
         }
         It "Should have ErrorAction as an ActionPreference" {
-            $CommandUnderTest | Should -HaveParameter ErrorAction -Type ActionPreference
+            $CommandUnderTest | Should -HaveParameter ErrorAction -Type System.Management.Automation.ActionPreference
         }
         It "Should have WarningAction as an ActionPreference" {
-            $CommandUnderTest | Should -HaveParameter WarningAction -Type ActionPreference
+            $CommandUnderTest | Should -HaveParameter WarningAction -Type System.Management.Automation.ActionPreference
         }
         It "Should have InformationAction as an ActionPreference" {
-            $CommandUnderTest | Should -HaveParameter InformationAction -Type ActionPreference
+            $CommandUnderTest | Should -HaveParameter InformationAction -Type System.Management.Automation.ActionPreference
         }
         It "Should have ProgressAction as an ActionPreference" {
-            $CommandUnderTest | Should -HaveParameter ProgressAction -Type ActionPreference
+            $CommandUnderTest | Should -HaveParameter ProgressAction -Type System.Management.Automation.ActionPreference
         }
         It "Should have ErrorVariable as a String" {
             $CommandUnderTest | Should -HaveParameter ErrorVariable -Type string

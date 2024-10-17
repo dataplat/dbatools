@@ -47,16 +47,16 @@ Describe "New-DbaReplSubscription" {
             $CommandUnderTest | Should -HaveParameter Debug -Type Switch
         }
         It "Should have ErrorAction parameter" {
-            $CommandUnderTest | Should -HaveParameter ErrorAction -Type ActionPreference
+            $CommandUnderTest | Should -HaveParameter ErrorAction -Type System.Management.Automation.ActionPreference
         }
         It "Should have WarningAction parameter" {
-            $CommandUnderTest | Should -HaveParameter WarningAction -Type ActionPreference
+            $CommandUnderTest | Should -HaveParameter WarningAction -Type System.Management.Automation.ActionPreference
         }
         It "Should have InformationAction parameter" {
-            $CommandUnderTest | Should -HaveParameter InformationAction -Type ActionPreference
+            $CommandUnderTest | Should -HaveParameter InformationAction -Type System.Management.Automation.ActionPreference
         }
         It "Should have ProgressAction parameter" {
-            $CommandUnderTest | Should -HaveParameter ProgressAction -Type ActionPreference
+            $CommandUnderTest | Should -HaveParameter ProgressAction -Type System.Management.Automation.ActionPreference
         }
         It "Should have ErrorVariable parameter" {
             $CommandUnderTest | Should -HaveParameter ErrorVariable -Type String

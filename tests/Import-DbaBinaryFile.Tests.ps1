@@ -50,7 +50,7 @@ Describe "Import-DbaBinaryFile" {
             $CommandUnderTest | Should -HaveParameter NoFileNameColumn -Type Switch
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Table[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type [Microsoft.SqlServer.Management.Smo.Table[]]
         }
         It "Should have FilePath as a parameter" {
             $CommandUnderTest | Should -HaveParameter FilePath -Type FileInfo[]

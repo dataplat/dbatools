@@ -24,10 +24,10 @@ Describe "Get-DbaStartupParameter" {
         It "Should have common parameters" {
             $CommandUnderTest | Should -HaveParameter Verbose -Type Switch -Mandatory:$false
             $CommandUnderTest | Should -HaveParameter Debug -Type Switch -Mandatory:$false
-            $CommandUnderTest | Should -HaveParameter ErrorAction -Type ActionPreference -Mandatory:$false
-            $CommandUnderTest | Should -HaveParameter WarningAction -Type ActionPreference -Mandatory:$false
-            $CommandUnderTest | Should -HaveParameter InformationAction -Type ActionPreference -Mandatory:$false
-            $CommandUnderTest | Should -HaveParameter ProgressAction -Type ActionPreference -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ErrorAction -Type System.Management.Automation.ActionPreference -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter WarningAction -Type System.Management.Automation.ActionPreference -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InformationAction -Type System.Management.Automation.ActionPreference -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ProgressAction -Type System.Management.Automation.ActionPreference -Mandatory:$false
             $CommandUnderTest | Should -HaveParameter ErrorVariable -Type String -Mandatory:$false
             $CommandUnderTest | Should -HaveParameter WarningVariable -Type String -Mandatory:$false
             $CommandUnderTest | Should -HaveParameter InformationVariable -Type String -Mandatory:$false

@@ -31,9 +31,9 @@ Describe "Invoke-DbaCycleErrorLog Unit Tests" -Tag "UnitTests" {
         It "Should have common parameters" {
             $command | Should -HaveParameter Verbose -Type Switch -Mandatory:$false
             $command | Should -HaveParameter Debug -Type Switch -Mandatory:$false
-            $command | Should -HaveParameter ErrorAction -Type ActionPreference -Mandatory:$false
-            $command | Should -HaveParameter WarningAction -Type ActionPreference -Mandatory:$false
-            $command | Should -HaveParameter InformationAction -Type ActionPreference -Mandatory:$false
+            $command | Should -HaveParameter ErrorAction -Type System.Management.Automation.ActionPreference -Mandatory:$false
+            $command | Should -HaveParameter WarningAction -Type System.Management.Automation.ActionPreference -Mandatory:$false
+            $command | Should -HaveParameter InformationAction -Type System.Management.Automation.ActionPreference -Mandatory:$false
             $command | Should -HaveParameter ErrorVariable -Type String -Mandatory:$false
             $command | Should -HaveParameter WarningVariable -Type String -Mandatory:$false
             $command | Should -HaveParameter InformationVariable -Type String -Mandatory:$false

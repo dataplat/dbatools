@@ -17,8 +17,8 @@ Describe "Remove-DbaDbTable" {
         It "Should have Table as a non-mandatory parameter of type String[]" {
             $CommandUnderTest | Should -HaveParameter Table -Type String[] -Mandatory:$false
         }
-        It "Should have InputObject as a non-mandatory parameter of type Table[]" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Table[] -Mandatory:$false
+        It "Should have InputObject as a non-mandatory parameter of type [Microsoft.SqlServer.Management.Smo.Table[]]" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type [Microsoft.SqlServer.Management.Smo.Table[]] -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false

@@ -14,10 +14,10 @@ Describe "Get-DbaConnectedInstance" {
         It "Should have the expected parameters" {
             $CommandUnderTest | Should -HaveParameter Verbose -Type switch -Mandatory:$false
             $CommandUnderTest | Should -HaveParameter Debug -Type switch -Mandatory:$false
-            $CommandUnderTest | Should -HaveParameter ErrorAction -Type ActionPreference -Mandatory:$false
-            $CommandUnderTest | Should -HaveParameter WarningAction -Type ActionPreference -Mandatory:$false
-            $CommandUnderTest | Should -HaveParameter InformationAction -Type ActionPreference -Mandatory:$false
-            $CommandUnderTest | Should -HaveParameter ProgressAction -Type ActionPreference -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ErrorAction -Type System.Management.Automation.ActionPreference -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter WarningAction -Type System.Management.Automation.ActionPreference -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InformationAction -Type System.Management.Automation.ActionPreference -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ProgressAction -Type System.Management.Automation.ActionPreference -Mandatory:$false
             $CommandUnderTest | Should -HaveParameter ErrorVariable -Type string -Mandatory:$false
             $CommandUnderTest | Should -HaveParameter WarningVariable -Type string -Mandatory:$false
             $CommandUnderTest | Should -HaveParameter InformationVariable -Type string -Mandatory:$false

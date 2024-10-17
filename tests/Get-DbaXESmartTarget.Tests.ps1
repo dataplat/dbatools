@@ -15,16 +15,16 @@ Describe "Get-DbaXESmartTarget" {
             $CommandUnderTest | Should -HaveParameter Debug -Type switch -Mandatory:$false
         }
         It "Should have ErrorAction as an ActionPreference that is not mandatory" {
-            $CommandUnderTest | Should -HaveParameter ErrorAction -Type ActionPreference -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ErrorAction -Type System.Management.Automation.ActionPreference -Mandatory:$false
         }
         It "Should have WarningAction as an ActionPreference that is not mandatory" {
-            $CommandUnderTest | Should -HaveParameter WarningAction -Type ActionPreference -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter WarningAction -Type System.Management.Automation.ActionPreference -Mandatory:$false
         }
         It "Should have InformationAction as an ActionPreference that is not mandatory" {
-            $CommandUnderTest | Should -HaveParameter InformationAction -Type ActionPreference -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InformationAction -Type System.Management.Automation.ActionPreference -Mandatory:$false
         }
         It "Should have ProgressAction as an ActionPreference that is not mandatory" {
-            $CommandUnderTest | Should -HaveParameter ProgressAction -Type ActionPreference -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ProgressAction -Type System.Management.Automation.ActionPreference -Mandatory:$false
         }
         It "Should have ErrorVariable as a String that is not mandatory" {
             $CommandUnderTest | Should -HaveParameter ErrorVariable -Type string -Mandatory:$false

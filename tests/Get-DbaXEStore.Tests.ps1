@@ -27,16 +27,16 @@ Describe "Get-DbaXEStore" {
             $CommandUnderTest | Should -HaveParameter Debug -Type Switch -Mandatory:$false
         }
         It "Should have ErrorAction as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ErrorAction -Type ActionPreference -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ErrorAction -Type System.Management.Automation.ActionPreference -Mandatory:$false
         }
         It "Should have WarningAction as a parameter" {
-            $CommandUnderTest | Should -HaveParameter WarningAction -Type ActionPreference -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter WarningAction -Type System.Management.Automation.ActionPreference -Mandatory:$false
         }
         It "Should have InformationAction as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InformationAction -Type ActionPreference -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InformationAction -Type System.Management.Automation.ActionPreference -Mandatory:$false
         }
         It "Should have ProgressAction as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ProgressAction -Type ActionPreference -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ProgressAction -Type System.Management.Automation.ActionPreference -Mandatory:$false
         }
         It "Should have ErrorVariable as a parameter" {
             $CommandUnderTest | Should -HaveParameter ErrorVariable -Type String -Mandatory:$false

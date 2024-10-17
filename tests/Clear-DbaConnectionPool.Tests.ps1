@@ -26,17 +26,17 @@ Describe "Clear-DbaConnectionPool" {
         It "Should have Debug as a non-mandatory switch parameter" {
             $CommandUnderTest | Should -HaveParameter Debug -Type switch -Mandatory:$false
         }
-        It "Should have ErrorAction as a non-mandatory parameter of type ActionPreference" {
-            $CommandUnderTest | Should -HaveParameter ErrorAction -Type ActionPreference -Mandatory:$false
+        It "Should have ErrorAction as a non-mandatory parameter of Type System.Management.Automation.ActionPreference" {
+            $CommandUnderTest | Should -HaveParameter ErrorAction -Type System.Management.Automation.ActionPreference -Mandatory:$false
         }
-        It "Should have WarningAction as a non-mandatory parameter of type ActionPreference" {
-            $CommandUnderTest | Should -HaveParameter WarningAction -Type ActionPreference -Mandatory:$false
+        It "Should have WarningAction as a non-mandatory parameter of Type System.Management.Automation.ActionPreference" {
+            $CommandUnderTest | Should -HaveParameter WarningAction -Type System.Management.Automation.ActionPreference -Mandatory:$false
         }
-        It "Should have InformationAction as a non-mandatory parameter of type ActionPreference" {
-            $CommandUnderTest | Should -HaveParameter InformationAction -Type ActionPreference -Mandatory:$false
+        It "Should have InformationAction as a non-mandatory parameter of Type System.Management.Automation.ActionPreference" {
+            $CommandUnderTest | Should -HaveParameter InformationAction -Type System.Management.Automation.ActionPreference -Mandatory:$false
         }
-        It "Should have ProgressAction as a non-mandatory parameter of type ActionPreference" {
-            $CommandUnderTest | Should -HaveParameter ProgressAction -Type ActionPreference -Mandatory:$false
+        It "Should have ProgressAction as a non-mandatory parameter of Type System.Management.Automation.ActionPreference" {
+            $CommandUnderTest | Should -HaveParameter ProgressAction -Type System.Management.Automation.ActionPreference -Mandatory:$false
         }
         It "Should have ErrorVariable as a non-mandatory parameter of type String" {
             $CommandUnderTest | Should -HaveParameter ErrorVariable -Type String -Mandatory:$false

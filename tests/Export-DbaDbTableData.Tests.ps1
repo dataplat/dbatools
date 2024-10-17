@@ -6,7 +6,7 @@ Describe "Export-DbaDbTableData" {
             $CommandUnderTest = Get-Command Export-DbaDbTableData
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Table[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject -Type [Microsoft.SqlServer.Management.Smo.Table[]] -Mandatory:$false
         }
         It "Should have Path as a parameter" {
             $CommandUnderTest | Should -HaveParameter Path -Type String -Mandatory:$false

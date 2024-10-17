@@ -18,16 +18,16 @@ Describe "Remove-DbaExtendedProperty" {
             $CommandUnderTest | Should -HaveParameter Debug -Type Switch
         }
         It "Accepts ErrorAction as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ErrorAction -Type ActionPreference
+            $CommandUnderTest | Should -HaveParameter ErrorAction -Type System.Management.Automation.ActionPreference
         }
         It "Accepts WarningAction as a parameter" {
-            $CommandUnderTest | Should -HaveParameter WarningAction -Type ActionPreference
+            $CommandUnderTest | Should -HaveParameter WarningAction -Type System.Management.Automation.ActionPreference
         }
         It "Accepts InformationAction as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InformationAction -Type ActionPreference
+            $CommandUnderTest | Should -HaveParameter InformationAction -Type System.Management.Automation.ActionPreference
         }
         It "Accepts ProgressAction as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ProgressAction -Type ActionPreference
+            $CommandUnderTest | Should -HaveParameter ProgressAction -Type System.Management.Automation.ActionPreference
         }
         It "Accepts ErrorVariable as a parameter" {
             $CommandUnderTest | Should -HaveParameter ErrorVariable -Type String

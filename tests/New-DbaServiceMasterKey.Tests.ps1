@@ -23,10 +23,10 @@ Describe "New-DbaServiceMasterKey" {
         It "Should have common parameters" {
             $CommandUnderTest | Should -HaveParameter Verbose -Type Switch
             $CommandUnderTest | Should -HaveParameter Debug -Type Switch
-            $CommandUnderTest | Should -HaveParameter ErrorAction -Type ActionPreference
-            $CommandUnderTest | Should -HaveParameter WarningAction -Type ActionPreference
-            $CommandUnderTest | Should -HaveParameter InformationAction -Type ActionPreference
-            $CommandUnderTest | Should -HaveParameter ProgressAction -Type ActionPreference
+            $CommandUnderTest | Should -HaveParameter ErrorAction -Type System.Management.Automation.ActionPreference
+            $CommandUnderTest | Should -HaveParameter WarningAction -Type System.Management.Automation.ActionPreference
+            $CommandUnderTest | Should -HaveParameter InformationAction -Type System.Management.Automation.ActionPreference
+            $CommandUnderTest | Should -HaveParameter ProgressAction -Type System.Management.Automation.ActionPreference
             $CommandUnderTest | Should -HaveParameter ErrorVariable -Type String
             $CommandUnderTest | Should -HaveParameter WarningVariable -Type String
             $CommandUnderTest | Should -HaveParameter InformationVariable -Type String
