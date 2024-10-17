@@ -35,8 +35,8 @@ Describe "Add-DbaRegServer" {
         It "Should have OtherParams as a non-mandatory parameter of type String" {
             $CommandUnderTest | Should -HaveParameter OtherParams -Type String -Mandatory:$false
         }
-        It "Should have InputObject as a non-mandatory parameter of type ServerGroup[]" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type ServerGroup[] -Mandatory:$false
+        It "Should have InputObject as a non-mandatory parameter of type Microsoft.SqlServer.Management.RegisteredServers.ServerGroup[]" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.RegisteredServers.ServerGroup[] -Mandatory:$false
         }
         It "Should have ServerObject as a non-mandatory parameter of type Server[]" {
             $CommandUnderTest | Should -HaveParameter ServerObject -Type Server[] -Mandatory:$false

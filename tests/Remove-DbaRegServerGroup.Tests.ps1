@@ -15,7 +15,7 @@ Describe "Remove-DbaRegServerGroup" {
             $CommandUnderTest | Should -HaveParameter Name -Type String[]
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type ServerGroup[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.RegisteredServers.ServerGroup[]
         }
         It "Should have EnableException as a parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
