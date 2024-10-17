@@ -17,8 +17,8 @@ Describe "Enable-DbaDbEncryption" {
         It "Should have EncryptorName as a non-mandatory parameter of type String" {
             $CommandUnderTest | Should -HaveParameter EncryptorName -Type String -Mandatory:$false
         }
-        It "Should have InputObject as a non-mandatory parameter of type Database[]" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[] -Mandatory:$false
+        It "Should have InputObject as a non-mandatory parameter of type Microsoft.SqlServer.Management.Smo.Database[]" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[] -Mandatory:$false
         }
         It "Should have Force as a non-mandatory Switch" {
             $CommandUnderTest | Should -HaveParameter Force -Type Switch -Mandatory:$false

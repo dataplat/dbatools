@@ -24,7 +24,7 @@ Describe "Get-DbaDbCertificate" {
             $CommandUnderTest | Should -HaveParameter Subject -Type String[] -Mandatory:$false
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[] -Mandatory:$false
         }
         It "Should have EnableException as a parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false

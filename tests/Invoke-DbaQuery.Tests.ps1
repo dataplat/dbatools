@@ -61,7 +61,7 @@ Describe "Invoke-DbaQuery" {
             $CommandUnderTest | Should -HaveParameter MessagesToOutput -Type Switch -Mandatory:$false
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[] -Mandatory:$false
         }
         It "Should have ReadOnly parameter" {
             $CommandUnderTest | Should -HaveParameter ReadOnly -Type Switch -Mandatory:$false

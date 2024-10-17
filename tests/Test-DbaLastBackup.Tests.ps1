@@ -72,7 +72,7 @@ Describe "Test-DbaLastBackup Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter AzureCredential -Type String -Mandatory:$false
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[] -Mandatory:$false
         }
         It "Should have MaxTransferSize as a parameter" {
             $CommandUnderTest | Should -HaveParameter MaxTransferSize -Type Int32 -Mandatory:$false
@@ -122,7 +122,7 @@ Describe "Test-DbaLastBackup Integration Tests" -Tag "IntegrationTests" {
 
     Context "Setup restores and backups on the local drive for Test-DbaLastBackup" {
         BeforeAll {
-            Get-DbaDatabase -SqlInstance $global:instance1 -Database $dbs | Backup-DbaDatabase -Type Database
+            Get-DbaDatabase -SqlInstance $global:instance1 -Database $dbs | Backup-DbaDatabase -Type Microsoft.SqlServer.Management.Smo.Database
             Invoke-DbaQuery -SqlInstance $global:instance1 -Query "INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample')"
             Get-DbaDatabase -SqlInstance $global:instance1 -Database $testlastbackup | Backup-DbaDatabase -Type Differential
             Invoke-DbaQuery -SqlInstance $global:instance1 -Query "INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample1')"

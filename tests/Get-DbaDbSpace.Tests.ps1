@@ -25,8 +25,8 @@ Describe "Get-DbaDbSpace" {
         It "Should have IncludeSystemDBs as a non-mandatory switch parameter" {
             $CommandUnderTest | Should -HaveParameter IncludeSystemDBs -Type Switch -Mandatory:$false
         }
-        It "Should have InputObject as a non-mandatory parameter of type Database[]" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[] -Mandatory:$false
+        It "Should have InputObject as a non-mandatory parameter of type Microsoft.SqlServer.Management.Smo.Database[]" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[] -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false

@@ -15,7 +15,7 @@ Describe "Mount-DbaDatabase" {
             $CommandUnderTest | Should -HaveParameter Database -Type String[]
         }
         It "Should have FileStructure as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FileStructure -Type StringCollection
+            $CommandUnderTest | Should -HaveParameter FileStructure -Type System.Collections.Specialized.StringCollection
         }
         It "Should have DatabaseOwner as a parameter" {
             $CommandUnderTest | Should -HaveParameter DatabaseOwner -Type String

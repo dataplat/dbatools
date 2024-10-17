@@ -30,7 +30,7 @@ Describe "Invoke-DbaDbLogShipRecovery" {
             $CommandUnderTest | Should -HaveParameter Force -Type Switch
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[]
         }
         It "Should have Delay as a parameter" {
             $CommandUnderTest | Should -HaveParameter Delay -Type Int32

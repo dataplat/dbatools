@@ -33,7 +33,7 @@ foreach ($command in $commands) {
 
     foreach ($param in $parameters) {
         $paramName = $param.Name
-        $paramType = $param.ParameterType.Name
+        $paramType = $param.ParameterType.FullName
 
         if ($param.IsMandatory) {
             $isMandatory = "is"

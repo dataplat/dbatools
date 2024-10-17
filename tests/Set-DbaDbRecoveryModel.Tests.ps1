@@ -31,7 +31,7 @@ Describe "Set-DbaDbRecoveryModel" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[] -Mandatory:$false
         }
     }
 

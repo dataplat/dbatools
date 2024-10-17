@@ -15,7 +15,7 @@ Describe "Dismount-DbaDatabase" {
             $CommandUnderTest | Should -HaveParameter Database -Type String[]
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[]
         }
         It "Should have UpdateStatistics as a parameter" {
             $CommandUnderTest | Should -HaveParameter UpdateStatistics -Type Switch

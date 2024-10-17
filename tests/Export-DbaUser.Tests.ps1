@@ -9,7 +9,7 @@ Describe "Export-DbaUser Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[] -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false

@@ -120,7 +120,7 @@ Describe "Get-DbaDbRestoreHistory Integration Tests" -Tag "IntegrationTests" {
 
     Context "Get restore history by restore type" {
         It "returns the correct history records for full db restore" {
-            $results = Get-DbaDbRestoreHistory -SqlInstance $global:instance2 -Database $dbname1, $dbname2 -RestoreType Database
+            $results = Get-DbaDbRestoreHistory -SqlInstance $global:instance2 -Database $dbname1, $dbname2 -RestoreType Microsoft.SqlServer.Management.Smo.Database
             $results.count | Should -Be 4
             @($results | Where-Object RestoreType -eq Database).Count | Should -Be 4
         }

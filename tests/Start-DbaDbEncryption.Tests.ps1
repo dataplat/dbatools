@@ -58,7 +58,7 @@ Describe "Start-DbaDbEncryption" {
             $CommandUnderTest | Should -HaveParameter BackupSecurePassword -Type SecureString
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[]
         }
         It "Should have AllUserDatabases as a parameter" {
             $CommandUnderTest | Should -HaveParameter AllUserDatabases -Type Switch

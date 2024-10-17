@@ -42,7 +42,7 @@ Describe "Invoke-DbaDbMirroring" {
             $CommandUnderTest | Should -HaveParameter SharedPath -Type String
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[]
         }
         It "Should have UseLastBackup parameter" {
             $CommandUnderTest | Should -HaveParameter UseLastBackup -Type Switch

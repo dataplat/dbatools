@@ -27,7 +27,7 @@ Describe "Restore-DbaDbSnapshot Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter Snapshot -Type Object[]
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[]
         }
         It "Should have Force as a switch parameter" {
             $CommandUnderTest | Should -HaveParameter Force -Type switch

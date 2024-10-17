@@ -30,7 +30,7 @@ Describe "Find-DbaDbUnusedIndex" {
             $CommandUnderTest | Should -HaveParameter Lookups -Type Int32
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[]
         }
         It "Should have EnableException parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch

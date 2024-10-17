@@ -18,8 +18,8 @@ Describe "Get-DbaDbFileGrowth" {
         It "Should have Database as a non-mandatory parameter of type String[]" {
             $CommandUnderTest | Should -HaveParameter Database -Type String[] -Mandatory:$false
         }
-        It "Should have InputObject as a non-mandatory parameter of type Database[]" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[] -Mandatory:$false
+        It "Should have InputObject as a non-mandatory parameter of type Microsoft.SqlServer.Management.Smo.Database[]" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[] -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false

@@ -33,7 +33,7 @@ Describe "Get-DbaDbSchema Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter IncludeSystemSchemas -Type Switch
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[]
         }
         It "Should have EnableException as a switch parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch

@@ -25,7 +25,7 @@ Describe "Get-DbaHelpIndex Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[]
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[]
         }
         It "Should have ObjectName as a parameter" {
             $CommandUnderTest | Should -HaveParameter ObjectName -Type String

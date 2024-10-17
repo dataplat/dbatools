@@ -15,7 +15,7 @@ Describe "Remove-DbaDbEncryptionKey" {
             $CommandUnderTest | Should -HaveParameter Database -Type String[]
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type DatabaseEncryptionKey[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.DatabaseEncryptionKey[]
         }
         It "Should have EnableException as a parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
