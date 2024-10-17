@@ -3,7 +3,7 @@
 This script will invoke Pester tests, then serialize XML results and pull them in appveyor.yml
 
 .DESCRIPTION
-Internal function that creates SMO server object.
+Internal function that runs pester tests
 
 .PARAMETER Finalize
 If Finalize is specified, we collect XML output, upload tests, and indicate build errors
@@ -157,25 +157,6 @@ function Get-CodecovReport($Results, $ModuleBase) {
         }
     }
     $newreport
-}
-
-function Send-CodecovReport($CodecovReport) {
-    $params = @{ }
-    $params['branch'] = $env:APPVEYOR_REPO_BRANCH
-    $params['service'] = "appveyor"
-    $params['job'] = $env:APPVEYOR_ACCOUNT_NAME
-    if ($params['job']) { $params['job'] += '/' + $env:APPVEYOR_PROJECT_SLUG }
-    if ($params['job']) { $params['job'] += '/' + $env:APPVEYOR_BUILD_VERSION }
-    $params['build'] = $env:APPVEYOR_JOB_ID
-    $params['pr'] = $env:APPVEYOR_PULL_REQUEST_NUMBER
-    $params['slug'] = $env:APPVEYOR_REPO_NAME
-    $params['commit'] = $env:APPVEYOR_REPO_COMMIT
-    Add-Type -AssemblyName System.Web
-    $CodeCovParams = [System.Web.HttpUtility]::ParseQueryString([String]::Empty)
-    $params.GetEnumerator() | Where-Object Value | ForEach-Object { $CodeCovParams.Add($_.Name, $_.Value) }
-    $Request = [System.UriBuilder]('https://codecov.io/upload/v2')
-    $Request.Query = $CodeCovParams.ToString()
-    Invoke-RestMethod -Uri $Request.Uri -Method Post -InFile $CodecovReport -ContentType 'multipart/form-data'
 }
 
 
