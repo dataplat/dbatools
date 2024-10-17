@@ -1,69 +1,80 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaKbUpdate" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'Name', 'Simple', 'Language', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaKbUpdate
+        }
+        It "Should have Name as a non-mandatory String[] parameter" {
+            $CommandUnderTest | Should -HaveParameter Name -Type String[] -Not -Mandatory
+        }
+        It "Should have Simple as a non-mandatory SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter Simple -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have Language as a non-mandatory String parameter" {
+            $CommandUnderTest | Should -HaveParameter Language -Type String -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
-    It "successfully connects and parses link and title" {
-        $results = Get-DbaKbUpdate -Name KB4057119
-        $results.Link -match 'download.windowsupdate.com'
-        $results.Title -match 'Cumulative Update'
-        $results.KBLevel | Should -Be 4057119
-    }
+    Context "Integration Tests" {
+        It "successfully connects and parses link and title" {
+            $results = Get-DbaKbUpdate -Name KB4057119
+            $results.Link | Should -Match 'download.windowsupdate.com'
+            $results.Title | Should -Match 'Cumulative Update'
+            $results.KBLevel | Should -Be 4057119
+        }
 
-    It "test with the -Simple param" {
-        $results = Get-DbaKbUpdate -Name KB4577194 -Simple
-        $results.Link -match 'download.windowsupdate.com'
-        $results.Title -match 'Cumulative Update'
-        $results.KBLevel | Should -Be 4577194
-    }
+        It "test with the -Simple param" {
+            $results = Get-DbaKbUpdate -Name KB4577194 -Simple
+            $results.Link | Should -Match 'download.windowsupdate.com'
+            $results.Title | Should -Match 'Cumulative Update'
+            $results.KBLevel | Should -Be 4577194
+        }
 
-    # see https://github.com/dataplat/dbatools/issues/6745
-    It "Calling script uses a variable named filter" {
-        $filter = "SQLServer*-KB-*x64*.exe"
+        It "Calling script uses a variable named filter" {
+            $filter = "SQLServer*-KB-*x64*.exe"
 
-        $results = Get-DbaKbUpdate -Name KB4564903
-        $results.KBLevel | Should -Be 4564903
-        $results.Link -match 'download.windowsupdate.com'
-        $results.Title -match 'Cumulative Update'
-    }
+            $results = Get-DbaKbUpdate -Name KB4564903
+            $results.KBLevel | Should -Be 4564903
+            $results.Link | Should -Match 'download.windowsupdate.com'
+            $results.Title | Should -Match 'Cumulative Update'
+        }
 
-    It "Call with multiple KBs" {
-        $results = Get-DbaKbUpdate -Name KB4057119, KB4577194, KB4564903
-
-        # basic retry logic in case the first download didn't get all of the files
-        if ($null -eq $results -or $results.Count -ne 3) {
-            Write-Message -Level Warning -Message "Retrying..."
-            Start-Sleep -s 30
+        It "Call with multiple KBs" {
             $results = Get-DbaKbUpdate -Name KB4057119, KB4577194, KB4564903
+
+            # basic retry logic in case the first download didn't get all of the files
+            if ($null -eq $results -or $results.Count -ne 3) {
+                Write-Warning "Retrying..."
+                Start-Sleep -Seconds 30
+                $results = Get-DbaKbUpdate -Name KB4057119, KB4577194, KB4564903
+            }
+
+            $results.KBLevel | Should -Contain 4057119
+            $results.KBLevel | Should -Contain 4577194
+            $results.KBLevel | Should -Contain 4564903
         }
 
-        $results.KBLevel | Should -Contain 4057119
-        $results.KBLevel | Should -Contain 4577194
-        $results.KBLevel | Should -Contain 4564903
-    }
+        It "Call without specific language" {
+            $results = Get-DbaKbUpdate -Name KB5003279
+            $results.KBLevel | Should -Be 5003279
+            $results.Classification | Should -Match 'Service Packs'
+            $results.Link | Should -Match '-enu_'
+        }
 
-    It "Call without specific language" {
-        $results = Get-DbaKbUpdate -Name KB5003279
-        $results.KBLevel | Should -Be 5003279
-        $results.Classification -match 'Service Packs'
-        $results.Link -match '-enu_'
-    }
-
-    It "Call with specific language" {
-        $results = Get-DbaKbUpdate -Name KB5003279 -Language ja
-        $results.KBLevel | Should -Be 5003279
-        $results.Classification -match 'Service Packs'
-        $results.Link -match '-jpn_'
+        It "Call with specific language" {
+            $results = Get-DbaKbUpdate -Name KB5003279 -Language ja
+            $results.KBLevel | Should -Be 5003279
+            $results.Classification | Should -Match 'Service Packs'
+            $results.Link | Should -Match '-jpn_'
+        }
     }
 }

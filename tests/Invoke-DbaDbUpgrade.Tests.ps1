@@ -1,19 +1,55 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Invoke-DbaDbUpgrade" {
+    BeforeAll {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'NoCheckDb', 'NoUpdateUsage', 'NoUpdateStats', 'NoRefreshView', 'AllUserDatabases', 'Force', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Invoke-DbaDbUpgrade
+        }
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Not -Mandatory
+        }
+        It "Should have ExcludeDatabase parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Not -Mandatory
+        }
+        It "Should have NoCheckDb parameter" {
+            $CommandUnderTest | Should -HaveParameter NoCheckDb -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have NoUpdateUsage parameter" {
+            $CommandUnderTest | Should -HaveParameter NoUpdateUsage -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have NoUpdateStats parameter" {
+            $CommandUnderTest | Should -HaveParameter NoUpdateStats -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have NoRefreshView parameter" {
+            $CommandUnderTest | Should -HaveParameter NoRefreshView -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have AllUserDatabases parameter" {
+            $CommandUnderTest | Should -HaveParameter AllUserDatabases -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have Force parameter" {
+            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have InputObject parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[] -Not -Mandatory
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
 }
+
 <#
     Integration test should appear below and are custom to the command you are writing.
     Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
+    for more guidance.
 #>

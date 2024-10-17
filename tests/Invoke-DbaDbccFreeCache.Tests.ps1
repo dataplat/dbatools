@@ -1,53 +1,68 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Invoke-DbaDbccFreeCache" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Operation', 'InputValue', 'NoInformationalMessages', 'MarkInUseForRemoval', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Invoke-DbaDbccFreeCache
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Operation as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Operation -Type String
+        }
+        It "Should have InputValue as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputValue -Type String
+        }
+        It "Should have NoInformationalMessages as a parameter" {
+            $CommandUnderTest | Should -HaveParameter NoInformationalMessages -Type SwitchParameter
+        }
+        It "Should have MarkInUseForRemoval as a parameter" {
+            $CommandUnderTest | Should -HaveParameter MarkInUseForRemoval -Type SwitchParameter
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
-Describe "$commandname Integration Test" -Tag "IntegrationTests" {
-    $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'Operation', 'Cmd', 'Output'
-    $result = Invoke-DbaDbccFreeCache -SqlInstance $script:instance2 -Operation FreeSystemCache -Confirm:$false
 
-    Context "Validate standard output" {
-        foreach ($prop in $props) {
-            $p = $result.PSObject.Properties[$prop]
-            It "Should return property: $prop" {
-                $p.Name | Should Be $prop
-            }
+    Context "Command usage" {
+        BeforeAll {
+            $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'Operation', 'Cmd', 'Output'
         }
-    }
 
-    Context "Works correctly" {
         It "returns the right results for FREESYSTEMCACHE" {
-            $result.Operation -match 'FREESYSTEMCACHE' | Should Be $true
-            $result.Output -match 'DBCC execution completed. If DBCC printed error messages, contact your system administrator.' | Should Be $true
+            $result = Invoke-DbaDbccFreeCache -SqlInstance $script:instance2 -Operation FreeSystemCache -Confirm:$false
+            $result.Operation | Should -Match 'FREESYSTEMCACHE'
+            $result.Output | Should -Match 'DBCC execution completed. If DBCC printed error messages, contact your system administrator.'
+            foreach ($prop in $props) {
+                $result.PSObject.Properties.Name | Should -Contain $prop
+            }
         }
 
         It "returns the right results for FREESESSIONCACHE" {
             $result = Invoke-DbaDbccFreeCache -SqlInstance $script:instance2 -Operation FreeSessionCache -Confirm:$false
-            $result.Operation -match 'FREESESSIONCACHE' | Should Be $true
-            $result.Output -match 'DBCC execution completed. If DBCC printed error messages, contact your system administrator.' | Should Be $true
+            $result.Operation | Should -Match 'FREESESSIONCACHE'
+            $result.Output | Should -Match 'DBCC execution completed. If DBCC printed error messages, contact your system administrator.'
         }
 
         It "returns the right results for FREEPROCCACHE" {
             $result = Invoke-DbaDbccFreeCache -SqlInstance $script:instance2 -Operation FREEPROCCACHE -Confirm:$false
-            $result.Operation -match 'FREEPROCCACHE' | Should Be $true
-            $result.Output -match 'DBCC execution completed. If DBCC printed error messages, contact your system administrator.' | Should Be $true
+            $result.Operation | Should -Match 'FREEPROCCACHE'
+            $result.Output | Should -Match 'DBCC execution completed. If DBCC printed error messages, contact your system administrator.'
         }
 
         It "returns the right results for FREESESSIONCACHE and using NoInformationalMessages" {
             $result = Invoke-DbaDbccFreeCache -SqlInstance $script:instance2 -Operation FreeSessionCache -NoInformationalMessages -Confirm:$false
-            $result.Operation -match 'FREESESSIONCACHE' | Should Be $true
-            $result.Output | Should Be $null
+            $result.Operation | Should -Match 'FREESESSIONCACHE'
+            $result.Output | Should -BeNullOrEmpty
         }
     }
-
 }

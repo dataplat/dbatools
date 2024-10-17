@@ -1,47 +1,63 @@
-$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaDbCompatibility" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaDbCompatibility
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String[]
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[]
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance1
-        $compatibilityLevel = $server.Databases['master'].CompatibilityLevel
-    }
-    Context "Gets compatibility for multiple databases" {
-        $results = Get-DbaDbCompatibility -SqlInstance $script:instance1
-        It "Gets results" {
-            $results | Should Not Be $null
+    Context "Command usage" {
+        BeforeDiscovery {
+            . "$PSScriptRoot\constants.ps1"
         }
-        Foreach ($row in $results) {
-            It "Should return correct compatibility level for $($row.database)" {
+        BeforeAll {
+            $server = Connect-DbaInstance -SqlInstance $script:instance1
+            $compatibilityLevel = $server.Databases['master'].CompatibilityLevel
+        }
+
+        Context "Gets compatibility for multiple databases" {
+            BeforeAll {
+                $results = Get-DbaDbCompatibility -SqlInstance $script:instance1
+            }
+            It "Gets results" {
+                $results | Should -Not -BeNullOrEmpty
+            }
+            It "Should return correct compatibility level for <_.Database>" -ForEach $results {
                 # Only test system databases as there might be leftover databases from other tests
-                if ($row.DatabaseId -le 4) {
-                    $row.Compatibility | Should Be $compatibilityLevel
+                if ($_.DatabaseId -le 4) {
+                    $_.Compatibility | Should -Be $compatibilityLevel
                 }
-                $row.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $script:instance1 -Database $row.Database).Id
+                $_.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $script:instance1 -Database $_.Database).Id
             }
         }
-    }
-    Context "Gets compatibility for one database" {
-        $results = Get-DbaDbCompatibility -SqlInstance $script:instance1 -database master
 
-        It "Gets results" {
-            $results | Should Not Be $null
-        }
-        It "Should return correct compatibility level for $($results.database)" {
-            $results.Compatibility | Should Be $compatibilityLevel
-            $results.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $script:instance1 -Database master).Id
+        Context "Gets compatibility for one database" {
+            BeforeAll {
+                $results = Get-DbaDbCompatibility -SqlInstance $script:instance1 -Database master
+            }
+            It "Gets results" {
+                $results | Should -Not -BeNullOrEmpty
+            }
+            It "Should return correct compatibility level for master" {
+                $results.Compatibility | Should -Be $compatibilityLevel
+                $results.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $script:instance1 -Database master).Id
+            }
         }
     }
 }

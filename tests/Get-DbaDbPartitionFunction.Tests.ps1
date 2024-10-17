@@ -1,56 +1,69 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaDbPartitionFunction" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'PartitionFunction', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaDbPartitionFunction
         }
-    }
-}
-
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    BeforeAll {
-        $tempguid = [guid]::newguid();
-        $PFName = "dbatoolssci_$($tempguid.guid)"
-        $CreateTestPartitionFunction = "CREATE PARTITION FUNCTION [$PFName] (int)  AS RANGE LEFT FOR VALUES (1, 100, 1000, 10000, 100000);"
-        Invoke-DbaQuery -SqlInstance $script:instance2 -Query $CreateTestPartitionFunction -Database master
-    }
-    AfterAll {
-        $DropTestPartitionFunction = "DROP PARTITION FUNCTION [$PFName];"
-        Invoke-DbaQuery -SqlInstance $script:instance2 -Query $DropTestPartitionFunction -Database master
+        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database as a non-mandatory parameter of type Object[]" {
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Not -Mandatory
+        }
+        It "Should have ExcludeDatabase as a non-mandatory parameter of type Object[]" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Not -Mandatory
+        }
+        It "Should have PartitionFunction as a non-mandatory parameter of type String[]" {
+            $CommandUnderTest | Should -HaveParameter PartitionFunction -Type String[] -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+        }
     }
 
     Context "Partition Functions are correctly located" {
-        $results1 = Get-DbaDbPartitionFunction -SqlInstance $script:instance2 -Database master | Select-Object *
-        $results2 = Get-DbaDbPartitionFunction -SqlInstance $script:instance2
+        BeforeAll {
+            $tempguid = [guid]::newguid();
+            $PFName = "dbatoolssci_$($tempguid.guid)"
+            $CreateTestPartitionFunction = "CREATE PARTITION FUNCTION [$PFName] (int)  AS RANGE LEFT FOR VALUES (1, 100, 1000, 10000, 100000);"
+            Invoke-DbaQuery -SqlInstance $script:instance2 -Query $CreateTestPartitionFunction -Database master
+        }
+        AfterAll {
+            $DropTestPartitionFunction = "DROP PARTITION FUNCTION [$PFName];"
+            Invoke-DbaQuery -SqlInstance $script:instance2 -Query $DropTestPartitionFunction -Database master
+        }
 
         It "Should execute and return results" {
-            $results2 | Should -Not -Be $null
+            $results2 = Get-DbaDbPartitionFunction -SqlInstance $script:instance2
+            $results2 | Should -Not -BeNullOrEmpty
         }
 
         It "Should execute against Master and return results" {
-            $results1 | Should -Not -Be $null
+            $results1 = Get-DbaDbPartitionFunction -SqlInstance $script:instance2 -Database master | Select-Object *
+            $results1 | Should -Not -BeNullOrEmpty
         }
 
         It "Should have matching name $PFName" {
+            $results1 = Get-DbaDbPartitionFunction -SqlInstance $script:instance2 -Database master | Select-Object *
             $results1.name | Should -Be $PFName
         }
 
         It "Should have range values of @(1, 100, 1000, 10000, 100000)" {
+            $results1 = Get-DbaDbPartitionFunction -SqlInstance $script:instance2 -Database master | Select-Object *
             $results1.rangeValues | Should -Be @(1, 100, 1000, 10000, 100000)
         }
 
         It "Should have PartitionFunctionParameters of Int" {
+            $results1 = Get-DbaDbPartitionFunction -SqlInstance $script:instance2 -Database master | Select-Object *
             $results1.PartitionFunctionParameters | Should -Be "[int]"
         }
 
-        It "Should not Throw an Error" {
-            {Get-DbaDbPartitionFunction -SqlInstance $script:instance2 -ExcludeDatabase master } | Should -not -Throw
+        It "Should not Throw an Error when excluding master database" {
+            { Get-DbaDbPartitionFunction -SqlInstance $script:instance2 -ExcludeDatabase master } | Should -Not -Throw
         }
     }
 }

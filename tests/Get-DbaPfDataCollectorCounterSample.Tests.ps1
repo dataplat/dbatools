@@ -1,24 +1,54 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaPfDataCollectorCounterSample" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'Credential', 'CollectorSet', 'Collector', 'Counter', 'Continuous', 'ListSet', 'MaxSamples', 'SampleInterval', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaPfDataCollectorCounterSample
+        }
+        It "Should have ComputerName as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[]
+        }
+        It "Should have Credential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
+        }
+        It "Should have CollectorSet as a parameter" {
+            $CommandUnderTest | Should -HaveParameter CollectorSet -Type String[]
+        }
+        It "Should have Collector as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Collector -Type String[]
+        }
+        It "Should have Counter as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Counter -Type String[]
+        }
+        It "Should have Continuous as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter Continuous -Type SwitchParameter
+        }
+        It "Should have ListSet as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter ListSet -Type SwitchParameter[]
+        }
+        It "Should have MaxSamples as a parameter" {
+            $CommandUnderTest | Should -HaveParameter MaxSamples -Type Int32
+        }
+        It "Should have SampleInterval as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SampleInterval -Type Int32
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[]
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Verifying command works" {
-        It "returns a result with the right computername and name is not null" {
+        BeforeAll {
             $results = Get-DbaPfDataCollectorCounterSample | Select-Object -First 1
-            $results.ComputerName | Should Be $env:COMPUTERNAME
-            $results.Name | Should Not Be $null
+        }
+        It "returns a result with the right computername" {
+            $results.ComputerName | Should -Be $env:COMPUTERNAME
+        }
+        It "returns a result where name is not null" {
+            $results.Name | Should -Not -BeNullOrEmpty
         }
     }
 }

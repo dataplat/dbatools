@@ -1,14 +1,54 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaWsfcResourceType" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'Credential', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaWsfcResourceType
+        }
+        It "Should have ComputerName as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have Credential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have Verbose as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Verbose -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have Debug as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Debug -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have ErrorAction as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ErrorAction -Type ActionPreference -Not -Mandatory
+        }
+        It "Should have WarningAction as a parameter" {
+            $CommandUnderTest | Should -HaveParameter WarningAction -Type ActionPreference -Not -Mandatory
+        }
+        It "Should have InformationAction as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InformationAction -Type ActionPreference -Not -Mandatory
+        }
+        It "Should have ProgressAction as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ProgressAction -Type ActionPreference -Not -Mandatory
+        }
+        It "Should have ErrorVariable as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ErrorVariable -Type String -Not -Mandatory
+        }
+        It "Should have WarningVariable as a parameter" {
+            $CommandUnderTest | Should -HaveParameter WarningVariable -Type String -Not -Mandatory
+        }
+        It "Should have InformationVariable as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InformationVariable -Type String -Not -Mandatory
+        }
+        It "Should have OutVariable as a parameter" {
+            $CommandUnderTest | Should -HaveParameter OutVariable -Type String -Not -Mandatory
+        }
+        It "Should have OutBuffer as a parameter" {
+            $CommandUnderTest | Should -HaveParameter OutBuffer -Type Int32 -Not -Mandatory
+        }
+        It "Should have PipelineVariable as a parameter" {
+            $CommandUnderTest | Should -HaveParameter PipelineVariable -Type String -Not -Mandatory
         }
     }
 }

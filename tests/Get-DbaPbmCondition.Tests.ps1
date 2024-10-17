@@ -1,28 +1,40 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaPbmCondition" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Condition', 'InputObject', 'IncludeSystemObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaPbmCondition
+        }
+        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Condition as a non-mandatory parameter of type String[]" {
+            $CommandUnderTest | Should -HaveParameter Condition -Type String[] -Not -Mandatory
+        }
+        It "Should have InputObject as a non-mandatory parameter of type PSObject[]" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type PSObject[] -Not -Mandatory
+        }
+        It "Should have IncludeSystemObject as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter IncludeSystemObject -Type Switch -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe "Get-DbaPbmCondition Integration Tests" -Tag "IntegrationTests" {
+    BeforeDiscovery {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     BeforeAll {
-        $conditionName = "dbatoolsCondition_$(get-random)"
-        $conditionQuery = "
-            Declare @condition_id int
+        $conditionName = "dbatoolsCondition_$(Get-Random)"
+        $conditionQuery = @"
+            DECLARE @condition_id int
             EXEC msdb.dbo.sp_syspolicy_add_condition @name=N'$conditionName', @description=N'', @facet=N'Database', @expression=N'<Operator>
             <TypeClass>Bool</TypeClass>
             <OpType>EQ</OpType>
@@ -37,35 +49,39 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 <Value>test</Value>
             </Constant>
             </Operator>', @is_name_condition=1, @obj_name=N'test', @condition_id=@condition_id OUTPUT
-            Select @condition_id as conditionId"
+            SELECT @condition_id AS conditionId
+"@
 
         $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $conditionId = $server.Query($conditionQuery) | Select-Object -expand conditionId
+        $conditionId = $server.Query($conditionQuery) | Select-Object -ExpandProperty conditionId
     }
+
     AfterAll {
         $dropQuery = "EXEC msdb.dbo.sp_syspolicy_delete_condition @condition_id=$conditionId"
         $null = $server.Query($dropQuery)
     }
 
     Context "Command returns results" {
-        $results = Get-DbaPbmCondition -SqlInstance $script:instance2
         It "Should get results" {
-            $results | Should Not Be $null
+            $results = Get-DbaPbmCondition -SqlInstance $script:instance2
+            $results | Should -Not -BeNullOrEmpty
         }
 
         It "Should have name property '$conditionName'" {
-            $results.Name | Should Be $conditionName
+            $results = Get-DbaPbmCondition -SqlInstance $script:instance2
+            $results.Name | Should -Contain $conditionName
         }
     }
 
     Context "Command actually works by condition name" {
-        $results = Get-DbaPbmCondition -SqlInstance $script:instance2 -Condition $conditionName
         It "Should get results" {
-            $results | Should Not Be $null
+            $results = Get-DbaPbmCondition -SqlInstance $script:instance2 -Condition $conditionName
+            $results | Should -Not -BeNullOrEmpty
         }
 
         It "Should have name property '$conditionName'" {
-            $results.Name | Should Be $conditionName
+            $results = Get-DbaPbmCondition -SqlInstance $script:instance2 -Condition $conditionName
+            $results.Name | Should -Be $conditionName
         }
     }
 }

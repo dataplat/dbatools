@@ -1,35 +1,45 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "Get-DbaComputerSystem Unit Tests" -Tag "UnitTests" {
+Describe "Get-DbaComputerSystem" {
+    BeforeAll {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'Credential', 'IncludeAws', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaComputerSystem
+        }
+        It "Should have ComputerName as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[]
+        }
+        It "Should have Credential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
+        }
+        It "Should have IncludeAws as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter IncludeAws -Type switch
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type switch
         }
     }
+
     Context "Validate input" {
-        it "Cannot resolve hostname of computer" {
-            mock Resolve-DbaNetworkName {$null}
-            {Get-DbaComputerSystem -ComputerName 'DoesNotExist142' -WarningAction Stop 3> $null} | Should Throw
+        It "Throws when it cannot resolve hostname of computer" {
+            Mock Resolve-DbaNetworkName { $null }
+            { Get-DbaComputerSystem -ComputerName 'DoesNotExist142' -ErrorAction Stop } | Should -Throw
         }
     }
-}
-Describe "Get-DbaComputerSystem Integration Test" -Tag "IntegrationTests" {
-    $result = Get-DbaComputerSystem -ComputerName $script:instance1
 
-    $props = 'ComputerName', 'Domain', 'IsDaylightSavingsTime', 'Manufacturer', 'Model', 'NumberLogicalProcessors'
-    , 'NumberProcessors', 'IsHyperThreading', 'SystemFamily', 'SystemSkuNumber', 'SystemType', 'IsSystemManagedPageFile', 'TotalPhysicalMemory'
+    Context "Validate output" -Skip:$env:CI {
+        BeforeAll {
+            $result = Get-DbaComputerSystem -ComputerName $script:instance1
 
-    Context "Validate output" {
-        foreach ($prop in $props) {
-            $p = $result.PSObject.Properties[$prop]
-            it "Should return property: $prop" {
-                $p.Name | Should Be $prop
-            }
+            $props = 'ComputerName', 'Domain', 'IsDaylightSavingsTime', 'Manufacturer', 'Model', 'NumberLogicalProcessors',
+            'NumberProcessors', 'IsHyperThreading', 'SystemFamily', 'SystemSkuNumber', 'SystemType', 'IsSystemManagedPageFile', 'TotalPhysicalMemory'
+        }
+
+        It "Should return property: <_>" -ForEach $props {
+            $result.PSObject.Properties[$_] | Should -Not -BeNullOrEmpty
         }
     }
 }

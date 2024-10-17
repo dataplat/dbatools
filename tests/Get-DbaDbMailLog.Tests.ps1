@@ -1,71 +1,104 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaDbMailLog" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Since', 'Type', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaDbMailLog
         }
-    }
-}
-
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $server.Query("INSERT INTO msdb.[dbo].[sysmail_log]
-        ([event_type]
-        ,[log_date]
-        ,[description]
-        ,[process_id]
-        ,[mailitem_id]
-        ,[account_id]
-        ,[last_mod_date]
-        ,[last_mod_user])
-        VALUES
-        (1,'2018-12-09 12:18:14.920','DatabaseMail process is started',4890,NULL,NULL,'2018-12-09 12:18:14.920','dbatools\dbatoolssci')")
-    }
-    AfterAll {
-        $server.Query("DELETE FROM msdb.[dbo].[sysmail_log] WHERE last_mod_user = 'dbatools\dbatoolssci'")
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Since as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Since -Type DateTime
+        }
+        It "Should have Type as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Type -Type String[]
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+        }
     }
 
-    Context "Gets Db Mail Log" {
-        $results = Get-DbaDbMailLog -SqlInstance $script:instance2 | Where-Object {$_.Login -eq 'dbatools\dbatoolssci'}
-        It "Gets results" {
-            $results | Should Not Be $null
+    Context "Command usage" {
+        BeforeDiscovery {
+            # Run setup code to get script variables within scope of the discovery phase
+            . (Join-Path $PSScriptRoot 'constants.ps1')
         }
-        It "Should have created Description" {
-            $results.description | Should be 'DatabaseMail process is started'
+
+        BeforeAll {
+            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server.Query("INSERT INTO msdb.[dbo].[sysmail_log]
+            ([event_type]
+            ,[log_date]
+            ,[description]
+            ,[process_id]
+            ,[mailitem_id]
+            ,[account_id]
+            ,[last_mod_date]
+            ,[last_mod_user])
+            VALUES
+            (1,'2018-12-09 12:18:14.920','DatabaseMail process is started',4890,NULL,NULL,'2018-12-09 12:18:14.920','dbatools\dbatoolssci')")
         }
-        It "Should have last modified user of dbatools\dbatoolssci " {
-            $results.lastmoduser | Should be 'dbatools\dbatoolssci'
+
+        AfterAll {
+            $server.Query("DELETE FROM msdb.[dbo].[sysmail_log] WHERE last_mod_user = 'dbatools\dbatoolssci'")
         }
-    }
-    Context "Gets Db Mail Log using -Type" {
-        $results = Get-DbaDbMailLog -SqlInstance $script:instance2 -Type Information
-        It "Gets results" {
-            $results | Should Not Be $null
+
+        Context "Gets Db Mail Log" {
+            BeforeAll {
+                $results = Get-DbaDbMailLog -SqlInstance $script:instance2 | Where-Object {$_.Login -eq 'dbatools\dbatoolssci'}
+            }
+
+            It "Gets results" {
+                $results | Should -Not -BeNullOrEmpty
+            }
+
+            It "Should have created Description" {
+                $results.description | Should -Be 'DatabaseMail process is started'
+            }
+
+            It "Should have last modified user of dbatools\dbatoolssci" {
+                $results.lastmoduser | Should -Be 'dbatools\dbatoolssci'
+            }
         }
-        It "Should have Log Id" {
-            $results.logid | Should not be $null
+
+        Context "Gets Db Mail Log using -Type" {
+            BeforeAll {
+                $results = Get-DbaDbMailLog -SqlInstance $script:instance2 -Type Information
+            }
+
+            It "Gets results" {
+                $results | Should -Not -BeNullOrEmpty
+            }
+
+            It "Should have Log Id" {
+                $results.logid | Should -Not -BeNullOrEmpty
+            }
+
+            It "Should have an Event Type of Information" {
+                $results.eventtype | Should -Be 'Information'
+            }
         }
-        It "Should have an Event Type of Information" {
-            $results.eventtype | Should be 'Information'
-        }
-    }
-    Context "Gets Db Mail History using -Since" {
-        $results = Get-DbaDbMailLog -SqlInstance $script:instance2 -Since '2018-01-01'
-        It "Gets results" {
-            $results | Should Not Be $null
-        }
-        It "Should have a LogDate greater than 2018-01-01" {
-            $results.LogDate | Should Begreaterthan '2018-01-01'
-        }
-        It "Should have a LastModDate greater than 2018-01-01" {
-            $results.LastModDate | Should Begreaterthan '2018-01-01'
+
+        Context "Gets Db Mail History using -Since" {
+            BeforeAll {
+                $results = Get-DbaDbMailLog -SqlInstance $script:instance2 -Since '2018-01-01'
+            }
+
+            It "Gets results" {
+                $results | Should -Not -BeNullOrEmpty
+            }
+
+            It "Should have a LogDate greater than 2018-01-01" {
+                $results.LogDate | Should -BeGreaterThan '2018-01-01'
+            }
+
+            It "Should have a LastModDate greater than 2018-01-01" {
+                $results.LastModDate | Should -BeGreaterThan '2018-01-01'
+            }
         }
     }
 }

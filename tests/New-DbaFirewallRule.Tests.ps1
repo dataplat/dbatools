@@ -1,76 +1,93 @@
-$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tags "UnitTests" {
+Describe "New-DbaFirewallRule" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'Credential', 'Type', 'Configuration', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command New-DbaFirewallRule
+        }
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have Credential parameter" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Type parameter" {
+            $CommandUnderTest | Should -HaveParameter Type -Type String[] -Not -Mandatory
+        }
+        It "Should have Configuration parameter" {
+            $CommandUnderTest | Should -HaveParameter Configuration -Type Hashtable -Not -Mandatory
+        }
+        It "Should have Force parameter" {
+            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
-    BeforeAll {
-        $null = Remove-DbaFirewallRule -SqlInstance $script:instance2 -Confirm:$false
-    }
+    Context "Integration Tests" {
+        BeforeAll {
+            . "$PSScriptRoot\constants.ps1"
+            $null = Remove-DbaFirewallRule -SqlInstance $script:instance2 -Confirm:$false
+        }
 
-    AfterAll {
-        $null = Remove-DbaFirewallRule -SqlInstance $script:instance2 -Confirm:$false
-    }
+        AfterAll {
+            $null = Remove-DbaFirewallRule -SqlInstance $script:instance2 -Confirm:$false
+        }
 
-    $resultsNew = New-DbaFirewallRule -SqlInstance $script:instance2  -Confirm:$false
-    $resultsGet = Get-DbaFirewallRule -SqlInstance $script:instance2
-    $resultsRemoveBrowser = $resultsGet | Where-Object { $_.Type -eq "Browser" } | Remove-DbaFirewallRule -Confirm:$false
-    $resultsRemove = Remove-DbaFirewallRule -SqlInstance $script:instance2 -Type AllInstance -Confirm:$false
+        It "creates two firewall rules" {
+            $resultsNew = New-DbaFirewallRule -SqlInstance $script:instance2 -Confirm:$false
+            $resultsNew.Count | Should -Be 2
+        }
 
-    $instanceName = ([DbaInstanceParameter]$script:instance2).InstanceName
+        It "creates first firewall rule for SQL Server instance" {
+            $resultsNew = New-DbaFirewallRule -SqlInstance $script:instance2 -Confirm:$false
+            $instanceName = ([DbaInstanceParameter]$script:instance2).InstanceName
+            $resultsNew[0].Successful | Should -Be $true
+            $resultsNew[0].Type | Should -Be 'Engine'
+            $resultsNew[0].DisplayName | Should -Be "SQL Server instance $instanceName"
+            $resultsNew[0].Status | Should -Be 'The rule was successfully created.'
+        }
 
-    It "creates two firewall rules" {
-        $resultsNew.Count | Should -Be 2
-    }
+        It "creates second firewall rule for SQL Server Browser" {
+            $resultsNew = New-DbaFirewallRule -SqlInstance $script:instance2 -Confirm:$false
+            $resultsNew[1].Successful | Should -Be $true
+            $resultsNew[1].Type | Should -Be 'Browser'
+            $resultsNew[1].DisplayName | Should -Be 'SQL Server Browser'
+            $resultsNew[1].Status | Should -Be 'The rule was successfully created.'
+        }
 
-    It "creates first firewall rule for SQL Server instance" {
-        $resultsNew[0].Successful | Should -Be $true
-        $resultsNew[0].Type | Should -Be 'Engine'
-        $resultsNew[0].DisplayName | Should -Be "SQL Server instance $instanceName"
-        $resultsNew[0].Status | Should -Be 'The rule was successfully created.'
-    }
+        It "returns two firewall rules" {
+            $resultsGet = Get-DbaFirewallRule -SqlInstance $script:instance2
+            $resultsGet.Count | Should -Be 2
+        }
 
-    It "creates second firewall rule for SQL Server Browser" {
-        $resultsNew[1].Successful | Should -Be $true
-        $resultsNew[1].Type | Should -Be 'Browser'
-        $resultsNew[1].DisplayName | Should -Be 'SQL Server Browser'
-        $resultsNew[1].Status | Should -Be 'The rule was successfully created.'
-    }
+        It "returns one firewall rule for SQL Server instance" {
+            $resultsGet = Get-DbaFirewallRule -SqlInstance $script:instance2
+            $resultInstance = $resultsGet | Where-Object Type -eq 'Engine'
+            $resultInstance.Protocol | Should -Be "TCP"
+        }
 
-    It "returns two firewall rules" {
-        $resultsGet.Count | Should -Be 2
-    }
+        It "returns one firewall rule for SQL Server Browser" {
+            $resultsGet = Get-DbaFirewallRule -SqlInstance $script:instance2
+            $resultBrowser = $resultsGet | Where-Object Type -eq 'Browser'
+            $resultBrowser.Protocol | Should -Be 'UDP'
+            $resultBrowser.LocalPort | Should -Be '1434'
+        }
 
-    It "returns one firewall rule for SQL Server instance" {
-        $resultInstance = $resultsGet | Where-Object Type -eq 'Engine'
-        $resultInstance.Protocol | Should -Be "TCP"
-    }
+        It "removes firewall rule for Browser" {
+            $resultsGet = Get-DbaFirewallRule -SqlInstance $script:instance2
+            $resultsRemoveBrowser = $resultsGet | Where-Object { $_.Type -eq "Browser" } | Remove-DbaFirewallRule -Confirm:$false
+            $resultsRemoveBrowser.Type | Should -Be 'Browser'
+            $resultsRemoveBrowser.IsRemoved | Should -Be $true
+            $resultsRemoveBrowser.Status | Should -Be 'The rule was successfully removed.'
+        }
 
-    It "returns one firewall rule for SQL Server Browser" {
-        $resultBrowser = $resultsGet | Where-Object Type -eq 'Browser'
-        $resultBrowser.Protocol | Should -Be 'UDP'
-        $resultBrowser.LocalPort | Should -Be '1434'
-    }
-
-    It "removes firewall rule for Browser" {
-        $resultsRemoveBrowser.Type | Should -Be 'Browser'
-        $resultsRemoveBrowser.IsRemoved | Should -Be $true
-        $resultsRemoveBrowser.Status | Should -Be 'The rule was successfully removed.'
-    }
-
-    It "removes other firewall rule" {
-        $resultsRemove.Type | Should -Be 'Engine'
-        $resultsRemove.IsRemoved | Should -Be $true
-        $resultsRemove.Status | Should -Be 'The rule was successfully removed.'
+        It "removes other firewall rule" {
+            $resultsRemove = Remove-DbaFirewallRule -SqlInstance $script:instance2 -Type AllInstance -Confirm:$false
+            $resultsRemove.Type | Should -Be 'Engine'
+            $resultsRemove.IsRemoved | Should -Be $true
+            $resultsRemove.Status | Should -Be 'The rule was successfully removed.'
+        }
     }
 }

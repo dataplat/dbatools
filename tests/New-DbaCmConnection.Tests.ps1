@@ -1,19 +1,51 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "New-DbaCmConnection" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'Credential', 'UseWindowsCredentials', 'OverrideExplicitCredential', 'DisabledConnectionTypes', 'DisableBadCredentialCache', 'DisableCimPersistence', 'DisableCredentialAutoRegister', 'EnableCredentialFailover', 'WindowsCredentialsAreBad', 'CimWinRMOptions', 'CimDCOMOptions', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command New-DbaCmConnection
+        }
+        It "Should have ComputerName as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaCmConnectionParameter[]
+        }
+        It "Should have Credential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
+        }
+        It "Should have UseWindowsCredentials as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter UseWindowsCredentials -Type switch
+        }
+        It "Should have OverrideExplicitCredential as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter OverrideExplicitCredential -Type switch
+        }
+        It "Should have DisabledConnectionTypes as a parameter" {
+            $CommandUnderTest | Should -HaveParameter DisabledConnectionTypes -Type ManagementConnectionType
+        }
+        It "Should have DisableBadCredentialCache as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter DisableBadCredentialCache -Type switch
+        }
+        It "Should have DisableCimPersistence as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter DisableCimPersistence -Type switch
+        }
+        It "Should have DisableCredentialAutoRegister as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter DisableCredentialAutoRegister -Type switch
+        }
+        It "Should have EnableCredentialFailover as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableCredentialFailover -Type switch
+        }
+        It "Should have WindowsCredentialsAreBad as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter WindowsCredentialsAreBad -Type switch
+        }
+        It "Should have CimWinRMOptions as a parameter" {
+            $CommandUnderTest | Should -HaveParameter CimWinRMOptions -Type WSManSessionOptions
+        }
+        It "Should have CimDCOMOptions as a parameter" {
+            $CommandUnderTest | Should -HaveParameter CimDCOMOptions -Type DComSessionOptions
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type switch
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+
+# Integration tests can be added below this line
+# Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests for more guidance

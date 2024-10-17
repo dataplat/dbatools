@@ -1,20 +1,11 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'InputObject', 'FileGroup', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
-        }
-    }
-}
-
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "Get-DbaDbFileGroup" {
     BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+
         $random = Get-Random
         $multifgdb = "dbatoolsci_multifgdb$random"
         Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $multifgdb
@@ -22,44 +13,70 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $server.Query("CREATE DATABASE $multifgdb; ALTER DATABASE $multifgdb ADD FILEGROUP [Test1]; ALTER DATABASE $multifgdb ADD FILEGROUP [Test2];")
     }
+
     AfterAll {
         Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $multifgdb
     }
 
+    Context "Validate parameters" {
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaDbFileGroup
+        }
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Not -Mandatory
+        }
+        It "Should have InputObject parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[] -Not -Mandatory
+        }
+        It "Should have FileGroup parameter" {
+            $CommandUnderTest | Should -HaveParameter FileGroup -Type String[] -Not -Mandatory
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+        }
+    }
+
     Context "Returns values for Instance" {
-        $results = Get-DbaDbFileGroup -SqlInstance $script:instance2
+        BeforeAll {
+            $results = Get-DbaDbFileGroup -SqlInstance $script:instance2
+        }
         It "Results are not empty" {
-            $results | Should Not Be $Null
+            $results | Should -Not -BeNullOrEmpty
         }
         It "Returns the correct object" {
-            $results[0].GetType().ToString() | Should Be "Microsoft.SqlServer.Management.Smo.FileGroup"
+            $results[0].GetType().ToString() | Should -Be "Microsoft.SqlServer.Management.Smo.FileGroup"
         }
     }
 
     Context "Accepts database and filegroup input" {
-        $results = Get-DbaDbFileGroup -SqlInstance $script:instance2 -Database $multifgdb
-
         It "Reports the right number of filegroups" {
-            $results.Count | Should Be 3
+            $results = Get-DbaDbFileGroup -SqlInstance $script:instance2 -Database $multifgdb
+            $results.Count | Should -Be 3
         }
 
-        $results = Get-DbaDbFileGroup -SqlInstance $script:instance2 -Database $multifgdb -FileGroup Test1
-
-        It "Reports the right number of filegroups" {
-            $results.Count | Should Be 1
+        It "Reports the right number of filegroups when filtering" {
+            $results = Get-DbaDbFileGroup -SqlInstance $script:instance2 -Database $multifgdb -FileGroup Test1
+            $results.Count | Should -Be 1
         }
     }
 
     Context "Accepts piped input" {
-        $results = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeUser | Get-DbaDbFileGroup
-
+        BeforeAll {
+            $results = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeUser | Get-DbaDbFileGroup
+        }
         It "Reports the right number of filegroups" {
-            $results.Count | Should Be 4
+            $results.Count | Should -Be 4
         }
 
         It "Excludes User Databases" {
             $results.Parent.Name | Should -Not -Contain $multifgdb
-            $results.Parent.Name  | Should -Contain 'msdb'
+            $results.Parent.Name | Should -Contain 'msdb'
         }
     }
 }

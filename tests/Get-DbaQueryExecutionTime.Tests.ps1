@@ -1,19 +1,75 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaQueryExecutionTime" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'MaxResultsPerDb', 'MinExecs', 'MinExecMs', 'ExcludeSystem', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaQueryExecutionTime
+        }
+        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database as a non-mandatory parameter of type Object[]" {
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Not -Mandatory
+        }
+        It "Should have ExcludeDatabase as a non-mandatory parameter of type Object[]" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Not -Mandatory
+        }
+        It "Should have MaxResultsPerDb as a non-mandatory parameter of type Int32" {
+            $CommandUnderTest | Should -HaveParameter MaxResultsPerDb -Type Int32 -Not -Mandatory
+        }
+        It "Should have MinExecs as a non-mandatory parameter of type Int32" {
+            $CommandUnderTest | Should -HaveParameter MinExecs -Type Int32 -Not -Mandatory
+        }
+        It "Should have MinExecMs as a non-mandatory parameter of type Int32" {
+            $CommandUnderTest | Should -HaveParameter MinExecMs -Type Int32 -Not -Mandatory
+        }
+        It "Should have ExcludeSystem as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeSystem -Type Switch -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+        }
+    }
+
+    Context "Command usage" {
+        BeforeDiscovery {
+            # Run setup code to get script variables within scope of the discovery phase
+            . (Join-Path $PSScriptRoot 'constants.ps1')
+        }
+
+        Context "Connects and retrieves query execution times" -ForEach $script:instance1, $script:instance2 {
+            BeforeAll {
+                $server = Connect-DbaInstance -SqlInstance $_
+            }
+
+            It "Returns query execution times" {
+                $results = Get-DbaQueryExecutionTime -SqlInstance $server -MaxResultsPerDb 5
+                $results | Should -Not -BeNullOrEmpty
+                $results.Count | Should -BeLessOrEqual 5
+            }
+
+            It "Respects the MinExecs parameter" {
+                $minExecs = 2
+                $results = Get-DbaQueryExecutionTime -SqlInstance $server -MinExecs $minExecs -MaxResultsPerDb 5
+                $results | Should -Not -BeNullOrEmpty
+                $results | ForEach-Object { $_.ExecutionCount | Should -BeGreaterOrEqual $minExecs }
+            }
+
+            It "Respects the MinExecMs parameter" {
+                $minExecMs = 100
+                $results = Get-DbaQueryExecutionTime -SqlInstance $server -MinExecMs $minExecMs -MaxResultsPerDb 5
+                $results | Should -Not -BeNullOrEmpty
+                $results | ForEach-Object { $_.AvgElapsedTime | Should -BeGreaterOrEqual $minExecMs }
+            }
+
+            It "Excludes system databases when ExcludeSystem is specified" {
+                $results = Get-DbaQueryExecutionTime -SqlInstance $server -ExcludeSystem -MaxResultsPerDb 5
+                $results | Should -Not -BeNullOrEmpty
+                $results.Database | Should -Not -Contain @('master', 'model', 'msdb', 'tempdb')
+            }
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>

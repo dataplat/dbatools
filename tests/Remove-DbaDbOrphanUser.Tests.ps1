@@ -1,19 +1,35 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Remove-DbaDbOrphanUser Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'User', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Remove-DbaDbOrphanUser
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[]
+        }
+        It "Should have ExcludeDatabase as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[]
+        }
+        It "Should have User as a parameter" {
+            $CommandUnderTest | Should -HaveParameter User -Type Object[]
+        }
+        It "Should have Force as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe "Remove-DbaDbOrphanUser Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $random = Get-Random
@@ -30,6 +46,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
         $null = Invoke-Command2 -ScriptBlock { net user $args[0] $args[1] /add *>&1 } -ArgumentList $loginWindows, $plaintext -ComputerName $script:instance2
     }
+
     BeforeEach {
         $null = New-DbaLogin -SqlInstance $script:instance2 -Login $login1 -Password $securePassword -Force
         $null = New-DbaLogin -SqlInstance $script:instance2 -Login $login2 -Password $securePassword -Force
@@ -44,6 +61,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $null = Remove-DbaLogin -SqlInstance $script:instance2 -Login $login2 -Confirm:$false
         $null = Remove-DbaLogin -SqlInstance $script:instance2 -Login "$($script:instance2)\$loginWindows" -Confirm:$false
     }
+
     AfterEach {
         $users = Get-DbaDbUser -SqlInstance $script:instance2 -Database $dbname, msdb
         if ($users.Name -contains $login1) {
@@ -53,8 +71,9 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $null = Remove-DbaDbUser $script:instance2 -Database $dbname, msdb -User $login2
         }
     }
+
     AfterAll {
-        $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
         $null = Invoke-Command2 -ScriptBlock { net user $args /delete *>&1 } -ArgumentList $loginWindows -ComputerName $script:instance2
     }
 
@@ -64,9 +83,9 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $null = Remove-DbaDbOrphanUser -SqlInstance $script:instance2
         $results1 = Get-DbaDbUser -SqlInstance $script:instance2 -Database $dbname, msdb
 
-        $results0.Name -contains $login1 | Should Be $true
-        $results0.Name -contains $login2 | Should Be $true
-        $results0.Count | Should BeGreaterThan $results1.Count
+        $results0.Name | Should -Contain $login1
+        $results0.Name | Should -Contain $login2
+        $results0.Count | Should -BeGreaterThan $results1.Count
     }
 
     It "Removes selected Orphan Users" {
@@ -75,9 +94,9 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $null = Remove-DbaDbOrphanUser -SqlInstance $script:instance2 -User $login1
         $results1 = Get-DbaDbUser -SqlInstance $script:instance2 -Database $dbname, msdb
 
-        $results0.Count | Should BeGreaterThan $results1.Count
-        $results1.Name -contains $login1 | Should Be $false
-        $results1.Name -contains $login2 | Should Be $true
+        $results0.Count | Should -BeGreaterThan $results1.Count
+        $results1.Name | Should -Not -Contain $login1
+        $results1.Name | Should -Contain $login2
     }
 
     It "Removes Orphan Users for Database" {
@@ -85,11 +104,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $results1 = Get-DbaDbUser -SqlInstance $script:instance2 -Database $dbname, msdb
         $results1 = $results1 | Where-Object { $_.Name -eq $login1 -or $_.Name -eq $login2 }
 
-        $results1.Name -contains $login1 | Should Be $true
-        $results1.Name -contains $login2 | Should Be $true
-        $results1.Database -contains 'msdb' | Should Be $false
-        $results1.Database -contains $dbname | Should Be $true
-
+        $results1.Name | Should -Contain $login1
+        $results1.Name | Should -Contain $login2
+        $results1.Database | Should -Not -Contain 'msdb'
+        $results1.Database | Should -Contain $dbname
     }
 
     It "Removes Orphan Users except for excluded databases" {
@@ -97,10 +115,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $results1 = Get-DbaDbUser -SqlInstance $script:instance2 -Database $dbname, msdb
         $results1 = $results1 | Where-Object { $_.Name -eq $login1 -or $_.Name -eq $login2 }
 
-        $results1.Name -contains $login1 | Should Be $true
-        $results1.Name -contains $login2 | Should Be $true
-        $results1.Database -contains 'msdb' | Should Be $true
-        $results1.Database -contains $dbname | Should Be $false
+        $results1.Name | Should -Contain $login1
+        $results1.Name | Should -Contain $login2
+        $results1.Database | Should -Contain 'msdb'
+        $results1.Database | Should -Not -Contain $dbname
     }
 
     It "Removes Orphan Users with unmapped logins if force specified" {
@@ -111,23 +129,22 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $null = Remove-DbaDbOrphanUser -SqlInstance $script:instance2 -User $login2
         $results1 = Get-DbaDbUser -SqlInstance $script:instance2 -Database $dbname, msdb
 
-        $results1.Name -contains $login1 | Should Be $false
-        $results1.Name -contains $login2 | Should Be $true
+        $results1.Name | Should -Not -Contain $login1
+        $results1.Name | Should -Contain $login2
 
         $null = Remove-DbaLogin -SqlInstance $script:instance2 -Login $login1 -Confirm:$false
         $null = Remove-DbaLogin -SqlInstance $script:instance2 -Login $login2 -Confirm:$false
-
     }
 
-    It "Removes Orphan Logins that own Schemas without objects " {
+    It "Removes Orphan Logins that own Schemas without objects" {
         $sql = "CREATE SCHEMA $schema AUTHORIZATION $login2"
         $server.Query($sql, $dbname)
 
         $null = Remove-DbaDbOrphanUser -SqlInstance $script:instance2 -Database $dbname, msdb -User $login1, $login2 -Force
         $results1 = Get-DbaDbUser -SqlInstance $script:instance2 -Database $dbname, msdb
 
-        $results1.Name -contains $login1 | Should Be $false
-        $results1.Name -contains $login2 | Should Be $false
+        $results1.Name | Should -Not -Contain $login1
+        $results1.Name | Should -Not -Contain $login2
 
         $sql = "DROP SCHEMA $schema"
         $server.Query($sql, $dbname)
@@ -147,8 +164,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $null = Remove-DbaDbOrphanUser -SqlInstance $script:instance2 -Database $dbname -User $login2 -Force
         $results1 = Get-DbaDbUser -SqlInstance $script:instance2 -Database $dbname
 
-        $results1.Name -contains $login1 | Should Be $true
-        $results1.Name -contains $login2 | Should Be $false
+        $results1.Name | Should -Contain $login1
+        $results1.Name | Should -Not -Contain $login2
 
         $sql = "DROP TABLE $schema.test1;DROP TABLE [$login2].test2;DROP SCHEMA $schema;DROP SCHEMA [$login2];"
         $server.Query($sql, $dbname)
@@ -157,6 +174,6 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     It "Removes the orphaned windows login" {
         $null = Remove-DbaDbOrphanUser -SqlInstance $script:instance2 -Database $dbname -User "$($script:instance2)\$loginWindows"
         $results1 = Get-DbaDbUser -SqlInstance $script:instance2 -Database $dbname
-        $results1.Name -contains $loginWindows | Should -Be $false
+        $results1.Name | Should -Not -Contain $loginWindows
     }
 }

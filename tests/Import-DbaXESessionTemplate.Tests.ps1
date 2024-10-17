@@ -1,27 +1,58 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Import-DbaXESessionTemplate" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Name', 'Path', 'Template', 'TargetFilePath', 'TargetFileMetadataPath', 'EnableException', 'StartUpState'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Import-DbaXESessionTemplate
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Name as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Name -Type String
+        }
+        It "Should have Path as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Path -Type String[]
+        }
+        It "Should have Template as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Template -Type String[]
+        }
+        It "Should have TargetFilePath as a parameter" {
+            $CommandUnderTest | Should -HaveParameter TargetFilePath -Type String
+        }
+        It "Should have TargetFileMetadataPath as a parameter" {
+            $CommandUnderTest | Should -HaveParameter TargetFileMetadataPath -Type String
+        }
+        It "Should have StartUpState as a parameter" {
+            $CommandUnderTest | Should -HaveParameter StartUpState -Type String
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    AfterAll {
-        $null = Get-DbaXESession -SqlInstance $script:instance2 -Session 'Overly Complex Queries' | Remove-DbaXESession
-    }
     Context "Test Importing Session Template" {
-        It -Skip "session imports with proper name and non-default target file location" {
-            $result = Import-DbaXESessionTemplate -SqlInstance $script:instance2 -Template 'Overly Complex Queries' -TargetFilePath C:\temp
-            $result.Name | Should Be "Overly Complex Queries"
-            $result.TargetFile -match 'C\:\\temp' | Should Be $true
+        BeforeAll {
+            $script:instanceName = $script:instance2
+        }
+
+        AfterAll {
+            $null = Get-DbaXESession -SqlInstance $script:instanceName -Session 'Overly Complex Queries' | Remove-DbaXESession
+        }
+
+        It "Session imports with proper name and non-default target file location" -Skip {
+            $result = Import-DbaXESessionTemplate -SqlInstance $script:instanceName -Template 'Overly Complex Queries' -TargetFilePath C:\temp
+            $result.Name | Should -Be "Overly Complex Queries"
+            $result.TargetFile | Should -Match 'C:\\temp'
         }
     }
 }

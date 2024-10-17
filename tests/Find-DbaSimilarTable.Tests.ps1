@@ -1,21 +1,45 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Find-DbaSimilarTable" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'SchemaName', 'TableName', 'ExcludeViews', 'IncludeSystemDatabases', 'MatchPercentThreshold', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Find-DbaSimilarTable
+        }
+        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database as a non-mandatory parameter of type Object[]" {
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Not -Mandatory
+        }
+        It "Should have ExcludeDatabase as a non-mandatory parameter of type Object[]" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Not -Mandatory
+        }
+        It "Should have SchemaName as a non-mandatory parameter of type String" {
+            $CommandUnderTest | Should -HaveParameter SchemaName -Type String -Not -Mandatory
+        }
+        It "Should have TableName as a non-mandatory parameter of type String" {
+            $CommandUnderTest | Should -HaveParameter TableName -Type String -Not -Mandatory
+        }
+        It "Should have ExcludeViews as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeViews -Type Switch -Not -Mandatory
+        }
+        It "Should have IncludeSystemDatabases as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter IncludeSystemDatabases -Type Switch -Not -Mandatory
+        }
+        It "Should have MatchPercentThreshold as a non-mandatory parameter of type Int32" {
+            $CommandUnderTest | Should -HaveParameter MatchPercentThreshold -Type Int32 -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Testing if similar tables are discovered" {
         BeforeAll {
+            . "$PSScriptRoot\constants.ps1"
             $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database tempdb
             $db.Query("CREATE TABLE dbatoolsci_table1 (id int identity, fname varchar(20), lname char(5), lol bigint, whatever datetime)")
             $db.Query("CREATE TABLE dbatoolsci_table2 (id int identity, fname varchar(20), lname char(5), lol bigint, whatever datetime)")
@@ -25,18 +49,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $db.Query("DROP TABLE dbatoolsci_table2")
         }
 
-        $results = Find-DbaSimilarTable -SqlInstance $script:instance1 -Database tempdb | Where-Object Table -Match dbatoolsci
-
-        It "returns at least two rows" { # not an exact count because who knows
-            $results.Count -ge 2 | Should Be $true
+        It "returns at least two rows with correct database IDs and 100% match" {
+            $results = Find-DbaSimilarTable -SqlInstance $script:instance1 -Database tempdb | Where-Object Table -Match dbatoolsci
+            $results.Count | Should -BeGreaterOrEqual 2
             $results.OriginalDatabaseId | Should -Be $db.ID, $db.ID
             $results.MatchingDatabaseId | Should -Be $db.ID, $db.ID
-        }
-
-        foreach ($result in $results) {
-            It "matches 100% for the test tables" {
-                $result.MatchPercent -eq 100 | Should Be $true
-            }
+            $results | ForEach-Object { $_.MatchPercent | Should -Be 100 }
         }
     }
 }

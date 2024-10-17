@@ -1,46 +1,57 @@
-<#
-    The below statement stays in for every test you build.
-#>
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-<#
-    Unit test is required for any command added
-#>
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaServerRole" {
+    BeforeAll {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'ServerRole', 'ExcludeServerRole', 'ExcludeFixedRole', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaServerRole
+        }
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have ServerRole parameter" {
+            $CommandUnderTest | Should -HaveParameter ServerRole -Type String[] -Not -Mandatory
+        }
+        It "Should have ExcludeServerRole parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeServerRole -Type String[] -Not -Mandatory
+        }
+        It "Should have ExcludeFixedRole parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeFixedRole -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command actually works" {
-        $results = Get-DbaServerRole -SqlInstance $script:instance2
+        BeforeAll {
+            $results = Get-DbaServerRole -SqlInstance $script:instance2
+        }
+
         It "Should have correct properties" {
             $ExpectedProps = 'ComputerName,DatabaseEngineEdition,DatabaseEngineType,DateCreated,DateModified,Events,ExecutionManager,ID,InstanceName,IsFixedRole,Login,Name,Owner,Parent,ParentCollection,Properties,Role,ServerRole,ServerVersion,SqlInstance,State,Urn,UserData'.Split(',')
-            ($results[0].PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
+            ($results[0].PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
         }
 
         It "Shows only one value with ServerRole parameter" {
             $results = Get-DbaServerRole -SqlInstance $script:instance2 -ServerRole sysadmin
-            $results[0].Role | Should Be "sysadmin"
+            $results[0].Role | Should -Be "sysadmin"
         }
 
         It "Should exclude sysadmin from output" {
             $results = Get-DbaServerRole -SqlInstance $script:instance2 -ExcludeServerRole sysadmin
-            'sysadmin' -NotIn $results.Role | Should Be $true
+            $results.Role | Should -Not -Contain 'sysadmin'
         }
 
         It "Should exclude fixed server-level roles" {
             $results = Get-DbaServerRole -SqlInstance $script:instance2 -ExcludeFixedRole
-            'sysadmin' -NotIn $results.Role | Should Be $true
+            $results.Role | Should -Not -Contain 'sysadmin'
         }
-
     }
 }

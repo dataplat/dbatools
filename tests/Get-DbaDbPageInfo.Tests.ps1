@@ -1,47 +1,63 @@
-$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaDbPageInfo" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Schema', 'Table', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaDbPageInfo
+        }
+        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database as a non-mandatory parameter of type String[]" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Not -Mandatory
+        }
+        It "Should have Schema as a non-mandatory parameter of type String[]" {
+            $CommandUnderTest | Should -HaveParameter Schema -Type String[] -Not -Mandatory
+        }
+        It "Should have Table as a non-mandatory parameter of type String[]" {
+            $CommandUnderTest | Should -HaveParameter Table -Type String[] -Not -Mandatory
+        }
+        It "Should have InputObject as a non-mandatory parameter of type Database[]" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[] -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
-}
 
-Describe "$CommandName Integration Test" -Tag "IntegrationTests" {
-    BeforeAll {
-        $random = Get-Random
-        $dbname = "dbatoolsci_pageinfo_$random"
-        Get-DbaProcess -SqlInstance $script:instance2 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $server.Query("CREATE DATABASE $dbname;")
-        $server.Databases[$dbname].Query('CREATE TABLE [dbo].[TestTable](TestText VARCHAR(MAX) NOT NULL)')
-        $query = "
-                INSERT INTO dbo.TestTable
-                (
-                    TestText
-                )
-                VALUES
-                ('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')"
+    Context "Command usage" {
+        BeforeAll {
+            $random = Get-Random
+            $dbname = "dbatoolsci_pageinfo_$random"
+            Get-DbaProcess -SqlInstance $script:instance2 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
+            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server.Query("CREATE DATABASE $dbname;")
+            $server.Databases[$dbname].Query('CREATE TABLE [dbo].[TestTable](TestText VARCHAR(MAX) NOT NULL)')
+            $query = "
+                    INSERT INTO dbo.TestTable
+                    (
+                        TestText
+                    )
+                    VALUES
+                    ('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')"
 
-        # Generate a bunch of extra inserts to create enough pages
-        1..100 | ForEach-Object {
-            $query += ",('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')"
+            # Generate a bunch of extra inserts to create enough pages
+            1..100 | ForEach-Object {
+                $query += ",('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')"
+            }
+            $server.Databases[$dbname].Query($query)
         }
-        $server.Databases[$dbname].Query($query)
-    }
-    AfterAll {
-        Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
-    }
-    Context "Count Pages" {
-        $result = Get-DbaDbPageInfo -SqlInstance $script:instance2 -Database $dbname
+
+        AfterAll {
+            Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
+        }
+
         It "returns the proper results" {
-            ($result).Count | Should -Be 9
+            $result = Get-DbaDbPageInfo -SqlInstance $script:instance2 -Database $dbname
+            $result.Count | Should -Be 9
             ($result | Where-Object { $_.IsAllocated -eq $false }).Count | Should -Be 5
             ($result | Where-Object { $_.IsAllocated -eq $true }).Count | Should -Be 4
         }

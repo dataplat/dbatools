@@ -1,31 +1,38 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaInstanceProtocol" {
+    BeforeAll {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'Credential', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaInstanceProtocol
+        }
+        It "Should have ComputerName as a non-mandatory parameter of type DbaInstanceParameter[]" {
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have Credential as a non-mandatory parameter of type PSCredential" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type switch -Not -Mandatory
         }
     }
-}
-
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Context "Command actually works" {
-        $results = Get-DbaInstanceProtocol -ComputerName $script:instance1, $script:instance2
-
-        It "shows some services" {
-            $results.DisplayName | Should Not Be $null
+        BeforeAll {
+            $results = Get-DbaInstanceProtocol -ComputerName $script:instance1, $script:instance2
         }
 
-        $results = $results | Where-Object Name -eq Tcp
+        It "shows some services" {
+            $results.DisplayName | Should -Not -BeNullOrEmpty
+        }
+
         It "can get TCPIP" {
-            foreach ($result in $results) {
-                $result.Name -eq "Tcp" | Should Be $true
+            $tcpResults = $results | Where-Object Name -eq Tcp
+            foreach ($result in $tcpResults) {
+                $result.Name | Should -Be "Tcp"
             }
         }
     }

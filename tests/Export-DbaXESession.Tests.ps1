@@ -1,55 +1,97 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'InputObject', 'Session', 'Path', 'FilePath', 'Encoding', 'Passthru', 'BatchSeparator', 'NoPrefix', 'NoClobber', 'Append', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
-        }
-    }
-}
-
-
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "Export-DbaXESession" {
     BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+
         $AltExportPath = "$env:USERPROFILE\Documents"
         $outputFile = "$AltExportPath\Dbatoolsci_XE_CustomFile.sql"
     }
+
     AfterAll {
-        (Get-ChildItem $outputFile -ErrorAction SilentlyContinue) | Remove-Item -ErrorAction SilentlyContinue
+        Get-ChildItem $outputFile -ErrorAction SilentlyContinue | Remove-Item -ErrorAction SilentlyContinue
+    }
+
+    Context "Validate parameters" {
+        BeforeAll {
+            $CommandUnderTest = Get-Command Export-DbaXESession
+        }
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have InputObject parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Session[]
+        }
+        It "Should have Session parameter" {
+            $CommandUnderTest | Should -HaveParameter Session -Type String[]
+        }
+        It "Should have Path parameter" {
+            $CommandUnderTest | Should -HaveParameter Path -Type String
+        }
+        It "Should have FilePath parameter" {
+            $CommandUnderTest | Should -HaveParameter FilePath -Type String
+        }
+        It "Should have Encoding parameter" {
+            $CommandUnderTest | Should -HaveParameter Encoding -Type String
+        }
+        It "Should have Passthru parameter" {
+            $CommandUnderTest | Should -HaveParameter Passthru -Type SwitchParameter
+        }
+        It "Should have BatchSeparator parameter" {
+            $CommandUnderTest | Should -HaveParameter BatchSeparator -Type String
+        }
+        It "Should have NoPrefix parameter" {
+            $CommandUnderTest | Should -HaveParameter NoPrefix -Type SwitchParameter
+        }
+        It "Should have NoClobber parameter" {
+            $CommandUnderTest | Should -HaveParameter NoClobber -Type SwitchParameter
+        }
+        It "Should have Append parameter" {
+            $CommandUnderTest | Should -HaveParameter Append -Type SwitchParameter
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+        }
     }
 
     Context "Check if output file was created" {
-        $null = Export-DbaXESession -SqlInstance $script:instance2 -FilePath $outputFile
+        BeforeAll {
+            $null = Export-DbaXESession -SqlInstance $script:instance2 -FilePath $outputFile
+        }
         It "Exports results to one sql file" {
-            (Get-ChildItem $outputFile).Count | Should Be 1
+            (Get-ChildItem $outputFile).Count | Should -Be 1
         }
         It "Exported file is bigger than 0" {
-            (Get-ChildItem $outputFile).Length | Should BeGreaterThan 0
+            (Get-ChildItem $outputFile).Length | Should -BeGreaterThan 0
         }
     }
 
     Context "Check if session parameter is honored" {
-        $null = Export-DbaXESession -SqlInstance $script:instance2 -FilePath $outputFile -Session system_health
+        BeforeAll {
+            $null = Export-DbaXESession -SqlInstance $script:instance2 -FilePath $outputFile -Session system_health
+        }
         It "Exports results to one sql file" {
-            (Get-ChildItem $outputFile).Count | Should Be 1
+            (Get-ChildItem $outputFile).Count | Should -Be 1
         }
         It "Exported file is bigger than 0" {
-            (Get-ChildItem $outputFile).Length | Should BeGreaterThan 0
+            (Get-ChildItem $outputFile).Length | Should -BeGreaterThan 0
         }
     }
 
     Context "Check if supports Pipeline input" {
-        $null = Get-DbaXESession -SqlInstance $script:instance2 -Session system_health | Export-DbaXESession -FilePath $outputFile
+        BeforeAll {
+            $null = Get-DbaXESession -SqlInstance $script:instance2 -Session system_health | Export-DbaXESession -FilePath $outputFile
+        }
         It "Exports results to one sql file" {
-            (Get-ChildItem $outputFile).Count | Should Be 1
+            (Get-ChildItem $outputFile).Count | Should -Be 1
         }
         It "Exported file is bigger than 0" {
-            (Get-ChildItem $outputFile).Length | Should BeGreaterThan 0
+            (Get-ChildItem $outputFile).Length | Should -BeGreaterThan 0
         }
     }
 }

@@ -1,18 +1,44 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Invoke-DbaDbDbccCheckConstraint Unit Tests" -Tag 'UnitTests' {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Object', 'AllConstraints', 'AllErrorMessages', 'NoInformationalMessages', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Invoke-DbaDbDbccCheckConstraint
+        }
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Not -Mandatory
+        }
+        It "Should have Object parameter" {
+            $CommandUnderTest | Should -HaveParameter Object -Type String -Not -Mandatory
+        }
+        It "Should have AllConstraints parameter" {
+            $CommandUnderTest | Should -HaveParameter AllConstraints -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have AllErrorMessages parameter" {
+            $CommandUnderTest | Should -HaveParameter AllErrorMessages -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have NoInformationalMessages parameter" {
+            $CommandUnderTest | Should -HaveParameter NoInformationalMessages -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
 }
-Describe "$commandname Integration Test" -Tag "IntegrationTests" {
+
+Describe "Invoke-DbaDbDbccCheckConstraint Integration Test" -Tag "IntegrationTests" {
     BeforeAll {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $random = Get-Random
@@ -25,26 +51,35 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
         $null = $server.Query("INSERT $tableName(Col1, Col2) VALUES (100, 'Hello')", $dbname)
         $null = $server.Query("ALTER TABLE $tableName WITH NOCHECK ADD CONSTRAINT $check1 CHECK (Col1 > 100); ", $dbname)
     }
+
     AfterAll {
         $null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
     }
 
     Context "Validate standard output" {
-        $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Cmd', 'Output', 'Table', 'Constraint', 'Where'
-        $result = Invoke-DbaDbDbccCheckConstraint -SqlInstance $script:instance2 -Database $dbname -Object $tableName -Confirm:$false
-
-        foreach ($prop in $props) {
-            $p = $result[0].PSObject.Properties[$prop]
-            It "Should return property: $prop" {
-                $p.Name | Should Be $prop
-            }
+        BeforeAll {
+            $result = Invoke-DbaDbDbccCheckConstraint -SqlInstance $script:instance2 -Database $dbname -Object $tableName -Confirm:$false
         }
 
-        It "returns correct results" {
-            $result.Database -match $dbname | Should Be $true
-            $result.Table -match $tableName | Should Be $true
-            $result.Constraint -match $check1 | Should Be $true
-            $result.Output.Substring(0, 25) -eq 'DBCC execution completed.' | Should Be $true
+        It "Should return correct properties" {
+            $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Cmd', 'Output', 'Table', 'Constraint', 'Where'
+            $result[0].PSObject.Properties.Name | Should -Be $props
+        }
+
+        It "Should return correct database name" {
+            $result.Database | Should -Match $dbname
+        }
+
+        It "Should return correct table name" {
+            $result.Table | Should -Match $tableName
+        }
+
+        It "Should return correct constraint name" {
+            $result.Constraint | Should -Match $check1
+        }
+
+        It "Should return correct output" {
+            $result.Output.Substring(0, 25) | Should -Be 'DBCC execution completed.'
         }
     }
 }

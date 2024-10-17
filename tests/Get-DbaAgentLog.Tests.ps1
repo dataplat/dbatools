@@ -1,35 +1,51 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaAgentLog" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'LogNumber', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaAgentLog
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have LogNumber as a parameter" {
+            $CommandUnderTest | Should -HaveParameter LogNumber -Type Int32[]
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Command gets agent log" {
-        $results = Get-DbaAgentLog -SqlInstance $script:instance2
+        BeforeDiscovery {
+            . (Join-Path $PSScriptRoot 'constants.ps1')
+        }
+        BeforeAll {
+            $results = Get-DbaAgentLog -SqlInstance $script:instance2
+        }
         It "Results are not empty" {
-            $results | Should Not Be $Null
+            $results | Should -Not -BeNullOrEmpty
         }
         It "Results contain SQLServerAgent version" {
-            $results.text -like '`[100`] Microsoft SQLServerAgent version*' | Should Be $true
+            $results.text -like '[100] Microsoft SQLServerAgent version*' | Should -Be $true
         }
         It "LogDate is a DateTime type" {
-            $($results | Select-Object -first 1).LogDate | Should BeOfType DateTime
+            $($results | Select-Object -First 1).LogDate | Should -BeOfType DateTime
         }
     }
+
     Context "Command gets current agent log using LogNumber parameter" {
-        $results = Get-DbaAgentLog -SqlInstance $script:instance2 -LogNumber 0
+        BeforeDiscovery {
+            . (Join-Path $PSScriptRoot 'constants.ps1')
+        }
+        BeforeAll {
+            $results = Get-DbaAgentLog -SqlInstance $script:instance2 -LogNumber 0
+        }
         It "Results are not empty" {
-            $results | Should Not Be $Null
+            $results | Should -Not -BeNullOrEmpty
         }
     }
 }

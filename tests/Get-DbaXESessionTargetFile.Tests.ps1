@@ -1,25 +1,41 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
-#Loading this function is needed since it is currently not in the manifest
-. "$PSScriptRoot\..\public\Get-DbaXESessionTargetFile.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaXESessionTargetFile" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+        #Loading this function is needed since it is currently not in the manifest
+        . "$PSScriptRoot\..\public\Get-DbaXESessionTargetFile.ps1"
+    }
+
     Context "Validate parameters" {
-        $paramCount = 6
-        $defaultParamCount = 11
-        [object[]]$params = (Get-ChildItem function:\Get-DbaXESessionTargetFile).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'Session', 'Target', 'InputObject', 'EnableException'
-        It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaXESessionTargetFile
         }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Session as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Session -Type String[]
+        }
+        It "Should have Target as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Target -Type String[]
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Target[]
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
 }
+
 <#
     Integration test should appear below and are custom to the command you are writing.
     Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
+    for more guidance.
 #>

@@ -1,19 +1,77 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaDbBackupHistory Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'IncludeCopyOnly', 'Force', 'Since', 'RecoveryFork', 'Last', 'LastFull', 'LastDiff', 'LastLog', 'DeviceType', 'Raw', 'LastLsn', 'Type', 'EnableException', 'IncludeMirror', 'AgCheck', 'IgnoreDiffBackup', 'LsnSort'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaDbBackupHistory
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Not -Mandatory
+        }
+        It "Should have ExcludeDatabase as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Not -Mandatory
+        }
+        It "Should have IncludeCopyOnly as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter IncludeCopyOnly -Type switch -Not -Mandatory
+        }
+        It "Should have Force as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter Force -Type switch -Not -Mandatory
+        }
+        It "Should have Since as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Since -Type PSObject -Not -Mandatory
+        }
+        It "Should have RecoveryFork as a parameter" {
+            $CommandUnderTest | Should -HaveParameter RecoveryFork -Type string -Not -Mandatory
+        }
+        It "Should have Last as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter Last -Type switch -Not -Mandatory
+        }
+        It "Should have LastFull as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter LastFull -Type switch -Not -Mandatory
+        }
+        It "Should have LastDiff as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter LastDiff -Type switch -Not -Mandatory
+        }
+        It "Should have LastLog as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter LastLog -Type switch -Not -Mandatory
+        }
+        It "Should have DeviceType as a parameter" {
+            $CommandUnderTest | Should -HaveParameter DeviceType -Type string[] -Not -Mandatory
+        }
+        It "Should have Raw as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter Raw -Type switch -Not -Mandatory
+        }
+        It "Should have LastLsn as a parameter" {
+            $CommandUnderTest | Should -HaveParameter LastLsn -Type BigInteger -Not -Mandatory
+        }
+        It "Should have IncludeMirror as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter IncludeMirror -Type switch -Not -Mandatory
+        }
+        It "Should have Type as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Type -Type string[] -Not -Mandatory
+        }
+        It "Should have AgCheck as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter AgCheck -Type switch -Not -Mandatory
+        }
+        It "Should have IgnoreDiffBackup as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter IgnoreDiffBackup -Type switch -Not -Mandatory
+        }
+        It "Should have LsnSort as a parameter" {
+            $CommandUnderTest | Should -HaveParameter LsnSort -Type string -Not -Mandatory
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type switch -Not -Mandatory
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+Describe "Get-DbaDbBackupHistory Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $DestBackupDir = 'C:\Temp\backups'
         if (-Not (Test-Path $DestBackupDir)) {
@@ -40,18 +98,21 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Get last history for single database" {
-        $results = Get-DbaDbBackupHistory -SqlInstance $script:instance1 -Database $dbname -Last
+        BeforeAll {
+            $results = Get-DbaDbBackupHistory -SqlInstance $script:instance1 -Database $dbname -Last
+        }
+
         It "Should be 4 backups returned" {
-            $results.count | Should Be 4
+            $results.count | Should -Be 4
         }
         It "First backup should be a Full Backup" {
-            $results[0].Type | Should be "Full"
+            $results[0].Type | Should -Be "Full"
         }
         It "Duration should be meaningful" {
-            ($results[0].end - $results[0].start).TotalSeconds | Should Be $results[0].Duration.TotalSeconds
+            ($results[0].end - $results[0].start).TotalSeconds | Should -Be $results[0].Duration.TotalSeconds
         }
         It "Last Backup Should be a log backup" {
-            $results[-1].Type | Should Be "Log"
+            $results[-1].Type | Should -Be "Log"
         }
         It "DatabaseId is returned" {
             $results[0].Database | Should -Be $dbname
@@ -60,46 +121,58 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Get last history for all databases" {
-        $results = Get-DbaDbBackupHistory -SqlInstance $script:instance1
+        BeforeAll {
+            $results = Get-DbaDbBackupHistory -SqlInstance $script:instance1
+        }
+
         It "Should be more than one database" {
-            ($results | Where-Object Database -match "master").Count | Should BeGreaterThan 0
+            ($results | Where-Object Database -match "master").Count | Should -BeGreaterThan 0
         }
     }
 
     Context "ExcludeDatabase is honored" {
-        $results = Get-DbaDbBackupHistory -SqlInstance $script:instance1 -ExcludeDatabase 'master'
         It "Should not report about excluded database master" {
-            ($results | Where-Object Database -match "master").Count | Should Be 0
+            $results = Get-DbaDbBackupHistory -SqlInstance $script:instance1 -ExcludeDatabase 'master'
+            ($results | Where-Object Database -match "master").Count | Should -Be 0
         }
-        $results = Get-DbaDbBackupHistory -SqlInstance $script:instance1 -ExcludeDatabase 'master' -Type Full
-        It "Should not report about excluded database master" {
-            ($results | Where-Object Database -match "master").Count | Should Be 0
+        It "Should not report about excluded database master with -Type Full" {
+            $results = Get-DbaDbBackupHistory -SqlInstance $script:instance1 -ExcludeDatabase 'master' -Type Full
+            ($results | Where-Object Database -match "master").Count | Should -Be 0
         }
-        $results = Get-DbaDbBackupHistory -SqlInstance $script:instance1 -ExcludeDatabase 'master' -LastFull
-        It "Should not report about excluded database master" {
-            ($results | Where-Object Database -match "master").Count | Should Be 0
+        It "Should not report about excluded database master with -LastFull" {
+            $results = Get-DbaDbBackupHistory -SqlInstance $script:instance1 -ExcludeDatabase 'master' -LastFull
+            ($results | Where-Object Database -match "master").Count | Should -Be 0
         }
     }
 
     Context "LastFull should work with multiple databases" {
-        $results = Get-DbaDbBackupHistory -SqlInstance $script:instance1 -Database $dbname, master -lastfull
+        BeforeAll {
+            $results = Get-DbaDbBackupHistory -SqlInstance $script:instance1 -Database $dbname, master -lastfull
+        }
+
         It "Should return 2 records" {
-            $results.count | Should Be 2
+            $results.count | Should -Be 2
         }
     }
 
     Context "Testing IncludeCopyOnly with LastFull" {
-        $results = Get-DbaDbBackupHistory -SqlInstance $script:instance1 -LastFull -Database $dbname
-        $resultsCo = Get-DbaDbBackupHistory -SqlInstance $script:instance1 -LastFull -IncludeCopyOnly -Database $dbname
+        BeforeAll {
+            $results = Get-DbaDbBackupHistory -SqlInstance $script:instance1 -LastFull -Database $dbname
+            $resultsCo = Get-DbaDbBackupHistory -SqlInstance $script:instance1 -LastFull -IncludeCopyOnly -Database $dbname
+        }
+
         It "Should return the CopyOnly Backup" {
-            ($resultsCo.BackupSetID -ne $Results.BackupSetID) | Should Be $True
+            ($resultsCo.BackupSetID -ne $Results.BackupSetID) | Should -Be $True
         }
     }
 
     Context "Testing IncludeCopyOnly with Last" {
-        $resultsCo = Get-DbaDbBackupHistory -SqlInstance $script:instance1 -Last -IncludeCopyOnly -Database $dbname
+        BeforeAll {
+            $resultsCo = Get-DbaDbBackupHistory -SqlInstance $script:instance1 -Last -IncludeCopyOnly -Database $dbname
+        }
+
         It "Should return just the CopyOnly Full Backup" {
-            ($resultsCo | Measure-Object).count | Should Be 1
+            ($resultsCo | Measure-Object).count | Should -Be 1
         }
     }
 
@@ -114,7 +187,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Testing LastFull regression test for #6730" {
-        It "gathers the last full even in a forked scenario" {
+        BeforeAll {
             $dbname = $dbnameForked
             $database = $server.Databases[$dbname]
 
@@ -141,17 +214,21 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
             $allHistory = Get-DbaDbBackupHistory -SqlInstance $server -Database $dbname | Sort-Object -Property End -Descending
             $lastFull = Get-DbaDbBackupHistory -SqlInstance $server -Database $dbname -LastFull
+        }
 
+        It "gathers the last full even in a forked scenario" {
             $allHistory[0].End | Should -Be $lastFull.End
             $allHistory[0].LastRecoveryForkGUID | Should -Be $lastFull.LastRecoveryForkGUID
             $allHistory[0].FirstLsn | Should -Be $lastFull.FirstLsn
-
         }
     }
 
     Context "Testing IgnoreDiff parameter for #6914" {
-        $noIgnore = Get-DbaDbBackupHistory -SqlInstance $script:instance1 -Database $dbname
-        $Ignore = Get-DbaDbBackupHistory -SqlInstance $script:instance1 -Database $dbname -IgnoreDiffBackup
+        BeforeAll {
+            $noIgnore = Get-DbaDbBackupHistory -SqlInstance $script:instance1 -Database $dbname
+            $Ignore = Get-DbaDbBackupHistory -SqlInstance $script:instance1 -Database $dbname -IgnoreDiffBackup
+        }
+
         It "Should return one less backup" {
             $noIgnore.count - $Ignore.count | Should -Be 1
         }

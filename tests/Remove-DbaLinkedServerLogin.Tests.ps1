@@ -1,20 +1,11 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'LinkedServer', 'LocalLogin', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
-        }
-    }
-}
-
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "Remove-DbaLinkedServerLogin" {
     BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+
         $random = Get-Random
         $instance2 = Connect-DbaInstance -SqlInstance $script:instance2
         $instance3 = Connect-DbaInstance -SqlInstance $script:instance3
@@ -46,15 +37,40 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $linkedServerLogin6 = New-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin6Name -RemoteUser $remoteLoginName -RemoteUserPassword $securePassword
         $linkedServerLogin7 = New-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name, $linkedServer2Name -LocalLogin $localLogin7Name -RemoteUser $remoteLoginName -RemoteUserPassword $securePassword
     }
+
     AfterAll {
         Remove-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServer1Name, $linkedServer2Name -Confirm:$false -Force
         Remove-DbaLogin -SqlInstance $instance2 -Login $localLogin1Name, $localLogin2Name, $localLogin3Name, $localLogin4Name, $localLogin5Name, $localLogin6Name, $localLogin7Name -Confirm:$false
         Remove-DbaLogin -SqlInstance $instance3 -Login $remoteLoginName -Confirm:$false
     }
 
-    Context "ensure command works" {
+    Context "Validate parameters" {
+        BeforeAll {
+            $CommandUnderTest = Get-Command Remove-DbaLinkedServerLogin
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have LinkedServer as a parameter" {
+            $CommandUnderTest | Should -HaveParameter LinkedServer -Type String[] -Not -Mandatory
+        }
+        It "Should have LocalLogin as a parameter" {
+            $CommandUnderTest | Should -HaveParameter LocalLogin -Type String[] -Not -Mandatory
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Not -Mandatory
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+        }
+    }
 
+    Context "Command usage" {
         It "Check the validation for a linked server" {
+            $warningMessage = $null
             $results = Remove-DbaLinkedServerLogin -SqlInstance $instance2 -LocalLogin $localLogin1Name -Confirm:$false -WarningVariable warningMessage
             $results | Should -BeNullOrEmpty
             $warningMessage | Should -Match "LinkedServer is required"

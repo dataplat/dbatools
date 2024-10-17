@@ -1,19 +1,35 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "New-DbaDbSchema" {
     Context "Validate parameters" {
-        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Schema', 'SchemaOwner', 'InputObject', 'EnableException'
-        It "Should only contain our specific parameters" {
-            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
+        BeforeAll {
+            $CommandUnderTest = Get-Command New-DbaDbSchema
+        }
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Database parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String[]
+        }
+        It "Should have Schema parameter" {
+            $CommandUnderTest | Should -HaveParameter Schema -Type String[]
+        }
+        It "Should have SchemaOwner parameter" {
+            $CommandUnderTest | Should -HaveParameter SchemaOwner -Type String
+        }
+        It "Should have InputObject parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[]
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
-
+Describe "New-DbaDbSchema Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $random = Get-Random
         $server1 = Connect-DbaInstance -SqlInstance $script:instance1
@@ -36,7 +52,6 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "commands work as expected" {
-
         It "validates required Schema" {
             $schema = New-DbaDbSchema -SqlInstance $server1
             $schema | Should -BeNullOrEmpty

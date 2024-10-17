@@ -1,28 +1,44 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$commandname Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaAgReplica" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'AvailabilityGroup', 'Replica', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaAgReplica
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have AvailabilityGroup as a parameter" {
+            $CommandUnderTest | Should -HaveParameter AvailabilityGroup -Type String[] -Not -Mandatory
+        }
+        It "Should have Replica as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Replica -Type String[] -Not -Mandatory
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type AvailabilityGroup[] -Not -Mandatory
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
-    BeforeAll {
-        $agname = "dbatoolsci_agroup"
-        $ag = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Certificate dbatoolsci_AGCert -Confirm:$false
-        $replicaName = $ag.PrimaryReplica
-    }
-    AfterAll {
-        $null = Remove-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup $agname -Confirm:$false
-    }
-    Context "gets ag replicas" {
+    Context "Command usage" {
+        BeforeAll {
+            $agname = "dbatoolsci_agroup"
+            $ag = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Certificate dbatoolsci_AGCert -Confirm:$false
+            $replicaName = $ag.PrimaryReplica
+        }
+        AfterAll {
+            $null = Remove-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup $agname -Confirm:$false
+        }
         It "returns results with proper data" {
             $results = Get-DbaAgReplica -SqlInstance $script:instance3
             $results.AvailabilityGroup | Should -Contain $agname
@@ -36,8 +52,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $results.AvailabilityMode | Should -Be 'SynchronousCommit'
         }
 
-        # Skipping because this adds like 30 seconds to test times
-        It -Skip "Passes EnableException to Get-DbaAvailabilityGroup" {
+        It "Passes EnableException to Get-DbaAvailabilityGroup" -Skip {
             $results = Get-DbaAgReplica -SqlInstance invalidSQLHostName -ErrorVariable agerror
             $results | Should -BeNullOrEmpty
             ($agerror | Where-Object Message -match "The network path was not found") | Should -Not -BeNullOrEmpty

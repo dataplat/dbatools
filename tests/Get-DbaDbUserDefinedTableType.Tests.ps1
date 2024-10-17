@@ -1,55 +1,71 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaDbUserDefinedTableType" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException', 'Database', 'ExcludeDatabase', 'Type'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaDbUserDefinedTableType
         }
-    }
-}
-
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $tabletypename = ("dbatools_{0}" -f $(Get-Random))
-        $tabletypename1 = ("dbatools_{0}" -f $(Get-Random))
-        $server.Query("CREATE TYPE $tabletypename AS TABLE([column1] INT NULL)", 'tempdb')
-        $server.Query("CREATE TYPE $tabletypename1 AS TABLE([column1] INT NULL)", 'tempdb')
-    }
-    AfterAll {
-        $null = $server.Query("DROP TYPE $tabletypename", 'tempdb')
-        $null = $server.Query("DROP TYPE $tabletypename1", 'tempdb')
-    }
-
-    Context "Gets a Db User Defined Table Type" {
-        $results = Get-DbaDbUserDefinedTableType -SqlInstance $script:instance2 -database tempdb -Type $tabletypename
-        It "Gets results" {
-            $results | Should Not Be $Null
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
         }
-        It "Should have a name of $tabletypename" {
-            $results.name | Should Be "$tabletypename"
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
-        It "Should have an owner of dbo" {
-            $results.owner | Should Be "dbo"
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[]
         }
-        It "Should have a count of 1" {
-            $results.Count | Should Be 1
+        It "Should have ExcludeDatabase as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[]
+        }
+        It "Should have Type as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Type -Type String[]
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
 
-    Context "Gets all the Db User Defined Table Type" {
-        $results = Get-DbaDbUserDefinedTableType -SqlInstance $script:instance2 -database tempdb
-        It "Gets results" {
-            $results | Should Not Be $Null
+    Context "Command usage" {
+        BeforeAll {
+            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $tabletypename = ("dbatools_{0}" -f $(Get-Random))
+            $tabletypename1 = ("dbatools_{0}" -f $(Get-Random))
+            $server.Query("CREATE TYPE $tabletypename AS TABLE([column1] INT NULL)", 'tempdb')
+            $server.Query("CREATE TYPE $tabletypename1 AS TABLE([column1] INT NULL)", 'tempdb')
         }
-        It "Should have a count of 2" {
-            $results.Count | Should Be 2
+        AfterAll {
+            $null = $server.Query("DROP TYPE $tabletypename", 'tempdb')
+            $null = $server.Query("DROP TYPE $tabletypename1", 'tempdb')
         }
 
+        Context "Gets a Db User Defined Table Type" {
+            BeforeAll {
+                $results = Get-DbaDbUserDefinedTableType -SqlInstance $script:instance2 -Database tempdb -Type $tabletypename
+            }
+            It "Gets results" {
+                $results | Should -Not -BeNullOrEmpty
+            }
+            It "Should have a name of $tabletypename" {
+                $results.Name | Should -Be "$tabletypename"
+            }
+            It "Should have an owner of dbo" {
+                $results.Owner | Should -Be "dbo"
+            }
+            It "Should have a count of 1" {
+                $results | Should -HaveCount 1
+            }
+        }
+
+        Context "Gets all the Db User Defined Table Type" {
+            BeforeAll {
+                $results = Get-DbaDbUserDefinedTableType -SqlInstance $script:instance2 -Database tempdb
+            }
+            It "Gets results" {
+                $results | Should -Not -BeNullOrEmpty
+            }
+            It "Should have a count of 2" {
+                $results | Should -HaveCount 2
+            }
+        }
     }
 }

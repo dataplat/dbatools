@@ -1,33 +1,74 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Remove-DbaExtendedProperty" {
     Context "Validate parameters" {
-        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-        [object[]]$knownParameters = 'InputObject', 'EnableException'
-        It "Should only contain our specific parameters" {
-            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
+        BeforeAll {
+            $CommandUnderTest = Get-Command Remove-DbaExtendedProperty
+        }
+        It "Accepts InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type ExtendedProperty[]
+        }
+        It "Accepts EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+        }
+        It "Accepts Verbose as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Verbose -Type SwitchParameter
+        }
+        It "Accepts Debug as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Debug -Type SwitchParameter
+        }
+        It "Accepts ErrorAction as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ErrorAction -Type ActionPreference
+        }
+        It "Accepts WarningAction as a parameter" {
+            $CommandUnderTest | Should -HaveParameter WarningAction -Type ActionPreference
+        }
+        It "Accepts InformationAction as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InformationAction -Type ActionPreference
+        }
+        It "Accepts ProgressAction as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ProgressAction -Type ActionPreference
+        }
+        It "Accepts ErrorVariable as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ErrorVariable -Type String
+        }
+        It "Accepts WarningVariable as a parameter" {
+            $CommandUnderTest | Should -HaveParameter WarningVariable -Type String
+        }
+        It "Accepts InformationVariable as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InformationVariable -Type String
+        }
+        It "Accepts OutVariable as a parameter" {
+            $CommandUnderTest | Should -HaveParameter OutVariable -Type String
+        }
+        It "Accepts OutBuffer as a parameter" {
+            $CommandUnderTest | Should -HaveParameter OutBuffer -Type Int32
+        }
+        It "Accepts PipelineVariable as a parameter" {
+            $CommandUnderTest | Should -HaveParameter PipelineVariable -Type String
+        }
+        It "Accepts WhatIf as a parameter" {
+            $CommandUnderTest | Should -HaveParameter WhatIf -Type SwitchParameter
+        }
+        It "Accepts Confirm as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Confirm -Type SwitchParameter
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+    Context "Command usage" {
+        BeforeAll {
+            $random = Get-Random
+            $instance2 = Connect-DbaInstance -SqlInstance $script:instance2
+            $null = Get-DbaProcess -SqlInstance $instance2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false
+            $newDbName = "dbatoolsci_newdb_$random"
+            $db = New-DbaDatabase -SqlInstance $instance2 -Name $newDbName
+        }
 
-    BeforeAll {
-        $random = Get-Random
-        $instance2 = Connect-DbaInstance -SqlInstance $script:instance2
-        $null = Get-DbaProcess -SqlInstance $instance2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false
-        $newDbName = "dbatoolsci_newdb_$random"
-        $db = New-DbaDatabase -SqlInstance $instance2 -Name $newDbName
-    }
+        AfterAll {
+            $null = $db | Remove-DbaDatabase -Confirm:$false
+        }
 
-    AfterAll {
-        $null = $db | Remove-DbaDatabase -Confirm:$false
-    }
-
-    Context "commands work as expected" {
-        It "works" {
+        It "removes an extended property" {
             $ep = $db | Add-DbaExtendedProperty -Name "Test_Database_Name" -Value $newDbName
             $results = $ep | Remove-DbaExtendedProperty -Confirm:$false
             $results.Name | Should -Be "Test_Database_Name"

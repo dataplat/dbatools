@@ -1,25 +1,37 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaRandomizedDatasetTemplate" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'Template', 'Path', 'ExcludeDefault', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaRandomizedDatasetTemplate
+        }
+        It "Should have Template as a non-mandatory parameter of type String[]" {
+            $CommandUnderTest | Should -HaveParameter Template -Type String[] -Not -Mandatory
+        }
+        It "Should have Path as a non-mandatory parameter of type String[]" {
+            $CommandUnderTest | Should -HaveParameter Path -Type String[] -Not -Mandatory
+        }
+        It "Should have ExcludeDefault as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDefault -Type Switch -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Command returns templates" {
-
-        [array]$templates = Get-DbaRandomizedDatasetTemplate
+        BeforeAll {
+            $templates = Get-DbaRandomizedDatasetTemplate
+        }
 
         It "Should have at least 1 row" {
-            $templates.count | Should BeGreaterThan 0
+            $templates.Count | Should -BeGreaterThan 0
         }
     }
 }

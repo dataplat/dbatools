@@ -1,20 +1,53 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "New-DbaAgentProxy" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Name', 'ProxyCredential', 'SubSystem', 'Description', 'Login', 'ServerRole', 'MsdbRole', 'Disabled', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command New-DbaAgentProxy
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Name as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Name -Type String[]
+        }
+        It "Should have ProxyCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ProxyCredential -Type String[]
+        }
+        It "Should have SubSystem as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SubSystem -Type String[]
+        }
+        It "Should have Description as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Description -Type String
+        }
+        It "Should have Login as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Login -Type String[]
+        }
+        It "Should have ServerRole as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ServerRole -Type String[]
+        }
+        It "Should have MsdbRole as a parameter" {
+            $CommandUnderTest | Should -HaveParameter MsdbRole -Type String[]
+        }
+        It "Should have Disabled as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter Disabled -Type Switch
+        }
+        It "Should have Force as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    Context "verify command works" {
+    Context "Command usage" {
+        BeforeDiscovery {
+            . (Join-Path $PSScriptRoot 'constants.ps1')
+        }
+
         BeforeAll {
             $random = Get-Random
 
@@ -27,7 +60,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $null = Invoke-Command2 -ScriptBlock { net user $login $plaintext /add *>&1 } -ComputerName $instance2.ComputerName
             $credential = New-DbaCredential -SqlInstance $instance2 -Name "dbatoolsci_$random" -Identity "$($instance2.ComputerName)\$login" -Password $password
 
-            # if replication is installed then these can be tested also: Distribution, LogReader, Merge, QueueReader, Snapshot
             $isReplicationInstalled = $instance2.Databases["master"].Query("DECLARE @installed int;BEGIN TRY EXEC @installed = sys.sp_MS_replication_installed; END TRY BEGIN CATCH SET @installed = 0; END CATCH SELECT @installed AS IsReplicationInstalled;").IsReplicationInstalled
 
             if ($isReplicationInstalled -eq 1) {
@@ -36,7 +68,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 $agentProxyAllSubsystems = New-DbaAgentProxy -SqlInstance $instance2 -Name "dbatoolsci_proxy_$random" -Description "Subsystem test" -ProxyCredential "dbatoolsci_$random" -Subsystem PowerShell, AnalysisCommand, AnalysisQuery, CmdExec, SSIS
             }
 
-            # ActiveScripting was removed in SQL Server 2016
             $agentProxyActiveScripting = New-DbaAgentProxy -SqlInstance $instance2 -Name "dbatoolsci_proxy_ActiveScripting_$random" -Description "ActiveScripting test" -ProxyCredential "dbatoolsci_$random" -Subsystem ActiveScripting
 
             $agentProxySSISDisabled = New-DbaAgentProxy -SqlInstance $instance2 -Name "dbatoolsci_proxy_SSIS_disabled_$random" -Description "SSIS disabled test" -ProxyCredential "dbatoolsci_$random" -Subsystem SSIS -Disabled
@@ -59,8 +90,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "does not try to add the proxy without a valid credential" {
+            $warn = $null
             $results = New-DbaAgentProxy -SqlInstance $instance2 -Name STIG -ProxyCredential 'dbatoolsci_proxytest' -WarningAction SilentlyContinue -WarningVariable warn
-            $warn -match 'does not exist' | Should Be $true
+            $warn | Should -Match 'does not exist'
         }
 
         It "validate a proxy with all subsystems" {

@@ -1,20 +1,11 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Id', 'Default', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
-        }
-    }
-}
-
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe "Get-DbaTrace" {
     BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+
         $traceconfig = Get-DbaSpConfigure -SqlInstance $script:instance2 -ConfigName DefaultTraceEnabled
 
         if ($traceconfig.RunningValue -eq $false) {
@@ -36,13 +27,36 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $server.Query("RECONFIGURE WITH OVERRIDE")
             $server.Query("EXEC sp_configure 'show advanced options', 0;")
             $server.Query("RECONFIGURE WITH OVERRIDE")
-            #$null = Set-DbaSpConfigure -SqlInstance $script:instance2 -ConfigName DefaultTraceEnabled -Value $false
         }
     }
+
+    Context "Validate parameters" {
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaTrace
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Id as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Id -Type Int32[]
+        }
+        It "Should have Default as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter Default -Type Switch
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+        }
+    }
+
     Context "Test Check Default Trace" {
-        $results = Get-DbaTrace -SqlInstance $script:instance2
+        BeforeAll {
+            $results = Get-DbaTrace -SqlInstance $script:instance2
+        }
         It "Should find at least one trace file" {
-            $results.Id.Count -gt 0 | Should Be $true
+            $results.Id.Count | Should -BeGreaterThan 0
         }
     }
 }

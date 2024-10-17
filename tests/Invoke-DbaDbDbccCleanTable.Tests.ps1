@@ -1,65 +1,82 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Invoke-DbaDbDbccCleanTable" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Object', 'BatchSize', 'NoInformationalMessages', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Invoke-DbaDbDbccCleanTable
         }
-    }
-}
-Describe "$commandname Integration Test" -Tag "IntegrationTests" {
-    BeforeAll {
-        $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database tempdb
-        $null = $db.Query("CREATE TABLE dbo.dbatoolct_example (object_id int, [definition] nvarchar(max),Document varchar(2000));
-        INSERT INTO dbo.dbatoolct_example([object_id], [definition], Document) Select [object_id], [definition], REPLICATE('ab', 800) from master.sys.sql_modules;
-        ALTER TABLE dbo.dbatoolct_example DROP COLUMN Definition, Document;")
-    }
-    AfterAll {
-        try {
-            $null = $db.Query("DROP TABLE dbo.dbatoolct_example")
-        } catch {
-            $null = 1
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Not -Mandatory
+        }
+        It "Should have Object parameter" {
+            $CommandUnderTest | Should -HaveParameter Object -Type String[] -Not -Mandatory
+        }
+        It "Should have BatchSize parameter" {
+            $CommandUnderTest | Should -HaveParameter BatchSize -Type Int32 -Not -Mandatory
+        }
+        It "Should have NoInformationalMessages parameter" {
+            $CommandUnderTest | Should -HaveParameter NoInformationalMessages -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
 
-    Context "Validate standard output" {
-        $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Object', 'Cmd', 'Output'
-        $result = Invoke-DbaDbDbccCleanTable -SqlInstance $script:instance1 -Database 'tempdb' -Object 'dbo.dbatoolct_example' -Confirm:$false
-
-        foreach ($prop in $props) {
-            $p = $result[0].PSObject.Properties[$prop]
-            It "Should return property: $prop" {
-                $p.Name | Should Be $prop
+    Context "Command usage" {
+        BeforeAll {
+            . (Join-Path $PSScriptRoot 'constants.ps1')
+            $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database tempdb
+            $null = $db.Query("CREATE TABLE dbo.dbatoolct_example (object_id int, [definition] nvarchar(max),Document varchar(2000));
+            INSERT INTO dbo.dbatoolct_example([object_id], [definition], Document) Select [object_id], [definition], REPLICATE('ab', 800) from master.sys.sql_modules;
+            ALTER TABLE dbo.dbatoolct_example DROP COLUMN Definition, Document;")
+        }
+        AfterAll {
+            try {
+                $null = $db.Query("DROP TABLE dbo.dbatoolct_example")
+            } catch {
+                $null = 1
             }
         }
 
-        It "returns correct results" {
-            $result.Database -eq 'tempdb' | Should Be $true
-            $result.Object -eq 'dbo.dbatoolct_example' | Should Be $true
-            $result.Output.Substring(0, 25) -eq 'DBCC execution completed.' | Should Be $true
+        Context "Validate standard output" {
+            BeforeAll {
+                $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Object', 'Cmd', 'Output'
+                $result = Invoke-DbaDbDbccCleanTable -SqlInstance $script:instance1 -Database 'tempdb' -Object 'dbo.dbatoolct_example' -Confirm:$false
+            }
+            It "Should return property: <_>" -ForEach $props {
+                $result[0].PSObject.Properties[$_] | Should -Not -BeNullOrEmpty
+            }
+            It "Returns correct results" {
+                $result.Database | Should -Be 'tempdb'
+                $result.Object | Should -Be 'dbo.dbatoolct_example'
+                $result.Output.Substring(0, 25) | Should -Be 'DBCC execution completed.'
+            }
         }
-    }
 
-    Context "Validate BatchSize parameter " {
-        $result = Invoke-DbaDbDbccCleanTable -SqlInstance $script:instance1 -Database 'tempdb' -Object 'dbo.dbatoolct_example' -BatchSize 1000 -Confirm:$false
-
-        It "returns results for table" {
-            $result.Cmd -eq "DBCC CLEANTABLE('tempdb', 'dbo.dbatoolct_example', 1000)" | Should Be $true
-            $result.Output.Substring(0, 25) -eq 'DBCC execution completed.' | Should Be $true
+        Context "Validate BatchSize parameter" {
+            BeforeAll {
+                $result = Invoke-DbaDbDbccCleanTable -SqlInstance $script:instance1 -Database 'tempdb' -Object 'dbo.dbatoolct_example' -BatchSize 1000 -Confirm:$false
+            }
+            It "Returns results for table" {
+                $result.Cmd | Should -Be "DBCC CLEANTABLE('tempdb', 'dbo.dbatoolct_example', 1000)"
+                $result.Output.Substring(0, 25) | Should -Be 'DBCC execution completed.'
+            }
         }
-    }
 
-    Context "Validate NoInformationalMessages parameter " {
-        $result = Invoke-DbaDbDbccCleanTable -SqlInstance $script:instance1 -Database 'tempdb' -Object 'dbo.dbatoolct_example' -NoInformationalMessages -Confirm:$false
-
-        It "returns results for table" {
-            $result.Cmd -eq "DBCC CLEANTABLE('tempdb', 'dbo.dbatoolct_example') WITH NO_INFOMSGS" | Should Be $true
-            $result.Output -eq $null | Should Be $true
+        Context "Validate NoInformationalMessages parameter" {
+            BeforeAll {
+                $result = Invoke-DbaDbDbccCleanTable -SqlInstance $script:instance1 -Database 'tempdb' -Object 'dbo.dbatoolct_example' -NoInformationalMessages -Confirm:$false
+            }
+            It "Returns results for table" {
+                $result.Cmd | Should -Be "DBCC CLEANTABLE('tempdb', 'dbo.dbatoolct_example') WITH NO_INFOMSGS"
+                $result.Output | Should -BeNullOrEmpty
+            }
         }
     }
 }

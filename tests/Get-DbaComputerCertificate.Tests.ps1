@@ -1,20 +1,42 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaComputerCertificate" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'Credential', 'Store', 'Folder', 'Path', 'Thumbprint', 'EnableException', 'Type'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaComputerCertificate
+        }
+        It "Should have ComputerName as a non-mandatory parameter of type DbaInstanceParameter[]" {
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have Credential as a non-mandatory parameter of type PSCredential" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Store as a non-mandatory parameter of type String[]" {
+            $CommandUnderTest | Should -HaveParameter Store -Type String[] -Not -Mandatory
+        }
+        It "Should have Folder as a non-mandatory parameter of type String[]" {
+            $CommandUnderTest | Should -HaveParameter Folder -Type String[] -Not -Mandatory
+        }
+        It "Should have Type as a non-mandatory parameter of type String" {
+            $CommandUnderTest | Should -HaveParameter Type -Type String -Not -Mandatory
+        }
+        It "Should have Path as a non-mandatory parameter of type String" {
+            $CommandUnderTest | Should -HaveParameter Path -Type String -Not -Mandatory
+        }
+        It "Should have Thumbprint as a non-mandatory parameter of type String[]" {
+            $CommandUnderTest | Should -HaveParameter Thumbprint -Type String[] -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    Context "Can get a certificate" {
+    Context "Integration Tests" -Tag "IntegrationTests" {
         BeforeAll {
             $null = Add-DbaComputerCertificate -Path $script:appveyorlabrepo\certificates\localhost.crt -Confirm:$false
             $thumbprint = "29C469578D6C6211076A09CEE5C5797EEA0C2713"
@@ -23,19 +45,19 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             Remove-DbaComputerCertificate -Thumbprint $thumbprint -Confirm:$false
         }
 
-        $cert = Get-DbaComputerCertificate -Thumbprint $thumbprint
-
         It "returns a single certificate with a specific thumbprint" {
-            $cert.Thumbprint | Should Be $thumbprint
+            $cert = Get-DbaComputerCertificate -Thumbprint $thumbprint
+            $cert.Thumbprint | Should -Be $thumbprint
         }
-
-        $cert = Get-DbaComputerCertificate
 
         It "returns all certificates and at least one has the specified thumbprint" {
-            "$($cert.Thumbprint)" -match $thumbprint | Should Be $true
+            $certs = Get-DbaComputerCertificate
+            $certs.Thumbprint | Should -Contain $thumbprint
         }
+
         It "returns all certificates and at least one has the specified EnhancedKeyUsageList" {
-            "$($cert.EnhancedKeyUsageList)" -match '1\.3\.6\.1\.5\.5\.7\.3\.1' | Should Be $true
+            $certs = Get-DbaComputerCertificate
+            $certs.EnhancedKeyUsageList | Should -Contain '1.3.6.1.5.5.7.3.1'
         }
     }
 }

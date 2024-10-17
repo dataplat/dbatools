@@ -1,38 +1,57 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaRegistryRoot" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'Credential', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaRegistryRoot
+        }
+        It "Should have ComputerName as a non-mandatory parameter of type DbaInstanceParameter[]" {
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have Credential as a non-mandatory parameter of type PSCredential" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type switch -Not -Mandatory
+        }
+        # Common parameters
+        @('Verbose', 'Debug', 'ErrorVariable', 'WarningVariable', 'InformationVariable', 'OutVariable', 'OutBuffer', 'PipelineVariable') | ForEach-Object {
+            It "Should have $_ as a common parameter" {
+                $CommandUnderTest | Should -HaveParameter $_
+            }
+        }
+        @('ErrorAction', 'WarningAction', 'InformationAction', 'ProgressAction') | ForEach-Object {
+            It "Should have $_ as a common parameter of type ActionPreference" {
+                $CommandUnderTest | Should -HaveParameter $_ -Type ActionPreference
+            }
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command returns proper info" {
-        $results = Get-DbaRegistryRoot
-        $regexpath = "Software\\Microsoft\\Microsoft SQL Server"
+        BeforeAll {
+            $results = Get-DbaRegistryRoot
+            $regexpath = "Software\\Microsoft\\Microsoft SQL Server"
+        }
 
-        if ($results.count -gt 1) {
-            It "returns at least one named instance if more than one result is returned" {
-                $named = $results | Where-Object SqlInstance -match '\\'
-                $named.SqlInstance.Count -gt 0 | Should Be $true
+        It "Returns at least one result" {
+            $results | Should -Not -BeNullOrEmpty
+        }
+
+        It "Returns at least one named instance if more than one result is returned" -Skip:($results.Count -le 1) {
+            $named = $results | Where-Object SqlInstance -Match '\\'
+            $named | Should -Not -BeNullOrEmpty
+        }
+
+        It "Returns non-null values for Hive and SqlInstance" {
+            foreach ($result in $results) {
+                $result.Hive | Should -Not -BeNullOrEmpty
+                $result.SqlInstance | Should -Not -BeNullOrEmpty
             }
         }
 
-        foreach ($result in $results) {
-            It "returns non-null values" {
-                $result.Hive | Should Not Be $null
-                $result.SqlInstance | Should Not Be $null
-            }
-
-            It "matches Software\Microsoft\Microsoft SQL Server" {
-                $result.RegistryRoot -match $regexpath | Should Be $true
+        It "Returns RegistryRoot that matches 'Software\Microsoft\Microsoft SQL Server'" {
+            foreach ($result in $results) {
+                $result.RegistryRoot | Should -Match $regexpath
             }
         }
     }

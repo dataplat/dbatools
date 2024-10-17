@@ -1,46 +1,63 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaUptime" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Credential', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaUptime
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Credential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command actually works" {
-        $results = Get-DbaUptime -SqlInstance $script:instance1
+        BeforeAll {
+            $results = Get-DbaUptime -SqlInstance $script:instance1
+        }
         It "Should have correct properties" {
-            $ExpectedProps = 'ComputerName,InstanceName,SqlServer,SqlUptime,WindowsUptime,SqlStartTime,WindowsBootTime,SinceSqlStart,SinceWindowsBoot'.Split(',')
-            ($results.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
+            $ExpectedProps = 'ComputerName', 'InstanceName', 'SqlServer', 'SqlUptime', 'WindowsUptime', 'SqlStartTime', 'WindowsBootTime', 'SinceSqlStart', 'SinceWindowsBoot'
+            $results.PsObject.Properties.Name | Sort-Object | Should -Be ($ExpectedProps | Sort-Object)
         }
     }
+
     Context "Command can handle multiple SqlInstances" {
-        $results = Get-DbaUptime -SqlInstance $script:instance1, $script:instance2
-        It "Command resultset could contain 2 results" {
-            $results.count | Should Be 2
+        BeforeAll {
+            $results = Get-DbaUptime -SqlInstance $script:instance1, $script:instance2
         }
-        foreach ($result in $results) {
-            It "Windows up time should be more than SQL Uptime" {
-                $result.SqlUptime | Should BeLessThan $result.WindowsUpTime
+        It "Command resultset should contain 2 results" {
+            $results.count | Should -Be 2
+        }
+        It "Windows up time should be more than SQL Uptime" {
+            foreach ($result in $results) {
+                $result.SqlUptime | Should -BeLessThan $result.WindowsUpTime
             }
         }
     }
+
     Context "Properties should return expected types" {
-        $results = Get-DbaUptime -SqlInstance $script:instance1
-        foreach ($result in $results) {
-            It "SqlStartTime should be a DbaDateTime" {
-                $result.SqlStartTime  | Should BeOfType DbaDateTime
-            }
-            It "WindowsBootTime should be a DbaDateTime" {
-                $result.WindowsBootTime  | Should BeOfType DbaDateTime
-            }
+        BeforeAll {
+            $results = Get-DbaUptime -SqlInstance $script:instance1
+        }
+        It "SqlStartTime should be a DbaDateTime" {
+            $results.SqlStartTime | Should -BeOfType DbaDateTime
+        }
+        It "WindowsBootTime should be a DbaDateTime" {
+            $results.WindowsBootTime | Should -BeOfType DbaDateTime
         }
     }
 }

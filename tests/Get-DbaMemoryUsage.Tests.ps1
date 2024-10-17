@@ -1,38 +1,59 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaMemoryUsage" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'Credential', 'MemoryCounterRegex', 'PlanCounterRegex', 'BufferCounterRegex', 'SSASCounterRegex', 'SSISCounterRegex', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaMemoryUsage
+        }
+        It "Should have ComputerName as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[]
+        }
+        It "Should have Credential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
+        }
+        It "Should have MemoryCounterRegex as a parameter" {
+            $CommandUnderTest | Should -HaveParameter MemoryCounterRegex -Type String
+        }
+        It "Should have PlanCounterRegex as a parameter" {
+            $CommandUnderTest | Should -HaveParameter PlanCounterRegex -Type String
+        }
+        It "Should have BufferCounterRegex as a parameter" {
+            $CommandUnderTest | Should -HaveParameter BufferCounterRegex -Type String
+        }
+        It "Should have SSASCounterRegex as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SSASCounterRegex -Type String
+        }
+        It "Should have SSISCounterRegex as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SSISCounterRegex -Type String
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
-Describe "Get-DbaMemoryUsage Integration Test" -Tag "IntegrationTests" {
+
     Context "Command actually works" {
-        $results = Get-DbaMemoryUsage -ComputerName $script:instance1
+        BeforeAll {
+            $results = Get-DbaMemoryUsage -ComputerName $script:instance1
+            $resultsSimple = Get-DbaMemoryUsage -ComputerName $script:instance1
+        }
 
         It "returns results" {
-            $results.Count -gt 0 | Should Be $true
+            $results.Count | Should -BeGreaterThan 0
         }
+
         It "has the correct properties" {
             $result = $results[0]
-            $ExpectedProps = 'ComputerName,SqlInstance,CounterInstance,Counter,Pages,Memory'.Split(',')
-            ($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
+            $ExpectedProps = 'ComputerName', 'SqlInstance', 'CounterInstance', 'Counter', 'Pages', 'Memory'
+            $result.PSObject.Properties.Name | Should -Be $ExpectedProps
         }
 
-        $resultsSimple = Get-DbaMemoryUsage -ComputerName $script:instance1
-        It "returns results" {
-            $resultsSimple.Count -gt 0 | Should Be $true
+        It "returns results for simple query" {
+            $resultsSimple.Count | Should -BeGreaterThan 0
         }
     }
 }

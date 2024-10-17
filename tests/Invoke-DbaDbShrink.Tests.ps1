@@ -1,24 +1,65 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Invoke-DbaDbShrink Unit Tests" -Tag 'UnitTests' {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'AllUserDatabases', 'PercentFreeSpace', 'ShrinkMethod', 'FileType', 'StepSize', 'StatementTimeout', 'ExcludeIndexStats', 'ExcludeUpdateUsage', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Invoke-DbaDbShrink
+        }
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Not -Mandatory
+        }
+        It "Should have ExcludeDatabase parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Not -Mandatory
+        }
+        It "Should have AllUserDatabases parameter" {
+            $CommandUnderTest | Should -HaveParameter AllUserDatabases -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have PercentFreeSpace parameter" {
+            $CommandUnderTest | Should -HaveParameter PercentFreeSpace -Type Int32 -Not -Mandatory
+        }
+        It "Should have ShrinkMethod parameter" {
+            $CommandUnderTest | Should -HaveParameter ShrinkMethod -Type String -Not -Mandatory
+        }
+        It "Should have FileType parameter" {
+            $CommandUnderTest | Should -HaveParameter FileType -Type String -Not -Mandatory
+        }
+        It "Should have StepSize parameter" {
+            $CommandUnderTest | Should -HaveParameter StepSize -Type Int64 -Not -Mandatory
+        }
+        It "Should have StatementTimeout parameter" {
+            $CommandUnderTest | Should -HaveParameter StatementTimeout -Type Int32 -Not -Mandatory
+        }
+        It "Should have ExcludeIndexStats parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeIndexStats -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have ExcludeUpdateUsage parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeUpdateUsage -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe "Invoke-DbaDbShrink Integration Tests" -Tags "IntegrationTests" {
+    BeforeAll {
+        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $defaultPath = $server | Get-DbaDefaultPath
+    }
+
     Context "Verifying Database is shrunk" {
-        BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
-            $defaultPath = $server | Get-DbaDefaultPath
-        }
         BeforeEach {
             # Create Database with small size and grow it
             $db = New-Object Microsoft.SqlServer.Management.SMO.Database($server, "dbatoolsci_shrinktest")
@@ -55,6 +96,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $oldDataSize = $db.FileGroups[0].Files[0].Size
             $db.Checkpoint()
         }
+
         AfterEach {
             $db | Remove-DbaDatabase -Confirm:$false
         }
@@ -68,8 +110,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $db.RecalculateSpaceUsage()
             $db.FileGroups[0].Files[0].Refresh()
             $db.LogFiles[0].Refresh()
-            $db.FileGroups[0].Files[0].Size | Should Be $oldDataSize
-            $db.LogFiles[0].Size | Should BeLessThan $oldLogSize
+            $db.FileGroups[0].Files[0].Size | Should -Be $oldDataSize
+            $db.LogFiles[0].Size | Should -BeLessThan $oldLogSize
         }
 
         It "Shrinks just the data file(s) when FileType is Data" {
@@ -81,8 +123,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $db.RecalculateSpaceUsage()
             $db.FileGroups[0].Files[0].Refresh()
             $db.LogFiles[0].Refresh()
-            $db.FileGroups[0].Files[0].Size | Should BeLessThan $oldDataSize
-            $db.LogFiles[0].Size | Should Be $oldLogSize
+            $db.FileGroups[0].Files[0].Size | Should -BeLessThan $oldDataSize
+            $db.LogFiles[0].Size | Should -Be $oldLogSize
         }
 
         It "Shrinks the entire database when FileType is All" {
@@ -94,8 +136,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $db.RecalculateSpaceUsage()
             $db.FileGroups[0].Files[0].Refresh()
             $db.LogFiles[0].Refresh()
-            $db.LogFiles[0].Size | Should BeLessThan $oldLogSize
-            $db.FileGroups[0].Files[0].Size | Should BeLessThan $oldDataSize
+            $db.LogFiles[0].Size | Should -BeLessThan $oldLogSize
+            $db.FileGroups[0].Files[0].Size | Should -BeLessThan $oldDataSize
         }
 
         It "Shrinks just the data file(s) when FileType is Data and uses the StepSize" {
@@ -107,8 +149,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $db.RecalculateSpaceUsage()
             $db.FileGroups[0].Files[0].Refresh()
             $db.LogFiles[0].Refresh()
-            $db.FileGroups[0].Files[0].Size | Should BeLessThan $oldDataSize
-            $db.LogFiles[0].Size | Should Be $oldLogSize
+            $db.FileGroups[0].Files[0].Size | Should -BeLessThan $oldDataSize
+            $db.LogFiles[0].Size | Should -Be $oldLogSize
         }
     }
 }

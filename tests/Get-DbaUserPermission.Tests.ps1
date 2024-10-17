@@ -1,20 +1,48 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaUserPermission Unit Tests" -Tag 'UnitTests' {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'ExcludeSystemDatabase', 'IncludePublicGuest', 'IncludeSystemObjects', 'ExcludeSecurables', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaUserPermission
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[]
+        }
+        It "Should have ExcludeDatabase as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[]
+        }
+        It "Should have ExcludeSystemDatabase as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeSystemDatabase -Type Switch
+        }
+        It "Should have IncludePublicGuest as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter IncludePublicGuest -Type Switch
+        }
+        It "Should have IncludeSystemObjects as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter IncludeSystemObjects -Type Switch
+        }
+        It "Should have ExcludeSecurables as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeSecurables -Type Switch
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    Context "Command returns proper info" {
+Describe "Get-DbaUserPermission Integration Tests" -Tag "IntegrationTests" {
+    BeforeAll {
         $dbName = "dbatoolsci_UserPermission"
         $sql = @'
 create user alice without login;
@@ -26,41 +54,55 @@ exec sp_addrolemember 'userrole','bob';
 
         $db = New-DbaDatabase -SqlInstance $script:instance1 -Name $dbName
         $db.ExecuteNonQuery($sql)
+    }
 
-        $results = Get-DbaUserPermission -SqlInstance $script:instance1 -Database $dbName
+    AfterAll {
+        Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbName -Confirm:$false
+    }
 
-        $null = Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbName -Confirm:$false
-
-        It "returns results" {
-            $results.Count -gt 0 | Should Be $true
+    Context "Command returns proper info" {
+        BeforeAll {
+            $results = Get-DbaUserPermission -SqlInstance $script:instance1 -Database $dbName
         }
 
-        foreach ($result in $results) {
-            It "returns only $dbName or server results" {
-                $result.Object | Should -BeIn $dbName, 'SERVER'
+        It "returns results" {
+            $results.Count | Should -BeGreaterThan 0
+        }
+
+        It "returns only $dbName or server results" {
+            $results | ForEach-Object {
+                $_.Object | Should -BeIn $dbName, 'SERVER'
             }
-            if ($result.Object -eq $dbName -and $result.RoleSecurableClass -eq 'DATABASE') {
-                It "returns correct securable" {
-                    $result.Securable | Should Be $dbName
-                }
+        }
+
+        It "returns correct securable for database objects" {
+            $results | Where-Object { $_.Object -eq $dbName -and $_.RoleSecurableClass -eq 'DATABASE' } | ForEach-Object {
+                $_.Securable | Should -Be $dbName
             }
         }
     }
 
-    Context "Command do not return error when database as different collation" {
-        $dbName = "dbatoolsci_UserPermissionDiffCollation"
-        $dbCollation = "Latin1_General_CI_AI"
+    Context "Command does not return error when database has different collation" {
+        BeforeAll {
+            $dbNameDiffCollation = "dbatoolsci_UserPermissionDiffCollation"
+            $dbCollation = "Latin1_General_CI_AI"
 
-        $null = New-DbaDatabase -SqlInstance $script:instance1 -Name $dbName -Collation $dbCollation
+            New-DbaDatabase -SqlInstance $script:instance1 -Name $dbNameDiffCollation -Collation $dbCollation
+        }
 
-        $results = Get-DbaUserPermission -SqlInstance $script:instance1 -Database $dbName -WarningVariable warnvar 3> $null
+        AfterAll {
+            Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbNameDiffCollation -Confirm:$false
+        }
+
         It "Should not warn about collation conflict" {
-            $warnvar | Should -Be $null
-        }
-        It "returns results" {
-            $results.Count -gt 0 | Should Be $true
+            $warnVar = $null
+            $results = Get-DbaUserPermission -SqlInstance $script:instance1 -Database $dbNameDiffCollation -WarningVariable warnVar 3> $null
+            $warnVar | Should -BeNullOrEmpty
         }
 
-        $null = Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbName -Confirm:$false
+        It "returns results" {
+            $results = Get-DbaUserPermission -SqlInstance $script:instance1 -Database $dbNameDiffCollation
+            $results.Count | Should -BeGreaterThan 0
+        }
     }
 }

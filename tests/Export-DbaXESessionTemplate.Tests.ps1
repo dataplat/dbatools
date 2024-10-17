@@ -1,31 +1,51 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Export-DbaXESessionTemplate" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Session', 'Path', 'FilePath', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Export-DbaXESessionTemplate
+        }
+        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Session as a non-mandatory parameter of type Object[]" {
+            $CommandUnderTest | Should -HaveParameter Session -Type Object[] -Not -Mandatory
+        }
+        It "Should have Path as a non-mandatory parameter of type String" {
+            $CommandUnderTest | Should -HaveParameter Path -Type String -Not -Mandatory
+        }
+        It "Should have FilePath as a non-mandatory parameter of type String" {
+            $CommandUnderTest | Should -HaveParameter FilePath -Type String -Not -Mandatory
+        }
+        It "Should have InputObject as a non-mandatory parameter of type Session[]" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Session[] -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    BeforeAll {
-        $null = Get-DbaXESession -SqlInstance $script:instance2 -Session 'Profiler TSQL Duration' | Remove-DbaXESession
-    }
-    AfterAll {
-        $null = Get-DbaXESession -SqlInstance $script:instance2 -Session 'Profiler TSQL Duration' | Remove-DbaXESession
-        Remove-Item -Path 'C:\windows\temp\Profiler TSQL Duration.xml' -ErrorAction SilentlyContinue
-    }
-    Context "Test Importing Session Template" {
-        $session = Import-DbaXESessionTemplate -SqlInstance $script:instance2 -Template 'Profiler TSQL Duration'
-        $results = $session | Export-DbaXESessionTemplate -Path C:\windows\temp
-        It "session exports to disk" {
-            $results.Name | Should Be 'Profiler TSQL Duration.xml'
+    Context "Integration Tests" {
+        BeforeDiscovery {
+            . "$PSScriptRoot\constants.ps1"
+        }
+
+        BeforeAll {
+            $null = Get-DbaXESession -SqlInstance $script:instance2 -Session 'Profiler TSQL Duration' | Remove-DbaXESession
+        }
+
+        AfterAll {
+            $null = Get-DbaXESession -SqlInstance $script:instance2 -Session 'Profiler TSQL Duration' | Remove-DbaXESession
+            Remove-Item -Path 'C:\windows\temp\Profiler TSQL Duration.xml' -ErrorAction SilentlyContinue
+        }
+
+        It "Exports session to disk" {
+            $session = Import-DbaXESessionTemplate -SqlInstance $script:instance2 -Template 'Profiler TSQL Duration'
+            $results = $session | Export-DbaXESessionTemplate -Path C:\windows\temp
+            $results.Name | Should -Be 'Profiler TSQL Duration.xml'
         }
     }
 }

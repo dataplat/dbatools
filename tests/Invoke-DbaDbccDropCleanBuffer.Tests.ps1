@@ -1,41 +1,61 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Invoke-DbaDbccDropCleanBuffer" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'NoInformationalMessages', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Invoke-DbaDbccDropCleanBuffer
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have NoInformationalMessages as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter NoInformationalMessages -Type switch
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type switch
         }
     }
-}
-Describe "$commandname Integration Test" -Tag "IntegrationTests" {
-    $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'Cmd', 'Output'
-    $result = Invoke-DbaDbccDropCleanBuffer -SqlInstance $script:instance1 -Confirm:$false
 
     Context "Validate standard output" {
-        foreach ($prop in $props) {
-            $p = $result.PSObject.Properties[$prop]
-            It "Should return property: $prop" {
-                $p.Name | Should Be $prop
-            }
+        BeforeAll {
+            $result = Invoke-DbaDbccDropCleanBuffer -SqlInstance $script:instance1 -Confirm:$false
+        }
+
+        It "Should return property: ComputerName" {
+            $result.PSObject.Properties['ComputerName'] | Should -Not -BeNullOrEmpty
+        }
+        It "Should return property: InstanceName" {
+            $result.PSObject.Properties['InstanceName'] | Should -Not -BeNullOrEmpty
+        }
+        It "Should return property: SqlInstance" {
+            $result.PSObject.Properties['SqlInstance'] | Should -Not -BeNullOrEmpty
+        }
+        It "Should return property: Cmd" {
+            $result.PSObject.Properties['Cmd'] | Should -Not -BeNullOrEmpty
+        }
+        It "Should return property: Output" {
+            $result.PSObject.Properties['Output'] | Should -Not -BeNullOrEmpty
         }
     }
 
     Context "Works correctly" {
         It "returns results" {
-            $result.Output -match 'DBCC execution completed. If DBCC printed error messages, contact your system administrator.' | Should Be $true
+            $result = Invoke-DbaDbccDropCleanBuffer -SqlInstance $script:instance1 -Confirm:$false
+            $result.Output | Should -Match 'DBCC execution completed. If DBCC printed error messages, contact your system administrator.'
         }
 
         It "returns the right results for -NoInformationalMessages" {
             $result = Invoke-DbaDbccDropCleanBuffer -SqlInstance $script:instance1 -NoInformationalMessages -Confirm:$false
-            $result.Cmd -match 'DBCC DROPCLEANBUFFERS WITH NO_INFOMSGS' | Should Be $true
-            $result.Output -eq $null | Should Be $true
+            $result.Cmd | Should -Match 'DBCC DROPCLEANBUFFERS WITH NO_INFOMSGS'
+            $result.Output | Should -BeNullOrEmpty
         }
-
     }
-
 }

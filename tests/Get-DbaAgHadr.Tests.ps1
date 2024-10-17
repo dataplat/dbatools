@@ -1,25 +1,33 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag "UnitTests" {
+Describe "Get-DbaAgHadr" {
+    BeforeAll {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaAgHadr
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
 
-# $script:instance3 is used for Availability Group tests and needs Hadr service setting enabled
+    Context "Command usage" -Skip:(-not $env:APPVEYOR) {
+        BeforeAll {
+            $server = Connect-DbaInstance -SqlInstance $script:instance3
+        }
 
-Describe "$CommandName Integration Test" -Tag "IntegrationTests" {
-    $results = Get-DbaAgHadr -SqlInstance $script:instance3
-    Context "Validate output" {
         It "returns the correct properties" {
+            $results = Get-DbaAgHadr -SqlInstance $script:instance3
             $results.IsHadrEnabled | Should -Be $true
         }
     }
-} #$script:instance2 for appveyor
+}

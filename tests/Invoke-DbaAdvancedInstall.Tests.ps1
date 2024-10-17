@@ -1,55 +1,87 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Invoke-DbaAdvancedInstall" {
     BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+
         # Prevent the functions from executing dangerous stuff and getting right responses where needed
-        Mock -CommandName Invoke-Program -MockWith { [pscustomobject]@{ Successful = $true; ExitCode = [uint32[]]0 } } -ModuleName dbatools
-        Mock -CommandName Test-PendingReboot -MockWith { $false } -ModuleName dbatools
-        Mock -CommandName Test-ElevationRequirement -MockWith { $null } -ModuleName dbatools
-        Mock -CommandName Restart-Computer -MockWith { $null } -ModuleName dbatools
-        Mock -CommandName Register-RemoteSessionConfiguration -ModuleName dbatools -MockWith {
+        Mock -CommandName Invoke-Program -MockWith { [pscustomobject]@{ Successful = $true; ExitCode = [uint32[]]0 } } -ModuleName $ModuleName
+        Mock -CommandName Test-PendingReboot -MockWith { $false } -ModuleName $ModuleName
+        Mock -CommandName Test-ElevationRequirement -MockWith { $null } -ModuleName $ModuleName
+        Mock -CommandName Restart-Computer -MockWith { $null } -ModuleName $ModuleName
+        Mock -CommandName Register-RemoteSessionConfiguration -ModuleName $ModuleName -MockWith {
             [pscustomobject]@{ 'Name' = 'dbatoolsInstallSqlServerUpdate' ; Successful = $true ; Status = 'Dummy' }
         }
-        Mock -CommandName Unregister-RemoteSessionConfiguration -ModuleName dbatools -MockWith {
+        Mock -CommandName Unregister-RemoteSessionConfiguration -ModuleName $ModuleName -MockWith {
             [pscustomobject]@{ 'Name' = 'dbatoolsInstallSqlServerUpdate' ; Successful = $true ; Status = 'Dummy' }
         }
-        Mock -CommandName Set-DbaPrivilege -ModuleName dbatools -MockWith {}
-        Mock -CommandName Set-DbaTcpPort -ModuleName dbatools -MockWith {}
-        Mock -CommandName Restart-DbaService -ModuleName dbatools -MockWith {}
-        Mock -CommandName Get-DbaCmObject -ModuleName dbatools -MockWith { [pscustomobject]@{NumberOfCores = 24} } -ParameterFilter { $ClassName -eq 'Win32_processor' }
+        Mock -CommandName Set-DbaPrivilege -ModuleName $ModuleName -MockWith {}
+        Mock -CommandName Set-DbaTcpPort -ModuleName $ModuleName -MockWith {}
+        Mock -CommandName Restart-DbaService -ModuleName $ModuleName -MockWith {}
+        Mock -CommandName Get-DbaCmObject -ModuleName $ModuleName -MockWith { [pscustomobject]@{NumberOfCores = 24} } -ParameterFilter { $ClassName -eq 'Win32_processor' }
         # mock searching for setup, proper file should always it find
         Mock -CommandName Find-SqlInstanceSetup -MockWith {
             Get-ChildItem $Path -Filter "dummy.exe" -ErrorAction Stop | Select-Object -ExpandProperty FullName -First 1
-        } -ModuleName dbatools
+        } -ModuleName $ModuleName
         $null = New-Item -ItemType File -Path TestDrive:\dummy.exe -Force
     }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-ChildItem function:\$CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = @(
-            'ComputerName',
-            'Version',
-            'InstanceName',
-            'SaCredential',
-            'Credential',
-            'Authentication',
-            'ConfigurationPath',
-            'Configuration',
-            'InstallationPath',
-            'Port',
-            'SaveConfiguration',
-            'PerformVolumeMaintenanceTasks',
-            'Restart',
-            'EnableException',
-            'NoPendingRenameCheck',
-            'ArgumentList'
-        )
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Invoke-DbaAdvancedInstall
+        }
+        It "Should have ComputerName as a non-mandatory String parameter" {
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type String -Not -Mandatory
+        }
+        It "Should have InstanceName as a non-mandatory String parameter" {
+            $CommandUnderTest | Should -HaveParameter InstanceName -Type String -Not -Mandatory
+        }
+        It "Should have Port as a non-mandatory Nullable`1 parameter" {
+            $CommandUnderTest | Should -HaveParameter Port -Type ([Nullable`1]) -Not -Mandatory
+        }
+        It "Should have InstallationPath as a non-mandatory String parameter" {
+            $CommandUnderTest | Should -HaveParameter InstallationPath -Type String -Not -Mandatory
+        }
+        It "Should have ConfigurationPath as a non-mandatory String parameter" {
+            $CommandUnderTest | Should -HaveParameter ConfigurationPath -Type String -Not -Mandatory
+        }
+        It "Should have ArgumentList as a non-mandatory String[] parameter" {
+            $CommandUnderTest | Should -HaveParameter ArgumentList -Type String[] -Not -Mandatory
+        }
+        It "Should have Version as a non-mandatory Version parameter" {
+            $CommandUnderTest | Should -HaveParameter Version -Type Version -Not -Mandatory
+        }
+        It "Should have Configuration as a non-mandatory Hashtable parameter" {
+            $CommandUnderTest | Should -HaveParameter Configuration -Type Hashtable -Not -Mandatory
+        }
+        It "Should have Restart as a non-mandatory Boolean parameter" {
+            $CommandUnderTest | Should -HaveParameter Restart -Type Boolean -Not -Mandatory
+        }
+        It "Should have PerformVolumeMaintenanceTasks as a non-mandatory Boolean parameter" {
+            $CommandUnderTest | Should -HaveParameter PerformVolumeMaintenanceTasks -Type Boolean -Not -Mandatory
+        }
+        It "Should have SaveConfiguration as a non-mandatory String parameter" {
+            $CommandUnderTest | Should -HaveParameter SaveConfiguration -Type String -Not -Mandatory
+        }
+        It "Should have Authentication as a non-mandatory String parameter" {
+            $CommandUnderTest | Should -HaveParameter Authentication -Type String -Not -Mandatory
+        }
+        It "Should have Credential as a non-mandatory PSCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have SaCredential as a non-mandatory PSCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SaCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have NoPendingRenameCheck as a non-mandatory SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter NoPendingRenameCheck -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
+
     Context "Validate installs of each version" {
         BeforeAll {
             $cred = [pscredential]::new('foo', (ConvertTo-SecureString 'bar' -Force -AsPlainText))
@@ -62,7 +94,9 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                 [version]'14.0'
             )
         }
-        foreach ($version in $versions) {
+
+        It "Should install SQL <_.ToString()>" -ForEach $versions {
+            $version = $_
             $mainNode = if ($version.Major -ne 10) { "OPTIONS" } else { "SQLSERVER2008" }
             # Create a dummy Configuration.ini
             @(
@@ -112,24 +146,24 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                 SaCredential                  = $cred
                 PerformVolumeMaintenanceTasks = $true
             }
-            It "Should install SQL $version" {
-                $result = Invoke-DbaAdvancedInstall @splat -EnableException
-                Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
-                Assert-MockCalled -CommandName Test-PendingReboot -Exactly 2 -Scope It -ModuleName dbatools
-                Assert-MockCalled -CommandName Set-DbaPrivilege -Exactly 1 -Scope It -ModuleName dbatools
-                Assert-MockCalled -CommandName Set-DbaTcpPort -Exactly 1 -Scope It -ModuleName dbatools
+            $result = Invoke-DbaAdvancedInstall @splat -EnableException
 
-                $result | Should -Not -BeNullOrEmpty
-                $result.ComputerName | Should -BeLike $env:COMPUTERNAME*
-                $result.InstanceName | Should -Be 'foo'
-                $result.Version | Should -Be $version
-                $result.SACredential.GetNetworkCredential().Password | Should -Be $cred.GetNetworkCredential().Password
-                $result.Port | Should -Be 1337
-                $result.Successful | Should -Be $true
-                $result.Restarted | Should -Be $false
-                $result.Installer | Should -Be 'TestDrive:\dummy.exe'
-                $result.Notes | Should -BeNullOrEmpty
-            }
+            Should -InvokeVerifiable
+            Should -Invoke -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName $ModuleName
+            Should -Invoke -CommandName Test-PendingReboot -Exactly 2 -Scope It -ModuleName $ModuleName
+            Should -Invoke -CommandName Set-DbaPrivilege -Exactly 1 -Scope It -ModuleName $ModuleName
+            Should -Invoke -CommandName Set-DbaTcpPort -Exactly 1 -Scope It -ModuleName $ModuleName
+
+            $result | Should -Not -BeNullOrEmpty
+            $result.ComputerName | Should -BeLike "$env:COMPUTERNAME*"
+            $result.InstanceName | Should -Be 'foo'
+            $result.Version | Should -Be $version
+            $result.SACredential.GetNetworkCredential().Password | Should -Be $cred.GetNetworkCredential().Password
+            $result.Port | Should -Be 1337
+            $result.Successful | Should -Be $true
+            $result.Restarted | Should -Be $false
+            $result.Installer | Should -Be 'TestDrive:\dummy.exe'
+            $result.Notes | Should -BeNullOrEmpty
         }
     }
 }

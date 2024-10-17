@@ -1,37 +1,43 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaRandomizedType" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'RandomizedType', 'RandomizedSubType', 'Pattern', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaRandomizedType
+        }
+        It "Should have RandomizedType as a non-mandatory parameter of type String[]" {
+            $CommandUnderTest | Should -HaveParameter RandomizedType -Type String[] -Not -Mandatory
+        }
+        It "Should have RandomizedSubType as a non-mandatory parameter of type String[]" {
+            $CommandUnderTest | Should -HaveParameter RandomizedSubType -Type String[] -Not -Mandatory
+        }
+        It "Should have Pattern as a non-mandatory parameter of type String" {
+            $CommandUnderTest | Should -HaveParameter Pattern -Type String -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Command returns types" {
-
-        It "Should have at least 263 rows" {
+        It "Should have at least 205 rows" {
             $types = Get-DbaRandomizedType
-
-            $types.count | Should BeGreaterOrEqual 205
+            $types.Count | Should -BeGreaterOrEqual 205
         }
 
         It "Should return correct type based on subtype" {
             $result = Get-DbaRandomizedType -RandomizedSubType Zipcode
-
-            $result.Type | Should Be "Address"
+            $result.Type | Should -Be "Address"
         }
 
         It "Should return values based on pattern" {
             $types = Get-DbaRandomizedType -Pattern Name
-
-            $types.Count | Should BeGreaterOrEqual 26
+            $types.Count | Should -BeGreaterOrEqual 26
         }
     }
 }

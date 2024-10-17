@@ -1,21 +1,35 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaDbTrigger Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaDbTrigger
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Not -Mandatory
+        }
+        It "Should have ExcludeDatabase as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Not -Mandatory
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[] -Not -Mandatory
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "Get-DbaDbTrigger Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        #trigger adapted from https://docs.microsoft.com/en-us/sql/t-sql/statements/create-trigger-transact-sql?view=sql-server-2017
+        . "$PSScriptRoot\constants.ps1"
+        $server = Connect-DbaInstance -SqlInstance $script:instance2
         $trigger = @"
 CREATE TRIGGER dbatoolsci_safety
     ON DATABASE
@@ -26,9 +40,9 @@ CREATE TRIGGER dbatoolsci_safety
     RAISERROR ('You must disable Trigger "dbatoolsci_safety" to drop synonyms!',10, 1)
     ROLLBACK
 "@
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
         $server.Query("$trigger")
     }
+
     AfterAll {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $trigger = "DROP TRIGGER dbatoolsci_safety ON DATABASE;"
@@ -36,33 +50,48 @@ CREATE TRIGGER dbatoolsci_safety
     }
 
     Context "Gets Database Trigger" {
-        $results = Get-DbaDbTrigger -SqlInstance $script:instance2 | Where-Object {$_.name -eq "dbatoolsci_safety"}
+        BeforeAll {
+            $results = Get-DbaDbTrigger -SqlInstance $script:instance2 | Where-Object {$_.name -eq "dbatoolsci_safety"}
+        }
+
         It "Gets results" {
-            $results | Should Not Be $null
+            $results | Should -Not -BeNullOrEmpty
         }
+
         It "Should be enabled" {
-            $results.isenabled | Should Be $true
+            $results.isenabled | Should -BeTrue
         }
+
         It "Should have text of Trigger" {
-            $results.text | Should BeLike '*FOR DROP_SYNONYM*'
+            $results.text | Should -BeLike '*FOR DROP_SYNONYM*'
         }
     }
+
     Context "Gets Database Trigger when using -Database" {
-        $results = Get-DbaDbTrigger -SqlInstance $script:instance2 -Database Master
+        BeforeAll {
+            $results = Get-DbaDbTrigger -SqlInstance $script:instance2 -Database Master
+        }
+
         It "Gets results" {
-            $results | Should Not Be $null
+            $results | Should -Not -BeNullOrEmpty
         }
+
         It "Should be enabled" {
-            $results.isenabled | Should Be $true
+            $results.isenabled | Should -BeTrue
         }
+
         It "Should have text of Trigger" {
-            $results.text | Should BeLike '*FOR DROP_SYNONYM*'
+            $results.text | Should -BeLike '*FOR DROP_SYNONYM*'
         }
     }
+
     Context "Gets no Database Trigger when using -ExcludeDatabase" {
-        $results = Get-DbaDbTrigger -SqlInstance $script:instance2 -ExcludeDatabase Master
+        BeforeAll {
+            $results = Get-DbaDbTrigger -SqlInstance $script:instance2 -ExcludeDatabase Master
+        }
+
         It "Gets no results" {
-            $results | Should Be $null
+            $results | Should -BeNullOrEmpty
         }
     }
 }

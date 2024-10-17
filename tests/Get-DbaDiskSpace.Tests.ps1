@@ -1,29 +1,49 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaDiskSpace" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'Credential', 'Unit', 'SqlCredential', 'ExcludeDrive', 'CheckFragmentation', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaDiskSpace
+        }
+        It "Should have ComputerName as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[]
+        }
+        It "Should have Credential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
+        }
+        It "Should have Unit as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Unit -Type String
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have ExcludeDrive as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDrive -Type String[]
+        }
+        It "Should have CheckFragmentation as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter CheckFragmentation -Type Switch
+        }
+        It "Should have Force as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Disks are properly retrieved" {
-        $results = Get-DbaDiskSpace -ComputerName $env:COMPUTERNAME
-        It "returns at least the system drive" {
-            $results.Name -contains "$env:SystemDrive\" | Should Be $true
+        BeforeAll {
+            $results = Get-DbaDiskSpace -ComputerName $env:COMPUTERNAME
+            $systemDriveResults = $results | Where-Object Name -eq "$env:SystemDrive\"
         }
 
-        $results = Get-DbaDiskSpace -ComputerName $env:COMPUTERNAME | Where-Object Name -eq "$env:SystemDrive\"
+        It "returns at least the system drive" {
+            $results.Name | Should -Contain "$env:SystemDrive\"
+        }
+
         It "has some valid properties" {
-            $results.BlockSize -gt 0 | Should Be $true
-            $results.SizeInGB -gt 0 | Should Be $true
+            $systemDriveResults.BlockSize | Should -BeGreaterThan 0
+            $systemDriveResults.SizeInGB | Should -BeGreaterThan 0
         }
     }
 }

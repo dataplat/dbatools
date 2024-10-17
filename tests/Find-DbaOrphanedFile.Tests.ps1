@@ -1,19 +1,36 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Find-DbaOrphanedFile" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Path', 'FileType', 'LocalOnly', 'RemoteOnly', 'Recurse', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Find-DbaOrphanedFile
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Path as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Path -Type String[]
+        }
+        It "Should have FileType as a parameter" {
+            $CommandUnderTest | Should -HaveParameter FileType -Type String[]
+        }
+        It "Should have LocalOnly as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter LocalOnly -Type Switch
+        }
+        It "Should have RemoteOnly as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter RemoteOnly -Type Switch
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+        }
+        It "Should have Recurse as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter Recurse -Type Switch
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Orphaned files are correctly identified" {
         BeforeAll {
             $dbname = "dbatoolsci_orphanedfile_$(Get-Random)"
@@ -43,10 +60,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
             $result = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname
             if ($result.count -eq 0) {
-                It "has failed setup" {
-                    Set-TestInconclusive -message "Setup failed"
-                }
-                throw "has failed setup"
+                Set-ItResult -Inconclusive -Because "Setup failed"
             }
 
             $backupFile = Backup-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Path $tmpBackupPath -Type Full
@@ -56,6 +70,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $tmpBackupPath3 = Join-Path (Get-SqlDefaultPaths $server data) "dbatoolsci_$(Get-Random)"
             $null = New-Item -Path $tmpBackupPath3 -type Container
         }
+
         AfterAll {
             Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname, $dbname2 | Remove-DbaDatabase -Confirm:$false
             Remove-Item $tmpdir -Recurse -Force -ErrorAction SilentlyContinue
@@ -63,6 +78,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             Remove-Item "C:\$($backupFile.BackupFile)" -Force -ErrorAction SilentlyContinue
             Remove-Item $tmpBackupPath3 -Recurse -Force -ErrorAction SilentlyContinue
         }
+
         It "Has the correct properties" {
             $null = Detach-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Force
             $results = Find-DbaOrphanedFile -SqlInstance $script:instance2
@@ -71,7 +87,6 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Filename,RemoteFilename,Server'.Split(',')
             ($results[0].PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
         }
-
 
         It "Finds two files" {
             $results = Find-DbaOrphanedFile -SqlInstance $script:instance2
@@ -84,6 +99,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results = Find-DbaOrphanedFile -SqlInstance $script:instance2
             $results.Filename.Count | Should -Be 0
         }
+
         It "works with -Recurse" {
             "a" | Out-File (Join-Path $tmpdir "out.mdf")
             $results = Find-DbaOrphanedFile -SqlInstance $script:instance2 -Path $tmpdir
@@ -106,6 +122,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results = Find-DbaOrphanedFile -SqlInstance $script:instance2 -Recurse
             $results.Filename | Should -Be "$tmpBackupPath3\out.mdf"
         }
+
         It "works with -Path" {
             $results = Find-DbaOrphanedFile -SqlInstance $script:instance2 -Path "C:" -FileType bak
             $results.Filename | Should -Contain "C:\$($backupFile.BackupFile)"

@@ -1,19 +1,64 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Install-DbaMaintenanceSolution" {
+    BeforeAll {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'BackupLocation', 'CleanupTime', 'OutputFileDirectory', 'ReplaceExisting', 'LogToTable', 'Solution', 'InstallJobs', 'LocalFile', 'Force', 'InstallParallel', 'EnableException', 'AutoScheduleJobs', 'StartTime'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Install-DbaMaintenanceSolution
+        }
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Database parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String
+        }
+        It "Should have BackupLocation parameter" {
+            $CommandUnderTest | Should -HaveParameter BackupLocation -Type String
+        }
+        It "Should have CleanupTime parameter" {
+            $CommandUnderTest | Should -HaveParameter CleanupTime -Type Int32
+        }
+        It "Should have OutputFileDirectory parameter" {
+            $CommandUnderTest | Should -HaveParameter OutputFileDirectory -Type String
+        }
+        It "Should have ReplaceExisting parameter" {
+            $CommandUnderTest | Should -HaveParameter ReplaceExisting -Type SwitchParameter
+        }
+        It "Should have LogToTable parameter" {
+            $CommandUnderTest | Should -HaveParameter LogToTable -Type SwitchParameter
+        }
+        It "Should have Solution parameter" {
+            $CommandUnderTest | Should -HaveParameter Solution -Type String[]
+        }
+        It "Should have InstallJobs parameter" {
+            $CommandUnderTest | Should -HaveParameter InstallJobs -Type SwitchParameter
+        }
+        It "Should have AutoScheduleJobs parameter" {
+            $CommandUnderTest | Should -HaveParameter AutoScheduleJobs -Type String[]
+        }
+        It "Should have StartTime parameter" {
+            $CommandUnderTest | Should -HaveParameter StartTime -Type String
+        }
+        It "Should have LocalFile parameter" {
+            $CommandUnderTest | Should -HaveParameter LocalFile -Type String
+        }
+        It "Should have Force parameter" {
+            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter
+        }
+        It "Should have InstallParallel parameter" {
+            $CommandUnderTest | Should -HaveParameter InstallParallel -Type SwitchParameter
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Limited testing of Maintenance Solution installer" {
         BeforeAll {
             $server = Connect-DbaInstance -SqlInstance $script:instance2
@@ -23,12 +68,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $server.Databases['tempdb'].Query("DROP TABLE CommandLog")
             Invoke-DbaQuery -SqlInstance $script:instance3 -Database tempdb -Query "drop procedure CommandExecute; drop procedure DatabaseBackup; drop procedure DatabaseIntegrityCheck; drop procedure IndexOptimize;"
         }
-        It "does not overwrite existing " {
+        It "does not overwrite existing" {
+            $warn = $null
             $results = Install-DbaMaintenanceSolution -SqlInstance $script:instance2 -Database tempdb -WarningVariable warn -WarningAction SilentlyContinue
-            $warn -match "already exists" | Should Be $true
+            $warn | Should -Match "already exists"
         }
 
-        It "Continues the installation on other servers " {
+        It "Continues the installation on other servers" {
             $results2 = Install-DbaMaintenanceSolution -SqlInstance $script:instance2, $script:instance3 -Database tempdb
             $sproc = Get-DbaDbModule -SqlInstance $script:instance3 -Database tempdb | Where-Object { $_.Name -eq "CommandExecute" }
             $sproc | Should -Not -BeNullOrEmpty

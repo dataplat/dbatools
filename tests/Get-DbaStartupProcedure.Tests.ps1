@@ -1,51 +1,54 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaStartupProcedure" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'StartupProcedure', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaStartupProcedure
         }
-    }
-}
-Describe "$commandname Integration Test" -Tag "IntegrationTests" {
-    BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $random = Get-Random
-        $startupProc = "dbo.StartUpProc$random"
-        $dbname = 'master'
-
-        $null = $server.Query("CREATE PROCEDURE $startupProc AS Select 1", $dbname)
-        $null = $server.Query("EXEC sp_procoption N'$startupProc', 'startup', '1'", $dbname)
-    }
-    AfterAll {
-        $null = $server.Query("DROP PROCEDURE $startupProc", $dbname)
-    }
-
-    Context "Validate returns correct output" {
-        $result = Get-DbaStartupProcedure -SqlInstance $script:instance2
-        It "returns correct results" {
-            $result.Schema -eq 'dbo' | Should Be $true
-            $result.Name -eq "StartUpProc$random" | Should Be $true
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have StartupProcedure as a parameter" {
+            $CommandUnderTest | Should -HaveParameter StartupProcedure -Type String[]
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
 
-    Context "Validate returns correct output for StartupProcedure parameter " {
-        $result = Get-DbaStartupProcedure -SqlInstance $script:instance2 -StartupProcedure $startupProc
-        It "returns correct results" {
-            $result.Schema -eq 'dbo' | Should Be $true
-            $result.Name -eq "StartUpProc$random" | Should Be $true
-        }
-    }
+    Context "Command usage" {
+        BeforeAll {
+            . "$PSScriptRoot\constants.ps1"
+            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $random = Get-Random
+            $startupProc = "dbo.StartUpProc$random"
+            $dbname = 'master'
 
-    Context "Validate returns correct output for incorrect StartupProcedure parameter " {
-        $result = Get-DbaStartupProcedure -SqlInstance $script:instance2 -StartupProcedure 'Not.Here'
+            $null = $server.Query("CREATE PROCEDURE $startupProc AS Select 1", $dbname)
+            $null = $server.Query("EXEC sp_procoption N'$startupProc', 'startup', '1'", $dbname)
+        }
+        AfterAll {
+            $null = $server.Query("DROP PROCEDURE $startupProc", $dbname)
+        }
+
         It "returns correct results" {
-            $null -eq $result | Should Be $true
+            $result = Get-DbaStartupProcedure -SqlInstance $script:instance2
+            $result.Schema | Should -Be 'dbo'
+            $result.Name | Should -Be "StartUpProc$random"
+        }
+
+        It "returns correct results for StartupProcedure parameter" {
+            $result = Get-DbaStartupProcedure -SqlInstance $script:instance2 -StartupProcedure $startupProc
+            $result.Schema | Should -Be 'dbo'
+            $result.Name | Should -Be "StartUpProc$random"
+        }
+
+        It "returns null for incorrect StartupProcedure parameter" {
+            $result = Get-DbaStartupProcedure -SqlInstance $script:instance2 -StartupProcedure 'Not.Here'
+            $result | Should -BeNullOrEmpty
         }
     }
 }

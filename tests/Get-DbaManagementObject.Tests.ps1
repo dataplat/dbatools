@@ -1,36 +1,48 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaManagementObject" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'Credential', 'VersionNumber', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaManagementObject
+        }
+        It "Should have ComputerName as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[]
+        }
+        It "Should have Credential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
+        }
+        It "Should have VersionNumber as a parameter" {
+            $CommandUnderTest | Should -HaveParameter VersionNumber -Type Int32
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
-Describe "Get-DbaManagementObject Integration Test" -Tag "IntegrationTests" {
-    $results = Get-DbaManagementObject -ComputerName $env:COMPUTERNAME
 
-    It "returns results" {
-        $results | Should -Not -BeNullOrEmpty
-    }
-    It "has the correct properties" {
-        $result = $results[0]
-        $ExpectedProps = 'ComputerName,Version,Loaded,LoadTemplate'.Split(',')
-        ($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
-    }
+    Context "Get-DbaManagementObject Integration Test" {
+        BeforeAll {
+            $results = Get-DbaManagementObject -ComputerName $env:COMPUTERNAME
+        }
 
-    $results = Get-DbaManagementObject -ComputerName $env:COMPUTERNAME -VersionNumber 16
-    It "Returns the version specified" {
-        $results | Should Not Be $null
+        It "returns results" {
+            $results | Should -Not -BeNullOrEmpty
+        }
+
+        It "has the correct properties" {
+            $result = $results[0]
+            $ExpectedProps = 'ComputerName', 'Version', 'Loaded', 'LoadTemplate'
+            $result.PSObject.Properties.Name | Should -Be $ExpectedProps
+        }
+
+        It "Returns the version specified" {
+            $versionResults = Get-DbaManagementObject -ComputerName $env:COMPUTERNAME -VersionNumber 16
+            $versionResults | Should -Not -BeNullOrEmpty
+        }
     }
 }

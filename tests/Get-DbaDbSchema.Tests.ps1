@@ -1,19 +1,47 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaDbSchema Unit Tests" -Tag 'UnitTests' {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Schema', 'SchemaOwner', 'IncludeSystemDatabases', 'IncludeSystemSchemas', 'InputObject', 'EnableException'
-        It "Should only contain our specific parameters" {
-            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaDbSchema
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String[]
+        }
+        It "Should have Schema as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Schema -Type String[]
+        }
+        It "Should have SchemaOwner as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SchemaOwner -Type String[]
+        }
+        It "Should have IncludeSystemDatabases as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter IncludeSystemDatabases -Type Switch
+        }
+        It "Should have IncludeSystemSchemas as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter IncludeSystemSchemas -Type Switch
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[]
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
-
+Describe "Get-DbaDbSchema Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $random = Get-Random
         $server1 = Connect-DbaInstance -SqlInstance $script:instance1
@@ -46,26 +74,25 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "commands work as expected" {
-
         It "get all schemas from all databases including system dbs and schemas" {
             $schemas = Get-DbaDbSchema -SqlInstance $server1 -IncludeSystemDatabases -IncludeSystemSchemas
             $schemas.Count | Should -BeGreaterThan 1
-            $schemas.Parent.Name | Should -Contain master
-            $schemas.Parent.Name | Should -Contain msdb
-            $schemas.Parent.Name | Should -Contain model
-            $schemas.Parent.Name | Should -Contain tempdb
-            $schemas.Name | Should -Contain dbo
+            $schemas.Parent.Name | Should -Contain 'master'
+            $schemas.Parent.Name | Should -Contain 'msdb'
+            $schemas.Parent.Name | Should -Contain 'model'
+            $schemas.Parent.Name | Should -Contain 'tempdb'
+            $schemas.Name | Should -Contain 'dbo'
             $schemas.Name | Should -Contain $schemaName
         }
 
         It "get all schemas from user databases including system schemas" {
             $schemas = Get-DbaDbSchema -SqlInstance $server1 -IncludeSystemSchemas
             $schemas.Count | Should -BeGreaterThan 1
-            $schemas.Parent.Name | Should -Not -Contain master
-            $schemas.Parent.Name | Should -Not -Contain msdb
-            $schemas.Parent.Name | Should -Not -Contain model
-            $schemas.Parent.Name | Should -Not -Contain tempdb
-            $schemas.Name | Should -Contain dbo
+            $schemas.Parent.Name | Should -Not -Contain 'master'
+            $schemas.Parent.Name | Should -Not -Contain 'msdb'
+            $schemas.Parent.Name | Should -Not -Contain 'model'
+            $schemas.Parent.Name | Should -Not -Contain 'tempdb'
+            $schemas.Name | Should -Contain 'dbo'
             $schemas.Name | Should -Contain $schemaName
         }
 
@@ -87,7 +114,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "get the dbo schema" {
             $schemas = Get-DbaDbSchema -SqlInstance $server1 -Database $newDbName -Schema dbo -IncludeSystemSchemas
             $schemas.Count | Should -Be 1
-            $schemas.Name | Should -Be dbo
+            $schemas.Name | Should -Be 'dbo'
         }
 
         It "get schemas by owner from a user database" {

@@ -1,19 +1,48 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tags "UnitTests" {
+Describe "Get-DbaDbRoleMember Unit Tests" -Tag "UnitTests" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Role', 'ExcludeRole', 'ExcludeFixedRole', 'IncludeSystemUser', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaDbRoleMember
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Not -Mandatory
+        }
+        It "Should have ExcludeDatabase as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type String[] -Not -Mandatory
+        }
+        It "Should have Role as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Role -Type String[] -Not -Mandatory
+        }
+        It "Should have ExcludeRole as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeRole -Type String[] -Not -Mandatory
+        }
+        It "Should have ExcludeFixedRole as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeFixedRole -Type Switch -Not -Mandatory
+        }
+        It "Should have IncludeSystemUser as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter IncludeSystemUser -Type Switch -Not -Mandatory
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Not -Mandatory
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe "Get-DbaDbRoleMember Integration Tests" -Tag "IntegrationTests" {
+    BeforeDiscovery {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     BeforeAll {
         $instance = Connect-DbaInstance -SqlInstance $script:instance2
         $allDatabases = $instance.Databases
@@ -23,13 +52,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It 'Excludes system users by default' {
             $result = Get-DbaDbRoleMember -SqlInstance $instance
 
-            $result.IsSystemObject | Select-Object -Unique | Should -Not -Contain $true
+            $result.IsSystemObject | Should -Not -Contain $true
         }
 
         It 'Includes system users' {
             $result = Get-DbaDbRoleMember -SqlInstance $instance -IncludeSystemUser
 
-            $result.SmoUser.IsSystemObject | Select-Object -Unique | Should -Contain $true
+            $result.SmoUser.IsSystemObject | Should -Contain $true
         }
 
         It 'Returns all role membership for all databases' {

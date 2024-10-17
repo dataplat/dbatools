@@ -1,54 +1,115 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Install-DbaAgentAdminAlert" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Category', 'Database', 'Operator', 'OperatorEmail', 'DelayBetweenResponses', 'Disabled', 'EventDescriptionKeyword', 'EventSource', 'JobId', 'ExcludeSeverity', 'ExcludeMessageId', 'NotificationMessage', 'NotifyMethod', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Install-DbaAgentAdminAlert
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Category as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Category -Type String
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String
+        }
+        It "Should have Operator as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Operator -Type String
+        }
+        It "Should have OperatorEmail as a parameter" {
+            $CommandUnderTest | Should -HaveParameter OperatorEmail -Type String
+        }
+        It "Should have DelayBetweenResponses as a parameter" {
+            $CommandUnderTest | Should -HaveParameter DelayBetweenResponses -Type Int32
+        }
+        It "Should have Disabled as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Disabled -Type SwitchParameter
+        }
+        It "Should have EventDescriptionKeyword as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EventDescriptionKeyword -Type String
+        }
+        It "Should have EventSource as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EventSource -Type String
+        }
+        It "Should have JobId as a parameter" {
+            $CommandUnderTest | Should -HaveParameter JobId -Type String
+        }
+        It "Should have ExcludeSeverity as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeSeverity -Type Int32[]
+        }
+        It "Should have ExcludeMessageId as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeMessageId -Type Int32[]
+        }
+        It "Should have NotificationMessage as a parameter" {
+            $CommandUnderTest | Should -HaveParameter NotificationMessage -Type String
+        }
+        It "Should have NotifyMethod as a parameter" {
+            $CommandUnderTest | Should -HaveParameter NotifyMethod -Type String
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    BeforeEach {
-        Get-DbaAgentAlert -SqlInstance $script:instance2, $script:instance3 | Remove-DbaAgentAlert -Confirm:$false
-    }
-    Context 'Creating a new SQL Server Agent alert' {
-        $parms = @{
-            SqlInstance           = $script:instance2
-            DelayBetweenResponses = 60
-            Disabled              = $false
-            NotifyMethod          = "NotifyEmail"
-            NotificationMessage   = "Test Notification"
-            Operator              = "Test Operator"
-            OperatorEmail         = "dba@ad.local"
-            ExcludeSeverity       = 0
-            EnableException       = $true
+    Context "Integration Tests" {
+        BeforeAll {
+            $script:instances = @($script:instance2, $script:instance3)
         }
 
-        It 'Should create a bunch of new alerts' {
-            $alert = Install-DbaAgentAdminAlert @parms | Select-Object -First 1
-
-            # Assert
-            $alert.Name | Should -Not -BeNullOrEmpty
-            $alert.DelayBetweenResponses | Should -Be 60
-            $alert.IsEnabled | Should -Be $true
+        BeforeEach {
+            foreach ($instance in $script:instances) {
+                Get-DbaAgentAlert -SqlInstance $instance | Remove-DbaAgentAlert -Confirm:$false
+            }
         }
 
-        $parms.SqlInstance = $script:instance3
-        $parms.ExcludeSeverity = 17
+        Context 'Creating a new SQL Server Agent alert' {
+            It 'Should create a bunch of new alerts on instance2' {
+                $parms = @{
+                    SqlInstance           = $script:instance2
+                    DelayBetweenResponses = 60
+                    Disabled              = $false
+                    NotifyMethod          = "NotifyEmail"
+                    NotificationMessage   = "Test Notification"
+                    Operator              = "Test Operator"
+                    OperatorEmail         = "dba@ad.local"
+                    ExcludeSeverity       = 0
+                    EnableException       = $true
+                }
 
-        It 'Should create a bunch of new alerts' {
-            $alerts = Install-DbaAgentAdminAlert @parms
+                $alert = Install-DbaAgentAdminAlert @parms | Select-Object -First 1
 
-            # Assert
-            $alerts.Severity | Should -No -Contain 17
+                $alert.Name | Should -Not -BeNullOrEmpty
+                $alert.DelayBetweenResponses | Should -Be 60
+                $alert.IsEnabled | Should -Be $true
+            }
 
-            Get-DbaAgentAlert -SqlInstance $script:instance3 | Should -Not -BeNullOrEmpty
+            It 'Should create a bunch of new alerts on instance3' {
+                $parms = @{
+                    SqlInstance           = $script:instance3
+                    DelayBetweenResponses = 60
+                    Disabled              = $false
+                    NotifyMethod          = "NotifyEmail"
+                    NotificationMessage   = "Test Notification"
+                    Operator              = "Test Operator"
+                    OperatorEmail         = "dba@ad.local"
+                    ExcludeSeverity       = 17
+                    EnableException       = $true
+                }
+
+                $alerts = Install-DbaAgentAdminAlert @parms
+
+                $alerts.Severity | Should -Not -Contain 17
+                Get-DbaAgentAlert -SqlInstance $script:instance3 | Should -Not -BeNullOrEmpty
+            }
         }
     }
 }

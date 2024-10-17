@@ -1,40 +1,64 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaTopResourceUsage" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Type', 'Limit', 'EnableException', 'ExcludeSystem'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaTopResourceUsage
+        }
+        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database as a non-mandatory parameter of type Object[]" {
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Not -Mandatory
+        }
+        It "Should have ExcludeDatabase as a non-mandatory parameter of type Object[]" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Not -Mandatory
+        }
+        It "Should have Type as a non-mandatory parameter of type String[]" {
+            $CommandUnderTest | Should -HaveParameter Type -Type String[] -Not -Mandatory
+        }
+        It "Should have Limit as a non-mandatory parameter of type Int32" {
+            $CommandUnderTest | Should -HaveParameter Limit -Type Int32 -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+        }
+        It "Should have ExcludeSystem as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeSystem -Type Switch -Not -Mandatory
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    $results = Get-DbaTopResourceUsage -SqlInstance $instances -Type Duration -Database master
-    $resultsExcluded = Get-DbaTopResourceUsage -SqlInstance $instances -Type Duration -ExcludeDatabase master
-    Context "Command returns proper info" {
-        It "returns results" {
-            $results.Count -gt 0 | Should Be $true
+    Context "Command usage" {
+        BeforeDiscovery {
+            # Run setup code to get script variables within scope of the discovery phase
+            . (Join-Path $PSScriptRoot 'constants.ps1')
         }
 
-        foreach ($result in $results) {
-            It "only returns results from master" {
-                $result.Database -eq 'master' | Should Be $true
+        BeforeAll {
+            $results = Get-DbaTopResourceUsage -SqlInstance $instances -Type Duration -Database master
+            $resultsExcluded = Get-DbaTopResourceUsage -SqlInstance $instances -Type Duration -ExcludeDatabase master
+        }
+
+        It "returns results" {
+            $results.Count | Should -BeGreaterThan 0
+        }
+
+        It "only returns results from master" {
+            $results | ForEach-Object {
+                $_.Database | Should -Be 'master'
             }
         }
 
-        # Each of the 4 -Types return slightly different information so this way, we can check to ensure only duration was returned
         It "Should have correct properties for Duration" {
-            $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Database,ObjectName,QueryHash,TotalElapsedTimeMs,ExecutionCount,AverageDurationMs,QueryTotalElapsedTimeMs,QueryText'.Split(',')
-            ($results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
+            $ExpectedProps = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'ObjectName', 'QueryHash', 'TotalElapsedTimeMs', 'ExecutionCount', 'AverageDurationMs', 'QueryTotalElapsedTimeMs', 'QueryText'
+            ($results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
         }
 
         It "No results for excluded database" {
-            $resultsExcluded.Database -notcontains 'master' | Should Be $true
+            $resultsExcluded.Database | Should -Not -Contain 'master'
         }
     }
 }

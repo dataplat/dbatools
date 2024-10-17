@@ -1,24 +1,57 @@
-$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaDbLogShipError Unit Tests" -Tag 'UnitTests' {
+    BeforeAll {
+        # Importing necessary module or setting up environment if needed
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Action', 'DateTimeFrom', 'DateTimeTo', 'Primary', 'Secondary', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandName = Get-Command Get-DbaDbLogShipError
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandName | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandName | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database as a parameter" {
+            $CommandName | Should -HaveParameter Database -Type String[] -Not -Mandatory
+        }
+        It "Should have ExcludeDatabase as a parameter" {
+            $CommandName | Should -HaveParameter ExcludeDatabase -Type String[] -Not -Mandatory
+        }
+        It "Should have Action as a parameter" {
+            $CommandName | Should -HaveParameter Action -Type String[] -Not -Mandatory
+        }
+        It "Should have DateTimeFrom as a parameter" {
+            $CommandName | Should -HaveParameter DateTimeFrom -Type DateTime -Not -Mandatory
+        }
+        It "Should have DateTimeTo as a parameter" {
+            $CommandName | Should -HaveParameter DateTimeTo -Type DateTime -Not -Mandatory
+        }
+        It "Should have Primary as a parameter" {
+            $CommandName | Should -HaveParameter Primary -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have Secondary as a parameter" {
+            $CommandName | Should -HaveParameter Secondary -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandName | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+Describe "Get-DbaDbLogShipError Integration Tests" -Tag "IntegrationTests" {
+    BeforeAll {
+        # Setup code for integration tests
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Return values" {
         It "Get the log shipping errors" {
-            $Results = @()
-            $Results += Get-DbaDbLogShipError -SqlInstance $script:instance2
-            $Results.Count | Should Be 0
+            $Results = Get-DbaDbLogShipError -SqlInstance $script:instance2
+            $Results.Count | Should -Be 0
         }
     }
 }

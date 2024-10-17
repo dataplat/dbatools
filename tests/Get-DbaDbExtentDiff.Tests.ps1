@@ -1,52 +1,66 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
-        }
-    }
-}
-
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "Get-DbaDbExtentDiff" {
     BeforeAll {
-        $dbname = "dbatoolsci_test_$(get-random)"
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+
+        $dbname = "dbatoolsci_test_$(Get-Random)"
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $server.Query("Create Database [$dbname]")
     }
+
     AfterAll {
         Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
     }
 
-    Context "Gets Changed Extents for Multiple Databases" {
-        $results = Get-DbaDbExtentDiff -SqlInstance $script:instance2
-        It "Gets results" {
-            $results | Should Not Be $null
+    Context "Validate parameters" {
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaDbExtentDiff
         }
-        Foreach ($row in $results) {
-            It "Should have extents for $($row.DatabaseName)" {
-                $row.ExtentsTotal | Should BeGreaterThan 0
-            }
-            It "Should have extents changed for $($row.DatabaseName)" {
-                $row.ExtentsChanged | Should BeGreaterOrEqual 0
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[]
+        }
+        It "Should have ExcludeDatabase as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[]
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+        }
+    }
+
+    Context "Gets Changed Extents for Multiple Databases" {
+        BeforeAll {
+            $results = Get-DbaDbExtentDiff -SqlInstance $script:instance2
+        }
+        It "Gets results" {
+            $results | Should -Not -BeNullOrEmpty
+        }
+        It "Should have extents for each database" {
+            foreach ($row in $results) {
+                $row.ExtentsTotal | Should -BeGreaterThan 0
+                $row.ExtentsChanged | Should -BeGreaterOrEqual 0
             }
         }
     }
+
     Context "Gets Changed Extents for Single Database" {
-        $results = Get-DbaDbExtentDiff -SqlInstance $script:instance2 -Database $dbname
+        BeforeAll {
+            $results = Get-DbaDbExtentDiff -SqlInstance $script:instance2 -Database $dbname
+        }
         It "Gets results" {
-            $results | Should Not Be $null
+            $results | Should -Not -BeNullOrEmpty
         }
-        It "Should have extents for $($results.DatabaseName)" {
-            $results.ExtentsTotal | Should BeGreaterThan 0
-        }
-        It "Should have extents changed for $($results.DatabaseName)" {
-            $results.ExtentsChanged | Should BeGreaterOrEqual 0
+        It "Should have extents for the specified database" {
+            $results.ExtentsTotal | Should -BeGreaterThan 0
+            $results.ExtentsChanged | Should -BeGreaterOrEqual 0
         }
     }
 }

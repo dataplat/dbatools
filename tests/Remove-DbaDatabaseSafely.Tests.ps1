@@ -1,22 +1,62 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Remove-DbaDatabaseSafely" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Destination', 'DestinationSqlCredential', 'NoDbccCheckDb', 'BackupFolder', 'CategoryName', 'JobOwner', 'AllDatabases', 'BackupCompression', 'ReuseSourceFolderStructure', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Remove-DbaDatabaseSafely
+        }
+        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter -Not -Mandatory
+        }
+        It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database as a non-mandatory parameter of type Object[]" {
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Not -Mandatory
+        }
+        It "Should have Destination as a non-mandatory parameter of type DbaInstanceParameter" {
+            $CommandUnderTest | Should -HaveParameter Destination -Type DbaInstanceParameter -Not -Mandatory
+        }
+        It "Should have DestinationSqlCredential as a non-mandatory parameter of type PSCredential" {
+            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have NoDbccCheckDb as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter NoDbccCheckDb -Type Switch -Not -Mandatory
+        }
+        It "Should have BackupFolder as a non-mandatory parameter of type String" {
+            $CommandUnderTest | Should -HaveParameter BackupFolder -Type String -Not -Mandatory
+        }
+        It "Should have CategoryName as a non-mandatory parameter of type String" {
+            $CommandUnderTest | Should -HaveParameter CategoryName -Type String -Not -Mandatory
+        }
+        It "Should have JobOwner as a non-mandatory parameter of type String" {
+            $CommandUnderTest | Should -HaveParameter JobOwner -Type String -Not -Mandatory
+        }
+        It "Should have AllDatabases as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter AllDatabases -Type Switch -Not -Mandatory
+        }
+        It "Should have BackupCompression as a non-mandatory parameter of type String" {
+            $CommandUnderTest | Should -HaveParameter BackupCompression -Type String -Not -Mandatory
+        }
+        It "Should have ReuseSourceFolderStructure as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter ReuseSourceFolderStructure -Type Switch -Not -Mandatory
+        }
+        It "Should have Force as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    BeforeAll {
-        try {
-            $null = Get-DbaProcess -SqlInstance $script:instance1, $script:instance2 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
+    Context "Command actually works" {
+        BeforeAll {
             $db1 = "dbatoolsci_safely"
             $db2 = "dbatoolsci_safely_otherInstance"
             $server3 = Connect-DbaInstance -SqlInstance $script:instance3
@@ -25,33 +65,33 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $server2.Query("CREATE DATABASE $db1")
             $server2.Query("CREATE DATABASE $db2")
             $server1 = Connect-DbaInstance -SqlInstance $script:instance1
-        } catch { }
-    }
-    AfterAll {
-        $null = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $db1, $db2
-        $null = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance3 -Database $db1
-        $null = Remove-DbaAgentJob -Confirm:$false -SqlInstance $script:instance2 -Job 'Rationalised Database Restore Script for dbatoolsci_safely'
-        $null = Remove-DbaAgentJob -Confirm:$false -SqlInstance $script:instance3 -Job 'Rationalised Database Restore Script for dbatoolsci_safely_otherInstance'
-    }
-    Context "Command actually works" {
+        }
+
+        AfterAll {
+            $null = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $db1, $db2
+            $null = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance3 -Database $db1
+            $null = Remove-DbaAgentJob -Confirm:$false -SqlInstance $script:instance2 -Job 'Rationalised Database Restore Script for dbatoolsci_safely'
+            $null = Remove-DbaAgentJob -Confirm:$false -SqlInstance $script:instance3 -Job 'Rationalised Database Restore Script for dbatoolsci_safely_otherInstance'
+        }
+
         It "Should have database name of $db1" {
             $results = Remove-DbaDatabaseSafely -SqlInstance $script:instance2 -Database $db1 -BackupFolder C:\temp -NoDbccCheckDb
             foreach ($result in $results) {
-                $result.DatabaseName | Should Be $db1
+                $result.DatabaseName | Should -Be $db1
             }
         }
 
-        It -Skip:$($server1.EngineEdition -notmatch "Express") "should warn and quit on Express Edition" {
-            $results = Remove-DbaDatabaseSafely -SqlInstance $script:instance1 -Database $db1 -BackupFolder C:\temp -NoDbccCheckDb -WarningAction SilentlyContinue -WarningVariable warn 3> $null
-            $results | Should Be $null
-            $warn -match 'Express Edition' | Should Be $true
+        It "Should warn and quit on Express Edition" -Skip:($server1.EngineEdition -notmatch "Express") {
+            $results = Remove-DbaDatabaseSafely -SqlInstance $script:instance1 -Database $db1 -BackupFolder C:\temp -NoDbccCheckDb -WarningAction SilentlyContinue -WarningVariable warn
+            $results | Should -BeNullOrEmpty
+            $warn | Should -Match 'Express Edition'
         }
 
         It "Should restore to another server" {
             $results = Remove-DbaDatabaseSafely -SqlInstance $script:instance2 -Database $db2 -BackupFolder c:\temp -NoDbccCheckDb -Destination $script:instance3
             foreach ($result in $results) {
-                $result.SqlInstance | Should Be $server2.SqlInstance
-                $result.TestingInstance | Should Be $server3.SqlInstance
+                $result.SqlInstance | Should -Be $server2.SqlInstance
+                $result.TestingInstance | Should -Be $server3.SqlInstance
             }
         }
     }

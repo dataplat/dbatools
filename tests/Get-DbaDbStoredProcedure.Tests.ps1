@@ -1,25 +1,47 @@
-<#
-    The below statement stays in for every test you build.
-#>
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-<#
-    Unit test is required for any command added
-#>
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaDbStoredProcedure Unit Tests" -Tag 'UnitTests' {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('WhatIf', 'Confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'ExcludeSystemSp', 'Name', 'Schema', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaDbStoredProcedure
+        }
+        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database as a non-mandatory parameter of type Object[]" {
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Not -Mandatory
+        }
+        It "Should have ExcludeDatabase as a non-mandatory parameter of type Object[]" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Not -Mandatory
+        }
+        It "Should have ExcludeSystemSp as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeSystemSp -Type Switch -Not -Mandatory
+        }
+        It "Should have Name as a non-mandatory parameter of type String[]" {
+            $CommandUnderTest | Should -HaveParameter Name -Type String[] -Not -Mandatory
+        }
+        It "Should have Schema as a non-mandatory parameter of type String[]" {
+            $CommandUnderTest | Should -HaveParameter Schema -Type String[] -Not -Mandatory
+        }
+        It "Should have InputObject as a non-mandatory parameter of type Database[]" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[] -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 }
-# Get-DbaNoun
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+
+Describe "Get-DbaDbStoredProcedure Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $random = Get-Random
@@ -33,21 +55,26 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $db1.Query("CREATE SCHEMA $schemaName")
         $db1.Query("CREATE PROCEDURE $schemaName.$procName2 AS SELECT 1")
     }
+
     AfterAll {
         $db1 | Remove-DbaDatabase -Confirm:$false
     }
 
     Context "Command actually works" {
-        $results = Get-DbaDbStoredProcedure -SqlInstance $script:instance2 -Database $db1Name
         It "Should have standard properties" {
-            $ExpectedProps = 'ComputerName,InstanceName,SqlInstance'.Split(',')
-            ($results[0].PsObject.Properties.Name | Where-Object { $_ -in $ExpectedProps } | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
+            $results = Get-DbaDbStoredProcedure -SqlInstance $script:instance2 -Database $db1Name
+            $ExpectedProps = 'ComputerName', 'InstanceName', 'SqlInstance'
+            $results[0].PsObject.Properties.Name | Should -Contain $ExpectedProps
         }
+
         It "Should get test procedure: $procName" {
-            ($results | Where-Object Name -eq $procName).Name | Should -Be $true
+            $results = Get-DbaDbStoredProcedure -SqlInstance $script:instance2 -Database $db1Name
+            $results | Where-Object Name -eq $procName | Should -Not -BeNullOrEmpty
         }
+
         It "Should include system procedures" {
-            ($results | Where-Object Name -eq 'sp_columns') | Should -Be $true
+            $results = Get-DbaDbStoredProcedure -SqlInstance $script:instance2 -Database $db1Name
+            $results | Where-Object Name -eq 'sp_columns' | Should -Not -BeNullOrEmpty
         }
     }
 
@@ -56,6 +83,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results = Get-DbaDbStoredProcedure -SqlInstance $script:instance2 -ExcludeDatabase master
             $results.Database | Should -Not -Contain 'master'
         }
+
         It "Should exclude system procedures" {
             $results = Get-DbaDbStoredProcedure -SqlInstance $script:instance2 -Database $db1Name -ExcludeSystemSp
             $results | Where-Object Name -eq 'sp_helpdb' | Should -BeNullOrEmpty
@@ -65,11 +93,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Piping works" {
         It "Should allow piping from string" {
             $results = $script:instance2 | Get-DbaDbStoredProcedure -Database $db1Name
-            ($results | Where-Object Name -eq $procName).Name | Should -Not -BeNullOrEmpty
+            $results | Where-Object Name -eq $procName | Should -Not -BeNullOrEmpty
         }
+
         It "Should allow piping from Get-DbaDatabase" {
             $results = Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1Name | Get-DbaDbStoredProcedure
-            ($results | Where-Object Name -eq $procName).Name | Should -Not -BeNullOrEmpty
+            $results | Where-Object Name -eq $procName | Should -Not -BeNullOrEmpty
         }
     }
 
@@ -79,22 +108,26 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results.Name | Should -Be $procName
             $results.DatabaseId | Should -Be $db1.Id
         }
+
         It "Search by 2 part name" {
             $results = $script:instance2 | Get-DbaDbStoredProcedure -Database $db1Name -Name "$schemaName.$procName2"
             $results.Name | Should -Be $procName2
             $results.Schema | Should -Be $schemaName
         }
+
         It "Search by 3 part name and omit the -Database param" {
             $results = $script:instance2 | Get-DbaDbStoredProcedure -Name "$db1Name.$schemaName.$procName2"
             $results.Name | Should -Be $procName2
             $results.Schema | Should -Be $schemaName
             $results.Database | Should -Be $db1Name
         }
+
         It "Search by name and schema params" {
             $results = $script:instance2 | Get-DbaDbStoredProcedure -Database $db1Name -Name $procName2 -Schema $schemaName
             $results.Name | Should -Be $procName2
             $results.Schema | Should -Be $schemaName
         }
+
         It "Search by schema name" {
             $results = $script:instance2 | Get-DbaDbStoredProcedure -Database $db1Name -Schema $schemaName
             $results.Name | Should -Be $procName2

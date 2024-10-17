@@ -1,43 +1,54 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaDbDbccOpenTran" {
+    BeforeAll {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaDbDbccOpenTran
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String[]
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
-Describe "$commandname  Integration Test" -Tag "IntegrationTests" {
+
     Context "Gets results for Open Transactions" {
-        $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Cmd', 'Output', 'Field', 'Data'
-        $result = Get-DbaDbDbccOpenTran -SqlInstance $script:instance1
+        BeforeAll {
+            $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Cmd', 'Output', 'Field', 'Data'
+            $result = Get-DbaDbDbccOpenTran -SqlInstance $script:instance1
+        }
 
         It "returns results for DBCC OPENTRAN" {
-            $result | Should Not Be $null
+            $result | Should -Not -BeNullOrEmpty
         }
 
         It "returns multiple results" {
-            $result.Count -gt 0 | Should Be $true
+            $result.Count | Should -BeGreaterThan 0
         }
 
-        foreach ($prop in $props) {
-            $p = $result[0].PSObject.Properties[$prop]
-            It "Should return property: $prop" {
-                $p.Name | Should Be $prop
+        It "Should return expected properties" {
+            foreach ($prop in $props) {
+                $result[0].PSObject.Properties.Name | Should -Contain $prop
             }
         }
 
-        $result = Get-DbaDbDbccOpenTran -SqlInstance $script:instance1 -Database tempDB
-        $tempDB = Get-DbaDatabase -SqlInstance $script:instance1 -Database tempDB
+        It "returns results for a specific database" {
+            $tempDB = Get-DbaDatabase -SqlInstance $script:instance1 -Database tempDB
+            $result = Get-DbaDbDbccOpenTran -SqlInstance $script:instance1 -Database tempDB
 
-        It "returns results for a database" {
-            $result | Should Not Be $null
-            $result.Database | Get-Unique | Should -Be tempDB
+            $result | Should -Not -BeNullOrEmpty
+            $result.Database | Get-Unique | Should -Be 'tempDB'
             $result.DatabaseId | Get-Unique | Should -Be $tempDB.Id
         }
     }

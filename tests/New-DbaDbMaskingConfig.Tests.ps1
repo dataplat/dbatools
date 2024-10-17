@@ -1,54 +1,96 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "New-DbaDbMaskingConfig" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Table', 'Column', 'Path', 'Locale', 'CharacterString', 'SampleCount', 'KnownNameFilePath', 'PatternFilePath', 'ExcludeDefaultKnownName', 'ExcludeDefaultPattern', 'Force', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command New-DbaDbMaskingConfig
+        }
+        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database as a non-mandatory parameter of type String[]" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Not -Mandatory
+        }
+        It "Should have Table as a non-mandatory parameter of type String[]" {
+            $CommandUnderTest | Should -HaveParameter Table -Type String[] -Not -Mandatory
+        }
+        It "Should have Column as a non-mandatory parameter of type String[]" {
+            $CommandUnderTest | Should -HaveParameter Column -Type String[] -Not -Mandatory
+        }
+        It "Should have Path as a non-mandatory parameter of type String" {
+            $CommandUnderTest | Should -HaveParameter Path -Type String -Not -Mandatory
+        }
+        It "Should have Locale as a non-mandatory parameter of type String" {
+            $CommandUnderTest | Should -HaveParameter Locale -Type String -Not -Mandatory
+        }
+        It "Should have CharacterString as a non-mandatory parameter of type String" {
+            $CommandUnderTest | Should -HaveParameter CharacterString -Type String -Not -Mandatory
+        }
+        It "Should have SampleCount as a non-mandatory parameter of type Int32" {
+            $CommandUnderTest | Should -HaveParameter SampleCount -Type Int32 -Not -Mandatory
+        }
+        It "Should have KnownNameFilePath as a non-mandatory parameter of type String" {
+            $CommandUnderTest | Should -HaveParameter KnownNameFilePath -Type String -Not -Mandatory
+        }
+        It "Should have PatternFilePath as a non-mandatory parameter of type String" {
+            $CommandUnderTest | Should -HaveParameter PatternFilePath -Type String -Not -Mandatory
+        }
+        It "Should have ExcludeDefaultKnownName as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDefaultKnownName -Type Switch -Not -Mandatory
+        }
+        It "Should have ExcludeDefaultPattern as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDefaultPattern -Type Switch -Not -Mandatory
+        }
+        It "Should have Force as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Not -Mandatory
+        }
+        It "Should have InputObject as a non-mandatory parameter of type Object[]" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
-    BeforeAll {
-        $dbname = "dbatoolsci_maskconfig"
-        $sql = "CREATE TABLE [dbo].[people](
-                    [fname] [varchar](50) NULL,
-                    [lname] [varchar](50) NULL,
-                    [dob] [datetime] NULL
-                ) ON [PRIMARY]"
-        $db = New-DbaDatabase -SqlInstance $script:instance1 -Name $dbname
-        $db.Query($sql)
-        $sql = "INSERT INTO people (fname, lname, dob) VALUES ('Joe','Schmoe','2/2/2000')
-                INSERT INTO people (fname, lname, dob) VALUES ('Jane','Schmee','2/2/1950')"
-        $db.Query($sql)
+    Context "Command functionality" {
+        BeforeAll {
+            . "$PSScriptRoot\constants.ps1"
+            $dbname = "dbatoolsci_maskconfig"
+            $sql = "CREATE TABLE [dbo].[people](
+                        [fname] [varchar](50) NULL,
+                        [lname] [varchar](50) NULL,
+                        [dob] [datetime] NULL
+                    ) ON [PRIMARY]"
+            $db = New-DbaDatabase -SqlInstance $script:instance1 -Name $dbname
+            $db.Query($sql)
+            $sql = "INSERT INTO people (fname, lname, dob) VALUES ('Joe','Schmoe','2/2/2000')
+                    INSERT INTO people (fname, lname, dob) VALUES ('Jane','Schmee','2/2/1950')"
+            $db.Query($sql)
 
-        # bug 6934
-        $db.Query("
-                CREATE TABLE dbo.DbConfigTest
-                (
-                    id              SMALLINT      NOT NULL,
-                    IPAddress       VARCHAR(100)  NOT NULL,
-                    Address         VARCHAR(100)  NOT NULL,
-                    StreetAddress   VARCHAR(100)  NOT NULL,
-                    Street          VARCHAR(100)  NOT NULL
-                );
-                INSERT INTO dbo.DbConfigTest (id, IPAddress, Address, StreetAddress, Street)
-                VALUES
-                (1, '127.0.0.1', '123 Fake Street', '123 Fake Street', '123 Fake Street'),
-                (2, '', '123 Fake Street', '123 Fake Street', '123 Fake Street'),
-                (3, 'fe80::7df3:7015:89e9:fbed%15', '123 Fake Street', '123 Fake Street', '123 Fake Street')")
-    }
-    AfterAll {
-        Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
-        $results | Remove-Item -Confirm:$false -ErrorAction Ignore
-    }
+            # bug 6934
+            $db.Query("
+                    CREATE TABLE dbo.DbConfigTest
+                    (
+                        id              SMALLINT      NOT NULL,
+                        IPAddress       VARCHAR(100)  NOT NULL,
+                        Address         VARCHAR(100)  NOT NULL,
+                        StreetAddress   VARCHAR(100)  NOT NULL,
+                        Street          VARCHAR(100)  NOT NULL
+                    );
+                    INSERT INTO dbo.DbConfigTest (id, IPAddress, Address, StreetAddress, Street)
+                    VALUES
+                    (1, '127.0.0.1', '123 Fake Street', '123 Fake Street', '123 Fake Street'),
+                    (2, '', '123 Fake Street', '123 Fake Street', '123 Fake Street'),
+                    (3, 'fe80::7df3:7015:89e9:fbed%15', '123 Fake Street', '123 Fake Street', '123 Fake Street')")
+        }
 
-    Context "Command works" {
+        AfterAll {
+            Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
+            $results | Remove-Item -Confirm:$false -ErrorAction Ignore
+        }
 
         It "Should output a file with specific content" {
             $results = New-DbaDbMaskingConfig -SqlInstance $script:instance1 -Database $dbname -Path C:\temp

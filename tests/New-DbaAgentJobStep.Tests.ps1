@@ -1,22 +1,87 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "New-DbaAgentJobStep" {
+    BeforeAll {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Job', 'StepId', 'StepName', 'Subsystem', 'SubsystemServer', 'Command', 'CmdExecSuccessCode', 'OnSuccessAction', 'OnSuccessStepId', 'OnFailAction', 'OnFailStepId', 'Database', 'DatabaseUser', 'RetryAttempts', 'RetryInterval', 'OutputFileName', 'Insert', 'Flag', 'ProxyName', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command New-DbaAgentJobStep
+        }
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Job parameter" {
+            $CommandUnderTest | Should -HaveParameter Job -Type Object[]
+        }
+        It "Should have StepId parameter" {
+            $CommandUnderTest | Should -HaveParameter StepId -Type Int32
+        }
+        It "Should have StepName parameter" {
+            $CommandUnderTest | Should -HaveParameter StepName -Type String
+        }
+        It "Should have Subsystem parameter" {
+            $CommandUnderTest | Should -HaveParameter Subsystem -Type String
+        }
+        It "Should have SubsystemServer parameter" {
+            $CommandUnderTest | Should -HaveParameter SubsystemServer -Type String
+        }
+        It "Should have Command parameter" {
+            $CommandUnderTest | Should -HaveParameter Command -Type String
+        }
+        It "Should have CmdExecSuccessCode parameter" {
+            $CommandUnderTest | Should -HaveParameter CmdExecSuccessCode -Type Int32
+        }
+        It "Should have OnSuccessAction parameter" {
+            $CommandUnderTest | Should -HaveParameter OnSuccessAction -Type String
+        }
+        It "Should have OnSuccessStepId parameter" {
+            $CommandUnderTest | Should -HaveParameter OnSuccessStepId -Type Int32
+        }
+        It "Should have OnFailAction parameter" {
+            $CommandUnderTest | Should -HaveParameter OnFailAction -Type String
+        }
+        It "Should have OnFailStepId parameter" {
+            $CommandUnderTest | Should -HaveParameter OnFailStepId -Type Int32
+        }
+        It "Should have Database parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String
+        }
+        It "Should have DatabaseUser parameter" {
+            $CommandUnderTest | Should -HaveParameter DatabaseUser -Type String
+        }
+        It "Should have RetryAttempts parameter" {
+            $CommandUnderTest | Should -HaveParameter RetryAttempts -Type Int32
+        }
+        It "Should have RetryInterval parameter" {
+            $CommandUnderTest | Should -HaveParameter RetryInterval -Type Int32
+        }
+        It "Should have OutputFileName parameter" {
+            $CommandUnderTest | Should -HaveParameter OutputFileName -Type String
+        }
+        It "Should have Insert parameter" {
+            $CommandUnderTest | Should -HaveParameter Insert -Type SwitchParameter
+        }
+        It "Should have Flag parameter" {
+            $CommandUnderTest | Should -HaveParameter Flag -Type String[]
+        }
+        It "Should have ProxyName parameter" {
+            $CommandUnderTest | Should -HaveParameter ProxyName -Type String
+        }
+        It "Should have Force parameter" {
+            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "New Agent Job Step is added properly" {
         BeforeAll {
-            # Create job to add step to
             $random = Get-Random
             $job = New-DbaAgentJob -SqlInstance $script:instance2 -Job "dbatoolsci_job_1_$random" -Description "Just another job"
             $jobTwo = New-DbaAgentJob -SqlInstance $script:instance2 -Job "dbatoolsci_job_2_$random" -Description "Just another job"
@@ -54,13 +119,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results.OutputFileName | Should -Be "log.txt"
         }
 
-
         It "Should actually for sure exist" {
             $newresults = Get-DbaAgentJob -SqlInstance $script:instance2 -Job "dbatoolsci_job_1_$random"
             $newresults.JobSteps.Name | Should -Be "Step One"
         }
 
         It "Should not write over existing job steps" {
+            $warn = $null
             New-DbaAgentJobStep -SqlInstance $script:instance2 -Job "dbatoolsci_job_1_$random" -StepName "Step One" -WarningAction SilentlyContinue -WarningVariable warn
             $warn -match "already exists" | Should -Be $true
             $newresults = Get-DbaAgentJob -SqlInstance $script:instance2 -Job "dbatoolsci_job_1_$random"
@@ -83,7 +148,6 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $newresults.JobSteps | Where-Object Id -eq 2 | Select-Object -ExpandProperty Name | Should -Be "New Step One"
         }
 
-        # see 7199 and 7200
         It "Job is refreshed from the server" {
             $agentStep1 = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job $jobThree -StepName "Error collection" -OnFailAction QuitWithFailure -OnSuccessAction QuitWithFailure
             $agentStep2 = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job $jobThree -StepName "Step 1" -OnFailAction GoToStep -OnFailStepId 1 -OnSuccessAction GoToNextStep

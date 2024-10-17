@@ -1,37 +1,78 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Invoke-DbaAzSqlDbTip" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'AzureDomain', 'Tenant', 'LocalFile', 'Database', 'ExcludeDatabase', 'AllUserDatabases', 'ReturnAllTips', 'Compat100', 'StatementTimeout', 'EnableException', 'Force'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Invoke-DbaAzSqlDbTip
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have AzureDomain as a parameter" {
+            $CommandUnderTest | Should -HaveParameter AzureDomain -Type String
+        }
+        It "Should have Tenant as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Tenant -Type String
+        }
+        It "Should have LocalFile as a parameter" {
+            $CommandUnderTest | Should -HaveParameter LocalFile -Type String
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String[]
+        }
+        It "Should have ExcludeDatabase as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type String[]
+        }
+        It "Should have AllUserDatabases as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter AllUserDatabases -Type Switch
+        }
+        It "Should have ReturnAllTips as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter ReturnAllTips -Type Switch
+        }
+        It "Should have Compat100 as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter Compat100 -Type Switch
+        }
+        It "Should have StatementTimeout as a parameter" {
+            $CommandUnderTest | Should -HaveParameter StatementTimeout -Type Int32
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+        }
+        It "Should have Force as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch
         }
     }
-}
 
-Describe "$commandName Integration Tests" -Tags "IntegrationTests" {
-    if ($env:azuredbpasswd -eq "failstoooften") {
-        Context "Run the tips against Azure database" {
+    Context "Run the tips against Azure database" {
+        BeforeDiscovery {
+            $script:skipAzureTests = [Environment]::GetEnvironmentVariable('azuredbpasswd') -ne "failstoooften"
+        }
+
+        BeforeAll {
             $securePassword = ConvertTo-SecureString $env:azuredbpasswd -AsPlainText -Force
             $cred = New-Object System.Management.Automation.PSCredential ($script:azuresqldblogin, $securePassword)
-
             $results = Invoke-DbaAzSqlDbTip -SqlInstance $script:azureserver -Database test -SqlCredential $cred -ReturnAllTips
+        }
 
-            It "Should get some results" {
-                $results | Should -not -BeNullOrEmpty
-            }
+        It "Should get some results" -Skip:$script:skipAzureTests {
+            $results | Should -Not -BeNullOrEmpty
+        }
 
-            It "Should have the right ComputerName" {
-                $results.ComputerName | Should -Be $script:azureserver
-            }
+        It "Should have the right ComputerName" -Skip:$script:skipAzureTests {
+            $results.ComputerName | Should -Be $script:azureserver
+        }
 
-            It "Database name should be 'test'" {
-                $results.Database | Should -Be 'test'
-            }
+        It "Database name should be 'test'" -Skip:$script:skipAzureTests {
+            $results.Database | Should -Be 'test'
         }
     }
 }

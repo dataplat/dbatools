@@ -1,20 +1,11 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'IncludeSystem', 'User', 'Login', 'SecurePassword', 'ExternalProvider', 'DefaultSchema', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
-        }
-    }
-}
-
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+Describe "New-DbaDbUser" {
     BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+
         $dbname = "dbatoolscidb_$(Get-Random)"
         $userName = "dbatoolscidb_UserWithLogin"
         $userNameWithPassword = "dbatoolscidb_UserWithPassword"
@@ -28,18 +19,64 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $null = Set-DbaSpConfigure -SqlInstance $script:instance2 -Name ContainmentEnabled -Value 1
         $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "ALTER DATABASE [$dbname] SET CONTAINMENT = PARTIAL WITH NO_WAIT"
     }
+
     AfterAll {
         $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
         $null = Remove-DbaLogin -SqlInstance $script:instance2 -Login $userName -Confirm:$false
         $null = Set-DbaSpConfigure -SqlInstance $script:instance2 -Name ContainmentEnabled -Value $dbContainmentSpValue
     }
+
+    Context "Validate parameters" {
+        BeforeAll {
+            $CommandUnderTest = Get-Command New-DbaDbUser
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Not -Mandatory
+        }
+        It "Should have ExcludeDatabase as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type String[] -Not -Mandatory
+        }
+        It "Should have IncludeSystem as a parameter" {
+            $CommandUnderTest | Should -HaveParameter IncludeSystem -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have User as a parameter" {
+            $CommandUnderTest | Should -HaveParameter User -Type String -Not -Mandatory
+        }
+        It "Should have Login as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Login -Type String -Not -Mandatory
+        }
+        It "Should have SecurePassword as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SecurePassword -Type SecureString -Not -Mandatory
+        }
+        It "Should have ExternalProvider as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExternalProvider -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have DefaultSchema as a parameter" {
+            $CommandUnderTest | Should -HaveParameter DefaultSchema -Type String -Not -Mandatory
+        }
+        It "Should have Force as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+        }
+    }
+
     Context "Test error handling" {
         It "Tries to create the user with an invalid default schema" {
+            $warningMessage = $null
             $results = New-DbaDbUser -SqlInstance $script:instance2 -Database $dbname -Login $userName -DefaultSchema invalidSchemaName -WarningVariable warningMessage
             $results | Should -BeNullOrEmpty
             $warningMessage | Should -BeLike "*Schema * does not exist in database*"
         }
     }
+
     Context "Should create the user with login" {
         It "Creates the user and get it" {
             New-DbaDbUser -SqlInstance $script:instance2 -Database $dbname -Login $userName -DefaultSchema guest
@@ -48,6 +85,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $newDbUser.DefaultSchema | Should -Be 'guest'
         }
     }
+
     Context "Should create the user with password" {
         It "Creates the contained sql user and get it." {
             New-DbaDbUser -SqlInstance $script:instance2 -Database $dbname -Username $userNameWithPassword -Password $securePassword -DefaultSchema guest
@@ -56,6 +94,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $newDbUser.DefaultSchema | Should -Be 'guest'
         }
     }
+
     Context "Should create the user without login" {
         It "Creates the user and get it. Login property is empty" {
             New-DbaDbUser -SqlInstance $script:instance2 -Database $dbname -User $userNameWithoutLogin -DefaultSchema guest
@@ -65,6 +104,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results.Login | Should -BeNullOrEmpty
         }
     }
+
     Context "Should run with multiple databases" {
         BeforeAll {
             $dbs = "dbatoolscidb0_$(Get-Random)", "dbatoolscidb1_$(Get-Random)", "dbatoolscidb3_$(Get-Random)"
@@ -76,10 +116,12 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $null = New-DbaDatabase -SqlInstance $script:instance2 -Name $dbs
             $accessibleDbCount = (Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeSystem -OnlyAccessible).count
         }
+
         AfterAll {
             $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbs -Confirm:$false
             $null = Remove-DbaLogin -SqlInstance $script:instance2 -Login $loginName -Confirm:$false
         }
+
         It "Should add login to all databases provided" {
             $results = New-DbaDbUser -SqlInstance $script:instance2 -Login $loginName -Database $dbs -Force -EnableException
             $results.Count | Should -Be 3

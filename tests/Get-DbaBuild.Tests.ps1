@@ -1,22 +1,46 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'Build', 'Kb', 'MajorVersion', 'ServicePack', 'CumulativeUpdate', 'SqlInstance', 'SqlCredential', 'Update', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
-        }
-    }
-}
-
-Describe "$CommandName Unit Test" -Tags Unittest {
+Describe "Get-DbaBuild" {
     BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+
         $ModuleBase = (Get-Module -Name dbatools | Where-Object ModuleBase -NotMatch net).ModuleBase
         $idxfile = "$ModuleBase\bin\dbatools-buildref-index.json"
+    }
+
+    Context "Validate parameters" {
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaBuild
+        }
+        It "Should have Build parameter" {
+            $CommandUnderTest | Should -HaveParameter Build -Type Version[] -Not -Mandatory
+        }
+        It "Should have Kb parameter" {
+            $CommandUnderTest | Should -HaveParameter Kb -Type String[] -Not -Mandatory
+        }
+        It "Should have MajorVersion parameter" {
+            $CommandUnderTest | Should -HaveParameter MajorVersion -Type String -Not -Mandatory
+        }
+        It "Should have ServicePack parameter" {
+            $CommandUnderTest | Should -HaveParameter ServicePack -Type String -Not -Mandatory
+        }
+        It "Should have CumulativeUpdate parameter" {
+            $CommandUnderTest | Should -HaveParameter CumulativeUpdate -Type String -Not -Mandatory
+        }
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Update parameter" {
+            $CommandUnderTest | Should -HaveParameter Update -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+        }
     }
 
     Context 'Validate data in json is correct' {
@@ -29,6 +53,7 @@ Describe "$CommandName Unit Test" -Tags Unittest {
             $IdxRef | Should -BeOfType System.Object
         }
     }
+
     Context 'Validate LastUpdated property' {
         BeforeAll {
             $IdxRef = Get-Content $idxfile -Raw | ConvertFrom-Json
@@ -46,6 +71,7 @@ Describe "$CommandName Unit Test" -Tags Unittest {
             $lastupdate | Should -BeLessThan (Get-Date)
         }
     }
+
     Context 'Validate Data property' {
         BeforeAll {
             $IdxRef = Get-Content $idxfile -Raw | ConvertFrom-Json
@@ -74,7 +100,7 @@ Describe "$CommandName Unit Test" -Tags Unittest {
                 $splitted = $ver.split('.')
                 $dots = $ver.split('.').Length - 1
                 if ($dots -ne 2) {
-                    if ($dots[0] -le 15) {
+                    if ($splitted[0] -le 15) {
                         $dots | Should -Be 3
                     } else {
                         $dots | Should -Be 4
@@ -83,7 +109,6 @@ Describe "$CommandName Unit Test" -Tags Unittest {
                 try {
                     $splitted | ForEach-Object { [convert]::ToInt32($_) }
                 } catch {
-                    # I know. But someone can find a method to output a custom message ?
                     $splitted -join '.' | Should -Be "Composed by integers"
                 }
             }
@@ -102,15 +127,13 @@ Describe "$CommandName Unit Test" -Tags Unittest {
             $Names.Length | Should -BeGreaterThan 7
         }
     }
+
     Context "Params mutual exclusion" {
         It "Doesn't accept 'Build', 'Kb', 'SqlInstance" {
             { Get-DbaBuild -Build '10.0.1600' -Kb '4052908' -SqlInstance 'localhost' -EnableException -ErrorAction Stop } | Should -Throw
         }
         It "Doesn't accept 'Build', 'Kb'" {
             { Get-DbaBuild -Build '10.0.1600' -Kb '4052908' -EnableException -ErrorAction Stop } | Should -Throw
-        }
-        It "Doesn't accept 'Build', 'SqlInstance'" {
-            { Get-DbaBuild -Build '10.0.1600' -SqlInstance 'localhost' -EnableException -ErrorAction Stop } | Should -Throw
         }
         It "Doesn't accept 'Build', 'SqlInstance'" {
             { Get-DbaBuild -Build '10.0.1600' -SqlInstance 'localhost' -EnableException -ErrorAction Stop } | Should -Throw
@@ -131,14 +154,15 @@ Describe "$CommandName Unit Test" -Tags Unittest {
             { Get-DbaBuild -CumulativeUpdate 'CU2' -EnableException -ErrorAction Stop } | Should -Throw
         }
     }
+
     Context "Passing just -Update works, see #6823" {
         It 'works with -Update' {
-            function Get-DbaBuildReferenceIndexOnline { }
-            Mock Get-DbaBuildReferenceIndexOnline -MockWith { } -ModuleName dbatools
+            Mock Get-DbaBuildReferenceIndexOnline -MockWith { } -ModuleName $ModuleName
             Get-DbaBuild -Update -WarningVariable warnings 3>$null
             $warnings | Should -BeNullOrEmpty
         }
     }
+
     Context "Retired KBs" {
         It 'Handles retired KBs' {
             $result = Get-DbaBuild -Build '13.0.5479'
@@ -159,6 +183,7 @@ Describe "$CommandName Unit Test" -Tags Unittest {
             $result2008R2.MatchType | Should -Be 'Exact'
         }
     }
+
     # These are groups by major release (aka "Name")
     foreach ($g in $OrderedKeys) {
         $Versions = $Groups[$g]
@@ -169,8 +194,7 @@ Describe "$CommandName Unit Test" -Tags Unittest {
             It "No multiple Names around" {
                 ($Versions.Name | Where-Object { $_ }).Count | Should -Be 1
             }
-            # Skip for now bc a prerelease has been added
-            It -Skip "has one version tagged as RTM" {
+            It "has one version tagged as RTM" -Skip {
                 ($Versions.SP -eq 'RTM').Count | Should -Be 1
             }
             It "SP Property is formatted correctly" {
@@ -189,7 +213,6 @@ Describe "$CommandName Unit Test" -Tags Unittest {
                 $OrderedActualSPs = $ActualSPs | Sort-Object
                 ($ActualSPs -join ',') | Should -Be ($OrderedActualSPs -join ',')
             }
-            # see https://github.com/dataplat/dbatools/pull/2466
             It "KBList has only numbers on it" {
                 $NotNumbers = $Versions.KBList | Where-Object { $_ } | Where-Object { $_ -notmatch '^[\d]+$' }
                 if ($NotNumbers.Count -ne 0) {
@@ -202,12 +225,13 @@ Describe "$CommandName Unit Test" -Tags Unittest {
     }
 }
 
-Describe "$commandname Integration Tests" -Tags 'IntegrationTests' {
+Describe "Get-DbaBuild Integration Tests" -Tag 'IntegrationTests' {
+    BeforeAll {
+        $server1 = Connect-DbaInstance -SqlInstance $script:instance1
+        $server2 = Connect-DbaInstance -SqlInstance $script:instance2
+    }
+
     Context "piping and params" {
-        BeforeAll {
-            $server1 = Connect-DbaInstance -SqlInstance $script:instance1
-            $server2 = Connect-DbaInstance -SqlInstance $script:instance2
-        }
         It "works when instances are piped" {
             $res = @($server1, $server2) | Get-DbaBuild
             $res.Count | Should -Be 2
@@ -216,8 +240,12 @@ Describe "$commandname Integration Tests" -Tags 'IntegrationTests' {
             { @($server1, $server2) | Get-DbaBuild -Kb -EnableException } | Should -Throw
         }
     }
+
     Context "Test retrieving version from instances" {
-        $results = Get-DbaBuild -SqlInstance $script:instance1, $script:instance2
+        BeforeAll {
+            $results = Get-DbaBuild -SqlInstance $script:instance1, $script:instance2
+        }
+
         It "Should return an exact match" {
             $results | Should -Not -BeNullOrEmpty
             foreach ($r in $results) {

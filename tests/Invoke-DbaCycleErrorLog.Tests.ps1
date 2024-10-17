@@ -1,28 +1,66 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag "UnitTests" {
+Describe "Invoke-DbaCycleErrorLog Unit Tests" -Tag "UnitTests" {
+    BeforeAll {
+        # Importing constants and any necessary setup
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Type', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandName = "Invoke-DbaCycleErrorLog"
+            $command = Get-Command $CommandName
+        }
+
+        It "Should have SqlInstance parameter" {
+            $command | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+
+        It "Should have SqlCredential parameter" {
+            $command | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+
+        It "Should have Type parameter" {
+            $command | Should -HaveParameter Type -Type String -Not -Mandatory
+        }
+
+        It "Should have EnableException parameter" {
+            $command | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+        }
+
+        It "Should have common parameters" {
+            $command | Should -HaveParameter Verbose -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter Debug -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter ErrorAction -Type ActionPreference -Not -Mandatory
+            $command | Should -HaveParameter WarningAction -Type ActionPreference -Not -Mandatory
+            $command | Should -HaveParameter InformationAction -Type ActionPreference -Not -Mandatory
+            $command | Should -HaveParameter ErrorVariable -Type String -Not -Mandatory
+            $command | Should -HaveParameter WarningVariable -Type String -Not -Mandatory
+            $command | Should -HaveParameter InformationVariable -Type String -Not -Mandatory
+            $command | Should -HaveParameter OutVariable -Type String -Not -Mandatory
+            $command | Should -HaveParameter OutBuffer -Type Int32 -Not -Mandatory
+            $command | Should -HaveParameter PipelineVariable -Type String -Not -Mandatory
+            $command | Should -HaveParameter WhatIf -Type SwitchParameter -Not -Mandatory
+            $command | Should -HaveParameter Confirm -Type SwitchParameter -Not -Mandatory
         }
     }
 }
 
-Describe "$CommandName Integration Test" -Tag "IntegrationTests" {
-    $results = Invoke-DbaCycleErrorLog -SqlInstance $script:instance1 -Type instance
+Describe "Invoke-DbaCycleErrorLog Integration Tests" -Tag "IntegrationTests" {
+    BeforeAll {
+        # Importing constants and any necessary setup
+        . "$PSScriptRoot\constants.ps1"
+        $results = Invoke-DbaCycleErrorLog -SqlInstance $script:instance1 -Type instance
+    }
 
     Context "Validate output" {
         It "Should have correct properties" {
-            $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,LogType,IsSuccessful,Notes'.Split(',')
-            ($results.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
+            $ExpectedProps = 'ComputerName', 'InstanceName', 'SqlInstance', 'LogType', 'IsSuccessful', 'Notes'
+            $results.PSObject.Properties.Name | Should -Be $ExpectedProps
         }
+
         It "Should cycle instance error log" {
-            $results.LogType | Should Be "instance"
+            $results.LogType | Should -Be "instance"
         }
     }
 }

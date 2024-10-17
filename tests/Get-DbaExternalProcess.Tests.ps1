@@ -1,22 +1,24 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaExternalProcess" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'ComputerName', 'Credential', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaExternalProcess
+        }
+        It "Accepts ComputerName as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[]
+        }
+        It "Accepts Credential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
+        }
+        It "Accepts EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    Context "Can get an external process" {
+    Context "Integration Tests" -Tag "IntegrationTests" {
         BeforeAll {
-            $null = Invoke-DbaQuery -SqlInstance $script:instance1 -Query "
+            $null = Invoke-DbaQuery -SqlInstance $script:instance1 -Query @"
             -- To allow advanced options to be changed.
             EXECUTE sp_configure 'show advanced options', 1;
             GO
@@ -28,19 +30,18 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             GO
             -- To update the currently configured value for this feature.
             RECONFIGURE;
-            GO"
-            $query = @"
-            xp_cmdshell 'powershell -command ""sleep 20""'
+            GO
 "@
+            $query = "xp_cmdshell 'powershell -command ""sleep 20""'"
             Start-Process -FilePath sqlcmd -ArgumentList "-S $script:instance1 -Q `"$query`"" -NoNewWindow -RedirectStandardOutput null
+            Start-Sleep -Seconds 1
         }
 
         It "returns a process" {
-            Start-Sleep -Seconds 1
             $results = Get-DbaExternalProcess -ComputerName localhost | Select-Object -First 1
             $results.ComputerName | Should -Be "localhost"
             $results.Name | Should -Be "cmd.exe"
-            $results.ProcessId | Should -Not -Be $null
+            $results.ProcessId | Should -Not -BeNullOrEmpty
         }
     }
 }

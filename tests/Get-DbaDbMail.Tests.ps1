@@ -1,46 +1,57 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaDbMail" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaDbMail
         }
-    }
-}
-
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $mailSettings = @{
-            AccountRetryAttempts           = '1'
-            AccountRetryDelay              = '60'
-            DatabaseMailExeMinimumLifeTime = '600'
-            DefaultAttachmentEncoding      = 'MIME'
-            LoggingLevel                   = '2'
-            MaxFileSize                    = '1000'
-            ProhibitedExtensions           = 'exe,dll,vbs,js'
+        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
         }
-        foreach ($m in $mailSettings.GetEnumerator()) {
-            $server.query("exec msdb.dbo.sysmail_configure_sp '$($m.key)','$($m.value)';")
+        It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type switch -Not -Mandatory
         }
     }
 
-    Context "Gets DbMail Settings" {
-        $results = Get-DbaDbMail -SqlInstance $script:instance2
-        It "Gets results" {
-            $results | Should Not Be $null
+    Context "Command usage" {
+        BeforeDiscovery {
+            . "$PSScriptRoot\constants.ps1"
         }
-        Foreach ($row in $($results.ConfigurationValues)) {
-            It "Should have ConfiguredValues of $($row.name)" {
-                $row.name | Should Bein $mailSettings.keys
+
+        BeforeAll {
+            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $mailSettings = @{
+                AccountRetryAttempts           = '1'
+                AccountRetryDelay              = '60'
+                DatabaseMailExeMinimumLifeTime = '600'
+                DefaultAttachmentEncoding      = 'MIME'
+                LoggingLevel                   = '2'
+                MaxFileSize                    = '1000'
+                ProhibitedExtensions           = 'exe,dll,vbs,js'
             }
-            It "Should have ConfiguredValues settings for $($row.name) of $($row.value)" {
-                $row.value | Should Bein $mailSettings.values
+            foreach ($m in $mailSettings.GetEnumerator()) {
+                $server.query("exec msdb.dbo.sysmail_configure_sp '$($m.key)','$($m.value)';")
+            }
+        }
+
+        Context "Gets DbMail Settings" {
+            BeforeAll {
+                $results = Get-DbaDbMail -SqlInstance $script:instance2
+            }
+
+            It "Gets results" {
+                $results | Should -Not -BeNullOrEmpty
+            }
+
+            It "Should have ConfiguredValues of <_.name>" -ForEach $results.ConfigurationValues {
+                $_.name | Should -BeIn $mailSettings.keys
+            }
+
+            It "Should have ConfiguredValues settings for <_.name> of <_.value>" -ForEach $results.ConfigurationValues {
+                $_.value | Should -BeIn $mailSettings.values
             }
         }
     }

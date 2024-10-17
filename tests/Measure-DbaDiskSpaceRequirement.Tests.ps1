@@ -1,48 +1,76 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Measure-DbaDiskSpaceRequirement" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Source', 'Database', 'SourceSqlCredential', 'Destination', 'DestinationDatabase', 'DestinationSqlCredential', 'Credential', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Measure-DbaDiskSpaceRequirement
+        }
+        It "Should have Source as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Source -Type DbaInstanceParameter
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String
+        }
+        It "Should have SourceSqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SourceSqlCredential -Type PSCredential
+        }
+        It "Should have Destination as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Destination -Type DbaInstanceParameter
+        }
+        It "Should have DestinationDatabase as a parameter" {
+            $CommandUnderTest | Should -HaveParameter DestinationDatabase -Type String
+        }
+        It "Should have DestinationSqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type PSCredential
+        }
+        It "Should have Credential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    Context "Should Measure Disk Space Required " {
-        $server1 = Connect-DbaInstance -SqlInstance $script:instance1
-        $server2 = Connect-DbaInstance -SqlInstance $script:instance2
-        $Options = @{
-            Source              = $script:instance1
-            Destination         = $script:instance2
-            Database            = "master"
-            DestinationDatabase = "Dbatoolsci_DestinationDB"
+    Context "Should Measure Disk Space Required" {
+        BeforeAll {
+            $server1 = Connect-DbaInstance -SqlInstance $script:instance1
+            $server2 = Connect-DbaInstance -SqlInstance $script:instance2
+            $Options = @{
+                Source              = $script:instance1
+                Destination         = $script:instance2
+                Database            = "master"
+                DestinationDatabase = "Dbatoolsci_DestinationDB"
+            }
+            $results = Measure-DbaDiskSpaceRequirement @Options
         }
-        $results = Measure-DbaDiskSpaceRequirement @Options
+
         It "Should have information" {
             $results | Should -Not -BeNullOrEmpty
         }
-        foreach ($r in $results) {
-            It "Should be sourced from Master" {
-                $r.SourceDatabase | Should -Be $Options.Database
-            }
-            It "Should be sourced from the instance $($script:instance1)" {
-                $r.SourceSqlInstance | Should -Be $server1.SqlInstance
-            }
-            It "Should be destined for Dbatoolsci_DestinationDB" {
-                $r.DestinationDatabase | Should -Be $Options.DestinationDatabase
-            }
-            It "Should be destined for the instance $($script:instance2)" {
-                $r.DestinationSqlInstance | Should -Be $server2.SqlInstance
-            }
-            It "Should be have files on source" {
-                $r.FileLocation | Should Be "Only on Source"
-            }
+
+        It "Should be sourced from Master" {
+            $results.SourceDatabase | Should -Be $Options.Database
+        }
+
+        It "Should be sourced from the instance $($script:instance1)" {
+            $results.SourceSqlInstance | Should -Be $server1.SqlInstance
+        }
+
+        It "Should be destined for Dbatoolsci_DestinationDB" {
+            $results.DestinationDatabase | Should -Be $Options.DestinationDatabase
+        }
+
+        It "Should be destined for the instance $($script:instance2)" {
+            $results.DestinationSqlInstance | Should -Be $server2.SqlInstance
+        }
+
+        It "Should have files on source" {
+            $results.FileLocation | Should -Be "Only on Source"
         }
     }
 }

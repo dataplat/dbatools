@@ -1,34 +1,69 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tags "UnitTests" {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Synonym', 'Schema', 'BaseServer', 'BaseDatabase', 'BaseSchema', 'BaseObject', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
-        }
-    }
-}
-
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe "New-DbaDbSynonym" {
     BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+
         $dbname = "dbatoolsscidb_$(Get-Random)"
         $dbname2 = "dbatoolsscidb_$(Get-Random)"
         $null = New-DbaDatabase -SqlInstance $script:instance2 -Name $dbname
         $null = New-DbaDatabase -SqlInstance $script:instance2 -Name $dbname2
     }
-    AfterEach {
-        $null = Remove-DbaDbSynonym -SqlInstance $script:instance2 -Confirm:$false
-    }
+
     AfterAll {
         $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname, $dbname2 -Confirm:$false
         $null = Remove-DbaDbSynonym -SqlInstance $script:instance2 -Confirm:$false
     }
 
+    Context "Validate parameters" {
+        BeforeAll {
+            $CommandUnderTest = Get-Command New-DbaDbSynonym
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String[]
+        }
+        It "Should have ExcludeDatabase as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type String[]
+        }
+        It "Should have Synonym as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Synonym -Type String
+        }
+        It "Should have Schema as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Schema -Type String
+        }
+        It "Should have BaseServer as a parameter" {
+            $CommandUnderTest | Should -HaveParameter BaseServer -Type String
+        }
+        It "Should have BaseDatabase as a parameter" {
+            $CommandUnderTest | Should -HaveParameter BaseDatabase -Type String
+        }
+        It "Should have BaseSchema as a parameter" {
+            $CommandUnderTest | Should -HaveParameter BaseSchema -Type String
+        }
+        It "Should have BaseObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter BaseObject -Type String
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[]
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+        }
+    }
+
     Context "Functionality" {
+        BeforeEach {
+            $null = Remove-DbaDbSynonym -SqlInstance $script:instance2 -Confirm:$false
+        }
+
         It 'Add new synonym and returns results' {
             $result1 = New-DbaDbSynonym -SqlInstance $script:instance2 -Database $dbname -Synonym 'syn1' -BaseObject 'obj1'
 
@@ -124,6 +159,5 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $result7.BaseServer | Should -Contain 'bsrv7'
             $result7.BaseObject | Should -Be 'obj7'
         }
-
     }
 }

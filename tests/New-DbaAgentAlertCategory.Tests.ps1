@@ -1,43 +1,61 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "New-DbaAgentAlertCategory" {
+    BeforeAll {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Category', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command New-DbaAgentAlertCategory
+        }
+        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Category as a non-mandatory parameter of type String[]" {
+            $CommandUnderTest | Should -HaveParameter Category -Type String[] -Not -Mandatory
+        }
+        It "Should have Force as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "New Agent Alert Category is added properly" {
+        BeforeAll {
+            $script:instance2 = "localhost"
+        }
+
+        AfterAll {
+            # Cleanup and ignore all output
+            $null = Remove-DbaAgentAlertCategory -SqlInstance $script:instance2 -Category CategoryTest1, CategoryTest2 -Confirm:$false
+        }
 
         It "Should have the right name and category type" {
             $results = New-DbaAgentAlertCategory -SqlInstance $script:instance2 -Category CategoryTest1
-            $results.Name | Should Be "CategoryTest1"
+            $results.Name | Should -Be "CategoryTest1"
         }
 
         It "Should have the right name and category type" {
             $results = New-DbaAgentAlertCategory -SqlInstance $script:instance2 -Category CategoryTest2
-            $results.Name | Should Be "CategoryTest2"
+            $results.Name | Should -Be "CategoryTest2"
         }
 
         It "Should actually for sure exist" {
             $newresults = Get-DbaAgentAlertCategory -SqlInstance $script:instance2 -Category CategoryTest1, CategoryTest2
-            $newresults[0].Name | Should Be "CategoryTest1"
-            $newresults[1].Name | Should Be "CategoryTest2"
+            $newresults[0].Name | Should -Be "CategoryTest1"
+            $newresults[1].Name | Should -Be "CategoryTest2"
         }
 
         It "Should not write over existing job categories" {
+            $warn = $null
             $results = New-DbaAgentAlertCategory -SqlInstance $script:instance2 -Category CategoryTest1 -WarningAction SilentlyContinue -WarningVariable warn
-            $warn -match "already exists" | Should Be $true
+            $warn | Should -Match "already exists"
         }
-
-        # Cleanup and ignore all output
-        $null = Remove-DbaAgentAlertCategory -SqlInstance $script:instance2 -Category CategoryTest1, CategoryTest2 -Confirm:$false
     }
 }

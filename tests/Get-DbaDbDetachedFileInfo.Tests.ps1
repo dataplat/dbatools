@@ -1,52 +1,69 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaDbDetachedFileInfo" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Path', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaDbDetachedFileInfo
         }
-    }
-}
-
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $versionName = $server.GetSqlServerVersionName()
-        $random = Get-Random
-        $dbname = "dbatoolsci_detatch_$random"
-        $server.Query("CREATE DATABASE $dbname")
-        $path = (Get-DbaDbFile -SqlInstance $script:instance2 -Database $dbname | Where-object {$_.PhysicalName -like '*.mdf'}).physicalname
-        Detach-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Force
-    }
-
-    AfterAll {
-        $server.Query("CREATE DATABASE $dbname
-            ON (FILENAME = '$path')
-            FOR ATTACH")
-        Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Path as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Path -Type String[]
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+        }
     }
 
     Context "Command actually works" {
-        $results = Get-DbaDbDetachedFileInfo -SqlInstance $script:instance2 -Path $path
-        it "Gets Results" {
-            $results | Should Not Be $null
+        BeforeDiscovery {
+            . "$PSScriptRoot\constants.ps1"
         }
+
+        BeforeAll {
+            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $versionName = $server.GetSqlServerVersionName()
+            $random = Get-Random
+            $dbname = "dbatoolsci_detatch_$random"
+            $server.Query("CREATE DATABASE $dbname")
+            $path = (Get-DbaDbFile -SqlInstance $script:instance2 -Database $dbname | Where-Object {$_.PhysicalName -like '*.mdf'}).physicalname
+            Detach-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Force
+        }
+
+        AfterAll {
+            $server.Query("CREATE DATABASE $dbname
+                ON (FILENAME = '$path')
+                FOR ATTACH")
+            Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
+        }
+
+        It "Gets Results" {
+            $results = Get-DbaDbDetachedFileInfo -SqlInstance $script:instance2 -Path $path
+            $results | Should -Not -BeNullOrEmpty
+        }
+
         It "Should be created database" {
-            $results.name | Should Be $dbname
+            $results = Get-DbaDbDetachedFileInfo -SqlInstance $script:instance2 -Path $path
+            $results.name | Should -Be $dbname
         }
+
         It "Should be the correct version" {
-            $results.version | Should Be $versionName
+            $results = Get-DbaDbDetachedFileInfo -SqlInstance $script:instance2 -Path $path
+            $results.version | Should -Be $versionName
         }
+
         It "Should have Data files" {
-            $results.DataFiles | Should Not Be $null
+            $results = Get-DbaDbDetachedFileInfo -SqlInstance $script:instance2 -Path $path
+            $results.DataFiles | Should -Not -BeNullOrEmpty
         }
+
         It "Should have Log files" {
-            $results.LogFiles | Should Not Be $null
+            $results = Get-DbaDbDetachedFileInfo -SqlInstance $script:instance2 -Path $path
+            $results.LogFiles | Should -Not -BeNullOrEmpty
         }
     }
 }

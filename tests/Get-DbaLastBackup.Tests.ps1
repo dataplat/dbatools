@@ -1,18 +1,39 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaLastBackup Unit Tests" -Tag 'UnitTests' {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        It "Should only contain our specific parameters" {
-            [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-            [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'EnableException'
-            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
+        BeforeAll {
+            $Command = Get-Command Get-DbaLastBackup
+        }
+        It "Should have SqlInstance parameter" {
+            $Command | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential parameter" {
+            $Command | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database parameter" {
+            $Command | Should -HaveParameter Database -Type Object[] -Not -Mandatory
+        }
+        It "Should have ExcludeDatabase parameter" {
+            $Command | Should -HaveParameter ExcludeDatabase -Type Object[] -Not -Mandatory
+        }
+        It "Should have EnableException parameter" {
+            $Command | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "Get-DbaLastBackup Integration Tests" -Tag "IntegrationTests" {
+    BeforeDiscovery {
+        $SkipAzureTest = [Environment]::GetEnvironmentVariable('azuredbpasswd') -ne "failstooften"
+    }
+
     BeforeAll {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $random = Get-Random
@@ -46,17 +67,17 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname | Backup-DbaDatabase -BackupDirectory $backupdir -Type Differential
             $null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname | Backup-DbaDatabase -BackupDirectory $backupdir -Type Log
             $results = Get-DbaLastBackup -SqlInstance $script:instance2 -Database $dbname
-            [datetime]$results.LastFullBackup -gt $yesterday    | Should -Be $true
-            [datetime]$results.LastDiffBackup -gt $yesterday    | Should -Be $true
-            [datetime]$results.LastLogBackup -gt $yesterday     | Should -Be $true
+            [datetime]$results.LastFullBackup | Should -BeGreaterThan $yesterday
+            [datetime]$results.LastDiffBackup | Should -BeGreaterThan $yesterday
+            [datetime]$results.LastLogBackup  | Should -BeGreaterThan $yesterday
         }
     }
 
     Context "Get last history for all databases" {
         It "returns more than 3 databases" {
             $results = Get-DbaLastBackup -SqlInstance $script:instance2
-            $results.count -gt 3                | Should -Be $true
-            $results.Database -contains $dbname | Should -Be $true
+            $results.count | Should -BeGreaterThan 3
+            $results.Database | Should -Contain $dbname
         }
     }
 
@@ -64,7 +85,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "supports multi-file backups" {
             $null = Backup-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -FileCount 4
             $results = Get-DbaLastBackup -SqlInstance $script:instance2 -Database $dbname | Select-Object -First 1
-            $results.LastFullBackup.GetType().Name | Should -Be "DbaDateTime"
+            $results.LastFullBackup | Should -BeOfType [DbaDateTime]
         }
     }
 
@@ -77,17 +98,16 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $copyOnlyFullBackup = ($results | Where-Object { $_.Database -eq $dbname -and $_.LastFullBackupIsCopyOnly -eq $true })
             $copyOnlyLogBackup = ($results | Where-Object { $_.Database -eq $dbname -and $_.LastLogBackupIsCopyOnly -eq $true })
 
-            $copyOnlyFullBackup.Database   | Should -Be $dbname
-            $copyOnlyLogBackup.Database    | Should -Be $dbname
-
+            $copyOnlyFullBackup.Database | Should -Be $dbname
+            $copyOnlyLogBackup.Database  | Should -Be $dbname
 
             $null = Backup-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -BackupDirectory $backupdir -Type Full
             $null = Backup-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -BackupDirectory $backupdir -Type Log
 
             $results = Get-DbaLastBackup -SqlInstance $script:instance2 -Database $dbname
 
-            $results.LastFullBackupIsCopyOnly   | Should -Be $false
-            $results.LastLogBackupIsCopyOnly    | Should -Be $false
+            $results.LastFullBackupIsCopyOnly | Should -Be $false
+            $results.LastLogBackupIsCopyOnly  | Should -Be $false
         }
     }
 }

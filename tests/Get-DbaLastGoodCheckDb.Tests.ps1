@@ -1,66 +1,89 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaLastGoodCheckDb" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaLastGoodCheckDb
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[]
+        }
+        It "Should have ExcludeDatabase as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[]
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[]
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
-    BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance1 -Database master
-        $server.Query("DBCC CHECKDB")
-        $dbname = "dbatoolsci_]_$(Get-Random)"
-        $db = New-DbaDatabase -SqlInstance $script:instance1 -Name $dbname -Owner sa
-        $db.Query("DBCC CHECKDB")
-    }
-    AfterAll {
-        $null = Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -confirm:$false
-    }
     Context "Command actually works" {
-        $results = Get-DbaLastGoodCheckDb -SqlInstance $script:instance1 -Database master
+        BeforeAll {
+            $server = Connect-DbaInstance -SqlInstance $script:instance1 -Database master
+            $server.Query("DBCC CHECKDB")
+            $dbname = "dbatoolsci_]_$(Get-Random)"
+            $db = New-DbaDatabase -SqlInstance $script:instance1 -Name $dbname -Owner sa
+            $db.Query("DBCC CHECKDB")
+        }
+        AfterAll {
+            $null = Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
+        }
+
         It "LastGoodCheckDb is a valid date" {
-            $results.LastGoodCheckDb -ne $null | Should Be $true
-            $results.LastGoodCheckDb -is [datetime] | Should Be $true
+            $results = Get-DbaLastGoodCheckDb -SqlInstance $script:instance1 -Database master
+            $results.LastGoodCheckDb | Should -Not -BeNullOrEmpty
+            $results.LastGoodCheckDb | Should -BeOfType [datetime]
         }
 
-        $results = Get-DbaLastGoodCheckDb -SqlInstance $script:instance1 -WarningAction SilentlyContinue
         It "returns more than 3 results" {
-            ($results).Count -gt 3 | Should Be $true
+            $results = Get-DbaLastGoodCheckDb -SqlInstance $script:instance1 -WarningAction SilentlyContinue
+            $results.Count | Should -BeGreaterThan 3
         }
 
-        $results = Get-DbaLastGoodCheckDb -SqlInstance $script:instance1 -Database $dbname
         It "LastGoodCheckDb is a valid date for database with embedded ] characters" {
-            $results.LastGoodCheckDb -ne $null | Should Be $true
-            $results.LastGoodCheckDb -is [datetime] | Should Be $true
+            $results = Get-DbaLastGoodCheckDb -SqlInstance $script:instance1 -Database $dbname
+            $results.LastGoodCheckDb | Should -Not -BeNullOrEmpty
+            $results.LastGoodCheckDb | Should -BeOfType [datetime]
         }
     }
 
     Context "Piping works" {
-        $server = Connect-DbaInstance -SqlInstance $script:instance1
-        $results = $server | Get-DbaLastGoodCheckDb -Database $dbname, master
-        It "LastGoodCheckDb accepts piped input from Connect-DbaInstance" {
-            ($results).Count -eq 2 | Should Be $true
+        BeforeAll {
+            $server = Connect-DbaInstance -SqlInstance $script:instance1
+            $dbname = "dbatoolsci_]_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $script:instance1 -Name $dbname -Owner sa
+        }
+        AfterAll {
+            $null = Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
         }
 
-        $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname, master
-        $results = $db | Get-DbaLastGoodCheckDb
+        It "LastGoodCheckDb accepts piped input from Connect-DbaInstance" {
+            $results = $server | Get-DbaLastGoodCheckDb -Database $dbname, master
+            $results.Count | Should -Be 2
+        }
+
         It "LastGoodCheckDb accepts piped input from Get-DbaDatabase" {
-            ($results).Count -eq 2 | Should Be $true
+            $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname, master
+            $results = $db | Get-DbaLastGoodCheckDb
+            $results.Count | Should -Be 2
         }
     }
 
     Context "Doesn't return duplicate results" {
-        $results = Get-DbaLastGoodCheckDb -SqlInstance $script:instance1, $script:instance2 -Database $dbname
         It "LastGoodCheckDb doesn't return duplicates when multiple servers are passed in" {
-            ($results | Group-Object SqlInstance, Database | Where-Object Count -gt 1) | Should BeNullOrEmpty
+            $dbname = "dbatoolsci_]_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $script:instance1 -Name $dbname -Owner sa
+            $results = Get-DbaLastGoodCheckDb -SqlInstance $script:instance1, $script:instance2 -Database $dbname
+            ($results | Group-Object SqlInstance, Database | Where-Object Count -gt 1) | Should -BeNullOrEmpty
+            $null = Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
         }
     }
 }

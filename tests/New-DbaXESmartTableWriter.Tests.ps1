@@ -1,24 +1,56 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "New-DbaXESmartTableWriter" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Table', 'AutoCreateTargetTable', 'UploadIntervalSeconds', 'Event', 'OutputColumn', 'Filter', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command New-DbaXESmartTableWriter
+        }
+        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database as a non-mandatory parameter of type String" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String -Not -Mandatory
+        }
+        It "Should have Table as a non-mandatory parameter of type String" {
+            $CommandUnderTest | Should -HaveParameter Table -Type String -Not -Mandatory
+        }
+        It "Should have AutoCreateTargetTable as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter AutoCreateTargetTable -Type Switch -Not -Mandatory
+        }
+        It "Should have UploadIntervalSeconds as a non-mandatory parameter of type Int32" {
+            $CommandUnderTest | Should -HaveParameter UploadIntervalSeconds -Type Int32 -Not -Mandatory
+        }
+        It "Should have Event as a non-mandatory parameter of type String[]" {
+            $CommandUnderTest | Should -HaveParameter Event -Type String[] -Not -Mandatory
+        }
+        It "Should have OutputColumn as a non-mandatory parameter of type String[]" {
+            $CommandUnderTest | Should -HaveParameter OutputColumn -Type String[] -Not -Mandatory
+        }
+        It "Should have Filter as a non-mandatory parameter of type String" {
+            $CommandUnderTest | Should -HaveParameter Filter -Type String -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
-}
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+
     Context "Creates a smart object" {
-        It "returns the object with all of the correct properties" {
+        BeforeAll {
             $results = New-DbaXESmartReplay -SqlInstance $script:instance2 -Database planning
+        }
+        It "returns the object with all of the correct properties" {
             $results.ServerName | Should -Be $script:instance2
-            $results.DatabaseName | Should -be 'planning'
-            $results.Password | Should -Be $null
+            $results.DatabaseName | Should -Be 'planning'
+            $results.Password | Should -BeNullOrEmpty
             $results.DelaySeconds | Should -Be 0
         }
     }

@@ -1,41 +1,53 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaDbServiceBrokerQueue" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException', 'Database', 'ExcludeDatabase', 'ExcludeSystemQueue'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaDbServiceBrokerQueue
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[]
+        }
+        It "Should have ExcludeDatabase as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[]
+        }
+        It "Should have ExcludeSystemQueue as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeSystemQueue -Type SwitchParameter
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $procname = ("dbatools_{0}" -f $(Get-Random))
-        $server.Query("CREATE PROCEDURE $procname AS SELECT 1", 'tempdb')
-        $queuename = ("dbatools_{0}" -f $(Get-Random))
-        $server.Query("CREATE QUEUE $queuename WITH STATUS = ON , RETENTION = OFF , ACTIVATION (  STATUS = ON , PROCEDURE_NAME = $procname , MAX_QUEUE_READERS = 1 , EXECUTE AS OWNER  ), POISON_MESSAGE_HANDLING (STATUS = ON)", 'tempdb')
-    }
-    AfterAll {
-        $null = $server.Query("DROP QUEUE $queuename", 'tempdb')
-        $null = $server.Query("DROP PROCEDURE $procname", 'tempdb')
-    }
+    Context "Command usage" {
+        BeforeDiscovery {
+            . (Join-Path $PSScriptRoot 'constants.ps1')
+        }
 
-    Context "Gets the service broker queue" {
-        $results = Get-DbaDbServiceBrokerQueue -SqlInstance $script:instance2 -database tempdb -ExcludeSystemQueue:$true
-        It "Gets results" {
-            $results | Should Not Be $Null
+        BeforeAll {
+            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $procname = ("dbatools_{0}" -f $(Get-Random))
+            $server.Query("CREATE PROCEDURE $procname AS SELECT 1", 'tempdb')
+            $queuename = ("dbatools_{0}" -f $(Get-Random))
+            $server.Query("CREATE QUEUE $queuename WITH STATUS = ON , RETENTION = OFF , ACTIVATION (  STATUS = ON , PROCEDURE_NAME = $procname , MAX_QUEUE_READERS = 1 , EXECUTE AS OWNER  ), POISON_MESSAGE_HANDLING (STATUS = ON)", 'tempdb')
         }
-        It "Should have a name of $queuename" {
-            $results.name | Should Be "$queuename"
+
+        AfterAll {
+            $null = $server.Query("DROP QUEUE $queuename", 'tempdb')
+            $null = $server.Query("DROP PROCEDURE $procname", 'tempdb')
         }
-        It "Should have an schema of dbo" {
-            $results.schema | Should Be "dbo"
+
+        It "Gets the service broker queue" {
+            $results = Get-DbaDbServiceBrokerQueue -SqlInstance $script:instance2 -Database tempdb -ExcludeSystemQueue
+            $results | Should -Not -BeNullOrEmpty
+            $results.Name | Should -Be $queuename
+            $results.Schema | Should -Be "dbo"
         }
     }
 }

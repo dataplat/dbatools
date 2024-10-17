@@ -1,20 +1,37 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tags "UnitTests" {
+Describe "Import-DbaRegServer" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Path', 'InputObject', 'Group', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Import-DbaRegServer
+        }
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Path parameter" {
+            $CommandUnderTest | Should -HaveParameter Path -Type String[] -Not -Mandatory
+        }
+        It "Should have InputObject parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Not -Mandatory
+        }
+        It "Should have Group parameter" {
+            $CommandUnderTest | Should -HaveParameter Group -Type Object -Not -Mandatory
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
-    Context "Setup" {
+    Context "Integration Tests" {
         BeforeAll {
             $srvName = "dbatoolsci-server1"
             $group = "dbatoolsci-group1"
@@ -38,13 +55,15 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
             $newServer3 = Add-DbaRegServer -SqlInstance $script:instance2 -ServerName $srvName3 -Name $regSrvName3 -Description $regSrvDesc3
         }
+
         BeforeEach {
             Get-DbaRegServer -SqlInstance $script:instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegServer -Confirm:$false
-            Get-DbaRegServerGroup -SqlInstance $script:instance2| Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
+            Get-DbaRegServerGroup -SqlInstance $script:instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
         }
-        Aftereach {
+
+        AfterEach {
             Get-DbaRegServer -SqlInstance $script:instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegServer -Confirm:$false
-            Get-DbaRegServerGroup -SqlInstance $script:instance2| Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
+            Get-DbaRegServerGroup -SqlInstance $script:instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
             $results, $results2, $results3 | Remove-Item -ErrorAction Ignore
         }
 
@@ -67,6 +86,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results4.ServerName | Should -Be @('dbatoolsci-server3')
             $results4.Description | Should -Be @('dbatoolsci-server3desc')
         }
+
         It "imports from a random object so long as it has ServerName" {
             $object = [pscustomobject]@{
                 ServerName = 'dbatoolsci-randobject'
@@ -75,12 +95,13 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results.ServerName | Should -Be 'dbatoolsci-randobject'
             $results.Name | Should -Be 'dbatoolsci-randobject'
         }
+
         It "does not import object if ServerName does not exist" {
             $object = [pscustomobject]@{
                 Name = 'dbatoolsci-randobject'
             }
             $results = $object | Import-DbaRegServer -SqlInstance $script:instance2 -WarningAction SilentlyContinue -WarningVariable warn
-            $results | Should -Be $null
+            $results | Should -BeNullOrEmpty
             $warn | Should -Match 'No servers added'
         }
     }

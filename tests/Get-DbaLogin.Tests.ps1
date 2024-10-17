@@ -1,23 +1,12 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Login', 'IncludeFilter', 'ExcludeLogin', 'ExcludeFilter', 'ExcludeSystemLogin', 'Type', 'HasAccess', 'Locked', 'Disabled', , 'MustChangePassword', 'Detailed', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
-        }
-    }
-}
-
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "Get-DbaLogin" {
     BeforeAll {
-        $SkipLocalTest = $true # Change to $false to run the local-only tests on a local instance. This is being used because the 'locked' test makes assumptions the password policy configuration is enabled for the Windows OS.
-        $random = Get-Random
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
 
+        $random = Get-Random
         $password = ConvertTo-SecureString -String "password1A@" -AsPlainText -Force
         New-DbaLogin -SqlInstance $script:instance1 -Login "testlogin1_$random" -Password $password
         New-DbaLogin -SqlInstance $script:instance1 -Login "testlogin2_$random" -Password $password
@@ -27,33 +16,81 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         Remove-DbaLogin -SqlInstance $script:instance1 -Login "testlogin1_$random", "testlogin2_$random" -Confirm:$false -Force
     }
 
+    Context "Validate parameters" {
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaLogin
+        }
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Login parameter" {
+            $CommandUnderTest | Should -HaveParameter Login -Type String[] -Not -Mandatory
+        }
+        It "Should have IncludeFilter parameter" {
+            $CommandUnderTest | Should -HaveParameter IncludeFilter -Type String[] -Not -Mandatory
+        }
+        It "Should have ExcludeLogin parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeLogin -Type String[] -Not -Mandatory
+        }
+        It "Should have ExcludeFilter parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeFilter -Type String[] -Not -Mandatory
+        }
+        It "Should have ExcludeSystemLogin parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeSystemLogin -Type Switch -Not -Mandatory
+        }
+        It "Should have Type parameter" {
+            $CommandUnderTest | Should -HaveParameter Type -Type String -Not -Mandatory
+        }
+        It "Should have HasAccess parameter" {
+            $CommandUnderTest | Should -HaveParameter HasAccess -Type Switch -Not -Mandatory
+        }
+        It "Should have Locked parameter" {
+            $CommandUnderTest | Should -HaveParameter Locked -Type Switch -Not -Mandatory
+        }
+        It "Should have Disabled parameter" {
+            $CommandUnderTest | Should -HaveParameter Disabled -Type Switch -Not -Mandatory
+        }
+        It "Should have MustChangePassword parameter" {
+            $CommandUnderTest | Should -HaveParameter MustChangePassword -Type Switch -Not -Mandatory
+        }
+        It "Should have Detailed parameter" {
+            $CommandUnderTest | Should -HaveParameter Detailed -Type Switch -Not -Mandatory
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+        }
+    }
+
     Context "Does sql instance have a SA account" {
-        $results = Get-DbaLogin -SqlInstance $script:instance1 -Login sa
         It "Should report that one account named SA exists" {
-            $results.Count | Should Be 1
+            $results = Get-DbaLogin -SqlInstance $script:instance1 -Login sa
+            $results.Count | Should -Be 1
         }
     }
 
     Context "Check that SA account is enabled" {
-        $results = Get-DbaLogin -SqlInstance $script:instance1 -Login sa
         It "Should say the SA account is disabled FALSE" {
-            $results.IsDisabled | Should Be "False"
+            $results = Get-DbaLogin -SqlInstance $script:instance1 -Login sa
+            $results.IsDisabled | Should -Be "False"
         }
     }
 
     Context "Check that SA account is SQL Login" {
-        $results = Get-DbaLogin -SqlInstance $script:instance1 -Login sa -Type SQL -Detailed
         It "Should report that one SQL Login named SA exists" {
-            $results.Count | Should Be 1
+            $results = Get-DbaLogin -SqlInstance $script:instance1 -Login sa -Type SQL -Detailed
+            $results.Count | Should -Be 1
         }
         It "Should get LoginProperties via Detailed switch" {
-            $results.BadPasswordCount | Should Not Be $null
-            $results.PasswordHash | Should Not Be $null
+            $results = Get-DbaLogin -SqlInstance $script:instance1 -Login sa -Type SQL -Detailed
+            $results.BadPasswordCount | Should -Not -BeNullOrEmpty
+            $results.PasswordHash | Should -Not -BeNullOrEmpty
         }
     }
 
     Context "Validate params" {
-
         It "Multiple logins" {
             $results = Get-DbaLogin -SqlInstance $script:instance1 -Login "testlogin1_$random", "testlogin2_$random" -Type SQL
             $results.Count | Should -Be 2
@@ -117,7 +154,20 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             ($results[0].PSobject.Properties.Name -contains "PasswordLastSetTime") | Should -Be $true
         }
 
-        It -Skip:$SkipLocalTest "Locked" {
+        It "MustChangePassword" {
+            $changeResult = Set-DbaLogin -SqlInstance $script:instance1 -Login "testlogin1_$random" -MustChange -Password $password -PasswordPolicyEnforced -PasswordExpirationEnabled
+            $changeResult.MustChangePassword | Should -Be $true
+
+            $result = Get-DbaLogin -SqlInstance $script:instance1 -MustChangePassword
+            $result.Name | Should -Contain "testlogin1_$random"
+        }
+    }
+
+    Context "Locked" {
+        BeforeDiscovery {
+            $SkipLocalTest = [Environment]::GetEnvironmentVariable('SkipLocalTest') -eq $true
+        }
+        It "Should lock and unlock a login" -Skip:$SkipLocalTest {
             $results = Set-DbaLogin -SqlInstance $script:instance1 -Login "testlogin1_$random" -PasswordPolicyEnforced -EnableException
             $results.PasswordPolicyEnforced | Should -Be $true
 
@@ -149,14 +199,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
             $results = Get-DbaLogin -SqlInstance $script:instance1 -Login "testlogin1_$random" -Type SQL
             $results.IsLocked | Should -Be $false
-        }
-
-        It "MustChangePassword" {
-            $changeResult = Set-DbaLogin -SqlInstance $script:instance1 -Login "testlogin1_$random" -MustChange -Password $password -PasswordPolicyEnforced -PasswordExpirationEnabled
-            $changeResult.MustChangePassword | Should -Be $true
-
-            $result = Get-DbaLogin -SqlInstance $script:instance1 -MustChangePassword
-            $result.Name | Should -Contain "testlogin1_$random"
         }
     }
 }

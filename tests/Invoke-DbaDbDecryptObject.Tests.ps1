@@ -1,25 +1,47 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Invoke-DbaDbDecryptObject Unit Tests" -Tag 'UnitTests' {
+    BeforeAll {
+        # Setup code (if any) goes here
+    }
+
     Context "Validate parameters" {
-        It "Should only contain our specific parameters" {
-            [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-            [object[]]$knownParameters = 'Database', 'EnableException', 'EncodingType', 'ExportDestination', 'ObjectName', 'SqlCredential', 'SqlInstance'
-            $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
+        BeforeAll {
+            $CommandName = 'Invoke-DbaDbDecryptObject'
+            $ParameterFilter = {-not $PSItem.IsInherited}
+            $command = Get-Command -Name $CommandName
+        }
+        It "Should have SqlInstance parameter" {
+            $command | Should -HaveParameter SqlInstance -Type DbaInstanceParameter -Not -Mandatory
+        }
+        It "Should have SqlCredential parameter" {
+            $command | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database parameter" {
+            $command | Should -HaveParameter Database -Type Object[] -Not -Mandatory
+        }
+        It "Should have ObjectName parameter" {
+            $command | Should -HaveParameter ObjectName -Type String[] -Not -Mandatory
+        }
+        It "Should have EncodingType parameter" {
+            $command | Should -HaveParameter EncodingType -Type String -Not -Mandatory
+        }
+        It "Should have ExportDestination parameter" {
+            $command | Should -HaveParameter ExportDestination -Type String -Not -Mandatory
+        }
+        It "Should have EnableException parameter" {
+            $command | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "UnitTests" {
+Describe "Invoke-DbaDbDecryptObject Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        # Get a random value for the database name
         $random = Get-Random
-
-        # Setup the database name
         $dbname = "dbatoolsci_decrypt_$random"
+        $PSDefaultParameterValues = @{
+            "It:Skip" = $true # Skip all tests by default
+        }
 
         # Remove the database if it exists
         Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
@@ -40,7 +62,7 @@ Describe "$CommandName Integration Tests" -Tags "UnitTests" {
         $instance2Db.Query($remoteDacSampleEncryptedView)
 
         # Setup the code for the encrypted function
-        $queryScalarFunction = "
+        $queryScalarFunction = @"
 -- =============================================
 -- Author:        Sander Stad
 -- Description:   Dummy encrypted scalar function to test the command
@@ -63,12 +85,12 @@ BEGIN
     RETURN @ResultVar
 
 END
-        "
+"@
         # Create the encrypted scalar function
         $db.Query($queryScalarFunction)
 
         # Setup the code for the encrypted inline function
-        $queryInlineTVF = "
+        $queryInlineTVF = @"
 CREATE FUNCTION dbo.DummyEncryptedInlineTVF
 (
     @Id INTEGER
@@ -77,12 +99,12 @@ RETURNS TABLE
 WITH ENCRYPTION
 AS
     RETURN SELECT @@SERVERNAME AS ServerName, @@VERSION AS Version, @Id AS Id;
-        "
+"@
         # Create the encrypted inline TVF
         $db.Query($queryInlineTVF)
 
         # Setup the code for the encrypted table valued function
-        $queryTableValuedFunction = "
+        $queryTableValuedFunction = @"
 CREATE FUNCTION dbo.DummyEncryptedTableValuedFunction
 (
     @Id INTEGER
@@ -94,12 +116,12 @@ BEGIN
     INSERT INTO @r (i) VALUES (@Id)
     RETURN
 END;
-        "
+"@
         # Create the encrypted table valued function
         $db.Query($queryTableValuedFunction)
 
         # Setup the query for the encrypted stored procedure
-        $queryStoredProcedure = "
+        $queryStoredProcedure = @"
 -- =============================================
 -- Author:        Sander Stad
 -- Description:   Dummy encrypted stored procedure to test the command
@@ -116,17 +138,18 @@ BEGIN
     -- Insert statements for procedure here
     SELECT @param1
 END
-        "
+"@
 
         # Create the encrypted stored procedure
         $db.Query($queryStoredProcedure)
 
         # Setup the code for the encrypted view
-        $setupView = "
+        $setupView = @"
 CREATE VIEW dbo.dbatoolsci_test_vw
 WITH ENCRYPTION
 AS
-SELECT 1 AS Id;"
+SELECT 1 AS Id;
+"@
         # Create the encrypted view
         $db.Query($setupView)
 
@@ -134,14 +157,15 @@ SELECT 1 AS Id;"
         $db.Query("CREATE SCHEMA dbatools")
 
         # Setup the code for the encrypted trigger
-        $setupTable = "
+        $setupTable = @"
 CREATE TABLE dbatools.dbatoolsci_tab1
 (
     Id INTEGER
-);"
+);
+"@
         $db.Query($setupTable)
 
-        $setupTrigger = "
+        $setupTrigger = @"
 CREATE TRIGGER dbatools.dbatoolsci_test_trigger
 ON dbatools.dbatoolsci_tab1
 WITH ENCRYPTION
@@ -149,16 +173,18 @@ INSTEAD OF DELETE
 AS
 BEGIN
     RAISERROR ('Invoke-DbaDbDecryptObject.Tests', 16, 10);
-END;"
+END;
+"@
         # Create the encrypted trigger
         $db.Query($setupTrigger)
 
         # Setup the code for an encrypted view in a schema other than dbo
-        $setupViewInSchema = "
+        $setupViewInSchema = @"
 CREATE VIEW dbatools.dbatoolsci_test_schema_vw
 WITH ENCRYPTION
 AS
-SELECT 'dbatools' as SchemaName;"
+SELECT 'dbatools' as SchemaName;
+"@
         # Create the encrypted view
         $db.Query($setupViewInSchema)
 
@@ -166,19 +192,22 @@ SELECT 'dbatools' as SchemaName;"
         $db.Query("CREATE SCHEMA dbatools2")
 
         # Setup the code for an encrypted view in another schema other than dbo
-        $setupAnotherViewInSchema = "
+        $setupAnotherViewInSchema = @"
 CREATE VIEW dbatools2.dbatoolsci_test_schema_vw
 WITH ENCRYPTION
 AS
-SELECT 'dbatools2' as SchemaName;"
+SELECT 'dbatools2' as SchemaName;
+"@
         # Create the encrypted view
         $db.Query($setupAnotherViewInSchema)
 
         # Setup the code for a view that has UTF8 characters
-        $setupViewWithUTF8 = "CREATE VIEW dbo.dbatoolsci_test_UTF8_vw
+        $setupViewWithUTF8 = @"
+CREATE VIEW dbo.dbatoolsci_test_UTF8_vw
 WITH ENCRYPTION
 AS
-SELECT 'áéíñóú¡¿' as SampleUTF8;"
+SELECT 'áéíñóú¡¿' as SampleUTF8;
+"@
         # Create the encrypted view
         $db.Query($setupViewWithUTF8)
 
@@ -204,83 +233,79 @@ SELECT 'áéíñóú¡¿' as SampleUTF8;"
         Set-DbaSpConfigure -SqlInstance $script:instance2 -SqlCredential $instance2SqlCredential -ConfigName RemoteDacConnectionsEnabled -Value $instance2Config.ConfiguredValue -WarningAction SilentlyContinue
     }
 
-    # these tests are marked as skip to ensure the AppVeyor sql instances are not impacted negatively. These tests can be run locally.
     Context "DAC enabled" {
-        # too much messing around punts appveyor
-        It -Skip "Should throw error" {
+        It "Should throw error" {
             Set-DbaSpConfigure -SqlInstance $script:instance1 -Name RemoteDacConnectionsEnabled -Value $false
-            Invoke-DbaDbDecryptObject -SqlInstance $script:instance1 -Database $dbname -ObjectName DummyEncryptedStoredProcedure -WarningVariable warn -WarningAction SilentlyContinue
-            $error[0].Exception | Should -BeLike "*DAC is not enabled for instance*"
+            { Invoke-DbaDbDecryptObject -SqlInstance $script:instance1 -Database $dbname -ObjectName DummyEncryptedStoredProcedure -WarningAction SilentlyContinue -ErrorAction Stop } | Should -Throw -ExpectedMessage "*DAC is not enabled for instance*"
             Set-DbaSpConfigure -SqlInstance $script:instance1 -Name RemoteDacConnectionsEnabled -Value $true -WarningAction SilentlyContinue
         }
     }
 
     Context "Decrypt Scalar Function" {
-        It -Skip "Should be successful" {
+        It "Should be successful" {
             $result = Invoke-DbaDbDecryptObject -SqlInstance $script:instance1 -Database $dbname -ObjectName DummyEncryptedScalarFunction
             $result.Script | Should -Be $queryScalarFunction
         }
     }
 
     Context "Decrypt Inline TVF" {
-        It -Skip "Should be successful" {
+        It "Should be successful" {
             $result = Invoke-DbaDbDecryptObject -SqlInstance $script:instance1 -Database $dbname -ObjectName DummyEncryptedInlineTVF
             $result.Script | Should -Be $queryInlineTVF
         }
     }
 
     Context "Decrypt TVF" {
-        It -Skip "Should be successful" {
+        It "Should be successful" {
             $result = Invoke-DbaDbDecryptObject -SqlInstance $script:instance1 -Database $dbname -ObjectName DummyEncryptedTableValuedFunction
             $result.Script | Should -Be $queryTableValuedFunction
         }
     }
 
     Context "Decrypt Stored Procedure" {
-        It -Skip "Should be successful" {
+        It "Should be successful" {
             $result = Invoke-DbaDbDecryptObject -SqlInstance $script:instance1 -Database $dbname -ObjectName DummyEncryptedStoredProcedure
             $result.Script | Should -Be $queryStoredProcedure
         }
     }
 
     Context "Decrypt view" {
-        It -Skip "Should be successful" {
+        It "Should be successful" {
             $result = Invoke-DbaDbDecryptObject -SqlInstance $script:instance1 -Database $dbname -ObjectName dbatoolsci_test_vw
             $result.Script | Should -Be $setupView
         }
     }
 
     Context "Decrypt trigger in a schema other than dbo" {
-        It -Skip "Should be successful" {
+        It "Should be successful" {
             $result = Invoke-DbaDbDecryptObject -SqlInstance $script:instance1 -Database $dbname -ObjectName dbatoolsci_test_trigger
             $result.Script | Should -Be $setupTrigger
         }
     }
 
     Context "Decrypt objects with the same name but in different schemas" {
-        It -Skip "Should be successful" {
+        It "Should be successful" {
             @(Invoke-DbaDbDecryptObject -SqlInstance $script:instance1 -Database $dbname -ObjectName dbatoolsci_test_schema_vw).Count | Should -Be 2
         }
     }
 
     Context "Decrypt view with UTF8" {
-        It -Skip "Should be successful" {
+        It "Should be successful" {
             $result = Invoke-DbaDbDecryptObject -SqlInstance $script:instance1 -Database $dbname -ObjectName dbatoolsci_test_UTF8_vw -EncodingType UTF8
             $result.Script | Should -Not -BeNullOrEmpty
         }
     }
 
     Context "Decrypt view and use a destination folder" {
-        It -Skip "Should be successful" {
+        It "Should be successful" {
             $result = Invoke-DbaDbDecryptObject -SqlInstance $script:instance1 -Database $dbname -ObjectName dbatoolsci_test_vw -ExportDestination .
             (Get-Content $result.OutputFile | Out-String).Trim() | Should -Be $setupView.Trim()
             Remove-Item $result.OutputFile
         }
     }
 
-    # Note: this integration test takes about 3.5 minutes because it searches all objects and can be commented out if troubleshooting the other tests.
     Context "Decrypt all encrypted objects and use a destination folder" {
-        It -Skip "Should be successful" {
+        It "Should be successful" {
             $result = Invoke-DbaDbDecryptObject -SqlInstance $script:instance1 -Database $dbname -ExportDestination .
             @($result | Where-Object { $_.Type -eq 'StoredProcedure' }).Count       | Should -Be 1
             @($result | Where-Object { $_.Type -eq 'Trigger' }).Count               | Should -Be 1
@@ -290,7 +315,7 @@ SELECT 'áéíñóú¡¿' as SampleUTF8;"
     }
 
     Context "Connect to an instance (ideally a remote instance) using a SqlCredential and decrypt an object" {
-        It -Skip "Should be successful" {
+        It "Should be successful" {
             $result = Invoke-DbaDbDecryptObject -SqlInstance $script:instance2 -SqlCredential $instance2SqlCredential -Database $dbname -ObjectName dbatoolsci_test_remote_dac_vw -ExportDestination .
             (Get-Content $result.OutputFile | Out-String).Trim() | Should -Be $remoteDacSampleEncryptedView.Trim()
             Remove-Item $result.OutputFile

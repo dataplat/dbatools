@@ -1,36 +1,46 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaDbEncryption" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'IncludeSystemDBs', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaDbEncryption
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[]
+        }
+        It "Should have ExcludeDatabase as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[]
+        }
+        It "Should have IncludeSystemDBs as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter IncludeSystemDBs -Type Switch
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
-}
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    Context "Test Retriving Certificate" {
+
+    Context "Integration Tests" -Tag "IntegrationTests" {
         BeforeAll {
+            . "$PSScriptRoot\constants.ps1"
             $random = Get-Random
             $cert = "dbatoolsci_getcert$random"
-            $password = ConvertTo-SecureString -String Get-Random -AsPlainText -Force
-            New-DbaDbCertificate -SqlInstance $script:instance1 -Name $cert -password $password
+            $password = ConvertTo-SecureString -String (Get-Random) -AsPlainText -Force
+            New-DbaDbCertificate -SqlInstance $script:instance1 -Name $cert -Password $password
         }
+
         AfterAll {
-            Get-DbaDbCertificate -SqlInstance $script:instance1 -Certificate $cert | Remove-DbaDbCertificate -confirm:$false
+            Get-DbaDbCertificate -SqlInstance $script:instance1 -Certificate $cert | Remove-DbaDbCertificate -Confirm:$false
         }
-        $results = Get-DbaDbEncryption -SqlInstance $script:instance1
+
         It "Should find a certificate named $cert" {
-            ($results.Name -match 'dbatoolsci').Count -gt 0 | Should Be $true
+            $results = Get-DbaDbEncryption -SqlInstance $script:instance1
+            ($results.Name -match 'dbatoolsci').Count | Should -BeGreaterThan 0
         }
     }
 }

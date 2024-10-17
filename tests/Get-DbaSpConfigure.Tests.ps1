@@ -1,43 +1,59 @@
-$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaSpConfigure" {
+    BeforeAll {
+        $commandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Name', 'ExcludeName', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaSpConfigure
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Name as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Name -Type String[] -Not -Mandatory
+        }
+        It "Should have ExcludeName as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeName -Type String[] -Not -Mandatory
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Get configuration" {
-        $server = Connect-DbaInstance -SqlInstance $script:instance1
-        $configs = $server.Query("sp_configure")
-        $remotequerytimeout = $configs | Where-Object name -match 'remote query timeout'
+        BeforeAll {
+            $server = Connect-DbaInstance -SqlInstance $script:instance1
+            $configs = $server.Query("sp_configure")
+            $remotequerytimeout = $configs | Where-Object name -match 'remote query timeout'
+        }
 
         It "returns equal to results of the straight T-SQL query" {
             $results = Get-DbaSpConfigure -SqlInstance $script:instance1
-            $results.count -eq $configs.count
+            $results.count | Should -Be $configs.count
         }
 
         It "returns two results" {
             $results = Get-DbaSpConfigure -SqlInstance $script:instance1 -Name RemoteQueryTimeout, AllowUpdates
-            $results.Count | Should Be 2
+            $results.Count | Should -Be 2
         }
 
         It "returns two results less than all data" {
             $results = Get-DbaSpConfigure -SqlInstance $script:instance1 -ExcludeName "remote query timeout (s)", AllowUpdates
-            $results.Count -eq $configs.count - 2
+            $results.Count | Should -Be ($configs.count - 2)
         }
 
         It "matches the output of sp_configure " {
             $results = Get-DbaSpConfigure -SqlInstance $script:instance1 -Name RemoteQueryTimeout
-            $results.ConfiguredValue -eq $remotequerytimeout.config_value | Should Be $true
-            $results.RunningValue -eq $remotequerytimeout.run_value | Should Be $true
+            $results.ConfiguredValue | Should -Be $remotequerytimeout.config_value
+            $results.RunningValue | Should -Be $remotequerytimeout.run_value
         }
     }
 }

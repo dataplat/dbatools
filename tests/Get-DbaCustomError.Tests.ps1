@@ -1,43 +1,39 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaCustomError" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaCustomError
         }
-    }
-}
-
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance1
-        $sql = "EXEC msdb.dbo.sp_addmessage 54321, 9, N'Dbatools is Awesome!';"
-        $server.Query($sql)
-    }
-    Afterall {
-        $server = Connect-DbaInstance -SqlInstance $script:instance1
-        $sql = "EXEC msdb.dbo.sp_dropmessage 54321;"
-        $server.Query($sql)
+        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type switch -Not -Mandatory
+        }
     }
 
-    Context "Gets the backup devices" {
-        $results = Get-DbaCustomError -SqlInstance $script:instance1
-        It "Results are not empty" {
-            $results | Should Not Be $Null
+    Context "Integration Tests" -Tag "IntegrationTests" {
+        BeforeAll {
+            $server = Connect-DbaInstance -SqlInstance $script:instance1
+            $sql = "EXEC msdb.dbo.sp_addmessage 54321, 9, N'Dbatools is Awesome!';"
+            $server.Query($sql)
         }
-        It "Should have the name Custom Error Text" {
-            $results.Text | Should Be "Dbatools is Awesome!"
+        AfterAll {
+            $server = Connect-DbaInstance -SqlInstance $script:instance1
+            $sql = "EXEC msdb.dbo.sp_dropmessage 54321;"
+            $server.Query($sql)
         }
-        It "Should have a LanguageID" {
-            $results.LanguageID | Should Be 1033
-        }
-        It "Should have a Custom Error ID" {
-            $results.ID | Should Be 54321
+
+        It "Gets the custom errors" {
+            $results = Get-DbaCustomError -SqlInstance $script:instance1
+            $results | Should -Not -BeNullOrEmpty
+            $results.Text | Should -Be "Dbatools is Awesome!"
+            $results.LanguageID | Should -Be 1033
+            $results.ID | Should -Be 54321
         }
     }
 }

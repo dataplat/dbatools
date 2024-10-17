@@ -1,23 +1,41 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaDbObjectTrigger Unit Tests" -Tag 'UnitTests' {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        $paramCount = 7
-        $defaultParamCount = 11
-        [object[]]$params = (Get-ChildItem function:\Get-DbaDbObjectTrigger).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Type', 'InputObject', 'EnableException'
-        It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaDbObjectTrigger
         }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[]
+        }
+        It "Should have ExcludeDatabase as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[]
+        }
+        It "Should have Type as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Type -Type String
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[]
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "Get-DbaDbObjectTrigger Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $dbname = "dbatoolsci_addtriggertoobject"
         $tablename = "dbo.dbatoolsci_trigger"
@@ -54,123 +72,153 @@ CREATE TRIGGER $triggerviewname
 
         $systemDbs = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeUser
     }
+
     AfterAll {
         $null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
     }
 
     Context "Gets Table Trigger" {
-        $results = Get-DbaDbObjectTrigger -SqlInstance $script:instance2 -ExcludeDatabase $systemDbs.Name | Where-Object { $_.name -eq "dbatoolsci_triggerontable" }
+        BeforeAll {
+            $results = Get-DbaDbObjectTrigger -SqlInstance $script:instance2 -ExcludeDatabase $systemDbs.Name | Where-Object { $_.name -eq "dbatoolsci_triggerontable" }
+        }
         It "Gets results" {
-            $results | Should -Not -Be $null
+            $results | Should -Not -BeNullOrEmpty
         }
         It "Should be enabled" {
-            $results.isenabled | Should -Be $true
+            $results.isenabled | Should -BeTrue
         }
         It "Should have text of Trigger" {
             $results.TextBody | Should -BeLike '*dbatoolsci_trigger table*'
         }
     }
+
     Context "Gets Table Trigger when using -Database" {
-        $results = Get-DbaDbObjectTrigger -SqlInstance $script:instance2 -Database $dbname | Where-Object { $_.name -eq "dbatoolsci_triggerontable" }
+        BeforeAll {
+            $results = Get-DbaDbObjectTrigger -SqlInstance $script:instance2 -Database $dbname | Where-Object { $_.name -eq "dbatoolsci_triggerontable" }
+        }
         It "Gets results" {
-            $results | Should -Not -Be $null
+            $results | Should -Not -BeNullOrEmpty
         }
         It "Should be enabled" {
-            $results.isenabled | Should -Be $true
+            $results.isenabled | Should -BeTrue
         }
         It "Should have text of Trigger" {
             $results.TextBody | Should -BeLike '*dbatoolsci_trigger table*'
         }
     }
+
     Context "Gets Table Trigger passing table object using pipeline" {
-        $results = Get-DbaDbTable -SqlInstance $script:instance2 -Database $dbname -Table "dbatoolsci_trigger" | Get-DbaDbObjectTrigger
+        BeforeAll {
+            $results = Get-DbaDbTable -SqlInstance $script:instance2 -Database $dbname -Table "dbatoolsci_trigger" | Get-DbaDbObjectTrigger
+        }
         It "Gets results" {
-            $results | Should -Not -Be $null
+            $results | Should -Not -BeNullOrEmpty
         }
         It "Should be enabled" {
-            $results.isenabled | Should -Be $true
+            $results.isenabled | Should -BeTrue
         }
         It "Should have text of Trigger" {
             $results.TextBody | Should -BeLike '*dbatoolsci_trigger table*'
         }
     }
+
     Context "Gets View Trigger" {
-        $results = Get-DbaDbObjectTrigger -SqlInstance $script:instance2 -ExcludeDatabase $systemDbs.Name | Where-Object { $_.name -eq "dbatoolsci_triggeronview" }
+        BeforeAll {
+            $results = Get-DbaDbObjectTrigger -SqlInstance $script:instance2 -ExcludeDatabase $systemDbs.Name | Where-Object { $_.name -eq "dbatoolsci_triggeronview" }
+        }
         It "Gets results" {
-            $results | Should -Not -Be $null
+            $results | Should -Not -BeNullOrEmpty
         }
         It "Should be enabled" {
-            $results.isenabled | Should -Be $true
+            $results.isenabled | Should -BeTrue
         }
         It "Should have text of Trigger" {
             $results.TextBody | Should -BeLike '*dbatoolsci_view view*'
         }
     }
+
     Context "Gets View Trigger when using -Database" {
-        $results = Get-DbaDbObjectTrigger -SqlInstance $script:instance2 -Database $dbname | Where-Object { $_.name -eq "dbatoolsci_triggeronview" }
+        BeforeAll {
+            $results = Get-DbaDbObjectTrigger -SqlInstance $script:instance2 -Database $dbname | Where-Object { $_.name -eq "dbatoolsci_triggeronview" }
+        }
         It "Gets results" {
-            $results | Should -Not -Be $null
+            $results | Should -Not -BeNullOrEmpty
         }
         It "Should be enabled" {
-            $results.isenabled | Should -Be $true
+            $results.isenabled | Should -BeTrue
         }
         It "Should have text of Trigger" {
             $results.TextBody | Should -BeLike '*dbatoolsci_view view*'
         }
     }
+
     Context "Gets View Trigger passing table object using pipeline" {
-        $results = Get-DbaDbView -SqlInstance $script:instance2 -Database $dbname -ExcludeSystemView | Get-DbaDbObjectTrigger
+        BeforeAll {
+            $results = Get-DbaDbView -SqlInstance $script:instance2 -Database $dbname -ExcludeSystemView | Get-DbaDbObjectTrigger
+        }
         It "Gets results" {
-            $results | Should -Not -Be $null
+            $results | Should -Not -BeNullOrEmpty
         }
         It "Should be enabled" {
-            $results.isenabled | Should -Be $true
+            $results.isenabled | Should -BeTrue
         }
         It "Should have text of Trigger" {
             $results.TextBody | Should -BeLike '*dbatoolsci_view view*'
         }
     }
+
     Context "Gets Table and View Trigger passing both objects using pipeline" {
-        $tableResults = Get-DbaDbTable -SqlInstance $script:instance2 -Database $dbname -Table "dbatoolsci_trigger"
-        $viewResults = Get-DbaDbView -SqlInstance $script:instance2 -Database $dbname -ExcludeSystemView
-        $results = $tableResults, $viewResults | Get-DbaDbObjectTrigger
-        It "Gets results" {
-            $results | Should -Not -Be $null
+        BeforeAll {
+            $tableResults = Get-DbaDbTable -SqlInstance $script:instance2 -Database $dbname -Table "dbatoolsci_trigger"
+            $viewResults = Get-DbaDbView -SqlInstance $script:instance2 -Database $dbname -ExcludeSystemView
+            $results = $tableResults, $viewResults | Get-DbaDbObjectTrigger
         }
-        It "Should be enabled" {
+        It "Gets results" {
+            $results | Should -Not -BeNullOrEmpty
+        }
+        It "Should have two results" {
             $results.Count | Should -Be 2
         }
     }
+
     Context "Gets All types Trigger when using -Type" {
-        $results = Get-DbaDbObjectTrigger -SqlInstance $script:instance2 -Database $dbname -Type All
-        It "Gets results" {
-            $results | Should -Not -Be $null
+        BeforeAll {
+            $results = Get-DbaDbObjectTrigger -SqlInstance $script:instance2 -Database $dbname -Type All
         }
-        It "Should be only one" {
+        It "Gets results" {
+            $results | Should -Not -BeNullOrEmpty
+        }
+        It "Should have two results" {
             $results.Count | Should -Be 2
         }
     }
+
     Context "Gets only Table Trigger when using -Type" {
-        $results = Get-DbaDbObjectTrigger -SqlInstance $script:instance2 -Database $dbname -Type Table
-        It "Gets results" {
-            $results | Should -Not -Be $null
+        BeforeAll {
+            $results = Get-DbaDbObjectTrigger -SqlInstance $script:instance2 -Database $dbname -Type Table
         }
-        It "Should be only one" {
+        It "Gets results" {
+            $results | Should -Not -BeNullOrEmpty
+        }
+        It "Should have only one result" {
             $results.Count | Should -Be 1
         }
-        It "Should have text of Trigger" {
+        It "Should have a Table parent type" {
             $results.Parent.GetType().Name | Should -Be "Table"
         }
     }
+
     Context "Gets only View Trigger when using -Type" {
-        $results = Get-DbaDbObjectTrigger -SqlInstance $script:instance2 -Database $dbname -Type View
-        It "Gets results" {
-            $results | Should -Not -Be $null
+        BeforeAll {
+            $results = Get-DbaDbObjectTrigger -SqlInstance $script:instance2 -Database $dbname -Type View
         }
-        It "Should be only one" {
+        It "Gets results" {
+            $results | Should -Not -BeNullOrEmpty
+        }
+        It "Should have only one result" {
             $results.Count | Should -Be 1
         }
-        It "Should have text of Trigger" {
+        It "Should have a View parent type" {
             $results.Parent.GetType().Name | Should -Be "View"
         }
     }

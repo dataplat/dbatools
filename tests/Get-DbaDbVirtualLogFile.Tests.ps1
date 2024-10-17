@@ -1,25 +1,38 @@
-<#
-    The below statement stays in for every test you build.
-#>
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-<#
-    Unit test is required for any command added
-#>
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaDbVirtualLogFile Unit Tests" -Tag 'UnitTests' {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'IncludeSystemDBs', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaDbVirtualLogFile
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[]
+        }
+        It "Should have ExcludeDatabase as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[]
+        }
+        It "Should have IncludeSystemDBs as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter IncludeSystemDBs -Type Switch
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 }
-# Get-DbaNoun
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+
+Describe "Get-DbaDbVirtualLogFile Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $db1 = "dbatoolsci_getvlf"
@@ -28,24 +41,27 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $setupright = $true
         if ($needed.Count -ne 1) {
             $setupright = $false
-            it "has failed setup" {
-                Set-TestInconclusive -message "Setup failed"
-            }
+            Set-ItResult -Inconclusive -Because "Setup failed"
         }
     }
+
     AfterAll {
         Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $db1
     }
+
     Context "Command actually works" {
-        $results = Get-DbaDbVirtualLogFile -SqlInstance $script:instance2 -Database $db1
+        BeforeAll {
+            $results = Get-DbaDbVirtualLogFile -SqlInstance $script:instance2 -Database $db1
+        }
+
         It "Should have correct properties" {
             $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Database,RecoveryUnitId,FileId,FileSize,StartOffset,FSeqNo,Status,Parity,CreateLSN'.Split(',')
-            ($results[0].PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
+            ($results[0].PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
         }
 
         It "Should have database name of $db1" {
-            foreach ($result in $results) {
-                $result.Database | Should Be $db1
+            $results | ForEach-Object {
+                $_.Database | Should -Be $db1
             }
         }
     }

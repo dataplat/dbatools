@@ -1,42 +1,52 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaDbccHelp" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Statement', 'IncludeUndocumented', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaDbccHelp
+        }
+        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Statement as a non-mandatory parameter of type String" {
+            $CommandUnderTest | Should -HaveParameter Statement -Type String -Not -Mandatory
+        }
+        It "Should have IncludeUndocumented as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter IncludeUndocumented -Type Switch -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
-}
-Describe "$commandname Integration Test" -Tag "IntegrationTests" {
-    $props = 'Operation', 'Cmd', 'Output'
-    $result = Get-DbaDbccHelp -SqlInstance $script:instance2 -Statement FREESYSTEMCACHE
 
-    Context "Validate standard output" {
-        foreach ($prop in $props) {
-            $p = $result.PSObject.Properties[$prop]
-            It "Should return property: $prop" {
-                $p.Name | Should Be $prop
-            }
-        }
-    }
-
-    Context "Works correctly" {
-        It "returns the right results for FREESYSTEMCACHE" {
-            $result.Operation | Should Be 'FREESYSTEMCACHE'
-            $result.Cmd | Should Be 'DBCC HELP(FREESYSTEMCACHE)'
-            $result.Output | Should Not Be $null
+    Context "Integration Tests" -Tag "IntegrationTests" {
+        BeforeAll {
+            . "$PSScriptRoot\constants.ps1"
+            $props = 'Operation', 'Cmd', 'Output'
         }
 
-        It "returns the right results for PAGE" {
+        It "Returns the right results for FREESYSTEMCACHE" {
+            $result = Get-DbaDbccHelp -SqlInstance $script:instance2 -Statement FREESYSTEMCACHE
+            $result.Operation | Should -Be 'FREESYSTEMCACHE'
+            $result.Cmd | Should -Be 'DBCC HELP(FREESYSTEMCACHE)'
+            $result.Output | Should -Not -BeNullOrEmpty
+        }
+
+        It "Returns the right results for PAGE with IncludeUndocumented" {
             $result = Get-DbaDbccHelp -SqlInstance $script:instance2 -Statement PAGE -IncludeUndocumented
-            $result.Operation | Should Be 'PAGE'
-            $result.Cmd | Should Be 'DBCC HELP(PAGE)'
-            $result.Output | Should Not Be $null
+            $result.Operation | Should -Be 'PAGE'
+            $result.Cmd | Should -Be 'DBCC HELP(PAGE)'
+            $result.Output | Should -Not -BeNullOrEmpty
+        }
+
+        It "Returns expected properties" {
+            $result = Get-DbaDbccHelp -SqlInstance $script:instance2 -Statement FREESYSTEMCACHE
+            foreach ($prop in $props) {
+                $result.PSObject.Properties.Name | Should -Contain $prop
+            }
         }
     }
 }

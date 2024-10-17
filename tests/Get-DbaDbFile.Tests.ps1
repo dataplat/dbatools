@@ -1,56 +1,84 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaDbFile" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'FileGroup', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaDbFile
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Not -Mandatory
+        }
+        It "Should have ExcludeDatabase as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Not -Mandatory
+        }
+        It "Should have FileGroup as a parameter" {
+            $CommandUnderTest | Should -HaveParameter FileGroup -Type Object[] -Not -Mandatory
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[] -Not -Mandatory
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
-}
 
-Describe "$CommandName Unit Tests" -Tag "Unit" {
     Context "Ensure array" {
-        $results = Get-Command -Name Get-DbaDbFile | Select-Object -ExpandProperty ScriptBlock
+        BeforeAll {
+            $results = Get-Command -Name Get-DbaDbFile | Select-Object -ExpandProperty ScriptBlock
+        }
         It "returns disks as an array" {
             $results -match '\$disks \= \@\(' | Should -Be $true
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "Should return file information" {
-        $results = Get-DbaDbFile -SqlInstance $script:instance1
+        BeforeAll {
+            $results = Get-DbaDbFile -SqlInstance $script:instance1
+        }
         It "returns information about tempdb files" {
             $results.Database -contains "tempdb" | Should -Be $true
         }
     }
 
     Context "Should return file information for only tempdb" {
-        $results = Get-DbaDbFile -SqlInstance $script:instance1 -Database tempdb
-        foreach ($result in $results) {
-            It "returns only tempdb files" {
-                $result.Database | Should -Be "tempdb"
+        BeforeAll {
+            $results = Get-DbaDbFile -SqlInstance $script:instance1 -Database tempdb
+        }
+        It "returns only tempdb files" {
+            $results | ForEach-Object {
+                $_.Database | Should -Be "tempdb"
             }
         }
     }
 
     Context "Should return file information for only tempdb primary filegroup" {
-        $results = Get-DbaDbFile -SqlInstance $script:instance1 -Database tempdb -FileGroup Primary
-        foreach ($result in $results) {
-            It "returns only tempdb files that are in Primary filegroup" {
-                $result.Database | Should -Be "tempdb"
-                $result.FileGroupName | Should -Be "Primary"
+        BeforeAll {
+            $results = Get-DbaDbFile -SqlInstance $script:instance1 -Database tempdb -FileGroup Primary
+        }
+        It "returns only tempdb files that are in Primary filegroup" {
+            $results | ForEach-Object {
+                $_.Database | Should -Be "tempdb"
+                $_.FileGroupName | Should -Be "Primary"
             }
         }
     }
 
     Context "Physical name is populated" {
-        $results = Get-DbaDbFile -SqlInstance $script:instance1 -Database master
+        BeforeAll {
+            $results = Get-DbaDbFile -SqlInstance $script:instance1 -Database master
+        }
         It "master returns proper results" {
             $result = $results | Where-Object LogicalName -eq 'master'
             $result.PhysicalName -match 'master.mdf' | Should -Be $true

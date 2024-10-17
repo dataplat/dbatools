@@ -1,47 +1,61 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaInstanceAudit" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Audit', 'ExcludeAudit', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaInstanceAudit
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Audit as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Audit -Type String[]
+        }
+        It "Should have ExcludeAudit as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeAudit -Type String[]
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
-    BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $sql = "CREATE SERVER AUDIT LoginAudit
-                TO FILE (FILEPATH = N'C:\temp',MAXSIZE = 10 MB,MAX_ROLLOVER_FILES = 1,RESERVE_DISK_SPACE = OFF)
-                WITH (QUEUE_DELAY = 1000, ON_FAILURE = CONTINUE)
+    Context "Command usage" {
+        BeforeAll {
+            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $sql = "CREATE SERVER AUDIT LoginAudit
+                    TO FILE (FILEPATH = N'C:\temp',MAXSIZE = 10 MB,MAX_ROLLOVER_FILES = 1,RESERVE_DISK_SPACE = OFF)
+                    WITH (QUEUE_DELAY = 1000, ON_FAILURE = CONTINUE)
 
-                CREATE SERVER AUDIT SPECIFICATION TrackAllLogins
-                FOR SERVER AUDIT LoginAudit ADD (SUCCESSFUL_LOGIN_GROUP) WITH (STATE = ON)
+                    CREATE SERVER AUDIT SPECIFICATION TrackAllLogins
+                    FOR SERVER AUDIT LoginAudit ADD (SUCCESSFUL_LOGIN_GROUP) WITH (STATE = ON)
 
-                ALTER SERVER AUDIT LoginAudit WITH (STATE = ON)"
-        $server.Query($sql)
-    }
-    AfterAll {
-        $sql = "ALTER SERVER AUDIT SPECIFICATION TrackAllLogins WITH (STATE = OFF)
-                ALTER SERVER AUDIT LoginAudit WITH (STATE = OFF)
-                DROP SERVER AUDIT SPECIFICATION TrackAllLogins
-                DROP SERVER AUDIT LoginAudit"
-        $server.Query($sql)
-    }
-    Context "Verifying command output" {
+                    ALTER SERVER AUDIT LoginAudit WITH (STATE = ON)"
+            $server.Query($sql)
+        }
+        AfterAll {
+            $sql = "ALTER SERVER AUDIT SPECIFICATION TrackAllLogins WITH (STATE = OFF)
+                    ALTER SERVER AUDIT LoginAudit WITH (STATE = OFF)
+                    DROP SERVER AUDIT SPECIFICATION TrackAllLogins
+                    DROP SERVER AUDIT LoginAudit"
+            $server.Query($sql)
+        }
         It "returns some results" {
             $results = Get-DbaInstanceAudit -SqlInstance $script:instance2
-            $results | Should -Not -Be $null
+            $results | Should -Not -BeNullOrEmpty
         }
-        It "returns some results" {
+        It "returns LoginAudit results" {
             $results = Get-DbaInstanceAudit -SqlInstance $script:instance2 -Audit LoginAudit
             $results.Name | Should -Be 'LoginAudit'
-            $results.Enabled | Should -Be $true
+            $results.Enabled | Should -BeTrue
         }
     }
 }

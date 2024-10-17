@@ -1,20 +1,35 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Measure-DbatoolsImport" {
+    BeforeAll {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = $null
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It -Skip "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Measure-DbatoolsImport
+        }
+        It "Should have no parameters" {
+            $CommandUnderTest.Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')} | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Command usage" {
+        It "Should not throw when executed" {
+            { Measure-DbatoolsImport } | Should -Not -Throw
+        }
+
+        It "Should return a result" {
+            $result = Measure-DbatoolsImport
+            $result | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should return a timespan" {
+            $result = Measure-DbatoolsImport
+            $result | Should -BeOfType [System.TimeSpan]
         }
     }
 }
 
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+# Integration tests can be added here
+# Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests for more guidance.

@@ -1,22 +1,41 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "New-DbaComputerCertificateSigningRequest" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'ComputerName', 'Credential', 'ClusterInstanceName', 'Path', 'FriendlyName', 'KeyLength', 'Dns', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command New-DbaComputerCertificateSigningRequest
+        }
+        It "Should have ComputerName as a non-mandatory parameter of type DbaInstanceParameter[]" {
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have Credential as a non-mandatory parameter of type PSCredential" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have ClusterInstanceName as a non-mandatory parameter of type String" {
+            $CommandUnderTest | Should -HaveParameter ClusterInstanceName -Type String -Not -Mandatory
+        }
+        It "Should have Path as a non-mandatory parameter of type String" {
+            $CommandUnderTest | Should -HaveParameter Path -Type String -Not -Mandatory
+        }
+        It "Should have FriendlyName as a non-mandatory parameter of type String" {
+            $CommandUnderTest | Should -HaveParameter FriendlyName -Type String -Not -Mandatory
+        }
+        It "Should have KeyLength as a non-mandatory parameter of type Int32" {
+            $CommandUnderTest | Should -HaveParameter KeyLength -Type Int32 -Not -Mandatory
+        }
+        It "Should have Dns as a non-mandatory parameter of type String[]" {
+            $CommandUnderTest | Should -HaveParameter Dns -Type String[] -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    It "generates a new certificate" {
-        $files = New-DbaComputerCertificateSigningRequest
-        $files.Count | Should -Be 2
-        $files | Remove-Item -Confirm:$false
+    Context "Command usage" {
+        It "generates a new certificate" {
+            $files = New-DbaComputerCertificateSigningRequest
+            $files.Count | Should -Be 2
+            $files | Remove-Item -Confirm:$false
+        }
     }
 }

@@ -1,19 +1,45 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Import-DbatoolsConfig" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Path', 'ModuleName', 'ModuleVersion', 'Scope', 'IncludeFilter', 'ExcludeFilter', 'Peek', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Import-DbatoolsConfig
+        }
+        It "Should have Path as a non-mandatory String[] parameter" {
+            $CommandUnderTest | Should -HaveParameter Path -Type String[] -Not -Mandatory
+        }
+        It "Should have ModuleName as a non-mandatory String parameter" {
+            $CommandUnderTest | Should -HaveParameter ModuleName -Type String -Not -Mandatory
+        }
+        It "Should have ModuleVersion as a non-mandatory Int32 parameter" {
+            $CommandUnderTest | Should -HaveParameter ModuleVersion -Type Int32 -Not -Mandatory
+        }
+        It "Should have Scope as a non-mandatory ConfigScope parameter" {
+            $CommandUnderTest | Should -HaveParameter Scope -Type ConfigScope -Not -Mandatory
+        }
+        It "Should have IncludeFilter as a non-mandatory String[] parameter" {
+            $CommandUnderTest | Should -HaveParameter IncludeFilter -Type String[] -Not -Mandatory
+        }
+        It "Should have ExcludeFilter as a non-mandatory String[] parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeFilter -Type String[] -Not -Mandatory
+        }
+        It "Should have Peek as a non-mandatory SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter Peek -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
 }
+
 <#
-    Integration test are custom to the command you are writing for.
+    Integration tests are custom to the command you are writing for.
     Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence
+    for more guidance
 #>

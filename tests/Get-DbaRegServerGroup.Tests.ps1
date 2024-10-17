@@ -1,21 +1,33 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tags "UnitTests" {
+Describe "Get-DbaRegServerGroup" {
     Context "Validate parameters" {
-        It "Should only contain our specific parameters" {
-            [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-            [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Group', 'ExcludeGroup', 'Id', 'EnableException'
-            $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaRegServerGroup
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Group as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Group -Type Object[]
+        }
+        It "Should have ExcludeGroup as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeGroup -Type Object[]
+        }
+        It "Should have Id as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Id -Type Int32[]
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    Context "Setup" {
+    Context "Command usage" {
         BeforeAll {
+            . "$PSScriptRoot\constants.ps1"
             $server = Connect-DbaInstance $script:instance1
             $regStore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($server.ConnectionContext.SqlConnectionObject)
             $dbStore = $regStore.DatabaseEngineServerGroup
@@ -25,7 +37,6 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $regSrvName = "dbatoolsci-server12"
             $regSrvDesc = "dbatoolsci-server123"
 
-            <# Create that first group            #>
             $newGroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($dbStore, $group)
             $newGroup.Create()
             $dbStore.Refresh()
@@ -36,7 +47,6 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $newServer.Description = $regSrvDesc
             $newServer.Create()
 
-            <# Create the second group #>
             $srvName2 = "dbatoolsci-server1"
             $group2 = "dbatoolsci-group2"
             $regSrvName2 = "dbatoolsci-group2-server12"
@@ -52,7 +62,6 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $newServer.Description = $regSrvDesc2
             $newServer.Create()
 
-            <# Create the third group #>
             $srvName3 = "dbatoolsci-server1"
             $group3 = "dbatoolsci-group3"
             $regSrvName3 = "dbatoolsci-group3-server12"
@@ -68,7 +77,6 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $newServer.Description = $regSrvDesc3
             $newServer.Create()
 
-            <# Create the sub-group #>
             $subGroupSrvName = "dbatoolsci-subgroup-server"
             $subGroup = "dbatoolsci-group1a"
             $subGroupRegSrvName = "dbatoolsci-subgroup-server21"
@@ -84,6 +92,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $subGroupServer.Description = $subGroupRegSrvDesc
             $subGroupServer.Create()
         }
+
         AfterAll {
             Get-DbaRegServer -SqlInstance $script:instance1 | Where-Object Name -Match dbatoolsci | Remove-DbaRegServer -Confirm:$false
             Get-DbaRegServerGroup -SqlInstance $script:instance1 | Where-Object Name -Match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
@@ -93,6 +102,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results = Get-DbaRegServerGroup -SqlInstance $script:instance1 -Group $group
             $results.Count | Should -Be 1
         }
+
         It "Should allow searching subgroups" {
             $results = Get-DbaRegServerGroup -SqlInstance $script:instance1 -Group "$group\$subGroup"
             $results.Count | Should -Be 1
@@ -110,9 +120,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
             $results = Get-DbaRegServerGroup -SqlInstance $script:instance1 -ExcludeGroup $group
             $results.Count | Should -Be 2
-            (($results.Name -contains $group2) -and ($results.Name -contains $group3)) | Should -Be $true
+            ($results.Name -contains $group2 -and $results.Name -contains $group3) | Should -Be $true
         }
-
-        # Property Comparisons will come later when we have the commands
     }
 }

@@ -1,19 +1,73 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaSpn" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'AccountName', 'Credential', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaSpn
+        }
+        It "Accepts ComputerName as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type String[] -Not -Mandatory
+        }
+        It "Accepts AccountName as a parameter" {
+            $CommandUnderTest | Should -HaveParameter AccountName -Type String[] -Not -Mandatory
+        }
+        It "Accepts Credential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Not -Mandatory
+        }
+        It "Accepts EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+        }
+        It "Accepts Verbose as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Verbose -Type SwitchParameter -Not -Mandatory
+        }
+        It "Accepts Debug as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Debug -Type SwitchParameter -Not -Mandatory
+        }
+        It "Accepts ErrorAction as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ErrorAction -Type ActionPreference -Not -Mandatory
+        }
+        It "Accepts WarningAction as a parameter" {
+            $CommandUnderTest | Should -HaveParameter WarningAction -Type ActionPreference -Not -Mandatory
+        }
+        It "Accepts InformationAction as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InformationAction -Type ActionPreference -Not -Mandatory
+        }
+        It "Accepts ProgressAction as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ProgressAction -Type ActionPreference -Not -Mandatory
+        }
+        It "Accepts ErrorVariable as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ErrorVariable -Type String -Not -Mandatory
+        }
+        It "Accepts WarningVariable as a parameter" {
+            $CommandUnderTest | Should -HaveParameter WarningVariable -Type String -Not -Mandatory
+        }
+        It "Accepts InformationVariable as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InformationVariable -Type String -Not -Mandatory
+        }
+        It "Accepts OutVariable as a parameter" {
+            $CommandUnderTest | Should -HaveParameter OutVariable -Type String -Not -Mandatory
+        }
+        It "Accepts OutBuffer as a parameter" {
+            $CommandUnderTest | Should -HaveParameter OutBuffer -Type Int32 -Not -Mandatory
+        }
+        It "Accepts PipelineVariable as a parameter" {
+            $CommandUnderTest | Should -HaveParameter PipelineVariable -Type String -Not -Mandatory
         }
     }
+
+    # Add more contexts and tests as needed for integration testing
+    # For example:
+    # Context "Integration Tests" {
+    #     BeforeAll {
+    #         # Setup code for integration tests
+    #     }
+    #     
+    #     It "Should return valid SPNs" {
+    #         # Test code
+    #     }
+    #     
+    #     AfterAll {
+    #         # Cleanup code for integration tests
+    #     }
+    # }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>

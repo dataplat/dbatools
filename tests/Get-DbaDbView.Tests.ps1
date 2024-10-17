@@ -1,18 +1,51 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaDbView Unit Tests" -Tag 'UnitTests' {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        It "Should only contain our specific parameters" {
-            [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-            [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'ExcludeSystemView', 'View', 'Schema', 'InputObject', 'EnableException'
-            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaDbView
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[]
+        }
+        It "Should have ExcludeDatabase as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[]
+        }
+        It "Should have ExcludeSystemView as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeSystemView -Type SwitchParameter
+        }
+        It "Should have View as a parameter" {
+            $CommandUnderTest | Should -HaveParameter View -Type String[]
+        }
+        It "Should have Schema as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Schema -Type String[]
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[]
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe "Get-DbaDbView Integration Tests" -Tag "IntegrationTests" {
+    BeforeDiscovery {
+        $SkipAzureTests = [Environment]::GetEnvironmentVariable('azuredbpasswd') -ne "failstooften"
+    }
+
     BeforeAll {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $viewName = ("dbatoolsci_{0}" -f $(Get-Random))
@@ -21,6 +54,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $server.Query("CREATE SCHEMA [someschema]", 'tempdb')
         $server.Query("CREATE VIEW [someschema].$viewNameWithSchema AS (SELECT 1 as col1)", 'tempdb')
     }
+
     AfterAll {
         $null = $server.Query("DROP VIEW $viewName", 'tempdb')
         $null = $server.Query("DROP VIEW [someschema].$viewNameWithSchema", 'tempdb')
@@ -32,11 +66,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results = Get-DbaDbView -SqlInstance $script:instance2 -Database tempdb
         }
         It "Should have standard properties" {
-            $ExpectedProps = 'ComputerName,InstanceName,SqlInstance'.Split(',')
-            ($results[0].PsObject.Properties.Name | Where-Object { $_ -in $ExpectedProps } | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
+            $ExpectedProps = 'ComputerName', 'InstanceName', 'SqlInstance'
+            $results[0].PsObject.Properties.Name | Should -Contain $ExpectedProps
         }
         It "Should get test view: $viewName" {
-            ($results | Where-Object Name -eq $viewName).Name | Should -Be $viewName
+            $results | Where-Object Name -eq $viewName | Select-Object -ExpandProperty Name | Should -Be $viewName
         }
         It "Should include system views" {
             ($results | Where-Object IsSystemObject -eq $true).Count | Should -BeGreaterThan 0
@@ -46,30 +80,30 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Exclusions work correctly" {
         It "Should contain no views from master database" {
             $results = Get-DbaDbView -SqlInstance $script:instance2 -ExcludeDatabase master
-            'master' | Should -Not -BeIn $results.Database
+            $results.Database | Should -Not -Contain 'master'
         }
         It "Should exclude system views" {
             $results = Get-DbaDbView -SqlInstance $script:instance2 -Database master -ExcludeSystemView
-            ($results | Where-Object IsSystemObject -eq $true).Count | Should -Be 0
+            $results | Where-Object IsSystemObject -eq $true | Should -BeNullOrEmpty
         }
     }
 
-    Context "Piping workings" {
+    Context "Piping works" {
         It "Should allow piping from string" {
             $results = $script:instance2 | Get-DbaDbView -Database tempdb
-            ($results | Where-Object Name -eq $viewName).Name | Should -Be $viewName
+            $results | Where-Object Name -eq $viewName | Select-Object -ExpandProperty Name | Should -Be $viewName
         }
         It "Should allow piping from Get-DbaDatabase" {
             $results = Get-DbaDatabase -SqlInstance $script:instance2 -Database tempdb | Get-DbaDbView
-            ($results | Where-Object Name -eq $viewName).Name | Should -Be $viewName
+            $results | Where-Object Name -eq $viewName | Select-Object -ExpandProperty Name | Should -Be $viewName
         }
     }
     
     Context "Schema parameter (see #9445)" {
         It "Should return just one view with schema 'someschema'" {
             $results = $script:instance2 | Get-DbaDbView -Database tempdb -Schema 'someschema'
-            ($results | Where-Object Name -eq $viewNameWithSchema).Name | Should -Be $viewNameWithSchema
-            ($results | Where-Object Schema -ne 'someschema').Count | Should -Be 0
+            $results | Where-Object Name -eq $viewNameWithSchema | Select-Object -ExpandProperty Name | Should -Be $viewNameWithSchema
+            $results | Where-Object Schema -ne 'someschema' | Should -BeNullOrEmpty
         }
     }
 }

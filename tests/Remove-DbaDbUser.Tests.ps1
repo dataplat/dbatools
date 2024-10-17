@@ -1,31 +1,68 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Remove-DbaDbUser Unit Tests" -Tag 'UnitTests' {
+    BeforeAll {
+        # Importing the function if needed
+        # . "$PSScriptRoot\$ModuleName.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'User', 'InputObject', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandName = 'Remove-DbaDbUser'
+            $command = Get-Command -Name $CommandName
+        }
+        It "Should have SqlInstance parameter" {
+            $command | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential parameter" {
+            $command | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database parameter" {
+            $command | Should -HaveParameter Database -Type Object[] -Not -Mandatory
+        }
+        It "Should have ExcludeDatabase parameter" {
+            $command | Should -HaveParameter ExcludeDatabase -Type Object[] -Not -Mandatory
+        }
+        It "Should have User parameter" {
+            $command | Should -HaveParameter User -Type Object[] -Not -Mandatory
+        }
+        It "Should have InputObject parameter" {
+            $command | Should -HaveParameter InputObject -Type User[] -Not -Mandatory
+        }
+        It "Should have Force parameter" {
+            $command | Should -HaveParameter Force -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have EnableException parameter" {
+            $command | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    Context "Verifying User is removed" {
-        BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance1
-            $db = Get-DbaDatabase $server -Database tempdb
-            $securePassword = ConvertTo-SecureString "password" -AsPlainText -Force
-            $loginTest = New-DbaLogin $server -Login dbatoolsci_remove_dba_db_user -Password $securePassword -Force
+Describe "Remove-DbaDbUser Integration Tests" -Tag "IntegrationTests" {
+    BeforeDiscovery {
+        $script:instance1 = "localhost"
+    }
+
+    BeforeAll {
+        $server = Connect-DbaInstance -SqlInstance $script:instance1
+        $db = Get-DbaDatabase $server -Database tempdb
+        $securePassword = ConvertTo-SecureString "password" -AsPlainText -Force
+        $loginTest = New-DbaLogin $server -Login dbatoolsci_remove_dba_db_user -Password $securePassword -Force
+    }
+
+    AfterAll {
+        if ($loginTest) {
+            $loginTest.Drop()
         }
+    }
+
+    Context "Verifying User is removed" {
         BeforeEach {
             $user = New-Object Microsoft.SqlServer.Management.SMO.User($db, $loginTest.Name)
             $user.Login = $loginTest.Name
             $user.Create()
         }
+
         AfterEach {
             $user = $db.Users[$loginTest.Name]
             if ($user) {
@@ -42,23 +79,18 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 $user.Drop()
             }
         }
-        AfterAll {
-            if ($loginTest) {
-                $loginTest.Drop()
-            }
-        }
 
         It "drops a user with no ownerships" {
-            Remove-DbaDbUser $server -Database tempdb -User $user.Name
-            $db.Users[$user.Name] | Should BeNullOrEmpty
+            Remove-DbaDbUser -SqlInstance $server -Database tempdb -User $user.Name
+            $db.Users[$user.Name] | Should -BeNullOrEmpty
         }
 
         It "drops a user with a schema of the same name, but no objects owned by the schema" {
             $schema = New-Object Microsoft.SqlServer.Management.SMO.Schema($db, $user.Name)
             $schema.Owner = $user.Name
             $schema.Create()
-            Remove-DbaDbUser $server -Database tempdb -User $user.Name
-            $db.Users[$user.Name] | Should BeNullOrEmpty
+            Remove-DbaDbUser -SqlInstance $server -Database tempdb -User $user.Name
+            $db.Users[$user.Name] | Should -BeNullOrEmpty
         }
 
         It "does NOT drop a user that owns objects other than a schema" {
@@ -69,8 +101,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $col1 = New-Object Microsoft.SqlServer.Management.SMO.Column($table, "col1", [Microsoft.SqlServer.Management.SMO.DataType]::Int)
             $table.Columns.Add($col1)
             $table.Create()
-            Remove-DbaDbUser $server -Database tempdb -User $user.Name -WarningAction SilentlyContinue
-            $db.Users[$user.Name] | Should Be $user
+            Remove-DbaDbUser -SqlInstance $server -Database tempdb -User $user.Name -WarningAction SilentlyContinue
+            $db.Users[$user.Name] | Should -Be $user
         }
     }
 }

@@ -1,22 +1,37 @@
-$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaAgentJobStep" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Job', 'ExcludeJob', 'ExcludeDisabledJobs', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaAgentJobStep
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Job as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Job -Type String[]
+        }
+        It "Should have ExcludeJob as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeJob -Type String[]
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Job[]
+        }
+        It "Should have ExcludeDisabledJobs as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDisabledJobs -Type Switch
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Gets a job step" {
         BeforeAll {
-            $jobName = "dbatoolsci_job_$(get-random)"
+            . "$PSScriptRoot\constants.ps1"
+            $jobName = "dbatoolsci_job_$(Get-Random)"
             $null = New-DbaAgentJob -SqlInstance $script:instance2 -Job $jobName
             $null = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job $jobName -StepName dbatoolsci_jobstep1 -Subsystem TransactSql -Command 'select 1'
         }
@@ -26,21 +41,20 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
         It "Successfully gets job when not using Job param" {
             $results = Get-DbaAgentJobStep -SqlInstance $script:instance2
-            $results.Name | should contain 'dbatoolsci_jobstep1'
+            $results.Name | Should -Contain 'dbatoolsci_jobstep1'
         }
         It "Successfully gets job when using Job param" {
             $results = Get-DbaAgentJobStep -SqlInstance $script:instance2 -Job $jobName
-            $results.Name | should contain 'dbatoolsci_jobstep1'
+            $results.Name | Should -Contain 'dbatoolsci_jobstep1'
         }
         It "Successfully gets job when excluding some jobs" {
             $results = Get-DbaAgentJobStep -SqlInstance $script:instance2 -ExcludeJob 'syspolicy_purge_history'
-            $results.Name | should contain 'dbatoolsci_jobstep1'
+            $results.Name | Should -Contain 'dbatoolsci_jobstep1'
         }
         It "Successfully excludes disabled jobs" {
             $null = Set-DbaAgentJob -SqlInstance $script:instance2 -Job $jobName -Disabled
             $results = Get-DbaAgentJobStep -SqlInstance $script:instance2 -ExcludeDisabledJobs
-            $results.Name | should not contain 'dbatoolsci_jobstep1'
+            $results.Name | Should -Not -Contain 'dbatoolsci_jobstep1'
         }
-
     }
 }

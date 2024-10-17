@@ -1,19 +1,48 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Find-DbaStoredProcedure Unit Tests" -Tag 'UnitTests' {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Pattern', 'IncludeSystemObjects', 'IncludeSystemDatabases', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Find-DbaStoredProcedure
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[]
+        }
+        It "Should have ExcludeDatabase as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[]
+        }
+        It "Should have Pattern as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Pattern -Type String
+        }
+        It "Should have IncludeSystemObjects as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter IncludeSystemObjects -Type Switch
+        }
+        It "Should have IncludeSystemDatabases as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter IncludeSystemDatabases -Type Switch
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "Find-DbaStoredProcedure Integration Tests" -Tag "IntegrationTests" {
+    BeforeDiscovery {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Command finds Procedures in a System Database" {
         BeforeAll {
             $ServerProcedure = @"
@@ -29,12 +58,13 @@ AS
             $DropProcedure = "DROP PROCEDURE dbo.cp_dbatoolsci_sysadmin;"
             $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Database 'Master' -Query $DropProcedure
         }
-        $results = Find-DbaStoredProcedure -SqlInstance $script:instance2 -Pattern dbatools* -IncludeSystemDatabases
         It "Should find a specific StoredProcedure named cp_dbatoolsci_sysadmin" {
-            $results.Name | Should Contain "cp_dbatoolsci_sysadmin"
+            $results = Find-DbaStoredProcedure -SqlInstance $script:instance2 -Pattern dbatools* -IncludeSystemDatabases
+            $results.Name | Should -Contain "cp_dbatoolsci_sysadmin"
             $results.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $script:instance2 -Database master).ID
         }
     }
+
     Context "Command finds Procedures in a User Database" {
         BeforeAll {
             $null = New-DbaDatabase -SqlInstance $script:instance2 -Name 'dbatoolsci_storedproceduredb'
@@ -49,17 +79,18 @@ AS
         AfterAll {
             $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database 'dbatoolsci_storedproceduredb' -Confirm:$false
         }
-        $results = Find-DbaStoredProcedure -SqlInstance $script:instance2 -Pattern dbatools* -Database 'dbatoolsci_storedproceduredb'
         It "Should find a specific StoredProcedure named sp_dbatoolsci_custom" {
-            $results.Name | Should Contain "sp_dbatoolsci_custom"
+            $results = Find-DbaStoredProcedure -SqlInstance $script:instance2 -Pattern dbatools* -Database 'dbatoolsci_storedproceduredb'
+            $results.Name | Should -Contain "sp_dbatoolsci_custom"
             $results.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $script:instance2 -Database dbatoolsci_storedproceduredb).ID
         }
         It "Should find sp_dbatoolsci_custom in dbatoolsci_storedproceduredb" {
-            $results.Database | Should Contain "dbatoolsci_storedproceduredb"
+            $results = Find-DbaStoredProcedure -SqlInstance $script:instance2 -Pattern dbatools* -Database 'dbatoolsci_storedproceduredb'
+            $results.Database | Should -Contain "dbatoolsci_storedproceduredb"
         }
-        $results = Find-DbaStoredProcedure -SqlInstance $script:instance2 -Pattern dbatools* -ExcludeDatabase 'dbatoolsci_storedproceduredb'
         It "Should find no results when Excluding dbatoolsci_storedproceduredb" {
-            $results | Should Be $null
+            $results = Find-DbaStoredProcedure -SqlInstance $script:instance2 -Pattern dbatools* -ExcludeDatabase 'dbatoolsci_storedproceduredb'
+            $results | Should -BeNullOrEmpty
         }
     }
 }

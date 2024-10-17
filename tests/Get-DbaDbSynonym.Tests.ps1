@@ -1,19 +1,48 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tags "UnitTests" {
+Describe "Get-DbaDbSynonym Unit Tests" -Tag "UnitTests" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Schema', 'ExcludeSchema', 'Synonym', 'ExcludeSynonym', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaDbSynonym
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String[]
+        }
+        It "Should have ExcludeDatabase as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type String[]
+        }
+        It "Should have Schema as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Schema -Type String[]
+        }
+        It "Should have ExcludeSchema as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeSchema -Type String[]
+        }
+        It "Should have Synonym as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Synonym -Type String[]
+        }
+        It "Should have ExcludeSynonym as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeSynonym -Type String[]
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[]
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe "Get-DbaDbSynonym Integration Tests" -Tag "IntegrationTests" {
+    BeforeDiscovery {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     BeforeAll {
         $dbname = "dbatoolsscidb_$(Get-Random)"
         $dbname2 = "dbatoolsscidb2_$(Get-Random)"
@@ -24,6 +53,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $null = New-DbaDbSynonym -SqlInstance $script:instance2 -Database $dbname2 -Synonym syn2 -BaseObject obj2
         $null = New-DbaDbSynonym -SqlInstance $script:instance2 -Database $dbname2 -Schema sch2 -Synonym syn3 -BaseObject obj2
     }
+
     AfterAll {
         $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname, $dbname2 -Confirm:$false
         $null = Remove-DbaDbSynonym -SqlInstance $script:instance2 -Confirm:$false
@@ -32,13 +62,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Functionality" {
         It 'Returns Results' {
             $result1 = Get-DbaDbSynonym -SqlInstance $script:instance2
-
             $result1.Count | Should -BeGreaterThan 0
         }
 
         It 'Returns all synonyms for all databases' {
             $result2 = Get-DbaDbSynonym -SqlInstance $script:instance2
-
             $uniqueDatabases = $result2.Database | Select-Object -Unique
             $uniqueDatabases.Count | Should -BeGreaterThan 1
             $result2.Count | Should -BeGreaterThan 2
@@ -46,52 +74,42 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
         It 'Accepts a list of databases' {
             $result3 = Get-DbaDbSynonym -SqlInstance $script:instance2 -Database $dbname, $dbname2
-
-            $result3.Database | Select-Object -Unique | Should -Be $dbname, $dbname2
+            $result3.Database | Select-Object -Unique | Should -Be @($dbname, $dbname2)
         }
 
         It 'Excludes databases' {
             $result4 = Get-DbaDbSynonym -SqlInstance $script:instance2 -ExcludeDatabase $dbname2
-
             $uniqueDatabases = $result4.Database | Select-Object -Unique
             $uniqueDatabases | Should -Not -Contain $dbname2
         }
 
         It 'Accepts a list of synonyms' {
             $result5 = Get-DbaDbSynonym -SqlInstance $script:instance2 -Synonym 'syn1', 'syn2'
-
-            $result5.Name | Select-Object -Unique | Should -Be 'syn1', 'syn2'
+            $result5.Name | Select-Object -Unique | Should -Be @('syn1', 'syn2')
         }
 
         It 'Excludes synonyms' {
             $result6 = Get-DbaDbSynonym -SqlInstance $script:instance2 -ExcludeSynonym 'syn2'
-
             $result6.Name | Select-Object -Unique | Should -Not -Contain 'syn2'
         }
 
         It 'Finds synonyms for specified schema only' {
             $result7 = Get-DbaDbSynonym -SqlInstance $script:instance2 -Schema 'sch2'
-
             $result7.Count | Should -Be 1
         }
 
         It 'Accepts a list of schemas' {
             $result8 = Get-DbaDbSynonym -SqlInstance $script:instance2 -Schema 'dbo','sch2'
-
-            $result8.Schema | Select-Object -Unique | Should -Be 'dbo','sch2'
+            $result8.Schema | Select-Object -Unique | Should -Be @('dbo','sch2')
         }
 
         It 'Excludes schemas' {
             $result9 = Get-DbaDbSynonym -SqlInstance $script:instance2 -ExcludeSchema 'dbo'
-
             $result9.Schema | Select-Object -Unique | Should -Not -Contain 'dbo'
         }
 
-        It 'Input is provided' {
-            $result10 = Get-DbaDbSynonym -WarningAction SilentlyContinue -WarningVariable warn > $null
-
-            $warn | Should -Match 'You must pipe in a database or specify a SqlInstance'
+        It 'Throws when no input is provided' {
+            { Get-DbaDbSynonym } | Should -Throw -ExpectedMessage 'You must pipe in a database or specify a SqlInstance'
         }
-
     }
 }

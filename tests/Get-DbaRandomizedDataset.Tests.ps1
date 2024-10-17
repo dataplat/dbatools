@@ -1,26 +1,38 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaRandomizedDataset" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'Template', 'TemplateFile', 'Rows', 'Locale', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaRandomizedDataset
+        }
+        It "Should have Template as a non-mandatory parameter of type String[]" {
+            $CommandUnderTest | Should -HaveParameter Template -Type String[] -Not -Mandatory
+        }
+        It "Should have TemplateFile as a non-mandatory parameter of type String[]" {
+            $CommandUnderTest | Should -HaveParameter TemplateFile -Type String[] -Not -Mandatory
+        }
+        It "Should have Rows as a non-mandatory parameter of type Int32" {
+            $CommandUnderTest | Should -HaveParameter Rows -Type Int32 -Not -Mandatory
+        }
+        It "Should have Locale as a non-mandatory parameter of type String" {
+            $CommandUnderTest | Should -HaveParameter Locale -Type String -Not -Mandatory
+        }
+        It "Should have InputObject as a non-mandatory parameter of type Object[]" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Command generates data sets" {
-        $rowCount = 10
-
-        $dataset = Get-DbaRandomizedDataset -Template PersonalData -Rows $rowCount
+        BeforeAll {
+            $rowCount = 10
+            $dataset = Get-DbaRandomizedDataset -Template PersonalData -Rows $rowCount
+        }
 
         It "Should have $rowCount rows" {
-            $dataset.count | Should Be 10
+            $dataset.Count | Should -Be 10
         }
     }
 }

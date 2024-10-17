@@ -1,43 +1,75 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
-. "$PSScriptRoot\..\private\functions\Get-SqlDefaultSPConfigure.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-SqlDefaultSPConfigure" {
+    BeforeAll {
+        . "$PSScriptRoot\constants.ps1"
+        . "$PSScriptRoot\..\private\functions\Get-SqlDefaultSPConfigure.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlVersion'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-SqlDefaultSPConfigure
+        }
+        It "Should have SqlVersion as a non-mandatory parameter of type Object" {
+            $CommandUnderTest | Should -HaveParameter SqlVersion -Type Object -Not -Mandatory
+        }
+        It "Should have Verbose as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter Verbose -Type switch -Not -Mandatory
+        }
+        It "Should have Debug as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter Debug -Type switch -Not -Mandatory
+        }
+        It "Should have ErrorAction as a non-mandatory parameter of type ActionPreference" {
+            $CommandUnderTest | Should -HaveParameter ErrorAction -Type ActionPreference -Not -Mandatory
+        }
+        It "Should have WarningAction as a non-mandatory parameter of type ActionPreference" {
+            $CommandUnderTest | Should -HaveParameter WarningAction -Type ActionPreference -Not -Mandatory
+        }
+        It "Should have InformationAction as a non-mandatory parameter of type ActionPreference" {
+            $CommandUnderTest | Should -HaveParameter InformationAction -Type ActionPreference -Not -Mandatory
+        }
+        It "Should have ProgressAction as a non-mandatory parameter of type ActionPreference" {
+            $CommandUnderTest | Should -HaveParameter ProgressAction -Type ActionPreference -Not -Mandatory
+        }
+        It "Should have ErrorVariable as a non-mandatory parameter of type String" {
+            $CommandUnderTest | Should -HaveParameter ErrorVariable -Type String -Not -Mandatory
+        }
+        It "Should have WarningVariable as a non-mandatory parameter of type String" {
+            $CommandUnderTest | Should -HaveParameter WarningVariable -Type String -Not -Mandatory
+        }
+        It "Should have InformationVariable as a non-mandatory parameter of type String" {
+            $CommandUnderTest | Should -HaveParameter InformationVariable -Type String -Not -Mandatory
+        }
+        It "Should have OutVariable as a non-mandatory parameter of type String" {
+            $CommandUnderTest | Should -HaveParameter OutVariable -Type String -Not -Mandatory
+        }
+        It "Should have OutBuffer as a non-mandatory parameter of type Int32" {
+            $CommandUnderTest | Should -HaveParameter OutBuffer -Type Int32 -Not -Mandatory
+        }
+        It "Should have PipelineVariable as a non-mandatory parameter of type String" {
+            $CommandUnderTest | Should -HaveParameter PipelineVariable -Type String -Not -Mandatory
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
     Context "Try all versions of SQL" {
-        $versionName = @{
-            8  = "2000"
-            9  = "2005"
-            10 = "2008/2008R2"
-            11 = "2012"
-            12 = "2014"
-            13 = "2016"
-            14 = "2017"
-            15 = "2019"
-            16 = "2022"
+        BeforeAll {
+            $versionName = @{
+                8  = "2000"
+                9  = "2005"
+                10 = "2008/2008R2"
+                11 = "2012"
+                12 = "2014"
+                13 = "2016"
+                14 = "2017"
+                15 = "2019"
+                16 = "2022"
+            }
         }
 
-        foreach ($version in 8..14){
-            $results = Get-SqlDefaultSPConfigure -SqlVersion $version
-
-            It "Should return results for $($versionName.item($version))" {
-                $results | Should  Not BeNullOrEmpty
-            }
-
-            It "Should return 'System.Management.Automation.PSCustomObject' object" {
-                $results.GetType().fullname | Should Be "System.Management.Automation.PSCustomObject"
-            }
+        It "Should return results for <versionName[$_]>" -ForEach (8..14) {
+            $results = Get-SqlDefaultSPConfigure -SqlVersion $_
+            $results | Should -Not -BeNullOrEmpty
+            $results.GetType().FullName | Should -Be "System.Management.Automation.PSCustomObject"
         }
     }
 }

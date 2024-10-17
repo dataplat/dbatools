@@ -1,37 +1,55 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaWaitStatistic" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Threshold', 'IncludeIgnorable', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaWaitStatistic
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Threshold as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Threshold -Type Int32 -Not -Mandatory
+        }
+        It "Should have IncludeIgnorable as a parameter" {
+            $CommandUnderTest | Should -HaveParameter IncludeIgnorable -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command returns proper info" {
-        $results = Get-DbaWaitStatistic -SqlInstance $script:instance2 -Threshold 100
-
-        It "returns results" {
-            $results.Count -gt 0 | Should Be $true
+        BeforeAll {
+            $results = Get-DbaWaitStatistic -SqlInstance $script:instance2 -Threshold 100
         }
 
-        foreach ($result in $results) {
-            It "returns a hyperlink" {
-                $result.URL -match 'sqlskills.com' | Should Be $true
+        It "returns results" {
+            $results | Should -Not -BeNullOrEmpty
+        }
+
+        It "returns a hyperlink for each result" {
+            $results | ForEach-Object {
+                $_.URL | Should -Match 'sqlskills.com'
             }
         }
     }
 
     Context "Command returns proper info when using parameter IncludeIgnorable" {
-        $ignoredWaits = 'REQUEST_FOR_DEADLOCK_SEARCH', 'SLEEP_MASTERDBREADY', 'SLEEP_TASK', 'LAZYWRITER_SLEEP'
-        $results = Get-DbaWaitStatistic -SqlInstance $script:instance2 -Threshold 100 -IncludeIgnorable | Where-Object {
-            $ignoredWaits -contains $_.WaitType
+        BeforeAll {
+            $ignoredWaits = 'REQUEST_FOR_DEADLOCK_SEARCH', 'SLEEP_MASTERDBREADY', 'SLEEP_TASK', 'LAZYWRITER_SLEEP'
+            $results = Get-DbaWaitStatistic -SqlInstance $script:instance2 -Threshold 100 -IncludeIgnorable | Where-Object {
+                $ignoredWaits -contains $_.WaitType
+            }
         }
 
         It "returns results" {
@@ -39,12 +57,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "results includes ignorable column" {
-            $results[0].PSObject.Properties.Name.Contains('Ignorable') | Should Be $true
+            $results[0].PSObject.Properties.Name | Should -Contain 'Ignorable'
         }
 
-        foreach ($result in $results) {
-            It "returns a hyperlink" {
-                $result.URL -match 'sqlskills.com' | Should Be $true
+        It "returns a hyperlink for each result" {
+            $results | ForEach-Object {
+                $_.URL | Should -Match 'sqlskills.com'
             }
         }
     }

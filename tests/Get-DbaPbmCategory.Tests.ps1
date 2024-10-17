@@ -1,35 +1,60 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaPbmCategory" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Category', 'InputObject', 'ExcludeSystemObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaPbmCategory
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Category as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Category -Type String[] -Not -Mandatory
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type PSObject[] -Not -Mandatory
+        }
+        It "Should have ExcludeSystemObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeSystemObject -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command actually works" {
-        $results = Get-DbaPbmCategory -SqlInstance $script:instance2
-        it "Gets Results" {
-            $results | Should Not Be $null
+        BeforeAll {
+            $results = Get-DbaPbmCategory -SqlInstance $script:instance2
+        }
+        It "Gets Results" {
+            $results | Should -Not -BeNullOrEmpty
         }
     }
+
     Context "Command actually works using -Category" {
-        $results = Get-DbaPbmCategory -SqlInstance $script:instance2 -Category 'Availability database errors'
-        it "Gets Results" {
-            $results | Should Not Be $null
+        BeforeAll {
+            $results = Get-DbaPbmCategory -SqlInstance $script:instance2 -Category 'Availability database errors'
+        }
+        It "Gets Results" {
+            $results | Should -Not -BeNullOrEmpty
         }
     }
+
     Context "Command actually works using -ExcludeSystemObject" {
-        $results = Get-DbaPbmCategory -SqlInstance $script:instance2 -ExcludeSystemObject
-        it "Gets Results" {
-            $results | Should Not Be $null
+        BeforeAll {
+            $results = Get-DbaPbmCategory -SqlInstance $script:instance2 -ExcludeSystemObject
+        }
+        It "Gets Results" {
+            $results | Should -Not -BeNullOrEmpty
         }
     }
 }

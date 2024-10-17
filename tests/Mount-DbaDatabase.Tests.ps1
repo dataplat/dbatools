@@ -1,41 +1,54 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Mount-DbaDatabase" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'FileStructure', 'DatabaseOwner', 'AttachOption', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Mount-DbaDatabase
         }
-    }
-}
-
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    Context "Setup removes, restores and backups on the local drive for Mount-DbaDatabase" {
-        $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database detachattach | Remove-DbaDatabase -Confirm:$false
-        $null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\detachattach\detachattach.bak -WithReplace
-        $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database detachattach | Backup-DbaDatabase -Type Full
-        $null = Detach-DbaDatabase -SqlInstance $script:instance1 -Database detachattach -Force
-    }
-
-    Context "Attaches a single database and tests to ensure the alias still exists" {
-        $results = Attach-DbaDatabase -SqlInstance $script:instance1 -Database detachattach
-
-        It "Should return success" {
-            $results.AttachResult | Should Be "Success"
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
         }
-
-        It "Should return that the database is only Database" {
-            $results.Database | Should Be "detachattach"
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
-
-        It "Should return that the AttachOption default is None" {
-            $results.AttachOption | Should Be "None"
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String[]
+        }
+        It "Should have FileStructure as a parameter" {
+            $CommandUnderTest | Should -HaveParameter FileStructure -Type StringCollection
+        }
+        It "Should have DatabaseOwner as a parameter" {
+            $CommandUnderTest | Should -HaveParameter DatabaseOwner -Type String
+        }
+        It "Should have AttachOption as a parameter" {
+            $CommandUnderTest | Should -HaveParameter AttachOption -Type String
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
 
-    $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database detachattach | Remove-DbaDatabase -Confirm:$false
+    Context "Integration Tests" {
+        BeforeAll {
+            . "$PSScriptRoot\constants.ps1"
+            
+            # Setup: remove, restore and backup on the local drive
+            Get-DbaDatabase -SqlInstance $script:instance1 -Database detachattach | Remove-DbaDatabase -Confirm:$false
+            Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\detachattach\detachattach.bak -WithReplace
+            Get-DbaDatabase -SqlInstance $script:instance1 -Database detachattach | Backup-DbaDatabase -Type Full
+            Detach-DbaDatabase -SqlInstance $script:instance1 -Database detachattach -Force
+        }
+
+        It "Attaches a single database and ensures the alias still exists" {
+            $results = Attach-DbaDatabase -SqlInstance $script:instance1 -Database detachattach
+
+            $results.AttachResult | Should -Be "Success"
+            $results.Database | Should -Be "detachattach"
+            $results.AttachOption | Should -Be "None"
+        }
+
+        AfterAll {
+            Get-DbaDatabase -SqlInstance $script:instance1 -Database detachattach | Remove-DbaDatabase -Confirm:$false
+        }
+    }
 }

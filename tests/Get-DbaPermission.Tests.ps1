@@ -1,19 +1,41 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaPermission Unit Tests" -Tag 'UnitTests' {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'IncludeServerLevel', 'ExcludeSystemObjects', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaPermission
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Not -Mandatory
+        }
+        It "Should have ExcludeDatabase as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Not -Mandatory
+        }
+        It "Should have IncludeServerLevel as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter IncludeServerLevel -Type Switch -Not -Mandatory
+        }
+        It "Should have ExcludeSystemObjects as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeSystemObjects -Type Switch -Not -Mandatory
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+Describe "Get-DbaPermission Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $server = $script:instance1
         $random = Get-Random
@@ -74,46 +96,45 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $removedUser2 = Remove-DbaLogin -SqlInstance $server -Login $loginNameUser2 -Confirm:$false
     }
 
-    Context "parameters work" {
-        It "returns server level permissions with -IncludeServerLevel" {
+    Context "Parameters work" {
+        It "Returns server level permissions with -IncludeServerLevel" {
             $results = Get-DbaPermission -SqlInstance $server -IncludeServerLevel
-            $results.where( { $_.Database -eq '' }).count | Should BeGreaterThan 0
+            $results.Where({ $_.Database -eq '' }).Count | Should -BeGreaterThan 0
         }
-        It "returns no server level permissions without -IncludeServerLevel" {
+        It "Returns no server level permissions without -IncludeServerLevel" {
             $results = Get-DbaPermission -SqlInstance $server
-            $results.where( { $_.Database -eq '' }).count | Should Be 0
+            $results.Where({ $_.Database -eq '' }).Count | Should -Be 0
         }
-        It "returns no system object permissions with -ExcludeSystemObjects" {
+        It "Returns no system object permissions with -ExcludeSystemObjects" {
             $results = Get-DbaPermission -SqlInstance $server -ExcludeSystemObjects
-            $results.where( { $_.securable -like 'sys.*' }).count | Should Be 0
+            $results.Where({ $_.securable -like 'sys.*' }).Count | Should -Be 0
         }
-        It "returns system object permissions without -ExcludeSystemObjects" {
+        It "Returns system object permissions without -ExcludeSystemObjects" {
             $results = Get-DbaPermission -SqlInstance $server
-            $results.where( { $_.securable -like 'sys.*' }).count | Should BeGreaterThan 0
+            $results.Where({ $_.securable -like 'sys.*' }).Count | Should -BeGreaterThan 0
         }
-        It "db object level permissions for a user are returned correctly" {
+        It "DB object level permissions for a user are returned correctly" {
             $results = Get-DbaPermission -SqlInstance $server -Database $dbName -ExcludeSystemObjects | Where-Object { $_.Grantee -eq $loginNameUser1 -and $_.SecurableType -ne "SCHEMA" }
-            $results.count | Should -Be 4
-            $results.where( { $_.Securable -eq "dbo.$tableName1" -and $_.PermState -eq 'DENY' -and $_.PermissionName -in ('DELETE', 'INSERT', 'UPDATE') }).count | Should -Be 3
-            $results.where( { $_.Securable -eq "dbo.$tableName1" -and $_.PermState -eq 'GRANT' -and $_.PermissionName -eq 'SELECT' }).count | Should -Be 1
+            $results.Count | Should -Be 4
+            $results.Where({ $_.Securable -eq "dbo.$tableName1" -and $_.PermState -eq 'DENY' -and $_.PermissionName -in ('DELETE', 'INSERT', 'UPDATE') }).Count | Should -Be 3
+            $results.Where({ $_.Securable -eq "dbo.$tableName1" -and $_.PermState -eq 'GRANT' -and $_.PermissionName -eq 'SELECT' }).Count | Should -Be 1
         }
     }
 
     # See https://github.com/dataplat/dbatools/issues/6744
     Context "Ensure implicit permissions are included in the result set" {
-        It "the dbo user and db_owner users are returned in the result set with the CONTROL permission" {
+        It "The dbo user and db_owner users are returned in the result set with the CONTROL permission" {
             $results = Get-DbaPermission -SqlInstance $server -Database $dbName -ExcludeSystemObjects | Where-Object { $_.Grantee -in ($loginNameDBO, $loginNameDBOwner) }
-            $results.count | Should -Be 2
+            $results.Count | Should -Be 2
 
-            $results.where( { ($_.Grantee -eq $loginNameDBO -and $_.GranteeType -eq "DATABASE OWNER (dbo user)" -and $_.PermissionName -eq "CONTROL") -or ($_.Grantee -eq $loginNameDBOwner -and $_.GranteeType -eq "DATABASE OWNER (db_owner role)" -and $_.PermissionName -eq "CONTROL") }).count | Should -Be 2
+            $results.Where({ ($_.Grantee -eq $loginNameDBO -and $_.GranteeType -eq "DATABASE OWNER (dbo user)" -and $_.PermissionName -eq "CONTROL") -or ($_.Grantee -eq $loginNameDBOwner -and $_.GranteeType -eq "DATABASE OWNER (db_owner role)" -and $_.PermissionName -eq "CONTROL") }).Count | Should -Be 2
         }
 
-        It "db schema level permissions are returned correctly" {
+        It "DB schema level permissions are returned correctly" {
             $results = Get-DbaPermission -SqlInstance $server -Database $dbName -ExcludeSystemObjects | Where-Object { $_.Grantee -in ($loginNameUser1, $loginNameUser2) -and $_.SecurableType -eq "SCHEMA" }
-            $results.where( { $_.Securable -eq "$schemaNameForTable2" -and $_.PermissionName -eq "CONTROL" }).count | Should -Be 2
-            $results.where( { $_.Securable -eq "$schemaNameForTable2" -and $_.PermissionName -eq "CONTROL" -and $_.Grantee -eq $loginNameUser1 -and $_.GranteeType -eq "SCHEMA OWNER" }).count | Should -Be 1
-            $results.where( { $_.Securable -eq "$schemaNameForTable2" -and $_.PermissionName -eq "CONTROL" -and $_.Grantee -eq $loginNameUser2 -and $_.GranteeType -eq "SQL_USER" }).count | Should -Be 1
-
+            $results.Where({ $_.Securable -eq "$schemaNameForTable2" -and $_.PermissionName -eq "CONTROL" }).Count | Should -Be 2
+            $results.Where({ $_.Securable -eq "$schemaNameForTable2" -and $_.PermissionName -eq "CONTROL" -and $_.Grantee -eq $loginNameUser1 -and $_.GranteeType -eq "SCHEMA OWNER" }).Count | Should -Be 1
+            $results.Where({ $_.Securable -eq "$schemaNameForTable2" -and $_.PermissionName -eq "CONTROL" -and $_.Grantee -eq $loginNameUser2 -and $_.GranteeType -eq "SQL_USER" }).Count | Should -Be 1
         }
     }
 }

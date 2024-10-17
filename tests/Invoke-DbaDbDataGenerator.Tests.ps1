@@ -1,38 +1,80 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'FilePath', 'Locale', 'CharacterString', 'Table', 'Column', 'ExcludeTable', 'ExcludeColumn', 'MaxValue', 'ExactLength', 'ModulusFactor', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
-        }
-    }
-}
-
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+Describe "Invoke-DbaDbDataGenerator" {
     BeforeAll {
-        $db = "dbatoolsci_generator"
-        $sql = "CREATE TABLE [dbo].[people](
-                    [FirstName] [varchar](50) NULL,
-                    [LastName] [varchar](50) NULL,
-                    [City] [varchar](100) NULL
-                ) ON [PRIMARY];"
-        New-DbaDatabase -SqlInstance $script:instance2 -Name $db
-        Invoke-DbaQuery -SqlInstance $script:instance2 -Database $db -Query $sql
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
     }
 
-    AfterAll {
-        Remove-DbaDatabase -SqlInstance $script:instance2 -Database $db -Confirm:$false
-        $file | Remove-Item -Confirm:$false -ErrorAction Ignore
+    Context "Validate parameters" {
+        BeforeAll {
+            $CommandUnderTest = Get-Command Invoke-DbaDbDataGenerator
+        }
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Not -Mandatory
+        }
+        It "Should have FilePath parameter" {
+            $CommandUnderTest | Should -HaveParameter FilePath -Type Object -Not -Mandatory
+        }
+        It "Should have Locale parameter" {
+            $CommandUnderTest | Should -HaveParameter Locale -Type String -Not -Mandatory
+        }
+        It "Should have CharacterString parameter" {
+            $CommandUnderTest | Should -HaveParameter CharacterString -Type String -Not -Mandatory
+        }
+        It "Should have Table parameter" {
+            $CommandUnderTest | Should -HaveParameter Table -Type String[] -Not -Mandatory
+        }
+        It "Should have Column parameter" {
+            $CommandUnderTest | Should -HaveParameter Column -Type String[] -Not -Mandatory
+        }
+        It "Should have ExcludeTable parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeTable -Type String[] -Not -Mandatory
+        }
+        It "Should have ExcludeColumn parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeColumn -Type String[] -Not -Mandatory
+        }
+        It "Should have MaxValue parameter" {
+            $CommandUnderTest | Should -HaveParameter MaxValue -Type Int32 -Not -Mandatory
+        }
+        It "Should have ExactLength parameter" {
+            $CommandUnderTest | Should -HaveParameter ExactLength -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have ModulusFactor parameter" {
+            $CommandUnderTest | Should -HaveParameter ModulusFactor -Type Int32 -Not -Mandatory
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
+        }
     }
 
     Context "Command works" {
+        BeforeAll {
+            $db = "dbatoolsci_generator"
+            $sql = "CREATE TABLE [dbo].[people](
+                        [FirstName] [varchar](50) NULL,
+                        [LastName] [varchar](50) NULL,
+                        [City] [varchar](100) NULL
+                    ) ON [PRIMARY];"
+            New-DbaDatabase -SqlInstance $script:instance2 -Name $db
+            Invoke-DbaQuery -SqlInstance $script:instance2 -Database $db -Query $sql
+        }
+
+        AfterAll {
+            Remove-DbaDatabase -SqlInstance $script:instance2 -Database $db -Confirm:$false
+            $file | Remove-Item -Confirm:$false -ErrorAction Ignore
+        }
+
         It "Starts with the right data" {
-            Invoke-DbaQuery -SqlInstance $script:instance2 -Database $db -Query "select * from people" | Should -Be $null
+            $result = Invoke-DbaQuery -SqlInstance $script:instance2 -Database $db -Query "select * from people"
+            $result | Should -BeNullOrEmpty
         }
 
         It "Returns the proper output" {
@@ -44,10 +86,11 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 $result.Rows | Should -Be 10
                 $result.Database | Should -Contain $db
             }
-
         }
+
         It "Generates the data" {
-            Invoke-DbaQuery -SqlInstance $script:instance2 -Database $db -Query "select * from people" | Should -Not -Be $null
+            $result = Invoke-DbaQuery -SqlInstance $script:instance2 -Database $db -Query "select * from people"
+            $result | Should -Not -BeNullOrEmpty
         }
     }
 }

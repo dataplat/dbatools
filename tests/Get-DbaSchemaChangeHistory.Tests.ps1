@@ -1,19 +1,39 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaSchemaChangeHistory" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Since', 'Object', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaSchemaChangeHistory
+        }
+        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database as a non-mandatory parameter of type Object[]" {
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Not -Mandatory
+        }
+        It "Should have ExcludeDatabase as a non-mandatory parameter of type Object[]" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Not -Mandatory
+        }
+        It "Should have Since as a non-mandatory parameter of type DbaDateTime" {
+            $CommandUnderTest | Should -HaveParameter Since -Type DbaDateTime -Not -Mandatory
+        }
+        It "Should have Object as a non-mandatory parameter of type String[]" {
+            $CommandUnderTest | Should -HaveParameter Object -Type String[] -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe "Get-DbaSchemaChangeHistory Integration Tests" -Tag "IntegrationTests" {
+    BeforeDiscovery {
+        . (Join-Path $PSScriptRoot 'constants.ps1')
+    }
+
     Context "Testing if schema changes are discovered" {
         BeforeAll {
             $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database tempdb
@@ -24,10 +44,9 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $db.Query("DROP TABLE dbo.dbatoolsci_schemachange1")
         }
 
-        $results = Get-DbaSchemaChangeHistory -SqlInstance $script:instance1 -Database tempdb
-
         It "notices dbatoolsci_schemachange changed" {
-            $results.Object -match 'dbatoolsci_schemachange' | Should Be $true
+            $results = Get-DbaSchemaChangeHistory -SqlInstance $script:instance1 -Database tempdb
+            $results.Object -match 'dbatoolsci_schemachange' | Should -Be $true
         }
     }
 }

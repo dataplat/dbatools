@@ -1,19 +1,69 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Invoke-DbaPfRelog Unit Tests" -Tag 'UnitTests' {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Path', 'Destination', 'Type', 'Append', 'AllowClobber', 'PerformanceCounter', 'PerformanceCounterPath', 'Interval', 'BeginTime', 'EndTime', 'ConfigPath', 'Summary', 'InputObject', 'Multithread', 'AllTime', 'Raw', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Invoke-DbaPfRelog
+        }
+        It "Should have Path as a non-mandatory String[] parameter" {
+            $CommandUnderTest | Should -HaveParameter Path -Type String[] -Not -Mandatory
+        }
+        It "Should have Destination as a non-mandatory String parameter" {
+            $CommandUnderTest | Should -HaveParameter Destination -Type String -Not -Mandatory
+        }
+        It "Should have Type as a non-mandatory String parameter" {
+            $CommandUnderTest | Should -HaveParameter Type -Type String -Not -Mandatory
+        }
+        It "Should have Append as a non-mandatory SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter Append -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have AllowClobber as a non-mandatory SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter AllowClobber -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have PerformanceCounter as a non-mandatory String[] parameter" {
+            $CommandUnderTest | Should -HaveParameter PerformanceCounter -Type String[] -Not -Mandatory
+        }
+        It "Should have PerformanceCounterPath as a non-mandatory String parameter" {
+            $CommandUnderTest | Should -HaveParameter PerformanceCounterPath -Type String -Not -Mandatory
+        }
+        It "Should have Interval as a non-mandatory Int32 parameter" {
+            $CommandUnderTest | Should -HaveParameter Interval -Type Int32 -Not -Mandatory
+        }
+        It "Should have BeginTime as a non-mandatory DateTime parameter" {
+            $CommandUnderTest | Should -HaveParameter BeginTime -Type DateTime -Not -Mandatory
+        }
+        It "Should have EndTime as a non-mandatory DateTime parameter" {
+            $CommandUnderTest | Should -HaveParameter EndTime -Type DateTime -Not -Mandatory
+        }
+        It "Should have ConfigPath as a non-mandatory String parameter" {
+            $CommandUnderTest | Should -HaveParameter ConfigPath -Type String -Not -Mandatory
+        }
+        It "Should have Summary as a non-mandatory SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter Summary -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have InputObject as a non-mandatory Object[] parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Not -Mandatory
+        }
+        It "Should have Multithread as a non-mandatory SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter Multithread -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have AllTime as a non-mandatory SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter AllTime -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have Raw as a non-mandatory SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter Raw -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+
+# Integration tests can be added below this line
+# Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests for more guidance.

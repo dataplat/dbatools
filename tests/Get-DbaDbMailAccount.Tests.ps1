@@ -1,84 +1,124 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaDbMailAccount" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Account', 'ExcludeAccount', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaDbMailAccount
         }
-    }
-}
-
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    BeforeAll {
-        $accountname = "dbatoolsci_test_$(get-random)"
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $mailAccountSettings = "EXEC msdb.dbo.sysmail_add_account_sp
-            @account_name='$accountname',
-            @description='Mail account for email alerts',
-            @email_address='dbatoolssci@dbatools.io',
-            @display_name ='dbatoolsci mail alerts',
-            @mailserver_name='smtp.dbatools.io',
-            @replyto_address='no-reply@dbatools.io';"
-        $server.query($mailAccountSettings)
-    }
-    AfterAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $mailAccountSettings = "EXEC msdb.dbo.sysmail_delete_account_sp
-            @account_name = '$accountname';"
-        $server.query($mailAccountSettings)
+        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Account as a non-mandatory parameter of type String[]" {
+            $CommandUnderTest | Should -HaveParameter Account -Type String[] -Not -Mandatory
+        }
+        It "Should have ExcludeAccount as a non-mandatory parameter of type String[]" {
+            $CommandUnderTest | Should -HaveParameter ExcludeAccount -Type String[] -Not -Mandatory
+        }
+        It "Should have InputObject as a non-mandatory parameter of type SqlMail[]" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type SqlMail[] -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type switch -Not -Mandatory
+        }
     }
 
-    Context "Gets DbMail Account" {
-        $results = Get-DbaDbMailAccount -SqlInstance $script:instance2 | Where-Object {$_.Name -eq "$accountname"}
-        It "Gets results" {
-            $results | Should Not Be $null
+    Context "Command usage" {
+        BeforeDiscovery {
+            . (Join-Path $PSScriptRoot 'constants.ps1')
         }
-        It "Should have Name of $accounName" {
-            $results.name | Should Be $accountname
+
+        BeforeAll {
+            $accountname = "dbatoolsci_test_$(Get-Random)"
+            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $mailAccountSettings = @"
+                EXEC msdb.dbo.sysmail_add_account_sp
+                @account_name='$accountname',
+                @description='Mail account for email alerts',
+                @email_address='dbatoolssci@dbatools.io',
+                @display_name ='dbatoolsci mail alerts',
+                @mailserver_name='smtp.dbatools.io',
+                @replyto_address='no-reply@dbatools.io';
+"@
+            $server.Query($mailAccountSettings)
         }
-        It "Should have Desctiption of 'Mail account for email alerts' " {
-            $results.description | Should Be 'Mail account for email alerts'
+
+        AfterAll {
+            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $mailAccountSettings = "EXEC msdb.dbo.sysmail_delete_account_sp @account_name = '$accountname';"
+            $server.Query($mailAccountSettings)
         }
-        It "Should have EmailAddress of 'dbatoolssci@dbatools.io' " {
-            $results.EmailAddress | Should Be 'dbatoolssci@dbatools.io'
+
+        Context "Gets DbMail Account" {
+            BeforeAll {
+                $results = Get-DbaDbMailAccount -SqlInstance $script:instance2 | Where-Object { $_.Name -eq $accountname }
+            }
+
+            It "Gets results" {
+                $results | Should -Not -BeNullOrEmpty
+            }
+
+            It "Should have Name of $accountname" {
+                $results.Name | Should -Be $accountname
+            }
+
+            It "Should have Description of 'Mail account for email alerts'" {
+                $results.Description | Should -Be 'Mail account for email alerts'
+            }
+
+            It "Should have EmailAddress of 'dbatoolssci@dbatools.io'" {
+                $results.EmailAddress | Should -Be 'dbatoolssci@dbatools.io'
+            }
+
+            It "Should have ReplyToAddress of 'no-reply@dbatools.io'" {
+                $results.ReplyToAddress | Should -Be 'no-reply@dbatools.io'
+            }
+
+            It "Should have MailServer of '[smtp.dbatools.io]'" {
+                $results.MailServers | Should -Be '[smtp.dbatools.io]'
+            }
         }
-        It "Should have ReplyToAddress of 'no-reply@dbatools.io' " {
-            $results.ReplyToAddress | Should Be 'no-reply@dbatools.io'
+
+        Context "Gets DbMail when using -Account" {
+            BeforeAll {
+                $results = Get-DbaDbMailAccount -SqlInstance $script:instance2 -Account $accountname
+            }
+
+            It "Gets results" {
+                $results | Should -Not -BeNullOrEmpty
+            }
+
+            It "Should have Name of $accountname" {
+                $results.Name | Should -Be $accountname
+            }
+
+            It "Should have Description of 'Mail account for email alerts'" {
+                $results.Description | Should -Be 'Mail account for email alerts'
+            }
+
+            It "Should have EmailAddress of 'dbatoolssci@dbatools.io'" {
+                $results.EmailAddress | Should -Be 'dbatoolssci@dbatools.io'
+            }
+
+            It "Should have ReplyToAddress of 'no-reply@dbatools.io'" {
+                $results.ReplyToAddress | Should -Be 'no-reply@dbatools.io'
+            }
+
+            It "Should have MailServer of '[smtp.dbatools.io]'" {
+                $results.MailServers | Should -Be '[smtp.dbatools.io]'
+            }
         }
-        It "Should have MailServer of '[smtp.dbatools.io]' " {
-            $results.MailServers | Should Be '[smtp.dbatools.io]'
-        }
-    }
-    Context "Gets DbMail when using -Account" {
-        $results = Get-DbaDbMailAccount -SqlInstance $script:instance2 -Account $accountname
-        It "Gets results" {
-            $results | Should Not Be $null
-        }
-        It "Should have Name of $accounName" {
-            $results.name | Should Be $accountname
-        }
-        It "Should have Desctiption of 'Mail account for email alerts' " {
-            $results.description | Should Be 'Mail account for email alerts'
-        }
-        It "Should have EmailAddress of 'dbatoolssci@dbatools.io' " {
-            $results.EmailAddress | Should Be 'dbatoolssci@dbatools.io'
-        }
-        It "Should have ReplyToAddress of 'no-reply@dbatools.io' " {
-            $results.ReplyToAddress | Should Be 'no-reply@dbatools.io'
-        }
-        It "Should have MailServer of '[smtp.dbatools.io]' " {
-            $results.MailServers | Should Be '[smtp.dbatools.io]'
-        }
-    }
-    Context "Gets no DbMail when using -ExcludeAccount" {
-        $results = Get-DbaDbMailAccount -SqlInstance $script:instance2 -ExcludeAccount $accountname
-        It "Gets no results" {
-            $results | Should Be $null
+
+        Context "Gets no DbMail when using -ExcludeAccount" {
+            BeforeAll {
+                $results = Get-DbaDbMailAccount -SqlInstance $script:instance2 -ExcludeAccount $accountname
+            }
+
+            It "Gets no results" {
+                $results | Should -BeNullOrEmpty
+            }
         }
     }
 }

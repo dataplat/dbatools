@@ -1,21 +1,37 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaPbmPolicy" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Policy', 'Category', 'InputObject', 'IncludeSystemObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaPbmPolicy
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Policy as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Policy -Type String[]
+        }
+        It "Should have Category as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Category -Type String[]
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type PSObject[]
+        }
+        It "Should have IncludeSystemObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter IncludeSystemObject -Type SwitchParameter
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    Context "Setup" {
+    Context "Integration Tests" {
         BeforeAll {
+            . "$PSScriptRoot\constants.ps1"
+
             $sqlconditionid = "DECLARE @condition_id INT
                 EXEC msdb.dbo.sp_syspolicy_add_condition @name=N'dbatoolsci_Condition', @description=N'', @facet=N'ApplicationRole', @expression=N'<Operator>
                   <TypeClass>Bool</TypeClass>
@@ -51,28 +67,27 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $conditionid = $server.ConnectionContext.ExecuteScalar($sqlconditionid)
             $objectsetid = $server.ConnectionContext.ExecuteScalar($sqlobjectsetid)
             $policyid = $server.ConnectionContext.ExecuteScalar($sqlpolicyid)
-
         }
+
         AfterAll {
             $server.Query("EXEC msdb.dbo.sp_syspolicy_delete_policy @policy_id=$policyid")
             $server.Query("EXEC msdb.dbo.sp_syspolicy_delete_object_set @object_set_id=$objectsetid")
             $server.Query("EXEC msdb.dbo.sp_syspolicy_delete_condition @condition_id=$conditionid")
         }
 
-        $results = Get-DbaPbmPolicy -SqlInstance $script:instance2
-
         It "returns the test policy" {
-            $results.Name -contains 'dbatoolsci_TestPolicy' | Should Be $true
+            $results = Get-DbaPbmPolicy -SqlInstance $script:instance2
+            $results.Name | Should -Contain 'dbatoolsci_TestPolicy'
         }
 
-        $results = Get-DbaPbmPolicy -SqlInstance $script:instance2 -Policy dbatoolsci_TestPolicy
-
         It "returns only the test policy named dbatoolsci_TestPolicy" {
-            $results.Name -eq 'dbatoolsci_TestPolicy' | Should Be $true
+            $results = Get-DbaPbmPolicy -SqlInstance $script:instance2 -Policy dbatoolsci_TestPolicy
+            $results.Name | Should -Be 'dbatoolsci_TestPolicy'
         }
 
         It "returns a policy with a condition named dbatoolsci_Condition" {
-            $results.Condition -eq 'dbatoolsci_Condition' | Should Be $true
+            $results = Get-DbaPbmPolicy -SqlInstance $script:instance2 -Policy dbatoolsci_TestPolicy
+            $results.Condition | Should -Be 'dbatoolsci_Condition'
         }
     }
 }

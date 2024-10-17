@@ -1,18 +1,36 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Install-DbaDarlingData" {
     Context "Validate parameters" {
-        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Branch', 'Database', 'LocalFile', 'Procedure', 'Force', 'EnableException'
-
-        It "Should only contain our specific parameters" {
-            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
+        BeforeAll {
+            $CommandUnderTest = Get-Command Install-DbaDarlingData
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type Object
+        }
+        It "Should have Branch as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Branch -Type String
+        }
+        It "Should have Procedure as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Procedure -Type String[]
+        }
+        It "Should have LocalFile as a parameter" {
+            $CommandUnderTest | Should -HaveParameter LocalFile -Type String
+        }
+        It "Should have Force as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+
     Context "Testing DarlingData installer with download" {
         BeforeAll {
             $database = "dbatoolsci_darling_$(Get-Random)"
@@ -33,10 +51,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
         It "has the correct properties" {
             $result = $resultsDownload[0]
-            $ExpectedProps = 'SqlInstance,InstanceName,ComputerName,Name,Status,Database'.Split(',')
+            $ExpectedProps = 'SqlInstance', 'InstanceName', 'ComputerName', 'Name', 'Status', 'Database'
             ($result.PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
         }
     }
+
     Context "Testing DarlingData installer with LocalFile" {
         BeforeAll {
             $database = "dbatoolsci_darling_$(Get-Random)"
@@ -48,7 +67,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             if (Test-Path $outfile) {
                 $fullOutfile = (Get-ChildItem $outfile).FullName
             }
-            $resultsLocalFile = Install-DbaDarlingData -SqlInstance $script:instance3 -Database $database -Branch main -LocalFile $fullOutfile  -Force
+            $resultsLocalFile = Install-DbaDarlingData -SqlInstance $script:instance3 -Database $database -Branch main -LocalFile $fullOutfile -Force
         }
         AfterAll {
             Remove-DbaDatabase -SqlInstance $script:instance3 -Database $database -Confirm:$false
@@ -62,7 +81,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
         It "Has the correct properties" {
             $result = $resultsLocalFile[0]
-            $ExpectedProps = 'SqlInstance,InstanceName,ComputerName,Name,Status,Database'.Split(',')
+            $ExpectedProps = 'SqlInstance', 'InstanceName', 'ComputerName', 'Name', 'Status', 'Database'
             ($result.PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
         }
     }

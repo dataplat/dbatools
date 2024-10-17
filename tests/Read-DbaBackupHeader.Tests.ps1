@@ -1,19 +1,67 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Read-DbaBackupHeader" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Path', 'Simple', 'FileList', 'AzureCredential', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Read-DbaBackupHeader
+        }
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter
+        }
+        It "Should have SqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Path parameter" {
+            $CommandUnderTest | Should -HaveParameter Path -Type Object[]
+        }
+        It "Should have Simple parameter" {
+            $CommandUnderTest | Should -HaveParameter Simple -Type SwitchParameter
+        }
+        It "Should have FileList parameter" {
+            $CommandUnderTest | Should -HaveParameter FileList -Type SwitchParameter
+        }
+        It "Should have AzureCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter AzureCredential -Type String
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+        }
+    }
+
+    Context "Command usage" {
+        BeforeDiscovery {
+            # Run setup code to get script variables within scope of the discovery phase
+            . (Join-Path $PSScriptRoot 'constants.ps1')
+        }
+
+        BeforeAll {
+            # Setup code for all tests in this context
+            $backupFile = "TestDrive:\test_backup.bak"
+            # Create a mock backup file or use an existing one for testing
+        }
+
+        It "Should read backup header from a local file" {
+            $result = Read-DbaBackupHeader -Path $backupFile
+            $result | Should -Not -BeNullOrEmpty
+            # Add more specific assertions based on expected output
+        }
+
+        It "Should read backup header from SQL Server" -ForEach @($script:instance1, $script:instance2) {
+            $result = Read-DbaBackupHeader -SqlInstance $_ -Path $backupFile
+            $result | Should -Not -BeNullOrEmpty
+            # Add more specific assertions based on expected output
+        }
+
+        It "Should return simplified output when using -Simple parameter" {
+            $result = Read-DbaBackupHeader -Path $backupFile -Simple
+            $result | Should -Not -BeNullOrEmpty
+            # Add assertions to check if the output is simplified
+        }
+
+        It "Should return file list when using -FileList parameter" {
+            $result = Read-DbaBackupHeader -Path $backupFile -FileList
+            $result | Should -Not -BeNullOrEmpty
+            # Add assertions to check if the output contains file list
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>

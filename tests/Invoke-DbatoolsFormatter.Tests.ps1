@@ -1,20 +1,12 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'Path', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
-        }
-    }
-}
+Describe "Invoke-DbatoolsFormatter" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
 
-Describe "$CommandName IntegrationTests" -Tag "IntegrationTests" {
-    $content = @'
+        $content = @'
 function Get-DbaStub {
         <#
         .SYNOPSIS
@@ -29,9 +21,9 @@ process {
 
 
 '@
-    #ensure empty lines also at the end
-    $content = $content + "`r`n    `r`n"
-    $wantedContent = @'
+        #ensure empty lines also at the end
+        $content = $content + "`r`n    `r`n"
+        $wantedContent = @'
 function Get-DbaStub {
     <#
         .SYNOPSIS
@@ -45,23 +37,34 @@ function Get-DbaStub {
     }
 }
 '@
+    }
+
+    Context "Validate parameters" {
+        BeforeAll {
+            $CommandUnderTest = Get-Command Invoke-DbatoolsFormatter
+        }
+        It "Should have Path as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Path -Type Object[] -Not -Mandatory
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
+        }
+    }
 
     Context "formatting actually works" {
-        $temppath = Join-Path $TestDrive 'somefile.ps1'
-        $temppathUnix = Join-Path $TestDrive 'somefileUnixeol.ps1'
-        ## Set-Content adds a newline...WriteAllText() doesn't
-        #Set-Content -Value $content -Path $temppath
-        [System.IO.File]::WriteAllText($temppath, $content)
-        [System.IO.File]::WriteAllText($temppathUnix, $content.Replace("`r", ""))
-        Invoke-DbatoolsFormatter -Path $temppath
-        Invoke-DbatoolsFormatter -Path $temppathUnix
-        $newcontent = [System.IO.File]::ReadAllText($temppath)
-        $newcontentUnix = [System.IO.File]::ReadAllText($temppathUnix)
-        <#
-        write-host -fore cyan "w $($wantedContent | convertto-json)"
-        write-host -fore cyan "n $($newcontent | convertto-json)"
-        write-host -fore cyan "t $($newcontent -eq $wantedContent)"
-        #>
+        BeforeAll {
+            $temppath = Join-Path $TestDrive 'somefile.ps1'
+            $temppathUnix = Join-Path $TestDrive 'somefileUnixeol.ps1'
+            ## Set-Content adds a newline...WriteAllText() doesn't
+            #Set-Content -Value $content -Path $temppath
+            [System.IO.File]::WriteAllText($temppath, $content)
+            [System.IO.File]::WriteAllText($temppathUnix, $content.Replace("`r", ""))
+            Invoke-DbatoolsFormatter -Path $temppath
+            Invoke-DbatoolsFormatter -Path $temppathUnix
+            $newcontent = [System.IO.File]::ReadAllText($temppath)
+            $newcontentUnix = [System.IO.File]::ReadAllText($temppathUnix)
+        }
+
         It "should format things according to dbatools standards" {
             $newcontent | Should -Be $wantedContent
         }
@@ -69,5 +72,4 @@ function Get-DbaStub {
             $newcontentUnix | Should -Be $wantedContent.Replace("`r", "")
         }
     }
-
 }

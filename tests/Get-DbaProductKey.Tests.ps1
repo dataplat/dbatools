@@ -1,34 +1,45 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaProductKey" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'SqlCredential', 'Credential', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaProductKey
+        }
+        It "Should have ComputerName as a non-mandatory parameter of type DbaInstanceParameter[]" {
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Credential as a non-mandatory parameter of type PSCredential" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type switch -Not -Mandatory
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-
-    Context "Gets ProductKey for Instances on $($env:ComputerName)" {
-        $results = Get-DbaProductKey -ComputerName $env:ComputerName
-        It "Gets results" {
-            $results | Should Not Be $null
+    Context "Command usage" {
+        BeforeDiscovery {
+            # Run setup code to get script variables within scope of the discovery phase
+            . (Join-Path $PSScriptRoot 'constants.ps1')
         }
-        Foreach ($row in $results) {
-            It "Should have Version $($row.Version)" {
-                $row.Version | Should not be $null
+
+        Context "Gets ProductKey for Instances on $env:ComputerName" {
+            BeforeAll {
+                $results = Get-DbaProductKey -ComputerName $env:ComputerName
             }
-            It "Should have Edition $($row.Edition)" {
-                $row.Edition | Should not be $null
+
+            It "Gets results" {
+                $results | Should -Not -BeNullOrEmpty
             }
-            It "Should have Key $($row.key)" {
-                $row.key | Should not be $null
+
+            It "Should have Version, Edition, and Key for each result" {
+                foreach ($row in $results) {
+                    $row.Version | Should -Not -BeNullOrEmpty
+                    $row.Edition | Should -Not -BeNullOrEmpty
+                    $row.Key | Should -Not -BeNullOrEmpty
+                }
             }
         }
     }

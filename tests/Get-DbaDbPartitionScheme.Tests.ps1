@@ -1,19 +1,36 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaDbPartitionScheme" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'PartitionScheme', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaDbPartitionScheme
+        }
+        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database as a non-mandatory parameter of type Object[]" {
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Not -Mandatory
+        }
+        It "Should have ExcludeDatabase as a non-mandatory parameter of type Object[]" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Not -Mandatory
+        }
+        It "Should have PartitionScheme as a non-mandatory parameter of type String[]" {
+            $CommandUnderTest | Should -HaveParameter PartitionScheme -Type String[] -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe "Get-DbaDbPartitionScheme Integration Tests" -Tag "IntegrationTests" {
+    BeforeDiscovery {
+        . (Join-Path $PSScriptRoot 'constants.ps1')
+    }
+
     BeforeAll {
         $tempguid = [guid]::newguid();
         $PFName = "dbatoolssci_$($tempguid.guid)"
@@ -27,6 +44,7 @@ CREATE PARTITION SCHEME $PFScheme AS PARTITION [$PFName] ALL TO ( [PRIMARY] );
 
         Invoke-DbaQuery -SqlInstance $script:instance2 -Query $CreateTestPartitionScheme -Database master
     }
+
     AfterAll {
         $DropTestPartitionScheme = @"
 DROP PARTITION SCHEME [$PFScheme];
@@ -37,31 +55,33 @@ DROP PARTITION FUNCTION [$PFName];
     }
 
     Context "Partition Schemes are correctly located" {
-        $results1 = Get-DbaDbPartitionScheme -SqlInstance $script:instance2 -Database master | Select-Object *
-        $results2 = Get-DbaDbPartitionScheme -SqlInstance $script:instance2
-
         It "Should execute and return results" {
-            $results2 | Should -Not -Be $null
+            $results2 = Get-DbaDbPartitionScheme -SqlInstance $script:instance2
+            $results2 | Should -Not -BeNullOrEmpty
         }
 
         It "Should execute against Master and return results" {
-            $results1 | Should -Not -Be $null
+            $results1 = Get-DbaDbPartitionScheme -SqlInstance $script:instance2 -Database master
+            $results1 | Should -Not -BeNullOrEmpty
         }
 
         It "Should have matching name $PFScheme" {
+            $results1 = Get-DbaDbPartitionScheme -SqlInstance $script:instance2 -Database master
             $results1.name | Should -Be $PFScheme
         }
 
-        It "Should have PartitionFunction of $PFName " {
+        It "Should have PartitionFunction of $PFName" {
+            $results1 = Get-DbaDbPartitionScheme -SqlInstance $script:instance2 -Database master
             $results1.PartitionFunction | Should -Be $PFName
         }
 
         It "Should have FileGroups of [Primary]" {
+            $results1 = Get-DbaDbPartitionScheme -SqlInstance $script:instance2 -Database master
             $results1.FileGroups | Should -Be @('PRIMARY', 'PRIMARY', 'PRIMARY', 'PRIMARY', 'PRIMARY', 'PRIMARY')
         }
 
-        It "Should not Throw an Error" {
-            {Get-DbaDbPartitionScheme -SqlInstance $script:instance2 -ExcludeDatabase master } | Should -not -Throw
+        It "Should not Throw an Error when excluding master database" {
+            { Get-DbaDbPartitionScheme -SqlInstance $script:instance2 -ExcludeDatabase master } | Should -Not -Throw
         }
     }
 }

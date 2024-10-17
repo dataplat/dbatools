@@ -1,51 +1,65 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaDbFeatureUsage" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaDbFeatureUsage
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String[]
+        }
+        It "Should have ExcludeDatabase as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type String[]
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[]
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    BeforeAll {
-        $dbname = "dbatoolsci_test_$(get-random)"
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $server.Query("Create Database [$dbname]")
-        $server.Query("Create Table [$dbname].dbo.TestCompression
-            (Column1 nvarchar(10),
-            Column2 int PRIMARY KEY,
-            Column3 nvarchar(18));")
-        $server.Query("ALTER TABLE [$dbname].dbo.TestCompression REBUILD PARTITION = ALL WITH (DATA_COMPRESSION = ROW);")
-    }
-    AfterAll {
-        $server.Query("DROP Database [$dbname]")
-    }
-    Context "Gets Feature Usage" {
-        $results = Get-DbaDbFeatureUsage -SqlInstance $script:instance2
-        It "Gets results" {
-            $results | Should Not Be $null
+    Context "Command usage" {
+        BeforeDiscovery {
+            # Run setup code to get script variables within scope of the discovery phase
+            . (Join-Path $PSScriptRoot 'constants.ps1')
         }
-    }
-    Context "Gets Feature Usage using -Database" {
-        $results = Get-DbaDbFeatureUsage -SqlInstance $script:instance2 -Database $dbname
-        It "Gets results" {
-            $results | Should Not Be $null
+
+        BeforeAll {
+            $dbname = "dbatoolsci_test_$(Get-Random)"
+            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server.Query("Create Database [$dbname]")
+            $server.Query("Create Table [$dbname].dbo.TestCompression
+                (Column1 nvarchar(10),
+                Column2 int PRIMARY KEY,
+                Column3 nvarchar(18));")
+            $server.Query("ALTER TABLE [$dbname].dbo.TestCompression REBUILD PARTITION = ALL WITH (DATA_COMPRESSION = ROW);")
         }
-        It "Has the Feature Compression" {
-            $results.Feature | Should Be "Compression"
+
+        AfterAll {
+            $server.Query("DROP Database [$dbname]")
         }
-    }
-    Context "Gets Feature Usage using -ExcludeDatabase" {
-        $results = Get-DbaDbFeatureUsage -SqlInstance $script:instance2 -ExcludeDatabase $dbname
-        It "Gets results" {
-            $results.database | Should Not Contain $dbname
+
+        It "Gets Feature Usage" {
+            $results = Get-DbaDbFeatureUsage -SqlInstance $script:instance2
+            $results | Should -Not -BeNullOrEmpty
+        }
+
+        It "Gets Feature Usage using -Database" {
+            $results = Get-DbaDbFeatureUsage -SqlInstance $script:instance2 -Database $dbname
+            $results | Should -Not -BeNullOrEmpty
+            $results.Feature | Should -Be "Compression"
+        }
+
+        It "Gets Feature Usage using -ExcludeDatabase" {
+            $results = Get-DbaDbFeatureUsage -SqlInstance $script:instance2 -ExcludeDatabase $dbname
+            $results.database | Should -Not -Contain $dbname
         }
     }
 }

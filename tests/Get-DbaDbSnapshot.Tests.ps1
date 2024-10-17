@@ -1,21 +1,47 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaDbSnapshot Unit Tests" -Tag 'UnitTests' {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Snapshot', 'ExcludeSnapshot', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaDbSnapshot
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[]
+        }
+        It "Should have ExcludeDatabase as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[]
+        }
+        It "Should have Snapshot as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Snapshot -Type Object[]
+        }
+        It "Should have ExcludeSnapshot as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeSnapshot -Type Object[]
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
 }
 
 # Targets only instance2 because it's the only one where Snapshots can happen
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
-    Context "Operations on snapshots" {
+Describe "Get-DbaDbSnapshot Integration Tests" -Tag "IntegrationTests" {
+    BeforeDiscovery {
+        $SkipTests = [Environment]::GetEnvironmentVariable('appveyor')
+    }
+
+    Context "Operations on snapshots" -Skip:$SkipTests {
         BeforeAll {
             Get-DbaProcess -SqlInstance $script:instance2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
             $server = Connect-DbaInstance -SqlInstance $script:instance2
@@ -39,32 +65,32 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
 
         It "Gets all snapshots by default" {
             $results = Get-DbaDbSnapshot -SqlInstance $script:instance2
-            ($results | Where-Object Name -Like 'dbatoolsci_GetSnap*').Count | Should Be 3
+            ($results | Where-Object Name -Like 'dbatoolsci_GetSnap*').Count | Should -Be 3
         }
         It "Honors the Database parameter, returning only snapshots of that database" {
             $results = Get-DbaDbSnapshot -SqlInstance $script:instance2 -Database $db1
-            $results.Count | Should Be 2
+            $results.Count | Should -Be 2
             $result = Get-DbaDbSnapshot -SqlInstance $script:instance2 -Database $db2
-            $result.SnapshotOf | Should Be $db2
+            $result.SnapshotOf | Should -Be $db2
         }
         It "Honors the ExcludeDatabase parameter, returning relevant snapshots" {
             $alldbs = (Get-DbaDatabase -SqlInstance $script:instance2 | Where-Object IsDatabaseSnapShot -eq $false | Where-Object Name -notin @($db1, $db2)).Name
             $results = Get-DbaDbSnapshot -SqlInstance $script:instance2 -ExcludeDatabase $alldbs
-            $results.Count | Should Be 3
+            $results.Count | Should -Be 3
         }
         It "Honors the Snapshot parameter" {
             $result = Get-DbaDbSnapshot -SqlInstance $script:instance2 -Snapshot $db1_snap1
-            $result.Name | Should Be $db1_snap1
-            $result.SnapshotOf | Should Be $db1
+            $result.Name | Should -Be $db1_snap1
+            $result.SnapshotOf | Should -Be $db1
         }
         It "Honors the ExcludeSnapshot parameter" {
             $result = Get-DbaDbSnapshot -SqlInstance $script:instance2 -ExcludeSnapshot $db1_snap1 -Database $db1
-            $result.Name | Should Be $db1_snap2
+            $result.Name | Should -Be $db1_snap2
         }
         It "has the correct default properties" {
             $result = Get-DbaDbSnapshot -SqlInstance $script:instance2 -Database $db2
             $ExpectedPropsDefault = 'ComputerName', 'CreateDate', 'InstanceName', 'Name', 'SnapshotOf', 'SqlInstance', 'DiskUsage'
-            ($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should Be ($ExpectedPropsDefault | Sort-Object)
+            ($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should -Be ($ExpectedPropsDefault | Sort-Object)
         }
     }
 }

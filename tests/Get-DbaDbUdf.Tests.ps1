@@ -1,22 +1,51 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaDbUdf Unit Tests" -Tag 'UnitTests' {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'ExcludeSystemUdf', 'Schema', 'ExcludeSchema', 'Name', 'ExcludeName', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaDbUdf
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[]
+        }
+        It "Should have ExcludeDatabase as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[]
+        }
+        It "Should have ExcludeSystemUdf as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeSystemUdf -Type Switch
+        }
+        It "Should have Schema as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Schema -Type String[]
+        }
+        It "Should have ExcludeSchema as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeSchema -Type String[]
+        }
+        It "Should have Name as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Name -Type String[]
+        }
+        It "Should have ExcludeName as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeName -Type String[]
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe "Get-DbaDbUdf Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        #Test Function adapted from examples at:
-        #https://docs.microsoft.com/en-us/sql/t-sql/statements/create-function-transact-sql?view=sql-server-2017#examples
         $CreateTestUDFunction = @"
 CREATE FUNCTION dbo.dbatoolssci_ISOweek (@DATE datetime)
 RETURNS int
@@ -39,21 +68,24 @@ END;
 "@
         Invoke-DbaQuery -SqlInstance $script:instance2 -Query $CreateTestUDFunction -Database master
     }
+
     AfterAll {
         $DropTestUDFunction = "DROP FUNCTION dbo.dbatoolssci_ISOweek;"
         Invoke-DbaQuery -SqlInstance $script:instance2 -Query $DropTestUDFunction -Database master
     }
 
     Context "User Functions are correctly located" {
-        $results1 = Get-DbaDbUdf -SqlInstance $script:instance2 -Database master -Name dbatoolssci_ISOweek | Select-Object *
-        $results2 = Get-DbaDbUdf -SqlInstance $script:instance2
+        BeforeAll {
+            $results1 = Get-DbaDbUdf -SqlInstance $script:instance2 -Database master -Name dbatoolssci_ISOweek | Select-Object *
+            $results2 = Get-DbaDbUdf -SqlInstance $script:instance2
+        }
 
         It "Should execute and return results" {
-            $results2 | Should -Not -Be $null
+            $results2 | Should -Not -BeNullOrEmpty
         }
 
         It "Should execute against Master and return results" {
-            $results1 | Should -Not -Be $null
+            $results1 | Should -Not -BeNullOrEmpty
         }
 
         It "Should have matching name dbo.dbatoolssci_ISOweek" {
@@ -61,7 +93,7 @@ END;
             $results1.schema | Should -Be 'dbo'
         }
 
-        It "Should have a function type of Scalar " {
+        It "Should have a function type of Scalar" {
             $results1.FunctionType | Should -Be 'Scalar'
         }
 
@@ -70,7 +102,7 @@ END;
         }
 
         It "Should not Throw an Error" {
-            { Get-DbaDbUdf -SqlInstance $script:instance2 -ExcludeDatabase master -ExcludeSystemUdf } | Should -not -Throw
+            { Get-DbaDbUdf -SqlInstance $script:instance2 -ExcludeDatabase master -ExcludeSystemUdf } | Should -Not -Throw
         }
     }
 }

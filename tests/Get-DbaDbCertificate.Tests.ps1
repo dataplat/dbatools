@@ -1,21 +1,40 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaDbCertificate" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Certificate', 'Subject', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaDbCertificate
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Not -Mandatory
+        }
+        It "Should have ExcludeDatabase as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type String[] -Not -Mandatory
+        }
+        It "Should have Certificate as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Certificate -Type Object[] -Not -Mandatory
+        }
+        It "Should have Subject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Subject -Type String[] -Not -Mandatory
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[] -Not -Mandatory
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Can get a database certificate" {
         BeforeAll {
+            . "$PSScriptRoot\constants.ps1"
+
             if (-not (Get-DbaDbMasterKey -SqlInstance $script:instance1 -Database master)) {
                 $masterkey = New-DbaDbMasterKey -SqlInstance $script:instance1 -Database master -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
             }
@@ -26,6 +45,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $cert1 = New-DbaDbCertificate -SqlInstance $script:instance1 -Name $certificateName1 -Confirm:$false
             $cert2 = New-DbaDbCertificate -SqlInstance $script:instance1 -Name $certificateName2 -Database "tempdb" -Confirm:$false
         }
+
         AfterAll {
             $null = $cert1 | Remove-DbaDbCertificate -Confirm:$false
             $null = $cert2 | Remove-DbaDbCertificate -Confirm:$false
@@ -33,22 +53,21 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             if ($masterKey) { $masterkey | Remove-DbaDbMasterKey -Confirm:$false }
         }
 
-        $cert = Get-DbaDbCertificate -SqlInstance $script:instance1 -Certificate $certificateName1
         It "returns database certificate created in default, master database" {
-            "$($cert.Database)" -match 'master' | Should Be $true
+            $cert = Get-DbaDbCertificate -SqlInstance $script:instance1 -Certificate $certificateName1
+            $cert.Database | Should -Match 'master'
             $cert.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $script:instance1 -Database master).Id
         }
 
-        $cert = Get-DbaDbCertificate -SqlInstance $script:instance1 -Database tempdb
         It "returns database certificate created in tempdb database, looked up by certificate name" {
-            "$($cert.Name)" -match $certificateName2 | Should Be $true
+            $cert = Get-DbaDbCertificate -SqlInstance $script:instance1 -Database tempdb
+            $cert.Name | Should -Match $certificateName2
             $cert.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $script:instance1 -Database tempdb).Id
         }
 
-        $cert = Get-DbaDbCertificate -SqlInstance $script:instance1 -ExcludeDatabase master
         It "returns database certificates excluding those in the master database" {
-            "$($cert.Database)" -notmatch 'master' | Should Be $true
+            $cert = Get-DbaDbCertificate -SqlInstance $script:instance1 -ExcludeDatabase master
+            $cert.Database | Should -Not -Match 'master'
         }
-
     }
 }

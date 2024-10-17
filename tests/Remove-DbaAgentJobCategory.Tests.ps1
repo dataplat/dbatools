@@ -1,34 +1,53 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Remove-DbaAgentJobCategory" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Category', 'CategoryType', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Remove-DbaAgentJobCategory
+        }
+        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Category as a non-mandatory parameter of type String[]" {
+            $CommandUnderTest | Should -HaveParameter Category -Type String[] -Not -Mandatory
+        }
+        It "Should have CategoryType as a non-mandatory parameter of type String[]" {
+            $CommandUnderTest | Should -HaveParameter CategoryType -Type String[] -Not -Mandatory
+        }
+        It "Should have InputObject as a non-mandatory parameter of type JobCategory[]" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type JobCategory[] -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe "Remove-DbaAgentJobCategory Integration Tests" -Tag "IntegrationTests" {
+    BeforeAll {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "New Agent Job Category is changed properly" {
+        BeforeAll {
+            $results = New-DbaAgentJobCategory -SqlInstance $script:instance2 -Category CategoryTest1, CategoryTest2, CategoryTest3
+        }
 
         It "Should have the right name and category type" {
-            $results = New-DbaAgentJobCategory -SqlInstance $script:instance2 -Category CategoryTest1, CategoryTest2, CategoryTest3
-            $results[0].Name | Should Be "CategoryTest1"
-            $results[0].CategoryType | Should Be "LocalJob"
-            $results[1].Name | Should Be "CategoryTest2"
-            $results[1].CategoryType | Should Be "LocalJob"
-            $results[2].Name | Should Be "CategoryTest3"
-            $results[2].CategoryType | Should Be "LocalJob"
+            $results[0].Name | Should -Be "CategoryTest1"
+            $results[0].CategoryType | Should -Be "LocalJob"
+            $results[1].Name | Should -Be "CategoryTest2"
+            $results[1].CategoryType | Should -Be "LocalJob"
+            $results[2].Name | Should -Be "CategoryTest3"
+            $results[2].CategoryType | Should -Be "LocalJob"
         }
 
         It "Should actually for sure exist" {
             $newresults = Get-DbaAgentJobCategory -SqlInstance $script:instance2 -Category CategoryTest1, CategoryTest2, CategoryTest3
-            $newresults.Count | Should Be 3
+            $newresults.Count | Should -Be 3
         }
 
         It "Remove the job categories" {
@@ -36,7 +55,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
             $newresults = Get-DbaAgentJobCategory -SqlInstance $script:instance2 -Category CategoryTest1, CategoryTest2, CategoryTest3
 
-            $newresults.Count | Should Be 0
+            $newresults.Count | Should -Be 0
+        }
+
+        AfterAll {
+            # Cleanup any remaining test categories
+            Remove-DbaAgentJobCategory -SqlInstance $script:instance2 -Category CategoryTest1, CategoryTest2, CategoryTest3 -Confirm:$false -ErrorAction SilentlyContinue
         }
     }
 }

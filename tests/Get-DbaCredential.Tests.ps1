@@ -1,22 +1,12 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
-. "$PSScriptRoot\..\private\functions\Invoke-Command2.ps1"
+param($ModuleName = 'dbatools')
 
-
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Credential', 'ExcludeCredential', 'Identity', 'ExcludeIdentity', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
-        }
-    }
-}
-
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+Describe "Get-DbaCredential" {
     BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+        . "$PSScriptRoot\..\private\functions\Invoke-Command2.ps1"
+
         $logins = "dbatoolsci_thor", "dbatoolsci_thorsmomma"
         $plaintext = "BigOlPassword!"
         $password = ConvertTo-SecureString $plaintext -AsPlainText -Force
@@ -29,6 +19,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $results = New-DbaCredential -SqlInstance $script:instance2 -Name dbatoolsci_thorcred -Identity dbatoolsci_thor -Password $password
         $results = New-DbaCredential -SqlInstance $script:instance2 -Identity dbatoolsci_thorsmomma -Password $password
     }
+
     AfterAll {
         try {
             (Get-DbaCredential -SqlInstance $script:instance2 -Identity dbatoolsci_thor, dbatoolsci_thorsmomma -ErrorAction Stop -WarningAction SilentlyContinue).Drop()
@@ -40,20 +31,47 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
+    Context "Validate parameters" {
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaCredential
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Credential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type String[]
+        }
+        It "Should have ExcludeCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeCredential -Type String[]
+        }
+        It "Should have Identity as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Identity -Type String[]
+        }
+        It "Should have ExcludeIdentity as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeIdentity -Type String[]
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+        }
+    }
+
     Context "Get credentials" {
         It "Should get just one credential with the proper properties when using Identity" {
             $results = Get-DbaCredential -SqlInstance $script:instance2 -Identity dbatoolsci_thorsmomma
-            $results.Name | Should Be "dbatoolsci_thorsmomma"
-            $results.Identity | Should Be "dbatoolsci_thorsmomma"
+            $results.Name | Should -Be "dbatoolsci_thorsmomma"
+            $results.Identity | Should -Be "dbatoolsci_thorsmomma"
         }
         It "Should get just one credential with the proper properties when using Name" {
             $results = Get-DbaCredential -SqlInstance $script:instance2 -Name dbatoolsci_thorsmomma
-            $results.Name | Should Be "dbatoolsci_thorsmomma"
-            $results.Identity | Should Be "dbatoolsci_thorsmomma"
+            $results.Name | Should -Be "dbatoolsci_thorsmomma"
+            $results.Identity | Should -Be "dbatoolsci_thorsmomma"
         }
         It "gets more than one credential" {
             $results = Get-DbaCredential -SqlInstance $script:instance2 -Identity dbatoolsci_thor, dbatoolsci_thorsmomma
-            $results.count -gt 1
+            $results.count | Should -BeGreaterThan 1
         }
     }
 }

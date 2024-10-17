@@ -1,26 +1,39 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaXESessionTemplate" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Path', 'Pattern', 'Template', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaXESessionTemplate
+        }
+        It "Should have Path as a non-mandatory String[] parameter" {
+            $CommandUnderTest | Should -HaveParameter Path -Type String[] -Not -Mandatory
+        }
+        It "Should have Pattern as a non-mandatory String parameter" {
+            $CommandUnderTest | Should -HaveParameter Pattern -Type String -Not -Mandatory
+        }
+        It "Should have Template as a non-mandatory String[] parameter" {
+            $CommandUnderTest | Should -HaveParameter Template -Type String[] -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Get Template Index" {
-        $results = Get-DbaXESessionTemplate
+        BeforeAll {
+            $results = Get-DbaXESessionTemplate
+        }
         It "returns good results with no missing information" {
-            $results | Where-Object Name -eq $null | Should Be $null
-            $results | Where-Object TemplateName -eq $null | Should Be $null
-            $results | Where-Object Description -eq $null | Should Be $null
-            $results | Where-Object Category -eq $null | Should Be $null
+            $results | Where-Object Name -eq $null | Should -BeNullOrEmpty
+            $results | Where-Object TemplateName -eq $null | Should -BeNullOrEmpty
+            $results | Where-Object Description -eq $null | Should -BeNullOrEmpty
+            $results | Where-Object Category -eq $null | Should -BeNullOrEmpty
         }
     }
 }

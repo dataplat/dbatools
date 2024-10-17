@@ -1,19 +1,48 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Export-DbatoolsConfig" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'FullName', 'Module', 'Name', 'Config', 'ModuleName', 'ModuleVersion', 'Scope', 'OutPath', 'SkipUnchanged', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Export-DbatoolsConfig
+        }
+        It "Should have FullName as a non-mandatory String parameter" {
+            $CommandUnderTest | Should -HaveParameter FullName -Type String -Not -Mandatory
+        }
+        It "Should have Module as a non-mandatory String parameter" {
+            $CommandUnderTest | Should -HaveParameter Module -Type String -Not -Mandatory
+        }
+        It "Should have Name as a non-mandatory String parameter" {
+            $CommandUnderTest | Should -HaveParameter Name -Type String -Not -Mandatory
+        }
+        It "Should have Config as a non-mandatory Config[] parameter" {
+            $CommandUnderTest | Should -HaveParameter Config -Type Config[] -Not -Mandatory
+        }
+        It "Should have ModuleName as a non-mandatory String parameter" {
+            $CommandUnderTest | Should -HaveParameter ModuleName -Type String -Not -Mandatory
+        }
+        It "Should have ModuleVersion as a non-mandatory Int32 parameter" {
+            $CommandUnderTest | Should -HaveParameter ModuleVersion -Type Int32 -Not -Mandatory
+        }
+        It "Should have Scope as a non-mandatory ConfigScope parameter" {
+            $CommandUnderTest | Should -HaveParameter Scope -Type ConfigScope -Not -Mandatory
+        }
+        It "Should have OutPath as a non-mandatory String parameter" {
+            $CommandUnderTest | Should -HaveParameter OutPath -Type String -Not -Mandatory
+        }
+        It "Should have SkipUnchanged as a non-mandatory SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter SkipUnchanged -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
 }
-<#
-    Integration test are custom to the command you are writing for.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence
-#>
+
+# Integration tests can be added here
+# Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests for more guidance

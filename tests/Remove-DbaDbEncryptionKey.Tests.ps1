@@ -1,65 +1,73 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tags "UnitTests" {
+Describe "Remove-DbaDbEncryptionKey" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Remove-DbaDbEncryptionKey
         }
-    }
-}
-
-
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    BeforeAll {
-        $PSDefaultParameterValues["*:Confirm"] = $false
-        $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
-        $masterkey = Get-DbaDbMasterKey -SqlInstance $script:instance2 -Database master
-        if (-not $masterkey) {
-            $delmasterkey = $true
-            $masterkey = New-DbaServiceMasterKey -SqlInstance $script:instance2 -SecurePassword $passwd
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
         }
-        $mastercert = Get-DbaDbCertificate -SqlInstance $script:instance2 -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
-        if (-not $mastercert) {
-            $delmastercert = $true
-            $mastercert = New-DbaDbCertificate -SqlInstance $script:instance2
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
-
-        $db = New-DbaDatabase -SqlInstance $script:instance2
-        $db | New-DbaDbMasterKey -SecurePassword $passwd
-        $db | New-DbaDbCertificate
-        $dbkey = $db | New-DbaDbEncryptionKey -Force
-    }
-
-    AfterAll {
-        if ($db) {
-            $db | Remove-DbaDatabase
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String[]
         }
-        if ($delmastercert) {
-            $mastercert | Remove-DbaDbCertificate
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type DatabaseEncryptionKey[]
         }
-        if ($delmasterkey) {
-            $masterkey | Remove-DbaDbMasterKey
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
 
     Context "Command actually works" {
+        BeforeAll {
+            $PSDefaultParameterValues["*:Confirm"] = $false
+            $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
+            $masterkey = Get-DbaDbMasterKey -SqlInstance $script:instance2 -Database master
+            if (-not $masterkey) {
+                $delmasterkey = $true
+                $masterkey = New-DbaServiceMasterKey -SqlInstance $script:instance2 -SecurePassword $passwd
+            }
+            $mastercert = Get-DbaDbCertificate -SqlInstance $script:instance2 -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
+            if (-not $mastercert) {
+                $delmastercert = $true
+                $mastercert = New-DbaDbCertificate -SqlInstance $script:instance2
+            }
+
+            $db = New-DbaDatabase -SqlInstance $script:instance2
+            $db | New-DbaDbMasterKey -SecurePassword $passwd
+            $db | New-DbaDbCertificate
+            $dbkey = $db | New-DbaDbEncryptionKey -Force
+        }
+
+        AfterAll {
+            if ($db) {
+                $db | Remove-DbaDatabase
+            }
+            if ($delmastercert) {
+                $mastercert | Remove-DbaDbCertificate
+            }
+            if ($delmasterkey) {
+                $masterkey | Remove-DbaDbMasterKey
+            }
+        }
+
         It "should remove encryption key on a database using piping" {
             $results = $dbkey | Remove-DbaDbEncryptionKey
             $results.Status | Should -Be "Success"
             $db.Refresh()
-            $db | Get-DbaDbEncryptionKey | Should -Be $null
+            $db | Get-DbaDbEncryptionKey | Should -BeNullOrEmpty
         }
+
         It "should remove encryption key on a database" {
             $null = $db | New-DbaDbEncryptionKey -Force
             $results = Remove-DbaDbEncryptionKey -SqlInstance $script:instance2 -Database $db.Name
             $results.Status | Should -Be "Success"
             $db.Refresh()
-            $db | Get-DbaDbEncryptionKey | Should -Be $null
+            $db | Get-DbaDbEncryptionKey | Should -BeNullOrEmpty
         }
     }
 }

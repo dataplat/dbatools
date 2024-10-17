@@ -1,70 +1,102 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaAgentProxy" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Proxy', 'ExcludeProxy', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaAgentProxy
         }
-    }
-}
-
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    BeforeAll {
-        $tPassword = ConvertTo-SecureString "ThisIsThePassword1" -AsPlainText -Force
-        $tUserName = "dbatoolsci_proxytest"
-        New-LocalUser -Name $tUserName -Password $tPassword -Disabled:$false
-        New-DbaCredential -SqlInstance $script:instance2 -Name "$tUserName" -Identity "$env:COMPUTERNAME\$tUserName" -Password $tPassword
-        New-DbaAgentProxy -SqlInstance $script:instance2 -Name STIG -ProxyCredential "$tUserName"
-        New-DbaAgentProxy -SqlInstance $script:instance2 -Name STIGX -ProxyCredential "$tUserName"
-    }
-    Afterall {
-        $tUserName = "dbatoolsci_proxytest"
-        Remove-LocalUser -Name $tUserName
-        $credential = Get-DbaCredential -SqlInstance $script:instance2 -Name $tUserName
-        $credential.DROP()
-        $proxy = Get-DbaAgentProxy -SqlInstance $script:instance2 -Proxy "STIG", "STIGX"
-        $proxy.DROP()
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Proxy as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Proxy -Type String[]
+        }
+        It "Should have ExcludeProxy as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeProxy -Type String[]
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
+        }
     }
 
-    Context "Gets the list of Proxy" {
-        $results = Get-DbaAgentProxy -SqlInstance $script:instance2
-        It "Results are not empty" {
-            $results | Should Not Be $Null
+    Context "Command usage" {
+        BeforeDiscovery {
+            . (Join-Path $PSScriptRoot 'constants.ps1')
         }
-        It "Should have the name STIG" {
-            $results.name | Should Contain "STIG"
+
+        BeforeAll {
+            $tPassword = ConvertTo-SecureString "ThisIsThePassword1" -AsPlainText -Force
+            $tUserName = "dbatoolsci_proxytest"
+            New-LocalUser -Name $tUserName -Password $tPassword -Disabled:$false
+            New-DbaCredential -SqlInstance $script:instance2 -Name "$tUserName" -Identity "$env:COMPUTERNAME\$tUserName" -Password $tPassword
+            New-DbaAgentProxy -SqlInstance $script:instance2 -Name STIG -ProxyCredential "$tUserName"
+            New-DbaAgentProxy -SqlInstance $script:instance2 -Name STIGX -ProxyCredential "$tUserName"
         }
-        It "Should be enabled" {
-            $results.isenabled | Should Contain $true
+
+        AfterAll {
+            $tUserName = "dbatoolsci_proxytest"
+            Remove-LocalUser -Name $tUserName
+            $credential = Get-DbaCredential -SqlInstance $script:instance2 -Name $tUserName
+            $credential.DROP()
+            $proxy = Get-DbaAgentProxy -SqlInstance $script:instance2 -Proxy "STIG", "STIGX"
+            $proxy.DROP()
         }
-    }
-    Context "Gets a single Proxy" {
-        $results = Get-DbaAgentProxy -SqlInstance $script:instance2 -Proxy "STIG"
-        It "Results are not empty" {
-            $results | Should Not Be $Null
+
+        Context "Gets the list of Proxy" {
+            BeforeAll {
+                $results = Get-DbaAgentProxy -SqlInstance $script:instance2
+            }
+
+            It "Results are not empty" {
+                $results | Should -Not -BeNullOrEmpty
+            }
+
+            It "Should have the name STIG" {
+                $results.name | Should -Contain "STIG"
+            }
+
+            It "Should be enabled" {
+                $results.isenabled | Should -Contain $true
+            }
         }
-        It "Should have the name STIG" {
-            $results.name | Should Be "STIG"
+
+        Context "Gets a single Proxy" {
+            BeforeAll {
+                $results = Get-DbaAgentProxy -SqlInstance $script:instance2 -Proxy "STIG"
+            }
+
+            It "Results are not empty" {
+                $results | Should -Not -BeNullOrEmpty
+            }
+
+            It "Should have the name STIG" {
+                $results.name | Should -Be "STIG"
+            }
+
+            It "Should be enabled" {
+                $results.isenabled | Should -Be $true
+            }
         }
-        It "Should be enabled" {
-            $results.isenabled | Should Be $true
-        }
-    }
-    Context "Gets the list of Proxy without excluded" {
-        $results = Get-DbaAgentProxy -SqlInstance $script:instance2 -ExcludeProxy "STIG"
-        It "Results are not empty" {
-            $results | Should Not Be $Null
-        }
-        It "Should not have the name STIG" {
-            $results.name | Should Not Be "STIG"
-        }
-        It "Should be enabled" {
-            $results.isenabled | Should Be $true
+
+        Context "Gets the list of Proxy without excluded" {
+            BeforeAll {
+                $results = Get-DbaAgentProxy -SqlInstance $script:instance2 -ExcludeProxy "STIG"
+            }
+
+            It "Results are not empty" {
+                $results | Should -Not -BeNullOrEmpty
+            }
+
+            It "Should not have the name STIG" {
+                $results.name | Should -Not -Be "STIG"
+            }
+
+            It "Should be enabled" {
+                $results.isenabled | Should -Be $true
+            }
         }
     }
 }

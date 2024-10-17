@@ -1,20 +1,11 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'Database', 'ExcludeDatabase', 'ExcludeQuery', 'SqlCredential', 'Path', 'QueryName', 'UseSelectionHelper', 'InstanceOnly', 'DatabaseSpecific', 'ExcludeQueryTextColumn', 'ExcludePlanColumn', 'NoColumnParsing', 'OutputPath', 'ExportQueries', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
-        }
-    }
-}
-
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe "Invoke-DbaDiagnosticQuery" {
     BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+
         $script:PesterOutputPath = "TestDrive:$commandName"
         $database = "dbatoolsci_frk_$(Get-Random)"
         $database2 = "dbatoolsci_frk_$(Get-Random)"
@@ -24,8 +15,9 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $server.Query("CREATE DATABASE [$database2]")
         $server.Query("CREATE DATABASE [$database3]")
     }
+
     AfterAll {
-        @($database, $database2, $database3) | Foreach-Object {
+        @($database, $database2, $database3) | ForEach-Object {
             $db = $_
             $server.Query("IF DB_ID('$db') IS NOT NULL
                 begin
@@ -37,8 +29,63 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
         Remove-Item $script:PesterOutputPath -Recurse -ErrorAction SilentlyContinue
     }
+
     AfterEach {
         Remove-Item $script:PesterOutputPath -Recurse -ErrorAction SilentlyContinue
+    }
+
+    Context "Validate parameters" {
+        BeforeAll {
+            $CommandUnderTest = Get-Command Invoke-DbaDiagnosticQuery
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[]
+        }
+        It "Should have ExcludeDatabase as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[]
+        }
+        It "Should have ExcludeQuery as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeQuery -Type Object[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Path as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Path -Type FileInfo
+        }
+        It "Should have QueryName as a parameter" {
+            $CommandUnderTest | Should -HaveParameter QueryName -Type String[]
+        }
+        It "Should have UseSelectionHelper as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter UseSelectionHelper -Type Switch
+        }
+        It "Should have InstanceOnly as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter InstanceOnly -Type Switch
+        }
+        It "Should have DatabaseSpecific as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter DatabaseSpecific -Type Switch
+        }
+        It "Should have ExcludeQueryTextColumn as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeQueryTextColumn -Type Switch
+        }
+        It "Should have ExcludePlanColumn as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludePlanColumn -Type Switch
+        }
+        It "Should have NoColumnParsing as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter NoColumnParsing -Type Switch
+        }
+        It "Should have OutputPath as a parameter" {
+            $CommandUnderTest | Should -HaveParameter OutputPath -Type String
+        }
+        It "Should have ExportQueries as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter ExportQueries -Type Switch
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+        }
     }
 
     Context "verifying output when running queries" {
@@ -63,27 +110,25 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
         It "Correctly excludes queries when QueryName and ExcludeQuery parameters are used" {
             $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -QueryName 'Version Info', 'Core Counts', 'Server Properties' -ExcludeQuery 'Core Counts'
-            @($results).Count | Should be 2
+            @($results).Count | Should -Be 2
         }
         It "Correctly excludes queries when only ExcludeQuery parameter is used" {
             $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -ExcludeQuery "Missing Index Warnings", "Buffer Usage"
             @($results).Count | Should -BeGreaterThan 0
-            @($results | Where-Object Name -eq "Missing Index Warnings").Count | Should be 0
-            @($results | Where-Object Name -eq "Buffer Usage").Count | Should be 0
+            @($results | Where-Object Name -eq "Missing Index Warnings").Count | Should -Be 0
+            @($results | Where-Object Name -eq "Buffer Usage").Count | Should -Be 0
         }
 
-        $columnnames = 'Item', 'RowError', 'RowState', 'Table', 'ItemArray', 'HasErrors'
-        $TestCases = @()
-        $columnnames.ForEach{$TestCases += @{columnname = $PSItem}}
-        $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -QueryName 'Memory Clerk Usage'
-        It "correctly excludes default column name <columnname>" -TestCases $TestCases {
-            Param($columnname)
-            @($results.Result | Get-Member | Where-Object Name -eq $columnname).Count | Should be 0
+        BeforeAll {
+            $columnnames = 'Item', 'RowError', 'RowState', 'Table', 'ItemArray', 'HasErrors'
+            $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -QueryName 'Memory Clerk Usage'
+        }
+        It "correctly excludes default column name <_>" -ForEach $columnnames {
+            @($results.Result | Get-Member | Where-Object Name -eq $_).Count | Should -Be 0
         }
     }
 
-    context "verifying output when exporting queries as files instead of running" {
-
+    Context "verifying output when exporting queries as files instead of running" {
         It "exports queries to sql files without running" {
             $null = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -ExportQueries -QueryName 'Memory Clerk Usage' -OutputPath $script:PesterOutputPath
             @(Get-ChildItem -path $script:PesterOutputPath -filter *.sql).Count | Should -Be 1
@@ -103,10 +148,9 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $null = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -ExportQueries -DatabaseSpecific -QueryName 'Database-scoped Configurations' -Database @($database, $database2) -OutputPath $script:PesterOutputPath
             @(Get-ChildItem -path $script:PesterOutputPath -filter *.sql | Where-Object {$_.FullName -match "($database)|($database2)"}).Count | Should -Be 2
         }
-
     }
 
-    context "verifying output when running database specific queries" {
+    Context "verifying output when running database specific queries" {
         It "runs database specific queries against single database only when providing database name" {
             $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -DatabaseSpecific -QueryName 'Database-scoped Configurations' -Database $database
             @($results).Count | Should -Be 1

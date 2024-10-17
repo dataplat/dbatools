@@ -1,69 +1,76 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaDbccSessionBuffer" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Operation', 'SessionId', 'RequestId', 'All', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaDbccSessionBuffer
+        }
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Operation parameter" {
+            $CommandUnderTest | Should -HaveParameter Operation -Type String
+        }
+        It "Should have SessionId parameter" {
+            $CommandUnderTest | Should -HaveParameter SessionId -Type Int32[]
+        }
+        It "Should have RequestId parameter" {
+            $CommandUnderTest | Should -HaveParameter RequestId -Type Int32
+        }
+        It "Should have All parameter" {
+            $CommandUnderTest | Should -HaveParameter All -Type SwitchParameter
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
-Describe "$commandname Integration Test" -Tag "IntegrationTests" {
-    BeforeAll {
-        $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database tempdb
-        $queryResult = $db.Query('SELECT top 10 object_id, @@Spid as MySpid FROM sys.objects')
-    }
-    AfterAll {
-    }
 
-    Context "Validate standard output for all databases " {
-        $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'SessionId', 'EventType', 'Parameters', 'EventInfo'
-        $result = Get-DbaDbccSessionBuffer -SqlInstance $script:instance1 -Operation InputBuffer -All
-
-        It "returns results" {
-            $result.Count -gt 0 | Should Be $true
+    Context "Integration Tests" {
+        BeforeAll {
+            $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database tempdb
+            $queryResult = $db.Query('SELECT top 10 object_id, @@Spid as MySpid FROM sys.objects')
         }
 
-        foreach ($prop in $props) {
-            $p = $result[0].PSObject.Properties[$prop]
-            It "Should return property: $prop" {
-                $p.Name | Should Be $prop
+        Context "Validate standard output for all databases" {
+            It "returns results for InputBuffer" {
+                $result = Get-DbaDbccSessionBuffer -SqlInstance $script:instance1 -Operation InputBuffer -All
+                $result.Count | Should -BeGreaterThan 0
+                $result[0].PSObject.Properties.Name | Should -Contain 'ComputerName'
+                $result[0].PSObject.Properties.Name | Should -Contain 'InstanceName'
+                $result[0].PSObject.Properties.Name | Should -Contain 'SqlInstance'
+                $result[0].PSObject.Properties.Name | Should -Contain 'SessionId'
+                $result[0].PSObject.Properties.Name | Should -Contain 'EventType'
+                $result[0].PSObject.Properties.Name | Should -Contain 'Parameters'
+                $result[0].PSObject.Properties.Name | Should -Contain 'EventInfo'
+            }
+
+            It "returns results for OutputBuffer" {
+                $result = Get-DbaDbccSessionBuffer -SqlInstance $script:instance1 -Operation OutputBuffer -All
+                $result.Count | Should -BeGreaterThan 0
+                $result[0].PSObject.Properties.Name | Should -Contain 'ComputerName'
+                $result[0].PSObject.Properties.Name | Should -Contain 'InstanceName'
+                $result[0].PSObject.Properties.Name | Should -Contain 'SqlInstance'
+                $result[0].PSObject.Properties.Name | Should -Contain 'SessionId'
+                $result[0].PSObject.Properties.Name | Should -Contain 'Buffer'
+                $result[0].PSObject.Properties.Name | Should -Contain 'HexBuffer'
             }
         }
 
-        $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'SessionId', 'Buffer', 'HexBuffer'
-        $result = Get-DbaDbccSessionBuffer -SqlInstance $script:instance1 -Operation OutputBuffer -All
-
-        It "returns results" {
-            $result.Count -gt 0 | Should Be $true
-        }
-
-        foreach ($prop in $props) {
-            $p = $result[0].PSObject.Properties[$prop]
-            It "Should return property: $prop" {
-                $p.Name | Should Be $prop
+        Context "Validate returns results for SessionId" {
+            It "returns results for InputBuffer" {
+                $spid = $queryResult[0].MySpid
+                $result = Get-DbaDbccSessionBuffer -SqlInstance $script:instance1 -Operation InputBuffer -SessionId $spid
+                $result.SessionId | Should -Be $spid
             }
 
+            It "returns results for OutputBuffer" {
+                $spid = $queryResult[0].MySpid
+                $result = Get-DbaDbccSessionBuffer -SqlInstance $script:instance1 -Operation OutputBuffer -SessionId $spid
+                $result.SessionId | Should -Be $spid
+            }
         }
     }
-
-    Context "Validate returns results for SessionId " {
-        $spid = $queryResult[0].MySpid
-        $result = Get-DbaDbccSessionBuffer -SqlInstance $script:instance1 -Operation InputBuffer -SessionId $spid
-
-        It "returns results for InputBuffer" {
-            $result.SessionId -eq $spid | Should Be $true
-        }
-
-        $result = Get-DbaDbccSessionBuffer -SqlInstance $script:instance1 -Operation OutputBuffer -SessionId $spid
-
-        It "returns results for OutputBuffer" {
-            $result.SessionId -eq $spid | Should Be $true
-        }
-    }
-
 }

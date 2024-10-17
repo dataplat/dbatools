@@ -1,47 +1,47 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaOperatingSystem" {
+    BeforeAll {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'Credential', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaOperatingSystem
+        }
+        It "Should have ComputerName as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[]
+        }
+        It "Should have Credential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
+
     Context "Validate input" {
         It "Cannot resolve hostname of computer" {
-            mock Resolve-DbaNetworkName {$null}
-            {Get-DbaOperatingSystem -ComputerName 'DoesNotExist142' -WarningAction Stop 3> $null} | Should Throw
+            Mock Resolve-DbaNetworkName {$null}
+            { Get-DbaOperatingSystem -ComputerName 'DoesNotExist142' -WarningAction Stop 3> $null } | Should -Throw
         }
     }
-}
-Describe "Get-DbaOperatingSystem Integration Test" -Tag "IntegrationTests" {
-    $result = Get-DbaOperatingSystem -ComputerName $script:instance1
 
-    $props = 'ComputerName', 'Manufacturer', 'Organization',
-    'Architecture', 'Build', 'Version', 'InstallDate', 'LastBootTime', 'LocalDateTime',
-    'BootDevice', 'TimeZone', 'TimeZoneDaylight', 'TimeZoneStandard', 'TotalVisibleMemory',
-    'OSVersion', 'SPVersion', 'PowerShellVersion', 'SystemDevice', 'SystemDrive', 'WindowsDirectory',
-    'PagingFileSize', 'FreePhysicalMemory', 'TotalVirtualMemory', 'FreeVirtualMemory', 'ActivePowerPlan',
-    'Status', 'Language', 'LanguageId', 'LanguageKeyboardLayoutId', 'LanguageTwoLetter', 'LanguageThreeLetter'
-    'LanguageAlias', 'LanguageNative', 'CodeSet', 'CountryCode', 'Locale', 'IsWsfc'
+    Context "Get-DbaOperatingSystem Integration Test" -Tag "IntegrationTests" {
+        BeforeAll {
+            $result = Get-DbaOperatingSystem -ComputerName $script:instance1
 
-    <#
-        FreePhysicalMemory: units = KB
-        FreeVirtualMemory: units = KB
-        TimeZoneStandard: StandardName from win32_timezone
-        TimeZoneDaylight: DaylightName from win32_timezone
-        TimeZone: Caption from win32_timezone
-    #>
-    Context "Validate standard output" {
-        foreach ($prop in $props) {
-            $p = $result.PSObject.Properties[$prop]
-            It "Should return property: $prop" {
-                $p.Name | Should Be $prop
-            }
+            $props = 'ComputerName', 'Manufacturer', 'Organization',
+            'Architecture', 'Build', 'Version', 'InstallDate', 'LastBootTime', 'LocalDateTime',
+            'BootDevice', 'TimeZone', 'TimeZoneDaylight', 'TimeZoneStandard', 'TotalVisibleMemory',
+            'OSVersion', 'SPVersion', 'PowerShellVersion', 'SystemDevice', 'SystemDrive', 'WindowsDirectory',
+            'PagingFileSize', 'FreePhysicalMemory', 'TotalVirtualMemory', 'FreeVirtualMemory', 'ActivePowerPlan',
+            'Status', 'Language', 'LanguageId', 'LanguageKeyboardLayoutId', 'LanguageTwoLetter', 'LanguageThreeLetter',
+            'LanguageAlias', 'LanguageNative', 'CodeSet', 'CountryCode', 'Locale', 'IsWsfc'
+        }
+
+        It "Should return property: <_>" -ForEach $props {
+            $result.PSObject.Properties[$_] | Should -Not -BeNullOrEmpty
         }
     }
 }

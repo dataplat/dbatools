@@ -1,43 +1,39 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaBackupDevice" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaBackupDevice
         }
-    }
-}
-
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $sql = "EXEC sp_addumpdevice 'tape', 'dbatoolsci_tape', '\\.\tape0';"
-        $server.Query($sql)
-    }
-    Afterall {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $sql = "EXEC sp_dropdevice 'dbatoolsci_tape';"
-        $server.Query($sql)
+        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type switch -Not -Mandatory
+        }
     }
 
-    Context "Gets the backup devices" {
-        $results = Get-DbaBackupDevice -SqlInstance $script:instance2
-        It "Results are not empty" {
-            $results | Should Not Be $Null
+    Context "Integration Tests" -Tag "IntegrationTests" {
+        BeforeAll {
+            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $sql = "EXEC sp_addumpdevice 'tape', 'dbatoolsci_tape', '\\.\tape0';"
+            $server.Query($sql)
         }
-        It "Should have the name dbatoolsci_tape" {
-            $results.name | Should Be "dbatoolsci_tape"
+        AfterAll {
+            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $sql = "EXEC sp_dropdevice 'dbatoolsci_tape';"
+            $server.Query($sql)
         }
-        It "Should have a BackupDeviceType of Tape" {
-            $results.BackupDeviceType | Should Be "Tape"
-        }
-        It "Should have a PhysicalLocation of \\.\Tape0" {
-            $results.PhysicalLocation | Should Be "\\.\Tape0"
+
+        It "Gets the backup devices" {
+            $results = Get-DbaBackupDevice -SqlInstance $script:instance2
+            $results | Should -Not -BeNullOrEmpty
+            $results.Name | Should -Be "dbatoolsci_tape"
+            $results.BackupDeviceType | Should -Be "Tape"
+            $results.PhysicalLocation | Should -Be "\\.\Tape0"
         }
     }
 }

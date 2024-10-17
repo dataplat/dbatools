@@ -1,20 +1,36 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Install-DbaMultiTool" {
     Context "Validate parameters" {
-        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Branch', 'Database', 'LocalFile', 'Force', 'EnableException'
-
-        It "Should only contain our specific parameters" {
-            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
+        BeforeAll {
+            $CommandUnderTest = Get-Command Install-DbaMultiTool
+        }
+        It "Should have SqlInstance parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Branch parameter" {
+            $CommandUnderTest | Should -HaveParameter Branch -Type String
+        }
+        It "Should have Database parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type Object
+        }
+        It "Should have LocalFile parameter" {
+            $CommandUnderTest | Should -HaveParameter LocalFile -Type String
+        }
+        It "Should have Force parameter" {
+            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter
+        }
+        It "Should have EnableException parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+
     Context "Testing DBA MultiTool installer with download" {
         BeforeAll {
+            . "$PSScriptRoot\constants.ps1"
             $branch = "main"
             $database = "dbatoolsci_multitool_$(Get-Random)"
             $server = Connect-DbaInstance -SqlInstance $script:instance2
@@ -27,22 +43,25 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Installs to specified database: $database" {
-            $resultsDownload[0].Database -eq $database | Should Be $true
+            $resultsDownload[0].Database | Should -Be $database
         }
         It "Shows status of Installed" {
-            $resultsDownload[0].Status -eq "Installed" | Should Be $true
+            $resultsDownload[0].Status | Should -Be "Installed"
         }
         It "Installed sp_doc, sp_helpme, sp_sizeoptimiser, and sp_estindex" {
-            'sp_doc', 'sp_helpme', 'sp_sizeoptimiser', 'sp_estindex' | Should BeIn $resultsDownload.Name
+            $resultsDownload.Name | Should -Contain 'sp_doc'
+            $resultsDownload.Name | Should -Contain 'sp_helpme'
+            $resultsDownload.Name | Should -Contain 'sp_sizeoptimiser'
+            $resultsDownload.Name | Should -Contain 'sp_estindex'
         }
         It "Has the correct properties" {
             $result = $resultsDownload[0]
-            $ExpectedProps = 'SqlInstance,InstanceName,ComputerName,Name,Status,Database'.Split(',')
-            ($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
+            $ExpectedProps = 'SqlInstance', 'InstanceName', 'ComputerName', 'Name', 'Status', 'Database'
+            $result.PsObject.Properties.Name | Should -Be $ExpectedProps
         }
         It "Shows status of Updated" {
             $resultsDownload = Install-DbaMultiTool -SqlInstance $script:instance2 -Database $database -Verbose:$false
-            $resultsDownload[0].Status -eq 'Updated' | Should -Be $true
+            $resultsDownload[0].Status | Should -Be 'Updated'
         }
         It "Shows status of Error" {
             $folder = Join-Path (Get-DbatoolsConfigValue -FullName Path.DbatoolsData) -Child "dba-multitool-$branch"
@@ -50,11 +69,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             Add-Content $sqlScript.FullName (New-Guid).ToString()
             $result = Install-DbaMultiTool -SqlInstance $script:instance2 -Database $database -Verbose:$false
             $result = $result | Where-Object Name -eq $sqlScript.BaseName
-            $result.Status -eq "Error" | Should -Be $true
+            $result.Status | Should -Be "Error"
         }
     }
+
     Context "Testing DBA MultiTool installer with LocalFile" {
         BeforeAll {
+            . "$PSScriptRoot\constants.ps1"
             $branch = "main"
             $database = "dbatoolsci_multitool_$(Get-Random)"
             $server = Connect-DbaInstance -SqlInstance $script:instance3
@@ -72,22 +93,25 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Installs to specified database: $database" {
-            $resultsLocalFile[0].Database -eq $database | Should -Be $true
+            $resultsLocalFile[0].Database | Should -Be $database
         }
         It "Shows status of Installed" {
-            $resultsLocalFile[0].Status -eq "Installed" | Should -Be $true
+            $resultsLocalFile[0].Status | Should -Be "Installed"
         }
         It "Installed sp_doc, sp_helpme, sp_sizeoptimiser, and sp_estindex" {
-            'sp_doc', 'sp_helpme', 'sp_sizeoptimiser', 'sp_estindex' | Should -BeIn $resultsLocalFile.Name
+            $resultsLocalFile.Name | Should -Contain 'sp_doc'
+            $resultsLocalFile.Name | Should -Contain 'sp_helpme'
+            $resultsLocalFile.Name | Should -Contain 'sp_sizeoptimiser'
+            $resultsLocalFile.Name | Should -Contain 'sp_estindex'
         }
         It "Has the correct properties" {
             $result = $resultsLocalFile[0]
-            $ExpectedProps = 'SqlInstance,InstanceName,ComputerName,Name,Status,Database'.Split(',')
-            ($result.PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
+            $ExpectedProps = 'SqlInstance', 'InstanceName', 'ComputerName', 'Name', 'Status', 'Database'
+            $result.PsObject.Properties.Name | Should -Be $ExpectedProps
         }
         It "Shows status of Updated" {
             $resultsLocalFile = Install-DbaMultiTool -SqlInstance $script:instance3 -Database $database
-            $resultsLocalFile[0].Status -eq 'Updated' | Should -Be $true
+            $resultsLocalFile[0].Status | Should -Be 'Updated'
         }
         It "Shows status of Error" {
             $folder = Join-Path (Get-DbatoolsConfigValue -FullName Path.DbatoolsData) -Child "dba-multitool-$branch"
@@ -95,7 +119,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             Add-Content $sqlScript.FullName (New-Guid).ToString()
             $result = Install-DbaMultiTool -SqlInstance $script:instance3 -Database $database -Verbose:$false
             $result = $result | Where-Object Name -eq $sqlScript.BaseName
-            $result.Status -eq "Error" | Should -Be $true
+            $result.Status | Should -Be "Error"
         }
     }
 }

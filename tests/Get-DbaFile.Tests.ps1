@@ -1,19 +1,30 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaFile" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Path', 'FileType', 'Depth', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaFile
+        }
+        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Path as a non-mandatory parameter of type String[]" {
+            $CommandUnderTest | Should -HaveParameter Path -Type String[] -Not -Mandatory
+        }
+        It "Should have FileType as a non-mandatory parameter of type String[]" {
+            $CommandUnderTest | Should -HaveParameter FileType -Type String[] -Not -Mandatory
+        }
+        It "Should have Depth as a non-mandatory parameter of type Int32" {
+            $CommandUnderTest | Should -HaveParameter Depth -Type Int32 -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Returns some files" {
         BeforeAll {
             $server = Connect-DbaInstance -SqlInstance $script:instance2
@@ -25,19 +36,20 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $db | Remove-DbaDatabase -Confirm:$false
         }
 
-        $results = Get-DbaFile -SqlInstance $script:instance2
         It "Should find the new database file" {
+            $results = Get-DbaFile -SqlInstance $script:instance2
             ($results.Filename -match 'dbatoolsci').Count | Should -BeGreaterThan 0
         }
 
-        $results = Get-DbaFile -SqlInstance $script:instance2 -Path (Get-DbaDefaultPath -SqlInstance $script:instance2).Log
         It "Should find the new database log file" {
+            $logPath = (Get-DbaDefaultPath -SqlInstance $script:instance2).Log
+            $results = Get-DbaFile -SqlInstance $script:instance2 -Path $logPath
             ($results.Filename -like '*dbatoolsci*ldf').Count | Should -BeGreaterThan 0
         }
 
-        $masterpath = $server.MasterDBPath
-        $results = Get-DbaFile -SqlInstance $script:instance2 -Path $masterpath
         It "Should find the master database file" {
+            $masterpath = $server.MasterDBPath
+            $results = Get-DbaFile -SqlInstance $script:instance2 -Path $masterpath
             ($results.Filename -match 'master.mdf').Count | Should -BeGreaterThan 0
         }
     }

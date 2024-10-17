@@ -1,66 +1,100 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaDbMailProfile Unit Tests" -Tag 'UnitTests' {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Profile', 'ExcludeProfile', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaDbMailProfile
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Profile as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Profile -Type String[] -Not -Mandatory
+        }
+        It "Should have ExcludeProfile as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeProfile -Type String[] -Not -Mandatory
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type SqlMail[] -Not -Mandatory
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "Get-DbaDbMailProfile Integration Tests" -Tag "IntegrationTests" {
+    BeforeDiscovery {
+        $profilename = "dbatoolsci_test_$(Get-Random)"
+    }
+
     BeforeAll {
-        $profilename = "dbatoolsci_test_$(get-random)"
         $server = Connect-DbaInstance -SqlInstance $script:instance2, $script:instance3
         $mailProfile = "EXEC msdb.dbo.sysmail_add_profile_sp
             @profile_name='$profilename',
             @description='Profile for system email';"
-        $server.query($mailProfile)
+        $server.Query($mailProfile)
     }
+
     AfterAll {
         $server = Connect-DbaInstance -SqlInstance $script:instance2, $script:instance3
         $mailProfile = "EXEC msdb.dbo.sysmail_delete_profile_sp
             @profile_name='$profilename';"
-        $server.query($mailProfile)
+        $server.Query($mailProfile)
     }
 
     Context "Gets DbMail Profile" {
-        $results = Get-DbaDbMailProfile -SqlInstance $script:instance2 | Where-Object {$_.name -eq "$profilename"}
         It "Gets results" {
-            $results | Should Not Be $null
+            $results = Get-DbaDbMailProfile -SqlInstance $script:instance2 | Where-Object { $_.Name -eq $profilename }
+            $results | Should -Not -BeNullOrEmpty
         }
+
         It "Should have Name of $profilename" {
-            $results.name | Should Be $profilename
+            $results = Get-DbaDbMailProfile -SqlInstance $script:instance2 | Where-Object { $_.Name -eq $profilename }
+            $results.Name | Should -Be $profilename
         }
-        It "Should have Desctiption of 'Profile for system email' " {
-            $results.description | Should Be 'Profile for system email'
+
+        It "Should have Description of 'Profile for system email'" {
+            $results = Get-DbaDbMailProfile -SqlInstance $script:instance2 | Where-Object { $_.Name -eq $profilename }
+            $results.Description | Should -Be 'Profile for system email'
         }
-        $results2 = Get-DbaDbMailProfile -SqlInstance $server | Where-Object {$_.name -eq "$profilename"}
+
         It "Gets results from multiple instances" {
-            $results2 | Should Not Be $null
-            ($results2 | Select-Object SqlInstance -Unique).count | Should -Be 2
+            $results2 = Get-DbaDbMailProfile -SqlInstance $server | Where-Object { $_.Name -eq $profilename }
+            $results2 | Should -Not -BeNullOrEmpty
+            ($results2 | Select-Object -Property SqlInstance -Unique).Count | Should -Be 2
         }
     }
+
     Context "Gets DbMailProfile when using -Profile" {
-        $results = Get-DbaDbMailProfile -SqlInstance $script:instance2 -Profile $profilename
         It "Gets results" {
-            $results | Should Not Be $null
+            $results = Get-DbaDbMailProfile -SqlInstance $script:instance2 -Profile $profilename
+            $results | Should -Not -BeNullOrEmpty
         }
+
         It "Should have Name of $profilename" {
-            $results.name | Should Be $profilename
+            $results = Get-DbaDbMailProfile -SqlInstance $script:instance2 -Profile $profilename
+            $results.Name | Should -Be $profilename
         }
-        It "Should have Desctiption of 'Profile for system email' " {
-            $results.description | Should Be 'Profile for system email'
+
+        It "Should have Description of 'Profile for system email'" {
+            $results = Get-DbaDbMailProfile -SqlInstance $script:instance2 -Profile $profilename
+            $results.Description | Should -Be 'Profile for system email'
         }
     }
+
     Context "Gets no DbMailProfile when using -ExcludeProfile" {
-        $results = Get-DbaDbMailProfile -SqlInstance $script:instance2 -ExcludeProfile $profilename
         It "Gets no results" {
+            $results = Get-DbaDbMailProfile -SqlInstance $script:instance2 -ExcludeProfile $profilename
             $results | Should -Not -Contain $profilename
         }
     }

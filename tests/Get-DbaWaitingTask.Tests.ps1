@@ -1,79 +1,71 @@
-<#
-    The below statement stays in for every test you build.
-#>
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-<#
-    Unit test is required for any command added
-#>
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaWaitingTask" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Spid', 'IncludeSystemSpid', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaWaitingTask
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Spid as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Spid -Type Object[]
+        }
+        It "Should have IncludeSystemSpid as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter IncludeSystemSpid -Type Switch
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
         }
     }
-}
-<#
-    Integration test are custom to the command you are writing it for,
-        but something similar to below should be included if applicable.
 
-    The below examples are by no means set in stone and there are already
-        a number of test that you can pull examples from in how they are done.
-#>
+    Context "Command actually works" {
+        BeforeAll {
+            $flag = "dbatools_$(Get-Random)"
+            $time = '00:15:00'
+            $sql = "SELECT '$flag'; WAITFOR DELAY '$time'"
+            $instance = $script:instance2
 
-# Get-DbaNoun
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+            $modulePath = 'C:\Github\dbatools\dbatools.psm1'
+            $job = 'YouHaveBeenFoundWaiting'
 
-    $flag = "dbatools_$(Get-Random)"
-    $time = '00:15:00'
-    $sql = "SELECT '$flag'; WAITFOR DELAY '$time'"
-    $instance = $script:instance2
+            Start-Job -Name $job -ScriptBlock {
+                Import-Module $args[0]
+                (Connect-DbaInstance -SqlInstance $args[1] -ClientName dbatools-waiting).Query($args[2])
+            } -ArgumentList $modulePath, $instance, $sql
 
-    $modulePath = 'C:\Github\dbatools\dbatools.psm1'
-    $job = 'YouHaveBeenFoundWaiting'
+            Start-Sleep -Seconds 8
 
-    Start-Job -Name $job -ScriptBlock {
-        Import-Module $args[0];
-        (Connect-DbaInstance -SqlInstance $args[1] -ClientName dbatools-waiting).Query($args[2])
-    } -ArgumentList $modulePath, $instance, $sql
+            $process = Get-DbaProcess -SqlInstance $instance | Where-Object Program -eq 'dbatools-waiting' | Select-Object -ExpandProperty Spid
+        }
 
-    <#
-        **This has to sleep as it can take a couple seconds for the job to start**
-        Setting it lower will cause issues, you have to consider the Start-Job has to load the module which takes on average 3-4 seconds itself before it executes the command.
+        AfterAll {
+            if ($process) {
+                $isProcess = Get-DbaProcess -SqlInstance $instance -Spid $process
+                if ($isProcess) {
+                    Stop-DbaProcess -SqlInstance $instance -Spid $process
 
-        If someone knows a cleaner method by all means adjust this test.
-    #>
-    Start-Sleep -Seconds 8
+                    $isProcess = Get-DbaProcess -SqlInstance $instance -Spid $process
+                    if ($isProcess) {
+                        Stop-DbaProcess -SqlInstance $instance -Spid $process -ErrorAction SilentlyContinue
+                    }
+                }
+            }
+            Get-Job -Name $job | Remove-Job -Force -ErrorAction SilentlyContinue
+        }
 
-    $process = Get-DbaProcess -SqlInstance $instance | Where-Object Program -eq 'dbatools-waiting' | Select-Object -ExpandProperty Spid
-
-    if ($process -ne $null) {
-        Context "Command actually works" {
+        It "Should have correct properties" -Skip:($null -eq $process) {
             $results = Get-DbaWaitingTask -SqlInstance $instance -Spid $process
-            It "Should have correct properties" {
-                $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Spid,Thread,Scheduler,WaitMs,WaitType,BlockingSpid,ResourceDesc,NodeId,Dop,DbId,InfoUrl,QueryPlan,SqlText'.Split(',')
-                ($results.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
-            }
-            It "Should have command of 'WAITFOR'" {
-                $results.WaitType | Should BeLike "*WAITFOR*"
-            }
+            $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Spid,Thread,Scheduler,WaitMs,WaitType,BlockingSpid,ResourceDesc,NodeId,Dop,DbId,InfoUrl,QueryPlan,SqlText'.Split(',')
+            ($results.PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
         }
 
-        $isProcess = Get-DbaProcess -SqlInstance $instance -Spid $process
-        if ($isProcess) {
-            Stop-DbaProcess -SqlInstance $instance -Spid $process
-
-            # I've had a few cases where first run didn't actually kill the process
-            $isProcess = Get-DbaProcess -SqlInstance $instance -Spid $process
-            if ($isProcess) {
-                Stop-DbaProcess -SqlInstance $instance -Spid $process -ErrorAction SilentlyContinue
-            }
+        It "Should have command of 'WAITFOR'" -Skip:($null -eq $process) {
+            $results = Get-DbaWaitingTask -SqlInstance $instance -Spid $process
+            $results.WaitType | Should -BeLike "*WAITFOR*"
         }
-        Get-Job -Name $job | Remove-Job -Force -ErrorAction SilentlyContinue
     }
 }

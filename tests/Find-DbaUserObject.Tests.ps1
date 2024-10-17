@@ -1,39 +1,47 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Find-DbaUserObject" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Pattern', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Find-DbaUserObject
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Pattern as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Pattern -Type String
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Command finds User Objects for SA" {
         BeforeAll {
+            . "$PSScriptRoot\constants.ps1"
             $null = New-DbaDatabase -SqlInstance $script:instance2 -Name 'dbatoolsci_userObject' -Owner 'sa'
         }
         AfterAll {
             $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database 'dbatoolsci_userObject' -Confirm:$false
         }
 
-        $results = Find-DbaUserObject -SqlInstance $script:instance2 -Pattern sa
         It "Should find a specific Database Owned by sa" {
-            $results.Where( {$_.name -eq 'dbatoolsci_userobject'}).Type | Should Be "Database"
+            $results = Find-DbaUserObject -SqlInstance $script:instance2 -Pattern sa
+            $results.Where( {$_.name -eq 'dbatoolsci_userobject'}).Type | Should -Be "Database"
         }
         It "Should find more than 10 objects Owned by sa" {
-            $results.Count | Should BeGreaterThan 10
+            $results = Find-DbaUserObject -SqlInstance $script:instance2 -Pattern sa
+            $results.Count | Should -BeGreaterThan 10
         }
     }
+
     Context "Command finds User Objects" {
-        $results = Find-DbaUserObject -SqlInstance $script:instance2
-        It "Should find resutls" {
-            $results | Should Not Be Null
+        It "Should find results" {
+            $results = Find-DbaUserObject -SqlInstance $script:instance2
+            $results | Should -Not -BeNullOrEmpty
         }
     }
 }

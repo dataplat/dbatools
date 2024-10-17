@@ -1,37 +1,11 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = @(
-            'SqlInstance',
-            'SqlCredential',
-            'DestinationSqlInstance',
-            'DestinationSqlCredential',
-            'Database',
-            'DestinationDatabase',
-            'BatchSize',
-            'BulkCopyTimeOut',
-            'InputObject',
-            'EnableException',
-            'CopyAllObjects',
-            'CopyAll',
-            'SchemaOnly',
-            'DataOnly',
-            'ScriptingOption',
-            'ScriptOnly'
-        )
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
-        }
-    }
-}
-
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "Invoke-DbaDbTransfer" {
     BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+
         $dbName = 'dbatools_transfer'
         $source = Connect-DbaInstance -SqlInstance $script:instance2
         $destination = Connect-DbaInstance -SqlInstance $script:instance3
@@ -51,6 +25,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $securePassword = 'bar' | ConvertTo-SecureString -AsPlainText -Force
         $creds = New-Object PSCredential ('foo', $securePassword)
     }
+
     AfterAll {
         try {
             $null = $db.Query("DROP TABLE dbo.transfer_test")
@@ -62,6 +37,61 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
         Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbName -Confirm:$false
     }
+
+    Context "Validate parameters" {
+        BeforeAll {
+            $CommandUnderTest = Get-Command Invoke-DbaDbTransfer
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have DestinationSqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter DestinationSqlInstance -Type DbaInstanceParameter
+        }
+        It "Should have DestinationSqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type PSCredential
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type String
+        }
+        It "Should have DestinationDatabase as a parameter" {
+            $CommandUnderTest | Should -HaveParameter DestinationDatabase -Type String
+        }
+        It "Should have BatchSize as a parameter" {
+            $CommandUnderTest | Should -HaveParameter BatchSize -Type Int32
+        }
+        It "Should have BulkCopyTimeOut as a parameter" {
+            $CommandUnderTest | Should -HaveParameter BulkCopyTimeOut -Type Int32
+        }
+        It "Should have ScriptingOption as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ScriptingOption -Type ScriptingOptions
+        }
+        It "Should have InputObject as a parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Transfer
+        }
+        It "Should have CopyAllObjects as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter CopyAllObjects -Type Switch
+        }
+        It "Should have CopyAll as a parameter" {
+            $CommandUnderTest | Should -HaveParameter CopyAll -Type String[]
+        }
+        It "Should have SchemaOnly as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter SchemaOnly -Type Switch
+        }
+        It "Should have DataOnly as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter DataOnly -Type Switch
+        }
+        It "Should have ScriptOnly as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter ScriptOnly -Type Switch
+        }
+        It "Should have EnableException as a switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+        }
+    }
+
     Context "Testing scripting invocation" {
         It "Should script all objects" {
             $transfer = New-DbaDbTransfer -SqlInstance $script:instance2 -Database $dbName -CopyAllObjects
@@ -81,6 +111,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $script | Should -BeLike '*CREATE TABLE `[dbo`].`[transfer_test4`]*'
         }
     }
+
     Context "Testing object transfer" {
         BeforeEach {
             Remove-DbaDatabase -SqlInstance $script:instance3 -Database $dbName -Confirm:$false

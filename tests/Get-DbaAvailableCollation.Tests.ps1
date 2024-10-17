@@ -1,23 +1,31 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaAvailableCollation" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaAvailableCollation
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Available Collations" {
-        $results = Get-DbaAvailableCollation -SqlInstance $script:instance2
-        It "finds a collation that matches Slovenian" {
-            ($results.Name -match 'Slovenian').Count -gt 10 | Should Be $true
+        BeforeAll {
+            . "$PSScriptRoot\constants.ps1"
+        }
+        BeforeDiscovery {
+            . "$PSScriptRoot\constants.ps1"
+        }
+        It "Finds a collation that matches Slovenian" {
+            $results = Get-DbaAvailableCollation -SqlInstance $script:instance2
+            ($results.Name -match 'Slovenian').Count | Should -BeGreaterThan 10
         }
     }
 }

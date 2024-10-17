@@ -1,57 +1,90 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaModule" {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'ModifiedSince', 'Type', 'ExcludeSystemDatabases', 'ExcludeSystemObjects', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaModule
+        }
+        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Database as a non-mandatory parameter of type Object[]" {
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Not -Mandatory
+        }
+        It "Should have ExcludeDatabase as a non-mandatory parameter of type Object[]" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Not -Mandatory
+        }
+        It "Should have ModifiedSince as a non-mandatory parameter of type DateTime" {
+            $CommandUnderTest | Should -HaveParameter ModifiedSince -Type DateTime -Not -Mandatory
+        }
+        It "Should have Type as a non-mandatory parameter of type String[]" {
+            $CommandUnderTest | Should -HaveParameter Type -Type String[] -Not -Mandatory
+        }
+        It "Should have ExcludeSystemDatabases as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeSystemDatabases -Type Switch -Not -Mandatory
+        }
+        It "Should have ExcludeSystemObjects as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeSystemObjects -Type Switch -Not -Mandatory
+        }
+        It "Should have InputObject as a non-mandatory parameter of type Database[]" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Database[] -Not -Mandatory
+        }
+        It "Should have EnableException as a non-mandatory switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Not -Mandatory
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    Context "Modules are properly retreived" {
-
-        # SQL2008R2SP2 returns around 600 of these in freshly installed instance. 100 is a good enough number.
-        It "Should have a high count" {
+    Context "Modules are properly retrieved" {
+        BeforeAll {
             $results = Get-DbaModule -SqlInstance $script:instance1 | Select-Object -First 101
-            $results.Count | Should BeGreaterThan 100
         }
 
-        # SQL2008R2SP2 will return a number of modules from the msdb database so it is a good candidate to test
-        $results = Get-DbaModule -SqlInstance $script:instance1 -Type View -Database msdb
-        It "Should only have one type of object" {
-            ($results | Select-Object -Unique Type | Measure-Object).Count | Should Be 1
+        It "Should have a high count" {
+            $results.Count | Should -BeGreaterThan 100
         }
 
-        It "Should only have one database" {
-            ($results | Select-Object -Unique Database | Measure-Object).Count | Should Be 1
+        It "Should only have one type of object when filtering by View" {
+            $viewResults = Get-DbaModule -SqlInstance $script:instance1 -Type View -Database msdb
+            ($viewResults | Select-Object -Unique Type | Measure-Object).Count | Should -Be 1
+        }
+
+        It "Should only have one database when filtering by msdb" {
+            $msdbResults = Get-DbaModule -SqlInstance $script:instance1 -Type View -Database msdb
+            ($msdbResults | Select-Object -Unique Database | Measure-Object).Count | Should -Be 1
         }
     }
 
     Context "Accepts Piped Input" {
-        $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database msdb, master
-        # SQL2008R2SP2 returns around 600 of these in freshly installed instance. 100 is a good enough number.
-        $results = $db | Get-DbaModule
+        BeforeAll {
+            $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database msdb, master
+            $results = $db | Get-DbaModule
+        }
+
         It "Should have a high count" {
-            $results.Count | Should BeGreaterThan 100
+            $results.Count | Should -BeGreaterThan 100
         }
+
         It "Should only have two databases" {
-            ($results | Select-Object -Unique Database | Measure-Object).Count | Should Be 2
+            ($results | Select-Object -Unique Database | Measure-Object).Count | Should -Be 2
         }
 
-        $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database msdb
-        $results = $db | Get-DbaModule -Type View
-        It "Should only have one type of object" {
-            ($results | Select-Object -Unique Type | Measure-Object).Count | Should Be 1
+        It "Should only have one type of object when filtering by View" {
+            $viewResults = Get-DbaDatabase -SqlInstance $script:instance1 -Database msdb | Get-DbaModule -Type View
+            ($viewResults | Select-Object -Unique Type | Measure-Object).Count | Should -Be 1
         }
 
-        It "Should only have one database" {
-            ($results | Select-Object -Unique Database | Measure-Object).Count | Should Be 1
+        It "Should only have one database when filtering by msdb" {
+            $msdbResults = Get-DbaDatabase -SqlInstance $script:instance1 -Database msdb | Get-DbaModule -Type View
+            ($msdbResults | Select-Object -Unique Database | Measure-Object).Count | Should -Be 1
         }
     }
 }

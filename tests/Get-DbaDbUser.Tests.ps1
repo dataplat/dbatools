@@ -1,19 +1,44 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Get-DbaDbUser Unit Tests" -Tag 'UnitTests' {
+    BeforeAll {
+        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'ExcludeSystemUser', 'User', 'Login', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command Get-DbaDbUser
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+        }
+        It "Should have Database as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type Object[]
+        }
+        It "Should have ExcludeDatabase as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[]
+        }
+        It "Should have ExcludeSystemUser as a parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeSystemUser -Type SwitchParameter
+        }
+        It "Should have User as a parameter" {
+            $CommandUnderTest | Should -HaveParameter User -Type String[]
+        }
+        It "Should have Login as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Login -Type String[]
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe "Get-DbaDbUser Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $tempguid = [guid]::newguid();
         $DBUserName = "dbatoolssci_$($tempguid.guid)"
@@ -32,6 +57,7 @@ CREATE USER [$DBUserName2] FOR LOGIN [$DBUserName2]
 "@
         Invoke-DbaQuery -SqlInstance $script:instance2 -Query $CreateTestUser -Database master
     }
+
     AfterAll {
         $DropTestUser = @"
 DROP USER [$DBUserName];
@@ -43,21 +69,23 @@ DROP LOGIN [$DBUserName2];
     }
 
     Context "Users are correctly located" {
-        $results1 = Get-DbaDbUser -SqlInstance $script:instance2 -Database master | Where-Object { $_.name -eq "$DBUserName" } | Select-Object *
-        $results2 = Get-DbaDbUser -SqlInstance $script:instance2
+        BeforeAll {
+            $results1 = Get-DbaDbUser -SqlInstance $script:instance2 -Database master | Where-Object { $_.name -eq "$DBUserName" } | Select-Object *
+            $results2 = Get-DbaDbUser -SqlInstance $script:instance2
 
-        $resultsByUser = Get-DbaDbUser -SqlInstance $script:instance2 -Database master -User $DBUserName2
-        $resultsByMultipleUser = Get-DbaDbUser -SqlInstance $script:instance2 -User $DBUserName, $DBUserName2
+            $resultsByUser = Get-DbaDbUser -SqlInstance $script:instance2 -Database master -User $DBUserName2
+            $resultsByMultipleUser = Get-DbaDbUser -SqlInstance $script:instance2 -User $DBUserName, $DBUserName2
 
-        $resultsByLogin = Get-DbaDbUser -SqlInstance $script:instance2 -Database master -Login $DBUserName2
-        $resultsByMultipleLogin = Get-DbaDbUser -SqlInstance $script:instance2 -Login $DBUserName, $DBUserName2
+            $resultsByLogin = Get-DbaDbUser -SqlInstance $script:instance2 -Database master -Login $DBUserName2
+            $resultsByMultipleLogin = Get-DbaDbUser -SqlInstance $script:instance2 -Login $DBUserName, $DBUserName2
+        }
 
         It "Should execute and return results" {
-            $results2 | Should -Not -Be $null
+            $results2 | Should -Not -BeNullOrEmpty
         }
 
         It "Should execute against Master and return results" {
-            $results1 | Should -Not -Be $null
+            $results1 | Should -Not -BeNullOrEmpty
         }
 
         It "Should have matching login and username of $DBUserName" {
@@ -74,11 +102,11 @@ DROP LOGIN [$DBUserName2];
         }
 
         It "Should have database access" {
-            $results1.HasDBAccess | Should -Be $true
+            $results1.HasDBAccess | Should -BeTrue
         }
 
         It "Should not Throw an Error" {
-            { Get-DbaDbUser -SqlInstance $script:instance2 -ExcludeDatabase master -ExcludeSystemUser } | Should -not -Throw
+            { Get-DbaDbUser -SqlInstance $script:instance2 -ExcludeDatabase master -ExcludeSystemUser } | Should -Not -Throw
         }
 
         It "Should return a specific user" {
@@ -87,8 +115,8 @@ DROP LOGIN [$DBUserName2];
         }
 
         It "Should return two specific users" {
-            $resultsByMultipleUser.Name | Should -Be $DBUserName, $DBUserName2
-            $resultsByMultipleUser.Database | Should -Be master, master
+            $resultsByMultipleUser.Name | Should -Be @($DBUserName, $DBUserName2)
+            $resultsByMultipleUser.Database | Should -Be @('master', 'master')
         }
 
         It "Should return a specific user for the given login" {
@@ -97,8 +125,8 @@ DROP LOGIN [$DBUserName2];
         }
 
         It "Should return two specific users for the given logins" {
-            $resultsByMultipleLogin.Name | Should -Be $DBUserName, $DBUserName2
-            $resultsByMultipleLogin.Database | Should -Be master, master
+            $resultsByMultipleLogin.Name | Should -Be @($DBUserName, $DBUserName2)
+            $resultsByMultipleLogin.Database | Should -Be @('master', 'master')
         }
     }
 }

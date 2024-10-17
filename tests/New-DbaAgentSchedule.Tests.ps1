@@ -1,19 +1,72 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "New-DbaAgentSchedule Unit Tests" -Tag 'UnitTests' {
+    BeforeAll {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        It "Should only contain our specific parameters" {
-            [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-            [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Job', 'Schedule', 'Disabled', 'FrequencyType', 'FrequencyInterval', 'FrequencySubdayType', 'FrequencySubdayInterval', 'FrequencyRelativeInterval', 'FrequencyRecurrenceFactor', 'StartDate', 'EndDate', 'StartTime', 'EndTime', 'Owner', 'Force', 'EnableException'
-            $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
+        BeforeAll {
+            $CommandUnderTest = Get-Command New-DbaAgentSchedule
+        }
+        It "Should have SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Not -Mandatory
+        }
+        It "Should have SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Not -Mandatory
+        }
+        It "Should have Job as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Job -Type Object[] -Not -Mandatory
+        }
+        It "Should have Schedule as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Schedule -Type Object -Not -Mandatory
+        }
+        It "Should have Disabled as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Disabled -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have FrequencyType as a parameter" {
+            $CommandUnderTest | Should -HaveParameter FrequencyType -Type Object -Not -Mandatory
+        }
+        It "Should have FrequencyInterval as a parameter" {
+            $CommandUnderTest | Should -HaveParameter FrequencyInterval -Type Object[] -Not -Mandatory
+        }
+        It "Should have FrequencySubdayType as a parameter" {
+            $CommandUnderTest | Should -HaveParameter FrequencySubdayType -Type Object -Not -Mandatory
+        }
+        It "Should have FrequencySubdayInterval as a parameter" {
+            $CommandUnderTest | Should -HaveParameter FrequencySubdayInterval -Type Int32 -Not -Mandatory
+        }
+        It "Should have FrequencyRelativeInterval as a parameter" {
+            $CommandUnderTest | Should -HaveParameter FrequencyRelativeInterval -Type Object -Not -Mandatory
+        }
+        It "Should have FrequencyRecurrenceFactor as a parameter" {
+            $CommandUnderTest | Should -HaveParameter FrequencyRecurrenceFactor -Type Int32 -Not -Mandatory
+        }
+        It "Should have StartDate as a parameter" {
+            $CommandUnderTest | Should -HaveParameter StartDate -Type String -Not -Mandatory
+        }
+        It "Should have EndDate as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EndDate -Type String -Not -Mandatory
+        }
+        It "Should have StartTime as a parameter" {
+            $CommandUnderTest | Should -HaveParameter StartTime -Type String -Not -Mandatory
+        }
+        It "Should have EndTime as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EndTime -Type String -Not -Mandatory
+        }
+        It "Should have Owner as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Owner -Type String -Not -Mandatory
+        }
+        It "Should have Force as a parameter" {
+            $CommandUnderTest | Should -HaveParameter Force -Type SwitchParameter -Not -Mandatory
+        }
+        It "Should have EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter -Not -Mandatory
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "New-DbaAgentSchedule Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $null = New-DbaAgentJob -SqlInstance $script:instance2 -Job 'dbatoolsci_newschedule' -OwnerLogin 'sa'
         $null = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job 'dbatoolsci_newschedule' -StepId 1 -StepName 'dbatoolsci Test Select' -Subsystem TransactSql -SubsystemServer $script:instance2 -Command "SELECT * FROM master.sys.all_columns;" -CmdExecSuccessCode 0 -OnSuccessAction QuitWithSuccess -OnFailAction QuitWithFailure -Database master -DatabaseUser sa
@@ -32,7 +85,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $scheduleOptions = @('Once', 'OneTime', 'Daily', 'Weekly', 'Monthly', 'MonthlyRelative', 'AgentStart', 'AutoStart', 'IdleComputer', 'OnIdle')
 
             foreach ($frequency in $scheduleOptions) {
-                $variables = @{SqlInstance    = $script:instance2
+                $variables = @{
+                    SqlInstance               = $script:instance2
                     Schedule                  = "dbatoolsci_$frequency"
                     Job                       = 'dbatoolsci_newschedule'
                     FrequencyType             = $frequency
@@ -42,9 +96,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 }
 
                 if ($frequency -notin @('IdleComputer', 'OnIdle')) {
-                    $results[$frequency] = $(New-DbaAgentSchedule -StartDate $start -StartTime '010000' -EndDate $end -EndTime '020000' @variables)
+                    $results[$frequency] = New-DbaAgentSchedule -StartDate $start -StartTime '010000' -EndDate $end -EndTime '020000' @variables
                 } else {
-                    $results[$frequency] = $(New-DbaAgentSchedule -Disabled -Force @variables)
+                    $results[$frequency] = New-DbaAgentSchedule -Disabled -Force @variables
                 }
             }
         }
@@ -52,7 +106,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $null = Get-DbaAgentSchedule -SqlInstance $script:instance2 |
                 Where-Object { $_.name -like 'dbatools*' } |
                 Remove-DbaAgentSchedule -Confirm:$false -Force
-            Remove-Variable -Name results
         }
 
         It "Should have Results" {
@@ -67,13 +120,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 $results[$key].JobCount | Should -Be 1
 
                 if ($key -in @('IdleComputer', 'OnIdle')) {
-                    $results[$key].FrequencyTypes   | Should -Be "OnIdle"
+                    $results[$key].FrequencyTypes | Should -Be "OnIdle"
                 } elseif ($key -in @('Once', 'OneTime')) {
-                    $results[$key].FrequencyTypes   | Should -Be "OneTime"
+                    $results[$key].FrequencyTypes | Should -Be "OneTime"
                 } elseif ($key -in @('AgentStart', 'AutoStart')) {
-                    $results[$key].FrequencyTypes   | Should -Be "AutoStart"
+                    $results[$key].FrequencyTypes | Should -Be "AutoStart"
                 } else {
-                    $results[$key].FrequencyTypes   | Should -Be $key
+                    $results[$key].FrequencyTypes | Should -Be $key
                 }
             }
         }
@@ -92,7 +145,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                     $frequencyType = "Weekly"
                 }
 
-                $variables = @{SqlInstance    = $script:instance2
+                $variables = @{
+                    SqlInstance               = $script:instance2
                     Schedule                  = "dbatoolsci_$frequencyinterval"
                     Job                       = 'dbatoolsci_newschedule'
                     FrequencyType             = $frequencyType
@@ -104,14 +158,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                     EndTime                   = '020000'
                 }
 
-                $results[$frequencyinterval] = $(New-DbaAgentSchedule @variables)
+                $results[$frequencyinterval] = New-DbaAgentSchedule @variables
             }
         }
         AfterAll {
             $null = Get-DbaAgentSchedule -SqlInstance $script:instance2 |
                 Where-Object { $_.name -like 'dbatools*' } |
                 Remove-DbaAgentSchedule -Confirm:$false -Force
-            Remove-Variable -Name results
         }
 
         It "Should have Results" {
@@ -150,7 +203,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $scheduleOptions = @('Time', 'Once', 'Second', 'Seconds', 'Minute', 'Minutes', 'Hour', 'Hours')
 
             foreach ($frequencySubdayType in $scheduleOptions) {
-                $variables = @{SqlInstance    = $script:instance2
+                $variables = @{
+                    SqlInstance               = $script:instance2
                     Schedule                  = "dbatoolsci_$frequencySubdayType"
                     Job                       = 'dbatoolsci_newschedule'
                     FrequencyType             = 'Daily'
@@ -164,14 +218,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                     EndTime                   = '020000'
                 }
 
-                $results[$frequencySubdayType] = $(New-DbaAgentSchedule @variables)
+                $results[$frequencySubdayType] = New-DbaAgentSchedule @variables
             }
         }
         AfterAll {
             $null = Get-DbaAgentSchedule -SqlInstance $script:instance2 |
                 Where-Object { $_.name -like 'dbatools*' } |
                 Remove-DbaAgentSchedule -Confirm:$false -Force
-            Remove-Variable -Name results
         }
 
         It "Should have Results" {
@@ -185,15 +238,15 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 $results[$key].FrequencySubdayTypes | Should -BeIn $scheduleOptions
 
                 if ($key -in @('Second', 'Seconds')) {
-                    $results[$key].FrequencySubdayTypes   | Should -Be "Second"
+                    $results[$key].FrequencySubdayTypes | Should -Be "Second"
                 } elseif ($key -in @('Minute', 'Minutes')) {
-                    $results[$key].FrequencySubdayTypes   | Should -Be "Minute"
+                    $results[$key].FrequencySubdayTypes | Should -Be "Minute"
                 } elseif ($key -in @('Hour', 'Hours')) {
-                    $results[$key].FrequencySubdayTypes   | Should -Be "Hour"
+                    $results[$key].FrequencySubdayTypes | Should -Be "Hour"
                 } elseif ($key -in @('Once', 'Time')) {
-                    $results[$key].FrequencySubdayTypes   | Should -Be "Once"
+                    $results[$key].FrequencySubdayTypes | Should -Be "Once"
                 } else {
-                    $results[$key].FrequencySubdayTypes   | Should -Be $key
+                    $results[$key].FrequencySubdayTypes | Should -Be $key
                 }
             }
         }
@@ -203,18 +256,18 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         BeforeAll {
             $results = @{}
 
-            # Unused (value of 0) is not valid for sp_add_jobschedule when using the MonthlyRelative frequency type, so 'Unused' has been removed from this test.
             $scheduleOptions = @('First', 'Second', 'Third', 'Fourth', 'Last')
 
             foreach ($frequencyRelativeInterval in $scheduleOptions) {
-                $variables = @{SqlInstance    = $script:instance2
+                $variables = @{
+                    SqlInstance               = $script:instance2
                     Schedule                  = "dbatoolsci_$frequencyRelativeInterval"
                     Job                       = 'dbatoolsci_newschedule'
-                    FrequencyType             = 'MonthlyRelative'           # required to set the FrequencyRelativeInterval
-                    FrequencyRecurrenceFactor = '2'                         # every 2 months
-                    FrequencyRelativeInterval = $frequencyRelativeInterval  # 'First', 'Second', 'Third', 'Fourth', 'Last'
-                    FrequencyInterval         = '6'                         # Friday or day 6
-                    FrequencySubDayInterval   = '1'                         # daily frequency 1="occurs once at..." or "occurs every..."
+                    FrequencyType             = 'MonthlyRelative'
+                    FrequencyRecurrenceFactor = '2'
+                    FrequencyRelativeInterval = $frequencyRelativeInterval
+                    FrequencyInterval         = '6'
+                    FrequencySubDayInterval   = '1'
                     FrequencySubDayType       = 'Once'
                     StartDate                 = $start
                     StartTime                 = '010000'
@@ -222,14 +275,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                     EndTime                   = '020000'
                 }
 
-                $results[$frequencyRelativeInterval] = $(New-DbaAgentSchedule @variables)
+                $results[$frequencyRelativeInterval] = New-DbaAgentSchedule @variables
             }
         }
         AfterAll {
             $null = Get-DbaAgentSchedule -SqlInstance $script:instance2 |
                 Where-Object { $_.name -like 'dbatools*' } |
                 Remove-DbaAgentSchedule -Confirm:$false -Force
-            Remove-Variable -Name results
         }
 
         It "Should have Results" {
@@ -240,8 +292,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $jobId = (Get-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_newschedule).JobID
             foreach ($key in $results.keys) {
                 $results[$key].EnumJobReferences() | Should -Contain $jobId
-                $results[$key].FrequencyRelativeIntervals   | Should -BeIn $scheduleOptions
-                $results[$key].FrequencyRelativeIntervals   | Should -Be $key
+                $results[$key].FrequencyRelativeIntervals | Should -BeIn $scheduleOptions
+                $results[$key].FrequencyRelativeIntervals | Should -Be $key
             }
         }
     }
