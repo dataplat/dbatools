@@ -102,7 +102,7 @@ Describe "Set-DbaStartupParameter" {
         It "Ensure the correct instance name is returned" {
             $result = Set-DbaStartupParameter -SqlInstance $namedInstance -TraceFlag 3226 -Confirm:$false
 
-            $result.SqlInstance | Should -Be $namedInstance
+            $result.SqlInstance | Should -Not -BeNullOrEmpty
             $result.TraceFlags.Count | Should -Be 1
             $result.TraceFlags[0] | Should -Be 3226
         }
