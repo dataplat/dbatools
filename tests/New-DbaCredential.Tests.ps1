@@ -1,73 +1,102 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
-. "$PSScriptRoot\..\private\functions\Invoke-Command2.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Name', 'Identity', 'SecurePassword', 'MappedClassType', 'ProviderName', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
-        }
-    }
-}
+Describe 'New-DbaCredential' -Tag 'UnitTests', 'IntegrationTests' {
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $logins = "dbatoolsci_thor", "dbatoolsci_thorsmomma"
-        $plaintext = "BigOlPassword!"
-        $password = ConvertTo-SecureString $plaintext -AsPlainText -Force
-
-        # Add user
-        foreach ($login in $logins) {
-            $null = Invoke-Command2 -ScriptBlock { net user $args[0] $args[1] /add *>&1 } -ArgumentList $login, $plaintext -ComputerName $script:instance2
-        }
-    }
-    AfterAll {
-        try {
-            (Get-DbaCredential -SqlInstance $script:instance2 -Identity dbatoolsci_thor, dbatoolsci_thorsmomma -ErrorAction Stop -WarningAction SilentlyContinue).Drop()
-            (Get-DbaCredential -SqlInstance $script:instance2 -Name "https://mystorageaccount.blob.core.windows.net/mycontainer" -ErrorAction Stop -WarningAction SilentlyContinue).Drop()
-        } catch { }
-
-        foreach ($login in $logins) {
-            $null = Invoke-Command2 -ScriptBlock { net user $args /delete *>&1 } -ArgumentList $login -ComputerName $script:instance2
-            $null = Invoke-Command2 -ScriptBlock { net user $args /delete *>&1 } -ArgumentList $login -ComputerName $script:instance2
-        }
+        $CommandName = 'New-DbaCredential'
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        . "$PSScriptRoot\constants.ps1"
+        . "$PSScriptRoot\..\private\functions\Invoke-Command2.ps1"
     }
 
-    Context "Create a new credential" {
-        It "Should create new credentials with the proper properties" {
-            $results = New-DbaCredential -SqlInstance $script:instance2 -Name dbatoolsci_thorcred -Identity dbatoolsci_thor -Password $password
-            $results.Name | Should Be "dbatoolsci_thorcred"
-            $results.Identity | Should Be "dbatoolsci_thor"
-
-            $results = New-DbaCredential -SqlInstance $script:instance2 -Identity dbatoolsci_thorsmomma -Password $password
-            $results | Should Not Be $null
+    Context "Validate parameters" {
+        BeforeAll {
+            $CommandUnderTest = Get-Command -Name $CommandName
         }
-        It "Gets the newly created credential" {
-            $results = Get-DbaCredential -SqlInstance $script:instance2 -Identity dbatoolsci_thorsmomma
-            $results.Name | Should Be "dbatoolsci_thorsmomma"
-            $results.Identity | Should Be "dbatoolsci_thorsmomma"
+        It "Accepts SqlInstance as a parameter" {
+            $CommandUnderTest | Should -HaveParameter -Name 'SqlInstance' -Type 'DbaInstanceParameter[]' -Mandatory:$false
+        }
+        It "Accepts SqlCredential as a parameter" {
+            $CommandUnderTest | Should -HaveParameter -Name 'SqlCredential' -Type 'PSCredential' -Mandatory:$false
+        }
+        It "Accepts Name as a parameter" {
+            $CommandUnderTest | Should -HaveParameter -Name 'Name' -Type 'String' -Mandatory:$false
+        }
+        It "Accepts Identity as a parameter" {
+            $CommandUnderTest | Should -HaveParameter -Name 'Identity' -Type 'String' -Mandatory:$false
+        }
+        It "Accepts SecurePassword as a parameter" {
+            $CommandUnderTest | Should -HaveParameter -Name 'SecurePassword' -Type 'SecureString' -Mandatory:$false
+        }
+        It "Accepts MappedClassType as a parameter" {
+            $CommandUnderTest | Should -HaveParameter -Name 'MappedClassType' -Type 'String' -Mandatory:$false
+        }
+        It "Accepts ProviderName as a parameter" {
+            $CommandUnderTest | Should -HaveParameter -Name 'ProviderName' -Type 'String' -Mandatory:$false
+        }
+        It "Accepts Force as a parameter" {
+            $CommandUnderTest | Should -HaveParameter -Name 'Force' -Type 'SwitchParameter' -Mandatory:$false
+        }
+        It "Accepts EnableException as a parameter" {
+            $CommandUnderTest | Should -HaveParameter -Name 'EnableException' -Type 'SwitchParameter' -Mandatory:$false
         }
     }
 
-    Context "Create a new credential without password" {
-        It "Should create new credentials with the proper properties but without password" {
-            $credentialParams = @{
-                SqlInstance = $script:instance2
-                Name = "https://mystorageaccount.blob.core.windows.net/mycontainer"
-                Identity = 'Managed Identity'
+    Context "Integration Tests" {
+        BeforeAll {
+            $logins   = "dbatoolsci_thor", "dbatoolsci_thorsmomma"
+            $plaintext = "BigOlPassword!"
+            $password  = ConvertTo-SecureString $plaintext -AsPlainText -Force
+
+            # Add users
+            foreach ($login in $logins) {
+                $null = Invoke-Command2 -ScriptBlock { net user $using:login $using:plaintext /add *>&1 } -ComputerName $script:instance2
             }
-            $results = New-DbaCredential @credentialParams
-            $results.Name | Should Be "https://mystorageaccount.blob.core.windows.net/mycontainer"
-            $results.Identity | Should Be "Managed Identity"
         }
-        It "Gets the newly created credential that doesn't have password" {
-            $results = Get-DbaCredential -SqlInstance $script:instance2 -Identity "Managed Identity"
-            $results.Name | Should Be "https://mystorageaccount.blob.core.windows.net/mycontainer"
-            $results.Identity | Should Be "Managed Identity"
+
+        AfterAll {
+            try {
+                (Get-DbaCredential -SqlInstance $script:instance2 -Identity dbatoolsci_thor, dbatoolsci_thorsmomma -ErrorAction Stop -WarningAction SilentlyContinue) | ForEach-Object { $_.Drop() }
+                (Get-DbaCredential -SqlInstance $script:instance2 -Name "https://mystorageaccount.blob.core.windows.net/mycontainer" -ErrorAction Stop -WarningAction SilentlyContinue).Drop()
+            } catch { }
+
+            foreach ($login in $logins) {
+                $null = Invoke-Command2 -ScriptBlock { net user $using:login /delete *>&1 } -ComputerName $script:instance2
+            }
+        }
+
+        Context "Create a new credential" {
+            It "Should create new credentials with the proper properties" {
+                $results = New-DbaCredential -SqlInstance $script:instance2 -Name dbatoolsci_thorcred -Identity dbatoolsci_thor -Password $password
+                $results.Name     | Should -Be "dbatoolsci_thorcred"
+                $results.Identity | Should -Be "dbatoolsci_thor"
+
+                $results = New-DbaCredential -SqlInstance $script:instance2 -Identity dbatoolsci_thorsmomma -Password $password
+                $results | Should -Not -Be $null
+            }
+            It "Gets the newly created credential" {
+                $results = Get-DbaCredential -SqlInstance $script:instance2 -Identity dbatoolsci_thorsmomma
+                $results.Name     | Should -Be "dbatoolsci_thorsmomma"
+                $results.Identity | Should -Be "dbatoolsci_thorsmomma"
+            }
+        }
+
+        Context "Create a new credential without password" {
+            It "Should create new credentials with the proper properties but without password" {
+                $credentialParams = @{
+                    SqlInstance = $script:instance2
+                    Name        = "https://mystorageaccount.blob.core.windows.net/mycontainer"
+                    Identity    = 'Managed Identity'
+                }
+                $results = New-DbaCredential @credentialParams
+                $results.Name     | Should -Be "https://mystorageaccount.blob.core.windows.net/mycontainer"
+                $results.Identity | Should -Be "Managed Identity"
+            }
+            It "Gets the newly created credential that doesn't have password" {
+                $results = Get-DbaCredential -SqlInstance $script:instance2 -Identity "Managed Identity"
+                $results.Name     | Should -Be "https://mystorageaccount.blob.core.windows.net/mycontainer"
+                $results.Identity | Should -Be "Managed Identity"
+            }
         }
     }
 }

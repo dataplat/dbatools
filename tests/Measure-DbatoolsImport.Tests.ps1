@@ -1,7 +1,7 @@
 param($ModuleName = 'dbatools')
 
 Describe "Measure-DbatoolsImport" {
-    BeforeAll {
+    BeforeDiscovery {
         . "$PSScriptRoot\constants.ps1"
     }
 
@@ -10,7 +10,7 @@ Describe "Measure-DbatoolsImport" {
             $CommandUnderTest = Get-Command Measure-DbatoolsImport
         }
         It "Should have no parameters" {
-            $CommandUnderTest.Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')} | Should -BeNullOrEmpty
+            $CommandUnderTest.Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') } | Should -BeNullOrEmpty
         }
     }
 
