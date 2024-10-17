@@ -189,4 +189,4 @@ Describe "Connect-DbaInstance" {
 * -Mandatory:$false is how you do a "not mandatory" parameter
 * Scoping is different -- you likely need to use $global:whatever instead of $script:whatever
 * Type SwitchParameter does not exist. it's Switch
-* SMO objects were shortened from [Microsoft.SqlServer.Management.Smo.Table[]]$InputObject to Table[] in the Paramter check and that broke the tests. Same for Database and BigInteger (which is bigint)
+* BigInteger is bigint
