@@ -18,7 +18,7 @@ Describe "Get-DbaAgentJobStep" {
             $CommandUnderTest | Should -HaveParameter ExcludeJob -Type String[]
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Job[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Agent.Job[]
         }
         It "Should have ExcludeDisabledJobs as a switch parameter" {
             $CommandUnderTest | Should -HaveParameter ExcludeDisabledJobs -Type Switch

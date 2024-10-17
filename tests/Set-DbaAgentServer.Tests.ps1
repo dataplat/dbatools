@@ -28,7 +28,7 @@ Describe "Set-DbaAgentServer" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type JobServer[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Agent.JobServer[] -Mandatory:$false
         }
         It "Should have AgentLogLevel as a parameter" {
             $CommandUnderTest | Should -HaveParameter AgentLogLevel -Type Object -Mandatory:$false

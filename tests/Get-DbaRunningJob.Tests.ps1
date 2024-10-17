@@ -12,7 +12,7 @@ Describe "Get-DbaRunningJob" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have InputObject as a non-mandatory parameter of type Job[]" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Job[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Agent.Job[] -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type switch -Mandatory:$false

@@ -30,7 +30,7 @@ Describe "Copy-DbaAgentSchedule" {
             $CommandUnderTest | Should -HaveParameter Id -Type Int32[]
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type JobSchedule[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Agent.JobSchedule[]
         }
         It "Should have Force as a switch parameter" {
             $CommandUnderTest | Should -HaveParameter Force -Type Switch

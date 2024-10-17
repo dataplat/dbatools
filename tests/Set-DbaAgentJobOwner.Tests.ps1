@@ -18,7 +18,7 @@ Describe "Set-DbaAgentJobOwner" {
             $CommandUnderTest | Should -HaveParameter ExcludeJob -Type Object[]
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Job[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Agent.Job[]
         }
         It "Should have Login parameter" {
             $CommandUnderTest | Should -HaveParameter Login -Type String

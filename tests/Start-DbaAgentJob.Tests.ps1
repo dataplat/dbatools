@@ -21,7 +21,7 @@ Describe "Start-DbaAgentJob" {
             $CommandUnderTest | Should -HaveParameter ExcludeJob -Type String[]
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Job[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Agent.Job[]
         }
         It "Should have AllJobs parameter" {
             $CommandUnderTest | Should -HaveParameter AllJobs -Type Switch

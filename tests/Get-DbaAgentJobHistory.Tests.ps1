@@ -39,7 +39,7 @@ Describe "Get-DbaAgentJobHistory Unit Tests" -Tag 'UnitTests' {
             $command | Should -HaveParameter WithOutputFile -Type Switch -Mandatory:$false
         }
         It "Should have JobCollection parameter" {
-            $command | Should -HaveParameter JobCollection -Type Job -Mandatory:$false
+            $command | Should -HaveParameter JobCollection -Type Microsoft.SqlServer.Management.Smo.Agent.Job -Mandatory:$false
         }
         It "Should have EnableException parameter" {
             $command | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
