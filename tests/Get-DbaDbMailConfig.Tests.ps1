@@ -15,7 +15,7 @@ Describe "Get-DbaDbMailConfig" {
             $CommandUnderTest | Should -HaveParameter Name -Type String[] -Mandatory:$false
         }
         It "Should have InputObject as a non-mandatory parameter of type SqlMail[]" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type SqlMail[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Mail.SqlMail[] -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
