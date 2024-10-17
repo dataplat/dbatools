@@ -207,7 +207,6 @@ if (-not $Finalize) {
         $PesterConfig = New-PesterConfiguration
         $PesterConfig.Run.Path = $f.FullName
         $PesterConfig.Run.PassThru = $true
-        $PesterConfig.Run.ShowFullOutput = $true
         $PesterConfig.Output.Verbosity = 'Normal'
 
         if ($IncludeCoverage) {
