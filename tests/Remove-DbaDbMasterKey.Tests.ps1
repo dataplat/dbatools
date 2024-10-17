@@ -33,7 +33,7 @@ Describe "Remove-DbaDbMasterKey Unit Tests" -Tag 'UnitTests' {
         }
 
         It "Should have InputObject parameter" {
-            $command | Should -HaveParameter InputObject -Type MasterKey[] -Mandatory:$false
+            $command | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.MasterKey[] -Mandatory:$false
         }
 
         It "Should have EnableException parameter" {

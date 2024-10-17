@@ -34,7 +34,7 @@ Describe "Get-DbatoolsLog" {
             $CommandUnderTest | Should -HaveParameter Runspace -Type Guid -Mandatory:$false
         }
         It "Should have Level as a non-mandatory MessageLevel[] parameter" {
-            $CommandUnderTest | Should -HaveParameter Level -Type MessageLevel[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Level -Type Dataplat.Dbatools.Message.MessageLevel[] -Mandatory:$false
         }
         It "Should have Raw as a non-mandatory Switch" {
             $CommandUnderTest | Should -HaveParameter Raw -Type Switch -Mandatory:$false
