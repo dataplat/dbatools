@@ -46,7 +46,7 @@ Describe "Set-DbaLogin" {
             $command | Should -HaveParameter PasswordExpirationEnabled -Type Switch -Mandatory:$false
             $command | Should -HaveParameter AddRole -Type String[] -Mandatory:$false
             $command | Should -HaveParameter RemoveRole -Type String[] -Mandatory:$false
-            $command | Should -HaveParameter InputObject -Type Login[] -Mandatory:$false
+            $command | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Login[] -Mandatory:$false
             $command | Should -HaveParameter Force -Type Switch -Mandatory:$false
             $command | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }

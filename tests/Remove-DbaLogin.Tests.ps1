@@ -21,7 +21,7 @@ Describe "Remove-DbaLogin" {
             $CommandUnderTest | Should -HaveParameter Login -Type String[] -Mandatory:$false
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Login[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Login[] -Mandatory:$false
         }
         It "Should have Force as a parameter" {
             $CommandUnderTest | Should -HaveParameter Force -Type Switch -Mandatory:$false

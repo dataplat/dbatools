@@ -24,7 +24,7 @@ Describe "Grant-DbaAgPermission" {
             $CommandUnderTest | Should -HaveParameter Permission -Type String[]
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Login[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Login[]
         }
         It "Should have EnableException as a parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch

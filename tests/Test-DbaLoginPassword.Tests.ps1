@@ -23,7 +23,7 @@ Describe "Test-DbaLoginPassword" {
             $CommandUnderTest | Should -HaveParameter Dictionary -Type String[]
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Login[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Login[]
         }
         It "Should have EnableException parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch

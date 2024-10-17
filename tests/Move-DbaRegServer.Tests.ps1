@@ -21,7 +21,7 @@ Describe "Move-DbaRegServer" {
             $CommandUnderTest | Should -HaveParameter Group -Type String
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type RegisteredServer[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer[]
         }
         It "Should have EnableException as a parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
