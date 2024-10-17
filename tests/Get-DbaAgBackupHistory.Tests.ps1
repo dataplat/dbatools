@@ -50,7 +50,7 @@ Describe "Get-DbaAgBackupHistory" {
         It "Should have Raw as a non-mandatory switch parameter" {
             $CommandUnderTest | Should -HaveParameter Raw -Type Switch -Mandatory:$false
         }
-        It "Should have LastLsn as a non-mandatory parameter of Type BigInt" {
+        It "Should have LastLsn as a non-mandatory parameter of type BigInt" {
             $CommandUnderTest | Should -HaveParameter LastLsn -Type BigInt -Mandatory:$false
         }
         It "Should have IncludeMirror as a non-mandatory switch parameter" {

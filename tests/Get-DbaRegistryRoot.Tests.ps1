@@ -21,7 +21,7 @@ Describe "Get-DbaRegistryRoot" {
             }
         }
         @('ErrorAction', 'WarningAction', 'InformationAction', 'ProgressAction') | ForEach-Object {
-            It "Should have $_ as a common parameter of Type System.Management.Automation.ActionPreference" {
+            It "Should have $_ as a common parameter of type System.Management.Automation.ActionPreference" {
                 $CommandUnderTest | Should -HaveParameter $_ -Type System.Management.Automation.ActionPreference
             }
         }

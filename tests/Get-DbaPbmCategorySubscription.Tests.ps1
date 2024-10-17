@@ -23,16 +23,16 @@ Describe "Get-DbaPbmCategorySubscription" {
         It "Should have Debug as a non-mandatory switch parameter" {
             $CommandUnderTest | Should -HaveParameter Debug -Type switch -Mandatory:$false
         }
-        It "Should have ErrorAction as a non-mandatory parameter of Type System.Management.Automation.ActionPreference" {
+        It "Should have ErrorAction as a non-mandatory parameter of type System.Management.Automation.ActionPreference" {
             $CommandUnderTest | Should -HaveParameter ErrorAction -Type System.Management.Automation.ActionPreference -Mandatory:$false
         }
-        It "Should have WarningAction as a non-mandatory parameter of Type System.Management.Automation.ActionPreference" {
+        It "Should have WarningAction as a non-mandatory parameter of type System.Management.Automation.ActionPreference" {
             $CommandUnderTest | Should -HaveParameter WarningAction -Type System.Management.Automation.ActionPreference -Mandatory:$false
         }
-        It "Should have InformationAction as a non-mandatory parameter of Type System.Management.Automation.ActionPreference" {
+        It "Should have InformationAction as a non-mandatory parameter of type System.Management.Automation.ActionPreference" {
             $CommandUnderTest | Should -HaveParameter InformationAction -Type System.Management.Automation.ActionPreference -Mandatory:$false
         }
-        It "Should have ProgressAction as a non-mandatory parameter of Type System.Management.Automation.ActionPreference" {
+        It "Should have ProgressAction as a non-mandatory parameter of type System.Management.Automation.ActionPreference" {
             $CommandUnderTest | Should -HaveParameter ProgressAction -Type System.Management.Automation.ActionPreference -Mandatory:$false
         }
         It "Should have ErrorVariable as a non-mandatory parameter of type String" {
