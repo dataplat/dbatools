@@ -6,16 +6,16 @@ Describe "ConvertTo-DbaXESession" {
             $CommandUnderTest = Get-Command ConvertTo-DbaXESession
         }
         It "Accepts InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object[]
         }
         It "Accepts Name as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Name -Type String
+            $CommandUnderTest | Should -HaveParameter Name -Type System.String
         }
         It "Accepts OutputScriptOnly as a parameter" {
-            $CommandUnderTest | Should -HaveParameter OutputScriptOnly -Type Switch
+            $CommandUnderTest | Should -HaveParameter OutputScriptOnly -Type System.Management.Automation.SwitchParameter
         }
         It "Accepts EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

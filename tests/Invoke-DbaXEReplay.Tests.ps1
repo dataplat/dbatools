@@ -16,19 +16,19 @@ Describe "Invoke-DbaXEReplay" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[]
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String[]
         }
         It "Should have Event parameter" {
-            $CommandUnderTest | Should -HaveParameter Event -Type String[]
+            $CommandUnderTest | Should -HaveParameter Event -Type System.String[]
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Object
+            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object
         }
         It "Should have Raw parameter" {
-            $CommandUnderTest | Should -HaveParameter Raw -Type Switch
+            $CommandUnderTest | Should -HaveParameter Raw -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

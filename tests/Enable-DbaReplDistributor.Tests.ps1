@@ -10,23 +10,23 @@ Describe "Enable-DbaReplDistributor" {
         BeforeAll {
             $CommandUnderTest = Get-Command Enable-DbaReplDistributor
         }
-        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+        It "Should have SqlInstance as a non-mandatory parameter of type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
         }
-        It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+        It "Should have SqlCredential as a non-mandatory parameter of type System.Management.Automation.PSCredential" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
         }
-        It "Should have DistributionDatabase as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter DistributionDatabase -Type String -Mandatory:$false
+        It "Should have DistributionDatabase as a non-mandatory parameter of type System.String" {
+            $CommandUnderTest | Should -HaveParameter DistributionDatabase -Type System.String -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have WhatIf as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter WhatIf -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter WhatIf -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have Confirm as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Confirm -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Confirm -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 }

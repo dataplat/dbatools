@@ -42,19 +42,19 @@ Describe "Get-DbaCredential" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type String[]
+            $CommandUnderTest | Should -HaveParameter Credential -Type System.String[]
         }
         It "Should have ExcludeCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeCredential -Type String[]
+            $CommandUnderTest | Should -HaveParameter ExcludeCredential -Type System.String[]
         }
         It "Should have Identity as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Identity -Type String[]
+            $CommandUnderTest | Should -HaveParameter Identity -Type System.String[]
         }
         It "Should have ExcludeIdentity as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeIdentity -Type String[]
+            $CommandUnderTest | Should -HaveParameter ExcludeIdentity -Type System.String[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

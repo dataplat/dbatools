@@ -10,22 +10,22 @@ Describe "ConvertTo-DbaDataTable" {
             $CommandUnderTest = Get-Command ConvertTo-DbaDataTable
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type PSObject[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object[] -Mandatory:$false
         }
         It "Should have TimeSpanType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter TimeSpanType -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter TimeSpanType -Type System.String -Mandatory:$false
         }
         It "Should have SizeType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SizeType -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SizeType -Type System.String -Mandatory:$false
         }
         It "Should have IgnoreNull as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IgnoreNull -Type Switch
+            $CommandUnderTest | Should -HaveParameter IgnoreNull -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Raw as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Raw -Type Switch
+            $CommandUnderTest | Should -HaveParameter Raw -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 
@@ -143,7 +143,7 @@ Describe "ConvertTo-DbaDataTable" {
         }
 
         It "Should return '1.00:00:00' when TimeSpanType is String" {
-            (ConvertTo-DbaDataTable -InputObject $obj -TimeSpanType String).Timespan | Should -Be '1.00:00:00'
+            (ConvertTo-DbaDataTable -InputObject $obj -TimeSpanType System.String).Timespan | Should -Be '1.00:00:00'
         }
 
         It "Should return 864000000000 when TimeSpanType is Ticks" {

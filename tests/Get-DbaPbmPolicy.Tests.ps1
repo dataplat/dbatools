@@ -12,19 +12,19 @@ Describe "Get-DbaPbmPolicy" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have Policy as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Policy -Type String[]
+            $CommandUnderTest | Should -HaveParameter Policy -Type System.String[]
         }
         It "Should have Category as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Category -Type String[]
+            $CommandUnderTest | Should -HaveParameter Category -Type System.String[]
         }
         It "Should have InputObject as a parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type PSObject[]
         }
         It "Should have IncludeSystemObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeSystemObject -Type Switch
+            $CommandUnderTest | Should -HaveParameter IncludeSystemObject -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

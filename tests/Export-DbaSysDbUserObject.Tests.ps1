@@ -6,37 +6,37 @@ Describe "Export-DbaSysDbUserObject" {
             $CommandUnderTest = Get-Command Export-DbaSysDbUserObject
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have IncludeDependencies as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeDependencies -Type Switch
+            $CommandUnderTest | Should -HaveParameter IncludeDependencies -Type System.Management.Automation.SwitchParameter
         }
         It "Should have BatchSeparator as a string parameter" {
-            $CommandUnderTest | Should -HaveParameter BatchSeparator -Type String
+            $CommandUnderTest | Should -HaveParameter BatchSeparator -Type System.String
         }
         It "Should have Path as a string parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type String
+            $CommandUnderTest | Should -HaveParameter Path -Type System.String
         }
         It "Should have FilePath as a string parameter" {
-            $CommandUnderTest | Should -HaveParameter FilePath -Type String
+            $CommandUnderTest | Should -HaveParameter FilePath -Type System.String
         }
         It "Should have NoPrefix as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoPrefix -Type Switch
+            $CommandUnderTest | Should -HaveParameter NoPrefix -Type System.Management.Automation.SwitchParameter
         }
         It "Should have ScriptingOptionsObject as a ScriptingOptions parameter" {
-            $CommandUnderTest | Should -HaveParameter ScriptingOptionsObject -Type ScriptingOptions
+            $CommandUnderTest | Should -HaveParameter ScriptingOptionsObject -Type Microsoft.SqlServer.Management.Smo.ScriptingOptions
         }
         It "Should have NoClobber as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoClobber -Type Switch
+            $CommandUnderTest | Should -HaveParameter NoClobber -Type System.Management.Automation.SwitchParameter
         }
         It "Should have PassThru as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter PassThru -Type Switch
+            $CommandUnderTest | Should -HaveParameter PassThru -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

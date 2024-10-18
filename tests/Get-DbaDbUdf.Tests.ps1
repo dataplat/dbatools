@@ -12,34 +12,34 @@ Describe "Get-DbaDbUdf Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Get-DbaDbUdf
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type Object[]
+            $CommandUnderTest | Should -HaveParameter Database -Type System.Object[]
         }
         It "Should have ExcludeDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.Object[]
         }
         It "Should have ExcludeSystemUdf as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSystemUdf -Type Switch
+            $CommandUnderTest | Should -HaveParameter ExcludeSystemUdf -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Schema as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Schema -Type String[]
+            $CommandUnderTest | Should -HaveParameter Schema -Type System.String[]
         }
         It "Should have ExcludeSchema as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSchema -Type String[]
+            $CommandUnderTest | Should -HaveParameter ExcludeSchema -Type System.String[]
         }
         It "Should have Name as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Name -Type String[]
+            $CommandUnderTest | Should -HaveParameter Name -Type System.String[]
         }
         It "Should have ExcludeName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeName -Type String[]
+            $CommandUnderTest | Should -HaveParameter ExcludeName -Type System.String[]
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 }

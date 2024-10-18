@@ -71,23 +71,23 @@ Describe "Copy-DbaDatabase" {
             $params | Should -Contain 'KeepReplication'
         }
 
-        It "Source should be a DbaInstanceParameter and not mandatory" {
-            (Get-Command Copy-DbaDatabase).Parameters['Source'].ParameterType.Name | Should -Be 'DbaInstanceParameter'
+        It "Source should be a Dataplat.Dbatools.Parameter.DbaInstanceParameter and not mandatory" {
+            (Get-Command Copy-DbaDatabase).Parameters['Source'].ParameterType.FullName | Should -Be 'Dataplat.Dbatools.Parameter.DbaInstanceParameter'
             (Get-Command Copy-DbaDatabase).Parameters['Source'].Attributes.Mandatory | Should -Be $false
         }
 
-        It "SourceSqlCredential should be a PSCredential and not mandatory" {
-            (Get-Command Copy-DbaDatabase).Parameters['SourceSqlCredential'].ParameterType.Name | Should -Be 'PSCredential'
+        It "SourceSqlCredential should be a System.Management.Automation.PSCredential and not mandatory" {
+            (Get-Command Copy-DbaDatabase).Parameters['SourceSqlCredential'].ParameterType.FullName | Should -Be 'System.Management.Automation.PSCredential'
             (Get-Command Copy-DbaDatabase).Parameters['SourceSqlCredential'].Attributes.Mandatory | Should -Be $false
         }
 
-        It "Destination should be a DbaInstanceParameter[] and not mandatory" {
-            (Get-Command Copy-DbaDatabase).Parameters['Destination'].ParameterType.Name | Should -Be 'DbaInstanceParameter[]'
+        It "Destination should be a Dataplat.Dbatools.Parameter.DbaInstanceParameter[] and not mandatory" {
+            (Get-Command Copy-DbaDatabase).Parameters['Destination'].ParameterType.FullName | Should -Be 'Dataplat.Dbatools.Parameter.DbaInstanceParameter[]'
             (Get-Command Copy-DbaDatabase).Parameters['Destination'].Attributes.Mandatory | Should -Be $false
         }
 
-        It "DestinationSqlCredential should be a PSCredential and not mandatory" {
-            (Get-Command Copy-DbaDatabase).Parameters['DestinationSqlCredential'].ParameterType.Name | Should -Be 'PSCredential'
+        It "DestinationSqlCredential should be a System.Management.Automation.PSCredential and not mandatory" {
+            (Get-Command Copy-DbaDatabase).Parameters['DestinationSqlCredential'].ParameterType.FullName | Should -Be 'System.Management.Automation.PSCredential'
             (Get-Command Copy-DbaDatabase).Parameters['DestinationSqlCredential'].Attributes.Mandatory | Should -Be $false
         }
 

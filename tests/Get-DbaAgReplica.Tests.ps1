@@ -11,22 +11,22 @@ Describe "Get-DbaAgReplica" {
             $CommandUnderTest = Get-Command Get-DbaAgReplica
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
         }
         It "Should have AvailabilityGroup as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AvailabilityGroup -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter AvailabilityGroup -Type System.String[] -Mandatory:$false
         }
         It "Should have Replica as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Replica -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Replica -Type System.String[] -Mandatory:$false
         }
         It "Should have InputObject as a parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.AvailabilityGroup[] -Mandatory:$false
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

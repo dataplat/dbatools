@@ -5,14 +5,14 @@ Describe "Copy-DbaXESessionTemplate" {
         BeforeAll {
             $CommandUnderTest = Get-Command Copy-DbaXESessionTemplate
         }
-        It "Should have Path as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter Path -Type String[] -Mandatory:$false
+        It "Should have Path as a non-mandatory parameter of type System.String[]" {
+            $CommandUnderTest | Should -HaveParameter Path -Type System.String[] -Mandatory:$false
         }
-        It "Should have Destination as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter Destination -Type String -Mandatory:$false
+        It "Should have Destination as a non-mandatory parameter of type System.String" {
+            $CommandUnderTest | Should -HaveParameter Destination -Type System.String -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

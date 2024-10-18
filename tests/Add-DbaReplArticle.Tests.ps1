@@ -18,25 +18,25 @@ Describe "Add-DbaReplArticle" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String
         }
         It "Should have Publication parameter" {
-            $CommandUnderTest | Should -HaveParameter Publication -Type String
+            $CommandUnderTest | Should -HaveParameter Publication -Type System.String
         }
         It "Should have Schema parameter" {
-            $CommandUnderTest | Should -HaveParameter Schema -Type String
+            $CommandUnderTest | Should -HaveParameter Schema -Type System.String
         }
         It "Should have Name parameter" {
-            $CommandUnderTest | Should -HaveParameter Name -Type String
+            $CommandUnderTest | Should -HaveParameter Name -Type System.String
         }
         It "Should have Filter parameter" {
-            $CommandUnderTest | Should -HaveParameter Filter -Type String
+            $CommandUnderTest | Should -HaveParameter Filter -Type System.String
         }
         It "Should have CreationScriptOptions parameter" {
             $CommandUnderTest | Should -HaveParameter CreationScriptOptions -Type PSObject
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 }

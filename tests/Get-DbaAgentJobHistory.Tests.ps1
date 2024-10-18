@@ -18,31 +18,31 @@ Describe "Get-DbaAgentJobHistory Unit Tests" -Tag 'UnitTests' {
             $command | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Job parameter" {
-            $command | Should -HaveParameter Job -Type Object[] -Mandatory:$false
+            $command | Should -HaveParameter Job -Type System.Object[] -Mandatory:$false
         }
         It "Should have ExcludeJob parameter" {
-            $command | Should -HaveParameter ExcludeJob -Type Object[] -Mandatory:$false
+            $command | Should -HaveParameter ExcludeJob -Type System.Object[] -Mandatory:$false
         }
         It "Should have StartDate parameter" {
-            $command | Should -HaveParameter StartDate -Type DateTime -Mandatory:$false
+            $command | Should -HaveParameter StartDate -Type System.DateTime -Mandatory:$false
         }
         It "Should have EndDate parameter" {
-            $command | Should -HaveParameter EndDate -Type DateTime -Mandatory:$false
+            $command | Should -HaveParameter EndDate -Type System.DateTime -Mandatory:$false
         }
         It "Should have OutcomeType parameter" {
-            $command | Should -HaveParameter OutcomeType -Type CompletionResult -Mandatory:$false
+            $command | Should -HaveParameter OutcomeType -Type Microsoft.SqlServer.Management.Smo.Agent.CompletionResult -Mandatory:$false
         }
         It "Should have ExcludeJobSteps parameter" {
-            $command | Should -HaveParameter ExcludeJobSteps -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter ExcludeJobSteps -Type System.Management.Automation.Switch -Mandatory:$false
         }
         It "Should have WithOutputFile parameter" {
-            $command | Should -HaveParameter WithOutputFile -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter WithOutputFile -Type System.Management.Automation.Switch -Mandatory:$false
         }
         It "Should have JobCollection parameter" {
             $command | Should -HaveParameter JobCollection -Type Microsoft.SqlServer.Management.Smo.Agent.Job -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $command | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter EnableException -Type System.Management.Automation.Switch -Mandatory:$false
         }
     }
 }

@@ -6,16 +6,16 @@ Describe "Get-DbaNetworkConfiguration" {
             $CommandUnderTest = Get-Command Get-DbaNetworkConfiguration
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter Credential -Type System.Management.Automation.PSCredential
         }
         It "Should have OutputType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter OutputType -Type String
+            $CommandUnderTest | Should -HaveParameter OutputType -Type System.String
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

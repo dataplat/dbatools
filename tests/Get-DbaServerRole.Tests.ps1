@@ -16,16 +16,16 @@ Describe "Get-DbaServerRole" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have ServerRole parameter" {
-            $CommandUnderTest | Should -HaveParameter ServerRole -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ServerRole -Type System.String[] -Mandatory:$false
         }
         It "Should have ExcludeServerRole parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeServerRole -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeServerRole -Type System.String[] -Mandatory:$false
         }
         It "Should have ExcludeFixedRole parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeFixedRole -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeFixedRole -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

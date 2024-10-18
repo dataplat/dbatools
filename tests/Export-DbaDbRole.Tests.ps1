@@ -6,58 +6,58 @@ Describe "Export-DbaDbRole Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Export-DbaDbRole
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Microsoft.SqlServer.Management.Smo.DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object[] -Mandatory:$false
         }
         It "Should have ScriptingOptionsObject parameter" {
             $CommandUnderTest | Should -HaveParameter ScriptingOptionsObject -Type Microsoft.SqlServer.Management.Smo.ScriptingOptions -Mandatory:$false
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Database -Type System.Object[] -Mandatory:$false
         }
         It "Should have Role parameter" {
-            $CommandUnderTest | Should -HaveParameter Role -Type Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Role -Type System.Object[] -Mandatory:$false
         }
         It "Should have ExcludeRole parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeRole -Type Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeRole -Type System.Object[] -Mandatory:$false
         }
         It "Should have ExcludeFixedRole parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeFixedRole -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeFixedRole -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have IncludeRoleMember parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeRoleMember -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter IncludeRoleMember -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have Path parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Path -Type System.String -Mandatory:$false
         }
         It "Should have FilePath parameter" {
-            $CommandUnderTest | Should -HaveParameter FilePath -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter FilePath -Type System.String -Mandatory:$false
         }
         It "Should have Passthru parameter" {
-            $CommandUnderTest | Should -HaveParameter Passthru -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Passthru -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have BatchSeparator parameter" {
-            $CommandUnderTest | Should -HaveParameter BatchSeparator -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter BatchSeparator -Type System.String -Mandatory:$false
         }
         It "Should have NoClobber parameter" {
-            $CommandUnderTest | Should -HaveParameter NoClobber -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter NoClobber -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have Append parameter" {
-            $CommandUnderTest | Should -HaveParameter Append -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Append -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have NoPrefix parameter" {
-            $CommandUnderTest | Should -HaveParameter NoPrefix -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter NoPrefix -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have Encoding parameter" {
-            $CommandUnderTest | Should -HaveParameter Encoding -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Encoding -Type System.String -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 }

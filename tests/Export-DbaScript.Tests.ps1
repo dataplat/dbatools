@@ -12,37 +12,37 @@ Describe "Export-DbaScript" {
             $CommandUnderTest = Get-Command Export-DbaScript
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object[]
         }
         It "Should have ScriptingOptionsObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ScriptingOptionsObject -Type ScriptingOptions
+            $CommandUnderTest | Should -HaveParameter ScriptingOptionsObject -Type Microsoft.SqlServer.Management.Smo.ScriptingOptions
         }
         It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type String
+            $CommandUnderTest | Should -HaveParameter Path -Type System.String
         }
         It "Should have FilePath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FilePath -Type String
+            $CommandUnderTest | Should -HaveParameter FilePath -Type System.String
         }
         It "Should have Encoding as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Encoding -Type String
+            $CommandUnderTest | Should -HaveParameter Encoding -Type System.String
         }
         It "Should have BatchSeparator as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BatchSeparator -Type String
+            $CommandUnderTest | Should -HaveParameter BatchSeparator -Type System.String
         }
         It "Should have NoPrefix as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoPrefix -Type Switch
+            $CommandUnderTest | Should -HaveParameter NoPrefix -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Passthru as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Passthru -Type Switch
+            $CommandUnderTest | Should -HaveParameter Passthru -Type System.Management.Automation.SwitchParameter
         }
         It "Should have NoClobber as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoClobber -Type Switch
+            $CommandUnderTest | Should -HaveParameter NoClobber -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Append as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Append -Type Switch
+            $CommandUnderTest | Should -HaveParameter Append -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

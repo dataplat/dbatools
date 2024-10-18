@@ -6,19 +6,19 @@ Describe "Disable-DbaStartupProcedure" {
             $CommandUnderTest = Get-Command Disable-DbaStartupProcedure
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
         }
         It "Should have StartupProcedure parameter" {
-            $CommandUnderTest | Should -HaveParameter StartupProcedure -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter StartupProcedure -Type System.String[] -Mandatory:$false
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object[] -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

@@ -10,8 +10,8 @@ Describe "Get-SqlDefaultSPConfigure" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-SqlDefaultSPConfigure
         }
-        It "Should have SqlVersion as a non-mandatory parameter of type Object" {
-            $CommandUnderTest | Should -HaveParameter SqlVersion -Type Object -Mandatory:$false
+        It "Should have SqlVersion as a non-mandatory parameter of type System.Object" {
+            $CommandUnderTest | Should -HaveParameter SqlVersion -Type System.Object -Mandatory:$false
         }
     }
 

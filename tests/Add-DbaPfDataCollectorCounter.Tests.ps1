@@ -5,26 +5,26 @@ Describe "Add-DbaPfDataCollectorCounter" {
         BeforeAll {
             $CommandUnderTest = Get-Command Add-DbaPfDataCollectorCounter
         }
-        It "Should have ComputerName as a non-mandatory DbaInstanceParameter[] parameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[] -Mandatory:$false
+        It "Should have ComputerName as a non-mandatory Dataplat.Dbatools.Parameter.DbaInstanceParameter[] parameter" {
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
         }
-        It "Should have Credential as a non-mandatory PSCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Mandatory:$false
+        It "Should have Credential as a non-mandatory System.Management.Automation.PSCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type System.Management.Automation.PSCredential -Mandatory:$false
         }
-        It "Should have CollectorSet as a non-mandatory String[] parameter" {
-            $CommandUnderTest | Should -HaveParameter CollectorSet -Type String[] -Mandatory:$false
+        It "Should have CollectorSet as a non-mandatory System.String[] parameter" {
+            $CommandUnderTest | Should -HaveParameter CollectorSet -Type System.String[] -Mandatory:$false
         }
-        It "Should have Collector as a non-mandatory String[] parameter" {
-            $CommandUnderTest | Should -HaveParameter Collector -Type String[] -Mandatory:$false
+        It "Should have Collector as a non-mandatory System.String[] parameter" {
+            $CommandUnderTest | Should -HaveParameter Collector -Type System.String[] -Mandatory:$false
         }
-        It "Should have Counter as a non-mandatory Object[] parameter" {
-            $CommandUnderTest | Should -HaveParameter Counter -Type Object[] -Mandatory:$false
+        It "Should have Counter as a non-mandatory System.Object[] parameter" {
+            $CommandUnderTest | Should -HaveParameter Counter -Type System.Object[] -Mandatory:$false
         }
-        It "Should have InputObject as a non-mandatory Object[] parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Mandatory:$false
+        It "Should have InputObject as a non-mandatory System.Object[] parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object[] -Mandatory:$false
         }
-        It "Should have EnableException as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+        It "Should have EnableException as a non-mandatory System.Management.Automation.SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 }

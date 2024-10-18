@@ -6,16 +6,16 @@ Describe "Get-DbaSpn" {
             $CommandUnderTest = Get-Command Get-DbaSpn
         }
         It "Accepts ComputerName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type System.String[] -Mandatory:$false
         }
         It "Accepts AccountName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AccountName -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter AccountName -Type System.String[] -Mandatory:$false
         }
         It "Accepts Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Credential -Type System.Management.Automation.PSCredential -Mandatory:$false
         }
         It "Accepts EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

@@ -12,37 +12,37 @@ Describe "Copy-DbaSsisCatalog" {
             $CommandUnderTest = Get-Command Copy-DbaSsisCatalog
         }
         It "Should have Source parameter" {
-            $CommandUnderTest | Should -HaveParameter Source -Type DbaInstanceParameter
+            $CommandUnderTest | Should -HaveParameter Source -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter
         }
         It "Should have Destination parameter" {
-            $CommandUnderTest | Should -HaveParameter Destination -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter Destination -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have SourceSqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SourceSqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SourceSqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have DestinationSqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Project parameter" {
-            $CommandUnderTest | Should -HaveParameter Project -Type String
+            $CommandUnderTest | Should -HaveParameter Project -Type System.String
         }
         It "Should have Folder parameter" {
-            $CommandUnderTest | Should -HaveParameter Folder -Type String
+            $CommandUnderTest | Should -HaveParameter Folder -Type System.String
         }
         It "Should have Environment parameter" {
-            $CommandUnderTest | Should -HaveParameter Environment -Type String
+            $CommandUnderTest | Should -HaveParameter Environment -Type System.String
         }
         It "Should have CreateCatalogPassword parameter" {
-            $CommandUnderTest | Should -HaveParameter CreateCatalogPassword -Type SecureString
+            $CommandUnderTest | Should -HaveParameter CreateCatalogPassword -Type System.Security.SecureString
         }
         It "Should have EnableSqlClr parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableSqlClr -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableSqlClr -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type Switch
+            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 }

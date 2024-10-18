@@ -18,40 +18,40 @@ Describe "Invoke-DbaDbDataGenerator" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String[] -Mandatory:$false
         }
         It "Should have FilePath parameter" {
-            $CommandUnderTest | Should -HaveParameter FilePath -Type Object -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter FilePath -Type System.Object -Mandatory:$false
         }
         It "Should have Locale parameter" {
-            $CommandUnderTest | Should -HaveParameter Locale -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Locale -Type System.String -Mandatory:$false
         }
         It "Should have CharacterString parameter" {
-            $CommandUnderTest | Should -HaveParameter CharacterString -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter CharacterString -Type System.String -Mandatory:$false
         }
         It "Should have Table parameter" {
-            $CommandUnderTest | Should -HaveParameter Table -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Table -Type System.String[] -Mandatory:$false
         }
         It "Should have Column parameter" {
-            $CommandUnderTest | Should -HaveParameter Column -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Column -Type System.String[] -Mandatory:$false
         }
         It "Should have ExcludeTable parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeTable -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeTable -Type System.String[] -Mandatory:$false
         }
         It "Should have ExcludeColumn parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeColumn -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeColumn -Type System.String[] -Mandatory:$false
         }
         It "Should have MaxValue parameter" {
-            $CommandUnderTest | Should -HaveParameter MaxValue -Type Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter MaxValue -Type System.Int32 -Mandatory:$false
         }
         It "Should have ExactLength parameter" {
-            $CommandUnderTest | Should -HaveParameter ExactLength -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExactLength -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have ModulusFactor parameter" {
-            $CommandUnderTest | Should -HaveParameter ModulusFactor -Type Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ModulusFactor -Type System.Int32 -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

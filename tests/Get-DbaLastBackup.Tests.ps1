@@ -12,26 +12,26 @@ Describe "Get-DbaLastBackup Unit Tests" -Tag 'UnitTests' {
             $Command = Get-Command Get-DbaLastBackup
         }
         It "Should have SqlInstance parameter" {
-            $Command | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+            $Command | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $Command | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+            $Command | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
         }
         It "Should have Database parameter" {
-            $Command | Should -HaveParameter Database -Type Object[] -Mandatory:$false
+            $Command | Should -HaveParameter Database -Type System.Object[] -Mandatory:$false
         }
         It "Should have ExcludeDatabase parameter" {
-            $Command | Should -HaveParameter ExcludeDatabase -Type Object[] -Mandatory:$false
+            $Command | Should -HaveParameter ExcludeDatabase -Type System.Object[] -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $Command | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $Command | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 }
 
 Describe "Get-DbaLastBackup Integration Tests" -Tag "IntegrationTests" {
     BeforeDiscovery {
-        $SkipAzureTest = [Environment]::GetEnvironmentVariable('azuredbpasswd') -ne "failstooften"
+        $SkipAzureTest = [Environment]::GetEnvironmentVariable('azuredbpasswd') -ne "failstoooften"
     }
 
     BeforeAll {

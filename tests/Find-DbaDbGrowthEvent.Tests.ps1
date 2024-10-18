@@ -12,28 +12,28 @@ Describe "Find-DbaDbGrowthEvent" {
             $CommandUnderTest = Get-Command Find-DbaDbGrowthEvent
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have SqlCredential as a parameter" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type Object[]
+            $CommandUnderTest | Should -HaveParameter Database -Type Microsoft.SqlServer.Management.Smo.Database[]
         }
         It "Should have ExcludeDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Microsoft.SqlServer.Management.Smo.Database[]
         }
         It "Should have EventType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EventType -Type String
+            $CommandUnderTest | Should -HaveParameter EventType -Type System.String
         }
         It "Should have FileType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FileType -Type String
+            $CommandUnderTest | Should -HaveParameter FileType -Type System.String
         }
         It "Should have UseLocalTime as a parameter" {
-            $CommandUnderTest | Should -HaveParameter UseLocalTime -Type Switch
+            $CommandUnderTest | Should -HaveParameter UseLocalTime -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

@@ -11,25 +11,25 @@ Describe "Invoke-DbaDbccFreeCache" {
             $CommandUnderTest = Get-Command Invoke-DbaDbccFreeCache
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Operation as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Operation -Type String
+            $CommandUnderTest | Should -HaveParameter Operation -Type System.String
         }
         It "Should have InputValue as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputValue -Type String
+            $CommandUnderTest | Should -HaveParameter InputValue -Type System.String
         }
         It "Should have NoInformationalMessages as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NoInformationalMessages -Type Switch
+            $CommandUnderTest | Should -HaveParameter NoInformationalMessages -Type System.Management.Automation.SwitchParameter
         }
         It "Should have MarkInUseForRemoval as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MarkInUseForRemoval -Type Switch
+            $CommandUnderTest | Should -HaveParameter MarkInUseForRemoval -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

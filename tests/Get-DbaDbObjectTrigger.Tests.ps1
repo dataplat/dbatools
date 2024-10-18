@@ -18,19 +18,19 @@ Describe "Get-DbaDbObjectTrigger Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type Object[]
+            $CommandUnderTest | Should -HaveParameter Database -Type System.Object[]
         }
         It "Should have ExcludeDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.Object[]
         }
         It "Should have Type as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Type -Type String
+            $CommandUnderTest | Should -HaveParameter Type -Type System.String
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 }

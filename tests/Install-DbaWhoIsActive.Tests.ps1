@@ -91,8 +91,8 @@ ALTER PROC dbo.sp_WhoIsActive
     --If a SQL Agent job is running, an subnode called agent_info will be populated with some or all of
     --the following: job_id, job_name, step_id, step_name, msdb_query_error (in the event of an error)
     --
-    --If @get_task_info is set to 2 and a lock wait is detected, a subnode called block_info will be
-    --populated with some or all of the following: lock_type, database_name, object_id, file_id, hobt_id,
+    --If @get_task_info is set to 2 and a lock wait is detected, a subnode called block_info will
+    --be populated with some or all of the following: lock_type, database_name, object_id, file_id, hobt_id,
     --applock_hash, metadata_resource, metadata_class_id, object_name, schema_name
     @get_additional_info BIT = 0,
 
@@ -184,32 +184,32 @@ ALTER PROC dbo.sp_WhoIsActive
         }
         It "Should have SqlInstance parameter" {
             $ParameterList['SqlInstance'] | Should -Not -BeNullOrEmpty
-            $ParameterList['SqlInstance'].ParameterType.Name | Should -Be 'DbaInstanceParameter[]'
+            $ParameterList['SqlInstance'].ParameterType.FullName | Should -Be 'Dataplat.Dbatools.Parameter.DbaInstanceParameter[]'
             $ParameterList['SqlInstance'].IsMandatory | Should -Be $false
         }
         It "Should have SqlCredential parameter" {
             $ParameterList['SqlCredential'] | Should -Not -BeNullOrEmpty
-            $ParameterList['SqlCredential'].ParameterType.Name | Should -Be 'PSCredential'
+            $ParameterList['SqlCredential'].ParameterType.FullName | Should -Be 'System.Management.Automation.PSCredential'
             $ParameterList['SqlCredential'].IsMandatory | Should -Be $false
         }
         It "Should have LocalFile parameter" {
             $ParameterList['LocalFile'] | Should -Not -BeNullOrEmpty
-            $ParameterList['LocalFile'].ParameterType.Name | Should -Be 'String'
+            $ParameterList['LocalFile'].ParameterType.FullName | Should -Be 'System.String'
             $ParameterList['LocalFile'].IsMandatory | Should -Be $false
         }
         It "Should have Database parameter" {
             $ParameterList['Database'] | Should -Not -BeNullOrEmpty
-            $ParameterList['Database'].ParameterType.Name | Should -Be 'Object'
+            $ParameterList['Database'].ParameterType.FullName | Should -Be 'System.Object'
             $ParameterList['Database'].IsMandatory | Should -Be $false
         }
         It "Should have EnableException parameter" {
             $ParameterList['EnableException'] | Should -Not -BeNullOrEmpty
-            $ParameterList['EnableException'].ParameterType.Name | Should -Be 'Switch'
+            $ParameterList['EnableException'].ParameterType.FullName | Should -Be 'System.Management.Automation.SwitchParameter'
             $ParameterList['EnableException'].IsMandatory | Should -Be $false
         }
         It "Should have Force parameter" {
             $ParameterList['Force'] | Should -Not -BeNullOrEmpty
-            $ParameterList['Force'].ParameterType.Name | Should -Be 'Switch'
+            $ParameterList['Force'].ParameterType.FullName | Should -Be 'System.Management.Automation.SwitchParameter'
             $ParameterList['Force'].IsMandatory | Should -Be $false
         }
     }

@@ -12,43 +12,43 @@ Describe "Invoke-DbaDbShrink Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Invoke-DbaDbShrink
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Database -Type System.Object[] -Mandatory:$false
         }
         It "Should have ExcludeDatabase parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.Object[] -Mandatory:$false
         }
         It "Should have AllUserDatabases parameter" {
-            $CommandUnderTest | Should -HaveParameter AllUserDatabases -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter AllUserDatabases -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have PercentFreeSpace parameter" {
-            $CommandUnderTest | Should -HaveParameter PercentFreeSpace -Type Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter PercentFreeSpace -Type System.Int32 -Mandatory:$false
         }
         It "Should have ShrinkMethod parameter" {
-            $CommandUnderTest | Should -HaveParameter ShrinkMethod -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ShrinkMethod -Type System.String -Mandatory:$false
         }
         It "Should have FileType parameter" {
-            $CommandUnderTest | Should -HaveParameter FileType -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter FileType -Type System.String -Mandatory:$false
         }
         It "Should have StepSize parameter" {
-            $CommandUnderTest | Should -HaveParameter StepSize -Type Int64 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter StepSize -Type System.Int64 -Mandatory:$false
         }
         It "Should have StatementTimeout parameter" {
-            $CommandUnderTest | Should -HaveParameter StatementTimeout -Type Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter StatementTimeout -Type System.Int32 -Mandatory:$false
         }
         It "Should have ExcludeIndexStats parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeIndexStats -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeIndexStats -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have ExcludeUpdateUsage parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeUpdateUsage -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeUpdateUsage -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 }

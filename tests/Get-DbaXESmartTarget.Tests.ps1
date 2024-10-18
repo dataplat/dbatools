@@ -6,7 +6,7 @@ Describe "Get-DbaXESmartTarget" {
             $CommandUnderTest = Get-Command Get-DbaXESmartTarget
         }
         It "Should have EnableException as a Switch that is not mandatory" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 }

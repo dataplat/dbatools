@@ -19,10 +19,10 @@ Describe "Export-DbaXESession" {
             $CommandUnderTest = Get-Command Export-DbaXESession
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have InputObject parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.XEvent.Session[]
@@ -40,22 +40,22 @@ Describe "Export-DbaXESession" {
             $CommandUnderTest | Should -HaveParameter Encoding -Type String
         }
         It "Should have Passthru parameter" {
-            $CommandUnderTest | Should -HaveParameter Passthru -Type Switch
+            $CommandUnderTest | Should -HaveParameter Passthru -Type System.Management.Automation.SwitchParameter
         }
         It "Should have BatchSeparator parameter" {
             $CommandUnderTest | Should -HaveParameter BatchSeparator -Type String
         }
         It "Should have NoPrefix parameter" {
-            $CommandUnderTest | Should -HaveParameter NoPrefix -Type Switch
+            $CommandUnderTest | Should -HaveParameter NoPrefix -Type System.Management.Automation.SwitchParameter
         }
         It "Should have NoClobber parameter" {
-            $CommandUnderTest | Should -HaveParameter NoClobber -Type Switch
+            $CommandUnderTest | Should -HaveParameter NoClobber -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Append parameter" {
-            $CommandUnderTest | Should -HaveParameter Append -Type Switch
+            $CommandUnderTest | Should -HaveParameter Append -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

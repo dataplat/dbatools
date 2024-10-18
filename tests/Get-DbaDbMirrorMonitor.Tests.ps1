@@ -12,25 +12,25 @@ Describe "Get-DbaDbMirrorMonitor" {
             $CommandUnderTest = Get-Command Get-DbaDbMirrorMonitor
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String[] -Mandatory:$false
         }
         It "Should have InputObject parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[] -Mandatory:$false
         }
         It "Should have Update parameter" {
-            $CommandUnderTest | Should -HaveParameter Update -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Update -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have LimitResults parameter" {
-            $CommandUnderTest | Should -HaveParameter LimitResults -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter LimitResults -Type System.String -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 }

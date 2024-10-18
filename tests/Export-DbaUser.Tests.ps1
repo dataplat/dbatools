@@ -6,13 +6,13 @@ Describe "Export-DbaUser Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Export-DbaUser
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have InputObject parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[] -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
         }
         It "Should have Database parameter" {
             $CommandUnderTest | Should -HaveParameter Database -Type String[] -Mandatory:$false
@@ -36,25 +36,25 @@ Describe "Export-DbaUser Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter Encoding -Type String -Mandatory:$false
         }
         It "Should have NoClobber parameter" {
-            $CommandUnderTest | Should -HaveParameter NoClobber -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter NoClobber -Type System.Management.Automation.Switch -Mandatory:$false
         }
         It "Should have Append parameter" {
-            $CommandUnderTest | Should -HaveParameter Append -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Append -Type System.Management.Automation.Switch -Mandatory:$false
         }
         It "Should have Passthru parameter" {
-            $CommandUnderTest | Should -HaveParameter Passthru -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Passthru -Type System.Management.Automation.Switch -Mandatory:$false
         }
         It "Should have Template parameter" {
-            $CommandUnderTest | Should -HaveParameter Template -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Template -Type System.Management.Automation.Switch -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.Switch -Mandatory:$false
         }
         It "Should have ScriptingOptionsObject parameter" {
             $CommandUnderTest | Should -HaveParameter ScriptingOptionsObject -Type Microsoft.SqlServer.Management.Smo.ScriptingOptions -Mandatory:$false
         }
         It "Should have ExcludeGoBatchSeparator parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeGoBatchSeparator -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeGoBatchSeparator -Type System.Management.Automation.Switch -Mandatory:$false
         }
     }
 }

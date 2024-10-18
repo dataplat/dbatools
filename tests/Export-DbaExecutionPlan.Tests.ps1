@@ -12,31 +12,31 @@ Describe "Export-DbaExecutionPlan" {
             $CommandUnderTest = Get-Command Export-DbaExecutionPlan
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type Object[]
+            $CommandUnderTest | Should -HaveParameter Database -Type System.Object[]
         }
         It "Should have ExcludeDatabase parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.Object[]
         }
         It "Should have Path parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type String
+            $CommandUnderTest | Should -HaveParameter Path -Type System.String
         }
         It "Should have SinceCreation parameter" {
-            $CommandUnderTest | Should -HaveParameter SinceCreation -Type DateTime
+            $CommandUnderTest | Should -HaveParameter SinceCreation -Type System.DateTime
         }
         It "Should have SinceLastExecution parameter" {
-            $CommandUnderTest | Should -HaveParameter SinceLastExecution -Type DateTime
+            $CommandUnderTest | Should -HaveParameter SinceLastExecution -Type System.DateTime
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object[]
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 }

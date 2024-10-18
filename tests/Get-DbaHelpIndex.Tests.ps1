@@ -5,7 +5,7 @@ Describe "Get-DbaHelpIndex Unit Tests" -Tag 'UnitTests' {
         $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
         Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
         . "$PSScriptRoot\constants.ps1"
-        Write-Host -Object "${script:instance2}" -ForegroundColor Cyan
+        Write-host -Object "${script:instance2}" -ForegroundColor Cyan
     }
 
     Context "Validate parameters" {
@@ -13,37 +13,37 @@ Describe "Get-DbaHelpIndex Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Get-DbaHelpIndex
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type Object[]
+            $CommandUnderTest | Should -HaveParameter Database -Type System.Object[]
         }
         It "Should have ExcludeDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.Object[]
         }
         It "Should have InputObject as a parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[]
         }
         It "Should have ObjectName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ObjectName -Type String
+            $CommandUnderTest | Should -HaveParameter ObjectName -Type System.String
         }
         It "Should have IncludeStats as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeStats -Type Switch
+            $CommandUnderTest | Should -HaveParameter IncludeStats -Type System.Management.Automation.SwitchParameter
         }
         It "Should have IncludeDataTypes as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeDataTypes -Type Switch
+            $CommandUnderTest | Should -HaveParameter IncludeDataTypes -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Raw as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Raw -Type Switch
+            $CommandUnderTest | Should -HaveParameter Raw -Type System.Management.Automation.SwitchParameter
         }
         It "Should have IncludeFragmentation as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeFragmentation -Type Switch
+            $CommandUnderTest | Should -HaveParameter IncludeFragmentation -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 }

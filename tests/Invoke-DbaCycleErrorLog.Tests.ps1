@@ -13,19 +13,19 @@ Describe "Invoke-DbaCycleErrorLog Unit Tests" -Tag "UnitTests" {
         }
 
         It "Should have SqlInstance parameter" {
-            $command | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+            $command | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
         }
 
         It "Should have SqlCredential parameter" {
-            $command | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+            $command | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
         }
 
         It "Should have Type parameter" {
-            $command | Should -HaveParameter Type -Type String -Mandatory:$false
+            $command | Should -HaveParameter Type -Type System.String -Mandatory:$false
         }
 
         It "Should have EnableException parameter" {
-            $command | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 }

@@ -10,7 +10,7 @@ Describe "Get-XpDirTreeRestoreFile" {
             $CommandUnderTest = Get-Command Get-XpDirTreeRestoreFile
         }
         It "Should have Path as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Path -Type System.String -Mandatory:$false
         }
         It "Should have SqlInstance as a non-mandatory DbaInstanceParameter parameter" {
             $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter -Mandatory:$false
@@ -19,10 +19,10 @@ Describe "Get-XpDirTreeRestoreFile" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have NoRecurse as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter NoRecurse -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter NoRecurse -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

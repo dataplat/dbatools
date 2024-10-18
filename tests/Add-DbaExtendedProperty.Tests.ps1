@@ -6,25 +6,25 @@ Describe "Add-DbaExtendedProperty" {
             $CommandUnderTest = Get-Command Add-DbaExtendedProperty
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String[] -Mandatory:$false
         }
         It "Should have Name as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Name -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Name -Type System.String -Mandatory:$false
         }
         It "Should have Value as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Value -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Value -Type System.String -Mandatory:$false
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type PSObject[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Management.Automation.PSObject[] -Mandatory:$false
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

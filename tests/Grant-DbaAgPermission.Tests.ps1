@@ -12,22 +12,22 @@ Describe "Grant-DbaAgPermission" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have Login as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Login -Type String[]
+            $CommandUnderTest | Should -HaveParameter Login -Type Microsoft.SqlServer.Management.Smo.Login[]
         }
         It "Should have AvailabilityGroup as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AvailabilityGroup -Type String[]
+            $CommandUnderTest | Should -HaveParameter AvailabilityGroup -Type System.String[]
         }
         It "Should have Type as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Type -Type String[]
+            $CommandUnderTest | Should -HaveParameter Type -Type System.String[]
         }
         It "Should have Permission as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Permission -Type String[]
+            $CommandUnderTest | Should -HaveParameter Permission -Type System.String[]
         }
         It "Should have InputObject as a parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Login[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 }

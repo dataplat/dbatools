@@ -12,31 +12,31 @@ Describe "Find-DbaTrigger Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Find-DbaTrigger
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type Microsoft.Management.Automation.PSCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type Object[]
+            $CommandUnderTest | Should -HaveParameter Database -Type System.Object[]
         }
         It "Should have ExcludeDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.Object[]
         }
         It "Should have Pattern as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Pattern -Type String
+            $CommandUnderTest | Should -HaveParameter Pattern -Type System.String
         }
         It "Should have TriggerLevel as a parameter" {
-            $CommandUnderTest | Should -HaveParameter TriggerLevel -Type String
+            $CommandUnderTest | Should -HaveParameter TriggerLevel -Type System.String
         }
         It "Should have IncludeSystemObjects as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeSystemObjects -Type Switch
+            $CommandUnderTest | Should -HaveParameter IncludeSystemObjects -Type System.Management.Automation.SwitchParameter
         }
         It "Should have IncludeSystemDatabases as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeSystemDatabases -Type Switch
+            $CommandUnderTest | Should -HaveParameter IncludeSystemDatabases -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 }

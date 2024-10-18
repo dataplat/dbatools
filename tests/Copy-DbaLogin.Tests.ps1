@@ -60,55 +60,55 @@ Describe "Copy-DbaLogin" {
             $CommandUnderTest = Get-Command Copy-DbaLogin
         }
         It "Should have Source parameter" {
-            $CommandUnderTest | Should -HaveParameter Source -Type DbaInstanceParameter
+            $CommandUnderTest | Should -HaveParameter Source -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter
         }
         It "Should have SourceSqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SourceSqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SourceSqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Destination parameter" {
-            $CommandUnderTest | Should -HaveParameter Destination -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter Destination -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have DestinationSqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Login parameter" {
-            $CommandUnderTest | Should -HaveParameter Login -Type Object[]
+            $CommandUnderTest | Should -HaveParameter Login -Type System.Object[]
         }
         It "Should have ExcludeLogin parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeLogin -Type Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeLogin -Type System.Object[]
         }
         It "Should have ExcludeSystemLogins parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSystemLogins -Type Switch
+            $CommandUnderTest | Should -HaveParameter ExcludeSystemLogins -Type System.Management.Automation.SwitchParameter
         }
         It "Should have SyncSaName parameter" {
-            $CommandUnderTest | Should -HaveParameter SyncSaName -Type Switch
+            $CommandUnderTest | Should -HaveParameter SyncSaName -Type System.Management.Automation.SwitchParameter
         }
         It "Should have OutFile parameter" {
-            $CommandUnderTest | Should -HaveParameter OutFile -Type String
+            $CommandUnderTest | Should -HaveParameter OutFile -Type System.String
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object[]
         }
         It "Should have LoginRenameHashtable parameter" {
-            $CommandUnderTest | Should -HaveParameter LoginRenameHashtable -Type Hashtable
+            $CommandUnderTest | Should -HaveParameter LoginRenameHashtable -Type System.Collections.Hashtable
         }
         It "Should have KillActiveConnection parameter" {
-            $CommandUnderTest | Should -HaveParameter KillActiveConnection -Type Switch
+            $CommandUnderTest | Should -HaveParameter KillActiveConnection -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type Switch
+            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter
         }
         It "Should have ExcludePermissionSync parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludePermissionSync -Type Switch
+            $CommandUnderTest | Should -HaveParameter ExcludePermissionSync -Type System.Management.Automation.SwitchParameter
         }
         It "Should have NewSid parameter" {
-            $CommandUnderTest | Should -HaveParameter NewSid -Type Switch
+            $CommandUnderTest | Should -HaveParameter NewSid -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
         It "Should have ObjectLevel parameter" {
-            $CommandUnderTest | Should -HaveParameter ObjectLevel -Type Switch
+            $CommandUnderTest | Should -HaveParameter ObjectLevel -Type System.Management.Automation.SwitchParameter
         }
     }
 

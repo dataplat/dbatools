@@ -10,17 +10,17 @@ Describe "Get-DbaKbUpdate" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaKbUpdate
         }
-        It "Should have Name as a non-mandatory String[] parameter" {
-            $CommandUnderTest | Should -HaveParameter Name -Type String[] -Mandatory:$false
+        It "Should have Name as a non-mandatory System.String[] parameter" {
+            $CommandUnderTest | Should -HaveParameter Name -Type System.String[] -Mandatory:$false
         }
-        It "Should have Simple as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter Simple -Type Switch -Mandatory:$false
+        It "Should have Simple as a non-mandatory System.Management.Automation.SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter Simple -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
-        It "Should have Language as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Language -Type String -Mandatory:$false
+        It "Should have Language as a non-mandatory System.String parameter" {
+            $CommandUnderTest | Should -HaveParameter Language -Type System.String -Mandatory:$false
         }
-        It "Should have EnableException as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+        It "Should have EnableException as a non-mandatory System.Management.Automation.SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

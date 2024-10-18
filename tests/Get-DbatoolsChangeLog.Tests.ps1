@@ -21,7 +21,7 @@ Describe "Get-DbatoolsChangeLog" {
 
         It "Example integration test" {
             # Add integration test here
-            $true | Should -Be $true
+            $true | Should -Be [System.Boolean]::True
         }
 
         AfterAll {

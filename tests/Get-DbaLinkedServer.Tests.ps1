@@ -11,20 +11,20 @@ Describe "Get-DbaLinkedServer" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaLinkedServer
         }
-        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+        It "Should have SqlInstance as a non-mandatory parameter of type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
         }
-        It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+        It "Should have SqlCredential as a non-mandatory parameter of type System.Management.Automation.PSCredential" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
         }
-        It "Should have LinkedServer as a non-mandatory parameter of type Object[]" {
-            $CommandUnderTest | Should -HaveParameter LinkedServer -Type Object[] -Mandatory:$false
+        It "Should have LinkedServer as a non-mandatory parameter of type System.Object[]" {
+            $CommandUnderTest | Should -HaveParameter LinkedServer -Type System.Object[] -Mandatory:$false
         }
-        It "Should have ExcludeLinkedServer as a non-mandatory parameter of type Object[]" {
-            $CommandUnderTest | Should -HaveParameter ExcludeLinkedServer -Type Object[] -Mandatory:$false
+        It "Should have ExcludeLinkedServer as a non-mandatory parameter of type System.Object[]" {
+            $CommandUnderTest | Should -HaveParameter ExcludeLinkedServer -Type System.Object[] -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

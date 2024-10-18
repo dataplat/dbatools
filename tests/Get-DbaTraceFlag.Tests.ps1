@@ -5,17 +5,17 @@ Describe "Get-DbaTraceFlag" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaTraceFlag
         }
-        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+        It "Should have SqlInstance as a non-mandatory parameter of type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
         }
-        It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+        It "Should have SqlCredential as a non-mandatory parameter of type System.Management.Automation.PSCredential" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
         }
-        It "Should have TraceFlag as a non-mandatory parameter of type Int32[]" {
-            $CommandUnderTest | Should -HaveParameter TraceFlag -Type Int32[] -Mandatory:$false
+        It "Should have TraceFlag as a non-mandatory parameter of type System.Int32[]" {
+            $CommandUnderTest | Should -HaveParameter TraceFlag -Type System.Int32[] -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

@@ -17,19 +17,19 @@ Describe "Add-DbaRegServerGroup" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have Name as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Name -Type String
+            $CommandUnderTest | Should -HaveParameter Name -Type System.String
         }
         It "Should have Description as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Description -Type String
+            $CommandUnderTest | Should -HaveParameter Description -Type System.String
         }
         It "Should have Group as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Group -Type String
+            $CommandUnderTest | Should -HaveParameter Group -Type System.String
         }
         It "Should have InputObject as a parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.RegisteredServers.ServerGroup[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

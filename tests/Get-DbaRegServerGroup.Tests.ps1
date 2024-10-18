@@ -12,16 +12,16 @@ Describe "Get-DbaRegServerGroup" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have Group as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Group -Type Object[]
+            $CommandUnderTest | Should -HaveParameter Group -Type System.Object[]
         }
         It "Should have ExcludeGroup as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeGroup -Type Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeGroup -Type System.Object[]
         }
         It "Should have Id as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Id -Type Int32[]
+            $CommandUnderTest | Should -HaveParameter Id -Type System.Int32[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

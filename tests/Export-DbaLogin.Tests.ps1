@@ -61,67 +61,67 @@ Describe "Export-DbaLogin" {
             $CommandUnderTest = Get-Command Export-DbaLogin
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Connection.ManagementConnectionType[]
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object[]
         }
         It "Should have Login as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Login -Type Object[]
+            $CommandUnderTest | Should -HaveParameter Login -Type System.Object[]
         }
         It "Should have ExcludeLogin as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeLogin -Type Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeLogin -Type System.Object[]
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type Object[]
+            $CommandUnderTest | Should -HaveParameter Database -Type System.Object[]
         }
         It "Should have ExcludeJobs as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeJobs -Type Switch
+            $CommandUnderTest | Should -HaveParameter ExcludeJobs -Type System.Management.Automation.SwitchParameter
         }
         It "Should have ExcludeDatabase as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Switch
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.Management.Automation.SwitchParameter
         }
         It "Should have ExcludePassword as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludePassword -Type Switch
+            $CommandUnderTest | Should -HaveParameter ExcludePassword -Type System.Management.Automation.SwitchParameter
         }
         It "Should have DefaultDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DefaultDatabase -Type String
+            $CommandUnderTest | Should -HaveParameter DefaultDatabase -Type System.String
         }
         It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type String
+            $CommandUnderTest | Should -HaveParameter Path -Type System.String
         }
         It "Should have FilePath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FilePath -Type String
+            $CommandUnderTest | Should -HaveParameter FilePath -Type System.String
         }
         It "Should have Encoding as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Encoding -Type String
+            $CommandUnderTest | Should -HaveParameter Encoding -Type System.String
         }
         It "Should have NoClobber as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoClobber -Type Switch
+            $CommandUnderTest | Should -HaveParameter NoClobber -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Append as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Append -Type Switch
+            $CommandUnderTest | Should -HaveParameter Append -Type System.Management.Automation.SwitchParameter
         }
         It "Should have BatchSeparator as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BatchSeparator -Type String
+            $CommandUnderTest | Should -HaveParameter BatchSeparator -Type System.String
         }
         It "Should have DestinationVersion as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationVersion -Type String
+            $CommandUnderTest | Should -HaveParameter DestinationVersion -Type System.String
         }
         It "Should have NoPrefix as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoPrefix -Type Switch
+            $CommandUnderTest | Should -HaveParameter NoPrefix -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Passthru as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Passthru -Type Switch
+            $CommandUnderTest | Should -HaveParameter Passthru -Type System.Management.Automation.SwitchParameter
         }
         It "Should have ObjectLevel as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ObjectLevel -Type Switch
+            $CommandUnderTest | Should -HaveParameter ObjectLevel -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

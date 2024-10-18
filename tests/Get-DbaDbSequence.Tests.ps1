@@ -18,13 +18,13 @@ Describe "Get-DbaDbSequence Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[]
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String[]
         }
         It "Should have Sequence as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Sequence -Type String[]
+            $CommandUnderTest | Should -HaveParameter Sequence -Type System.String[]
         }
         It "Should have Schema as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Schema -Type String[]
+            $CommandUnderTest | Should -HaveParameter Schema -Type System.String[]
         }
         It "Should have InputObject as a parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[]

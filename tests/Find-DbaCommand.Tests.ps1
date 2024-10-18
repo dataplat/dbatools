@@ -6,25 +6,25 @@ Describe "Find-DbaCommand" {
             $CommandUnderTest = Get-Command Find-DbaCommand
         }
         It "Should have Pattern as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Pattern -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Pattern -Type System.String -Mandatory:$false
         }
         It "Should have Tag as a non-mandatory String[] parameter" {
-            $CommandUnderTest | Should -HaveParameter Tag -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Tag -Type System.String[] -Mandatory:$false
         }
         It "Should have Author as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Author -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Author -Type System.String -Mandatory:$false
         }
         It "Should have MinimumVersion as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter MinimumVersion -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter MinimumVersion -Type System.String -Mandatory:$false
         }
         It "Should have MaximumVersion as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter MaximumVersion -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter MaximumVersion -Type System.String -Mandatory:$false
         }
         It "Should have Rebuild as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter Rebuild -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Rebuild -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

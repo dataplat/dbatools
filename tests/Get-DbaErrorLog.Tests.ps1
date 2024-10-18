@@ -6,28 +6,28 @@ Describe "Get-DbaErrorLog" {
             $CommandUnderTest = Get-Command Get-DbaErrorLog
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have LogNumber as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LogNumber -Type Int32[]
+            $CommandUnderTest | Should -HaveParameter LogNumber -Type System.Int32[]
         }
         It "Should have Source as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Source -Type Object[]
+            $CommandUnderTest | Should -HaveParameter Source -Type System.Object[]
         }
         It "Should have Text as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Text -Type String
+            $CommandUnderTest | Should -HaveParameter Text -Type System.String
         }
         It "Should have After as a parameter" {
-            $CommandUnderTest | Should -HaveParameter After -Type DateTime
+            $CommandUnderTest | Should -HaveParameter After -Type System.DateTime
         }
         It "Should have Before as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Before -Type DateTime
+            $CommandUnderTest | Should -HaveParameter Before -Type System.DateTime
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

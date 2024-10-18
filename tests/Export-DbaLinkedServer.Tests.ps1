@@ -9,31 +9,31 @@ Describe "Export-DbaLinkedServer" {
             $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
         }
         It "Should have LinkedServer as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LinkedServer -Type String[]
+            $CommandUnderTest | Should -HaveParameter LinkedServer -Type System.String[]
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter Credential -Type System.Management.Automation.PSCredential
         }
         It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type String
+            $CommandUnderTest | Should -HaveParameter Path -Type System.String
         }
         It "Should have FilePath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FilePath -Type String
+            $CommandUnderTest | Should -HaveParameter FilePath -Type System.String
         }
         It "Should have ExcludePassword as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludePassword -Type Switch
+            $CommandUnderTest | Should -HaveParameter ExcludePassword -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Append as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Append -Type Switch
+            $CommandUnderTest | Should -HaveParameter Append -Type System.Management.Automation.SwitchParameter
         }
         It "Should have InputObject as a parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.LinkedServer[]
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

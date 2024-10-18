@@ -5,19 +5,19 @@ Describe "Get-DbaXESessionTarget" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaXESessionTarget
         }
-        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+        It "Should have SqlInstance as a non-mandatory parameter of type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
         }
-        It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+        It "Should have SqlCredential as a non-mandatory parameter of type System.Management.Automation.PSCredential" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
         }
-        It "Should have Session as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter Session -Type String[] -Mandatory:$false
+        It "Should have Session as a non-mandatory parameter of type System.String[]" {
+            $CommandUnderTest | Should -HaveParameter Session -Type System.String[] -Mandatory:$false
         }
-        It "Should have Target as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter Target -Type String[] -Mandatory:$false
+        It "Should have Target as a non-mandatory parameter of type System.String[]" {
+            $CommandUnderTest | Should -HaveParameter Target -Type System.String[] -Mandatory:$false
         }
-        It "Should have InputObject as a non-mandatory parameter of type Session[]" {
+        It "Should have InputObject as a non-mandatory parameter of type Microsoft.SqlServer.Management.XEvent.Session[]" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.XEvent.Session[] -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {

@@ -18,13 +18,13 @@ Describe "Get-DbaAgentJobOutputFile" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have Job parameter" {
-            $CommandUnderTest | Should -HaveParameter Job -Type Object[]
+            $CommandUnderTest | Should -HaveParameter Job -Type System.Object[]
         }
         It "Should have ExcludeJob parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeJob -Type Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeJob -Type System.Object[]
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

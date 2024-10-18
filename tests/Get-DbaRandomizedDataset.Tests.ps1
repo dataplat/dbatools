@@ -5,23 +5,23 @@ Describe "Get-DbaRandomizedDataset" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaRandomizedDataset
         }
-        It "Should have Template as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter Template -Type String[] -Mandatory:$false
+        It "Should have Template as a non-mandatory parameter of type System.String[]" {
+            $CommandUnderTest | Should -HaveParameter Template -Type System.String[] -Mandatory:$false
         }
-        It "Should have TemplateFile as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter TemplateFile -Type String[] -Mandatory:$false
+        It "Should have TemplateFile as a non-mandatory parameter of type System.String[]" {
+            $CommandUnderTest | Should -HaveParameter TemplateFile -Type System.String[] -Mandatory:$false
         }
-        It "Should have Rows as a non-mandatory parameter of type Int32" {
-            $CommandUnderTest | Should -HaveParameter Rows -Type Int32 -Mandatory:$false
+        It "Should have Rows as a non-mandatory parameter of type System.Int32" {
+            $CommandUnderTest | Should -HaveParameter Rows -Type System.Int32 -Mandatory:$false
         }
-        It "Should have Locale as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter Locale -Type String -Mandatory:$false
+        It "Should have Locale as a non-mandatory parameter of type System.String" {
+            $CommandUnderTest | Should -HaveParameter Locale -Type System.String -Mandatory:$false
         }
-        It "Should have InputObject as a non-mandatory parameter of type Object[]" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Mandatory:$false
+        It "Should have InputObject as a non-mandatory parameter of type System.Object[]" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object[] -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

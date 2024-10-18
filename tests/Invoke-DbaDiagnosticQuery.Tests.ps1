@@ -39,52 +39,52 @@ Describe "Invoke-DbaDiagnosticQuery" {
             $CommandUnderTest = Get-Command Invoke-DbaDiagnosticQuery
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Connection.ManagementConnectionType[]
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type Object[]
+            $CommandUnderTest | Should -HaveParameter Database -Type Microsoft.SqlServer.Management.Smo.Database[]
         }
         It "Should have ExcludeDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Microsoft.SqlServer.Management.Smo.Database[]
         }
         It "Should have ExcludeQuery as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeQuery -Type Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeQuery -Type Microsoft.SqlServer.Management.Smo.SqlSmoObject[]
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Path as a parameter" {
             $CommandUnderTest | Should -HaveParameter Path -Type System.IO.FileInfo
         }
         It "Should have QueryName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter QueryName -Type String[]
+            $CommandUnderTest | Should -HaveParameter QueryName -Type System.String[]
         }
         It "Should have UseSelectionHelper as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter UseSelectionHelper -Type Switch
+            $CommandUnderTest | Should -HaveParameter UseSelectionHelper -Type System.Management.Automation.SwitchParameter
         }
         It "Should have InstanceOnly as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter InstanceOnly -Type Switch
+            $CommandUnderTest | Should -HaveParameter InstanceOnly -Type System.Management.Automation.SwitchParameter
         }
         It "Should have DatabaseSpecific as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter DatabaseSpecific -Type Switch
+            $CommandUnderTest | Should -HaveParameter DatabaseSpecific -Type System.Management.Automation.SwitchParameter
         }
         It "Should have ExcludeQueryTextColumn as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeQueryTextColumn -Type Switch
+            $CommandUnderTest | Should -HaveParameter ExcludeQueryTextColumn -Type System.Management.Automation.SwitchParameter
         }
         It "Should have ExcludePlanColumn as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludePlanColumn -Type Switch
+            $CommandUnderTest | Should -HaveParameter ExcludePlanColumn -Type System.Management.Automation.SwitchParameter
         }
         It "Should have NoColumnParsing as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoColumnParsing -Type Switch
+            $CommandUnderTest | Should -HaveParameter NoColumnParsing -Type System.Management.Automation.SwitchParameter
         }
         It "Should have OutputPath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter OutputPath -Type String
+            $CommandUnderTest | Should -HaveParameter OutputPath -Type System.String
         }
         It "Should have ExportQueries as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExportQueries -Type Switch
+            $CommandUnderTest | Should -HaveParameter ExportQueries -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

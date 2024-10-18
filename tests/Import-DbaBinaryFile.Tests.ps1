@@ -23,31 +23,31 @@ Describe "Import-DbaBinaryFile" {
             $CommandUnderTest = Get-Command Import-DbaBinaryFile
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Connection.ManagementConnectionType[]
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String
         }
         It "Should have Table as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Table -Type String
+            $CommandUnderTest | Should -HaveParameter Table -Type System.String
         }
         It "Should have Schema as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Schema -Type String
+            $CommandUnderTest | Should -HaveParameter Schema -Type System.String
         }
         It "Should have Statement as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Statement -Type String
+            $CommandUnderTest | Should -HaveParameter Statement -Type System.String
         }
         It "Should have FileNameColumn as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FileNameColumn -Type String
+            $CommandUnderTest | Should -HaveParameter FileNameColumn -Type System.String
         }
         It "Should have BinaryColumn as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BinaryColumn -Type String
+            $CommandUnderTest | Should -HaveParameter BinaryColumn -Type System.String
         }
         It "Should have NoFileNameColumn as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoFileNameColumn -Type Switch
+            $CommandUnderTest | Should -HaveParameter NoFileNameColumn -Type System.Management.Automation.SwitchParameter
         }
         It "Should have InputObject as a parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type [Microsoft.SqlServer.Management.Smo.Table[]]
@@ -59,7 +59,7 @@ Describe "Import-DbaBinaryFile" {
             $CommandUnderTest | Should -HaveParameter Path -Type System.IO.FileInfo[]
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

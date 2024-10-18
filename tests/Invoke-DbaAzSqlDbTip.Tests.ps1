@@ -18,37 +18,37 @@ Describe "Invoke-DbaAzSqlDbTip" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have AzureDomain as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AzureDomain -Type String
+            $CommandUnderTest | Should -HaveParameter AzureDomain -Type System.String
         }
         It "Should have Tenant as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Tenant -Type String
+            $CommandUnderTest | Should -HaveParameter Tenant -Type System.String
         }
         It "Should have LocalFile as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LocalFile -Type String
+            $CommandUnderTest | Should -HaveParameter LocalFile -Type System.String
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[]
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String[]
         }
         It "Should have ExcludeDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type String[]
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.String[]
         }
         It "Should have AllUserDatabases as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter AllUserDatabases -Type Switch
+            $CommandUnderTest | Should -HaveParameter AllUserDatabases -Type System.Management.Automation.SwitchParameter
         }
         It "Should have ReturnAllTips as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ReturnAllTips -Type Switch
+            $CommandUnderTest | Should -HaveParameter ReturnAllTips -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Compat100 as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Compat100 -Type Switch
+            $CommandUnderTest | Should -HaveParameter Compat100 -Type System.Management.Automation.SwitchParameter
         }
         It "Should have StatementTimeout as a parameter" {
-            $CommandUnderTest | Should -HaveParameter StatementTimeout -Type Int32
+            $CommandUnderTest | Should -HaveParameter StatementTimeout -Type System.Int32
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Force as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type Switch
+            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter
         }
     }
 

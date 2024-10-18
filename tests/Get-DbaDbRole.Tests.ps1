@@ -12,25 +12,25 @@ Describe "Get-DbaDbRole" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String[] -Mandatory:$false
         }
         It "Should have ExcludeDatabase parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.String[] -Mandatory:$false
         }
         It "Should have Role parameter" {
-            $CommandUnderTest | Should -HaveParameter Role -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Role -Type System.String[] -Mandatory:$false
         }
         It "Should have ExcludeRole parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeRole -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeRole -Type System.String[] -Mandatory:$false
         }
         It "Should have ExcludeFixedRole parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeFixedRole -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeFixedRole -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have InputObject parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[] -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

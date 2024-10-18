@@ -11,29 +11,29 @@ Describe "Add-DbaRegServer" {
         It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
-        It "Should have ServerName as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter ServerName -Type String -Mandatory:$false
+        It "Should have ServerName as a non-mandatory parameter of type System.String" {
+            $CommandUnderTest | Should -HaveParameter ServerName -Type System.String -Mandatory:$false
         }
-        It "Should have Name as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter Name -Type String -Mandatory:$false
+        It "Should have Name as a non-mandatory parameter of type System.String" {
+            $CommandUnderTest | Should -HaveParameter Name -Type System.String -Mandatory:$false
         }
-        It "Should have Description as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter Description -Type String -Mandatory:$false
+        It "Should have Description as a non-mandatory parameter of type System.String" {
+            $CommandUnderTest | Should -HaveParameter Description -Type System.String -Mandatory:$false
         }
-        It "Should have Group as a non-mandatory parameter of type Object" {
-            $CommandUnderTest | Should -HaveParameter Group -Type Object -Mandatory:$false
+        It "Should have Group as a non-mandatory parameter of type System.Object" {
+            $CommandUnderTest | Should -HaveParameter Group -Type System.Object -Mandatory:$false
         }
-        It "Should have ActiveDirectoryTenant as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter ActiveDirectoryTenant -Type String -Mandatory:$false
+        It "Should have ActiveDirectoryTenant as a non-mandatory parameter of type System.String" {
+            $CommandUnderTest | Should -HaveParameter ActiveDirectoryTenant -Type System.String -Mandatory:$false
         }
-        It "Should have ActiveDirectoryUserId as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter ActiveDirectoryUserId -Type String -Mandatory:$false
+        It "Should have ActiveDirectoryUserId as a non-mandatory parameter of type System.String" {
+            $CommandUnderTest | Should -HaveParameter ActiveDirectoryUserId -Type System.String -Mandatory:$false
         }
-        It "Should have ConnectionString as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter ConnectionString -Type String -Mandatory:$false
+        It "Should have ConnectionString as a non-mandatory parameter of type System.String" {
+            $CommandUnderTest | Should -HaveParameter ConnectionString -Type System.String -Mandatory:$false
         }
-        It "Should have OtherParams as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter OtherParams -Type String -Mandatory:$false
+        It "Should have OtherParams as a non-mandatory parameter of type System.String" {
+            $CommandUnderTest | Should -HaveParameter OtherParams -Type System.String -Mandatory:$false
         }
         It "Should have InputObject as a non-mandatory parameter of type Microsoft.SqlServer.Management.RegisteredServers.ServerGroup[]" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.RegisteredServers.ServerGroup[] -Mandatory:$false
@@ -42,7 +42,7 @@ Describe "Add-DbaRegServer" {
             $CommandUnderTest | Should -HaveParameter ServerObject -Type Microsoft.SqlServer.Management.Smo.Server[] -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

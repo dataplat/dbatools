@@ -63,7 +63,7 @@ foreach ($command in $commands) {
         }
 
         $testhelpall += 1
-        if ([String]::IsNullOrEmpty($Help.Description.Text)) {
+        if ([System.String]::IsNullOrEmpty($Help.Description.Text)) {
             # Should be a description for every function
             It "gets description for $commandName" {
                 $Help.Description | Should Not BeNullOrEmpty
@@ -72,7 +72,7 @@ foreach ($command in $commands) {
         }
 
         $testhelpall += 1
-        if ([String]::IsNullOrEmpty(($Help.Examples.Example | Select-Object -First 1).Code)) {
+        if ([System.String]::IsNullOrEmpty(($Help.Examples.Example | Select-Object -First 1).Code)) {
             # Should be at least one example
             It "gets example code from $commandName" {
                 ($Help.Examples.Example | Select-Object -First 1).Code | Should Not BeNullOrEmpty
@@ -81,7 +81,7 @@ foreach ($command in $commands) {
         }
 
         $testhelpall += 1
-        if ([String]::IsNullOrEmpty(($Help.Examples.Example.Remarks | Select-Object -First 1).Text)) {
+        if ([System.String]::IsNullOrEmpty(($Help.Examples.Example.Remarks | Select-Object -First 1).Text)) {
             # Should be at least one example description
             It "gets example help from $commandName" {
                 ($Help.Examples.Example.Remarks | Select-Object -First 1).Text | Should Not BeNullOrEmpty
@@ -128,7 +128,7 @@ foreach ($command in $commands) {
                 $parameterHelp = $Help.parameters.parameter | Where-Object Name -EQ $parameterName
 
                 $testparamsall += 1
-                if ([String]::IsNullOrEmpty($parameterHelp.Description.Text)) {
+                if ([System.String]::IsNullOrEmpty($parameterHelp.Description.Text)) {
                     # Should be a description for every parameter
                     It "gets help for parameter: $parameterName : in $commandName" {
                         $parameterHelp.Description.Text | Should Not BeNullOrEmpty

@@ -12,37 +12,37 @@ Describe "Copy-DbaAgentJob" {
             $CommandUnderTest = Get-Command Copy-DbaAgentJob
         }
         It "Should have Source as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Source -Type DbaInstanceParameter
+            $CommandUnderTest | Should -HaveParameter Source -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter
         }
         It "Should have SourceSqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SourceSqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SourceSqlCredential -Type Microsoft.SqlServer.Management.Smo.PSCredential
         }
         It "Should have Destination as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Destination -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter Destination -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have DestinationSqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type Microsoft.SqlServer.Management.Smo.PSCredential
         }
         It "Should have Job as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Job -Type Object[]
+            $CommandUnderTest | Should -HaveParameter Job -Type System.Object[]
         }
         It "Should have ExcludeJob as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeJob -Type Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeJob -Type System.Object[]
         }
         It "Should have DisableOnSource as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter DisableOnSource -Type Switch
+            $CommandUnderTest | Should -HaveParameter DisableOnSource -Type System.Management.Automation.SwitchParameter
         }
         It "Should have DisableOnDestination as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter DisableOnDestination -Type Switch
+            $CommandUnderTest | Should -HaveParameter DisableOnDestination -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Force as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type Switch
+            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter
         }
         It "Should have InputObject as a parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Agent.Job[]
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

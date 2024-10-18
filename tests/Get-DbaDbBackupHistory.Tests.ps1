@@ -27,7 +27,7 @@ Describe "Get-DbaDbBackupHistory Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter Since -Type PSObject -Mandatory:$false
         }
         It "Should have RecoveryFork as a parameter" {
-            $CommandUnderTest | Should -HaveParameter RecoveryFork -Type string -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter RecoveryFork -Type System.String -Mandatory:$false
         }
         It "Should have Last as a switch parameter" {
             $CommandUnderTest | Should -HaveParameter Last -Type switch -Mandatory:$false
@@ -42,19 +42,19 @@ Describe "Get-DbaDbBackupHistory Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter LastLog -Type switch -Mandatory:$false
         }
         It "Should have DeviceType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DeviceType -Type string[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter DeviceType -Type System.String[] -Mandatory:$false
         }
         It "Should have Raw as a switch parameter" {
             $CommandUnderTest | Should -HaveParameter Raw -Type switch -Mandatory:$false
         }
         It "Should have LastLsn as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LastLsn -Type BigInt -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter LastLsn -Type System.Int64 -Mandatory:$false
         }
         It "Should have IncludeMirror as a switch parameter" {
             $CommandUnderTest | Should -HaveParameter IncludeMirror -Type switch -Mandatory:$false
         }
         It "Should have Type as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Type -Type string[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Type -Type System.String[] -Mandatory:$false
         }
         It "Should have AgCheck as a switch parameter" {
             $CommandUnderTest | Should -HaveParameter AgCheck -Type switch -Mandatory:$false
@@ -63,7 +63,7 @@ Describe "Get-DbaDbBackupHistory Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter IgnoreDiffBackup -Type switch -Mandatory:$false
         }
         It "Should have LsnSort as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LsnSort -Type string -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter LsnSort -Type System.String -Mandatory:$false
         }
         It "Should have EnableException as a switch parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type switch -Mandatory:$false
@@ -199,7 +199,6 @@ Describe "Get-DbaDbBackupHistory Integration Tests" -Tag "IntegrationTests" {
             $null = Backup-DbaDatabase -SqlInstance $server -Database $dbname -Type Full -BackupDirectory $DestBackupDir
             1 .. 1000 | ForEach-Object -Process { $database.ExecuteNonQuery("INSERT INTO dbo.test DEFAULT VALUES") }
             $null = Backup-DbaDatabase -SqlInstance $server -Database $dbname -Type Full -BackupDirectory $DestBackupDir
-            1 .. 1000 | ForEach-Object -Process { $database.ExecuteNonQuery("INSERT INTO dbo.test DEFAULT VALUES") }
             $null = Backup-DbaDatabase -SqlInstance $server -Database $dbname -Type Full -BackupDirectory $DestBackupDir
 
             $interResults = Get-DbaDbBackupHistory -SqlInstance $server -Database $dbname | Sort-Object -Property End

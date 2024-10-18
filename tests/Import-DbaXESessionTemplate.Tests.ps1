@@ -18,25 +18,25 @@ Describe "Import-DbaXESessionTemplate" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have Name as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Name -Type String
+            $CommandUnderTest | Should -HaveParameter Name -Type System.String
         }
         It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type String[]
+            $CommandUnderTest | Should -HaveParameter Path -Type System.String[]
         }
         It "Should have Template as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Template -Type String[]
+            $CommandUnderTest | Should -HaveParameter Template -Type System.String[]
         }
         It "Should have TargetFilePath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter TargetFilePath -Type String
+            $CommandUnderTest | Should -HaveParameter TargetFilePath -Type System.String
         }
         It "Should have TargetFileMetadataPath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter TargetFileMetadataPath -Type String
+            $CommandUnderTest | Should -HaveParameter TargetFileMetadataPath -Type System.String
         }
         It "Should have StartUpState as a parameter" {
-            $CommandUnderTest | Should -HaveParameter StartUpState -Type String
+            $CommandUnderTest | Should -HaveParameter StartUpState -Type System.String
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

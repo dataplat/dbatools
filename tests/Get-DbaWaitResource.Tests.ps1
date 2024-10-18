@@ -6,19 +6,19 @@ Describe "Get-DbaWaitResource" {
             $CommandUnderTest = Get-Command Get-DbaWaitResource
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have WaitResource parameter" {
-            $CommandUnderTest | Should -HaveParameter WaitResource -Type String
+            $CommandUnderTest | Should -HaveParameter WaitResource -Type System.String
         }
         It "Should have Row parameter" {
-            $CommandUnderTest | Should -HaveParameter Row -Type Switch
+            $CommandUnderTest | Should -HaveParameter Row -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 }

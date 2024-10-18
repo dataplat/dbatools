@@ -35,19 +35,19 @@ Describe "Get-DbaTrace" {
             $CommandUnderTest = Get-Command Get-DbaTrace
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Id as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Id -Type Int32[]
+            $CommandUnderTest | Should -HaveParameter Id -Type System.Int32[]
         }
         It "Should have Default as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Default -Type Switch
+            $CommandUnderTest | Should -HaveParameter Default -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

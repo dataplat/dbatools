@@ -18,22 +18,22 @@ Describe "Get-DbaDbUser Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type Object[]
+            $CommandUnderTest | Should -HaveParameter Database -Type System.Object[]
         }
         It "Should have ExcludeDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.Object[]
         }
         It "Should have ExcludeSystemUser as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSystemUser -Type Switch
+            $CommandUnderTest | Should -HaveParameter ExcludeSystemUser -Type System.Management.Automation.SwitchParameter
         }
         It "Should have User as a parameter" {
-            $CommandUnderTest | Should -HaveParameter User -Type String[]
+            $CommandUnderTest | Should -HaveParameter User -Type System.String[]
         }
         It "Should have Login as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Login -Type String[]
+            $CommandUnderTest | Should -HaveParameter Login -Type System.String[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 }

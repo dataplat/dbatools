@@ -38,61 +38,61 @@ Describe "Invoke-DbaDbDataMasking" {
             $CommandUnderTest = Get-Command Invoke-DbaDbDataMasking
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Connection.ManagementConnectionType[]
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[]
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String[]
         }
         It "Should have FilePath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FilePath -Type Object
+            $CommandUnderTest | Should -HaveParameter FilePath -Type System.Object
         }
         It "Should have Locale as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Locale -Type String
+            $CommandUnderTest | Should -HaveParameter Locale -Type System.String
         }
         It "Should have CharacterString as a parameter" {
-            $CommandUnderTest | Should -HaveParameter CharacterString -Type String
+            $CommandUnderTest | Should -HaveParameter CharacterString -Type System.String
         }
         It "Should have Table as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Table -Type String[]
+            $CommandUnderTest | Should -HaveParameter Table -Type System.String[]
         }
         It "Should have Column as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Column -Type String[]
+            $CommandUnderTest | Should -HaveParameter Column -Type System.String[]
         }
         It "Should have ExcludeTable as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeTable -Type String[]
+            $CommandUnderTest | Should -HaveParameter ExcludeTable -Type System.String[]
         }
         It "Should have ExcludeColumn as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeColumn -Type String[]
+            $CommandUnderTest | Should -HaveParameter ExcludeColumn -Type System.String[]
         }
         It "Should have MaxValue as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MaxValue -Type Int32
+            $CommandUnderTest | Should -HaveParameter MaxValue -Type System.Int32
         }
         It "Should have ModulusFactor as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ModulusFactor -Type Int32
+            $CommandUnderTest | Should -HaveParameter ModulusFactor -Type System.Int32
         }
         It "Should have ExactLength as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExactLength -Type Switch
+            $CommandUnderTest | Should -HaveParameter ExactLength -Type System.Management.Automation.Switch
         }
         It "Should have CommandTimeout as a parameter" {
-            $CommandUnderTest | Should -HaveParameter CommandTimeout -Type Int32
+            $CommandUnderTest | Should -HaveParameter CommandTimeout -Type System.Int32
         }
         It "Should have BatchSize as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BatchSize -Type Int32
+            $CommandUnderTest | Should -HaveParameter BatchSize -Type System.Int32
         }
         It "Should have Retry as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Retry -Type Int32
+            $CommandUnderTest | Should -HaveParameter Retry -Type System.Int32
         }
         It "Should have DictionaryFilePath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DictionaryFilePath -Type String[]
+            $CommandUnderTest | Should -HaveParameter DictionaryFilePath -Type System.String[]
         }
         It "Should have DictionaryExportPath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DictionaryExportPath -Type String
+            $CommandUnderTest | Should -HaveParameter DictionaryExportPath -Type System.String
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.Switch
         }
     }
 

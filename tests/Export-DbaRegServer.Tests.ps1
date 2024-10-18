@@ -15,28 +15,28 @@ Describe "Export-DbaRegServer" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object[]
         }
         It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type String
+            $CommandUnderTest | Should -HaveParameter Path -Type System.String
         }
         It "Should have FilePath as a parameter" {
             $CommandUnderTest | Should -HaveParameter FilePath -Type System.IO.FileInfo
         }
         It "Should have CredentialPersistenceType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter CredentialPersistenceType -Type String
+            $CommandUnderTest | Should -HaveParameter CredentialPersistenceType -Type System.String
         }
         It "Should have Group as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Group -Type Object[]
+            $CommandUnderTest | Should -HaveParameter Group -Type System.Object[]
         }
         It "Should have ExcludeGroup as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeGroup -Type Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeGroup -Type System.Object[]
         }
         It "Should have Overwrite as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Overwrite -Type Switch
+            $CommandUnderTest | Should -HaveParameter Overwrite -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

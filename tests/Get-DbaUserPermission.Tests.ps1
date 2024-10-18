@@ -12,31 +12,31 @@ Describe "Get-DbaUserPermission Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Get-DbaUserPermission
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Connection.ManagementConnectionType[]
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type Object[]
+            $CommandUnderTest | Should -HaveParameter Database -Type Microsoft.SqlServer.Management.Smo.Database[]
         }
         It "Should have ExcludeDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Microsoft.SqlServer.Management.Smo.Database[]
         }
         It "Should have ExcludeSystemDatabase as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSystemDatabase -Type Switch
+            $CommandUnderTest | Should -HaveParameter ExcludeSystemDatabase -Type System.Management.Automation.SwitchParameter
         }
         It "Should have IncludePublicGuest as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludePublicGuest -Type Switch
+            $CommandUnderTest | Should -HaveParameter IncludePublicGuest -Type System.Management.Automation.SwitchParameter
         }
         It "Should have IncludeSystemObjects as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeSystemObjects -Type Switch
+            $CommandUnderTest | Should -HaveParameter IncludeSystemObjects -Type System.Management.Automation.SwitchParameter
         }
         It "Should have ExcludeSecurables as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSecurables -Type Switch
+            $CommandUnderTest | Should -HaveParameter ExcludeSecurables -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 }

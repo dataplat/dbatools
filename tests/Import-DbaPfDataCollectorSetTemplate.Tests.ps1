@@ -6,64 +6,64 @@ Describe "Import-DbaPfDataCollectorSetTemplate" {
             $CommandUnderTest = Get-Command Import-DbaPfDataCollectorSetTemplate
         }
         It "Should have ComputerName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter Credential -Type System.Management.Automation.PSCredential
         }
         It "Should have DisplayName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DisplayName -Type String
+            $CommandUnderTest | Should -HaveParameter DisplayName -Type System.String
         }
         It "Should have SchedulesEnabled as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter SchedulesEnabled -Type Switch
+            $CommandUnderTest | Should -HaveParameter SchedulesEnabled -Type System.Management.Automation.SwitchParameter
         }
         It "Should have RootPath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter RootPath -Type String
+            $CommandUnderTest | Should -HaveParameter RootPath -Type System.String
         }
         It "Should have Segment as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Segment -Type Switch
+            $CommandUnderTest | Should -HaveParameter Segment -Type System.Management.Automation.SwitchParameter
         }
         It "Should have SegmentMaxDuration as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SegmentMaxDuration -Type Int32
+            $CommandUnderTest | Should -HaveParameter SegmentMaxDuration -Type System.Int32
         }
         It "Should have SegmentMaxSize as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SegmentMaxSize -Type Int32
+            $CommandUnderTest | Should -HaveParameter SegmentMaxSize -Type System.Int32
         }
         It "Should have Subdirectory as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Subdirectory -Type String
+            $CommandUnderTest | Should -HaveParameter Subdirectory -Type System.String
         }
         It "Should have SubdirectoryFormat as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SubdirectoryFormat -Type Int32
+            $CommandUnderTest | Should -HaveParameter SubdirectoryFormat -Type System.Int32
         }
         It "Should have SubdirectoryFormatPattern as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SubdirectoryFormatPattern -Type String
+            $CommandUnderTest | Should -HaveParameter SubdirectoryFormatPattern -Type System.String
         }
         It "Should have Task as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Task -Type String
+            $CommandUnderTest | Should -HaveParameter Task -Type System.String
         }
         It "Should have TaskRunAsSelf as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter TaskRunAsSelf -Type Switch
+            $CommandUnderTest | Should -HaveParameter TaskRunAsSelf -Type System.Management.Automation.SwitchParameter
         }
         It "Should have TaskArguments as a parameter" {
-            $CommandUnderTest | Should -HaveParameter TaskArguments -Type String
+            $CommandUnderTest | Should -HaveParameter TaskArguments -Type System.String
         }
         It "Should have TaskUserTextArguments as a parameter" {
-            $CommandUnderTest | Should -HaveParameter TaskUserTextArguments -Type String
+            $CommandUnderTest | Should -HaveParameter TaskUserTextArguments -Type System.String
         }
         It "Should have StopOnCompletion as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter StopOnCompletion -Type Switch
+            $CommandUnderTest | Should -HaveParameter StopOnCompletion -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type String[]
+            $CommandUnderTest | Should -HaveParameter Path -Type System.String[]
         }
         It "Should have Template as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Template -Type String[]
+            $CommandUnderTest | Should -HaveParameter Template -Type System.String[]
         }
         It "Should have Instance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Instance -Type String[]
+            $CommandUnderTest | Should -HaveParameter Instance -Type System.String[]
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

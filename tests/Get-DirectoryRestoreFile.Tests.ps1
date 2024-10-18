@@ -10,14 +10,14 @@ Describe "Get-DirectoryRestoreFile" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DirectoryRestoreFile
         }
-        It "Should have Path as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type String -Mandatory:$false
+        It "Should have Path as a non-mandatory System.String parameter" {
+            $CommandUnderTest | Should -HaveParameter Path -Type System.String -Mandatory:$false
         }
-        It "Should have Recurse as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter Recurse -Type Switch -Mandatory:$false
+        It "Should have Recurse as a non-mandatory System.Management.Automation.Switch parameter" {
+            $CommandUnderTest | Should -HaveParameter Recurse -Type System.Management.Automation.Switch -Mandatory:$false
         }
-        It "Should have EnableException as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+        It "Should have EnableException as a non-mandatory System.Management.Automation.Switch parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.Switch -Mandatory:$false
         }
     }
 
@@ -38,7 +38,7 @@ Describe "Get-DirectoryRestoreFile" {
             $results = Get-DirectoryRestoreFile -Path TestDrive:\backups
         }
 
-        It "Should Return an array of FileInfo" {
+        It "Should Return an array of System.IO.FileSystemInfo" {
             $results | Should -BeOfType System.IO.FileSystemInfo
         }
         It "Should Return 3 files" {
@@ -66,7 +66,7 @@ Describe "Get-DirectoryRestoreFile" {
             $results2 = Get-DirectoryRestoreFile -Path TestDrive:\backups -Recurse
         }
 
-        It "Should Return an array of FileInfo" {
+        It "Should Return an array of System.IO.FileSystemInfo" {
             $results2 | Should -BeOfType System.IO.FileSystemInfo
         }
         It "Should Return 4 files" {

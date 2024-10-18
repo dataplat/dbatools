@@ -11,28 +11,28 @@ Describe "Get-DbaMemoryUsage" {
             $CommandUnderTest = Get-Command Get-DbaMemoryUsage
         }
         It "Should have ComputerName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter Credential -Type Microsoft.Management.Automation.PSCredential
         }
         It "Should have MemoryCounterRegex as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MemoryCounterRegex -Type String
+            $CommandUnderTest | Should -HaveParameter MemoryCounterRegex -Type System.String
         }
         It "Should have PlanCounterRegex as a parameter" {
-            $CommandUnderTest | Should -HaveParameter PlanCounterRegex -Type String
+            $CommandUnderTest | Should -HaveParameter PlanCounterRegex -Type System.String
         }
         It "Should have BufferCounterRegex as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BufferCounterRegex -Type String
+            $CommandUnderTest | Should -HaveParameter BufferCounterRegex -Type System.String
         }
         It "Should have SSASCounterRegex as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SSASCounterRegex -Type String
+            $CommandUnderTest | Should -HaveParameter SSASCounterRegex -Type System.String
         }
         It "Should have SSISCounterRegex as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SSISCounterRegex -Type String
+            $CommandUnderTest | Should -HaveParameter SSISCounterRegex -Type System.String
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

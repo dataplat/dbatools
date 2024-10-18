@@ -5,14 +5,14 @@ Describe "Get-DbaCmConnection" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaCmConnection
         }
-        It "Should have ComputerName as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter ComputerName -Type String[] -Mandatory:$false
+        It "Should have ComputerName as a non-mandatory parameter of type System.String[]" {
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type System.String[] -Mandatory:$false
         }
-        It "Should have UserName as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter UserName -Type String -Mandatory:$false
+        It "Should have UserName as a non-mandatory parameter of type System.String" {
+            $CommandUnderTest | Should -HaveParameter UserName -Type System.String -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

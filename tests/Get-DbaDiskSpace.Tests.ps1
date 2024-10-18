@@ -6,28 +6,28 @@ Describe "Get-DbaDiskSpace" {
             $CommandUnderTest = Get-Command Get-DbaDiskSpace
         }
         It "Should have ComputerName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter Credential -Type Microsoft.SqlServer.Management.Smo.PSCredential
         }
         It "Should have Unit as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Unit -Type String
+            $CommandUnderTest | Should -HaveParameter Unit -Type System.String
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type Microsoft.SqlServer.Management.Smo.PSCredential
         }
         It "Should have ExcludeDrive as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDrive -Type String[]
+            $CommandUnderTest | Should -HaveParameter ExcludeDrive -Type System.String[]
         }
         It "Should have CheckFragmentation as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter CheckFragmentation -Type Switch
+            $CommandUnderTest | Should -HaveParameter CheckFragmentation -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Force as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type Switch
+            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

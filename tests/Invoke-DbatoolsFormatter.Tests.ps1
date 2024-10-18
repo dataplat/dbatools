@@ -44,10 +44,10 @@ function Get-DbaStub {
             $CommandUnderTest = Get-Command Invoke-DbatoolsFormatter
         }
         It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Path -Type System.Object[] -Mandatory:$false
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

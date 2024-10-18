@@ -42,37 +42,37 @@ Describe "Copy-DbaCredential" {
             $CommandUnderTest = Get-Command Copy-DbaCredential
         }
         It "Should have Source parameter" {
-            $CommandUnderTest | Should -HaveParameter Source -Type DbaInstanceParameter
+            $CommandUnderTest | Should -HaveParameter Source -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter
         }
         It "Should have SourceSqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SourceSqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SourceSqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Credential parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter Credential -Type System.Management.Automation.PSCredential
         }
         It "Should have Destination parameter" {
-            $CommandUnderTest | Should -HaveParameter Destination -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter Destination -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have DestinationSqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Name parameter" {
-            $CommandUnderTest | Should -HaveParameter Name -Type String[]
+            $CommandUnderTest | Should -HaveParameter Name -Type System.String[]
         }
         It "Should have ExcludeName parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeName -Type String[]
+            $CommandUnderTest | Should -HaveParameter ExcludeName -Type System.String[]
         }
         It "Should have Identity parameter" {
-            $CommandUnderTest | Should -HaveParameter Identity -Type String[]
+            $CommandUnderTest | Should -HaveParameter Identity -Type System.String[]
         }
         It "Should have ExcludeIdentity parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeIdentity -Type String[]
+            $CommandUnderTest | Should -HaveParameter ExcludeIdentity -Type System.String[]
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type Switch
+            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

@@ -6,25 +6,25 @@ Describe "Invoke-DbaDbDbccCleanTable" {
             $CommandUnderTest = Get-Command Invoke-DbaDbDbccCleanTable
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Microsoft.SqlServer.Management.Smo.DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String[] -Mandatory:$false
         }
         It "Should have Object parameter" {
-            $CommandUnderTest | Should -HaveParameter Object -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Object -Type System.String[] -Mandatory:$false
         }
         It "Should have BatchSize parameter" {
-            $CommandUnderTest | Should -HaveParameter BatchSize -Type Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter BatchSize -Type System.Int32 -Mandatory:$false
         }
         It "Should have NoInformationalMessages parameter" {
-            $CommandUnderTest | Should -HaveParameter NoInformationalMessages -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter NoInformationalMessages -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

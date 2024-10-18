@@ -11,52 +11,52 @@ Describe "Install-DbaAgentAdminAlert" {
             $CommandUnderTest = Get-Command Install-DbaAgentAdminAlert
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Microsoft.SqlServer.Management.Smo.DbaInstanceParameter[]
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Category as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Category -Type String
+            $CommandUnderTest | Should -HaveParameter Category -Type System.String
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String
         }
         It "Should have Operator as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Operator -Type String
+            $CommandUnderTest | Should -HaveParameter Operator -Type System.String
         }
         It "Should have OperatorEmail as a parameter" {
-            $CommandUnderTest | Should -HaveParameter OperatorEmail -Type String
+            $CommandUnderTest | Should -HaveParameter OperatorEmail -Type System.String
         }
         It "Should have DelayBetweenResponses as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DelayBetweenResponses -Type Int32
+            $CommandUnderTest | Should -HaveParameter DelayBetweenResponses -Type System.Int32
         }
         It "Should have Disabled as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Disabled -Type Switch
+            $CommandUnderTest | Should -HaveParameter Disabled -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EventDescriptionKeyword as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EventDescriptionKeyword -Type String
+            $CommandUnderTest | Should -HaveParameter EventDescriptionKeyword -Type System.String
         }
         It "Should have EventSource as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EventSource -Type String
+            $CommandUnderTest | Should -HaveParameter EventSource -Type System.String
         }
         It "Should have JobId as a parameter" {
-            $CommandUnderTest | Should -HaveParameter JobId -Type String
+            $CommandUnderTest | Should -HaveParameter JobId -Type System.String
         }
         It "Should have ExcludeSeverity as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSeverity -Type Int32[]
+            $CommandUnderTest | Should -HaveParameter ExcludeSeverity -Type System.Int32[]
         }
         It "Should have ExcludeMessageId as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeMessageId -Type Int32[]
+            $CommandUnderTest | Should -HaveParameter ExcludeMessageId -Type System.Int32[]
         }
         It "Should have NotificationMessage as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NotificationMessage -Type String
+            $CommandUnderTest | Should -HaveParameter NotificationMessage -Type System.String
         }
         It "Should have NotifyMethod as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NotifyMethod -Type String
+            $CommandUnderTest | Should -HaveParameter NotifyMethod -Type System.String
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

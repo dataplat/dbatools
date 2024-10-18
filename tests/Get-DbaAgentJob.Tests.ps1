@@ -18,31 +18,31 @@ Describe "Get-DbaAgentJob Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Job parameter" {
-            $CommandUnderTest | Should -HaveParameter Job -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Job -Type System.String[] -Mandatory:$false
         }
         It "Should have ExcludeJob parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeJob -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeJob -Type System.String[] -Mandatory:$false
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String[] -Mandatory:$false
         }
         It "Should have Category parameter" {
-            $CommandUnderTest | Should -HaveParameter Category -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Category -Type System.String[] -Mandatory:$false
         }
         It "Should have ExcludeCategory parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeCategory -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeCategory -Type System.String[] -Mandatory:$false
         }
         It "Should have ExcludeDisabledJobs parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDisabledJobs -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeDisabledJobs -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have IncludeExecution parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeExecution -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter IncludeExecution -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have Type parameter" {
-            $CommandUnderTest | Should -HaveParameter Type -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Type -Type System.String[] -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 }

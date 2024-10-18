@@ -11,41 +11,41 @@ Describe "Add-DbaAgListener" {
         BeforeAll {
             $CommandUnderTest = Get-Command Add-DbaAgListener
         }
-        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+        It "Should have SqlInstance as a non-mandatory parameter of type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
         }
-        It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+        It "Should have SqlCredential as a non-mandatory parameter of type System.Management.Automation.PSCredential" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
         }
-        It "Should have AvailabilityGroup as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter AvailabilityGroup -Type String[] -Mandatory:$false
+        It "Should have AvailabilityGroup as a non-mandatory parameter of type System.String[]" {
+            $CommandUnderTest | Should -HaveParameter AvailabilityGroup -Type System.String[] -Mandatory:$false
         }
-        It "Should have Name as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter Name -Type String -Mandatory:$false
+        It "Should have Name as a non-mandatory parameter of type System.String" {
+            $CommandUnderTest | Should -HaveParameter Name -Type System.String -Mandatory:$false
         }
-        It "Should have IPAddress as a non-mandatory parameter of type IPAddress[]" {
-            $CommandUnderTest | Should -HaveParameter IPAddress -Type IPAddress[] -Mandatory:$false
+        It "Should have IPAddress as a non-mandatory parameter of type System.Net.IPAddress[]" {
+            $CommandUnderTest | Should -HaveParameter IPAddress -Type System.Net.IPAddress[] -Mandatory:$false
         }
-        It "Should have SubnetIP as a non-mandatory parameter of type IPAddress[]" {
-            $CommandUnderTest | Should -HaveParameter SubnetIP -Type IPAddress[] -Mandatory:$false
+        It "Should have SubnetIP as a non-mandatory parameter of type System.Net.IPAddress[]" {
+            $CommandUnderTest | Should -HaveParameter SubnetIP -Type System.Net.IPAddress[] -Mandatory:$false
         }
-        It "Should have SubnetMask as a non-mandatory parameter of type IPAddress[]" {
-            $CommandUnderTest | Should -HaveParameter SubnetMask -Type IPAddress[] -Mandatory:$false
+        It "Should have SubnetMask as a non-mandatory parameter of type System.Net.IPAddress[]" {
+            $CommandUnderTest | Should -HaveParameter SubnetMask -Type System.Net.IPAddress[] -Mandatory:$false
         }
-        It "Should have Port as a non-mandatory parameter of type Int32" {
-            $CommandUnderTest | Should -HaveParameter Port -Type Int32 -Mandatory:$false
+        It "Should have Port as a non-mandatory parameter of type System.Int32" {
+            $CommandUnderTest | Should -HaveParameter Port -Type System.Int32 -Mandatory:$false
         }
         It "Should have Dhcp as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Dhcp -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Dhcp -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have Passthru as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Passthru -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Passthru -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
-        It "Should have InputObject as a non-mandatory parameter of type AvailabilityGroup[]" {
+        It "Should have InputObject as a non-mandatory parameter of type Microsoft.SqlServer.Management.Smo.AvailabilityGroup[]" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.AvailabilityGroup[] -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

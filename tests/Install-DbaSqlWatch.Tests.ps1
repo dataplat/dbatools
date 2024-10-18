@@ -6,25 +6,25 @@ Describe "Install-DbaSqlWatch" {
             $CommandUnderTest = Get-Command Install-DbaSqlWatch
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String
         }
         It "Should have LocalFile as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LocalFile -Type String
+            $CommandUnderTest | Should -HaveParameter LocalFile -Type System.String
         }
         It "Should have PreRelease as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter PreRelease -Type Switch
+            $CommandUnderTest | Should -HaveParameter PreRelease -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Force as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type Switch
+            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

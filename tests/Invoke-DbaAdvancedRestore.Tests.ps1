@@ -12,70 +12,70 @@ Describe "Invoke-DbaAdvancedRestore" {
             $CommandUnderTest = Get-Command Invoke-DbaAdvancedRestore
         }
         It "Should have BackupHistory parameter" {
-            $CommandUnderTest | Should -HaveParameter BackupHistory -Type Object[]
+            $CommandUnderTest | Should -HaveParameter BackupHistory -Type System.Object[]
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have OutputScriptOnly parameter" {
-            $CommandUnderTest | Should -HaveParameter OutputScriptOnly -Type Switch
+            $CommandUnderTest | Should -HaveParameter OutputScriptOnly -Type System.Management.Automation.SwitchParameter
         }
         It "Should have VerifyOnly parameter" {
-            $CommandUnderTest | Should -HaveParameter VerifyOnly -Type Switch
+            $CommandUnderTest | Should -HaveParameter VerifyOnly -Type System.Management.Automation.SwitchParameter
         }
         It "Should have RestoreTime parameter" {
-            $CommandUnderTest | Should -HaveParameter RestoreTime -Type DateTime
+            $CommandUnderTest | Should -HaveParameter RestoreTime -Type System.DateTime
         }
         It "Should have StandbyDirectory parameter" {
-            $CommandUnderTest | Should -HaveParameter StandbyDirectory -Type String
+            $CommandUnderTest | Should -HaveParameter StandbyDirectory -Type System.String
         }
         It "Should have NoRecovery parameter" {
-            $CommandUnderTest | Should -HaveParameter NoRecovery -Type Switch
+            $CommandUnderTest | Should -HaveParameter NoRecovery -Type System.Management.Automation.SwitchParameter
         }
         It "Should have MaxTransferSize parameter" {
-            $CommandUnderTest | Should -HaveParameter MaxTransferSize -Type Int32
+            $CommandUnderTest | Should -HaveParameter MaxTransferSize -Type System.Int32
         }
         It "Should have BlockSize parameter" {
-            $CommandUnderTest | Should -HaveParameter BlockSize -Type Int32
+            $CommandUnderTest | Should -HaveParameter BlockSize -Type System.Int32
         }
         It "Should have BufferCount parameter" {
-            $CommandUnderTest | Should -HaveParameter BufferCount -Type Int32
+            $CommandUnderTest | Should -HaveParameter BufferCount -Type System.Int32
         }
         It "Should have Continue parameter" {
-            $CommandUnderTest | Should -HaveParameter Continue -Type Switch
+            $CommandUnderTest | Should -HaveParameter Continue -Type System.Management.Automation.SwitchParameter
         }
         It "Should have AzureCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter AzureCredential -Type String
+            $CommandUnderTest | Should -HaveParameter AzureCredential -Type System.String
         }
         It "Should have WithReplace parameter" {
-            $CommandUnderTest | Should -HaveParameter WithReplace -Type Switch
+            $CommandUnderTest | Should -HaveParameter WithReplace -Type System.Management.Automation.SwitchParameter
         }
         It "Should have KeepReplication parameter" {
-            $CommandUnderTest | Should -HaveParameter KeepReplication -Type Switch
+            $CommandUnderTest | Should -HaveParameter KeepReplication -Type System.Management.Automation.SwitchParameter
         }
         It "Should have KeepCDC parameter" {
-            $CommandUnderTest | Should -HaveParameter KeepCDC -Type Switch
+            $CommandUnderTest | Should -HaveParameter KeepCDC -Type System.Management.Automation.SwitchParameter
         }
         It "Should have PageRestore parameter" {
-            $CommandUnderTest | Should -HaveParameter PageRestore -Type Object[]
+            $CommandUnderTest | Should -HaveParameter PageRestore -Type System.Object[]
         }
         It "Should have ExecuteAs parameter" {
-            $CommandUnderTest | Should -HaveParameter ExecuteAs -Type String
+            $CommandUnderTest | Should -HaveParameter ExecuteAs -Type System.String
         }
         It "Should have StopBefore parameter" {
-            $CommandUnderTest | Should -HaveParameter StopBefore -Type Switch
+            $CommandUnderTest | Should -HaveParameter StopBefore -Type System.Management.Automation.SwitchParameter
         }
         It "Should have StopMark parameter" {
-            $CommandUnderTest | Should -HaveParameter StopMark -Type String
+            $CommandUnderTest | Should -HaveParameter StopMark -Type System.String
         }
         It "Should have StopAfterDate parameter" {
-            $CommandUnderTest | Should -HaveParameter StopAfterDate -Type DateTime
+            $CommandUnderTest | Should -HaveParameter StopAfterDate -Type System.DateTime
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 }

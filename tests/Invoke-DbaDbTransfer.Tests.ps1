@@ -55,22 +55,22 @@ Describe "Invoke-DbaDbTransfer" {
             $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type PSCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String
         }
         It "Should have DestinationDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationDatabase -Type String
+            $CommandUnderTest | Should -HaveParameter DestinationDatabase -Type System.String
         }
         It "Should have BatchSize as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BatchSize -Type Int32
+            $CommandUnderTest | Should -HaveParameter BatchSize -Type System.Int32
         }
         It "Should have BulkCopyTimeOut as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BulkCopyTimeOut -Type Int32
+            $CommandUnderTest | Should -HaveParameter BulkCopyTimeOut -Type System.Int32
         }
         It "Should have ScriptingOption as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ScriptingOption -Type ScriptingOptions
+            $CommandUnderTest | Should -HaveParameter ScriptingOption -Type Microsoft.SqlServer.Management.Smo.ScriptingOptions
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Transfer
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Transfer
         }
         It "Should have CopyAllObjects as a switch parameter" {
             $CommandUnderTest | Should -HaveParameter CopyAllObjects -Type Switch

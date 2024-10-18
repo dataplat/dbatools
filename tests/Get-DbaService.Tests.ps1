@@ -13,26 +13,26 @@ Describe "Get-DbaService" {
         It "Should have ComputerName as a non-mandatory parameter of type DbaInstanceParameter[]" {
             $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[] -Mandatory:$false
         }
-        It "Should have InstanceName as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter InstanceName -Type String[] -Mandatory:$false
+        It "Should have InstanceName as a non-mandatory parameter of type System.String[]" {
+            $CommandUnderTest | Should -HaveParameter InstanceName -Type System.String[] -Mandatory:$false
         }
         It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
             $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
-        It "Should have Credential as a non-mandatory parameter of type PSCredential" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Mandatory:$false
+        It "Should have Credential as a non-mandatory parameter of type System.Management.Automation.PSCredential" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type System.Management.Automation.PSCredential -Mandatory:$false
         }
-        It "Should have Type as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter Type -Type String[] -Mandatory:$false
+        It "Should have Type as a non-mandatory parameter of type System.String[]" {
+            $CommandUnderTest | Should -HaveParameter Type -Type System.String[] -Mandatory:$false
         }
-        It "Should have ServiceName as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter ServiceName -Type String[] -Mandatory:$false
+        It "Should have ServiceName as a non-mandatory parameter of type System.String[]" {
+            $CommandUnderTest | Should -HaveParameter ServiceName -Type System.String[] -Mandatory:$false
         }
         It "Should have AdvancedProperties as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter AdvancedProperties -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter AdvancedProperties -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

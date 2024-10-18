@@ -12,13 +12,13 @@ Describe "Get-DbaWaitingTask" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have Spid as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Spid -Type Object[]
+            $CommandUnderTest | Should -HaveParameter Spid -Type System.Object[]
         }
         It "Should have IncludeSystemSpid as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeSystemSpid -Type Switch
+            $CommandUnderTest | Should -HaveParameter IncludeSystemSpid -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

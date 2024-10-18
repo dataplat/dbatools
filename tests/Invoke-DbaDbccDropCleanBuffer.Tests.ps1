@@ -11,10 +11,10 @@ Describe "Invoke-DbaDbccDropCleanBuffer" {
             $CommandUnderTest = Get-Command Invoke-DbaDbccDropCleanBuffer
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have NoInformationalMessages as a switch parameter" {
             $CommandUnderTest | Should -HaveParameter NoInformationalMessages -Type switch

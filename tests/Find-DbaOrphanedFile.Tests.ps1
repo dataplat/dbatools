@@ -6,28 +6,28 @@ Describe "Find-DbaOrphanedFile" {
             $CommandUnderTest = Get-Command Find-DbaOrphanedFile
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type String[]
+            $CommandUnderTest | Should -HaveParameter Path -Type System.String[]
         }
         It "Should have FileType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FileType -Type String[]
+            $CommandUnderTest | Should -HaveParameter FileType -Type System.String[]
         }
         It "Should have LocalOnly as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter LocalOnly -Type Switch
+            $CommandUnderTest | Should -HaveParameter LocalOnly -Type System.Management.Automation.SwitchParameter
         }
         It "Should have RemoteOnly as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter RemoteOnly -Type Switch
+            $CommandUnderTest | Should -HaveParameter RemoteOnly -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Recurse as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Recurse -Type Switch
+            $CommandUnderTest | Should -HaveParameter Recurse -Type System.Management.Automation.SwitchParameter
         }
     }
 

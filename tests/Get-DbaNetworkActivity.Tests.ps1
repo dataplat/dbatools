@@ -11,14 +11,14 @@ Describe "Get-DbaNetworkActivity" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaNetworkActivity
         }
-        It "Should have ComputerName as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter ComputerName -Type String[] -Mandatory:$false
+        It "Should have ComputerName as a non-mandatory parameter of type System.String[]" {
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type System.String[] -Mandatory:$false
         }
-        It "Should have Credential as a non-mandatory parameter of type PSCredential" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Mandatory:$false
+        It "Should have Credential as a non-mandatory parameter of type System.Management.Automation.PSCredential" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type System.Management.Automation.PSCredential -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

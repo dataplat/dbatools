@@ -61,37 +61,37 @@ Describe "Get-DbaRegServer" {
             $CommandUnderTest = Get-Command Get-DbaRegServer
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Name as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Name -Type String[]
+            $CommandUnderTest | Should -HaveParameter Name -Type System.String[]
         }
         It "Should have ServerName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ServerName -Type String[]
+            $CommandUnderTest | Should -HaveParameter ServerName -Type System.String[]
         }
         It "Should have Group as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Group -Type String[]
+            $CommandUnderTest | Should -HaveParameter Group -Type System.String[]
         }
         It "Should have ExcludeGroup as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeGroup -Type String[]
+            $CommandUnderTest | Should -HaveParameter ExcludeGroup -Type System.String[]
         }
         It "Should have Id as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Id -Type Int32[]
+            $CommandUnderTest | Should -HaveParameter Id -Type System.Int32[]
         }
         It "Should have IncludeSelf as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeSelf -Type Switch
+            $CommandUnderTest | Should -HaveParameter IncludeSelf -Type System.Management.Automation.SwitchParameter
         }
         It "Should have ResolveNetworkName as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ResolveNetworkName -Type Switch
+            $CommandUnderTest | Should -HaveParameter ResolveNetworkName -Type System.Management.Automation.SwitchParameter
         }
         It "Should have IncludeLocal as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeLocal -Type Switch
+            $CommandUnderTest | Should -HaveParameter IncludeLocal -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

@@ -25,52 +25,52 @@ Describe "Invoke-DbaQuery" {
             $CommandUnderTest = Get-Command Invoke-DbaQuery
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String -Mandatory:$false
         }
         It "Should have Query parameter" {
-            $CommandUnderTest | Should -HaveParameter Query -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Query -Type System.String -Mandatory:$false
         }
         It "Should have QueryTimeout parameter" {
-            $CommandUnderTest | Should -HaveParameter QueryTimeout -Type Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter QueryTimeout -Type System.Int32 -Mandatory:$false
         }
         It "Should have File parameter" {
-            $CommandUnderTest | Should -HaveParameter File -Type Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter File -Type System.Object[] -Mandatory:$false
         }
         It "Should have SqlObject parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlObject -Type SqlSmoObject[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlObject -Type Microsoft.SqlServer.Management.Smo.SqlSmoObject[] -Mandatory:$false
         }
         It "Should have As parameter" {
-            $CommandUnderTest | Should -HaveParameter As -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter As -Type System.String -Mandatory:$false
         }
         It "Should have SqlParameter parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlParameter -Type PSObject[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlParameter -Type System.Management.Automation.PSObject[] -Mandatory:$false
         }
         It "Should have CommandType parameter" {
-            $CommandUnderTest | Should -HaveParameter CommandType -Type CommandType -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter CommandType -Type System.Data.CommandType -Mandatory:$false
         }
         It "Should have AppendServerInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter AppendServerInstance -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter AppendServerInstance -Type System.Management.Automation.Switch -Mandatory:$false
         }
         It "Should have MessagesToOutput parameter" {
-            $CommandUnderTest | Should -HaveParameter MessagesToOutput -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter MessagesToOutput -Type System.Management.Automation.Switch -Mandatory:$false
         }
         It "Should have InputObject parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[] -Mandatory:$false
         }
         It "Should have ReadOnly parameter" {
-            $CommandUnderTest | Should -HaveParameter ReadOnly -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ReadOnly -Type System.Management.Automation.Switch -Mandatory:$false
         }
         It "Should have NoExec parameter" {
-            $CommandUnderTest | Should -HaveParameter NoExec -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter NoExec -Type System.Management.Automation.Switch -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.Switch -Mandatory:$false
         }
     }
 

@@ -12,19 +12,19 @@ Describe "Mount-DbaDatabase" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[]
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String[]
         }
         It "Should have FileStructure as a parameter" {
             $CommandUnderTest | Should -HaveParameter FileStructure -Type System.Collections.Specialized.StringCollection
         }
         It "Should have DatabaseOwner as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DatabaseOwner -Type String
+            $CommandUnderTest | Should -HaveParameter DatabaseOwner -Type System.String
         }
         It "Should have AttachOption as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AttachOption -Type String
+            $CommandUnderTest | Should -HaveParameter AttachOption -Type System.String
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

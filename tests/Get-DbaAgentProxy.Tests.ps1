@@ -6,19 +6,19 @@ Describe "Get-DbaAgentProxy" {
             $CommandUnderTest = Get-Command Get-DbaAgentProxy
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Proxy as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Proxy -Type String[]
+            $CommandUnderTest | Should -HaveParameter Proxy -Type System.String[]
         }
         It "Should have ExcludeProxy as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeProxy -Type String[]
+            $CommandUnderTest | Should -HaveParameter ExcludeProxy -Type System.String[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.Switch
         }
     }
 

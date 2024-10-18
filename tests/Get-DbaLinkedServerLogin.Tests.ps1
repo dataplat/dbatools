@@ -63,22 +63,22 @@ Describe "Get-DbaLinkedServerLogin" {
             $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
         }
         It "Should have LinkedServer as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LinkedServer -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter LinkedServer -Type System.String[] -Mandatory:$false
         }
         It "Should have LocalLogin as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LocalLogin -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter LocalLogin -Type System.String[] -Mandatory:$false
         }
         It "Should have ExcludeLocalLogin as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeLocalLogin -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeLocalLogin -Type System.String[] -Mandatory:$false
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object[] -Mandatory:$false
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

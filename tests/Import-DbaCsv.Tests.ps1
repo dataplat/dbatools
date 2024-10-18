@@ -22,115 +22,115 @@ Describe "Import-DbaCsv" {
             $CommandUnderTest = Get-Command Import-DbaCsv
         }
         It "Should have Path parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Path -Type System.Object[] -Mandatory:$false
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String -Mandatory:$false
         }
         It "Should have Table parameter" {
-            $CommandUnderTest | Should -HaveParameter Table -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Table -Type System.String -Mandatory:$false
         }
         It "Should have Schema parameter" {
-            $CommandUnderTest | Should -HaveParameter Schema -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Schema -Type System.String -Mandatory:$false
         }
         It "Should have Truncate parameter" {
-            $CommandUnderTest | Should -HaveParameter Truncate -Type Switch
+            $CommandUnderTest | Should -HaveParameter Truncate -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Delimiter parameter" {
-            $CommandUnderTest | Should -HaveParameter Delimiter -Type Char -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Delimiter -Type System.Char -Mandatory:$false
         }
         It "Should have SingleColumn parameter" {
-            $CommandUnderTest | Should -HaveParameter SingleColumn -Type Switch
+            $CommandUnderTest | Should -HaveParameter SingleColumn -Type System.Management.Automation.SwitchParameter
         }
         It "Should have BatchSize parameter" {
-            $CommandUnderTest | Should -HaveParameter BatchSize -Type Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter BatchSize -Type System.Int32 -Mandatory:$false
         }
         It "Should have NotifyAfter parameter" {
-            $CommandUnderTest | Should -HaveParameter NotifyAfter -Type Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter NotifyAfter -Type System.Int32 -Mandatory:$false
         }
         It "Should have TableLock parameter" {
-            $CommandUnderTest | Should -HaveParameter TableLock -Type Switch
+            $CommandUnderTest | Should -HaveParameter TableLock -Type System.Management.Automation.SwitchParameter
         }
         It "Should have CheckConstraints parameter" {
-            $CommandUnderTest | Should -HaveParameter CheckConstraints -Type Switch
+            $CommandUnderTest | Should -HaveParameter CheckConstraints -Type System.Management.Automation.SwitchParameter
         }
         It "Should have FireTriggers parameter" {
-            $CommandUnderTest | Should -HaveParameter FireTriggers -Type Switch
+            $CommandUnderTest | Should -HaveParameter FireTriggers -Type System.Management.Automation.SwitchParameter
         }
         It "Should have KeepIdentity parameter" {
-            $CommandUnderTest | Should -HaveParameter KeepIdentity -Type Switch
+            $CommandUnderTest | Should -HaveParameter KeepIdentity -Type System.Management.Automation.SwitchParameter
         }
         It "Should have KeepNulls parameter" {
-            $CommandUnderTest | Should -HaveParameter KeepNulls -Type Switch
+            $CommandUnderTest | Should -HaveParameter KeepNulls -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Column parameter" {
-            $CommandUnderTest | Should -HaveParameter Column -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Column -Type System.String[] -Mandatory:$false
         }
         It "Should have ColumnMap parameter" {
-            $CommandUnderTest | Should -HaveParameter ColumnMap -Type Hashtable -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ColumnMap -Type System.Collections.Hashtable -Mandatory:$false
         }
         It "Should have KeepOrdinalOrder parameter" {
-            $CommandUnderTest | Should -HaveParameter KeepOrdinalOrder -Type Switch
+            $CommandUnderTest | Should -HaveParameter KeepOrdinalOrder -Type System.Management.Automation.SwitchParameter
         }
         It "Should have AutoCreateTable parameter" {
-            $CommandUnderTest | Should -HaveParameter AutoCreateTable -Type Switch
+            $CommandUnderTest | Should -HaveParameter AutoCreateTable -Type System.Management.Automation.SwitchParameter
         }
         It "Should have NoProgress parameter" {
-            $CommandUnderTest | Should -HaveParameter NoProgress -Type Switch
+            $CommandUnderTest | Should -HaveParameter NoProgress -Type System.Management.Automation.SwitchParameter
         }
         It "Should have NoHeaderRow parameter" {
-            $CommandUnderTest | Should -HaveParameter NoHeaderRow -Type Switch
+            $CommandUnderTest | Should -HaveParameter NoHeaderRow -Type System.Management.Automation.SwitchParameter
         }
         It "Should have UseFileNameForSchema parameter" {
-            $CommandUnderTest | Should -HaveParameter UseFileNameForSchema -Type Switch
+            $CommandUnderTest | Should -HaveParameter UseFileNameForSchema -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Quote parameter" {
-            $CommandUnderTest | Should -HaveParameter Quote -Type Char -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Quote -Type System.Char -Mandatory:$false
         }
         It "Should have Escape parameter" {
-            $CommandUnderTest | Should -HaveParameter Escape -Type Char -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Escape -Type System.Char -Mandatory:$false
         }
         It "Should have Comment parameter" {
-            $CommandUnderTest | Should -HaveParameter Comment -Type Char -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Comment -Type System.Char -Mandatory:$false
         }
         It "Should have TrimmingOption parameter" {
-            $CommandUnderTest | Should -HaveParameter TrimmingOption -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter TrimmingOption -Type System.String -Mandatory:$false
         }
         It "Should have BufferSize parameter" {
-            $CommandUnderTest | Should -HaveParameter BufferSize -Type Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter BufferSize -Type System.Int32 -Mandatory:$false
         }
         It "Should have ParseErrorAction parameter" {
-            $CommandUnderTest | Should -HaveParameter ParseErrorAction -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ParseErrorAction -Type System.String -Mandatory:$false
         }
         It "Should have Encoding parameter" {
-            $CommandUnderTest | Should -HaveParameter Encoding -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Encoding -Type System.String -Mandatory:$false
         }
         It "Should have NullValue parameter" {
-            $CommandUnderTest | Should -HaveParameter NullValue -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter NullValue -Type System.String -Mandatory:$false
         }
         It "Should have MaxQuotedFieldLength parameter" {
-            $CommandUnderTest | Should -HaveParameter MaxQuotedFieldLength -Type Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter MaxQuotedFieldLength -Type System.Int32 -Mandatory:$false
         }
         It "Should have SkipEmptyLine parameter" {
-            $CommandUnderTest | Should -HaveParameter SkipEmptyLine -Type Switch
+            $CommandUnderTest | Should -HaveParameter SkipEmptyLine -Type System.Management.Automation.SwitchParameter
         }
         It "Should have SupportsMultiline parameter" {
-            $CommandUnderTest | Should -HaveParameter SupportsMultiline -Type Switch
+            $CommandUnderTest | Should -HaveParameter SupportsMultiline -Type System.Management.Automation.SwitchParameter
         }
         It "Should have UseColumnDefault parameter" {
-            $CommandUnderTest | Should -HaveParameter UseColumnDefault -Type Switch
+            $CommandUnderTest | Should -HaveParameter UseColumnDefault -Type System.Management.Automation.SwitchParameter
         }
         It "Should have NoTransaction parameter" {
-            $CommandUnderTest | Should -HaveParameter NoTransaction -Type Switch
+            $CommandUnderTest | Should -HaveParameter NoTransaction -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

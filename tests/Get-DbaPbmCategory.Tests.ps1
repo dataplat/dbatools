@@ -18,16 +18,16 @@ Describe "Get-DbaPbmCategory" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Category as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Category -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Category -Type System.String[] -Mandatory:$false
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type PSObject[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Management.Automation.PSObject[] -Mandatory:$false
         }
         It "Should have ExcludeSystemObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSystemObject -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeSystemObject -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

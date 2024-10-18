@@ -26,28 +26,28 @@ Describe "Invoke-DbaDbDbccUpdateUsage" {
             $CommandUnderTest = Get-Command Invoke-DbaDbDbccUpdateUsage
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Connection.ManagementConnectionType[]
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[]
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String[]
         }
         It "Should have Table parameter" {
-            $CommandUnderTest | Should -HaveParameter Table -Type String
+            $CommandUnderTest | Should -HaveParameter Table -Type System.String
         }
         It "Should have Index parameter" {
-            $CommandUnderTest | Should -HaveParameter Index -Type String
+            $CommandUnderTest | Should -HaveParameter Index -Type System.String
         }
         It "Should have NoInformationalMessages parameter" {
-            $CommandUnderTest | Should -HaveParameter NoInformationalMessages -Type Switch
+            $CommandUnderTest | Should -HaveParameter NoInformationalMessages -Type System.Management.Automation.SwitchParameter
         }
         It "Should have CountRows parameter" {
-            $CommandUnderTest | Should -HaveParameter CountRows -Type Switch
+            $CommandUnderTest | Should -HaveParameter CountRows -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

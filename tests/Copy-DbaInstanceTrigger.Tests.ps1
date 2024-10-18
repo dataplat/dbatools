@@ -6,22 +6,22 @@ Describe "Copy-DbaInstanceTrigger" {
             $CommandUnderTest = Get-Command Copy-DbaInstanceTrigger
         }
         It "Should have Source as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Source -Type DbaInstanceParameter
+            $CommandUnderTest | Should -HaveParameter Source -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter
         }
         It "Should have SourceSqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SourceSqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SourceSqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Destination as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Destination -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter Destination -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have DestinationSqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have ServerTrigger as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ServerTrigger -Type Object[]
+            $CommandUnderTest | Should -HaveParameter ServerTrigger -Type System.Object[]
         }
         It "Should have ExcludeServerTrigger as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeServerTrigger -Type Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeServerTrigger -Type System.Object[]
         }
         It "Should have Force as a switch parameter" {
             $CommandUnderTest | Should -HaveParameter Force -Type Switch

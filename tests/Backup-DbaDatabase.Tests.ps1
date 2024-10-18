@@ -13,139 +13,139 @@ Describe "Backup-DbaDatabase Unit Tests" -Tag 'UnitTests' {
         }
 
         It "Should have SqlInstance parameter" {
-            $command | Should -HaveParameter SqlInstance -Type DbaInstanceParameter -Mandatory:$false
+            $command | Should -HaveParameter SqlInstance -Type Microsoft.SqlServer.Management.Smo.DbaInstanceParameter -Mandatory:$false
         }
 
         It "Should have SqlCredential parameter" {
-            $command | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+            $command | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
         }
 
         It "Should have Database parameter" {
-            $command | Should -HaveParameter Database -Type Object[] -Mandatory:$false
+            $command | Should -HaveParameter Database -Type System.Object[] -Mandatory:$false
         }
 
         It "Should have ExcludeDatabase parameter" {
-            $command | Should -HaveParameter ExcludeDatabase -Type Object[] -Mandatory:$false
+            $command | Should -HaveParameter ExcludeDatabase -Type System.Object[] -Mandatory:$false
         }
 
         It "Should have Path parameter" {
-            $command | Should -HaveParameter Path -Type String[] -Mandatory:$false
+            $command | Should -HaveParameter Path -Type System.String[] -Mandatory:$false
         }
 
         It "Should have FilePath parameter" {
-            $command | Should -HaveParameter FilePath -Type String -Mandatory:$false
+            $command | Should -HaveParameter FilePath -Type System.String -Mandatory:$false
         }
 
         It "Should have IncrementPrefix parameter" {
-            $command | Should -HaveParameter IncrementPrefix -Type Switch
+            $command | Should -HaveParameter IncrementPrefix -Type System.Management.Automation.SwitchParameter
         }
 
         It "Should have ReplaceInName parameter" {
-            $command | Should -HaveParameter ReplaceInName -Type Switch
+            $command | Should -HaveParameter ReplaceInName -Type System.Management.Automation.SwitchParameter
         }
 
         It "Should have NoAppendDbNameInPath parameter" {
-            $command | Should -HaveParameter NoAppendDbNameInPath -Type Switch
+            $command | Should -HaveParameter NoAppendDbNameInPath -Type System.Management.Automation.SwitchParameter
         }
 
         It "Should have CopyOnly parameter" {
-            $command | Should -HaveParameter CopyOnly -Type Switch
+            $command | Should -HaveParameter CopyOnly -Type System.Management.Automation.SwitchParameter
         }
 
         It "Should have Type parameter" {
-            $command | Should -HaveParameter Type -Type String -Mandatory:$false
+            $command | Should -HaveParameter Type -Type System.String -Mandatory:$false
         }
 
         It "Should have InputObject parameter" {
-            $command | Should -HaveParameter InputObject -Type Object[] -Mandatory:$false
+            $command | Should -HaveParameter InputObject -Type System.Object[] -Mandatory:$false
         }
 
         It "Should have CreateFolder parameter" {
-            $command | Should -HaveParameter CreateFolder -Type Switch
+            $command | Should -HaveParameter CreateFolder -Type System.Management.Automation.SwitchParameter
         }
 
         It "Should have FileCount parameter" {
-            $command | Should -HaveParameter FileCount -Type Int32 -Mandatory:$false
+            $command | Should -HaveParameter FileCount -Type System.Int32 -Mandatory:$false
         }
 
         It "Should have CompressBackup parameter" {
-            $command | Should -HaveParameter CompressBackup -Type Switch
+            $command | Should -HaveParameter CompressBackup -Type System.Management.Automation.SwitchParameter
         }
 
         It "Should have Checksum parameter" {
-            $command | Should -HaveParameter Checksum -Type Switch
+            $command | Should -HaveParameter Checksum -Type System.Management.Automation.SwitchParameter
         }
 
         It "Should have Verify parameter" {
-            $command | Should -HaveParameter Verify -Type Switch
+            $command | Should -HaveParameter Verify -Type System.Management.Automation.SwitchParameter
         }
 
         It "Should have MaxTransferSize parameter" {
-            $command | Should -HaveParameter MaxTransferSize -Type Int32 -Mandatory:$false
+            $command | Should -HaveParameter MaxTransferSize -Type System.Int32 -Mandatory:$false
         }
 
         It "Should have BlockSize parameter" {
-            $command | Should -HaveParameter BlockSize -Type Int32 -Mandatory:$false
+            $command | Should -HaveParameter BlockSize -Type System.Int32 -Mandatory:$false
         }
 
         It "Should have BufferCount parameter" {
-            $command | Should -HaveParameter BufferCount -Type Int32 -Mandatory:$false
+            $command | Should -HaveParameter BufferCount -Type System.Int32 -Mandatory:$false
         }
 
         It "Should have AzureBaseUrl parameter" {
-            $command | Should -HaveParameter AzureBaseUrl -Type String[] -Mandatory:$false
+            $command | Should -HaveParameter AzureBaseUrl -Type System.String[] -Mandatory:$false
         }
 
         It "Should have AzureCredential parameter" {
-            $command | Should -HaveParameter AzureCredential -Type String -Mandatory:$false
+            $command | Should -HaveParameter AzureCredential -Type System.String -Mandatory:$false
         }
 
         It "Should have NoRecovery parameter" {
-            $command | Should -HaveParameter NoRecovery -Type Switch
+            $command | Should -HaveParameter NoRecovery -Type System.Management.Automation.SwitchParameter
         }
 
         It "Should have BuildPath parameter" {
-            $command | Should -HaveParameter BuildPath -Type Switch
+            $command | Should -HaveParameter BuildPath -Type System.Management.Automation.SwitchParameter
         }
 
         It "Should have WithFormat parameter" {
-            $command | Should -HaveParameter WithFormat -Type Switch
+            $command | Should -HaveParameter WithFormat -Type System.Management.Automation.SwitchParameter
         }
 
         It "Should have Initialize parameter" {
-            $command | Should -HaveParameter Initialize -Type Switch
+            $command | Should -HaveParameter Initialize -Type System.Management.Automation.SwitchParameter
         }
 
         It "Should have SkipTapeHeader parameter" {
-            $command | Should -HaveParameter SkipTapeHeader -Type Switch
+            $command | Should -HaveParameter SkipTapeHeader -Type System.Management.Automation.SwitchParameter
         }
 
         It "Should have TimeStampFormat parameter" {
-            $command | Should -HaveParameter TimeStampFormat -Type String -Mandatory:$false
+            $command | Should -HaveParameter TimeStampFormat -Type System.String -Mandatory:$false
         }
 
         It "Should have IgnoreFileChecks parameter" {
-            $command | Should -HaveParameter IgnoreFileChecks -Type Switch
+            $command | Should -HaveParameter IgnoreFileChecks -Type System.Management.Automation.SwitchParameter
         }
 
         It "Should have OutputScriptOnly parameter" {
-            $command | Should -HaveParameter OutputScriptOnly -Type Switch
+            $command | Should -HaveParameter OutputScriptOnly -Type System.Management.Automation.SwitchParameter
         }
 
         It "Should have EncryptionAlgorithm parameter" {
-            $command | Should -HaveParameter EncryptionAlgorithm -Type String -Mandatory:$false
+            $command | Should -HaveParameter EncryptionAlgorithm -Type System.String -Mandatory:$false
         }
 
         It "Should have EncryptionCertificate parameter" {
-            $command | Should -HaveParameter EncryptionCertificate -Type String -Mandatory:$false
+            $command | Should -HaveParameter EncryptionCertificate -Type System.String -Mandatory:$false
         }
 
         It "Should have Description parameter" {
-            $command | Should -HaveParameter Description -Type String -Mandatory:$false
+            $command | Should -HaveParameter Description -Type System.String -Mandatory:$false
         }
 
         It "Should have EnableException parameter" {
-            $command | Should -HaveParameter EnableException -Type Switch
+            $command | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 }

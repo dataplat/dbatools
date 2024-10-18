@@ -18,16 +18,16 @@ Describe "Get-DbaDbRecoveryModel" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have RecoveryModel as a parameter" {
-            $CommandUnderTest | Should -HaveParameter RecoveryModel -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter RecoveryModel -Type System.String[] -Mandatory:$false
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Database -Type System.Object[] -Mandatory:$false
         }
         It "Should have ExcludeDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.Object[] -Mandatory:$false
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

@@ -6,25 +6,25 @@ Describe "Copy-DbaSpConfigure" {
             $CommandUnderTest = Get-Command Copy-DbaSpConfigure
         }
         It "Should have Source as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Source -Type DbaInstanceParameter
+            $CommandUnderTest | Should -HaveParameter Source -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter
         }
         It "Should have SourceSqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SourceSqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SourceSqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Destination as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Destination -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter Destination -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have DestinationSqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have ConfigName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ConfigName -Type Object[]
+            $CommandUnderTest | Should -HaveParameter ConfigName -Type System.Object[]
         }
         It "Should have ExcludeConfigName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeConfigName -Type Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeConfigName -Type System.Object[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.Switch
         }
     }
 }

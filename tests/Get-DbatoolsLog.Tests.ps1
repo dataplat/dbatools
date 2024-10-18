@@ -9,38 +9,38 @@ Describe "Get-DbatoolsLog" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbatoolsLog
         }
-        It "Should have FunctionName as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter FunctionName -Type String -Mandatory:$false
+        It "Should have FunctionName as a non-mandatory System.String parameter" {
+            $CommandUnderTest | Should -HaveParameter FunctionName -Type System.String -Mandatory:$false
         }
-        It "Should have ModuleName as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter ModuleName -Type String -Mandatory:$false
+        It "Should have ModuleName as a non-mandatory System.String parameter" {
+            $CommandUnderTest | Should -HaveParameter ModuleName -Type System.String -Mandatory:$false
         }
-        It "Should have Target as a non-mandatory Object parameter" {
-            $CommandUnderTest | Should -HaveParameter Target -Type Object -Mandatory:$false
+        It "Should have Target as a non-mandatory System.Object parameter" {
+            $CommandUnderTest | Should -HaveParameter Target -Type System.Object -Mandatory:$false
         }
-        It "Should have Tag as a non-mandatory String[] parameter" {
-            $CommandUnderTest | Should -HaveParameter Tag -Type String[] -Mandatory:$false
+        It "Should have Tag as a non-mandatory System.String[] parameter" {
+            $CommandUnderTest | Should -HaveParameter Tag -Type System.String[] -Mandatory:$false
         }
-        It "Should have Last as a non-mandatory Int32 parameter" {
-            $CommandUnderTest | Should -HaveParameter Last -Type Int32 -Mandatory:$false
+        It "Should have Last as a non-mandatory System.Int32 parameter" {
+            $CommandUnderTest | Should -HaveParameter Last -Type System.Int32 -Mandatory:$false
         }
-        It "Should have LastError as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter LastError -Type Switch -Mandatory:$false
+        It "Should have LastError as a non-mandatory System.Management.Automation.SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter LastError -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
-        It "Should have Skip as a non-mandatory Int32 parameter" {
-            $CommandUnderTest | Should -HaveParameter Skip -Type Int32 -Mandatory:$false
+        It "Should have Skip as a non-mandatory System.Int32 parameter" {
+            $CommandUnderTest | Should -HaveParameter Skip -Type System.Int32 -Mandatory:$false
         }
-        It "Should have Runspace as a non-mandatory Guid parameter" {
-            $CommandUnderTest | Should -HaveParameter Runspace -Type Guid -Mandatory:$false
+        It "Should have Runspace as a non-mandatory System.Guid parameter" {
+            $CommandUnderTest | Should -HaveParameter Runspace -Type System.Guid -Mandatory:$false
         }
-        It "Should have Level as a non-mandatory MessageLevel[] parameter" {
+        It "Should have Level as a non-mandatory Dataplat.Dbatools.Message.MessageLevel[] parameter" {
             $CommandUnderTest | Should -HaveParameter Level -Type Dataplat.Dbatools.Message.MessageLevel[] -Mandatory:$false
         }
-        It "Should have Raw as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter Raw -Type Switch -Mandatory:$false
+        It "Should have Raw as a non-mandatory System.Management.Automation.SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter Raw -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
-        It "Should have Errors as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter Errors -Type Switch -Mandatory:$false
+        It "Should have Errors as a non-mandatory System.Management.Automation.SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter Errors -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

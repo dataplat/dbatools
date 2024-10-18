@@ -6,25 +6,25 @@ Describe "Invoke-DbaBalanceDataFiles" {
             $CommandUnderTest = Get-Command Invoke-DbaBalanceDataFiles
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Database -Type System.Object[] -Mandatory:$false
         }
         It "Should have Table parameter" {
-            $CommandUnderTest | Should -HaveParameter Table -Type Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Table -Type System.Object[] -Mandatory:$false
         }
         It "Should have RebuildOffline parameter" {
-            $CommandUnderTest | Should -HaveParameter RebuildOffline -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter RebuildOffline -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 }

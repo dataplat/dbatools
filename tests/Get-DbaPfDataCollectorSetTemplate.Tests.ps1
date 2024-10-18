@@ -11,17 +11,17 @@ Describe "Get-DbaPfDataCollectorSetTemplate" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaPfDataCollectorSetTemplate
         }
-        It "Should have Path as a non-mandatory String[] parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type String[] -Mandatory:$false
+        It "Should have Path as a non-mandatory System.String[] parameter" {
+            $CommandUnderTest | Should -HaveParameter Path -Type System.String[] -Mandatory:$false
         }
-        It "Should have Pattern as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Pattern -Type String -Mandatory:$false
+        It "Should have Pattern as a non-mandatory System.String parameter" {
+            $CommandUnderTest | Should -HaveParameter Pattern -Type System.String -Mandatory:$false
         }
-        It "Should have Template as a non-mandatory String[] parameter" {
-            $CommandUnderTest | Should -HaveParameter Template -Type String[] -Mandatory:$false
+        It "Should have Template as a non-mandatory System.String[] parameter" {
+            $CommandUnderTest | Should -HaveParameter Template -Type System.String[] -Mandatory:$false
         }
-        It "Should have EnableException as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+        It "Should have EnableException as a non-mandatory System.Management.Automation.SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

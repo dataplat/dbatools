@@ -18,16 +18,16 @@ Describe "Import-DbaRegServer" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Path parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Path -Type System.String[] -Mandatory:$false
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object[] -Mandatory:$false
         }
         It "Should have Group parameter" {
-            $CommandUnderTest | Should -HaveParameter Group -Type Object -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Group -Type System.Object -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

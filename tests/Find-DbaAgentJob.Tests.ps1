@@ -12,46 +12,46 @@ Describe "Find-DbaAgentJob Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Find-DbaAgentJob
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have JobName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter JobName -Type String[]
+            $CommandUnderTest | Should -HaveParameter JobName -Type System.String[]
         }
         It "Should have ExcludeJobName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeJobName -Type String[]
+            $CommandUnderTest | Should -HaveParameter ExcludeJobName -Type System.String[]
         }
         It "Should have StepName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter StepName -Type String[]
+            $CommandUnderTest | Should -HaveParameter StepName -Type System.String[]
         }
         It "Should have LastUsed as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LastUsed -Type Int32
+            $CommandUnderTest | Should -HaveParameter LastUsed -Type System.Int32
         }
         It "Should have IsDisabled as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IsDisabled -Type Switch
+            $CommandUnderTest | Should -HaveParameter IsDisabled -Type System.Management.Automation.SwitchParameter
         }
         It "Should have IsFailed as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IsFailed -Type Switch
+            $CommandUnderTest | Should -HaveParameter IsFailed -Type System.Management.Automation.SwitchParameter
         }
         It "Should have IsNotScheduled as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IsNotScheduled -Type Switch
+            $CommandUnderTest | Should -HaveParameter IsNotScheduled -Type System.Management.Automation.SwitchParameter
         }
         It "Should have IsNoEmailNotification as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IsNoEmailNotification -Type Switch
+            $CommandUnderTest | Should -HaveParameter IsNoEmailNotification -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Category as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Category -Type String[]
+            $CommandUnderTest | Should -HaveParameter Category -Type System.String[]
         }
         It "Should have Owner as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Owner -Type String
+            $CommandUnderTest | Should -HaveParameter Owner -Type System.String
         }
         It "Should have Since as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Since -Type DateTime
+            $CommandUnderTest | Should -HaveParameter Since -Type System.DateTime
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 }

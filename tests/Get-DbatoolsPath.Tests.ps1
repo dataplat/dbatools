@@ -10,7 +10,7 @@ Describe "Get-DbatoolsPath" {
             $CommandUnderTest = Get-Command Get-DbatoolsPath
         }
         It "Should have Name as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Name -Type String
+            $CommandUnderTest | Should -HaveParameter Name -Type System.String
         }
     }
 }

@@ -12,19 +12,19 @@ Describe "Get-DbaInstanceAudit" {
             $CommandUnderTest = Get-Command Get-DbaInstanceAudit
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Audit as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Audit -Type String[]
+            $CommandUnderTest | Should -HaveParameter Audit -Type System.String[]
         }
         It "Should have ExcludeAudit as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeAudit -Type String[]
+            $CommandUnderTest | Should -HaveParameter ExcludeAudit -Type System.String[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

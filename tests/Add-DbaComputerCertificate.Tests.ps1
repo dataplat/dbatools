@@ -12,31 +12,31 @@ Describe "Add-DbaComputerCertificate" {
             $CommandUnderTest = Get-Command Add-DbaComputerCertificate
         }
         It "Should have ComputerName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter Credential -Type System.Management.Automation.PSCredential
         }
         It "Should have SecurePassword as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SecurePassword -Type SecureString
+            $CommandUnderTest | Should -HaveParameter SecurePassword -Type System.Security.SecureString
         }
         It "Should have Certificate as a parameter" {
             $CommandUnderTest | Should -HaveParameter Certificate -Type System.Security.Cryptography.X509Certificates.X509Certificate2[]
         }
         It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type String
+            $CommandUnderTest | Should -HaveParameter Path -Type System.String
         }
         It "Should have Store as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Store -Type String
+            $CommandUnderTest | Should -HaveParameter Store -Type System.String
         }
         It "Should have Folder as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Folder -Type String
+            $CommandUnderTest | Should -HaveParameter Folder -Type System.String
         }
         It "Should have Flag as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Flag -Type String[]
+            $CommandUnderTest | Should -HaveParameter Flag -Type System.String[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

@@ -6,37 +6,37 @@ Describe "Backup-DbaDbCertificate" {
             $CommandUnderTest = Get-Command Backup-DbaDbCertificate
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Certificate parameter" {
-            $CommandUnderTest | Should -HaveParameter Certificate -Type Object[]
+            $CommandUnderTest | Should -HaveParameter Certificate -Type System.Object[]
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type Object[]
+            $CommandUnderTest | Should -HaveParameter Database -Type System.Object[]
         }
         It "Should have ExcludeDatabase parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.Object[]
         }
         It "Should have EncryptionPassword parameter" {
-            $CommandUnderTest | Should -HaveParameter EncryptionPassword -Type SecureString
+            $CommandUnderTest | Should -HaveParameter EncryptionPassword -Type System.Security.SecureString
         }
         It "Should have DecryptionPassword parameter" {
-            $CommandUnderTest | Should -HaveParameter DecryptionPassword -Type SecureString
+            $CommandUnderTest | Should -HaveParameter DecryptionPassword -Type System.Security.SecureString
         }
         It "Should have Path parameter" {
             $CommandUnderTest | Should -HaveParameter Path -Type System.IO.FileInfo
         }
         It "Should have Suffix parameter" {
-            $CommandUnderTest | Should -HaveParameter Suffix -Type String
+            $CommandUnderTest | Should -HaveParameter Suffix -Type System.String
         }
         It "Should have InputObject parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Certificate[]
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

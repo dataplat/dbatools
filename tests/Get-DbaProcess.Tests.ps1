@@ -24,22 +24,22 @@ Describe "Get-DbaProcess" {
             $CommandUnderTest | Should -HaveParameter ExcludeSpid -Type Int32[] -Mandatory:$false
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String[] -Mandatory:$false
         }
         It "Should have Login as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Login -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Login -Type System.String[] -Mandatory:$false
         }
         It "Should have Hostname as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Hostname -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Hostname -Type System.String[] -Mandatory:$false
         }
         It "Should have Program as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Program -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Program -Type System.String[] -Mandatory:$false
         }
         It "Should have ExcludeSystemSpids as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSystemSpids -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeSystemSpids -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

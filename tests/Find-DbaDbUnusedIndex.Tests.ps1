@@ -6,34 +6,34 @@ Describe "Find-DbaDbUnusedIndex" {
             $CommandUnderTest = Get-Command Find-DbaDbUnusedIndex
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Connection.ManagementConnectionType[]
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type Object[]
+            $CommandUnderTest | Should -HaveParameter Database -Type Microsoft.SqlServer.Management.Smo.Database[]
         }
         It "Should have ExcludeDatabase parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Microsoft.SqlServer.Management.Smo.Database[]
         }
         It "Should have IgnoreUptime parameter" {
-            $CommandUnderTest | Should -HaveParameter IgnoreUptime -Type Switch
+            $CommandUnderTest | Should -HaveParameter IgnoreUptime -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Seeks parameter" {
-            $CommandUnderTest | Should -HaveParameter Seeks -Type Int32
+            $CommandUnderTest | Should -HaveParameter Seeks -Type System.Int32
         }
         It "Should have Scans parameter" {
-            $CommandUnderTest | Should -HaveParameter Scans -Type Int32
+            $CommandUnderTest | Should -HaveParameter Scans -Type System.Int32
         }
         It "Should have Lookups parameter" {
-            $CommandUnderTest | Should -HaveParameter Lookups -Type Int32
+            $CommandUnderTest | Should -HaveParameter Lookups -Type System.Int32
         }
         It "Should have InputObject parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[]
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 }

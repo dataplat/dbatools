@@ -10,52 +10,52 @@ Describe "Install-DbaMaintenanceSolution" {
             $CommandUnderTest = Get-Command Install-DbaMaintenanceSolution
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String
         }
         It "Should have BackupLocation parameter" {
-            $CommandUnderTest | Should -HaveParameter BackupLocation -Type String
+            $CommandUnderTest | Should -HaveParameter BackupLocation -Type System.String
         }
         It "Should have CleanupTime parameter" {
-            $CommandUnderTest | Should -HaveParameter CleanupTime -Type Int32
+            $CommandUnderTest | Should -HaveParameter CleanupTime -Type System.Int32
         }
         It "Should have OutputFileDirectory parameter" {
-            $CommandUnderTest | Should -HaveParameter OutputFileDirectory -Type String
+            $CommandUnderTest | Should -HaveParameter OutputFileDirectory -Type System.String
         }
         It "Should have ReplaceExisting parameter" {
-            $CommandUnderTest | Should -HaveParameter ReplaceExisting -Type Switch
+            $CommandUnderTest | Should -HaveParameter ReplaceExisting -Type System.Management.Automation.SwitchParameter
         }
         It "Should have LogToTable parameter" {
-            $CommandUnderTest | Should -HaveParameter LogToTable -Type Switch
+            $CommandUnderTest | Should -HaveParameter LogToTable -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Solution parameter" {
-            $CommandUnderTest | Should -HaveParameter Solution -Type String[]
+            $CommandUnderTest | Should -HaveParameter Solution -Type System.String[]
         }
         It "Should have InstallJobs parameter" {
-            $CommandUnderTest | Should -HaveParameter InstallJobs -Type Switch
+            $CommandUnderTest | Should -HaveParameter InstallJobs -Type System.Management.Automation.SwitchParameter
         }
         It "Should have AutoScheduleJobs parameter" {
-            $CommandUnderTest | Should -HaveParameter AutoScheduleJobs -Type String[]
+            $CommandUnderTest | Should -HaveParameter AutoScheduleJobs -Type System.String[]
         }
         It "Should have StartTime parameter" {
-            $CommandUnderTest | Should -HaveParameter StartTime -Type String
+            $CommandUnderTest | Should -HaveParameter StartTime -Type System.String
         }
         It "Should have LocalFile parameter" {
-            $CommandUnderTest | Should -HaveParameter LocalFile -Type String
+            $CommandUnderTest | Should -HaveParameter LocalFile -Type System.String
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type Switch
+            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter
         }
         It "Should have InstallParallel parameter" {
-            $CommandUnderTest | Should -HaveParameter InstallParallel -Type Switch
+            $CommandUnderTest | Should -HaveParameter InstallParallel -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

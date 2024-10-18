@@ -20,34 +20,34 @@ Describe "Expand-DbaDbLogFile" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type Object[]
+            $CommandUnderTest | Should -HaveParameter Database -Type System.Object[]
         }
         It "Should have ExcludeDatabase parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.Object[]
         }
         It "Should have TargetLogSize parameter" {
-            $CommandUnderTest | Should -HaveParameter TargetLogSize -Type Int32
+            $CommandUnderTest | Should -HaveParameter TargetLogSize -Type System.Int32
         }
         It "Should have IncrementSize parameter" {
-            $CommandUnderTest | Should -HaveParameter IncrementSize -Type Int32
+            $CommandUnderTest | Should -HaveParameter IncrementSize -Type System.Int32
         }
         It "Should have LogFileId parameter" {
-            $CommandUnderTest | Should -HaveParameter LogFileId -Type Int32
+            $CommandUnderTest | Should -HaveParameter LogFileId -Type System.Int32
         }
         It "Should have ShrinkLogFile parameter" {
-            $CommandUnderTest | Should -HaveParameter ShrinkLogFile -Type Switch
+            $CommandUnderTest | Should -HaveParameter ShrinkLogFile -Type System.Management.Automation.SwitchParameter
         }
         It "Should have ShrinkSize parameter" {
-            $CommandUnderTest | Should -HaveParameter ShrinkSize -Type Int32
+            $CommandUnderTest | Should -HaveParameter ShrinkSize -Type System.Int32
         }
         It "Should have BackupDirectory parameter" {
-            $CommandUnderTest | Should -HaveParameter BackupDirectory -Type String
+            $CommandUnderTest | Should -HaveParameter BackupDirectory -Type System.String
         }
         It "Should have ExcludeDiskSpaceValidation parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDiskSpaceValidation -Type Switch
+            $CommandUnderTest | Should -HaveParameter ExcludeDiskSpaceValidation -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

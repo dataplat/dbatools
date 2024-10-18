@@ -10,28 +10,28 @@ Describe "Install-DbaFirstResponderKit" {
             $CommandUnderTest = Get-Command Install-DbaFirstResponderKit
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Branch parameter" {
-            $CommandUnderTest | Should -HaveParameter Branch -Type String
+            $CommandUnderTest | Should -HaveParameter Branch -Type System.String
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type Object
+            $CommandUnderTest | Should -HaveParameter Database -Type System.Object
         }
         It "Should have LocalFile parameter" {
-            $CommandUnderTest | Should -HaveParameter LocalFile -Type String
+            $CommandUnderTest | Should -HaveParameter LocalFile -Type System.String
         }
         It "Should have OnlyScript parameter" {
-            $CommandUnderTest | Should -HaveParameter OnlyScript -Type String[]
+            $CommandUnderTest | Should -HaveParameter OnlyScript -Type System.String[]
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type Switch
+            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 
