@@ -38,8 +38,8 @@ Describe "Add-DbaRegServer" {
         It "Should have InputObject as a non-mandatory parameter of type Microsoft.SqlServer.Management.RegisteredServers.ServerGroup[]" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.RegisteredServers.ServerGroup[] -Mandatory:$false
         }
-        It "Should have ServerObject as a non-mandatory parameter of type Server[]" {
-            $CommandUnderTest | Should -HaveParameter ServerObject -Type Server[] -Mandatory:$false
+        It "Should have ServerObject as a non-mandatory parameter of type Microsoft.SqlServer.Management.Smo.Server[]" {
+            $CommandUnderTest | Should -HaveParameter ServerObject -Type Microsoft.SqlServer.Management.Smo.Server[] -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false

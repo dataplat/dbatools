@@ -1,57 +1,55 @@
 param($ModuleName = 'dbatools')
 
 Describe "Add-DbaDbRoleMember" {
+    BeforeAll {
+        $CommandUnderTest = Get-Command Add-DbaDbRoleMember
+        $server = Connect-DbaInstance -SqlInstance $global:instance2
+        $user1 = "dbatoolssci_user1_$(Get-Random)"
+        $user2 = "dbatoolssci_user2_$(Get-Random)"
+        $role = "dbatoolssci_role_$(Get-Random)"
+        $null = New-DbaLogin -SqlInstance $global:instance2 -Login $user1 -Password ('Password1234!' | ConvertTo-SecureString -asPlainText -Force)
+        $null = New-DbaLogin -SqlInstance $global:instance2 -Login $user2 -Password ('Password1234!' | ConvertTo-SecureString -asPlainText -Force)
+        $dbname = "dbatoolsci_$(Get-Random)"
+        $null = New-DbaDatabase -SqlInstance $global:instance2 -Name $dbname -Owner sa
+        $null = New-DbaDbUser -SqlInstance $global:instance2 -Database $dbname -Login $user1 -Username $user1
+        $null = New-DbaDbUser -SqlInstance $global:instance2 -Database $dbname -Login $user2 -Username $user2
+        $null = New-DbaDbUser -SqlInstance $global:instance2 -Database msdb -Login $user1 -Username $user1 -IncludeSystem
+        $null = New-DbaDbUser -SqlInstance $global:instance2 -Database msdb -Login $user2 -Username $user2 -IncludeSystem
+        $null = $server.Query("CREATE ROLE $role", $dbname)
+    }
+
+    AfterAll {
+        $null = $server.Query("DROP USER $user1", 'msdb')
+        $null = $server.Query("DROP USER $user2", 'msdb')
+        $null = Remove-DbaDatabase -SqlInstance $global:instance2 -Database $dbname -Confirm:$false
+        $null = Remove-DbaLogin -SqlInstance $global:instance2 -Login $user1, $user2 -Confirm:$false
+    }
+
     Context "Validate parameters" {
-        BeforeAll {
-            $CommandUnderTest = Get-Command Add-DbaDbRoleMember
-        }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[]
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String[]
         }
         It "Should have Role as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Role -Type String[]
+            $CommandUnderTest | Should -HaveParameter Role -Type System.String[]
         }
         It "Should have Member as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Member -Type String[]
+            $CommandUnderTest | Should -HaveParameter Member -Type System.String[]
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 
     Context "Integration Tests" {
-        BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $global:instance2
-            $user1 = "dbatoolssci_user1_$(Get-Random)"
-            $user2 = "dbatoolssci_user2_$(Get-Random)"
-            $role = "dbatoolssci_role_$(Get-Random)"
-            $null = New-DbaLogin -SqlInstance $global:instance2 -Login $user1 -Password ('Password1234!' | ConvertTo-SecureString -asPlainText -Force)
-            $null = New-DbaLogin -SqlInstance $global:instance2 -Login $user2 -Password ('Password1234!' | ConvertTo-SecureString -asPlainText -Force)
-            $dbname = "dbatoolsci_$(Get-Random)"
-            $null = New-DbaDatabase -SqlInstance $global:instance2 -Name $dbname -Owner sa
-            $null = New-DbaDbUser -SqlInstance $global:instance2 -Database $dbname -Login $user1 -Username $user1
-            $null = New-DbaDbUser -SqlInstance $global:instance2 -Database $dbname -Login $user2 -Username $user2
-            $null = New-DbaDbUser -SqlInstance $global:instance2 -Database msdb -Login $user1 -Username $user1 -IncludeSystem
-            $null = New-DbaDbUser -SqlInstance $global:instance2 -Database msdb -Login $user2 -Username $user2 -IncludeSystem
-            $null = $server.Query("CREATE ROLE $role", $dbname)
-        }
-
-        AfterAll {
-            $null = $server.Query("DROP USER $user1", 'msdb')
-            $null = $server.Query("DROP USER $user2", 'msdb')
-            $null = Remove-DbaDatabase -SqlInstance $global:instance2 -Database $dbname -Confirm:$false
-            $null = Remove-DbaLogin -SqlInstance $global:instance2 -Login $user1, $user2 -Confirm:$false
-        }
-
         It 'Adds User to Role' {
             Add-DbaDbRoleMember -SqlInstance $global:instance2 -Role $role -Member $user1 -Database $dbname -Confirm:$false
             $roleDBAfter = Get-DbaDbRoleMember -SqlInstance $server -Database $dbname -Role $role

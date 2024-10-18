@@ -21,7 +21,7 @@ Describe "Add-DbaComputerCertificate" {
             $CommandUnderTest | Should -HaveParameter SecurePassword -Type SecureString
         }
         It "Should have Certificate as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Certificate -Type X509Certificate2[]
+            $CommandUnderTest | Should -HaveParameter Certificate -Type System.Security.Cryptography.X509Certificates.X509Certificate2[]
         }
         It "Should have Path as a parameter" {
             $CommandUnderTest | Should -HaveParameter Path -Type String
