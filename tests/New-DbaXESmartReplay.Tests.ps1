@@ -2,8 +2,6 @@ param($ModuleName = 'dbatools')
 
 Describe "New-DbaXESmartReplay" {
     BeforeAll {
-        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
         . "$PSScriptRoot\constants.ps1"
     }
 
@@ -43,7 +41,7 @@ Describe "New-DbaXESmartReplay" {
 
 Describe "New-DbaXESmartReplay Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $global:instance2 = [Environment]::GetEnvironmentVariable("instance2")
+        . "$PSScriptRoot\constants.ps1"
     }
 
     Context "Creates a smart object" {

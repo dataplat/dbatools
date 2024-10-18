@@ -169,7 +169,6 @@ Describe "Restore-DbaDatabase Unit Tests" -Tag 'UnitTests' {
 
 Describe "Restore-DbaDatabase Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $global:instance2 = "localhost"
         $env:appveyorlabrepo = "C:\github\appveyor-lab"
         $DataFolder = 'C:\temp\datafiles'
         $LogFolder = 'C:\temp\logfiles'

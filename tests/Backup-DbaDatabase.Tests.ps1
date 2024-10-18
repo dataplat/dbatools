@@ -152,8 +152,6 @@ Describe "Backup-DbaDatabase Unit Tests" -Tag 'UnitTests' {
 
 Describe "Backup-DbaDatabase Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $global:instance1 = "localhost"
-        $global:instance2 = "localhost\SQL2019"
         $global:appveyorlabrepo = "C:\github\appveyor-lab"
         $global:DestBackupDir = 'C:\Temp\backups'
         $global:random = Get-Random

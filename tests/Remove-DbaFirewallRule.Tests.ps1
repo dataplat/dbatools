@@ -29,11 +29,6 @@ Describe "Remove-DbaFirewallRule Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Command actually works" {
-        BeforeAll {
-            $global:instance1 = $global:instance1
-            $global:instance2 = $global:instance2
-        }
-
         It "Removes firewall rules" {
             # This test is a placeholder and needs to be implemented
             # when we have a proper way to create and remove firewall rules in a test environment

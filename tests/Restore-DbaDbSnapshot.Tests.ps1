@@ -40,7 +40,7 @@ Describe "Restore-DbaDbSnapshot Unit Tests" -Tag 'UnitTests' {
 
 Describe "Restore-DbaDbSnapshot Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $global:instance2 = $global:instance2
+        . "$PSScriptRoot\constants.ps1"
 
         Get-DbaProcess -SqlInstance $global:instance2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
         $server = Connect-DbaInstance -SqlInstance $global:instance2

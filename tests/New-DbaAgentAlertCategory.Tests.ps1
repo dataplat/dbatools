@@ -28,7 +28,7 @@ Describe "New-DbaAgentAlertCategory" {
 
     Context "New Agent Alert Category is added properly" {
         BeforeAll {
-            $global:instance2 = "localhost"
+            . "$PSScriptRoot\constants.ps1"
         }
 
         AfterAll {

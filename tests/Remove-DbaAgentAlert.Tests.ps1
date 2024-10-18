@@ -32,7 +32,7 @@ Describe "Remove-DbaAgentAlert Unit Tests" -Tag 'UnitTests' {
 
 Describe "Remove-DbaAgentAlert Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $global:instance2 = "localhost"
+        . "$PSScriptRoot\constants.ps1"
     }
 
     BeforeEach {

@@ -2,7 +2,6 @@ param($ModuleName = 'dbatools')
 
 Describe "Test-DbaMaxDop" {
     BeforeAll {
-        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
         . "$PSScriptRoot\constants.ps1"
     }
 
@@ -23,7 +22,7 @@ Describe "Test-DbaMaxDop" {
 
     Context "Command usage" {
         BeforeDiscovery {
-            $global:instance2 = $global:instance2
+            . "$PSScriptRoot\constants.ps1"
         }
 
         BeforeAll {

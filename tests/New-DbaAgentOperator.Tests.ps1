@@ -64,7 +64,6 @@ Describe "New-DbaAgentOperator" {
     Context "New Agent Operator is added properly" {
         BeforeAll {
             $random = Get-Random
-            $global:instance2 = $env:COMPUTERNAME
             $server2 = Connect-DbaInstance -SqlInstance $global:instance2
             $email1 = "test1$($random)@test.com"
             $email2 = "test2$($random)@test.com"

@@ -24,10 +24,6 @@ Describe "Disable-DbaAgHadr" {
     }
 
     Context "Integration Tests" -Tag "IntegrationTests" {
-        BeforeAll {
-            $global:instance3 = [Environment]::GetEnvironmentVariable('instance3')
-        }
-
         AfterAll {
             Enable-DbaAgHadr -SqlInstance $global:instance3 -Confirm:$false -Force
         }

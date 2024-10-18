@@ -27,7 +27,7 @@ Describe "Get-DbaPowerPlan" {
 
     Context "Command actually works" {
         BeforeDiscovery {
-            $global:instance2 = $global:instance2 # Ensure this variable is available in the discovery phase
+            . "$PSScriptRoot\constants.ps1"
         }
         It "Should return result for the server" {
             $results = Get-DbaPowerPlan -ComputerName $global:instance2

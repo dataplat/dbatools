@@ -22,12 +22,6 @@ Describe "Get-DbaAgentSchedule Unit Tests" -Tag 'UnitTests' {
 
 Describe "Get-DbaAgentSchedule Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $global:instance2 = $env:COMPUTERNAME
-        $global:instance3 = $env:COMPUTERNAME
-
-        $server2 = Connect-DbaInstance -SqlInstance $global:instance2
-        $server3 = Connect-DbaInstance -SqlInstance $global:instance3
-
         $null = New-DbaAgentSchedule -SqlInstance $global:instance2 -Schedule dbatoolsci_MonthlyTest -FrequencyType Monthly -FrequencyInterval 10 -FrequencyRecurrenceFactor 1 -Force
         $null = New-DbaAgentSchedule -SqlInstance $global:instance2 -Schedule dbatoolsci_WeeklyTest -FrequencyType Weekly -FrequencyInterval 2 -FrequencyRecurrenceFactor 1 -StartTime 020000  -Force
         $null = New-DbaAgentSchedule -SqlInstance $global:instance3 -Schedule dbatoolsci_MonthlyTest -FrequencyType Monthly -FrequencyInterval 10 -FrequencyRecurrenceFactor 1 -Force

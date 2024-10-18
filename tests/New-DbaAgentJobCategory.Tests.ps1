@@ -30,10 +30,6 @@ Describe "New-DbaAgentJobCategory" {
     }
 
     Context "New Agent Job Category is added properly" {
-        BeforeAll {
-            $global:instance2 = "localhost"
-        }
-
         It "Should have the right name and category type" {
             $results = New-DbaAgentJobCategory -SqlInstance $global:instance2 -Category CategoryTest1
             $results.Name | Should -Be "CategoryTest1"

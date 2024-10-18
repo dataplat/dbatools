@@ -36,13 +36,9 @@ Describe "Test-DbaDbLogShipStatus Unit Tests" -Tag "UnitTests" {
 Describe "Test-DbaDbLogShipStatus Integration Tests" -Tag "IntegrationTests" {
     BeforeDiscovery {
         $env:skipIntegrationTests = $false
-        $global:instance1 = $null
-        $global:instance2 = $null
 
         try {
             . "$PSScriptRoot\constants.ps1"
-            $global:instance1 = $global:instance1
-            $global:instance2 = $global:instance2
         } catch {
             $env:skipIntegrationTests = $true
         }

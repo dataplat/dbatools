@@ -30,7 +30,7 @@ Describe "Test-DbaDiskAllocation" {
 
     Context "Command actually works" {
         BeforeDiscovery {
-            $global:instance2 = $global:instance2 # Ensure this variable is in scope for discovery
+            . "$PSScriptRoot\constants.ps1"
         }
         It "Should return a result" {
             $results = Test-DbaDiskAllocation -ComputerName $global:instance2
