@@ -1,7 +1,7 @@
 Analyze and update the Pester test file for the dbatools PowerShell module at /workspace/tests/--CMDNAME--.Tests.ps1. Focus on the following:
 
 1. Review the provided errors and their line numbers.
-2. ONLY FOR SCOPING ERRORS: We should have used type full names and we used type short names. For any type errors, consult types.md and apply the appropriate replacements. Do not remove any arrays ([]), just replace the type names. Do not replace type names not causing errors.
+2. ONLY FOR TYPE ERRORS: We should have used type full names and we used type short names. For any type errors, consult types.md and apply the appropriate replacements. Do not remove any arrays ([]), just replace the type names. Do not replace type names not causing errors.
 3. Remember these are primarily INTEGRATION tests. Only mock when absolutely necessary.
 4. Make minimal changes required to make the tests pass. Avoid over-engineering.
 5. For SQL Server-specific testing scenarios, implement necessary adjustments while preserving test integrity.
