@@ -1,6 +1,14 @@
-I recently migrated the dbatools test library from Pester v4 to Pester v5. Many tests pass but many don't and I think ther are some scoping issues.
-Analyze the Pester test files for the dbatools PowerShell module along with their errors and line numbers.
+Analyze and update the Pester test file for the dbatools PowerShell module at /workspace/tests/--CMDNAME--.Tests.ps1. Focus on the following:
 
-If there are any type errors, refer to types.md for a replace map.
+1. Review the provided errors and their line numbers.
+2. For any type errors, consult types.md and apply the appropriate replacements.
+3. Remember these are primarily INTEGRATION tests. Only mock when absolutely necessary.
+4. Make minimal changes required to make the tests pass. Avoid over-engineering.
+5. For SQL Server-specific testing scenarios, implement necessary adjustments while preserving test integrity.
+6. If you encounter Pester v4 to v5 migration issues, update the test structure accordingly.
+7. Refer to the attached files for migration guidance (we may have missed some v4 syntax) as well as scoping guidance.
+8. DO NOT replace global variables with script variables UNLESS you are 100% certain it will solve the given error.
 
-Analyze and update: /workspace/tests/--CMDNAME--.Tests.ps1
+Edit the test and provide a summary of the changes made.
+
+Errors to address:

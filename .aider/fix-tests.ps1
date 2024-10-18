@@ -2,30 +2,31 @@ param (
     [int]$First = 1000,
     [int]$Skip = 0
 )
-$testerrors = Get-Content /workspace/.aider/prompts/fix-errors.json | ConvertFrom-Json
 
 $promptTemplate = Get-Content /workspace/.aider/prompts/fix-template.md
-$commands = $testerrors | Select-Object -First $First -Skip $Skip
-$added = @()
+
+$testerrors = Get-Content /workspace/.aider/prompts/fix-errors.json | ConvertFrom-Json
+$commands = $testerrors | Select-Object -ExpandProperty Command -Unique | Sort-Object
 
 foreach ($command in $commands) {
-    $cmdName = $command.Command
-    $filename = "/workspace/tests/$cmdName.Tests.ps1"
-    Write-Host "Processing $cmdName"
+    $filename = "/workspace/tests/$command.Tests.ps1"
+    Write-Host "Processing $command"
 
     if (-not (Test-Path $filename)) {
-        Write-Warning "No tests found for $cmdName"
+        Write-Warning "No tests found for $command"
         Write-Warning "$filename not found"
         continue
     }
 
-    $cmdPrompt = $promptTemplate -replace "--CMDNAME--", $cmdName
+    $cmdPrompt = $promptTemplate -replace "--CMDNAME--", $command
+
+    $testerr = $testerrors | Where-Object Command -eq $command
+    foreach ($err in $testerr) {
+        $cmdPrompt += "`n`n"
+        $cmdPrompt += "Error: $($err.ErrorMessage)`n"
+        $cmdPrompt += "Line: $($err.LineNumber)`n"
+    }
 
     # Run Aider in non-interactive mode with auto-confirmation
-    if ($added -notcontains $cmdName) {
-        $added += $cmdName
-        aider --message "$cmdPrompt" --file $filename --sonnet --no-stream --cache-prompts --read /workspace/.aider/prompts/conventions.md /workspace/.aider/prompts/types.md /workspace/.aider/prompts/errors.md
-    } else {
-        aider --message "$cmdPrompt" --sonnet --no-stream --cache-prompts --read /workspace/.aider/prompts/conventions.md /workspace/.aider/prompts/types.md
-    }
+    aider --message "$cmdPrompt" --file $filename --sonnet --no-stream --cache-prompts --read /workspace/.aider/prompts/conventions.md /workspace/.aider/prompts/types.md /workspace/.aider/prompts/breaking-changes-in-v5.md /workspace/.aider/prompts/setup-and-teardown.md /workspace/.aider/prompts/v4-to-v5.md
 }
