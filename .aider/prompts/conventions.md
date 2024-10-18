@@ -177,16 +177,12 @@ Describe "Connect-DbaInstance" {
 
 ## Additional Guidelines
 
-1. Do not use the Legacy parameter set that adapts Pester 5 syntax to Pester 4 syntax, as it is deprecated and does not work 100%.
-2. Implement necessary adjustments for SQL Server-specific testing scenarios while maintaining the integrity of the tests.
-3. Leave in comments like "#$script:instance2 for appveyor" -- it's a debugging thing
-4. Do not leave in the knownparameters section because it's taken care of by Should -HaveParameter
-5. Start with `param($ModuleName = 'dbatools')` like in the example above.
-
-## Issues with previous migration
-
+* Do not use the Legacy parameter set that adapts Pester 5 syntax to Pester 4 syntax, as it is deprecated and does not work 100%.
+* Implement necessary adjustments for SQL Server-specific testing scenarios while maintaining the integrity of the tests.
+* Leave in comments like "#$script:instance2 for appveyor" -- it's a debugging thing
+* Do not leave in the knownparameters section because it's taken care of by Should -HaveParameter
+* Start with `param($ModuleName = 'dbatools')` like in the example above.
 * -Skip:(whatever) should return true or false, not a string
 * -Mandatory:$false is how you do a "not mandatory" parameter
 * Scoping is different -- you likely need to use $global:whatever instead of $script:whatever
-* Type SwitchParameter does not exist. it's Switch
 * BigInteger is bigint

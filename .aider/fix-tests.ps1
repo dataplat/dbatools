@@ -28,5 +28,5 @@ foreach ($command in $commands) {
     }
 
     # Run Aider in non-interactive mode with auto-confirmation
-    aider --message "$cmdPrompt" --file $filename --sonnet --no-stream --cache-prompts --read /workspace/.aider/prompts/conventions.md /workspace/.aider/prompts/types.md /workspace/.aider/prompts/breaking-changes-in-v5.md /workspace/.aider/prompts/setup-and-teardown.md /workspace/.aider/prompts/v4-to-v5.md
+    aider --message "$cmdPrompt" --file $filename --sonnet --no-stream --cache-prompts --read /workspace/.aider/prompts/types.md /workspace/.aider/prompts/v4-to-v5.md
 }
