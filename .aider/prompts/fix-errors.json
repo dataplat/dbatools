@@ -1,0 +1,374 @@
+[
+    {
+        "Command": "Get-DbatoolsError",
+        "ErrorMessage": "Expected: 'Test error' But was: 'Error connecting to [nothing]: The network path was not found'",
+        "FilePath": "C:\\github\\dbatools\\tests\\Get-DbatoolsError.Tests.ps1",
+        "LineNumber": 40
+    },
+    {
+        "Command": "Get-DbatoolsLog",
+        "ErrorMessage": "RuntimeException: Cannot index into a null array.",
+        "FilePath": "C:\\github\\dbatools\\public\\Get-DbatoolsLog.ps1",
+        "LineNumber": 136
+    },
+    {
+        "Command": "Get-DbatoolsLog",
+        "ErrorMessage": "Expected 'Error', but got $null.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Get-DbatoolsLog.Tests.ps1",
+        "LineNumber": 82
+    },
+    {
+        "Command": "Remove-DbaReplPublication",
+        "ErrorMessage": "Expected command to have a parameter SqlInstance, but it wasn't mandatory and was of type [Dataplat.Dbatools.Parameter.DbaInstanceParameter[]].",
+        "FilePath": "C:\\github\\dbatools\\tests\\Remove-DbaReplPublication.Tests.ps1",
+        "LineNumber": 14
+    },
+    {
+        "Command": "Remove-DbaReplPublication",
+        "ErrorMessage": "Expected command to have a parameter Database, of type [System.String[]], but it was of type [System.String].",
+        "FilePath": "C:\\github\\dbatools\\tests\\Remove-DbaReplPublication.Tests.ps1",
+        "LineNumber": 20
+    },
+    {
+        "Command": "Remove-DbaReplPublication",
+        "ErrorMessage": "Expected command to have a parameter InputObject, of type [System.Object], but it was of type [Microsoft.SqlServer.Replication.Publication[]].",
+        "FilePath": "C:\\github\\dbatools\\tests\\Remove-DbaReplPublication.Tests.ps1",
+        "LineNumber": 26
+    },
+    {
+        "Command": "Register-DbatoolsConfig",
+        "ErrorMessage": "ArgumentException: Could not find type [Config[]]. Make sure that the assembly that contains that type is loaded.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Register-DbatoolsConfig.Tests.ps1",
+        "LineNumber": 8
+    },
+    {
+        "Command": "Remove-DbaReplArticle",
+        "ErrorMessage": "Expected command to have a parameter SqlInstance, which is mandatory and of type [Dataplat.Dbatools.Parameter.DbaInstanceParameter[]].",
+        "FilePath": "C:\\github\\dbatools\\tests\\Remove-DbaReplArticle.Tests.ps1",
+        "LineNumber": 14
+    },
+    {
+        "Command": "Remove-DbaReplArticle",
+        "ErrorMessage": "Expected command to have a parameter InputObject, of type [System.Management.Automation.PSObject], but it was of type [Microsoft.SqlServer.Replication.Article[]].",
+        "FilePath": "C:\\github\\dbatools\\tests\\Remove-DbaReplArticle.Tests.ps1",
+        "LineNumber": 32
+    },
+    {
+        "Command": "Get-XpDirTreeRestoreFile",
+        "ErrorMessage": "Method invocation failed because [System.Management.Automation.PSCustomObject] does not contain a method named 'ExecuteWithResults'.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Get-XpDirTreeRestoreFile.Tests.ps1",
+        "LineNumber": 78
+    },
+    {
+        "Command": "Unregister-DbatoolsConfig",
+        "ErrorMessage": "ArgumentException: Could not find type [ConfigScope]. Make sure that the assembly that contains that type is loaded.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Unregister-DbatoolsConfig.Tests.ps1",
+        "LineNumber": 7
+    },
+    {
+        "Command": "Reset-DbatoolsConfig",
+        "ErrorMessage": "ArgumentException: Could not find type [Config[]]. Make sure that the assembly that contains that type is loaded.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Reset-DbatoolsConfig.Tests.ps1",
+        "LineNumber": 9
+    },
+    {
+        "Command": "Remove-DbaPfDataCollectorSet",
+        "ErrorMessage": "Expected 'Long Running Queries', but got $null.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Remove-DbaPfDataCollectorSet.Tests.ps1",
+        "LineNumber": 44
+    },
+    {
+        "Command": "Export-DbaUser",
+        "ErrorMessage": "ArgumentException: Could not find type [ScriptingOptions]. Ensure that the assembly is loaded.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Export-DbaUser.Tests.ps1",
+        "LineNumber": 202
+    },
+    {
+        "Command": "Get-DbaLogin",
+        "ErrorMessage": "Expected 'testlogin1_229811432' to be found in collection, but it was not found.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Get-DbaLogin.Tests.ps1",
+        "LineNumber": 189
+    },
+    {
+        "Command": "Get-DbaSpConfigure",
+        "ErrorMessage": "Expected 16, but got 69.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Get-DbaSpConfigure.Tests.ps1",
+        "LineNumber": 40
+    },
+    {
+        "Command": "Get-DbaSpConfigure",
+        "ErrorMessage": "Expected 14, but got 67.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Get-DbaSpConfigure.Tests.ps1",
+        "LineNumber": 50
+    },
+    {
+        "Command": "Install-DbaWhoIsActive",
+        "ErrorMessage": "ValidationMetadataException: The argument is null or empty.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Install-DbaWhoIsActive.Tests.ps1",
+        "LineNumber": 183
+    },
+    {
+        "Command": "Install-DbaWhoIsActive",
+        "ErrorMessage": "Expected a value, but got $null or empty.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Install-DbaWhoIsActive.Tests.ps1",
+        "LineNumber": 249
+    },
+    {
+        "Command": "Stop-DbaExternalProcess",
+        "ErrorMessage": "Expected 'localhost', but got $null.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Stop-DbaExternalProcess.Tests.ps1",
+        "LineNumber": 51
+    },
+    {
+        "Command": "Update-DbaInstance",
+        "ErrorMessage": "ParameterBindingValidationException: Cannot bind argument to parameter 'ReferenceObject' because it is null.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Update-DbaInstance.Tests.ps1",
+        "LineNumber": 27
+    },
+    {
+        "Command": "Update-DbaInstance",
+        "ErrorMessage": "Path to SQL Server updates folder is not set.",
+        "FilePath": "C:\\github\\dbatools\\public\\Update-DbaInstance.ps1",
+        "LineNumber": 515
+    },
+    {
+        "Command": "Export-DbaCredential",
+        "ErrorMessage": "ArgumentException: Could not find type [Credential[]]. Ensure that the assembly is loaded.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Export-DbaCredential.Tests.ps1",
+        "LineNumber": 38
+    },
+    {
+        "Command": "Find-DbaAgentJob",
+        "ErrorMessage": "Expected a value, but got $null or empty.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Find-DbaAgentJob.Tests.ps1",
+        "LineNumber": 135
+    },
+    {
+        "Command": "Get-DbaAgentAlert",
+        "ErrorMessage": "CommandNotFoundException: The term 'C:\\github\\dbatools\\tests\\..\\functions\\Get-DbaAgentAlert.ps1' is not recognized.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Get-DbaAgentAlert.Tests.ps1",
+        "LineNumber": 6
+    },
+    {
+        "Command": "Get-DbaAgentLog",
+        "ErrorMessage": "Expected $true, but got $null.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Get-DbaAgentLog.Tests.ps1",
+        "LineNumber": 33
+    },
+    {
+        "Command": "Add-DbaDbRoleMember",
+        "ErrorMessage": "ParameterBindingValidationException: Cannot bind argument to parameter 'SqlInstance' because it is null.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Add-DbaDbRoleMember.Tests.ps1",
+        "LineNumber": 33
+    },
+    {
+        "Command": "Remove-DbaDatabase",
+        "ErrorMessage": "ParameterBindingValidationException: Cannot bind argument to parameter 'InputObject' because it is null.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Add-DbaExtendedProperty.Tests.ps1",
+        "LineNumber": 41
+    },
+    {
+        "Command": "Export-DbaDbRole",
+        "ErrorMessage": "ArgumentException: Could not find type [ScriptingOptions]. Ensure that the assembly is loaded.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Export-DbaDbRole.Tests.ps1",
+        "LineNumber": 127
+    },
+    {
+        "Command": "Export-DbaInstance",
+        "ErrorMessage": "ArgumentException: Could not find type [ScriptingOptions]. Ensure that the assembly is loaded.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Export-DbaInstance.Tests.ps1",
+        "LineNumber": 20
+    },
+    {
+        "Command": "Export-DbaLogin",
+        "ErrorMessage": "ParameterBindingValidationException: Cannot validate argument on parameter 'Name'. The argument is null.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Export-DbaLogin.Tests.ps1",
+        "LineNumber": 176
+    },
+    {
+        "Command": "Get-DbaAgentSchedule",
+        "ErrorMessage": "Win32Exception: The system cannot find the file specified.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Get-DbaAgentSchedule.Tests.ps1",
+        "LineNumber": 28
+    },
+    {
+        "Command": "Grant-DbaAgPermission",
+        "ErrorMessage": "Expected 'Success', but got $null.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Grant-DbaAgPermission.Tests.ps1",
+        "LineNumber": 48
+    },
+    {
+        "Command": "Copy-DbaAgentAlert",
+        "ErrorMessage": "Expected @('Skipped', 'Skipped'), but got 'Skipped'.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Copy-DbaAgentAlert.Tests.ps1",
+        "LineNumber": 91
+    },
+    {
+        "Command": "Copy-DbaAgentOperator",
+        "ErrorMessage": "Expected 2, but got 4.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Copy-DbaAgentOperator.Tests.ps1",
+        "LineNumber": 60
+    },
+    {
+        "Command": "Copy-DbaAgentProxy",
+        "ErrorMessage": "Expected 1, but got 2.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Copy-DbaAgentProxy.Tests.ps1",
+        "LineNumber": 70
+    },
+    {
+        "Command": "New-DbaAgentAlert",
+        "ErrorMessage": "Expected Get-DbaAgentAlert to be called 1 times exactly, but was called 0 times.",
+        "FilePath": "C:\\github\\dbatools\\tests\\New-DbaAgentAlert.Tests.ps1",
+        "LineNumber": 133
+    },
+    {
+        "Command": "New-DbaAvailabilityGroup",
+        "ErrorMessage": "Expected 'dbatoolsci_addag_agroupdb', but got $null.",
+        "FilePath": "C:\\github\\dbatools\\tests\\New-DbaAvailabilityGroup.Tests.ps1",
+        "LineNumber": 127
+    },
+    {
+        "Command": "Revoke-DbaAgPermission",
+        "ErrorMessage": "Expected 'Success', but got $null.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Revoke-DbaAgPermission.Tests.ps1",
+        "LineNumber": 51
+    },
+    {
+        "Command": "Copy-DbaCustomError",
+        "ErrorMessage": "Expected @('60000:'us_english'', '60000:'FranÃ§ais''), but got @(60000:'us_english', 60000:'Français').",
+        "FilePath": "C:\\github\\dbatools\\tests\\Copy-DbaCustomError.Tests.ps1",
+        "LineNumber": 50
+    },
+    {
+        "Command": "Copy-DbaCustomError",
+        "ErrorMessage": "Expected @('60000:'us_english'', '60000:'FranÃ§ais''), but got @(60000:'us_english', 60000:'Français').",
+        "FilePath": "C:\\github\\dbatools\\tests\\Copy-DbaCustomError.Tests.ps1",
+        "LineNumber": 56
+    },
+    {
+        "Command": "Copy-DbaDatabase",
+        "ErrorMessage": "Expected 'Source' to be found in collection @($null), but it was not found.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Copy-DbaDatabase.Tests.ps1",
+        "LineNumber": 41
+    },
+    {
+        "Command": "Copy-DbaDatabase",
+        "ErrorMessage": "Expected $false, but got $true.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Copy-DbaDatabase.Tests.ps1",
+        "LineNumber": 86
+    },
+    {
+        "Command": "Copy-DbaDatabase",
+        "ErrorMessage": "Expected strings to be the same, but they were different.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Copy-DbaDatabase.Tests.ps1",
+        "LineNumber": 154
+    },
+    {
+        "Command": "Copy-DbaResourceGovernor",
+        "ErrorMessage": "Expected 'Successful', but got @('Skipped', 'Successful').",
+        "FilePath": "C:\\github\\dbatools\\tests\\Copy-DbaResourceGovernor.Tests.ps1",
+        "LineNumber": 97
+    },
+    {
+        "Command": "Copy-DbaResourceGovernor",
+        "ErrorMessage": "Expected 'dbatoolsci_fnRG', but got $null.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Copy-DbaResourceGovernor.Tests.ps1",
+        "LineNumber": 103
+    },
+    {
+        "Command": "Get-DbaDbMailProfile",
+        "ErrorMessage": "Expected a value, but got $null or empty.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Get-DbaDbMailProfile.Tests.ps1",
+        "LineNumber": 58
+    },
+    {
+        "Command": "Get-DbaDbMailProfile",
+        "ErrorMessage": "Expected 'Profile for system email', but got $null.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Get-DbaDbMailProfile.Tests.ps1",
+        "LineNumber": 68
+    },
+    {
+        "Command": "Get-DbaDbMailProfile",
+        "ErrorMessage": "Expected a value, but got $null or empty.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Get-DbaDbMailProfile.Tests.ps1",
+        "LineNumber": 73
+    },
+    {
+        "Command": "Get-DbaDbMailProfile",
+        "ErrorMessage": "Expected $null, but got <empty>.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Get-DbaDbMailProfile.Tests.ps1",
+        "LineNumber": 86
+    },
+    {
+        "Command": "Add-DbaComputerCertificate",
+        "ErrorMessage": "ArgumentException: Could not find type [X509Certificate2[]]. Make sure that the assembly that contains that type is loaded.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Add-DbaComputerCertificate.Tests.ps1",
+        "LineNumber": 85
+    },
+    {
+        "Command": "Backup-DbaDatabase",
+        "ErrorMessage": "Import-Module : The specified module 'dbatools' was not loaded because no valid module file was found in any module directory.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Backup-DbaDatabase.Tests.ps1",
+        "LineNumber": 6
+    },
+    {
+        "Command": "Backup-DbaDatabase",
+        "ErrorMessage": "Expected 'C:\\Temp\\backups\\master', but got $null.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Backup-DbaDatabase.Tests.ps1",
+        "LineNumber": 284
+    },
+    {
+        "Command": "Backup-DbaDatabase",
+        "ErrorMessage": "Expected $true, but got $false.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Backup-DbaDatabase.Tests.ps1",
+        "LineNumber": 306
+    },
+    {
+        "Command": "Backup-DbaDatabase",
+        "ErrorMessage": "Expected like wildcard '*PesterTest.bak' to match $null, but it did not match.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Backup-DbaDatabase.Tests.ps1",
+        "LineNumber": 368
+    },
+    {
+        "Command": "Backup-DbaDatabase",
+        "ErrorMessage": "RuntimeException: Cannot index into a null array.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Backup-DbaDatabase.Tests.ps1",
+        "LineNumber": 419
+    },
+    {
+        "Command": "Backup-DbaDatabase",
+        "ErrorMessage": "RuntimeException: You cannot call a method on a null-valued expression.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Backup-DbaDatabase.Tests.ps1",
+        "LineNumber": 426
+    },
+    {
+        "Command": "Backup-DbaDatabase",
+        "ErrorMessage": "Expected 'CERTIFICATE', but got $null.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Backup-DbaDatabase.Tests.ps1",
+        "LineNumber": 508
+    },
+    {
+        "Command": "Add-DbaRegServer",
+        "ErrorMessage": "ArgumentException: Could not find type [Server[]]. Ensure that the assembly that contains that type is loaded.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Add-DbaRegServer.Tests.ps1",
+        "LineNumber": 40
+    },
+    {
+        "Command": "Copy-DbaXESessionTemplate",
+        "ErrorMessage": "Expected a value, but got $null or empty.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Copy-DbaXESessionTemplate.Tests.ps1",
+        "LineNumber": 29
+    },
+    {
+        "Command": "Export-DbatoolsConfig",
+        "ErrorMessage": "ArgumentException: Could not find type [Config[]]. Ensure that the assembly that contains that type is loaded.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Export-DbatoolsConfig.Tests.ps1",
+        "LineNumber": 33
+    },
+    {
+        "Command": "Export-DbatoolsConfig",
+        "ErrorMessage": "ArgumentException: Could not find type [ConfigScope]. Ensure that the assembly that contains that type is loaded.",
+        "FilePath": "C:\\github\\dbatools\\tests\\Export-DbatoolsConfig.Tests.ps1",
+        "LineNumber": 34
+    }
+]
