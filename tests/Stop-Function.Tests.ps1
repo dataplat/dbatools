@@ -10,47 +10,47 @@ Describe "Stop-Function" {
         BeforeAll {
             $CommandUnderTest = Get-Command Stop-Function
         }
-        It "Should have Message as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Message -Type String -Mandatory:$false
+        It "Should have Message as a non-mandatory System.String parameter" {
+            $CommandUnderTest | Should -HaveParameter Message -Type System.String -Mandatory:$false
         }
-        It "Should have EnableException as a non-mandatory Boolean parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Boolean -Mandatory:$false
+        It "Should have EnableException as a non-mandatory System.Boolean parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Boolean -Mandatory:$false
         }
-        It "Should have Category as a non-mandatory ErrorCategory parameter" {
-            $CommandUnderTest | Should -HaveParameter Category -Type ErrorCategory -Mandatory:$false
+        It "Should have Category as a non-mandatory System.Management.Automation.ErrorCategory parameter" {
+            $CommandUnderTest | Should -HaveParameter Category -Type System.Management.Automation.ErrorCategory -Mandatory:$false
         }
-        It "Should have ErrorRecord as a non-mandatory ErrorRecord[] parameter" {
-            $CommandUnderTest | Should -HaveParameter ErrorRecord -Type ErrorRecord[] -Mandatory:$false
+        It "Should have ErrorRecord as a non-mandatory System.Management.Automation.ErrorRecord[] parameter" {
+            $CommandUnderTest | Should -HaveParameter ErrorRecord -Type System.Management.Automation.ErrorRecord[] -Mandatory:$false
         }
-        It "Should have Tag as a non-mandatory String[] parameter" {
-            $CommandUnderTest | Should -HaveParameter Tag -Type String[] -Mandatory:$false
+        It "Should have Tag as a non-mandatory System.String[] parameter" {
+            $CommandUnderTest | Should -HaveParameter Tag -Type System.String[] -Mandatory:$false
         }
-        It "Should have FunctionName as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter FunctionName -Type String -Mandatory:$false
+        It "Should have FunctionName as a non-mandatory System.String parameter" {
+            $CommandUnderTest | Should -HaveParameter FunctionName -Type System.String -Mandatory:$false
         }
-        It "Should have File as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter File -Type String -Mandatory:$false
+        It "Should have File as a non-mandatory System.String parameter" {
+            $CommandUnderTest | Should -HaveParameter File -Type System.String -Mandatory:$false
         }
-        It "Should have Line as a non-mandatory Int32 parameter" {
-            $CommandUnderTest | Should -HaveParameter Line -Type Int32 -Mandatory:$false
+        It "Should have Line as a non-mandatory System.Int32 parameter" {
+            $CommandUnderTest | Should -HaveParameter Line -Type System.Int32 -Mandatory:$false
         }
-        It "Should have Target as a non-mandatory Object parameter" {
-            $CommandUnderTest | Should -HaveParameter Target -Type Object -Mandatory:$false
+        It "Should have Target as a non-mandatory System.Object parameter" {
+            $CommandUnderTest | Should -HaveParameter Target -Type System.Object -Mandatory:$false
         }
-        It "Should have Exception as a non-mandatory Exception parameter" {
-            $CommandUnderTest | Should -HaveParameter Exception -Type Exception -Mandatory:$false
+        It "Should have Exception as a non-mandatory System.Exception parameter" {
+            $CommandUnderTest | Should -HaveParameter Exception -Type System.Exception -Mandatory:$false
         }
-        It "Should have OverrideExceptionMessage as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter OverrideExceptionMessage -Type Switch -Mandatory:$false
+        It "Should have OverrideExceptionMessage as a non-mandatory System.Management.Automation.SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter OverrideExceptionMessage -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
-        It "Should have Continue as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter Continue -Type Switch -Mandatory:$false
+        It "Should have Continue as a non-mandatory System.Management.Automation.SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter Continue -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
-        It "Should have SilentlyContinue as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter SilentlyContinue -Type Switch -Mandatory:$false
+        It "Should have SilentlyContinue as a non-mandatory System.Management.Automation.SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter SilentlyContinue -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
-        It "Should have ContinueLabel as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter ContinueLabel -Type String -Mandatory:$false
+        It "Should have ContinueLabel as a non-mandatory System.String parameter" {
+            $CommandUnderTest | Should -HaveParameter ContinueLabel -Type System.String -Mandatory:$false
         }
     }
 

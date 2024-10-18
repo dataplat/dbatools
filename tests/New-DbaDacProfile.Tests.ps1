@@ -12,19 +12,19 @@ Describe "New-DbaDacProfile" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[]
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String[]
         }
         It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type String
+            $CommandUnderTest | Should -HaveParameter Path -Type System.String
         }
         It "Should have ConnectionString as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ConnectionString -Type String[]
+            $CommandUnderTest | Should -HaveParameter ConnectionString -Type System.String[]
         }
         It "Should have PublishOptions as a parameter" {
             $CommandUnderTest | Should -HaveParameter PublishOptions -Type Hashtable
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

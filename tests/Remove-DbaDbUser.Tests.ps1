@@ -12,28 +12,28 @@ Describe "Remove-DbaDbUser Unit Tests" -Tag 'UnitTests' {
             $command = Get-Command -Name $CommandName
         }
         It "Should have SqlInstance parameter" {
-            $command | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+            $command | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Connection.ManagementConnectionType[] -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $command | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+            $command | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
         }
         It "Should have Database parameter" {
-            $command | Should -HaveParameter Database -Type Object[] -Mandatory:$false
+            $command | Should -HaveParameter Database -Type System.Object[] -Mandatory:$false
         }
         It "Should have ExcludeDatabase parameter" {
-            $command | Should -HaveParameter ExcludeDatabase -Type Object[] -Mandatory:$false
+            $command | Should -HaveParameter ExcludeDatabase -Type System.Object[] -Mandatory:$false
         }
         It "Should have User parameter" {
-            $command | Should -HaveParameter User -Type Object[] -Mandatory:$false
+            $command | Should -HaveParameter User -Type System.Object[] -Mandatory:$false
         }
         It "Should have InputObject parameter" {
-            $command | Should -HaveParameter InputObject -Type User[] -Mandatory:$false
+            $command | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.SMO.User[] -Mandatory:$false
         }
         It "Should have Force parameter" {
-            $command | Should -HaveParameter Force -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter Force -Type System.Management.Automation.Switch -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $command | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter EnableException -Type System.Management.Automation.Switch -Mandatory:$false
         }
     }
 }

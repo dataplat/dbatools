@@ -5,20 +5,20 @@ Describe "New-DbaDacOption" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaDacOption
         }
-        It "Should have Type as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Type -Type String -Mandatory:$false
+        It "Should have Type as a non-mandatory System.String parameter" {
+            $CommandUnderTest | Should -HaveParameter Type -Type System.String -Mandatory:$false
         }
-        It "Should have Action as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Action -Type String -Mandatory:$false
+        It "Should have Action as a non-mandatory System.String parameter" {
+            $CommandUnderTest | Should -HaveParameter Action -Type System.String -Mandatory:$false
         }
-        It "Should have PublishXml as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter PublishXml -Type String -Mandatory:$false
+        It "Should have PublishXml as a non-mandatory System.String parameter" {
+            $CommandUnderTest | Should -HaveParameter PublishXml -Type System.String -Mandatory:$false
         }
-        It "Should have Property as a non-mandatory Hashtable parameter" {
-            $CommandUnderTest | Should -HaveParameter Property -Type Hashtable -Mandatory:$false
+        It "Should have Property as a non-mandatory System.Collections.Hashtable parameter" {
+            $CommandUnderTest | Should -HaveParameter Property -Type System.Collections.Hashtable -Mandatory:$false
         }
-        It "Should have EnableException as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+        It "Should have EnableException as a non-mandatory System.Management.Automation.SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

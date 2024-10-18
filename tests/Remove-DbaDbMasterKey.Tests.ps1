@@ -13,23 +13,23 @@ Describe "Remove-DbaDbMasterKey Unit Tests" -Tag 'UnitTests' {
         }
 
         It "Should have SqlInstance parameter" {
-            $command | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+            $command | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Connection.ManagementConnectionType[] -Mandatory:$false
         }
 
         It "Should have SqlCredential parameter" {
-            $command | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+            $command | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
         }
 
         It "Should have Database parameter" {
-            $command | Should -HaveParameter Database -Type String[] -Mandatory:$false
+            $command | Should -HaveParameter Database -Type System.String[] -Mandatory:$false
         }
 
         It "Should have ExcludeDatabase parameter" {
-            $command | Should -HaveParameter ExcludeDatabase -Type String[] -Mandatory:$false
+            $command | Should -HaveParameter ExcludeDatabase -Type System.String[] -Mandatory:$false
         }
 
         It "Should have All parameter" {
-            $command | Should -HaveParameter All -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter All -Type System.Management.Automation.Switch -Mandatory:$false
         }
 
         It "Should have InputObject parameter" {
@@ -37,7 +37,7 @@ Describe "Remove-DbaDbMasterKey Unit Tests" -Tag 'UnitTests' {
         }
 
         It "Should have EnableException parameter" {
-            $command | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter EnableException -Type System.Management.Automation.Switch -Mandatory:$false
         }
     }
 }

@@ -18,7 +18,7 @@ Describe "Remove-DbaDbUdf" {
             $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Mandatory:$false
         }
         It "Should have ExcludeSystemUdf as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSystemUdf -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeSystemUdf -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have Schema as a non-mandatory parameter of type String[]" {
             $CommandUnderTest | Should -HaveParameter Schema -Type String[] -Mandatory:$false
@@ -33,10 +33,10 @@ Describe "Remove-DbaDbUdf" {
             $CommandUnderTest | Should -HaveParameter ExcludeName -Type String[] -Mandatory:$false
         }
         It "Should have InputObject as a non-mandatory parameter of type UserDefinedFunction[]" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type UserDefinedFunction[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.UserDefinedFunction[] -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

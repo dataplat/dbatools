@@ -20,25 +20,25 @@ Describe 'New-DbaCredential' -Tag 'UnitTests', 'IntegrationTests' {
             $CommandUnderTest | Should -HaveParameter -Name 'SqlCredential' -Type 'PSCredential' -Mandatory:$false
         }
         It "Accepts Name as a parameter" {
-            $CommandUnderTest | Should -HaveParameter -Name 'Name' -Type 'String' -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter -Name 'Name' -Type 'System.String' -Mandatory:$false
         }
         It "Accepts Identity as a parameter" {
-            $CommandUnderTest | Should -HaveParameter -Name 'Identity' -Type 'String' -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter -Name 'Identity' -Type 'System.String' -Mandatory:$false
         }
         It "Accepts SecurePassword as a parameter" {
-            $CommandUnderTest | Should -HaveParameter -Name 'SecurePassword' -Type 'SecureString' -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter -Name 'SecurePassword' -Type 'System.Security.SecureString' -Mandatory:$false
         }
         It "Accepts MappedClassType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter -Name 'MappedClassType' -Type 'String' -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter -Name 'MappedClassType' -Type 'System.String' -Mandatory:$false
         }
         It "Accepts ProviderName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter -Name 'ProviderName' -Type 'String' -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter -Name 'ProviderName' -Type 'System.String' -Mandatory:$false
         }
         It "Accepts Force as a parameter" {
-            $CommandUnderTest | Should -HaveParameter -Name 'Force' -Type 'Switch' -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter -Name 'Force' -Type 'System.Management.Automation.SwitchParameter' -Mandatory:$false
         }
         It "Accepts EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter -Name 'EnableException' -Type 'Switch' -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter -Name 'EnableException' -Type 'System.Management.Automation.SwitchParameter' -Mandatory:$false
         }
     }
 

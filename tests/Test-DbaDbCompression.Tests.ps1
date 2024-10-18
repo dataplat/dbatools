@@ -11,29 +11,29 @@ Describe "Test-DbaDbCompression Unit Tests" -Tag 'UnitTests' {
         It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
-        It "Should have Database as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Mandatory:$false
+        It "Should have Database as a non-mandatory parameter of type System.String[]" {
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String[] -Mandatory:$false
         }
-        It "Should have ExcludeDatabase as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type String[] -Mandatory:$false
+        It "Should have ExcludeDatabase as a non-mandatory parameter of type System.String[]" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.String[] -Mandatory:$false
         }
-        It "Should have Schema as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter Schema -Type String[] -Mandatory:$false
+        It "Should have Schema as a non-mandatory parameter of type System.String[]" {
+            $CommandUnderTest | Should -HaveParameter Schema -Type System.String[] -Mandatory:$false
         }
-        It "Should have Table as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter Table -Type String[] -Mandatory:$false
+        It "Should have Table as a non-mandatory parameter of type System.String[]" {
+            $CommandUnderTest | Should -HaveParameter Table -Type System.String[] -Mandatory:$false
         }
-        It "Should have ResultSize as a non-mandatory parameter of type Int32" {
-            $CommandUnderTest | Should -HaveParameter ResultSize -Type Int32 -Mandatory:$false
+        It "Should have ResultSize as a non-mandatory parameter of type System.Int32" {
+            $CommandUnderTest | Should -HaveParameter ResultSize -Type System.Int32 -Mandatory:$false
         }
-        It "Should have Rank as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter Rank -Type String -Mandatory:$false
+        It "Should have Rank as a non-mandatory parameter of type System.String" {
+            $CommandUnderTest | Should -HaveParameter Rank -Type System.String -Mandatory:$false
         }
-        It "Should have FilterBy as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter FilterBy -Type String -Mandatory:$false
+        It "Should have FilterBy as a non-mandatory parameter of type System.String" {
+            $CommandUnderTest | Should -HaveParameter FilterBy -Type System.String -Mandatory:$false
         }
-        It "Should have EnableException as a non-mandatory parameter of type Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+        It "Should have EnableException as a non-mandatory parameter of type System.Management.Automation.SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 }

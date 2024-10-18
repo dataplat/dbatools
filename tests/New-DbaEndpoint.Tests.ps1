@@ -18,43 +18,43 @@ Describe "New-DbaEndpoint" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have Name as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Name -Type String
+            $CommandUnderTest | Should -HaveParameter Name -Type System.String
         }
         It "Should have Type as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Type -Type String
+            $CommandUnderTest | Should -HaveParameter Type -Type System.String
         }
         It "Should have Protocol as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Protocol -Type String
+            $CommandUnderTest | Should -HaveParameter Protocol -Type System.String
         }
         It "Should have Role as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Role -Type String
+            $CommandUnderTest | Should -HaveParameter Role -Type System.String
         }
         It "Should have EndpointEncryption as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EndpointEncryption -Type String
+            $CommandUnderTest | Should -HaveParameter EndpointEncryption -Type System.String
         }
         It "Should have EncryptionAlgorithm as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EncryptionAlgorithm -Type String
+            $CommandUnderTest | Should -HaveParameter EncryptionAlgorithm -Type System.String
         }
         It "Should have AuthenticationOrder as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AuthenticationOrder -Type String
+            $CommandUnderTest | Should -HaveParameter AuthenticationOrder -Type System.String
         }
         It "Should have Certificate as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Certificate -Type String
+            $CommandUnderTest | Should -HaveParameter Certificate -Type System.String
         }
         It "Should have IPAddress as a parameter" {
-            $CommandUnderTest | Should -HaveParameter IPAddress -Type IPAddress
+            $CommandUnderTest | Should -HaveParameter IPAddress -Type System.Net.IPAddress
         }
         It "Should have Port as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Port -Type Int32
+            $CommandUnderTest | Should -HaveParameter Port -Type System.Int32
         }
         It "Should have SslPort as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SslPort -Type Int32
+            $CommandUnderTest | Should -HaveParameter SslPort -Type System.Int32
         }
         It "Should have Owner as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Owner -Type String
+            $CommandUnderTest | Should -HaveParameter Owner -Type System.String
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

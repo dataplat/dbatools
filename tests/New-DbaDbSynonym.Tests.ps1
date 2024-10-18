@@ -28,34 +28,34 @@ Describe "New-DbaDbSynonym" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[]
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String[]
         }
         It "Should have ExcludeDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type String[]
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.String[]
         }
         It "Should have Synonym as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Synonym -Type String
+            $CommandUnderTest | Should -HaveParameter Synonym -Type System.String
         }
         It "Should have Schema as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Schema -Type String
+            $CommandUnderTest | Should -HaveParameter Schema -Type System.String
         }
         It "Should have BaseServer as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BaseServer -Type String
+            $CommandUnderTest | Should -HaveParameter BaseServer -Type System.String
         }
         It "Should have BaseDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BaseDatabase -Type String
+            $CommandUnderTest | Should -HaveParameter BaseDatabase -Type System.String
         }
         It "Should have BaseSchema as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BaseSchema -Type String
+            $CommandUnderTest | Should -HaveParameter BaseSchema -Type System.String
         }
         It "Should have BaseObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BaseObject -Type String
+            $CommandUnderTest | Should -HaveParameter BaseObject -Type System.String
         }
         It "Should have InputObject as a parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

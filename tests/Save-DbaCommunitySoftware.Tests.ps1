@@ -11,23 +11,23 @@ Describe "Save-DbaCommunitySoftware" {
         BeforeAll {
             $CommandUnderTest = Get-Command Save-DbaCommunitySoftware
         }
-        It "Should have Software as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Software -Type String -Mandatory:$false
+        It "Should have Software as a non-mandatory System.String parameter" {
+            $CommandUnderTest | Should -HaveParameter Software -Type System.String -Mandatory:$false
         }
-        It "Should have Branch as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Branch -Type String -Mandatory:$false
+        It "Should have Branch as a non-mandatory System.String parameter" {
+            $CommandUnderTest | Should -HaveParameter Branch -Type System.String -Mandatory:$false
         }
-        It "Should have LocalFile as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter LocalFile -Type String -Mandatory:$false
+        It "Should have LocalFile as a non-mandatory System.String parameter" {
+            $CommandUnderTest | Should -HaveParameter LocalFile -Type System.String -Mandatory:$false
         }
-        It "Should have Url as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Url -Type String -Mandatory:$false
+        It "Should have Url as a non-mandatory System.String parameter" {
+            $CommandUnderTest | Should -HaveParameter Url -Type System.String -Mandatory:$false
         }
-        It "Should have LocalDirectory as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter LocalDirectory -Type String -Mandatory:$false
+        It "Should have LocalDirectory as a non-mandatory System.String parameter" {
+            $CommandUnderTest | Should -HaveParameter LocalDirectory -Type System.String -Mandatory:$false
         }
-        It "Should have EnableException as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+        It "Should have EnableException as a non-mandatory System.Management.Automation.SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

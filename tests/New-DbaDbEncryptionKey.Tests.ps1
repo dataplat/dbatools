@@ -12,25 +12,25 @@ Describe "New-DbaDbEncryptionKey Unit Tests" -Tag "UnitTests" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String[] -Mandatory:$false
         }
         It "Should have EncryptorName parameter" {
-            $CommandUnderTest | Should -HaveParameter EncryptorName -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EncryptorName -Type System.String -Mandatory:$false
         }
         It "Should have Type parameter" {
-            $CommandUnderTest | Should -HaveParameter Type -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Type -Type System.String -Mandatory:$false
         }
         It "Should have EncryptionAlgorithm parameter" {
-            $CommandUnderTest | Should -HaveParameter EncryptionAlgorithm -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EncryptionAlgorithm -Type System.String -Mandatory:$false
         }
         It "Should have InputObject parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[] -Mandatory:$false
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 }

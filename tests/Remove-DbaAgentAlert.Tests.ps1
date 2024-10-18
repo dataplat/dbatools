@@ -16,13 +16,13 @@ Describe "Remove-DbaAgentAlert Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Alert parameter" {
-            $CommandUnderTest | Should -HaveParameter Alert -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Alert -Type Microsoft.SqlServer.Management.Smo.Alert[] -Mandatory:$false
         }
         It "Should have ExcludeAlert parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeAlert -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeAlert -Type System.String[] -Mandatory:$false
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Alert[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Alert[] -Mandatory:$false
         }
         It "Should have EnableException parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false

@@ -18,16 +18,16 @@ Describe "Remove-DbaDbMailAccount" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Account as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Account -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Account -Type System.String[] -Mandatory:$false
         }
         It "Should have ExcludeAccount as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeAccount -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeAccount -Type System.String[] -Mandatory:$false
         }
         It "Should have InputObject as a parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type MailAccount[] -Mandatory:$false
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

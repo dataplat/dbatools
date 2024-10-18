@@ -12,25 +12,25 @@ Describe "Set-DbaAgentAlert" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have Alert parameter" {
-            $CommandUnderTest | Should -HaveParameter Alert -Type Object[]
+            $CommandUnderTest | Should -HaveParameter Alert -Type System.Object[]
         }
         It "Should have NewName parameter" {
-            $CommandUnderTest | Should -HaveParameter NewName -Type String
+            $CommandUnderTest | Should -HaveParameter NewName -Type System.String
         }
         It "Should have Enabled parameter" {
-            $CommandUnderTest | Should -HaveParameter Enabled -Type Switch
+            $CommandUnderTest | Should -HaveParameter Enabled -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Disabled parameter" {
-            $CommandUnderTest | Should -HaveParameter Disabled -Type Switch
+            $CommandUnderTest | Should -HaveParameter Disabled -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type Switch
+            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Alert[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Agent.Alert[]
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

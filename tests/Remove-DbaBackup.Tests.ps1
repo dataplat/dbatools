@@ -17,22 +17,22 @@ Describe "Remove-DbaBackup" {
             $CommandUnderTest = Get-Command Remove-DbaBackup
         }
         It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type String
+            $CommandUnderTest | Should -HaveParameter Path -Type System.String
         }
         It "Should have BackupFileExtension as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BackupFileExtension -Type String
+            $CommandUnderTest | Should -HaveParameter BackupFileExtension -Type System.String
         }
         It "Should have RetentionPeriod as a parameter" {
-            $CommandUnderTest | Should -HaveParameter RetentionPeriod -Type String
+            $CommandUnderTest | Should -HaveParameter RetentionPeriod -Type System.String
         }
         It "Should have CheckArchiveBit as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter CheckArchiveBit -Type Switch
+            $CommandUnderTest | Should -HaveParameter CheckArchiveBit -Type System.Management.Automation.SwitchParameter
         }
         It "Should have RemoveEmptyBackupFolder as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter RemoveEmptyBackupFolder -Type Switch
+            $CommandUnderTest | Should -HaveParameter RemoveEmptyBackupFolder -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

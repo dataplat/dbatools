@@ -12,28 +12,28 @@ Describe "Test-DbaReplLatency" {
             $CommandUnderTest = Get-Command Test-DbaReplLatency
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type Object[]
+            $CommandUnderTest | Should -HaveParameter Database -Type System.Object[]
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have PublicationName parameter" {
-            $CommandUnderTest | Should -HaveParameter PublicationName -Type Object[]
+            $CommandUnderTest | Should -HaveParameter PublicationName -Type System.Object[]
         }
         It "Should have TimeToLive parameter" {
-            $CommandUnderTest | Should -HaveParameter TimeToLive -Type Int32
+            $CommandUnderTest | Should -HaveParameter TimeToLive -Type System.Int32
         }
         It "Should have RetainToken parameter" {
-            $CommandUnderTest | Should -HaveParameter RetainToken -Type Switch
+            $CommandUnderTest | Should -HaveParameter RetainToken -Type System.Management.Automation.SwitchParameter
         }
         It "Should have DisplayTokenHistory parameter" {
-            $CommandUnderTest | Should -HaveParameter DisplayTokenHistory -Type Switch
+            $CommandUnderTest | Should -HaveParameter DisplayTokenHistory -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

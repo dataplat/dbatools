@@ -16,25 +16,25 @@ Describe "New-DbaXESmartReplay" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String -Mandatory:$false
         }
         It "Should have Event parameter" {
-            $CommandUnderTest | Should -HaveParameter Event -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Event -Type System.String[] -Mandatory:$false
         }
         It "Should have Filter parameter" {
-            $CommandUnderTest | Should -HaveParameter Filter -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Filter -Type System.String -Mandatory:$false
         }
         It "Should have DelaySeconds parameter" {
-            $CommandUnderTest | Should -HaveParameter DelaySeconds -Type Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter DelaySeconds -Type System.Int32 -Mandatory:$false
         }
         It "Should have StopOnError parameter" {
-            $CommandUnderTest | Should -HaveParameter StopOnError -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter StopOnError -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have ReplayIntervalSeconds parameter" {
-            $CommandUnderTest | Should -HaveParameter ReplayIntervalSeconds -Type Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ReplayIntervalSeconds -Type System.Int32 -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 }

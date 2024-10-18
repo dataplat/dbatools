@@ -11,10 +11,10 @@ Describe "Update-DbaBuildReference" {
             $CommandUnderTest = Get-Command Update-DbaBuildReference
         }
         It "Should have LocalFile as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LocalFile -Type String
+            $CommandUnderTest | Should -HaveParameter LocalFile -Type System.String
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

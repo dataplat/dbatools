@@ -6,16 +6,16 @@ Describe "Unregister-DbatoolsConfig" {
             $CommandUnderTest = Get-Command Unregister-DbatoolsConfig
         }
         It "Accepts ConfigurationItem as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ConfigurationItem -Type Config[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ConfigurationItem -Type Dataplat.Dbatools.Configuration.Config[] -Mandatory:$false
         }
         It "Accepts FullName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FullName -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter FullName -Type System.String[] -Mandatory:$false
         }
         It "Accepts Module as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Module -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Module -Type System.String -Mandatory:$false
         }
         It "Accepts Name as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Name -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Name -Type System.String -Mandatory:$false
         }
         It "Accepts Scope as a parameter" {
             $CommandUnderTest | Should -HaveParameter Scope -Type Dataplat.Dbatools.Configuration.ConfigScope -Mandatory:$false

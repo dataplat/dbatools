@@ -6,106 +6,106 @@ Describe "New-DbaAvailabilityGroup" {
             $CommandUnderTest = Get-Command New-DbaAvailabilityGroup
         }
         It "Should have Primary as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Primary -Type DbaInstanceParameter
+            $CommandUnderTest | Should -HaveParameter Primary -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter
         }
         It "Should have PrimarySqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter PrimarySqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter PrimarySqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Secondary as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Secondary -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter Secondary -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have SecondarySqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SecondarySqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SecondarySqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Name as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Name -Type String
+            $CommandUnderTest | Should -HaveParameter Name -Type System.String
         }
         It "Should have IsContained as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IsContained -Type Switch
+            $CommandUnderTest | Should -HaveParameter IsContained -Type System.Management.Automation.SwitchParameter
         }
         It "Should have ReuseSystemDatabases as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ReuseSystemDatabases -Type Switch
+            $CommandUnderTest | Should -HaveParameter ReuseSystemDatabases -Type System.Management.Automation.SwitchParameter
         }
         It "Should have DtcSupport as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter DtcSupport -Type Switch
+            $CommandUnderTest | Should -HaveParameter DtcSupport -Type System.Management.Automation.SwitchParameter
         }
         It "Should have ClusterType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ClusterType -Type String
+            $CommandUnderTest | Should -HaveParameter ClusterType -Type System.String
         }
         It "Should have AutomatedBackupPreference as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AutomatedBackupPreference -Type String
+            $CommandUnderTest | Should -HaveParameter AutomatedBackupPreference -Type System.String
         }
         It "Should have FailureConditionLevel as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FailureConditionLevel -Type String
+            $CommandUnderTest | Should -HaveParameter FailureConditionLevel -Type System.String
         }
         It "Should have HealthCheckTimeout as a parameter" {
-            $CommandUnderTest | Should -HaveParameter HealthCheckTimeout -Type Int32
+            $CommandUnderTest | Should -HaveParameter HealthCheckTimeout -Type System.Int32
         }
         It "Should have Basic as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Basic -Type Switch
+            $CommandUnderTest | Should -HaveParameter Basic -Type System.Management.Automation.SwitchParameter
         }
         It "Should have DatabaseHealthTrigger as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter DatabaseHealthTrigger -Type Switch
+            $CommandUnderTest | Should -HaveParameter DatabaseHealthTrigger -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Passthru as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Passthru -Type Switch
+            $CommandUnderTest | Should -HaveParameter Passthru -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[]
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String[]
         }
         It "Should have SharedPath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SharedPath -Type String
+            $CommandUnderTest | Should -HaveParameter SharedPath -Type System.String
         }
         It "Should have UseLastBackup as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter UseLastBackup -Type Switch
+            $CommandUnderTest | Should -HaveParameter UseLastBackup -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Force as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type Switch
+            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter
         }
         It "Should have AvailabilityMode as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AvailabilityMode -Type String
+            $CommandUnderTest | Should -HaveParameter AvailabilityMode -Type System.String
         }
         It "Should have FailoverMode as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FailoverMode -Type String
+            $CommandUnderTest | Should -HaveParameter FailoverMode -Type System.String
         }
         It "Should have BackupPriority as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BackupPriority -Type Int32
+            $CommandUnderTest | Should -HaveParameter BackupPriority -Type System.Int32
         }
         It "Should have ConnectionModeInPrimaryRole as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ConnectionModeInPrimaryRole -Type String
+            $CommandUnderTest | Should -HaveParameter ConnectionModeInPrimaryRole -Type System.String
         }
         It "Should have ConnectionModeInSecondaryRole as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ConnectionModeInSecondaryRole -Type String
+            $CommandUnderTest | Should -HaveParameter ConnectionModeInSecondaryRole -Type System.String
         }
         It "Should have SeedingMode as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SeedingMode -Type String
+            $CommandUnderTest | Should -HaveParameter SeedingMode -Type System.String
         }
         It "Should have Endpoint as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Endpoint -Type String
+            $CommandUnderTest | Should -HaveParameter Endpoint -Type System.String
         }
         It "Should have EndpointUrl as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EndpointUrl -Type String[]
+            $CommandUnderTest | Should -HaveParameter EndpointUrl -Type System.String[]
         }
         It "Should have Certificate as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Certificate -Type String
+            $CommandUnderTest | Should -HaveParameter Certificate -Type System.String
         }
         It "Should have ConfigureXESession as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ConfigureXESession -Type Switch
+            $CommandUnderTest | Should -HaveParameter ConfigureXESession -Type System.Management.Automation.SwitchParameter
         }
         It "Should have IPAddress as a parameter" {
-            $CommandUnderTest | Should -HaveParameter IPAddress -Type IPAddress[]
+            $CommandUnderTest | Should -HaveParameter IPAddress -Type System.Net.IPAddress[]
         }
         It "Should have SubnetMask as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SubnetMask -Type IPAddress
+            $CommandUnderTest | Should -HaveParameter SubnetMask -Type System.Net.IPAddress
         }
         It "Should have Port as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Port -Type Int32
+            $CommandUnderTest | Should -HaveParameter Port -Type System.Int32
         }
         It "Should have Dhcp as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Dhcp -Type Switch
+            $CommandUnderTest | Should -HaveParameter Dhcp -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

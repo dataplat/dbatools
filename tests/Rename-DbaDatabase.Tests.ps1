@@ -27,52 +27,52 @@ Describe "Rename-DbaDatabase" {
             $CommandUnderTest = Get-Command Rename-DbaDatabase
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Connection.ManagementConnectionType[]
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type Object[]
+            $CommandUnderTest | Should -HaveParameter Database -Type System.Object[]
         }
         It "Should have ExcludeDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.Object[]
         }
         It "Should have AllDatabases as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter AllDatabases -Type Switch
+            $CommandUnderTest | Should -HaveParameter AllDatabases -Type System.Management.Automation.SwitchParameter
         }
         It "Should have DatabaseName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DatabaseName -Type String
+            $CommandUnderTest | Should -HaveParameter DatabaseName -Type System.String
         }
         It "Should have FileGroupName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FileGroupName -Type String
+            $CommandUnderTest | Should -HaveParameter FileGroupName -Type System.String
         }
         It "Should have LogicalName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LogicalName -Type String
+            $CommandUnderTest | Should -HaveParameter LogicalName -Type System.String
         }
         It "Should have FileName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FileName -Type String
+            $CommandUnderTest | Should -HaveParameter FileName -Type System.String
         }
         It "Should have ReplaceBefore as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ReplaceBefore -Type Switch
+            $CommandUnderTest | Should -HaveParameter ReplaceBefore -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Force as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type Switch
+            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Move as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Move -Type Switch
+            $CommandUnderTest | Should -HaveParameter Move -Type System.Management.Automation.SwitchParameter
         }
         It "Should have SetOffline as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter SetOffline -Type Switch
+            $CommandUnderTest | Should -HaveParameter SetOffline -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Preview as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Preview -Type Switch
+            $CommandUnderTest | Should -HaveParameter Preview -Type System.Management.Automation.SwitchParameter
         }
         It "Should have InputObject as a parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[]
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

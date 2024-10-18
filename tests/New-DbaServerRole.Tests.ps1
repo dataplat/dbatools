@@ -16,13 +16,13 @@ Describe "New-DbaServerRole" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have ServerRole as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ServerRole -Type String[]
+            $CommandUnderTest | Should -HaveParameter ServerRole -Type System.String[]
         }
         It "Should have Owner as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Owner -Type String
+            $CommandUnderTest | Should -HaveParameter Owner -Type System.String
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

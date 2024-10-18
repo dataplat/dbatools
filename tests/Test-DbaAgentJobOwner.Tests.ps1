@@ -6,19 +6,19 @@ Describe "Test-DbaAgentJobOwner Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Test-DbaAgentJobOwner
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
         }
         It "Should have Job as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Job -Type Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Job -Type System.Object[] -Mandatory:$false
         }
         It "Should have ExcludeJob as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeJob -Type Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeJob -Type System.Object[] -Mandatory:$false
         }
         It "Should have Login as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Login -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Login -Type System.String -Mandatory:$false
         }
         It "Should have EnableException as a parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false

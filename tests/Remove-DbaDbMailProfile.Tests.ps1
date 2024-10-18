@@ -12,16 +12,16 @@ Describe "Remove-DbaDbMailProfile" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have Profile as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Profile -Type String[]
+            $CommandUnderTest | Should -HaveParameter Profile -Type System.String[]
         }
         It "Should have ExcludeProfile as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeProfile -Type String[]
+            $CommandUnderTest | Should -HaveParameter ExcludeProfile -Type System.String[]
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type MailProfile[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Mail.MailProfile[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

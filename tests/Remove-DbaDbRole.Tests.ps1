@@ -12,25 +12,25 @@ Describe "Remove-DbaDbRole Unit Tests" -Tag "UnitTests" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String[] -Mandatory:$false
         }
         It "Should have ExcludeDatabase parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.String[] -Mandatory:$false
         }
         It "Should have Role parameter" {
-            $CommandUnderTest | Should -HaveParameter Role -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Role -Type System.String[] -Mandatory:$false
         }
         It "Should have ExcludeRole parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeRole -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeRole -Type System.String[] -Mandatory:$false
         }
         It "Should have IncludeSystemDbs parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeSystemDbs -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter IncludeSystemDbs -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object[] -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 }

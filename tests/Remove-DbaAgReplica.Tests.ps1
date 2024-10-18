@@ -12,22 +12,22 @@ Describe "Remove-DbaAgReplica" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have AvailabilityGroup as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AvailabilityGroup -Type String[]
+            $CommandUnderTest | Should -HaveParameter AvailabilityGroup -Type System.String[]
         }
         It "Should have Replica as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Replica -Type String[]
+            $CommandUnderTest | Should -HaveParameter Replica -Type System.String[]
         }
         It "Should have InputObject as a parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.AvailabilityReplica[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.Switch
         }
         It "Should have WhatIf as a parameter" {
-            $CommandUnderTest | Should -HaveParameter WhatIf -Type Switch
+            $CommandUnderTest | Should -HaveParameter WhatIf -Type System.Management.Automation.Switch
         }
         It "Should have Confirm as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Confirm -Type Switch
+            $CommandUnderTest | Should -HaveParameter Confirm -Type System.Management.Automation.Switch
         }
     }
 

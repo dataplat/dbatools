@@ -11,16 +11,16 @@ Describe "Set-DbaDbState Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Set-DbaDbState
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type Object[]
+            $CommandUnderTest | Should -HaveParameter Database -Type System.Object[]
         }
         It "Should have ExcludeDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.Object[]
         }
         It "Should have AllDatabases as a switch parameter" {
             $CommandUnderTest | Should -HaveParameter AllDatabases -Type switch
@@ -59,7 +59,7 @@ Describe "Set-DbaDbState Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter EnableException -Type switch
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type PSObject[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Management.Automation.PSObject[]
         }
     }
 }

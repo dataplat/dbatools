@@ -18,16 +18,16 @@ Describe "Set-DbaTcpPort" {
             $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
         }
         It "Should have Port as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Port -Type Int32[]
+            $CommandUnderTest | Should -HaveParameter Port -Type System.Int32[]
         }
         It "Should have IpAddress as a parameter" {
-            $CommandUnderTest | Should -HaveParameter IpAddress -Type IPAddress[]
+            $CommandUnderTest | Should -HaveParameter IpAddress -Type System.Net.IPAddress[]
         }
         It "Should have Force as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type Switch
+            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

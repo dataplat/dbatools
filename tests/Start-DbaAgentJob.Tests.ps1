@@ -12,34 +12,34 @@ Describe "Start-DbaAgentJob" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have Job parameter" {
-            $CommandUnderTest | Should -HaveParameter Job -Type String[]
+            $CommandUnderTest | Should -HaveParameter Job -Type System.String[]
         }
         It "Should have StepName parameter" {
-            $CommandUnderTest | Should -HaveParameter StepName -Type String
+            $CommandUnderTest | Should -HaveParameter StepName -Type System.String
         }
         It "Should have ExcludeJob parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeJob -Type String[]
+            $CommandUnderTest | Should -HaveParameter ExcludeJob -Type System.String[]
         }
         It "Should have InputObject parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Agent.Job[]
         }
         It "Should have AllJobs parameter" {
-            $CommandUnderTest | Should -HaveParameter AllJobs -Type Switch
+            $CommandUnderTest | Should -HaveParameter AllJobs -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Wait parameter" {
-            $CommandUnderTest | Should -HaveParameter Wait -Type Switch
+            $CommandUnderTest | Should -HaveParameter Wait -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Parallel parameter" {
-            $CommandUnderTest | Should -HaveParameter Parallel -Type Switch
+            $CommandUnderTest | Should -HaveParameter Parallel -Type System.Management.Automation.SwitchParameter
         }
         It "Should have WaitPeriod parameter" {
-            $CommandUnderTest | Should -HaveParameter WaitPeriod -Type Int32
+            $CommandUnderTest | Should -HaveParameter WaitPeriod -Type System.Int32
         }
         It "Should have SleepPeriod parameter" {
-            $CommandUnderTest | Should -HaveParameter SleepPeriod -Type Int32
+            $CommandUnderTest | Should -HaveParameter SleepPeriod -Type System.Int32
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

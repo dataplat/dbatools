@@ -6,28 +6,28 @@ Describe "Watch-DbaDbLogin" {
             $CommandUnderTest = Get-Command Watch-DbaDbLogin
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String
         }
         It "Should have Table as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Table -Type String
+            $CommandUnderTest | Should -HaveParameter Table -Type System.String
         }
         It "Should have SqlCms as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCms -Type String
+            $CommandUnderTest | Should -HaveParameter SqlCms -Type System.String
         }
         It "Should have ServersFromFile as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ServersFromFile -Type String
+            $CommandUnderTest | Should -HaveParameter ServersFromFile -Type System.String
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Server[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Server[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

@@ -70,7 +70,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
         It "should call internal functions using CredSSP" {
             $password = 'pwd' | ConvertTo-SecureString -AsPlainText -Force
-            $cred = [pscredential]::new('usr', $password)
+            $cred = [System.Management.Automation.PSCredential]::new('usr', $password)
             $null = Update-DbaInstance -ComputerName 'mocked' -Credential $cred -Version "2012SP3" -Path 'mocked' -EnableException -Confirm:$false
             Assert-MockCalled -ParameterFilter { $Authentication -eq 'CredSSP' } -CommandName Find-SqlInstanceUpdate -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Initialize-CredSSP -Exactly 1 -Scope It -ModuleName dbatools
@@ -84,7 +84,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
         It "should call internal functions using Kerberos" {
             $password = 'pwd' | ConvertTo-SecureString -AsPlainText -Force
-            $cred = [pscredential]::new('usr', $password)
+            $cred = [System.Management.Automation.PSCredential]::new('usr', $password)
             $null = Update-DbaInstance -ComputerName 'mocked' -Authentication Kerberos -Credential $cred -Version "2012SP3" -Path 'mocked' -EnableException -Confirm:$false
             Assert-MockCalled -ParameterFilter { $Authentication -eq 'Kerberos' } -CommandName Find-SqlInstanceUpdate -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Initialize-CredSSP -Exactly 0 -Scope It -ModuleName dbatools
@@ -787,7 +787,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
         It "fails when KB is missing in the folder" {
             { Update-DbaInstance -Path $exeDir -EnableException } | Should throw 'Could not find installer for the SQL2008 update KB'
-            { Update-DbaInstance -Version 2008SP3CU7 -Path $exeDir -EnableException } | Should throw 'Could not find installer for the SQL2008 update KB'
+            { Update-DbaInstance -Version 2008SP3 -Path $exeDir -EnableException } | Should throw 'Could not find installer for the SQL2008 update KB'
         }
         It "fails when SP level is lower than required" {
             { Update-DbaInstance -Type CumulativeUpdate -EnableException } | Should throw 'Current SP version SQL2008SP2 is not the latest available'
@@ -819,7 +819,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract_*'
             $warVar | Should -BeLike '*failed with exit code 12345*'
             #revert default mock
-            Mock -CommandName Invoke-Program -MockWith { [pscustomobject]@{ Successful = $true } } -ModuleName dbatools
+            Mock -CommandName Invoke-Program -MockWith { [pscustomobject]@{ Successful = $true } -ModuleName dbatools
         }
     }
 }

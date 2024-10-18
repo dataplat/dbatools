@@ -31,16 +31,16 @@ Describe "Set-DbaDbCompression" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[]
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String[]
         }
         It "Should have ExcludeDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type String[]
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.String[]
         }
         It "Should have Table as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Table -Type String[]
+            $CommandUnderTest | Should -HaveParameter Table -Type System.String[]
         }
         It "Should have CompressionType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter CompressionType -Type String
+            $CommandUnderTest | Should -HaveParameter CompressionType -Type System.String
         }
         It "Should have MaxRunTime as a parameter" {
             $CommandUnderTest | Should -HaveParameter MaxRunTime -Type Int32
@@ -49,13 +49,13 @@ Describe "Set-DbaDbCompression" {
             $CommandUnderTest | Should -HaveParameter PercentCompression -Type Int32
         }
         It "Should have ForceOfflineRebuilds as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ForceOfflineRebuilds -Type Switch
+            $CommandUnderTest | Should -HaveParameter ForceOfflineRebuilds -Type System.Management.Automation.SwitchParameter
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Object
+            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

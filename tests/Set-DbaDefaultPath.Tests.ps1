@@ -17,14 +17,14 @@ Describe "Set-DbaDefaultPath" {
         It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
-        It "Should have Type as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter Type -Type String[] -Mandatory:$false
+        It "Should have Type as a non-mandatory parameter of type System.String[]" {
+            $CommandUnderTest | Should -HaveParameter Type -Type System.String[] -Mandatory:$false
         }
-        It "Should have Path as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter Path -Type String -Mandatory:$false
+        It "Should have Path as a non-mandatory parameter of type System.String" {
+            $CommandUnderTest | Should -HaveParameter Path -Type System.String -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

@@ -12,16 +12,16 @@ Describe "Remove-DbaEndpoint" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have Endpoint as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Endpoint -Type String[]
+            $CommandUnderTest | Should -HaveParameter Endpoint -Type System.String[]
         }
         It "Should have AllEndpoints as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter AllEndpoints -Type Switch
+            $CommandUnderTest | Should -HaveParameter AllEndpoints -Type System.Management.Automation.SwitchParameter
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Endpoint[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Endpoint[]
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

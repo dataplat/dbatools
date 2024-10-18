@@ -11,23 +11,23 @@ Describe "New-DbaXESmartCsvWriter" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaXESmartCsvWriter
         }
-        It "Should have OutputFile as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter OutputFile -Type String -Mandatory:$false
+        It "Should have OutputFile as a non-mandatory System.String parameter" {
+            $CommandUnderTest | Should -HaveParameter OutputFile -Type System.String -Mandatory:$false
         }
-        It "Should have Overwrite as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter Overwrite -Type Switch -Mandatory:$false
+        It "Should have Overwrite as a non-mandatory System.Management.Automation.SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter Overwrite -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
-        It "Should have Event as a non-mandatory String[] parameter" {
-            $CommandUnderTest | Should -HaveParameter Event -Type String[] -Mandatory:$false
+        It "Should have Event as a non-mandatory System.String[] parameter" {
+            $CommandUnderTest | Should -HaveParameter Event -Type System.String[] -Mandatory:$false
         }
-        It "Should have OutputColumn as a non-mandatory String[] parameter" {
-            $CommandUnderTest | Should -HaveParameter OutputColumn -Type String[] -Mandatory:$false
+        It "Should have OutputColumn as a non-mandatory System.String[] parameter" {
+            $CommandUnderTest | Should -HaveParameter OutputColumn -Type System.String[] -Mandatory:$false
         }
-        It "Should have Filter as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Filter -Type String -Mandatory:$false
+        It "Should have Filter as a non-mandatory System.String parameter" {
+            $CommandUnderTest | Should -HaveParameter Filter -Type System.String -Mandatory:$false
         }
-        It "Should have EnableException as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+        It "Should have EnableException as a non-mandatory System.Management.Automation.SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

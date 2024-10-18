@@ -16,67 +16,67 @@ Describe "New-DbaAgentJobStep" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have Job parameter" {
-            $CommandUnderTest | Should -HaveParameter Job -Type Object[]
+            $CommandUnderTest | Should -HaveParameter Job -Type System.Object[]
         }
         It "Should have StepId parameter" {
-            $CommandUnderTest | Should -HaveParameter StepId -Type Int32
+            $CommandUnderTest | Should -HaveParameter StepId -Type System.Int32
         }
         It "Should have StepName parameter" {
-            $CommandUnderTest | Should -HaveParameter StepName -Type String
+            $CommandUnderTest | Should -HaveParameter StepName -Type System.String
         }
         It "Should have Subsystem parameter" {
-            $CommandUnderTest | Should -HaveParameter Subsystem -Type String
+            $CommandUnderTest | Should -HaveParameter Subsystem -Type System.String
         }
         It "Should have SubsystemServer parameter" {
-            $CommandUnderTest | Should -HaveParameter SubsystemServer -Type String
+            $CommandUnderTest | Should -HaveParameter SubsystemServer -Type System.String
         }
         It "Should have Command parameter" {
-            $CommandUnderTest | Should -HaveParameter Command -Type String
+            $CommandUnderTest | Should -HaveParameter Command -Type System.String
         }
         It "Should have CmdExecSuccessCode parameter" {
-            $CommandUnderTest | Should -HaveParameter CmdExecSuccessCode -Type Int32
+            $CommandUnderTest | Should -HaveParameter CmdExecSuccessCode -Type System.Int32
         }
         It "Should have OnSuccessAction parameter" {
-            $CommandUnderTest | Should -HaveParameter OnSuccessAction -Type String
+            $CommandUnderTest | Should -HaveParameter OnSuccessAction -Type System.String
         }
         It "Should have OnSuccessStepId parameter" {
-            $CommandUnderTest | Should -HaveParameter OnSuccessStepId -Type Int32
+            $CommandUnderTest | Should -HaveParameter OnSuccessStepId -Type System.Int32
         }
         It "Should have OnFailAction parameter" {
-            $CommandUnderTest | Should -HaveParameter OnFailAction -Type String
+            $CommandUnderTest | Should -HaveParameter OnFailAction -Type System.String
         }
         It "Should have OnFailStepId parameter" {
-            $CommandUnderTest | Should -HaveParameter OnFailStepId -Type Int32
+            $CommandUnderTest | Should -HaveParameter OnFailStepId -Type System.Int32
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String
         }
         It "Should have DatabaseUser parameter" {
-            $CommandUnderTest | Should -HaveParameter DatabaseUser -Type String
+            $CommandUnderTest | Should -HaveParameter DatabaseUser -Type System.String
         }
         It "Should have RetryAttempts parameter" {
-            $CommandUnderTest | Should -HaveParameter RetryAttempts -Type Int32
+            $CommandUnderTest | Should -HaveParameter RetryAttempts -Type System.Int32
         }
         It "Should have RetryInterval parameter" {
-            $CommandUnderTest | Should -HaveParameter RetryInterval -Type Int32
+            $CommandUnderTest | Should -HaveParameter RetryInterval -Type System.Int32
         }
         It "Should have OutputFileName parameter" {
-            $CommandUnderTest | Should -HaveParameter OutputFileName -Type String
+            $CommandUnderTest | Should -HaveParameter OutputFileName -Type System.String
         }
         It "Should have Insert parameter" {
-            $CommandUnderTest | Should -HaveParameter Insert -Type Switch
+            $CommandUnderTest | Should -HaveParameter Insert -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Flag parameter" {
-            $CommandUnderTest | Should -HaveParameter Flag -Type String[]
+            $CommandUnderTest | Should -HaveParameter Flag -Type System.String[]
         }
         It "Should have ProxyName parameter" {
-            $CommandUnderTest | Should -HaveParameter ProxyName -Type String
+            $CommandUnderTest | Should -HaveParameter ProxyName -Type System.String
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type Switch
+            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

@@ -12,13 +12,13 @@ Describe "Test-DbaBackupInformation Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Test-DbaBackupInformation
         }
         It "Should have BackupHistory as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BackupHistory -Type Object[]
+            $CommandUnderTest | Should -HaveParameter BackupHistory -Type System.Object[]
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have WithReplace as a switch parameter" {
             $CommandUnderTest | Should -HaveParameter WithReplace -Type switch

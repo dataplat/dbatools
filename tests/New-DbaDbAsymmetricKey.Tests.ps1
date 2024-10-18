@@ -16,31 +16,31 @@ Describe "New-DbaDbAsymmetricKey" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have Name as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Name -Type String[]
+            $CommandUnderTest | Should -HaveParameter Name -Type System.String[]
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[]
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String[]
         }
         It "Should have SecurePassword as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SecurePassword -Type SecureString
+            $CommandUnderTest | Should -HaveParameter SecurePassword -Type System.Security.SecureString
         }
         It "Should have Owner as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Owner -Type String
+            $CommandUnderTest | Should -HaveParameter Owner -Type System.String
         }
         It "Should have KeySource as a parameter" {
-            $CommandUnderTest | Should -HaveParameter KeySource -Type String
+            $CommandUnderTest | Should -HaveParameter KeySource -Type System.String
         }
         It "Should have KeySourceType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter KeySourceType -Type String
+            $CommandUnderTest | Should -HaveParameter KeySourceType -Type System.String
         }
         It "Should have InputObject as a parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[]
         }
         It "Should have Algorithm as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Algorithm -Type String
+            $CommandUnderTest | Should -HaveParameter Algorithm -Type System.String
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

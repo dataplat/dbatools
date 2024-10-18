@@ -12,13 +12,13 @@ Describe "Set-DbatoolsInsecureConnection" {
             $CommandUnderTest = Get-Command Set-DbatoolsInsecureConnection
         }
         It "Should have SessionOnly as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter SessionOnly -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SessionOnly -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have Scope as a non-mandatory ConfigScope parameter" {
-            $CommandUnderTest | Should -HaveParameter Scope -Type ConfigScope -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Scope -Type Dataplat.Dbatools.Configuration.ConfigScope -Mandatory:$false
         }
         It "Should have Register as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter Register -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Register -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

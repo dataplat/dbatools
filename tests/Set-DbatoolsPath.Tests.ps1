@@ -12,16 +12,16 @@ Describe "Set-DbatoolsPath" {
             $CommandUnderTest = Get-Command Set-DbatoolsPath
         }
         It "Should have Name as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Name -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Name -Type System.String -Mandatory:$false
         }
         It "Should have Path as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Path -Type System.String -Mandatory:$false
         }
         It "Should have Register as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter Register -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Register -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have Scope as a non-mandatory ConfigScope parameter" {
-            $CommandUnderTest | Should -HaveParameter Scope -Type ConfigScope -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Scope -Type Dataplat.Dbatools.Configuration.ConfigScope -Mandatory:$false
         }
     }
 }

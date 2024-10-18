@@ -18,13 +18,13 @@ Describe "Set-DbaErrorLogConfig" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have LogCount as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LogCount -Type Int32
+            $CommandUnderTest | Should -HaveParameter LogCount -Type System.Int32
         }
         It "Should have LogSize as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LogSize -Type Int32
+            $CommandUnderTest | Should -HaveParameter LogSize -Type System.Int32
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

@@ -25,25 +25,25 @@ Describe "New-DbaDbTable" {
             $CommandUnderTest = Get-Command New-DbaDbTable
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[]
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String[]
         }
         It "Should have Name as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Name -Type String
+            $CommandUnderTest | Should -HaveParameter Name -Type System.String
         }
         It "Should have Schema as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Schema -Type String
+            $CommandUnderTest | Should -HaveParameter Schema -Type System.String
         }
         It "Should have ColumnMap as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ColumnMap -Type Hash[Microsoft.SqlServer.Management.Smo.Table[]]
+            $CommandUnderTest | Should -HaveParameter ColumnMap -Type System.Collections.Hashtable[Microsoft.SqlServer.Management.Smo.Table[]]
         }
         It "Should have ColumnObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ColumnObject -Type Column[]
+            $CommandUnderTest | Should -HaveParameter ColumnObject -Type Microsoft.SqlServer.Management.Smo.Column[]
         }
         # Add more parameter checks as needed
     }

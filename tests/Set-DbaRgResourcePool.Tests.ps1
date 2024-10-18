@@ -41,7 +41,7 @@ Describe "Set-DbaRgResourcePool" {
             $CommandUnderTest | Should -HaveParameter MaximumProcesses -Type Int32 -Mandatory:$false
         }
         It "Should have SkipReconfigure parameter" {
-            $CommandUnderTest | Should -HaveParameter SkipReconfigure -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SkipReconfigure -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have InputObject parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Mandatory:$false

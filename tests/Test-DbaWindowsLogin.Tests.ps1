@@ -18,22 +18,22 @@ Describe "Test-DbaWindowsLogin" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Login parameter" {
-            $CommandUnderTest | Should -HaveParameter Login -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Login -Type System.String[] -Mandatory:$false
         }
         It "Should have ExcludeLogin parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeLogin -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeLogin -Type System.String[] -Mandatory:$false
         }
         It "Should have FilterBy parameter" {
-            $CommandUnderTest | Should -HaveParameter FilterBy -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter FilterBy -Type System.String -Mandatory:$false
         }
         It "Should have IgnoreDomains parameter" {
-            $CommandUnderTest | Should -HaveParameter IgnoreDomains -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter IgnoreDomains -Type System.String[] -Mandatory:$false
         }
         It "Should have InputObject parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Login[] -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

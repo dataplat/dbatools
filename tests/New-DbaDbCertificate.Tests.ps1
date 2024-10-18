@@ -18,31 +18,31 @@ Describe "New-DbaDbCertificate" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have Name as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Name -Type String[]
+            $CommandUnderTest | Should -HaveParameter Name -Type System.String[]
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[]
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String[]
         }
         It "Should have Subject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Subject -Type String[]
+            $CommandUnderTest | Should -HaveParameter Subject -Type System.String[]
         }
         It "Should have StartDate as a parameter" {
-            $CommandUnderTest | Should -HaveParameter StartDate -Type DateTime
+            $CommandUnderTest | Should -HaveParameter StartDate -Type System.DateTime
         }
         It "Should have ExpirationDate as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExpirationDate -Type DateTime
+            $CommandUnderTest | Should -HaveParameter ExpirationDate -Type System.DateTime
         }
         It "Should have ActiveForServiceBrokerDialog as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ActiveForServiceBrokerDialog -Type Switch
+            $CommandUnderTest | Should -HaveParameter ActiveForServiceBrokerDialog -Type System.Management.Automation.SwitchParameter
         }
         It "Should have SecurePassword as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SecurePassword -Type SecureString
+            $CommandUnderTest | Should -HaveParameter SecurePassword -Type System.Security.SecureString
         }
         It "Should have InputObject as a parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

@@ -9,10 +9,10 @@ Describe "Remove-DbaXESession" {
             $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Session as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Session -Type Object[]
+            $CommandUnderTest | Should -HaveParameter Session -Type System.Object[]
         }
         It "Should have AllSessions as a switch parameter" {
             $CommandUnderTest | Should -HaveParameter AllSessions -Type switch

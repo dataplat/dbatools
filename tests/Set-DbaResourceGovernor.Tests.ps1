@@ -6,10 +6,10 @@ Describe "Set-DbaResourceGovernor" {
             $CommandUnderTest = Get-Command Set-DbaResourceGovernor
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Enabled as a switch parameter" {
             $CommandUnderTest | Should -HaveParameter Enabled -Type switch
@@ -18,7 +18,7 @@ Describe "Set-DbaResourceGovernor" {
             $CommandUnderTest | Should -HaveParameter Disabled -Type switch
         }
         It "Should have ClassifierFunction as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ClassifierFunction -Type string
+            $CommandUnderTest | Should -HaveParameter ClassifierFunction -Type System.String
         }
         It "Should have EnableException as a switch parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type switch

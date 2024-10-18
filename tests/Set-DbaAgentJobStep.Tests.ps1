@@ -24,13 +24,13 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             @(Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params).Count | Should -Be 0
         }
 
-        It "Should have SqlInstance parameter of type DbaInstanceParameter[] and not mandatory" {
-            (Get-Command $CommandName).Parameters['SqlInstance'].ParameterType.FullName | Should -Be 'DbaInstanceParameter[]'
+        It "Should have SqlInstance parameter of type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] and not mandatory" {
+            (Get-Command $CommandName).Parameters['SqlInstance'].ParameterType.FullName | Should -Be 'Dataplat.Dbatools.Parameter.DbaInstanceParameter[]'
             (Get-Command $CommandName).Parameters['SqlInstance'].Attributes.Mandatory | Should -Be $false
         }
 
-        It "Should have SqlCredential parameter of type PSCredential and not mandatory" {
-            (Get-Command $CommandName).Parameters['SqlCredential'].ParameterType.FullName | Should -Be 'PSCredential'
+        It "Should have SqlCredential parameter of type System.Management.Automation.PSCredential and not mandatory" {
+            (Get-Command $CommandName).Parameters['SqlCredential'].ParameterType.FullName | Should -Be 'System.Management.Automation.PSCredential'
             (Get-Command $CommandName).Parameters['SqlCredential'].Attributes.Mandatory | Should -Be $false
         }
 

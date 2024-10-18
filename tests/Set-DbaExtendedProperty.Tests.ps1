@@ -9,16 +9,16 @@ Describe "Set-DbaExtendedProperty" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type ExtendedProperty[]
         }
         It "Should have Value as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Value -Type String
+            $CommandUnderTest | Should -HaveParameter Value -Type System.String
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
         It "Should have WhatIf as a parameter" {
-            $CommandUnderTest | Should -HaveParameter WhatIf -Type Switch
+            $CommandUnderTest | Should -HaveParameter WhatIf -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Confirm as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Confirm -Type Switch
+            $CommandUnderTest | Should -HaveParameter Confirm -Type System.Management.Automation.SwitchParameter
         }
     }
 }

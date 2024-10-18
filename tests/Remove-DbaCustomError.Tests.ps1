@@ -48,13 +48,13 @@ Describe "Remove-DbaCustomError" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have MessageID as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MessageID -Type Int32
+            $CommandUnderTest | Should -HaveParameter MessageID -Type System.Int32
         }
         It "Should have Language as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Language -Type String
+            $CommandUnderTest | Should -HaveParameter Language -Type System.String
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

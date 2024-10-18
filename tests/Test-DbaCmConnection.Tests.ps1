@@ -12,10 +12,10 @@ Describe "Test-DbaCmConnection" {
             $CommandUnderTest = Get-Command Test-DbaCmConnection
         }
         It "Should have ComputerName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaCmConnectionParameter[]
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type Dataplat.Dbatools.Parameter.DbaCmConnectionParameter[]
         }
         It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter Credential -Type System.Management.Automation.PSCredential
         }
         It "Should have Type as a parameter" {
             $CommandUnderTest | Should -HaveParameter Type -Type Dataplat.Dbatools.Connection.ManagementConnectionType[]

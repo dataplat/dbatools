@@ -9,28 +9,28 @@ Describe "Remove-DbaExtendedProperty" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type ExtendedProperty[]
         }
         It "Accepts EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
         It "Accepts WarningVariable as a parameter" {
-            $CommandUnderTest | Should -HaveParameter WarningVariable -Type String
+            $CommandUnderTest | Should -HaveParameter WarningVariable -Type System.String
         }
         It "Accepts InformationVariable as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InformationVariable -Type String
+            $CommandUnderTest | Should -HaveParameter InformationVariable -Type System.String
         }
         It "Accepts OutVariable as a parameter" {
-            $CommandUnderTest | Should -HaveParameter OutVariable -Type String
+            $CommandUnderTest | Should -HaveParameter OutVariable -Type System.String
         }
         It "Accepts OutBuffer as a parameter" {
-            $CommandUnderTest | Should -HaveParameter OutBuffer -Type Int32
+            $CommandUnderTest | Should -HaveParameter OutBuffer -Type System.Int32
         }
         It "Accepts PipelineVariable as a parameter" {
-            $CommandUnderTest | Should -HaveParameter PipelineVariable -Type String
+            $CommandUnderTest | Should -HaveParameter PipelineVariable -Type System.String
         }
         It "Accepts WhatIf as a parameter" {
-            $CommandUnderTest | Should -HaveParameter WhatIf -Type Switch
+            $CommandUnderTest | Should -HaveParameter WhatIf -Type System.Management.Automation.SwitchParameter
         }
         It "Accepts Confirm as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Confirm -Type Switch
+            $CommandUnderTest | Should -HaveParameter Confirm -Type System.Management.Automation.SwitchParameter
         }
     }
 

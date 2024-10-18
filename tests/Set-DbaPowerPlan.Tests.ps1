@@ -12,10 +12,10 @@ Describe "Set-DbaPowerPlan" {
             $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
         }
         It "Should have PowerPlan as a parameter" {
-            $CommandUnderTest | Should -HaveParameter PowerPlan -Type String
+            $CommandUnderTest | Should -HaveParameter PowerPlan -Type System.String
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

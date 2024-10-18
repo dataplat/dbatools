@@ -16,16 +16,16 @@ Describe "New-DbaAgentJobCategory" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have Category parameter" {
-            $CommandUnderTest | Should -HaveParameter Category -Type String[]
+            $CommandUnderTest | Should -HaveParameter Category -Type System.String[]
         }
         It "Should have CategoryType parameter" {
-            $CommandUnderTest | Should -HaveParameter CategoryType -Type String
+            $CommandUnderTest | Should -HaveParameter CategoryType -Type System.String
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type Switch
+            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

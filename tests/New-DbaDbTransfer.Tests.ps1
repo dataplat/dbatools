@@ -86,37 +86,37 @@ Describe "New-DbaDbTransfer" {
             $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type PSCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String
         }
         It "Should have DestinationDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationDatabase -Type String
+            $CommandUnderTest | Should -HaveParameter DestinationDatabase -Type System.String
         }
         It "Should have BatchSize as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BatchSize -Type Int32
+            $CommandUnderTest | Should -HaveParameter BatchSize -Type System.Int32
         }
         It "Should have BulkCopyTimeOut as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BulkCopyTimeOut -Type Int32
+            $CommandUnderTest | Should -HaveParameter BulkCopyTimeOut -Type System.Int32
         }
         It "Should have ScriptingOption as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ScriptingOption -Type ScriptingOptions
+            $CommandUnderTest | Should -HaveParameter ScriptingOption -Type Microsoft.SqlServer.Management.Smo.ScriptingOptions
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type NamedSmoObject[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.NamedSmoObject[]
         }
         It "Should have CopyAllObjects as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter CopyAllObjects -Type Switch
+            $CommandUnderTest | Should -HaveParameter CopyAllObjects -Type System.Management.Automation.SwitchParameter
         }
         It "Should have CopyAll as a parameter" {
             $CommandUnderTest | Should -HaveParameter CopyAll -Type String[]
         }
         It "Should have SchemaOnly as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter SchemaOnly -Type Switch
+            $CommandUnderTest | Should -HaveParameter SchemaOnly -Type System.Management.Automation.SwitchParameter
         }
         It "Should have DataOnly as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter DataOnly -Type Switch
+            $CommandUnderTest | Should -HaveParameter DataOnly -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

@@ -12,16 +12,16 @@ Describe "Set-DbaExtendedProtection" {
             $CommandUnderTest = Get-Command Set-DbaExtendedProtection
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Microsoft.SqlServer.Management.Smo.DbaInstanceParameter[]
         }
         It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter Credential -Type System.Management.Automation.PSCredential
         }
         It "Should have Value as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Value -Type Object
+            $CommandUnderTest | Should -HaveParameter Value -Type System.Object
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 
@@ -42,7 +42,7 @@ Describe "Set-DbaExtendedProtection" {
                     $ScriptBlock,
                     $EnableException
                 )
-                $server = [DbaInstanceParameter[]]$global:instance1
+                $server = [Microsoft.SqlServer.Management.Smo.DbaInstanceParameter[]]$global:instance1
                 @{
                     DisplayName        = "SQL Server ($($instance.InstanceName))"
                     AdvancedProperties = @(

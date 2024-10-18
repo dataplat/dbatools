@@ -31,58 +31,58 @@ Describe "Select-DbaObject" {
             $CommandUnderTest = Get-Command Select-DbaObject
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type PSObject
+            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Management.Automation.PSObject
         }
         It "Should have Property as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Property -Type DbaSelectParameter[]
+            $CommandUnderTest | Should -HaveParameter Property -Type Dataplat.Dbatools.Parameter.DbaSelectParameter[]
         }
         It "Should have ExcludeProperty as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeProperty -Type String[]
+            $CommandUnderTest | Should -HaveParameter ExcludeProperty -Type System.String[]
         }
         It "Should have ExpandProperty as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExpandProperty -Type String
+            $CommandUnderTest | Should -HaveParameter ExpandProperty -Type System.String
         }
         It "Should have Alias as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Alias -Type SelectAliasParameter[]
+            $CommandUnderTest | Should -HaveParameter Alias -Type Dataplat.Dbatools.Parameter.SelectAliasParameter[]
         }
         It "Should have ScriptProperty as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ScriptProperty -Type SelectScriptPropertyParameter[]
+            $CommandUnderTest | Should -HaveParameter ScriptProperty -Type Dataplat.Dbatools.Parameter.SelectScriptPropertyParameter[]
         }
         It "Should have ScriptMethod as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ScriptMethod -Type SelectScriptMethodParameter[]
+            $CommandUnderTest | Should -HaveParameter ScriptMethod -Type Dataplat.Dbatools.Parameter.SelectScriptMethodParameter[]
         }
         It "Should have Unique as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Unique -Type Switch
+            $CommandUnderTest | Should -HaveParameter Unique -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Last as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Last -Type Int32
+            $CommandUnderTest | Should -HaveParameter Last -Type System.Int32
         }
         It "Should have First as a parameter" {
-            $CommandUnderTest | Should -HaveParameter First -Type Int32
+            $CommandUnderTest | Should -HaveParameter First -Type System.Int32
         }
         It "Should have Skip as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Skip -Type Int32
+            $CommandUnderTest | Should -HaveParameter Skip -Type System.Int32
         }
         It "Should have SkipLast as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SkipLast -Type Int32
+            $CommandUnderTest | Should -HaveParameter SkipLast -Type System.Int32
         }
         It "Should have Wait as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Wait -Type Switch
+            $CommandUnderTest | Should -HaveParameter Wait -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Index as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Index -Type Int32[]
+            $CommandUnderTest | Should -HaveParameter Index -Type System.Int32[]
         }
         It "Should have ShowProperty as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ShowProperty -Type String[]
+            $CommandUnderTest | Should -HaveParameter ShowProperty -Type System.String[]
         }
         It "Should have ShowExcludeProperty as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ShowExcludeProperty -Type String[]
+            $CommandUnderTest | Should -HaveParameter ShowExcludeProperty -Type System.String[]
         }
         It "Should have TypeName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter TypeName -Type String
+            $CommandUnderTest | Should -HaveParameter TypeName -Type System.String
         }
         It "Should have KeepInputObject as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter KeepInputObject -Type Switch
+            $CommandUnderTest | Should -HaveParameter KeepInputObject -Type System.Management.Automation.SwitchParameter
         }
     }
 

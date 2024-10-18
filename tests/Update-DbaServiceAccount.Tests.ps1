@@ -74,34 +74,34 @@ Describe "Update-DbaServiceAccount" {
             $CommandUnderTest = Get-Command Update-DbaServiceAccount
         }
         It "Should have ComputerName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type Dataplat.Dbatools.Connection.ManagementConnectionType[] -Mandatory:$false
         }
         It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Credential -Type Microsoft.SqlServer.Management.Smo.Credential -Mandatory:$false
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object[] -Mandatory:$false
         }
         It "Should have ServiceName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ServiceName -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ServiceName -Type System.String[] -Mandatory:$false
         }
         It "Should have Username as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Username -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Username -Type System.String -Mandatory:$false
         }
         It "Should have ServiceCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ServiceCredential -Type PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ServiceCredential -Type Microsoft.SqlServer.Management.Smo.Credential -Mandatory:$false
         }
         It "Should have PreviousPassword as a parameter" {
-            $CommandUnderTest | Should -HaveParameter PreviousPassword -Type SecureString -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter PreviousPassword -Type System.Security.SecureString -Mandatory:$false
         }
         It "Should have SecurePassword as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SecurePassword -Type SecureString -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SecurePassword -Type System.Security.SecureString -Mandatory:$false
         }
         It "Should have NoRestart as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NoRestart -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter NoRestart -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

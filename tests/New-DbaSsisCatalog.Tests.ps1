@@ -9,19 +9,19 @@ Describe "New-DbaSsisCatalog" {
             $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter Credential -Type System.Management.Automation.PSCredential
         }
         It "Should have SecurePassword as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SecurePassword -Type SecureString
+            $CommandUnderTest | Should -HaveParameter SecurePassword -Type System.Security.SecureString
         }
         It "Should have SsisCatalog as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SsisCatalog -Type String
+            $CommandUnderTest | Should -HaveParameter SsisCatalog -Type System.String
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

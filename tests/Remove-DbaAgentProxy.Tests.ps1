@@ -9,19 +9,19 @@ Describe "Remove-DbaAgentProxy" {
             $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Proxy as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Proxy -Type String[]
+            $CommandUnderTest | Should -HaveParameter Proxy -Type System.String[]
         }
         It "Should have ExcludeProxy as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeProxy -Type String[]
+            $CommandUnderTest | Should -HaveParameter ExcludeProxy -Type System.String[]
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type ProxyAccount[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.ProxyAccount[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.Switch
         }
     }
 

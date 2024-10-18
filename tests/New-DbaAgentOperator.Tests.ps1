@@ -12,52 +12,52 @@ Describe "New-DbaAgentOperator" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have Operator parameter" {
-            $CommandUnderTest | Should -HaveParameter Operator -Type String
+            $CommandUnderTest | Should -HaveParameter Operator -Type System.String
         }
         It "Should have EmailAddress parameter" {
-            $CommandUnderTest | Should -HaveParameter EmailAddress -Type String
+            $CommandUnderTest | Should -HaveParameter EmailAddress -Type System.String
         }
         It "Should have NetSendAddress parameter" {
-            $CommandUnderTest | Should -HaveParameter NetSendAddress -Type String
+            $CommandUnderTest | Should -HaveParameter NetSendAddress -Type System.String
         }
         It "Should have PagerAddress parameter" {
-            $CommandUnderTest | Should -HaveParameter PagerAddress -Type String
+            $CommandUnderTest | Should -HaveParameter PagerAddress -Type System.String
         }
         It "Should have PagerDay parameter" {
-            $CommandUnderTest | Should -HaveParameter PagerDay -Type String
+            $CommandUnderTest | Should -HaveParameter PagerDay -Type System.String
         }
         It "Should have SaturdayStartTime parameter" {
-            $CommandUnderTest | Should -HaveParameter SaturdayStartTime -Type String
+            $CommandUnderTest | Should -HaveParameter SaturdayStartTime -Type System.String
         }
         It "Should have SaturdayEndTime parameter" {
-            $CommandUnderTest | Should -HaveParameter SaturdayEndTime -Type String
+            $CommandUnderTest | Should -HaveParameter SaturdayEndTime -Type System.String
         }
         It "Should have SundayStartTime parameter" {
-            $CommandUnderTest | Should -HaveParameter SundayStartTime -Type String
+            $CommandUnderTest | Should -HaveParameter SundayStartTime -Type System.String
         }
         It "Should have SundayEndTime parameter" {
-            $CommandUnderTest | Should -HaveParameter SundayEndTime -Type String
+            $CommandUnderTest | Should -HaveParameter SundayEndTime -Type System.String
         }
         It "Should have WeekdayStartTime parameter" {
-            $CommandUnderTest | Should -HaveParameter WeekdayStartTime -Type String
+            $CommandUnderTest | Should -HaveParameter WeekdayStartTime -Type System.String
         }
         It "Should have WeekdayEndTime parameter" {
-            $CommandUnderTest | Should -HaveParameter WeekdayEndTime -Type String
+            $CommandUnderTest | Should -HaveParameter WeekdayEndTime -Type System.String
         }
         It "Should have IsFailsafeOperator parameter" {
-            $CommandUnderTest | Should -HaveParameter IsFailsafeOperator -Type Switch
+            $CommandUnderTest | Should -HaveParameter IsFailsafeOperator -Type System.Management.Automation.SwitchParameter
         }
         It "Should have FailsafeNotificationMethod parameter" {
-            $CommandUnderTest | Should -HaveParameter FailsafeNotificationMethod -Type String
+            $CommandUnderTest | Should -HaveParameter FailsafeNotificationMethod -Type System.String
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type Switch
+            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Server[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Server[]
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

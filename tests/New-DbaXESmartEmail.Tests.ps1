@@ -12,46 +12,46 @@ Describe "New-DbaXESmartEmail" {
             $CommandUnderTest = Get-Command New-DbaXESmartEmail
         }
         It "Should have SmtpServer parameter" {
-            $CommandUnderTest | Should -HaveParameter SmtpServer -Type String
+            $CommandUnderTest | Should -HaveParameter SmtpServer -Type System.String
         }
         It "Should have Sender parameter" {
-            $CommandUnderTest | Should -HaveParameter Sender -Type String
+            $CommandUnderTest | Should -HaveParameter Sender -Type System.String
         }
         It "Should have To parameter" {
-            $CommandUnderTest | Should -HaveParameter To -Type String[]
+            $CommandUnderTest | Should -HaveParameter To -Type System.String[]
         }
         It "Should have Cc parameter" {
-            $CommandUnderTest | Should -HaveParameter Cc -Type String[]
+            $CommandUnderTest | Should -HaveParameter Cc -Type System.String[]
         }
         It "Should have Bcc parameter" {
-            $CommandUnderTest | Should -HaveParameter Bcc -Type String[]
+            $CommandUnderTest | Should -HaveParameter Bcc -Type System.String[]
         }
         It "Should have Credential parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter Credential -Type System.Management.Automation.PSCredential
         }
         It "Should have Subject parameter" {
-            $CommandUnderTest | Should -HaveParameter Subject -Type String
+            $CommandUnderTest | Should -HaveParameter Subject -Type System.String
         }
         It "Should have Body parameter" {
-            $CommandUnderTest | Should -HaveParameter Body -Type String
+            $CommandUnderTest | Should -HaveParameter Body -Type System.String
         }
         It "Should have Attachment parameter" {
-            $CommandUnderTest | Should -HaveParameter Attachment -Type String
+            $CommandUnderTest | Should -HaveParameter Attachment -Type System.String
         }
         It "Should have AttachmentFileName parameter" {
-            $CommandUnderTest | Should -HaveParameter AttachmentFileName -Type String
+            $CommandUnderTest | Should -HaveParameter AttachmentFileName -Type System.String
         }
         It "Should have PlainText parameter" {
-            $CommandUnderTest | Should -HaveParameter PlainText -Type String
+            $CommandUnderTest | Should -HaveParameter PlainText -Type System.String
         }
         It "Should have Event parameter" {
-            $CommandUnderTest | Should -HaveParameter Event -Type String[]
+            $CommandUnderTest | Should -HaveParameter Event -Type System.String[]
         }
         It "Should have Filter parameter" {
-            $CommandUnderTest | Should -HaveParameter Filter -Type String
+            $CommandUnderTest | Should -HaveParameter Filter -Type System.String
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

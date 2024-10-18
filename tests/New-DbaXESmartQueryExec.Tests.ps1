@@ -18,19 +18,19 @@ Describe "New-DbaXESmartQueryExec" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String
         }
         It "Should have Query as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Query -Type String
+            $CommandUnderTest | Should -HaveParameter Query -Type System.String
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Event as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Event -Type String[]
+            $CommandUnderTest | Should -HaveParameter Event -Type System.String[]
         }
         It "Should have Filter as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Filter -Type String
+            $CommandUnderTest | Should -HaveParameter Filter -Type System.String
         }
     }
 

@@ -10,61 +10,61 @@ Describe "New-DbaAgentJob" {
             $CommandUnderTest = Get-Command New-DbaAgentJob
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
         }
         It "Should have Job parameter" {
-            $CommandUnderTest | Should -HaveParameter Job -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Job -Type System.String -Mandatory:$false
         }
         It "Should have Schedule parameter" {
-            $CommandUnderTest | Should -HaveParameter Schedule -Type Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Schedule -Type System.Object[] -Mandatory:$false
         }
         It "Should have ScheduleId parameter" {
-            $CommandUnderTest | Should -HaveParameter ScheduleId -Type Int32[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ScheduleId -Type System.Int32[] -Mandatory:$false
         }
         It "Should have Disabled parameter" {
-            $CommandUnderTest | Should -HaveParameter Disabled -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Disabled -Type System.Management.Automation.Switch -Mandatory:$false
         }
         It "Should have Description parameter" {
-            $CommandUnderTest | Should -HaveParameter Description -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Description -Type System.String -Mandatory:$false
         }
         It "Should have StartStepId parameter" {
-            $CommandUnderTest | Should -HaveParameter StartStepId -Type Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter StartStepId -Type System.Int32 -Mandatory:$false
         }
         It "Should have Category parameter" {
-            $CommandUnderTest | Should -HaveParameter Category -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Category -Type System.String -Mandatory:$false
         }
         It "Should have OwnerLogin parameter" {
-            $CommandUnderTest | Should -HaveParameter OwnerLogin -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter OwnerLogin -Type System.String -Mandatory:$false
         }
         It "Should have EventLogLevel parameter" {
-            $CommandUnderTest | Should -HaveParameter EventLogLevel -Type Object -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EventLogLevel -Type System.Object -Mandatory:$false
         }
         It "Should have EmailLevel parameter" {
-            $CommandUnderTest | Should -HaveParameter EmailLevel -Type Object -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EmailLevel -Type System.Object -Mandatory:$false
         }
         It "Should have PageLevel parameter" {
-            $CommandUnderTest | Should -HaveParameter PageLevel -Type Object -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter PageLevel -Type System.Object -Mandatory:$false
         }
         It "Should have EmailOperator parameter" {
-            $CommandUnderTest | Should -HaveParameter EmailOperator -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EmailOperator -Type System.String -Mandatory:$false
         }
         It "Should have NetsendOperator parameter" {
-            $CommandUnderTest | Should -HaveParameter NetsendOperator -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter NetsendOperator -Type System.String -Mandatory:$false
         }
         It "Should have PageOperator parameter" {
-            $CommandUnderTest | Should -HaveParameter PageOperator -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter PageOperator -Type System.String -Mandatory:$false
         }
         It "Should have DeleteLevel parameter" {
-            $CommandUnderTest | Should -HaveParameter DeleteLevel -Type Object -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter DeleteLevel -Type System.Object -Mandatory:$false
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.Switch -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.Switch -Mandatory:$false
         }
     }
 

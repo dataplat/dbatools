@@ -17,46 +17,46 @@ Describe "Set-DbaAgReplica" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have AvailabilityGroup as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AvailabilityGroup -Type String
+            $CommandUnderTest | Should -HaveParameter AvailabilityGroup -Type System.String
         }
         It "Should have Replica as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Replica -Type String
+            $CommandUnderTest | Should -HaveParameter Replica -Type System.String
         }
         It "Should have AvailabilityMode as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AvailabilityMode -Type String
+            $CommandUnderTest | Should -HaveParameter AvailabilityMode -Type System.String
         }
         It "Should have FailoverMode as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FailoverMode -Type String
+            $CommandUnderTest | Should -HaveParameter FailoverMode -Type System.String
         }
         It "Should have BackupPriority as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BackupPriority -Type Int32
+            $CommandUnderTest | Should -HaveParameter BackupPriority -Type System.Int32
         }
         It "Should have ConnectionModeInPrimaryRole as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ConnectionModeInPrimaryRole -Type String
+            $CommandUnderTest | Should -HaveParameter ConnectionModeInPrimaryRole -Type System.String
         }
         It "Should have ConnectionModeInSecondaryRole as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ConnectionModeInSecondaryRole -Type String
+            $CommandUnderTest | Should -HaveParameter ConnectionModeInSecondaryRole -Type System.String
         }
         It "Should have SeedingMode as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SeedingMode -Type String
+            $CommandUnderTest | Should -HaveParameter SeedingMode -Type System.String
         }
         It "Should have SessionTimeout as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SessionTimeout -Type Int32
+            $CommandUnderTest | Should -HaveParameter SessionTimeout -Type System.Int32
         }
         It "Should have EndpointUrl as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EndpointUrl -Type String
+            $CommandUnderTest | Should -HaveParameter EndpointUrl -Type System.String
         }
         It "Should have ReadonlyRoutingConnectionUrl as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ReadonlyRoutingConnectionUrl -Type String
+            $CommandUnderTest | Should -HaveParameter ReadonlyRoutingConnectionUrl -Type System.String
         }
         It "Should have ReadOnlyRoutingList as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ReadOnlyRoutingList -Type Object[]
+            $CommandUnderTest | Should -HaveParameter ReadOnlyRoutingList -Type System.Object[]
         }
         It "Should have InputObject as a parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.AvailabilityReplica
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

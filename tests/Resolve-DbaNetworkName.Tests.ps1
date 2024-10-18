@@ -12,16 +12,16 @@ Describe "Resolve-DbaNetworkName Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Resolve-DbaNetworkName
         }
         It "Should have ComputerName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter Credential -Type System.Management.Automation.PSCredential
         }
         It "Should have Turbo as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Turbo -Type switch
+            $CommandUnderTest | Should -HaveParameter Turbo -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

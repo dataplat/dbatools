@@ -25,58 +25,58 @@ Describe "Set-DbaStartupParameter" {
             $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
         }
         It "Should have MasterData as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MasterData -Type String
+            $CommandUnderTest | Should -HaveParameter MasterData -Type System.String
         }
         It "Should have MasterLog as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MasterLog -Type String
+            $CommandUnderTest | Should -HaveParameter MasterLog -Type System.String
         }
         It "Should have ErrorLog as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ErrorLog -Type String
+            $CommandUnderTest | Should -HaveParameter ErrorLog -Type System.String
         }
         It "Should have TraceFlag as a parameter" {
-            $CommandUnderTest | Should -HaveParameter TraceFlag -Type String[]
+            $CommandUnderTest | Should -HaveParameter TraceFlag -Type System.String[]
         }
         It "Should have CommandPromptStart as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter CommandPromptStart -Type Switch
+            $CommandUnderTest | Should -HaveParameter CommandPromptStart -Type System.Management.Automation.SwitchParameter
         }
         It "Should have MinimalStart as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter MinimalStart -Type Switch
+            $CommandUnderTest | Should -HaveParameter MinimalStart -Type System.Management.Automation.SwitchParameter
         }
         It "Should have MemoryToReserve as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MemoryToReserve -Type Int32
+            $CommandUnderTest | Should -HaveParameter MemoryToReserve -Type System.Int32
         }
         It "Should have SingleUser as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter SingleUser -Type Switch
+            $CommandUnderTest | Should -HaveParameter SingleUser -Type System.Management.Automation.SwitchParameter
         }
         It "Should have SingleUserDetails as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SingleUserDetails -Type String
+            $CommandUnderTest | Should -HaveParameter SingleUserDetails -Type System.String
         }
         It "Should have NoLoggingToWinEvents as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoLoggingToWinEvents -Type Switch
+            $CommandUnderTest | Should -HaveParameter NoLoggingToWinEvents -Type System.Management.Automation.SwitchParameter
         }
         It "Should have StartAsNamedInstance as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter StartAsNamedInstance -Type Switch
+            $CommandUnderTest | Should -HaveParameter StartAsNamedInstance -Type System.Management.Automation.SwitchParameter
         }
         It "Should have DisableMonitoring as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter DisableMonitoring -Type Switch
+            $CommandUnderTest | Should -HaveParameter DisableMonitoring -Type System.Management.Automation.SwitchParameter
         }
         It "Should have IncreasedExtents as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncreasedExtents -Type Switch
+            $CommandUnderTest | Should -HaveParameter IncreasedExtents -Type System.Management.Automation.SwitchParameter
         }
         It "Should have TraceFlagOverride as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter TraceFlagOverride -Type Switch
+            $CommandUnderTest | Should -HaveParameter TraceFlagOverride -Type System.Management.Automation.SwitchParameter
         }
         It "Should have StartupConfig as a parameter" {
             $CommandUnderTest | Should -HaveParameter StartupConfig -Type Object
         }
         It "Should have Offline as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Offline -Type Switch
+            $CommandUnderTest | Should -HaveParameter Offline -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Force as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type Switch
+            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

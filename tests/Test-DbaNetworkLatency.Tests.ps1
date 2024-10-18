@@ -11,19 +11,19 @@ Describe "Test-DbaNetworkLatency" {
             $CommandUnderTest = Get-Command Test-DbaNetworkLatency
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Query as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Query -Type String
+            $CommandUnderTest | Should -HaveParameter Query -Type System.String
         }
         It "Should have Count as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Count -Type Int32
+            $CommandUnderTest | Should -HaveParameter Count -Type System.Int32
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

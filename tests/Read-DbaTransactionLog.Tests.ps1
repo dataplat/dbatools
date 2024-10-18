@@ -18,16 +18,16 @@ Describe "Read-DbaTransactionLog" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type Object
+            $CommandUnderTest | Should -HaveParameter Database -Type System.Object
         }
         It "Should have IgnoreLimit parameter" {
-            $CommandUnderTest | Should -HaveParameter IgnoreLimit -Type Switch
+            $CommandUnderTest | Should -HaveParameter IgnoreLimit -Type System.Management.Automation.SwitchParameter
         }
         It "Should have RowLimit parameter" {
-            $CommandUnderTest | Should -HaveParameter RowLimit -Type Int32
+            $CommandUnderTest | Should -HaveParameter RowLimit -Type System.Int32
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 }

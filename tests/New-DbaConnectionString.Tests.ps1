@@ -5,83 +5,83 @@ Describe "New-DbaConnectionString" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaConnectionString
         }
-        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+        It "Should have SqlInstance as a non-mandatory parameter of type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
         }
-        It "Should have Credential as a non-mandatory parameter of type PSCredential" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Mandatory:$false
+        It "Should have Credential as a non-mandatory parameter of type System.Management.Automation.PSCredential" {
+            $CommandUnderTest | Should -HaveParameter Credential -Type System.Management.Automation.PSCredential -Mandatory:$false
         }
-        It "Should have AccessToken as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter AccessToken -Type String -Mandatory:$false
+        It "Should have AccessToken as a non-mandatory parameter of type System.String" {
+            $CommandUnderTest | Should -HaveParameter AccessToken -Type System.String -Mandatory:$false
         }
-        It "Should have ApplicationIntent as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter ApplicationIntent -Type String -Mandatory:$false
+        It "Should have ApplicationIntent as a non-mandatory parameter of type System.String" {
+            $CommandUnderTest | Should -HaveParameter ApplicationIntent -Type System.String -Mandatory:$false
         }
-        It "Should have BatchSeparator as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter BatchSeparator -Type String -Mandatory:$false
+        It "Should have BatchSeparator as a non-mandatory parameter of type System.String" {
+            $CommandUnderTest | Should -HaveParameter BatchSeparator -Type System.String -Mandatory:$false
         }
-        It "Should have ClientName as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter ClientName -Type String -Mandatory:$false
+        It "Should have ClientName as a non-mandatory parameter of type System.String" {
+            $CommandUnderTest | Should -HaveParameter ClientName -Type System.String -Mandatory:$false
         }
-        It "Should have ConnectTimeout as a non-mandatory parameter of type Int32" {
-            $CommandUnderTest | Should -HaveParameter ConnectTimeout -Type Int32 -Mandatory:$false
+        It "Should have ConnectTimeout as a non-mandatory parameter of type System.Int32" {
+            $CommandUnderTest | Should -HaveParameter ConnectTimeout -Type System.Int32 -Mandatory:$false
         }
-        It "Should have Database as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String -Mandatory:$false
+        It "Should have Database as a non-mandatory parameter of type System.String" {
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String -Mandatory:$false
         }
         It "Should have EncryptConnection as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EncryptConnection -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EncryptConnection -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
-        It "Should have FailoverPartner as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter FailoverPartner -Type String -Mandatory:$false
+        It "Should have FailoverPartner as a non-mandatory parameter of type System.String" {
+            $CommandUnderTest | Should -HaveParameter FailoverPartner -Type System.String -Mandatory:$false
         }
         It "Should have IsActiveDirectoryUniversalAuth as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IsActiveDirectoryUniversalAuth -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter IsActiveDirectoryUniversalAuth -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
-        It "Should have LockTimeout as a non-mandatory parameter of type Int32" {
-            $CommandUnderTest | Should -HaveParameter LockTimeout -Type Int32 -Mandatory:$false
+        It "Should have LockTimeout as a non-mandatory parameter of type System.Int32" {
+            $CommandUnderTest | Should -HaveParameter LockTimeout -Type System.Int32 -Mandatory:$false
         }
-        It "Should have MaxPoolSize as a non-mandatory parameter of type Int32" {
-            $CommandUnderTest | Should -HaveParameter MaxPoolSize -Type Int32 -Mandatory:$false
+        It "Should have MaxPoolSize as a non-mandatory parameter of type System.Int32" {
+            $CommandUnderTest | Should -HaveParameter MaxPoolSize -Type System.Int32 -Mandatory:$false
         }
-        It "Should have MinPoolSize as a non-mandatory parameter of type Int32" {
-            $CommandUnderTest | Should -HaveParameter MinPoolSize -Type Int32 -Mandatory:$false
+        It "Should have MinPoolSize as a non-mandatory parameter of type System.Int32" {
+            $CommandUnderTest | Should -HaveParameter MinPoolSize -Type System.Int32 -Mandatory:$false
         }
         It "Should have MultipleActiveResultSets as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter MultipleActiveResultSets -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter MultipleActiveResultSets -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have MultiSubnetFailover as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter MultiSubnetFailover -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter MultiSubnetFailover -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
-        It "Should have NetworkProtocol as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter NetworkProtocol -Type String -Mandatory:$false
+        It "Should have NetworkProtocol as a non-mandatory parameter of type System.String" {
+            $CommandUnderTest | Should -HaveParameter NetworkProtocol -Type System.String -Mandatory:$false
         }
         It "Should have NonPooledConnection as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NonPooledConnection -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter NonPooledConnection -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
-        It "Should have PacketSize as a non-mandatory parameter of type Int32" {
-            $CommandUnderTest | Should -HaveParameter PacketSize -Type Int32 -Mandatory:$false
+        It "Should have PacketSize as a non-mandatory parameter of type System.Int32" {
+            $CommandUnderTest | Should -HaveParameter PacketSize -Type System.Int32 -Mandatory:$false
         }
-        It "Should have PooledConnectionLifetime as a non-mandatory parameter of type Int32" {
-            $CommandUnderTest | Should -HaveParameter PooledConnectionLifetime -Type Int32 -Mandatory:$false
+        It "Should have PooledConnectionLifetime as a non-mandatory parameter of type System.Int32" {
+            $CommandUnderTest | Should -HaveParameter PooledConnectionLifetime -Type System.Int32 -Mandatory:$false
         }
-        It "Should have SqlExecutionModes as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter SqlExecutionModes -Type String -Mandatory:$false
+        It "Should have SqlExecutionModes as a non-mandatory parameter of type System.String" {
+            $CommandUnderTest | Should -HaveParameter SqlExecutionModes -Type System.String -Mandatory:$false
         }
-        It "Should have StatementTimeout as a non-mandatory parameter of type Int32" {
-            $CommandUnderTest | Should -HaveParameter StatementTimeout -Type Int32 -Mandatory:$false
+        It "Should have StatementTimeout as a non-mandatory parameter of type System.Int32" {
+            $CommandUnderTest | Should -HaveParameter StatementTimeout -Type System.Int32 -Mandatory:$false
         }
         It "Should have TrustServerCertificate as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter TrustServerCertificate -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter TrustServerCertificate -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
-        It "Should have WorkstationId as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter WorkstationId -Type String -Mandatory:$false
+        It "Should have WorkstationId as a non-mandatory parameter of type System.String" {
+            $CommandUnderTest | Should -HaveParameter WorkstationId -Type System.String -Mandatory:$false
         }
         It "Should have Legacy as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Legacy -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Legacy -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
-        It "Should have AppendConnectionString as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter AppendConnectionString -Type String -Mandatory:$false
+        It "Should have AppendConnectionString as a non-mandatory parameter of type System.String" {
+            $CommandUnderTest | Should -HaveParameter AppendConnectionString -Type System.String -Mandatory:$false
         }
     }
 

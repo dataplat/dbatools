@@ -45,7 +45,7 @@ Describe "Start-DbaMigration" {
             $CommandUnderTest | Should -HaveParameter BackupRestore -Type switch
         }
         It "Should have SharedPath as a string parameter" {
-            $CommandUnderTest | Should -HaveParameter SharedPath -Type string
+            $CommandUnderTest | Should -HaveParameter SharedPath -Type System.String
         }
         It "Should have WithReplace as a switch parameter" {
             $CommandUnderTest | Should -HaveParameter WithReplace -Type switch
@@ -63,13 +63,13 @@ Describe "Start-DbaMigration" {
             $CommandUnderTest | Should -HaveParameter IncludeSupportDbs -Type switch
         }
         It "Should have SourceSqlCredential as a PSCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SourceSqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SourceSqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have DestinationSqlCredential as a PSCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Exclude as a string array parameter" {
-            $CommandUnderTest | Should -HaveParameter Exclude -Type string[]
+            $CommandUnderTest | Should -HaveParameter Exclude -Type System.String[]
         }
         It "Should have DisableJobsOnDestination as a switch parameter" {
             $CommandUnderTest | Should -HaveParameter DisableJobsOnDestination -Type switch
@@ -96,10 +96,10 @@ Describe "Start-DbaMigration" {
             $CommandUnderTest | Should -HaveParameter Force -Type switch
         }
         It "Should have AzureCredential as a string parameter" {
-            $CommandUnderTest | Should -HaveParameter AzureCredential -Type string
+            $CommandUnderTest | Should -HaveParameter AzureCredential -Type System.String
         }
         It "Should have MasterKeyPassword as a SecureString parameter" {
-            $CommandUnderTest | Should -HaveParameter MasterKeyPassword -Type SecureString
+            $CommandUnderTest | Should -HaveParameter MasterKeyPassword -Type System.Security.SecureString
         }
         It "Should have EnableException as a switch parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type switch

@@ -10,23 +10,23 @@ Describe "New-DbatoolsSupportPackage" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbatoolsSupportPackage
         }
-        It "Should have Path as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type String -Mandatory:$false
+        It "Should have Path as a non-mandatory System.String parameter" {
+            $CommandUnderTest | Should -HaveParameter Path -Type System.String -Mandatory:$false
         }
-        It "Should have Variables as a non-mandatory String[] parameter" {
-            $CommandUnderTest | Should -HaveParameter Variables -Type String[] -Mandatory:$false
+        It "Should have Variables as a non-mandatory System.String[] parameter" {
+            $CommandUnderTest | Should -HaveParameter Variables -Type System.String[] -Mandatory:$false
         }
-        It "Should have PassThru as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter PassThru -Type Switch -Mandatory:$false
+        It "Should have PassThru as a non-mandatory System.Management.Automation.SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter PassThru -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
-        It "Should have EnableException as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+        It "Should have EnableException as a non-mandatory System.Management.Automation.SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
-        It "Should have WhatIf as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter WhatIf -Type Switch -Mandatory:$false
+        It "Should have WhatIf as a non-mandatory System.Management.Automation.SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter WhatIf -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
-        It "Should have Confirm as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter Confirm -Type Switch -Mandatory:$false
+        It "Should have Confirm as a non-mandatory System.Management.Automation.SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter Confirm -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

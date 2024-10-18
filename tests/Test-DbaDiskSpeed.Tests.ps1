@@ -10,23 +10,23 @@ Describe "Test-DbaDiskSpeed Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Test-DbaDiskSpeed
         }
-        It "Should have SqlInstance as a non-mandatory DbaInstanceParameter[] parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+        It "Should have SqlInstance as a non-mandatory Dataplat.Dbatools.Parameter.DbaInstanceParameter[] parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
         }
-        It "Should have SqlCredential as a non-mandatory PSCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+        It "Should have SqlCredential as a non-mandatory System.Management.Automation.PSCredential parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
         }
-        It "Should have Database as a non-mandatory Object[] parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Mandatory:$false
+        It "Should have Database as a non-mandatory System.Object[] parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Type System.Object[] -Mandatory:$false
         }
-        It "Should have ExcludeDatabase as a non-mandatory Object[] parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Mandatory:$false
+        It "Should have ExcludeDatabase as a non-mandatory System.Object[] parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.Object[] -Mandatory:$false
         }
-        It "Should have AggregateBy as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter AggregateBy -Type String -Mandatory:$false
+        It "Should have AggregateBy as a non-mandatory System.String parameter" {
+            $CommandUnderTest | Should -HaveParameter AggregateBy -Type System.String -Mandatory:$false
         }
-        It "Should have EnableException as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+        It "Should have EnableException as a non-mandatory System.Management.Automation.SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 }

@@ -12,16 +12,16 @@ Describe "New-DbaDiagnosticAdsNotebook" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have TargetVersion as a parameter" {
-            $CommandUnderTest | Should -HaveParameter TargetVersion -Type String
+            $CommandUnderTest | Should -HaveParameter TargetVersion -Type System.String
         }
         It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type String
+            $CommandUnderTest | Should -HaveParameter Path -Type System.String
         }
         It "Should have IncludeDatabaseSpecific as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeDatabaseSpecific -Type Switch
+            $CommandUnderTest | Should -HaveParameter IncludeDatabaseSpecific -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

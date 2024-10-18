@@ -9,19 +9,19 @@ Describe "Register-DbatoolsConfig" {
             $CommandUnderTest | Should -HaveParameter Config -Type Dataplat.Dbatools.Configuration.Config[]
         }
         It "Accepts FullName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FullName -Type String[]
+            $CommandUnderTest | Should -HaveParameter FullName -Type System.String[]
         }
         It "Accepts Module as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Module -Type String
+            $CommandUnderTest | Should -HaveParameter Module -Type System.String
         }
         It "Accepts Name as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Name -Type String
+            $CommandUnderTest | Should -HaveParameter Name -Type System.String
         }
         It "Accepts Scope as a parameter" {
             $CommandUnderTest | Should -HaveParameter Scope -Type Dataplat.Dbatools.Configuration.ConfigScope
         }
         It "Accepts EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

@@ -6,34 +6,34 @@ Describe "Test-DbaAvailabilityGroup" {
             $CommandUnderTest = Get-Command Test-DbaAvailabilityGroup
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have AvailabilityGroup as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AvailabilityGroup -Type String
+            $CommandUnderTest | Should -HaveParameter AvailabilityGroup -Type System.String
         }
         It "Should have Secondary as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Secondary -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter Secondary -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have SecondarySqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SecondarySqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SecondarySqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have AddDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AddDatabase -Type String[]
+            $CommandUnderTest | Should -HaveParameter AddDatabase -Type System.String[]
         }
         It "Should have SeedingMode as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SeedingMode -Type String
+            $CommandUnderTest | Should -HaveParameter SeedingMode -Type System.String
         }
         It "Should have SharedPath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SharedPath -Type String
+            $CommandUnderTest | Should -HaveParameter SharedPath -Type System.String
         }
         It "Should have UseLastBackup as a parameter" {
-            $CommandUnderTest | Should -HaveParameter UseLastBackup -Type Switch
+            $CommandUnderTest | Should -HaveParameter UseLastBackup -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

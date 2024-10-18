@@ -57,37 +57,37 @@ Describe "Remove-DbaDbTableData" {
             $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential as a PSCredential parameter that is not mandatory" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type Microsoft.SqlServer.Management.Smo.PSCredential -Mandatory:$false
         }
         It "Should have Database as a String[] parameter that is not mandatory" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String[] -Mandatory:$false
         }
         It "Should have BatchSize as an Int32 parameter that is not mandatory" {
-            $CommandUnderTest | Should -HaveParameter BatchSize -Type Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter BatchSize -Type System.Int32 -Mandatory:$false
         }
         It "Should have Table as a String parameter that is not mandatory" {
-            $CommandUnderTest | Should -HaveParameter Table -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Table -Type System.String -Mandatory:$false
         }
         It "Should have DeleteSql as a String parameter that is not mandatory" {
-            $CommandUnderTest | Should -HaveParameter DeleteSql -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter DeleteSql -Type System.String -Mandatory:$false
         }
         It "Should have LogBackupPath as a String parameter that is not mandatory" {
-            $CommandUnderTest | Should -HaveParameter LogBackupPath -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter LogBackupPath -Type System.String -Mandatory:$false
         }
         It "Should have LogBackupTimeStampFormat as a String parameter that is not mandatory" {
-            $CommandUnderTest | Should -HaveParameter LogBackupTimeStampFormat -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter LogBackupTimeStampFormat -Type System.String -Mandatory:$false
         }
         It "Should have AzureBaseUrl as a String[] parameter that is not mandatory" {
-            $CommandUnderTest | Should -HaveParameter AzureBaseUrl -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter AzureBaseUrl -Type System.String[] -Mandatory:$false
         }
         It "Should have AzureCredential as a String parameter that is not mandatory" {
-            $CommandUnderTest | Should -HaveParameter AzureCredential -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter AzureCredential -Type System.String -Mandatory:$false
         }
         It "Should have InputObject as an Object[] parameter that is not mandatory" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object[] -Mandatory:$false
         }
         It "Should have EnableException as a Switch that is not mandatory" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.Switch -Mandatory:$false
         }
     }
 

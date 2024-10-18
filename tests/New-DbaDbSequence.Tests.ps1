@@ -31,34 +31,34 @@ Describe "New-DbaDbSequence" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[]
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String[]
         }
         It "Should have Sequence parameter" {
-            $CommandUnderTest | Should -HaveParameter Sequence -Type String[]
+            $CommandUnderTest | Should -HaveParameter Sequence -Type System.String[]
         }
         It "Should have Schema parameter" {
-            $CommandUnderTest | Should -HaveParameter Schema -Type String
+            $CommandUnderTest | Should -HaveParameter Schema -Type System.String
         }
         It "Should have IntegerType parameter" {
-            $CommandUnderTest | Should -HaveParameter IntegerType -Type String
+            $CommandUnderTest | Should -HaveParameter IntegerType -Type System.String
         }
         It "Should have StartWith parameter" {
-            $CommandUnderTest | Should -HaveParameter StartWith -Type Int64
+            $CommandUnderTest | Should -HaveParameter StartWith -Type System.Int64
         }
         It "Should have IncrementBy parameter" {
-            $CommandUnderTest | Should -HaveParameter IncrementBy -Type Int64
+            $CommandUnderTest | Should -HaveParameter IncrementBy -Type System.Int64
         }
         It "Should have MinValue parameter" {
-            $CommandUnderTest | Should -HaveParameter MinValue -Type Int64
+            $CommandUnderTest | Should -HaveParameter MinValue -Type System.Int64
         }
         It "Should have MaxValue parameter" {
-            $CommandUnderTest | Should -HaveParameter MaxValue -Type Int64
+            $CommandUnderTest | Should -HaveParameter MaxValue -Type System.Int64
         }
         It "Should have Cycle parameter" {
             $CommandUnderTest | Should -HaveParameter Cycle -Type Switch
         }
         It "Should have CacheSize parameter" {
-            $CommandUnderTest | Should -HaveParameter CacheSize -Type Int32
+            $CommandUnderTest | Should -HaveParameter CacheSize -Type System.Int32
         }
         It "Should have InputObject parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[]

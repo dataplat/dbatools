@@ -6,46 +6,46 @@ Describe "Set-DbaAvailabilityGroup" {
             $CommandUnderTest = Get-Command Set-DbaAvailabilityGroup
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have AvailabilityGroup as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AvailabilityGroup -Type String[]
+            $CommandUnderTest | Should -HaveParameter AvailabilityGroup -Type System.String[]
         }
         It "Should have AllAvailabilityGroups as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter AllAvailabilityGroups -Type Switch
+            $CommandUnderTest | Should -HaveParameter AllAvailabilityGroups -Type System.Management.Automation.SwitchParameter
         }
         It "Should have DtcSupportEnabled as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter DtcSupportEnabled -Type Switch
+            $CommandUnderTest | Should -HaveParameter DtcSupportEnabled -Type System.Management.Automation.SwitchParameter
         }
         It "Should have ClusterType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ClusterType -Type String
+            $CommandUnderTest | Should -HaveParameter ClusterType -Type System.String
         }
         It "Should have AutomatedBackupPreference as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AutomatedBackupPreference -Type String
+            $CommandUnderTest | Should -HaveParameter AutomatedBackupPreference -Type System.String
         }
         It "Should have FailureConditionLevel as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FailureConditionLevel -Type String
+            $CommandUnderTest | Should -HaveParameter FailureConditionLevel -Type System.String
         }
         It "Should have HealthCheckTimeout as a parameter" {
-            $CommandUnderTest | Should -HaveParameter HealthCheckTimeout -Type Int32
+            $CommandUnderTest | Should -HaveParameter HealthCheckTimeout -Type System.Int32
         }
         It "Should have BasicAvailabilityGroup as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter BasicAvailabilityGroup -Type Switch
+            $CommandUnderTest | Should -HaveParameter BasicAvailabilityGroup -Type System.Management.Automation.SwitchParameter
         }
         It "Should have DatabaseHealthTrigger as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter DatabaseHealthTrigger -Type Switch
+            $CommandUnderTest | Should -HaveParameter DatabaseHealthTrigger -Type System.Management.Automation.SwitchParameter
         }
         It "Should have IsDistributedAvailabilityGroup as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IsDistributedAvailabilityGroup -Type Switch
+            $CommandUnderTest | Should -HaveParameter IsDistributedAvailabilityGroup -Type System.Management.Automation.SwitchParameter
         }
         It "Should have InputObject as a parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.AvailabilityGroup[]
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 }

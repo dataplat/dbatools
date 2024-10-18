@@ -37,34 +37,34 @@ Describe "New-DbaDbUser" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String[] -Mandatory:$false
         }
         It "Should have ExcludeDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.String[] -Mandatory:$false
         }
         It "Should have IncludeSystem as a parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeSystem -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter IncludeSystem -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have User as a parameter" {
-            $CommandUnderTest | Should -HaveParameter User -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter User -Type System.String -Mandatory:$false
         }
         It "Should have Login as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Login -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Login -Type System.String -Mandatory:$false
         }
         It "Should have SecurePassword as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SecurePassword -Type SecureString -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SecurePassword -Type System.Security.SecureString -Mandatory:$false
         }
         It "Should have ExternalProvider as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExternalProvider -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExternalProvider -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have DefaultSchema as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DefaultSchema -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter DefaultSchema -Type System.String -Mandatory:$false
         }
         It "Should have Force as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

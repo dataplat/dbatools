@@ -6,25 +6,25 @@ Describe "Set-DbaAgentJobOwner" {
             $CommandUnderTest = Get-Command Set-DbaAgentJobOwner
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Job parameter" {
-            $CommandUnderTest | Should -HaveParameter Job -Type Object[]
+            $CommandUnderTest | Should -HaveParameter Job -Type System.Object[]
         }
         It "Should have ExcludeJob parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeJob -Type Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeJob -Type System.Object[]
         }
         It "Should have InputObject parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Agent.Job[]
         }
         It "Should have Login parameter" {
-            $CommandUnderTest | Should -HaveParameter Login -Type String
+            $CommandUnderTest | Should -HaveParameter Login -Type System.String
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 }

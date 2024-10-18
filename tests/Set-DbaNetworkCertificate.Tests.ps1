@@ -10,22 +10,22 @@ Describe "Set-DbaNetworkCertificate" {
             $CommandUnderTest = Get-Command Set-DbaNetworkCertificate
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter Credential -Type System.Management.Automation.PSCredential
         }
         It "Should have Certificate as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Certificate -Type X509Certificate2
+            $CommandUnderTest | Should -HaveParameter Certificate -Type System.Security.Cryptography.X509Certificates.X509Certificate2
         }
         It "Should have Thumbprint as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Thumbprint -Type String
+            $CommandUnderTest | Should -HaveParameter Thumbprint -Type System.String
         }
         It "Should have RestartService as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter RestartService -Type Switch
+            $CommandUnderTest | Should -HaveParameter RestartService -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

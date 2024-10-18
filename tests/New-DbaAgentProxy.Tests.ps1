@@ -12,34 +12,34 @@ Describe "New-DbaAgentProxy" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have Name as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Name -Type String[]
+            $CommandUnderTest | Should -HaveParameter Name -Type System.String[]
         }
         It "Should have ProxyCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ProxyCredential -Type String[]
+            $CommandUnderTest | Should -HaveParameter ProxyCredential -Type System.String[]
         }
         It "Should have SubSystem as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SubSystem -Type String[]
+            $CommandUnderTest | Should -HaveParameter SubSystem -Type System.String[]
         }
         It "Should have Description as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Description -Type String
+            $CommandUnderTest | Should -HaveParameter Description -Type System.String
         }
         It "Should have Login as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Login -Type String[]
+            $CommandUnderTest | Should -HaveParameter Login -Type System.String[]
         }
         It "Should have ServerRole as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ServerRole -Type String[]
+            $CommandUnderTest | Should -HaveParameter ServerRole -Type System.String[]
         }
         It "Should have MsdbRole as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MsdbRole -Type String[]
+            $CommandUnderTest | Should -HaveParameter MsdbRole -Type System.String[]
         }
         It "Should have Disabled as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Disabled -Type Switch
+            $CommandUnderTest | Should -HaveParameter Disabled -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Force as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type Switch
+            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

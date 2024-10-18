@@ -12,16 +12,16 @@ Describe "Remove-DbaComputerCertificate" {
             $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
         }
         It "Should have Thumbprint as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Thumbprint -Type String[]
+            $CommandUnderTest | Should -HaveParameter Thumbprint -Type System.String[]
         }
         It "Should have Store as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Store -Type String
+            $CommandUnderTest | Should -HaveParameter Store -Type System.String
         }
         It "Should have Folder as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Folder -Type String
+            $CommandUnderTest | Should -HaveParameter Folder -Type System.String
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

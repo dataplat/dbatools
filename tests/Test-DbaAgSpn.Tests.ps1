@@ -19,16 +19,16 @@ Describe "Test-DbaAgSpn" {
             $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Mandatory:$false
         }
         It "Should have AvailabilityGroup parameter" {
-            $CommandUnderTest | Should -HaveParameter AvailabilityGroup -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter AvailabilityGroup -Type System.String[] -Mandatory:$false
         }
         It "Should have Listener parameter" {
-            $CommandUnderTest | Should -HaveParameter Listener -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Listener -Type System.String[] -Mandatory:$false
         }
         It "Should have InputObject parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.AvailabilityGroup[] -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

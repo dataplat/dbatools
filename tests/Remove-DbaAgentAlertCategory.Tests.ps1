@@ -11,14 +11,14 @@ Describe "Remove-DbaAgentAlertCategory" {
         It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
-        It "Should have Category as a non-mandatory parameter of type String[]" {
-            $CommandUnderTest | Should -HaveParameter Category -Type String[] -Mandatory:$false
+        It "Should have Category as a non-mandatory parameter of type System.String[]" {
+            $CommandUnderTest | Should -HaveParameter Category -Type System.String[] -Mandatory:$false
         }
-        It "Should have InputObject as a non-mandatory parameter of type AlertCategory[]" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type AlertCategory[] -Mandatory:$false
+        It "Should have InputObject as a non-mandatory parameter of type Microsoft.SqlServer.Management.Smo.Agent.AlertCategory[]" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Agent.AlertCategory[] -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

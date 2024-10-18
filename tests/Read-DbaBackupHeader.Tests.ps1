@@ -12,19 +12,19 @@ Describe "Read-DbaBackupHeader" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
         It "Should have Path parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type Object[]
+            $CommandUnderTest | Should -HaveParameter Path -Type System.Object[]
         }
         It "Should have Simple parameter" {
-            $CommandUnderTest | Should -HaveParameter Simple -Type Switch
+            $CommandUnderTest | Should -HaveParameter Simple -Type System.Management.Automation.SwitchParameter
         }
         It "Should have FileList parameter" {
-            $CommandUnderTest | Should -HaveParameter FileList -Type Switch
+            $CommandUnderTest | Should -HaveParameter FileList -Type System.Management.Automation.SwitchParameter
         }
         It "Should have AzureCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter AzureCredential -Type String
+            $CommandUnderTest | Should -HaveParameter AzureCredential -Type System.String
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

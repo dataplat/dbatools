@@ -30,25 +30,25 @@ Describe "Set-DbaLogin" {
         }
 
         It "Should have the correct parameters" {
-            $command | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
-            $command | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
-            $command | Should -HaveParameter Login -Type String[] -Mandatory:$false
-            $command | Should -HaveParameter SecurePassword -Type Object -Mandatory:$false
-            $command | Should -HaveParameter DefaultDatabase -Type String -Mandatory:$false
-            $command | Should -HaveParameter Unlock -Type Switch -Mandatory:$false
-            $command | Should -HaveParameter PasswordMustChange -Type Switch -Mandatory:$false
-            $command | Should -HaveParameter NewName -Type String -Mandatory:$false
-            $command | Should -HaveParameter Disable -Type Switch -Mandatory:$false
-            $command | Should -HaveParameter Enable -Type Switch -Mandatory:$false
-            $command | Should -HaveParameter DenyLogin -Type Switch -Mandatory:$false
-            $command | Should -HaveParameter GrantLogin -Type Switch -Mandatory:$false
-            $command | Should -HaveParameter PasswordPolicyEnforced -Type Switch -Mandatory:$false
-            $command | Should -HaveParameter PasswordExpirationEnabled -Type Switch -Mandatory:$false
-            $command | Should -HaveParameter AddRole -Type String[] -Mandatory:$false
-            $command | Should -HaveParameter RemoveRole -Type String[] -Mandatory:$false
+            $command | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
+            $command | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $command | Should -HaveParameter Login -Type System.String[] -Mandatory:$false
+            $command | Should -HaveParameter SecurePassword -Type System.Object -Mandatory:$false
+            $command | Should -HaveParameter DefaultDatabase -Type System.String -Mandatory:$false
+            $command | Should -HaveParameter Unlock -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $command | Should -HaveParameter PasswordMustChange -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $command | Should -HaveParameter NewName -Type System.String -Mandatory:$false
+            $command | Should -HaveParameter Disable -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $command | Should -HaveParameter Enable -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $command | Should -HaveParameter DenyLogin -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $command | Should -HaveParameter GrantLogin -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $command | Should -HaveParameter PasswordPolicyEnforced -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $command | Should -HaveParameter PasswordExpirationEnabled -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $command | Should -HaveParameter AddRole -Type System.String[] -Mandatory:$false
+            $command | Should -HaveParameter RemoveRole -Type System.String[] -Mandatory:$false
             $command | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Login[] -Mandatory:$false
-            $command | Should -HaveParameter Force -Type Switch -Mandatory:$false
-            $command | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $command | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
 
         It "Validates -AddRole contains <_>" -ForEach $systemRoles {

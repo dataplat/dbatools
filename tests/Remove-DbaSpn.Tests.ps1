@@ -6,22 +6,22 @@ Describe "Remove-DbaSpn" {
             $CommandUnderTest = Get-Command Remove-DbaSpn
         }
         It "Accepts SPN as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SPN -Type String
+            $CommandUnderTest | Should -HaveParameter SPN -Type System.String
         }
         It "Accepts ServiceAccount as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ServiceAccount -Type String
+            $CommandUnderTest | Should -HaveParameter ServiceAccount -Type System.String
         }
         It "Accepts Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter Credential -Type System.Management.Automation.PSCredential
         }
         It "Accepts EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
         It "Accepts WhatIf as a parameter" {
-            $CommandUnderTest | Should -HaveParameter WhatIf -Type Switch
+            $CommandUnderTest | Should -HaveParameter WhatIf -Type System.Management.Automation.SwitchParameter
         }
         It "Accepts Confirm as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Confirm -Type Switch
+            $CommandUnderTest | Should -HaveParameter Confirm -Type System.Management.Automation.SwitchParameter
         }
     }
 

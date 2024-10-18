@@ -13,19 +13,19 @@ Describe "Remove-DbaDbCertificate Unit Tests" -Tag 'UnitTests' {
         }
 
         It "Should have SqlInstance parameter" {
-            $command | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+            $command | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
         }
 
         It "Should have SqlCredential parameter" {
-            $command | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+            $command | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
         }
 
         It "Should have Database parameter" {
-            $command | Should -HaveParameter Database -Type String[] -Mandatory:$false
+            $command | Should -HaveParameter Database -Type System.String[] -Mandatory:$false
         }
 
         It "Should have Certificate parameter" {
-            $command | Should -HaveParameter Certificate -Type String[] -Mandatory:$false
+            $command | Should -HaveParameter Certificate -Type System.String[] -Mandatory:$false
         }
 
         It "Should have InputObject parameter" {
@@ -33,7 +33,7 @@ Describe "Remove-DbaDbCertificate Unit Tests" -Tag 'UnitTests' {
         }
 
         It "Should have EnableException parameter" {
-            $command | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter EnableException -Type System.Management.Automation.Switch -Mandatory:$false
         }
     }
 }

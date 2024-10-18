@@ -31,31 +31,31 @@ Describe "Set-DbaDbFileGroup" {
             $CommandUnderTest = Get-Command Set-DbaDbFileGroup
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Database -Type System.String[] -Mandatory:$false
         }
         It "Should have FileGroup as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FileGroup -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter FileGroup -Type System.String[] -Mandatory:$false
         }
         It "Should have Default as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Default -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Default -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have ReadOnly as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ReadOnly -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ReadOnly -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have AutoGrowAllFiles as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter AutoGrowAllFiles -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter AutoGrowAllFiles -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object[] -Mandatory:$false
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

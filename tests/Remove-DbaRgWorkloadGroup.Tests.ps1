@@ -10,28 +10,28 @@ Describe "Remove-DbaRgWorkloadGroup" {
             $CommandUnderTest = Get-Command Remove-DbaRgWorkloadGroup
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
         }
         It "Should have WorkloadGroup parameter" {
-            $CommandUnderTest | Should -HaveParameter WorkloadGroup -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter WorkloadGroup -Type System.String[] -Mandatory:$false
         }
         It "Should have ResourcePool parameter" {
-            $CommandUnderTest | Should -HaveParameter ResourcePool -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ResourcePool -Type System.String -Mandatory:$false
         }
         It "Should have ResourcePoolType parameter" {
-            $CommandUnderTest | Should -HaveParameter ResourcePoolType -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ResourcePoolType -Type System.String -Mandatory:$false
         }
         It "Should have SkipReconfigure parameter" {
-            $CommandUnderTest | Should -HaveParameter SkipReconfigure -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SkipReconfigure -Type System.Management.Automation.Switch -Mandatory:$false
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type WorkloadGroup[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.WorkloadGroup[] -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.Switch -Mandatory:$false
         }
     }
 

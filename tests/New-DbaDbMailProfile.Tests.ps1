@@ -12,19 +12,19 @@ Describe "New-DbaDbMailProfile" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Profile as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter Profile -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Profile -Type System.String -Mandatory:$false
         }
         It "Should have Description as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter Description -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Description -Type System.String -Mandatory:$false
         }
         It "Should have MailAccountName as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter MailAccountName -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter MailAccountName -Type System.String -Mandatory:$false
         }
         It "Should have MailAccountPriority as a non-mandatory parameter of type Int32" {
-            $CommandUnderTest | Should -HaveParameter MailAccountPriority -Type Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter MailAccountPriority -Type System.Int32 -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory parameter of type Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

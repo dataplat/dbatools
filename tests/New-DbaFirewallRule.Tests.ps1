@@ -12,16 +12,16 @@ Describe "New-DbaFirewallRule" {
             $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Mandatory:$false
         }
         It "Should have Type parameter" {
-            $CommandUnderTest | Should -HaveParameter Type -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Type -Type System.String[] -Mandatory:$false
         }
         It "Should have Configuration parameter" {
-            $CommandUnderTest | Should -HaveParameter Configuration -Type Hashtable -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Configuration -Type System.Collections.Hashtable -Mandatory:$false
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 

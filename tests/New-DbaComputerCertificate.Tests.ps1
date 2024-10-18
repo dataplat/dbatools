@@ -6,55 +6,55 @@ Describe "New-DbaComputerCertificate" {
             $CommandUnderTest = Get-Command New-DbaComputerCertificate
         }
         It "Should have ComputerName as a non-mandatory DbaInstanceParameter[] parameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have Credential as a non-mandatory PSCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Credential -Type System.Management.Automation.PSCredential -Mandatory:$false
         }
         It "Should have CaServer as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter CaServer -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter CaServer -Type System.String -Mandatory:$false
         }
         It "Should have CaName as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter CaName -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter CaName -Type System.String -Mandatory:$false
         }
         It "Should have ClusterInstanceName as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter ClusterInstanceName -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ClusterInstanceName -Type System.String -Mandatory:$false
         }
         It "Should have SecurePassword as a non-mandatory SecureString parameter" {
-            $CommandUnderTest | Should -HaveParameter SecurePassword -Type SecureString -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SecurePassword -Type System.Security.SecureString -Mandatory:$false
         }
         It "Should have FriendlyName as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter FriendlyName -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter FriendlyName -Type System.String -Mandatory:$false
         }
         It "Should have CertificateTemplate as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter CertificateTemplate -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter CertificateTemplate -Type System.String -Mandatory:$false
         }
         It "Should have KeyLength as a non-mandatory Int32 parameter" {
-            $CommandUnderTest | Should -HaveParameter KeyLength -Type Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter KeyLength -Type System.Int32 -Mandatory:$false
         }
         It "Should have Store as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Store -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Store -Type System.String -Mandatory:$false
         }
         It "Should have Folder as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Folder -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Folder -Type System.String -Mandatory:$false
         }
         It "Should have Flag as a non-mandatory String[] parameter" {
-            $CommandUnderTest | Should -HaveParameter Flag -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Flag -Type System.String[] -Mandatory:$false
         }
         It "Should have Dns as a non-mandatory String[] parameter" {
-            $CommandUnderTest | Should -HaveParameter Dns -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Dns -Type System.String[] -Mandatory:$false
         }
         It "Should have SelfSigned as a non-mandatory Switch parameter" {
-            $CommandUnderTest | Should -HaveParameter SelfSigned -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SelfSigned -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory Switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
         It "Should have HashAlgorithm as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter HashAlgorithm -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter HashAlgorithm -Type System.String -Mandatory:$false
         }
         It "Should have MonthsValid as a non-mandatory Int32 parameter" {
-            $CommandUnderTest | Should -HaveParameter MonthsValid -Type Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter MonthsValid -Type System.Int32 -Mandatory:$false
         }
     }
 }

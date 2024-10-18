@@ -12,7 +12,7 @@ Describe "Remove-DbaAgentJob Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
         }
         It "Should have Job as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Job -Type Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Job -Type System.Object[] -Mandatory:$false
         }
         It "Should have KeepHistory as a switch parameter" {
             $CommandUnderTest | Should -HaveParameter KeepHistory -Type switch -Mandatory:$false

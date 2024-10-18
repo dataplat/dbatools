@@ -6,73 +6,73 @@ Describe "Set-DbaAgentJob" {
             $CommandUnderTest = Get-Command Set-DbaAgentJob
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Job as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Job -Type Object[]
+            $CommandUnderTest | Should -HaveParameter Job -Type System.Object[]
         }
         It "Should have Schedule as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Schedule -Type Object[]
+            $CommandUnderTest | Should -HaveParameter Schedule -Type System.Object[]
         }
         It "Should have ScheduleId as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ScheduleId -Type Int32[]
+            $CommandUnderTest | Should -HaveParameter ScheduleId -Type System.Int32[]
         }
         It "Should have NewName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NewName -Type String
+            $CommandUnderTest | Should -HaveParameter NewName -Type System.String
         }
         It "Should have Enabled as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Enabled -Type Switch
+            $CommandUnderTest | Should -HaveParameter Enabled -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Disabled as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Disabled -Type Switch
+            $CommandUnderTest | Should -HaveParameter Disabled -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Description as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Description -Type String
+            $CommandUnderTest | Should -HaveParameter Description -Type System.String
         }
         It "Should have StartStepId as a parameter" {
-            $CommandUnderTest | Should -HaveParameter StartStepId -Type Int32
+            $CommandUnderTest | Should -HaveParameter StartStepId -Type System.Int32
         }
         It "Should have Category as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Category -Type String
+            $CommandUnderTest | Should -HaveParameter Category -Type System.String
         }
         It "Should have OwnerLogin as a parameter" {
-            $CommandUnderTest | Should -HaveParameter OwnerLogin -Type String
+            $CommandUnderTest | Should -HaveParameter OwnerLogin -Type System.String
         }
         It "Should have EventLogLevel as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EventLogLevel -Type Object
+            $CommandUnderTest | Should -HaveParameter EventLogLevel -Type System.Object
         }
         It "Should have EmailLevel as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EmailLevel -Type Object
+            $CommandUnderTest | Should -HaveParameter EmailLevel -Type System.Object
         }
         It "Should have NetsendLevel as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NetsendLevel -Type Object
+            $CommandUnderTest | Should -HaveParameter NetsendLevel -Type System.Object
         }
         It "Should have PageLevel as a parameter" {
-            $CommandUnderTest | Should -HaveParameter PageLevel -Type Object
+            $CommandUnderTest | Should -HaveParameter PageLevel -Type System.Object
         }
         It "Should have EmailOperator as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EmailOperator -Type String
+            $CommandUnderTest | Should -HaveParameter EmailOperator -Type System.String
         }
         It "Should have NetsendOperator as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NetsendOperator -Type String
+            $CommandUnderTest | Should -HaveParameter NetsendOperator -Type System.String
         }
         It "Should have PageOperator as a parameter" {
-            $CommandUnderTest | Should -HaveParameter PageOperator -Type String
+            $CommandUnderTest | Should -HaveParameter PageOperator -Type System.String
         }
         It "Should have DeleteLevel as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DeleteLevel -Type Object
+            $CommandUnderTest | Should -HaveParameter DeleteLevel -Type System.Object
         }
         It "Should have Force as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type Switch
+            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter
         }
         It "Should have InputObject as a parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Agent.Job[]
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 }
