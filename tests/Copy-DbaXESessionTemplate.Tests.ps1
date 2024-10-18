@@ -20,12 +20,20 @@ Describe "Copy-DbaXESessionTemplate" {
         BeforeAll {
             # Run setup code to get script variables within scope of the discovery phase
             . (Join-Path $PSScriptRoot 'constants.ps1')
+
+            # Ensure the destination directory exists
+            $destinationPath = "$home\Documents\SQL Server Management Studio\Templates\XEventTemplates"
+            if (-not (Test-Path $destinationPath)) {
+                New-Item -Path $destinationPath -ItemType Directory -Force
+            }
+
+            # Copy the templates
+            $null = Copy-DbaXESessionTemplate -Destination $destinationPath
         }
 
         It "Copies the files properly" {
-            $null = Copy-DbaXESessionTemplate *>1
-            $source = ((Get-DbaXESessionTemplate -Path $Path | Where-Object Source -ne Microsoft).Path | Select-Object -First 1).Name
-            $result = Get-ChildItem "$home\Documents\SQL Server Management Studio\Templates\XEventTemplates" | Where-Object Name -eq $source
+            $source = (Get-DbaXESessionTemplate | Where-Object Source -ne Microsoft | Select-Object -First 1).Name
+            $result = Get-ChildItem $destinationPath | Where-Object Name -eq $source
             $result | Should -Not -BeNullOrEmpty
         }
     }

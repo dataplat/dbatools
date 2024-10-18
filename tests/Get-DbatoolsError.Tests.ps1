@@ -6,16 +6,16 @@ Describe "Get-DbatoolsError" {
             $CommandUnderTest = Get-Command Get-DbatoolsError
         }
         It "Accepts First as a parameter" {
-            $CommandUnderTest | Should -HaveParameter First -Type Int32
+            $CommandUnderTest | Should -HaveParameter First -Type System.Int32
         }
         It "Accepts Last as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Last -Type Int32
+            $CommandUnderTest | Should -HaveParameter Last -Type System.Int32
         }
         It "Accepts Skip as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Skip -Type Int32
+            $CommandUnderTest | Should -HaveParameter Skip -Type System.Int32
         }
         It "Accepts All as a parameter" {
-            $CommandUnderTest | Should -HaveParameter All -Type Switch
+            $CommandUnderTest | Should -HaveParameter All -Type System.Management.Automation.SwitchParameter
         }
     }
 
@@ -26,13 +26,13 @@ Describe "Get-DbatoolsError" {
         }
 
         It "returns a dbatools error" {
-            # Mock Connect-DbaInstance to throw an error
+            # Mock Connect-DbaInstance to throw a specific error
             Mock Connect-DbaInstance -ModuleName $ModuleName {
                 throw "Test error"
             }
 
             try {
-                $null = Connect-DbaInstance -SqlInstance nothing -ConnectTimeout 1 -ErrorAction Stop
+                $null = Connect-DbaInstance -SqlInstance 'nothing' -ConnectTimeout 1 -ErrorAction Stop
             } catch {}
 
             $result = Get-DbatoolsError

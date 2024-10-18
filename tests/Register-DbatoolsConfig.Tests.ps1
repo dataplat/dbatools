@@ -6,7 +6,7 @@ Describe "Register-DbatoolsConfig" {
             $CommandUnderTest = Get-Command Register-DbatoolsConfig
         }
         It "Accepts Config as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Config -Type Config[]
+            $CommandUnderTest | Should -HaveParameter Config -Type Dataplat.Dbatools.Configuration.Config[]
         }
         It "Accepts FullName as a parameter" {
             $CommandUnderTest | Should -HaveParameter FullName -Type String[]
@@ -18,7 +18,7 @@ Describe "Register-DbatoolsConfig" {
             $CommandUnderTest | Should -HaveParameter Name -Type String
         }
         It "Accepts Scope as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Scope -Type ConfigScope
+            $CommandUnderTest | Should -HaveParameter Scope -Type Dataplat.Dbatools.Configuration.ConfigScope
         }
         It "Accepts EnableException as a parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch

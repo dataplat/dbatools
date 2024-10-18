@@ -29,8 +29,8 @@ Describe "Export-DbaCredential Unit Tests" -Tag 'UnitTests' {
         It "Should have Append as a non-mandatory switch parameter" {
             $CommandUnderTest | Should -HaveParameter Append -Type Switch -Mandatory:$false
         }
-        It "Should have InputObject as a non-mandatory parameter of type Credential[]" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Credential[] -Mandatory:$false
+        It "Should have InputObject as a non-mandatory parameter of type Microsoft.SqlServer.Management.Smo.Credential[]" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Credential[] -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false

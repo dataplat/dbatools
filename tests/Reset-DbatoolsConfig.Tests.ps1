@@ -11,8 +11,8 @@ Describe "Reset-DbatoolsConfig" {
         BeforeAll {
             $CommandUnderTest = Get-Command Reset-DbatoolsConfig
         }
-        It "Should have ConfigurationItem as a non-mandatory parameter of type Config[]" {
-            $CommandUnderTest | Should -HaveParameter ConfigurationItem -Type Config[] -Mandatory:$false
+        It "Should have ConfigurationItem as a non-mandatory parameter of type Dataplat.Dbatools.Configuration.Config[]" {
+            $CommandUnderTest | Should -HaveParameter ConfigurationItem -Type Dataplat.Dbatools.Configuration.Config[] -Mandatory:$false
         }
         It "Should have FullName as a non-mandatory parameter of type String[]" {
             $CommandUnderTest | Should -HaveParameter FullName -Type String[] -Mandatory:$false

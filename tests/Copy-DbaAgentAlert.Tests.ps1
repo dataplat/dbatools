@@ -6,31 +6,31 @@ Describe "Copy-DbaAgentAlert" {
             $CommandUnderTest = Get-Command Copy-DbaAgentAlert
         }
         It "Should have Source as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Source -Type DbaInstanceParameter
+            $CommandUnderTest | Should -HaveParameter Source -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter
         }
         It "Should have SourceSqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SourceSqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SourceSqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Destination as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Destination -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter Destination -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have DestinationSqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Alert as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Alert -Type Object[]
+            $CommandUnderTest | Should -HaveParameter Alert -Type System.Object[]
         }
         It "Should have ExcludeAlert as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeAlert -Type Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeAlert -Type System.Object[]
         }
         It "Should have IncludeDefaults as a parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeDefaults -Type Switch
+            $CommandUnderTest | Should -HaveParameter IncludeDefaults -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Force as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type Switch
+            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 
@@ -98,7 +98,7 @@ Describe "Copy-DbaAgentAlert" {
         }
 
         It "The newly copied alert exists" {
-            $results = Get-DbaAgentAlert -SqlInstance $global:instance2
+            $results = Get-DbaAgentAlert -SqlInstance $global:instance3
             $results.Name | Should -Contain 'dbatoolsci test alert'
         }
     }

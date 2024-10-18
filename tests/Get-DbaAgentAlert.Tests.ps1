@@ -2,8 +2,8 @@ param($ModuleName = 'dbatools')
 
 Describe "Get-DbaAgentAlert Unit Tests" -Tag 'UnitTests' {
     BeforeAll {
-        # Importing the function if it's not automatically loaded
-        . (Join-Path $PSScriptRoot '..\functions\Get-DbaAgentAlert.ps1')
+        # Import the function using the correct path
+        . "$PSScriptRoot\..\internal\functions\Get-DbaAgentAlert.ps1"
     }
 
     Context "Validate parameters" {
@@ -11,19 +11,19 @@ Describe "Get-DbaAgentAlert Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Get-DbaAgentAlert
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Alert as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Alert -Type String[]
+            $CommandUnderTest | Should -HaveParameter Alert -Type System.String[]
         }
         It "Should have ExcludeAlert as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeAlert -Type String[]
+            $CommandUnderTest | Should -HaveParameter ExcludeAlert -Type System.String[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 }
@@ -43,11 +43,8 @@ Describe "Get-DbaAgentAlert Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Command actually works" {
-        BeforeAll {
-            $results = Get-DbaAgentAlert -SqlInstance $global:instance2
-        }
-
         It "gets the newly created alert" {
+            $results = Get-DbaAgentAlert -SqlInstance $global:instance2
             $results.Name | Should -Contain 'dbatoolsci test alert'
         }
     }

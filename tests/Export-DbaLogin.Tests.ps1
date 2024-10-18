@@ -173,7 +173,7 @@ Describe "Export-DbaLogin" {
             $results | Should -Match "IF NOT EXISTS"
             $results | Should -Match "USE \[$dbname2\]"
         }
-        It "Should Export for the SQLVersion <_>" -ForEach @((Get-Command $CommandName).Parameters.DestinationVersion.attributes.validvalues) {
+        It "Should Export for the SQLVersion <_>" -ForEach @((Get-Command $CommandName).Parameters.DestinationVersion.Attributes.ValidValues) {
             $file = Export-DbaLogin -SqlInstance $global:instance2 -Login $login2 -Database $dbname2 -DestinationVersion $_ -WarningAction SilentlyContinue
             $results = Get-Content -Path $file -Raw
             $results | Should -Match "$login2|$dbname2"

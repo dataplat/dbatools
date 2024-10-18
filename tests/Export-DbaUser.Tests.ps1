@@ -51,7 +51,7 @@ Describe "Export-DbaUser Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
         }
         It "Should have ScriptingOptionsObject parameter" {
-            $CommandUnderTest | Should -HaveParameter ScriptingOptionsObject -Type ScriptingOptions -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ScriptingOptionsObject -Type Microsoft.SqlServer.Management.Smo.ScriptingOptions -Mandatory:$false
         }
         It "Should have ExcludeGoBatchSeparator parameter" {
             $CommandUnderTest | Should -HaveParameter ExcludeGoBatchSeparator -Type Switch -Mandatory:$false

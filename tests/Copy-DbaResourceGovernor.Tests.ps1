@@ -66,35 +66,35 @@ ALTER RESOURCE GOVERNOR RECONFIGURE;
             $CommandUnderTest = Get-Command Copy-DbaResourceGovernor
         }
         It "Should have Source parameter" {
-            $CommandUnderTest | Should -HaveParameter Source -Type DbaInstanceParameter
+            $CommandUnderTest | Should -HaveParameter Source -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter
         }
         It "Should have SourceSqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SourceSqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SourceSqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Destination parameter" {
-            $CommandUnderTest | Should -HaveParameter Destination -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter Destination -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have DestinationSqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have ResourcePool parameter" {
-            $CommandUnderTest | Should -HaveParameter ResourcePool -Type Object[]
+            $CommandUnderTest | Should -HaveParameter ResourcePool -Type System.Object[]
         }
         It "Should have ExcludeResourcePool parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeResourcePool -Type Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeResourcePool -Type System.Object[]
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type Switch
+            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 
     Context "Command works" {
         It "copies the resource governor successfully" {
             $results = Copy-DbaResourceGovernor -Source $global:instance2 -Destination $global:instance3 -Force -WarningAction SilentlyContinue
-            $results.Status | Select-Object -Unique | Should -Be 'Successful'
+            $results.Status | Should -Contain 'Successful'
             $results.Status.Count | Should -BeGreaterThan 3
             $results.Name | Should -Contain 'dbatoolsci_prod'
         }

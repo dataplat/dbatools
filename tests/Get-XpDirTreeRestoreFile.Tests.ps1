@@ -13,10 +13,10 @@ Describe "Get-XpDirTreeRestoreFile" {
             $CommandUnderTest | Should -HaveParameter Path -Type String -Mandatory:$false
         }
         It "Should have SqlInstance as a non-mandatory DbaInstanceParameter parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter -Mandatory:$false
         }
         It "Should have SqlCredential as a non-mandatory PSCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory Switch" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
@@ -38,7 +38,7 @@ Describe "Get-XpDirTreeRestoreFile" {
 
         It "Should throw if SQL Server can't see the path" {
             Mock -ModuleName $ModuleName -CommandName Test-DbaPath { $false }
-            Mock -ModuleName $ModuleName -CommandName Connect-DbaInstance { [DbaInstanceParameter]"bad\bad" }
+            Mock -ModuleName $ModuleName -CommandName Connect-DbaInstance { [Dataplat.Dbatools.Parameter.DbaInstanceParameter]"bad\bad" }
             { Get-XpDirTreeRestoreFile -Path c:\dummy -SqlInstance bad\bad -EnableException } | Should -Throw
         }
     }

@@ -1,60 +1,60 @@
 param($ModuleName = 'dbatools')
 
 Describe "Copy-DbaAgentOperator" {
+    BeforeAll {
+        . "$PSScriptRoot\constants.ps1"
+        $server = Connect-DbaInstance -SqlInstance $global:instance2
+        $sql = "EXEC msdb.dbo.sp_add_operator @name=N'dbatoolsci_operator', @enabled=1, @pager_days=0"
+        $server.Query($sql)
+        $sql = "EXEC msdb.dbo.sp_add_operator @name=N'dbatoolsci_operator2', @enabled=1, @pager_days=0"
+        $server.Query($sql)
+    }
+
+    AfterAll {
+        $server = Connect-DbaInstance -SqlInstance $global:instance2
+        $sql = "EXEC msdb.dbo.sp_delete_operator @name=N'dbatoolsci_operator'"
+        $server.Query($sql)
+        $sql = "EXEC msdb.dbo.sp_delete_operator @name=N'dbatoolsci_operator2'"
+        $server.Query($sql)
+
+        $server = Connect-DbaInstance -SqlInstance $global:instance3
+        $sql = "EXEC msdb.dbo.sp_delete_operator @name=N'dbatoolsci_operator'"
+        $server.Query($sql)
+        $sql = "EXEC msdb.dbo.sp_delete_operator @name=N'dbatoolsci_operator2'"
+        $server.Query($sql)
+    }
+
     Context "Validate parameters" {
         BeforeAll {
             $CommandUnderTest = Get-Command Copy-DbaAgentOperator
         }
         It "Should have Source as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Source -Type DbaInstanceParameter
+            $CommandUnderTest | Should -HaveParameter Source -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter
         }
         It "Should have SourceSqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SourceSqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SourceSqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Destination as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Destination -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter Destination -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have DestinationSqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have Operator as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Operator -Type Object[]
+            $CommandUnderTest | Should -HaveParameter Operator -Type System.Object[]
         }
         It "Should have ExcludeOperator as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeOperator -Type Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeOperator -Type System.Object[]
         }
         It "Should have Force as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type Switch
+            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 
     Context "Command usage" {
-        BeforeAll {
-            . "$PSScriptRoot\constants.ps1"
-            $server = Connect-DbaInstance -SqlInstance $global:instance2
-            $sql = "EXEC msdb.dbo.sp_add_operator @name=N'dbatoolsci_operator', @enabled=1, @pager_days=0"
-            $server.Query($sql)
-            $sql = "EXEC msdb.dbo.sp_add_operator @name=N'dbatoolsci_operator2', @enabled=1, @pager_days=0"
-            $server.Query($sql)
-        }
-
-        AfterAll {
-            $server = Connect-DbaInstance -SqlInstance $global:instance2
-            $sql = "EXEC msdb.dbo.sp_delete_operator @name=N'dbatoolsci_operator'"
-            $server.Query($sql)
-            $sql = "EXEC msdb.dbo.sp_delete_operator @name=N'dbatoolsci_operator2'"
-            $server.Query($sql)
-
-            $server = Connect-DbaInstance -SqlInstance $global:instance3
-            $sql = "EXEC msdb.dbo.sp_delete_operator @name=N'dbatoolsci_operator'"
-            $server.Query($sql)
-            $sql = "EXEC msdb.dbo.sp_delete_operator @name=N'dbatoolsci_operator2'"
-            $server.Query($sql)
-        }
-
         It "Copies operators" {
             $results = Copy-DbaAgentOperator -Source $global:instance2 -Destination $global:instance3 -Operator dbatoolsci_operator, dbatoolsci_operator2
             $results.Count | Should -Be 2
@@ -63,6 +63,7 @@ Describe "Copy-DbaAgentOperator" {
 
         It "Returns one result that's skipped" {
             $results = Copy-DbaAgentOperator -Source $global:instance2 -Destination $global:instance3 -Operator dbatoolsci_operator
+            $results.Count | Should -Be 1
             $results.Status | Should -Be "Skipped"
         }
     }

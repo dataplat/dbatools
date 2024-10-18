@@ -15,7 +15,7 @@ Describe "Export-DbaDbRole Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Mandatory:$false
         }
         It "Should have ScriptingOptionsObject parameter" {
-            $CommandUnderTest | Should -HaveParameter ScriptingOptionsObject -Type ScriptingOptions -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ScriptingOptionsObject -Type Microsoft.SqlServer.Management.Smo.ScriptingOptions -Mandatory:$false
         }
         It "Should have Database parameter" {
             $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Mandatory:$false

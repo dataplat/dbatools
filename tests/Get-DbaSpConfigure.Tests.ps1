@@ -5,6 +5,10 @@ Describe "Get-DbaSpConfigure" {
         $commandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
         Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
         . "$PSScriptRoot\constants.ps1"
+
+        $server = Connect-DbaInstance -SqlInstance $global:instance1
+        $configs = $server.Query("sp_configure")
+        $remotequerytimeout = $configs | Where-Object name -match 'remote query timeout'
     }
 
     Context "Validate parameters" {
@@ -12,29 +16,23 @@ Describe "Get-DbaSpConfigure" {
             $CommandUnderTest = Get-Command Get-DbaSpConfigure
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
         }
         It "Should have Name as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Name -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Name -Type System.String[] -Mandatory:$false
         }
         It "Should have ExcludeName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeName -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeName -Type System.String[] -Mandatory:$false
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
         }
     }
 
     Context "Get configuration" {
-        BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $global:instance1
-            $configs = $server.Query("sp_configure")
-            $remotequerytimeout = $configs | Where-Object name -match 'remote query timeout'
-        }
-
         It "returns equal to results of the straight T-SQL query" {
             $results = Get-DbaSpConfigure -SqlInstance $global:instance1
             $results.count | Should -Be $configs.count
@@ -46,8 +44,9 @@ Describe "Get-DbaSpConfigure" {
         }
 
         It "returns two results less than all data" {
+            $allConfigsCount = (Get-DbaSpConfigure -SqlInstance $global:instance1).Count
             $results = Get-DbaSpConfigure -SqlInstance $global:instance1 -ExcludeName "remote query timeout (s)", AllowUpdates
-            $results.Count | Should -Be ($configs.count - 2)
+            $results.Count | Should -Be ($allConfigsCount - 2)
         }
 
         It "matches the output of sp_configure " {

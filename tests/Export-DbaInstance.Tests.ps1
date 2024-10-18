@@ -39,7 +39,7 @@ Describe "Export-DbaInstance Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest | Should -HaveParameter BatchSeparator -Type String -Mandatory:$false
         }
         It "Should have ScriptingOption as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ScriptingOption -Type ScriptingOptions -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ScriptingOption -Type Microsoft.SqlServer.Management.Smo.ScriptingOptions -Mandatory:$false
         }
         It "Should have NoPrefix as a parameter" {
             $CommandUnderTest | Should -HaveParameter NoPrefix -Type Switch -Mandatory:$false

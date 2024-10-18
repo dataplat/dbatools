@@ -18,7 +18,7 @@ Describe "Unregister-DbatoolsConfig" {
             $CommandUnderTest | Should -HaveParameter Name -Type String -Mandatory:$false
         }
         It "Accepts Scope as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Scope -Type ConfigScope -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Scope -Type Dataplat.Dbatools.Configuration.ConfigScope -Mandatory:$false
         }
     }
 

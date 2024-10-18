@@ -1,6 +1,10 @@
 param($ModuleName = 'dbatools')
 
 Describe "Get-DbaAgentLog" {
+    BeforeAll {
+        . (Join-Path $PSScriptRoot 'constants.ps1')
+    }
+
     Context "Validate parameters" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaAgentLog
@@ -15,7 +19,7 @@ Describe "Get-DbaAgentLog" {
             $CommandUnderTest | Should -HaveParameter LogNumber -Type Int32[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type SwitchParameter
         }
     }
 
@@ -33,14 +37,11 @@ Describe "Get-DbaAgentLog" {
             $results.text -like '[100] Microsoft SQLServerAgent version*' | Should -Be $true
         }
         It "LogDate is a DateTime type" {
-            $($results | Select-Object -First 1).LogDate | Should -BeOfType DateTime
+            $results[0].LogDate | Should -BeOfType DateTime
         }
     }
 
     Context "Command gets current agent log using LogNumber parameter" {
-        BeforeDiscovery {
-            . (Join-Path $PSScriptRoot 'constants.ps1')
-        }
         BeforeAll {
             $results = Get-DbaAgentLog -SqlInstance $global:instance2 -LogNumber 0
         }

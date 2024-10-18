@@ -5,6 +5,14 @@ Describe "Remove-DbaPfDataCollectorSet" {
         $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
         Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
         . "$PSScriptRoot\constants.ps1"
+
+        # Import the collector set template before all tests
+        $null = Get-DbaPfDataCollectorSetTemplate -Template 'Long Running Queries' | Import-DbaPfDataCollectorSetTemplate
+    }
+
+    AfterAll {
+        # Clean up after all tests
+        $null = Remove-DbaPfDataCollectorSet -CollectorSet 'Long Running Queries' -Confirm:$false -ErrorAction SilentlyContinue
     }
 
     Context "Validate parameters" {
@@ -12,42 +20,38 @@ Describe "Remove-DbaPfDataCollectorSet" {
             $CommandUnderTest = Get-Command Remove-DbaPfDataCollectorSet
         }
         It "Should have ComputerName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter Credential -Type System.Management.Automation.PSCredential
         }
         It "Should have CollectorSet as a parameter" {
-            $CommandUnderTest | Should -HaveParameter CollectorSet -Type String[]
+            $CommandUnderTest | Should -HaveParameter CollectorSet -Type System.String[]
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[]
+            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object[]
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 
     Context "Verifying command returns the proper results" {
-        BeforeAll {
-            $null = Get-DbaPfDataCollectorSetTemplate -Template 'Long Running Queries' | Import-DbaPfDataCollectorSetTemplate
-        }
-
         It "removes the data collector set" {
             $results = Get-DbaPfDataCollectorSet -CollectorSet 'Long Running Queries' | Remove-DbaPfDataCollectorSet -Confirm:$false
             $results.Name | Should -Be 'Long Running Queries'
             $results.Status | Should -Be 'Removed'
         }
 
-        It "returns a result" {
+        It "returns a result when getting the collector set" {
             $results = Get-DbaPfDataCollectorSet -CollectorSet 'Long Running Queries'
             $results.Name | Should -Be 'Long Running Queries'
         }
 
-        It "returns no results" {
+        It "returns no results after removing the collector set" {
             $null = Remove-DbaPfDataCollectorSet -CollectorSet 'Long Running Queries' -Confirm:$false
             $results = Get-DbaPfDataCollectorSet -CollectorSet 'Long Running Queries'
-            $results.Name | Should -BeNullOrEmpty
+            $results | Should -BeNullOrEmpty
         }
     }
 }
