@@ -18,7 +18,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $null = Get-DbaDatabase -SqlInstance $server -Database checkdbTestDatabase | Remove-DbaDatabase -Confirm:$false
-        $null = Restore-DbaDatabase -SqlInstance $server -Path $script:appveyorlabrepo\sql2008-backups\db1\SQL2008_db1_FULL_20170518_041738.bak -DatabaseName checkdbTestDatabase
+        $null = Restore-DbaDatabase -SqlInstance $server -Path $script:appveyorlabrepo\sql2008-backups\db1\FULL\SQL2008_db1_FULL_20170518_041738.bak -DatabaseName checkdbTestDatabase
         $null = New-DbaAgentJob -SqlInstance $server -Job checkdbTestJob
         $null = New-DbaAgentJobStep -SqlInstance $server -Job checkdbTestJob -StepName checkdb -Subsystem TransactSql -Command "DBCC CHECKDB('checkdbTestDatabase')"
     }
@@ -26,14 +26,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     AfterAll {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $null = Remove-DbaAgentJob -SqlInstance $server -Job checkdbTestJob -Confirm:$false
-        $null = Get-DbaDatabase -SqlInstance $erver -Database checkdbTestDatabase | Remove-DbaDatabase -Confirm:$false
+        $null = Get-DbaDatabase -SqlInstance $server -Database checkdbTestDatabase | Remove-DbaDatabase -Confirm:$false
     }
 
     Context "Gets Query Estimated Completion" {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $null = Start-DbaAgentJob -SqlInstance $server -Job checkdbTestJob
         $results = Get-DbaEstimatedCompletionTime -SqlInstance $server
-        $null = Remove-DbaAgentJob -SqlInstance $server -Job checkdb -Confirm:$false
         Start-Sleep -Seconds 5
         It "Gets results" {
             $results | Should Not Be $null
