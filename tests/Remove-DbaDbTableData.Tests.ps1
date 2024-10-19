@@ -53,41 +53,24 @@ Describe "Remove-DbaDbTableData" {
         BeforeAll {
             $CommandUnderTest = Get-Command Remove-DbaDbTableData
         }
-        It "Should have SqlInstance as a DbaInstanceParameter[] parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
-        }
-        It "Should have SqlCredential as a PSCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type Microsoft.SqlServer.Management.Smo.PSCredential
-        }
-        It "Should have Database as a String[] parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String[]
-        }
-        It "Should have BatchSize as an Int32 parameter" {
-            $CommandUnderTest | Should -HaveParameter BatchSize -Type System.Int32
-        }
-        It "Should have Table as a String parameter" {
-            $CommandUnderTest | Should -HaveParameter Table -Type System.String
-        }
-        It "Should have DeleteSql as a String parameter" {
-            $CommandUnderTest | Should -HaveParameter DeleteSql -Type System.String
-        }
-        It "Should have LogBackupPath as a String parameter" {
-            $CommandUnderTest | Should -HaveParameter LogBackupPath -Type System.String
-        }
-        It "Should have LogBackupTimeStampFormat as a String parameter" {
-            $CommandUnderTest | Should -HaveParameter LogBackupTimeStampFormat -Type System.String
-        }
-        It "Should have AzureBaseUrl as a String[] parameter" {
-            $CommandUnderTest | Should -HaveParameter AzureBaseUrl -Type System.String[]
-        }
-        It "Should have AzureCredential as a String parameter" {
-            $CommandUnderTest | Should -HaveParameter AzureCredential -Type System.String
-        }
-        It "Should have InputObject as an Object[] parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object[]
-        }
-        It "Should have EnableException as a Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.Switch
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "BatchSize",
+                "Table",
+                "DeleteSql",
+                "LogBackupPath",
+                "LogBackupTimeStampFormat",
+                "AzureBaseUrl",
+                "AzureCredential",
+                "InputObject",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

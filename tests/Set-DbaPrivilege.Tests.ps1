@@ -5,20 +5,18 @@ Describe "Set-DbaPrivilege" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaPrivilege
         }
-        It "Should have ComputerName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName
-        }
-        It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential
-        }
-        It "Should have Type as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Type
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
-        }
-        It "Should have User as a parameter" {
-            $CommandUnderTest | Should -HaveParameter User
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "ComputerName",
+                "Credential",
+                "Type",
+                "EnableException",
+                "User"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

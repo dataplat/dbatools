@@ -5,14 +5,16 @@ Describe "Get-DbaRegistryRoot" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaRegistryRoot
         }
-        It "Should have ComputerName as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName
-        }
-        It "Should have Credential as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential
-        }
-        It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "ComputerName",
+                "Credential",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

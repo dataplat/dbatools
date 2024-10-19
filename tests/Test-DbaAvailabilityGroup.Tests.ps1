@@ -5,35 +5,23 @@ Describe "Test-DbaAvailabilityGroup" {
         BeforeAll {
             $CommandUnderTest = Get-Command Test-DbaAvailabilityGroup
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have AvailabilityGroup as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AvailabilityGroup
-        }
-        It "Should have Secondary as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Secondary
-        }
-        It "Should have SecondarySqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SecondarySqlCredential
-        }
-        It "Should have AddDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AddDatabase
-        }
-        It "Should have SeedingMode as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SeedingMode
-        }
-        It "Should have SharedPath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SharedPath
-        }
-        It "Should have UseLastBackup as a parameter" {
-            $CommandUnderTest | Should -HaveParameter UseLastBackup
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "AvailabilityGroup",
+                "Secondary",
+                "SecondarySqlCredential",
+                "AddDatabase",
+                "SeedingMode",
+                "SharedPath",
+                "UseLastBackup",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

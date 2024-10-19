@@ -30,41 +30,24 @@ Describe "New-DbaDbUser" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaDbUser
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have ExcludeDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
-        }
-        It "Should have IncludeSystem as a parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeSystem
-        }
-        It "Should have User as a parameter" {
-            $CommandUnderTest | Should -HaveParameter User
-        }
-        It "Should have Login as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Login
-        }
-        It "Should have SecurePassword as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SecurePassword
-        }
-        It "Should have ExternalProvider as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExternalProvider
-        }
-        It "Should have DefaultSchema as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DefaultSchema
-        }
-        It "Should have Force as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Force
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "IncludeSystem",
+                "User",
+                "Login",
+                "SecurePassword",
+                "ExternalProvider",
+                "DefaultSchema",
+                "Force",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

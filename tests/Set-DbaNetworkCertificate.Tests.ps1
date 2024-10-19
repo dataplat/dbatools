@@ -9,23 +9,19 @@ Describe "Set-DbaNetworkCertificate" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaNetworkCertificate
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential
-        }
-        It "Should have Certificate as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Certificate
-        }
-        It "Should have Thumbprint as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Thumbprint
-        }
-        It "Should have RestartService as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter RestartService
-        }
-        It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "Credential",
+                "Certificate",
+                "Thumbprint",
+                "RestartService",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

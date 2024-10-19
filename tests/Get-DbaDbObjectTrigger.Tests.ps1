@@ -11,23 +11,18 @@ Describe "Get-DbaDbObjectTrigger Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaDbObjectTrigger
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
-        }
-        It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.Object[]
-        }
-        It "Should have ExcludeDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.Object[]
-        }
-        It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object[]
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "InputObject",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

@@ -60,38 +60,23 @@ Describe "Get-DbaRegServer" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaRegServer
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Name as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Name
-        }
-        It "Should have ServerName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ServerName
-        }
-        It "Should have Group as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Group
-        }
-        It "Should have ExcludeGroup as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeGroup
-        }
-        It "Should have Id as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Id
-        }
-        It "Should have IncludeSelf as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeSelf
-        }
-        It "Should have ResolveNetworkName as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ResolveNetworkName
-        }
-        It "Should have IncludeLocal as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeLocal
-        }
-        It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Name",
+                "ServerName",
+                "Group",
+                "ExcludeGroup",
+                "Id",
+                "IncludeSelf",
+                "ResolveNetworkName",
+                "IncludeLocal",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

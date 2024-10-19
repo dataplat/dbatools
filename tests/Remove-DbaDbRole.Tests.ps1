@@ -5,32 +5,21 @@ Describe "Remove-DbaDbRole Unit Tests" -Tag "UnitTests" {
         BeforeAll {
             $CommandUnderTest = Get-Command Remove-DbaDbRole
         }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have ExcludeDatabase parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
-        }
-        It "Should have Role parameter" {
-            $CommandUnderTest | Should -HaveParameter Role
-        }
-        It "Should have ExcludeRole parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeRole
-        }
-        It "Should have IncludeSystemDbs parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeSystemDbs
-        }
-        It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "Role",
+                "ExcludeRole",
+                "IncludeSystemDbs",
+                "InputObject",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

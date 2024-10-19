@@ -9,20 +9,18 @@ Describe "New-DbaAgentAlertCategory" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaAgentAlertCategory
         }
-        It "Should have SqlInstance as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Category as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Category
-        }
-        It "Should have Force as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force
-        }
-        It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Category",
+                "Force",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

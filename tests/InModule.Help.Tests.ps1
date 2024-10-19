@@ -123,6 +123,17 @@ foreach ($command in $commands) {
             $parameters = $command.ParameterSets.Parameters | Sort-Object -Property Name -Unique | Where-Object Name -notin $common
             $parameterNames = $parameters.Name
             $HelpParameterNames = $Help.Parameters.Parameter.Name | Sort-Object -Unique
+            
+            It "has all the required parameters" {
+                $requiredParameters = @(
+                    "SqlInstance",
+                    "SqlCredential"
+                )
+                foreach ($param in $requiredParameters) {
+                    $command | Should -HaveParameter $param
+                }
+            }
+
             foreach ($parameter in $parameters) {
                 $parameterName = $parameter.Name
                 $parameterHelp = $Help.parameters.parameter | Where-Object Name -EQ $parameterName

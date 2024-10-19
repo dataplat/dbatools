@@ -11,6 +11,16 @@ Describe "Get-DbaConnectedInstance" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaConnectedInstance
         }
+
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
+        }
     }
 
     Context "Command usage" {

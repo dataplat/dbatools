@@ -9,38 +9,24 @@ Describe "New-DbaDbAsymmetricKey" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaDbAsymmetricKey
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Name as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Name
-        }
-        It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have SecurePassword as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SecurePassword
-        }
-        It "Should have Owner as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Owner
-        }
-        It "Should have KeySource as a parameter" {
-            $CommandUnderTest | Should -HaveParameter KeySource
-        }
-        It "Should have KeySourceType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter KeySourceType
-        }
-        It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have Algorithm as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Algorithm
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Name",
+                "Database",
+                "SecurePassword",
+                "Owner",
+                "KeySource",
+                "KeySourceType",
+                "InputObject",
+                "Algorithm",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

@@ -5,35 +5,23 @@ Describe "Find-DbaSimilarTable" {
         BeforeAll {
             $CommandUnderTest = Get-Command Find-DbaSimilarTable
         }
-        It "Should have SqlInstance as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have ExcludeDatabase as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
-        }
-        It "Should have SchemaName as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SchemaName
-        }
-        It "Should have TableName as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter TableName
-        }
-        It "Should have ExcludeViews as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeViews
-        }
-        It "Should have IncludeSystemDatabases as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeSystemDatabases
-        }
-        It "Should have MatchPercentThreshold as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter MatchPercentThreshold
-        }
-        It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "SchemaName",
+                "TableName",
+                "ExcludeViews",
+                "IncludeSystemDatabases",
+                "MatchPercentThreshold",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

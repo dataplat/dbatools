@@ -11,32 +11,22 @@ Describe "Add-DbaReplArticle" {
         BeforeAll {
             $CommandUnderTest = Get-Command Add-DbaReplArticle
         }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have Publication parameter" {
-            $CommandUnderTest | Should -HaveParameter Publication
-        }
-        It "Should have Schema parameter" {
-            $CommandUnderTest | Should -HaveParameter Schema
-        }
-        It "Should have Name parameter" {
-            $CommandUnderTest | Should -HaveParameter Name
-        }
-        It "Should have Filter parameter" {
-            $CommandUnderTest | Should -HaveParameter Filter
-        }
-        It "Should have CreationScriptOptions parameter" {
-            $CommandUnderTest | Should -HaveParameter CreationScriptOptions
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "Publication",
+                "Schema",
+                "Name",
+                "Filter",
+                "CreationScriptOptions",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

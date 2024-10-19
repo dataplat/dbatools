@@ -11,29 +11,20 @@ Describe "Test-DbaWindowsLogin" {
         BeforeAll {
             $CommandUnderTest = Get-Command Test-DbaWindowsLogin
         }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Login parameter" {
-            $CommandUnderTest | Should -HaveParameter Login
-        }
-        It "Should have ExcludeLogin parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeLogin
-        }
-        It "Should have FilterBy parameter" {
-            $CommandUnderTest | Should -HaveParameter FilterBy
-        }
-        It "Should have IgnoreDomains parameter" {
-            $CommandUnderTest | Should -HaveParameter IgnoreDomains
-        }
-        It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Login",
+                "ExcludeLogin",
+                "FilterBy",
+                "IgnoreDomains",
+                "InputObject",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

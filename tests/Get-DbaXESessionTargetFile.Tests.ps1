@@ -13,23 +13,18 @@ Describe "Get-DbaXESessionTargetFile" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaXESessionTargetFile
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Session as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Session
-        }
-        It "Should have Target as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Target
-        }
-        It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Session",
+                "Target",
+                "InputObject",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

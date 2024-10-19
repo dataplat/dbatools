@@ -11,38 +11,23 @@ Describe "Get-DbaAgentJob Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaAgentJob
         }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Job parameter" {
-            $CommandUnderTest | Should -HaveParameter Job
-        }
-        It "Should have ExcludeJob parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeJob
-        }
-        It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have Category parameter" {
-            $CommandUnderTest | Should -HaveParameter Category
-        }
-        It "Should have ExcludeCategory parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeCategory
-        }
-        It "Should have ExcludeDisabledJobs parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDisabledJobs
-        }
-        It "Should have IncludeExecution parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeExecution
-        }
-        It "Should have Type parameter" {
-            $CommandUnderTest | Should -HaveParameter Type
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Job",
+                "ExcludeJob",
+                "Database",
+                "Category",
+                "ExcludeCategory",
+                "ExcludeDisabledJobs",
+                "IncludeExecution",
+                "Type",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

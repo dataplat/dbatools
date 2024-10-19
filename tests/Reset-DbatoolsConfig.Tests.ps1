@@ -11,26 +11,19 @@ Describe "Reset-DbatoolsConfig" {
         BeforeAll {
             $CommandUnderTest = Get-Command Reset-DbatoolsConfig
         }
-        It "Should have ConfigurationItem as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter ConfigurationItem
-        }
-        It "Should have FullName as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter FullName
-        }
-        It "Should have Module as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Module
-        }
-        It "Should have Name as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Name
-        }
-        It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
-        }
-        It "Should have WhatIf as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter WhatIf
-        }
-        It "Should have Confirm as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Confirm
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "ConfigurationItem",
+                "FullName",
+                "Module",
+                "Name",
+                "EnableException",
+                "WhatIf",
+                "Confirm"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

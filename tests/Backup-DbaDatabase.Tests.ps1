@@ -12,140 +12,46 @@ Describe "Backup-DbaDatabase Unit Tests" -Tag 'UnitTests' {
             $command = Get-Command -Name $commandName -Module $ModuleName
         }
 
-        It "Should have SqlInstance parameter" {
-            $command | Should -HaveParameter SqlInstance
-        }
-
-        It "Should have SqlCredential parameter" {
-            $command | Should -HaveParameter SqlCredential
-        }
-
-        It "Should have Database parameter" {
-            $command | Should -HaveParameter Database
-        }
-
-        It "Should have ExcludeDatabase parameter" {
-            $command | Should -HaveParameter ExcludeDatabase
-        }
-
-        It "Should have Path parameter" {
-            $command | Should -HaveParameter Path
-        }
-
-        It "Should have FilePath parameter" {
-            $command | Should -HaveParameter FilePath
-        }
-
-        It "Should have IncrementPrefix parameter" {
-            $command | Should -HaveParameter IncrementPrefix
-        }
-
-        It "Should have ReplaceInName parameter" {
-            $command | Should -HaveParameter ReplaceInName
-        }
-
-        It "Should have NoAppendDbNameInPath parameter" {
-            $command | Should -HaveParameter NoAppendDbNameInPath
-        }
-
-        It "Should have CopyOnly parameter" {
-            $command | Should -HaveParameter CopyOnly
-        }
-
-        It "Should have Type parameter" {
-            $command | Should -HaveParameter Type
-        }
-
-        It "Should have InputObject parameter" {
-            $command | Should -HaveParameter InputObject
-        }
-
-        It "Should have CreateFolder parameter" {
-            $command | Should -HaveParameter CreateFolder
-        }
-
-        It "Should have FileCount parameter" {
-            $command | Should -HaveParameter FileCount
-        }
-
-        It "Should have CompressBackup parameter" {
-            $command | Should -HaveParameter CompressBackup
-        }
-
-        It "Should have Checksum parameter" {
-            $command | Should -HaveParameter Checksum
-        }
-
-        It "Should have Verify parameter" {
-            $command | Should -HaveParameter Verify
-        }
-
-        It "Should have MaxTransferSize parameter" {
-            $command | Should -HaveParameter MaxTransferSize
-        }
-
-        It "Should have BlockSize parameter" {
-            $command | Should -HaveParameter BlockSize
-        }
-
-        It "Should have BufferCount parameter" {
-            $command | Should -HaveParameter BufferCount
-        }
-
-        It "Should have AzureBaseUrl parameter" {
-            $command | Should -HaveParameter AzureBaseUrl
-        }
-
-        It "Should have AzureCredential parameter" {
-            $command | Should -HaveParameter AzureCredential
-        }
-
-        It "Should have NoRecovery parameter" {
-            $command | Should -HaveParameter NoRecovery
-        }
-
-        It "Should have BuildPath parameter" {
-            $command | Should -HaveParameter BuildPath
-        }
-
-        It "Should have WithFormat parameter" {
-            $command | Should -HaveParameter WithFormat
-        }
-
-        It "Should have Initialize parameter" {
-            $command | Should -HaveParameter Initialize
-        }
-
-        It "Should have SkipTapeHeader parameter" {
-            $command | Should -HaveParameter SkipTapeHeader
-        }
-
-        It "Should have TimeStampFormat parameter" {
-            $command | Should -HaveParameter TimeStampFormat
-        }
-
-        It "Should have IgnoreFileChecks parameter" {
-            $command | Should -HaveParameter IgnoreFileChecks
-        }
-
-        It "Should have OutputScriptOnly parameter" {
-            $command | Should -HaveParameter OutputScriptOnly
-        }
-
-        It "Should have EncryptionAlgorithm parameter" {
-            $command | Should -HaveParameter EncryptionAlgorithm
-        }
-
-        It "Should have EncryptionCertificate parameter" {
-            $command | Should -HaveParameter EncryptionCertificate
-        }
-
-        It "Should have Description parameter" {
-            $command | Should -HaveParameter Description
-        }
-
-        It "Should have EnableException parameter" {
-            $command | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "Path",
+                "FilePath",
+                "IncrementPrefix",
+                "ReplaceInName",
+                "NoAppendDbNameInPath",
+                "CopyOnly",
+                "Type",
+                "InputObject",
+                "CreateFolder",
+                "FileCount",
+                "CompressBackup",
+                "Checksum",
+                "Verify",
+                "MaxTransferSize",
+                "BlockSize",
+                "BufferCount",
+                "AzureBaseUrl",
+                "AzureCredential",
+                "NoRecovery",
+                "BuildPath",
+                "WithFormat",
+                "Initialize",
+                "SkipTapeHeader",
+                "TimeStampFormat",
+                "IgnoreFileChecks",
+                "OutputScriptOnly",
+                "EncryptionAlgorithm",
+                "EncryptionCertificate",
+                "Description",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $command | Should -HaveParameter $param
+            }
         }
     }
 }

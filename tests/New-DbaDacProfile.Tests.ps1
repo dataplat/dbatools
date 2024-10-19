@@ -5,26 +5,20 @@ Describe "New-DbaDacProfile" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaDacProfile
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path
-        }
-        It "Should have ConnectionString as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ConnectionString
-        }
-        It "Should have PublishOptions as a parameter" {
-            $CommandUnderTest | Should -HaveParameter PublishOptions
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "Path",
+                "ConnectionString",
+                "PublishOptions",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

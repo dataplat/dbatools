@@ -11,44 +11,26 @@ Describe "Invoke-DbaDbShrink Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Invoke-DbaDbShrink
         }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have ExcludeDatabase parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
-        }
-        It "Should have AllUserDatabases parameter" {
-            $CommandUnderTest | Should -HaveParameter AllUserDatabases
-        }
-        It "Should have PercentFreeSpace parameter" {
-            $CommandUnderTest | Should -HaveParameter PercentFreeSpace
-        }
-        It "Should have ShrinkMethod parameter" {
-            $CommandUnderTest | Should -HaveParameter ShrinkMethod
-        }
-        It "Should have FileType parameter" {
-            $CommandUnderTest | Should -HaveParameter FileType
-        }
-        It "Should have StepSize parameter" {
-            $CommandUnderTest | Should -HaveParameter StepSize
-        }
-        It "Should have StatementTimeout parameter" {
-            $CommandUnderTest | Should -HaveParameter StatementTimeout
-        }
-        It "Should have ExcludeIndexStats parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeIndexStats
-        }
-        It "Should have ExcludeUpdateUsage parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeUpdateUsage
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "AllUserDatabases",
+                "PercentFreeSpace",
+                "ShrinkMethod",
+                "FileType",
+                "StepSize",
+                "StatementTimeout",
+                "ExcludeIndexStats",
+                "ExcludeUpdateUsage",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }
@@ -73,7 +55,7 @@ Describe "Invoke-DbaDbShrink Integration Tests" -Tags "IntegrationTests" {
             $primaryFile.GrowthType = "KB"
             $primaryFileGroup.Files.Add($primaryFile)
 
-            $logFile = New-Object Microsoft.SqlServer.Management.Smo.LogFile($db, "$($db.Name)_log")
+            $logFile = New-Object Microsoft.SqlServer.Management.SMO.LogFile($db, "$($db.Name)_log")
             $logFile.FileName = "$($defaultPath.Log)\$($db.Name)_log.ldf"
             $logFile.Size = 8 * 1024
             $logFile.Growth = 8 * 1024

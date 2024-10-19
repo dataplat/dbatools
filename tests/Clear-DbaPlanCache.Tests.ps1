@@ -9,20 +9,18 @@ Describe "Clear-DbaPlanCache" {
         BeforeAll {
             $CommandUnderTest = Get-Command Clear-DbaPlanCache
         }
-        It "Should have SqlInstance as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Mandatory:$false
-        }
-        It "Should have SqlCredential as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Mandatory:$false
-        }
-        It "Should have Threshold as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Threshold -Mandatory:$false
-        }
-        It "Should have InputObject as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Mandatory:$false
-        }
-        It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Mandatory:$false
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Threshold",
+                "InputObject",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param -Mandatory:$false
+            }
         }
     }
 

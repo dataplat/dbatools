@@ -11,86 +11,39 @@ Describe "Test-DbaLastBackup Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Test-DbaLastBackup
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have ExcludeDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
-        }
-        It "Should have Destination as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Destination
-        }
-        It "Should have DestinationSqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential
-        }
-        It "Should have DataDirectory as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DataDirectory
-        }
-        It "Should have LogDirectory as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LogDirectory
-        }
-        It "Should have FileStreamDirectory as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FileStreamDirectory
-        }
-        It "Should have Prefix as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Prefix
-        }
-        It "Should have VerifyOnly as a parameter" {
-            $CommandUnderTest | Should -HaveParameter VerifyOnly
-        }
-        It "Should have NoCheck as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NoCheck
-        }
-        It "Should have NoDrop as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NoDrop
-        }
-        It "Should have CopyFile as a parameter" {
-            $CommandUnderTest | Should -HaveParameter CopyFile
-        }
-        It "Should have CopyPath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter CopyPath
-        }
-        It "Should have MaxSize as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MaxSize
-        }
-        It "Should have DeviceType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DeviceType
-        }
-        It "Should have IncludeCopyOnly as a parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeCopyOnly
-        }
-        It "Should have IgnoreLogBackup as a parameter" {
-            $CommandUnderTest | Should -HaveParameter IgnoreLogBackup
-        }
-        It "Should have AzureCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AzureCredential
-        }
-        It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have MaxTransferSize as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MaxTransferSize
-        }
-        It "Should have BufferCount as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BufferCount
-        }
-        It "Should have IgnoreDiffBackup as a parameter" {
-            $CommandUnderTest | Should -HaveParameter IgnoreDiffBackup
-        }
-        It "Should have MaxDop as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MaxDop
-        }
-        It "Should have ReuseSourceFolderStructure as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ReuseSourceFolderStructure
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "Destination",
+                "DestinationSqlCredential",
+                "DataDirectory",
+                "LogDirectory",
+                "FileStreamDirectory",
+                "Prefix",
+                "VerifyOnly",
+                "NoCheck",
+                "NoDrop",
+                "CopyFile",
+                "CopyPath",
+                "MaxSize",
+                "DeviceType",
+                "IncludeCopyOnly",
+                "IgnoreLogBackup",
+                "AzureCredential",
+                "InputObject",
+                "MaxTransferSize",
+                "BufferCount",
+                "IgnoreDiffBackup",
+                "MaxDop",
+                "ReuseSourceFolderStructure",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

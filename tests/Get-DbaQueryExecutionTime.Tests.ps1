@@ -5,32 +5,22 @@ Describe "Get-DbaQueryExecutionTime" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaQueryExecutionTime
         }
-        It "Should have SqlInstance as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have ExcludeDatabase as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
-        }
-        It "Should have MaxResultsPerDb as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter MaxResultsPerDb
-        }
-        It "Should have MinExecs as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter MinExecs
-        }
-        It "Should have MinExecMs as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter MinExecMs
-        }
-        It "Should have ExcludeSystem as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSystem
-        }
-        It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "MaxResultsPerDb",
+                "MinExecs",
+                "MinExecMs",
+                "ExcludeSystem",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

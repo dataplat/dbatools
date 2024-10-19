@@ -5,22 +5,18 @@ Describe "Remove-DbaAgentJobCategory" {
         BeforeAll {
             $CommandUnderTest = Get-Command Remove-DbaAgentJobCategory
         }
-        It "Should have SqlInstance as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Category as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Category
-        }
-        It "Should have CategoryType as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter CategoryType
-        }
-        It "Should have InputObject as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have EnableException as a non-mandatory switch parameter" {
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Category",
+                "CategoryType",
+                "InputObject"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
             $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
@@ -51,7 +47,7 @@ Describe "Remove-DbaAgentJobCategory Integration Tests" -Tag "IntegrationTests" 
         }
 
         It "Remove the job categories" {
-            Remove-DbaAgentJobCategory -SqlInstance $global:instance2 -Category CategoryTest1, CategoryTest2, Categorytest3 -Confirm:$false
+            Remove-DbaAgentJobCategory -SqlInstance $global:instance2 -Category CategoryTest1, CategoryTest2, CategoryTest3 -Confirm:$false
 
             $newresults = Get-DbaAgentJobCategory -SqlInstance $global:instance2 -Category CategoryTest1, CategoryTest2, CategoryTest3
 

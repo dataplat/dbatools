@@ -11,32 +11,21 @@ Describe "Get-DbaDbSchema Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaDbSchema
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have Schema as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Schema
-        }
-        It "Should have SchemaOwner as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SchemaOwner
-        }
-        It "Should have IncludeSystemDatabases as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeSystemDatabases
-        }
-        It "Should have IncludeSystemSchemas as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeSystemSchemas
-        }
-        It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "Schema",
+                "SchemaOwner",
+                "IncludeSystemDatabases",
+                "IncludeSystemSchemas",
+                "InputObject",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

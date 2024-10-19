@@ -11,20 +11,17 @@ Describe "Test-DbaDiskAllocation" {
         BeforeAll {
             $CommandUnderTest = Get-Command Test-DbaDiskAllocation
         }
-        It "Should have ComputerName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName
-        }
-        It "Should have NoSqlCheck as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NoSqlCheck
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "ComputerName",
+                "NoSqlCheck",
+                "SqlCredential",
+                "Credential",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

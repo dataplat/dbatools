@@ -5,14 +5,16 @@ Describe "Copy-DbaXESessionTemplate" {
         BeforeAll {
             $CommandUnderTest = Get-Command Copy-DbaXESessionTemplate
         }
-        It "Should have Path as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Path
-        }
-        It "Should have Destination as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Destination
-        }
-        It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Path",
+                "Destination",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

@@ -11,32 +11,21 @@ Describe "Export-DbaExecutionPlan" {
         BeforeAll {
             $CommandUnderTest = Get-Command Export-DbaExecutionPlan
         }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have ExcludeDatabase parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
-        }
-        It "Should have Path parameter" {
-            $CommandUnderTest | Should -HaveParameter Path
-        }
-        It "Should have SinceCreation parameter" {
-            $CommandUnderTest | Should -HaveParameter SinceCreation
-        }
-        It "Should have SinceLastExecution parameter" {
-            $CommandUnderTest | Should -HaveParameter SinceLastExecution
-        }
-        It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "Path",
+                "SinceCreation",
+                "SinceLastExecution",
+                "InputObject",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

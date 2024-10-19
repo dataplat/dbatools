@@ -11,38 +11,23 @@ Describe "Get-DbaAgentJobHistory Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $command = Get-Command -Name $CommandName
         }
-        It "Should have SqlInstance parameter" {
-            $command | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential parameter" {
-            $command | Should -HaveParameter SqlCredential
-        }
-        It "Should have Job parameter" {
-            $command | Should -HaveParameter Job
-        }
-        It "Should have ExcludeJob parameter" {
-            $command | Should -HaveParameter ExcludeJob
-        }
-        It "Should have StartDate parameter" {
-            $command | Should -HaveParameter StartDate
-        }
-        It "Should have EndDate parameter" {
-            $command | Should -HaveParameter EndDate
-        }
-        It "Should have OutcomeType parameter" {
-            $command | Should -HaveParameter OutcomeType
-        }
-        It "Should have ExcludeJobSteps parameter" {
-            $command | Should -HaveParameter ExcludeJobSteps
-        }
-        It "Should have WithOutputFile parameter" {
-            $command | Should -HaveParameter WithOutputFile
-        }
-        It "Should have JobCollection parameter" {
-            $command | Should -HaveParameter JobCollection
-        }
-        It "Should have EnableException parameter" {
-            $command | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Job",
+                "ExcludeJob",
+                "StartDate",
+                "EndDate",
+                "OutcomeType",
+                "ExcludeJobSteps",
+                "WithOutputFile",
+                "JobCollection",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $command | Should -HaveParameter $param
+            }
         }
     }
 }

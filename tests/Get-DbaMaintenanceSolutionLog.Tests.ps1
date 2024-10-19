@@ -11,23 +11,18 @@ Describe "Get-DbaMaintenanceSolutionLog" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaMaintenanceSolutionLog
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have LogType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LogType
-        }
-        It "Should have Since as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Since
-        }
-        It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "LogType",
+                "Since",
+                "Path",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

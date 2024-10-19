@@ -11,29 +11,21 @@ Describe "Test-DbaReplLatency" {
         BeforeAll {
             $CommandUnderTest = Get-Command Test-DbaReplLatency
         }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have PublicationName parameter" {
-            $CommandUnderTest | Should -HaveParameter PublicationName
-        }
-        It "Should have TimeToLive parameter" {
-            $CommandUnderTest | Should -HaveParameter TimeToLive
-        }
-        It "Should have RetainToken parameter" {
-            $CommandUnderTest | Should -HaveParameter RetainToken
-        }
-        It "Should have DisplayTokenHistory parameter" {
-            $CommandUnderTest | Should -HaveParameter DisplayTokenHistory
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "Database",
+                "SqlCredential",
+                "PublicationName",
+                "TimeToLive",
+                "RetainToken",
+                "DisplayTokenHistory",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

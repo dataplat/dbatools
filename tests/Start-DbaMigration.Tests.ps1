@@ -29,80 +29,38 @@ Describe "Start-DbaMigration" {
         BeforeAll {
             $CommandUnderTest = Get-Command Start-DbaMigration
         }
-        It "Should have Source as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Source
-        }
-        It "Should have Destination as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Destination
-        }
-        It "Should have DetachAttach as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter DetachAttach
-        }
-        It "Should have Reattach as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Reattach
-        }
-        It "Should have BackupRestore as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter BackupRestore
-        }
-        It "Should have SharedPath as a string parameter" {
-            $CommandUnderTest | Should -HaveParameter SharedPath
-        }
-        It "Should have WithReplace as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter WithReplace
-        }
-        It "Should have NoRecovery as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoRecovery
-        }
-        It "Should have SetSourceReadOnly as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter SetSourceReadOnly
-        }
-        It "Should have ReuseSourceFolderStructure as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ReuseSourceFolderStructure
-        }
-        It "Should have IncludeSupportDbs as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeSupportDbs
-        }
-        It "Should have SourceSqlCredential as a PSCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SourceSqlCredential
-        }
-        It "Should have DestinationSqlCredential as a PSCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential
-        }
-        It "Should have Exclude as a string array parameter" {
-            $CommandUnderTest | Should -HaveParameter Exclude
-        }
-        It "Should have DisableJobsOnDestination as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter DisableJobsOnDestination
-        }
-        It "Should have DisableJobsOnSource as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter DisableJobsOnSource
-        }
-        It "Should have ExcludeSaRename as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSaRename
-        }
-        It "Should have UseLastBackup as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter UseLastBackup
-        }
-        It "Should have KeepCDC as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter KeepCDC
-        }
-        It "Should have KeepReplication as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter KeepReplication
-        }
-        It "Should have Continue as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Continue
-        }
-        It "Should have Force as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force
-        }
-        It "Should have AzureCredential as a string parameter" {
-            $CommandUnderTest | Should -HaveParameter AzureCredential
-        }
-        It "Should have MasterKeyPassword as a SecureString parameter" {
-            $CommandUnderTest | Should -HaveParameter MasterKeyPassword
-        }
-        It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Source",
+                "Destination",
+                "DetachAttach",
+                "Reattach",
+                "BackupRestore",
+                "SharedPath",
+                "WithReplace",
+                "NoRecovery",
+                "SetSourceReadOnly",
+                "ReuseSourceFolderStructure",
+                "IncludeSupportDbs",
+                "SourceSqlCredential",
+                "DestinationSqlCredential",
+                "Exclude",
+                "DisableJobsOnDestination",
+                "DisableJobsOnSource",
+                "ExcludeSaRename",
+                "UseLastBackup",
+                "KeepCDC",
+                "KeepReplication",
+                "Continue",
+                "Force",
+                "AzureCredential",
+                "MasterKeyPassword",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

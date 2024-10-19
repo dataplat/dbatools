@@ -5,44 +5,26 @@ Describe "Set-DbaDbSequence" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaDbSequence
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have Sequence as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Sequence
-        }
-        It "Should have Schema as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Schema
-        }
-        It "Should have RestartWith as a parameter" {
-            $CommandUnderTest | Should -HaveParameter RestartWith
-        }
-        It "Should have IncrementBy as a parameter" {
-            $CommandUnderTest | Should -HaveParameter IncrementBy
-        }
-        It "Should have MinValue as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MinValue
-        }
-        It "Should have MaxValue as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MaxValue
-        }
-        It "Should have Cycle as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Cycle
-        }
-        It "Should have CacheSize as a parameter" {
-            $CommandUnderTest | Should -HaveParameter CacheSize
-        }
-        It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "Sequence",
+                "Schema",
+                "RestartWith",
+                "IncrementBy",
+                "MinValue",
+                "MaxValue",
+                "Cycle",
+                "CacheSize",
+                "InputObject",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

@@ -5,23 +5,18 @@ Describe "Get-DbaRegServerGroup" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaRegServerGroup
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Group as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Group
-        }
-        It "Should have ExcludeGroup as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeGroup
-        }
-        It "Should have Id as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Id
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Group",
+                "ExcludeGroup",
+                "Id",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

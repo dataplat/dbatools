@@ -12,28 +12,18 @@ Describe "Remove-DbaDbCertificate Unit Tests" -Tag 'UnitTests' {
             $command = Get-Command -Name $CommandName
         }
 
-        It "Should have SqlInstance parameter" {
-            $command | Should -HaveParameter SqlInstance
-        }
-
-        It "Should have SqlCredential parameter" {
-            $command | Should -HaveParameter SqlCredential
-        }
-
-        It "Should have Database parameter" {
-            $command | Should -HaveParameter Database
-        }
-
-        It "Should have Certificate parameter" {
-            $command | Should -HaveParameter Certificate
-        }
-
-        It "Should have InputObject parameter" {
-            $command | Should -HaveParameter InputObject
-        }
-
-        It "Should have EnableException parameter" {
-            $command | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "Certificate",
+                "InputObject",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $command | Should -HaveParameter $param
+            }
         }
     }
 }

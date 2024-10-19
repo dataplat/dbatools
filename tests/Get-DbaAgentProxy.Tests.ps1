@@ -5,20 +5,17 @@ Describe "Get-DbaAgentProxy" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaAgentProxy
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Proxy as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Proxy
-        }
-        It "Should have ExcludeProxy as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeProxy
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Proxy",
+                "ExcludeProxy",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

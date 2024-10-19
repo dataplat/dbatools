@@ -24,28 +24,20 @@ Describe "New-DbaDbTable" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaDbTable
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "Name",
+                "Schema",
+                "ColumnMap",
+                "ColumnObject"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have Name as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Name
-        }
-        It "Should have Schema as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Schema
-        }
-        It "Should have ColumnMap as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ColumnMap
-        }
-        It "Should have ColumnObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ColumnObject
-        }
-        # Add more parameter checks as needed
     }
 
     Context "Should create the table" {

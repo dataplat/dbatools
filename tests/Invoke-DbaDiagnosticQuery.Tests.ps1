@@ -38,53 +38,28 @@ Describe "Invoke-DbaDiagnosticQuery" {
         BeforeAll {
             $CommandUnderTest = Get-Command Invoke-DbaDiagnosticQuery
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have ExcludeDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
-        }
-        It "Should have ExcludeQuery as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeQuery
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path
-        }
-        It "Should have QueryName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter QueryName
-        }
-        It "Should have UseSelectionHelper as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter UseSelectionHelper
-        }
-        It "Should have InstanceOnly as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter InstanceOnly
-        }
-        It "Should have DatabaseSpecific as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter DatabaseSpecific
-        }
-        It "Should have ExcludeQueryTextColumn as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeQueryTextColumn
-        }
-        It "Should have ExcludePlanColumn as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludePlanColumn
-        }
-        It "Should have NoColumnParsing as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoColumnParsing
-        }
-        It "Should have OutputPath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter OutputPath
-        }
-        It "Should have ExportQueries as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExportQueries
-        }
-        It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "Database",
+                "ExcludeDatabase",
+                "ExcludeQuery",
+                "SqlCredential",
+                "Path",
+                "QueryName",
+                "UseSelectionHelper",
+                "InstanceOnly",
+                "DatabaseSpecific",
+                "ExcludeQueryTextColumn",
+                "ExcludePlanColumn",
+                "NoColumnParsing",
+                "OutputPath",
+                "ExportQueries",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

@@ -5,20 +5,17 @@ Describe "Set-DbaExtendedProperty" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaExtendedProperty
         }
-        It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have Value as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Value
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
-        }
-        It "Should have WhatIf as a parameter" {
-            $CommandUnderTest | Should -HaveParameter WhatIf
-        }
-        It "Should have Confirm as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Confirm
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "InputObject",
+                "Value",
+                "EnableException",
+                "WhatIf",
+                "Confirm"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

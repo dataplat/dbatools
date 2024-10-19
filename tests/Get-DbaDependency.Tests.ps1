@@ -11,20 +11,17 @@ Describe "Get-DbaDependency Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaDependency
         }
-        It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have AllowSystemObjects as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AllowSystemObjects
-        }
-        It "Should have Parents as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Parents
-        }
-        It "Should have IncludeSelf as a parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeSelf
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "InputObject",
+                "AllowSystemObjects",
+                "Parents",
+                "IncludeSelf",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

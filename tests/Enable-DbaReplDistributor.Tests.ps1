@@ -10,23 +10,18 @@ Describe "Enable-DbaReplDistributor" {
         BeforeAll {
             $CommandUnderTest = Get-Command Enable-DbaReplDistributor
         }
-        It "Should have SqlInstance as a non-mandatory parameter of type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a non-mandatory parameter of type System.Management.Automation.PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have DistributionDatabase as a non-mandatory parameter of type System.String" {
-            $CommandUnderTest | Should -HaveParameter DistributionDatabase
-        }
-        It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
-        }
-        It "Should have WhatIf as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter WhatIf
-        }
-        It "Should have Confirm as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Confirm
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "DistributionDatabase",
+                "EnableException",
+                "WhatIf",
+                "Confirm"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

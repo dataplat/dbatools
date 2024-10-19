@@ -5,44 +5,26 @@ Describe "Export-DbaDacPackage" {
         BeforeAll {
             $CommandUnderTest = Get-Command Export-DbaDacPackage
         }
-        It "Should have SqlInstance as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have ExcludeDatabase as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
-        }
-        It "Should have AllUserDatabases as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter AllUserDatabases
-        }
-        It "Should have Path as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Path
-        }
-        It "Should have FilePath as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter FilePath
-        }
-        It "Should have DacOption as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter DacOption
-        }
-        It "Should have ExtendedParameters as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter ExtendedParameters
-        }
-        It "Should have ExtendedProperties as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter ExtendedProperties
-        }
-        It "Should have Type as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Type
-        }
-        It "Should have Table as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Table
-        }
-        It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "AllUserDatabases",
+                "Path",
+                "FilePath",
+                "DacOption",
+                "ExtendedParameters",
+                "ExtendedProperties",
+                "Type",
+                "Table",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

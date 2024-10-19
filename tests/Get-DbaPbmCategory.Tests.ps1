@@ -11,23 +11,18 @@ Describe "Get-DbaPbmCategory" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaPbmCategory
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Category as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Category
-        }
-        It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have ExcludeSystemObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSystemObject
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Category",
+                "InputObject",
+                "ExcludeSystemObject",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

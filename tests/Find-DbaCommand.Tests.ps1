@@ -5,26 +5,20 @@ Describe "Find-DbaCommand" {
         BeforeAll {
             $CommandUnderTest = Get-Command Find-DbaCommand
         }
-        It "Should have Pattern as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Pattern
-        }
-        It "Should have Tag as a non-mandatory String[] parameter" {
-            $CommandUnderTest | Should -HaveParameter Tag
-        }
-        It "Should have Author as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Author
-        }
-        It "Should have MinimumVersion as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter MinimumVersion
-        }
-        It "Should have MaximumVersion as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter MaximumVersion
-        }
-        It "Should have Rebuild as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter Rebuild
-        }
-        It "Should have EnableException as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Pattern",
+                "Tag",
+                "Author",
+                "MinimumVersion",
+                "MaximumVersion",
+                "Rebuild",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

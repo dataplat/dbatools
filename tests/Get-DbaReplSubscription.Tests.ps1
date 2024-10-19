@@ -10,29 +10,21 @@ Describe "Get-DbaReplSubscription" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaReplSubscription
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have PublicationName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter PublicationName
-        }
-        It "Should have SubscriberName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SubscriberName
-        }
-        It "Should have SubscriptionDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SubscriptionDatabase
-        }
-        It "Should have Type as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Type
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "PublicationName",
+                "SubscriberName",
+                "SubscriptionDatabase",
+                "Type",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

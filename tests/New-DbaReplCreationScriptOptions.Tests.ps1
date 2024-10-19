@@ -10,11 +10,15 @@ Describe "New-DbaReplCreationScriptOptions" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaReplCreationScriptOptions
         }
-        It "Should have Options as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Options
-        }
-        It "Should have NoDefaults as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoDefaults
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Options",
+                "NoDefaults"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

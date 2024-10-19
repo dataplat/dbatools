@@ -11,29 +11,20 @@ Describe "Invoke-DbaDbDbccCheckConstraint Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Invoke-DbaDbDbccCheckConstraint
         }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have Object parameter" {
-            $CommandUnderTest | Should -HaveParameter Object
-        }
-        It "Should have AllConstraints parameter" {
-            $CommandUnderTest | Should -HaveParameter AllConstraints
-        }
-        It "Should have AllErrorMessages parameter" {
-            $CommandUnderTest | Should -HaveParameter AllErrorMessages
-        }
-        It "Should have NoInformationalMessages parameter" {
-            $CommandUnderTest | Should -HaveParameter NoInformationalMessages
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "Object",
+                "AllConstraints",
+                "AllErrorMessages",
+                "NoInformationalMessages",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

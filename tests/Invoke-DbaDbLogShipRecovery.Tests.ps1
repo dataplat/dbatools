@@ -11,29 +11,20 @@ Describe "Invoke-DbaDbLogShipRecovery" {
         BeforeAll {
             $CommandUnderTest = Get-Command Invoke-DbaDbLogShipRecovery
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have NoRecovery as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoRecovery
-        }
-        It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
-        }
-        It "Should have Force as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force
-        }
-        It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have Delay as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Delay
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "Database",
+                "SqlCredential",
+                "NoRecovery",
+                "EnableException",
+                "Force",
+                "InputObject",
+                "Delay"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

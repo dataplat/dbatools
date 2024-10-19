@@ -11,17 +11,17 @@ Describe "Get-DbaManagementObject" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaManagementObject
         }
-        It "Should have ComputerName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName
-        }
-        It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential
-        }
-        It "Should have VersionNumber as a parameter" {
-            $CommandUnderTest | Should -HaveParameter VersionNumber
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "ComputerName",
+                "Credential",
+                "VersionNumber",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

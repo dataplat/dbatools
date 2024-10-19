@@ -9,23 +9,19 @@ Describe "ConvertTo-DbaDataTable" {
         BeforeAll {
             $CommandUnderTest = Get-Command ConvertTo-DbaDataTable
         }
-        It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have TimeSpanType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter TimeSpanType
-        }
-        It "Should have SizeType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SizeType
-        }
-        It "Should have IgnoreNull as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IgnoreNull
-        }
-        It "Should have Raw as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Raw
-        }
-        It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "InputObject",
+                "TimeSpanType",
+                "SizeType",
+                "IgnoreNull",
+                "Raw",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

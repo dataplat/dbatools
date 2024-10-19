@@ -11,11 +11,16 @@ Describe "Save-DbaDiagnosticQueryScript" {
         BeforeAll {
             $CommandUnderTest = Get-Command Save-DbaDiagnosticQueryScript
         }
-        It "Should have Path as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Path
-        }
-        It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Path",
+                "EnableException",
+                "SqlInstance",
+                "SqlCredential"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

@@ -5,32 +5,22 @@ Describe "Copy-DbaDataCollector" {
         BeforeAll {
             $CommandUnderTest = Get-Command Copy-DbaDataCollector
         }
-        It "Should have Source parameter" {
-            $CommandUnderTest | Should -HaveParameter Source
-        }
-        It "Should have SourceSqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SourceSqlCredential
-        }
-        It "Should have Destination parameter" {
-            $CommandUnderTest | Should -HaveParameter Destination
-        }
-        It "Should have DestinationSqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential
-        }
-        It "Should have CollectionSet parameter" {
-            $CommandUnderTest | Should -HaveParameter CollectionSet
-        }
-        It "Should have ExcludeCollectionSet parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeCollectionSet
-        }
-        It "Should have NoServerReconfig parameter" {
-            $CommandUnderTest | Should -HaveParameter NoServerReconfig
-        }
-        It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Source",
+                "SourceSqlCredential",
+                "Destination",
+                "DestinationSqlCredential",
+                "CollectionSet",
+                "ExcludeCollectionSet",
+                "NoServerReconfig",
+                "Force",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

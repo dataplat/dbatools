@@ -73,50 +73,27 @@ Describe "New-DbaDbTransfer" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaDbTransfer
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have DestinationSqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationSqlInstance
-        }
-        It "Should have DestinationSqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential
-        }
-        It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have DestinationDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationDatabase
-        }
-        It "Should have BatchSize as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BatchSize
-        }
-        It "Should have BulkCopyTimeOut as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BulkCopyTimeOut
-        }
-        It "Should have ScriptingOption as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ScriptingOption
-        }
-        It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have CopyAllObjects as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter CopyAllObjects
-        }
-        It "Should have CopyAll as a parameter" {
-            $CommandUnderTest | Should -HaveParameter CopyAll
-        }
-        It "Should have SchemaOnly as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter SchemaOnly
-        }
-        It "Should have DataOnly as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter DataOnly
-        }
-        It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "DestinationSqlInstance",
+                "DestinationSqlCredential",
+                "Database",
+                "DestinationDatabase",
+                "BatchSize",
+                "BulkCopyTimeOut",
+                "ScriptingOption",
+                "InputObject",
+                "CopyAllObjects",
+                "CopyAll",
+                "SchemaOnly",
+                "DataOnly",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

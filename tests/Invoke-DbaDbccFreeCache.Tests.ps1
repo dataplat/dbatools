@@ -10,26 +10,20 @@ Describe "Invoke-DbaDbccFreeCache" {
         BeforeAll {
             $CommandUnderTest = Get-Command Invoke-DbaDbccFreeCache
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Operation as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Operation
-        }
-        It "Should have InputValue as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputValue
-        }
-        It "Should have NoInformationalMessages as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NoInformationalMessages
-        }
-        It "Should have MarkInUseForRemoval as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MarkInUseForRemoval
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Operation",
+                "InputValue",
+                "NoInformationalMessages",
+                "MarkInUseForRemoval",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

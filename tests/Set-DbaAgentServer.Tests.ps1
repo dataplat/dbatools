@@ -21,77 +21,36 @@ Describe "Set-DbaAgentServer" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaAgentServer
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have AgentLogLevel as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AgentLogLevel
-        }
-        It "Should have AgentMailType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AgentMailType
-        }
-        It "Should have AgentShutdownWaitTime as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AgentShutdownWaitTime
-        }
-        It "Should have DatabaseMailProfile as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DatabaseMailProfile
-        }
-        It "Should have ErrorLogFile as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ErrorLogFile
-        }
-        It "Should have IdleCpuDuration as a parameter" {
-            $CommandUnderTest | Should -HaveParameter IdleCpuDuration
-        }
-        It "Should have IdleCpuPercentage as a parameter" {
-            $CommandUnderTest | Should -HaveParameter IdleCpuPercentage
-        }
-        It "Should have CpuPolling as a parameter" {
-            $CommandUnderTest | Should -HaveParameter CpuPolling
-        }
-        It "Should have LocalHostAlias as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LocalHostAlias
-        }
-        It "Should have LoginTimeout as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LoginTimeout
-        }
-        It "Should have MaximumHistoryRows as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MaximumHistoryRows
-        }
-        It "Should have MaximumJobHistoryRows as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MaximumJobHistoryRows
-        }
-        It "Should have NetSendRecipient as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NetSendRecipient
-        }
-        It "Should have ReplaceAlertTokens as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ReplaceAlertTokens
-        }
-        It "Should have SaveInSentFolder as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SaveInSentFolder
-        }
-        It "Should have SqlAgentAutoStart as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlAgentAutoStart
-        }
-        It "Should have SqlAgentMailProfile as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlAgentMailProfile
-        }
-        It "Should have SqlAgentRestart as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlAgentRestart
-        }
-        It "Should have SqlServerRestart as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlServerRestart
-        }
-        It "Should have WriteOemErrorLog as a parameter" {
-            $CommandUnderTest | Should -HaveParameter WriteOemErrorLog
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "InputObject",
+                "AgentLogLevel",
+                "AgentMailType",
+                "AgentShutdownWaitTime",
+                "DatabaseMailProfile",
+                "ErrorLogFile",
+                "IdleCpuDuration",
+                "IdleCpuPercentage",
+                "CpuPolling",
+                "LocalHostAlias",
+                "LoginTimeout",
+                "MaximumHistoryRows",
+                "MaximumJobHistoryRows",
+                "NetSendRecipient",
+                "ReplaceAlertTokens",
+                "SaveInSentFolder",
+                "SqlAgentAutoStart",
+                "SqlAgentMailProfile",
+                "SqlAgentRestart",
+                "SqlServerRestart",
+                "WriteOemErrorLog",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

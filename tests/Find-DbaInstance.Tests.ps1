@@ -5,35 +5,22 @@ Describe "Find-DbaInstance" {
         BeforeAll {
             $CommandUnderTest = Get-Command Find-DbaInstance
         }
-        It "Should have ComputerName as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName
-        }
-        It "Should have DiscoveryType as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter DiscoveryType
-        }
-        It "Should have Credential as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential
-        }
-        It "Should have SqlCredential as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have ScanType as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter ScanType
-        }
-        It "Should have IpAddress as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter IpAddress
-        }
-        It "Should have DomainController as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter DomainController
-        }
-        It "Should have TCPPort as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter TCPPort
-        }
-        It "Should have MinimumConfidence as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter MinimumConfidence
-        }
-        It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "ComputerName",
+                "DiscoveryType",
+                "Credential",
+                "SqlCredential",
+                "ScanType",
+                "IpAddress",
+                "DomainController",
+                "TCPPort",
+                "MinimumConfidence",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

@@ -11,47 +11,27 @@ Describe "Sync-DbaAvailabilityGroup" {
         BeforeAll {
             $CommandUnderTest = Get-Command Sync-DbaAvailabilityGroup
         }
-        It "Should have Primary parameter" {
-            $CommandUnderTest | Should -HaveParameter Primary
-        }
-        It "Should have PrimarySqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter PrimarySqlCredential
-        }
-        It "Should have Secondary parameter" {
-            $CommandUnderTest | Should -HaveParameter Secondary
-        }
-        It "Should have SecondarySqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SecondarySqlCredential
-        }
-        It "Should have AvailabilityGroup parameter" {
-            $CommandUnderTest | Should -HaveParameter AvailabilityGroup
-        }
-        It "Should have Exclude parameter" {
-            $CommandUnderTest | Should -HaveParameter Exclude
-        }
-        It "Should have Login parameter" {
-            $CommandUnderTest | Should -HaveParameter Login
-        }
-        It "Should have ExcludeLogin parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeLogin
-        }
-        It "Should have Job parameter" {
-            $CommandUnderTest | Should -HaveParameter Job
-        }
-        It "Should have ExcludeJob parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeJob
-        }
-        It "Should have DisableJobOnDestination parameter" {
-            $CommandUnderTest | Should -HaveParameter DisableJobOnDestination
-        }
-        It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Primary",
+                "PrimarySqlCredential",
+                "Secondary",
+                "SecondarySqlCredential",
+                "AvailabilityGroup",
+                "Exclude",
+                "Login",
+                "ExcludeLogin",
+                "Job",
+                "ExcludeJob",
+                "DisableJobOnDestination",
+                "InputObject",
+                "Force",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

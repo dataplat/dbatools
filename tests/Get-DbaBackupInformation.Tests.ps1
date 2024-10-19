@@ -58,59 +58,30 @@ Describe "Get-DbaBackupInformation" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaBackupInformation
         }
-        It "Should have Path parameter" {
-            $CommandUnderTest | Should -HaveParameter Path
-        }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have DatabaseName parameter" {
-            $CommandUnderTest | Should -HaveParameter DatabaseName
-        }
-        It "Should have SourceInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SourceInstance
-        }
-        It "Should have NoXpDirTree parameter" {
-            $CommandUnderTest | Should -HaveParameter NoXpDirTree
-        }
-        It "Should have NoXpDirRecurse parameter" {
-            $CommandUnderTest | Should -HaveParameter NoXpDirRecurse
-        }
-        It "Should have DirectoryRecurse parameter" {
-            $CommandUnderTest | Should -HaveParameter DirectoryRecurse
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
-        }
-        It "Should have MaintenanceSolution parameter" {
-            $CommandUnderTest | Should -HaveParameter MaintenanceSolution
-        }
-        It "Should have IgnoreLogBackup parameter" {
-            $CommandUnderTest | Should -HaveParameter IgnoreLogBackup
-        }
-        It "Should have IgnoreDiffBackup parameter" {
-            $CommandUnderTest | Should -HaveParameter IgnoreDiffBackup
-        }
-        It "Should have ExportPath parameter" {
-            $CommandUnderTest | Should -HaveParameter ExportPath
-        }
-        It "Should have AzureCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter AzureCredential
-        }
-        It "Should have Import parameter" {
-            $CommandUnderTest | Should -HaveParameter Import
-        }
-        It "Should have Anonymise parameter" {
-            $CommandUnderTest | Should -HaveParameter Anonymise
-        }
-        It "Should have NoClobber parameter" {
-            $CommandUnderTest | Should -HaveParameter NoClobber
-        }
-        It "Should have PassThru parameter" {
-            $CommandUnderTest | Should -HaveParameter PassThru
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Path",
+                "SqlInstance",
+                "SqlCredential",
+                "DatabaseName",
+                "SourceInstance",
+                "NoXpDirTree",
+                "NoXpDirRecurse",
+                "DirectoryRecurse",
+                "EnableException",
+                "MaintenanceSolution",
+                "IgnoreLogBackup",
+                "IgnoreDiffBackup",
+                "ExportPath",
+                "AzureCredential",
+                "Import",
+                "Anonymise",
+                "NoClobber",
+                "PassThru"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

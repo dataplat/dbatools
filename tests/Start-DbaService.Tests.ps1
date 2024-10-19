@@ -9,29 +9,21 @@ Describe "Start-DbaService" {
         BeforeAll {
             $CommandUnderTest = Get-Command Start-DbaService
         }
-        It "Should have ComputerName parameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName
-        }
-        It "Should have InstanceName parameter" {
-            $CommandUnderTest | Should -HaveParameter InstanceName
-        }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have Type parameter" {
-            $CommandUnderTest | Should -HaveParameter Type
-        }
-        It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have Timeout parameter" {
-            $CommandUnderTest | Should -HaveParameter Timeout
-        }
-        It "Should have Credential parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Type",
+                "InputObject",
+                "Timeout",
+                "Credential",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

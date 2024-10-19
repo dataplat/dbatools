@@ -21,116 +21,49 @@ Describe "Import-DbaCsv" {
         BeforeAll {
             $CommandUnderTest = Get-Command Import-DbaCsv
         }
-        It "Should have Path parameter" {
-            $CommandUnderTest | Should -HaveParameter Path
-        }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have Table parameter" {
-            $CommandUnderTest | Should -HaveParameter Table
-        }
-        It "Should have Schema parameter" {
-            $CommandUnderTest | Should -HaveParameter Schema
-        }
-        It "Should have Truncate parameter" {
-            $CommandUnderTest | Should -HaveParameter Truncate
-        }
-        It "Should have Delimiter parameter" {
-            $CommandUnderTest | Should -HaveParameter Delimiter
-        }
-        It "Should have SingleColumn parameter" {
-            $CommandUnderTest | Should -HaveParameter SingleColumn
-        }
-        It "Should have BatchSize parameter" {
-            $CommandUnderTest | Should -HaveParameter BatchSize
-        }
-        It "Should have NotifyAfter parameter" {
-            $CommandUnderTest | Should -HaveParameter NotifyAfter
-        }
-        It "Should have TableLock parameter" {
-            $CommandUnderTest | Should -HaveParameter TableLock
-        }
-        It "Should have CheckConstraints parameter" {
-            $CommandUnderTest | Should -HaveParameter CheckConstraints
-        }
-        It "Should have FireTriggers parameter" {
-            $CommandUnderTest | Should -HaveParameter FireTriggers
-        }
-        It "Should have KeepIdentity parameter" {
-            $CommandUnderTest | Should -HaveParameter KeepIdentity
-        }
-        It "Should have KeepNulls parameter" {
-            $CommandUnderTest | Should -HaveParameter KeepNulls
-        }
-        It "Should have Column parameter" {
-            $CommandUnderTest | Should -HaveParameter Column
-        }
-        It "Should have ColumnMap parameter" {
-            $CommandUnderTest | Should -HaveParameter ColumnMap
-        }
-        It "Should have KeepOrdinalOrder parameter" {
-            $CommandUnderTest | Should -HaveParameter KeepOrdinalOrder
-        }
-        It "Should have AutoCreateTable parameter" {
-            $CommandUnderTest | Should -HaveParameter AutoCreateTable
-        }
-        It "Should have NoProgress parameter" {
-            $CommandUnderTest | Should -HaveParameter NoProgress
-        }
-        It "Should have NoHeaderRow parameter" {
-            $CommandUnderTest | Should -HaveParameter NoHeaderRow
-        }
-        It "Should have UseFileNameForSchema parameter" {
-            $CommandUnderTest | Should -HaveParameter UseFileNameForSchema
-        }
-        It "Should have Quote parameter" {
-            $CommandUnderTest | Should -HaveParameter Quote
-        }
-        It "Should have Escape parameter" {
-            $CommandUnderTest | Should -HaveParameter Escape
-        }
-        It "Should have Comment parameter" {
-            $CommandUnderTest | Should -HaveParameter Comment
-        }
-        It "Should have TrimmingOption parameter" {
-            $CommandUnderTest | Should -HaveParameter TrimmingOption
-        }
-        It "Should have BufferSize parameter" {
-            $CommandUnderTest | Should -HaveParameter BufferSize
-        }
-        It "Should have ParseErrorAction parameter" {
-            $CommandUnderTest | Should -HaveParameter ParseErrorAction
-        }
-        It "Should have Encoding parameter" {
-            $CommandUnderTest | Should -HaveParameter Encoding
-        }
-        It "Should have NullValue parameter" {
-            $CommandUnderTest | Should -HaveParameter NullValue
-        }
-        It "Should have MaxQuotedFieldLength parameter" {
-            $CommandUnderTest | Should -HaveParameter MaxQuotedFieldLength
-        }
-        It "Should have SkipEmptyLine parameter" {
-            $CommandUnderTest | Should -HaveParameter SkipEmptyLine
-        }
-        It "Should have SupportsMultiline parameter" {
-            $CommandUnderTest | Should -HaveParameter SupportsMultiline
-        }
-        It "Should have UseColumnDefault parameter" {
-            $CommandUnderTest | Should -HaveParameter UseColumnDefault
-        }
-        It "Should have NoTransaction parameter" {
-            $CommandUnderTest | Should -HaveParameter NoTransaction
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Path",
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "Table",
+                "Schema",
+                "Truncate",
+                "Delimiter",
+                "SingleColumn",
+                "BatchSize",
+                "NotifyAfter",
+                "TableLock",
+                "CheckConstraints",
+                "FireTriggers",
+                "KeepIdentity",
+                "KeepNulls",
+                "Column",
+                "ColumnMap",
+                "KeepOrdinalOrder",
+                "AutoCreateTable",
+                "NoProgress",
+                "NoHeaderRow",
+                "UseFileNameForSchema",
+                "Quote",
+                "Escape",
+                "Comment",
+                "TrimmingOption",
+                "BufferSize",
+                "ParseErrorAction",
+                "Encoding",
+                "NullValue",
+                "MaxQuotedFieldLength",
+                "SkipEmptyLine",
+                "SupportsMultiline",
+                "UseColumnDefault",
+                "NoTransaction",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

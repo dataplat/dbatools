@@ -5,32 +5,21 @@ Describe "New-DbaDbEncryptionKey Unit Tests" -Tag "UnitTests" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaDbEncryptionKey
         }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have EncryptorName parameter" {
-            $CommandUnderTest | Should -HaveParameter EncryptorName
-        }
-        It "Should have Type parameter" {
-            $CommandUnderTest | Should -HaveParameter Type
-        }
-        It "Should have EncryptionAlgorithm parameter" {
-            $CommandUnderTest | Should -HaveParameter EncryptionAlgorithm
-        }
-        It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "EncryptorName",
+                "Type",
+                "EncryptionAlgorithm",
+                "InputObject",
+                "Force",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

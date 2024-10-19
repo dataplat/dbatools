@@ -4,23 +4,18 @@ Describe "Stop-DbaPfDataCollectorSet" {
         BeforeAll {
             $CommandUnderTest = Get-Command Stop-DbaPfDataCollectorSet
         }
-        It "Should have ComputerName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName
-        }
-        It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential
-        }
-        It "Should have CollectorSet as a parameter" {
-            $CommandUnderTest | Should -HaveParameter CollectorSet
-        }
-        It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have NoWait as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoWait
-        }
-        It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "ComputerName",
+                "Credential",
+                "CollectorSet",
+                "InputObject",
+                "NoWait",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

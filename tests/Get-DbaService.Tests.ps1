@@ -10,29 +10,20 @@ Describe "Get-DbaService" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaService
         }
-        It "Should have ComputerName as a non-mandatory parameter of type DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter ComputerName
-        }
-        It "Should have InstanceName as a non-mandatory parameter of type System.String[]" {
-            $CommandUnderTest | Should -HaveParameter InstanceName
-        }
-        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have Credential as a non-mandatory parameter of type System.Management.Automation.PSCredential" {
-            $CommandUnderTest | Should -HaveParameter Credential
-        }
-        It "Should have Type as a non-mandatory parameter of type System.String[]" {
-            $CommandUnderTest | Should -HaveParameter Type
-        }
-        It "Should have ServiceName as a non-mandatory parameter of type System.String[]" {
-            $CommandUnderTest | Should -HaveParameter ServiceName
-        }
-        It "Should have AdvancedProperties as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter AdvancedProperties
-        }
-        It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Credential",
+                "Type",
+                "ServiceName",
+                "AdvancedProperties",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

@@ -5,26 +5,20 @@ Describe "Read-DbaBackupHeader" {
         BeforeAll {
             $CommandUnderTest = Get-Command Read-DbaBackupHeader
         }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Path parameter" {
-            $CommandUnderTest | Should -HaveParameter Path
-        }
-        It "Should have Simple parameter" {
-            $CommandUnderTest | Should -HaveParameter Simple
-        }
-        It "Should have FileList parameter" {
-            $CommandUnderTest | Should -HaveParameter FileList
-        }
-        It "Should have AzureCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter AzureCredential
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Path",
+                "Simple",
+                "FileList",
+                "AzureCredential",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

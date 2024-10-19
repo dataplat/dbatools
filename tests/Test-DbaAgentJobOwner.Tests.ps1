@@ -5,23 +5,18 @@ Describe "Test-DbaAgentJobOwner Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Test-DbaAgentJobOwner
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Job as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Job
-        }
-        It "Should have ExcludeJob as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeJob
-        }
-        It "Should have Login as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Login
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Job",
+                "ExcludeJob",
+                "Login",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

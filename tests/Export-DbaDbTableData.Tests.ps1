@@ -5,35 +5,23 @@ Describe "Export-DbaDbTableData" {
         BeforeAll {
             $CommandUnderTest = Get-Command Export-DbaDbTableData
         }
-        It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path
-        }
-        It "Should have FilePath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FilePath
-        }
-        It "Should have Encoding as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Encoding
-        }
-        It "Should have BatchSeparator as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BatchSeparator
-        }
-        It "Should have NoPrefix as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoPrefix
-        }
-        It "Should have Passthru as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Passthru
-        }
-        It "Should have NoClobber as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoClobber
-        }
-        It "Should have Append as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Append
-        }
-        It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "InputObject",
+                "Path",
+                "FilePath",
+                "Encoding",
+                "BatchSeparator",
+                "NoPrefix",
+                "Passthru",
+                "NoClobber",
+                "Append",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

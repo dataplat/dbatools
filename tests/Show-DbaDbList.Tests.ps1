@@ -5,23 +5,19 @@ Describe "Show-DbaDbList" {
         BeforeAll {
             $CommandUnderTest = Get-Command Show-DbaDbList
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Title as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Title
-        }
-        It "Should have Header as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Header
-        }
-        It "Should have DefaultDb as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DefaultDb
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Title",
+                "Header",
+                "DefaultDb",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

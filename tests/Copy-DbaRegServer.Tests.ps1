@@ -9,29 +9,21 @@ Describe "Copy-DbaRegServer" {
         BeforeAll {
             $CommandUnderTest = Get-Command Copy-DbaRegServer
         }
-        It "Should have Source as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Source
-        }
-        It "Should have SourceSqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SourceSqlCredential
-        }
-        It "Should have Destination as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Destination
-        }
-        It "Should have DestinationSqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential
-        }
-        It "Should have Group as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Group
-        }
-        It "Should have SwitchServerName as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter SwitchServerName
-        }
-        It "Should have Force as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force
-        }
-        It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Source",
+                "SourceSqlCredential",
+                "Destination",
+                "DestinationSqlCredential",
+                "Group",
+                "SwitchServerName",
+                "Force",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

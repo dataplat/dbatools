@@ -69,71 +69,34 @@ Describe "New-DbaLogin" {
             $CommandName = 'New-DbaLogin'
             $Command = Get-Command -Name $CommandName
         }
-        It "Should have SqlInstance parameter" {
-            $Command | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential parameter" {
-            $Command | Should -HaveParameter SqlCredential
-        }
-        It "Should have Login parameter" {
-            $Command | Should -HaveParameter Login
-        }
-        It "Should have InputObject parameter" {
-            $Command | Should -HaveParameter InputObject
-        }
-        It "Should have LoginRenameHashtable parameter" {
-            $Command | Should -HaveParameter LoginRenameHashtable
-        }
-        It "Should have SecurePassword parameter" {
-            $Command | Should -HaveParameter SecurePassword
-        }
-        It "Should have HashedPassword parameter" {
-            $Command | Should -HaveParameter HashedPassword
-        }
-        It "Should have MapToCertificate parameter" {
-            $Command | Should -HaveParameter MapToCertificate
-        }
-        It "Should have MapToAsymmetricKey parameter" {
-            $Command | Should -HaveParameter MapToAsymmetricKey
-        }
-        It "Should have MapToCredential parameter" {
-            $Command | Should -HaveParameter MapToCredential
-        }
-        It "Should have Sid parameter" {
-            $Command | Should -HaveParameter Sid
-        }
-        It "Should have DefaultDatabase parameter" {
-            $Command | Should -HaveParameter DefaultDatabase
-        }
-        It "Should have Language parameter" {
-            $Command | Should -HaveParameter Language
-        }
-        It "Should have PasswordExpirationEnabled parameter" {
-            $Command | Should -HaveParameter PasswordExpirationEnabled
-        }
-        It "Should have PasswordPolicyEnforced parameter" {
-            $Command | Should -HaveParameter PasswordPolicyEnforced
-        }
-        It "Should have PasswordMustChange parameter" {
-            $Command | Should -HaveParameter PasswordMustChange
-        }
-        It "Should have Disabled parameter" {
-            $Command | Should -HaveParameter Disabled
-        }
-        It "Should have DenyWindowsLogin parameter" {
-            $Command | Should -HaveParameter DenyWindowsLogin
-        }
-        It "Should have NewSid parameter" {
-            $Command | Should -HaveParameter NewSid
-        }
-        It "Should have ExternalProvider parameter" {
-            $Command | Should -HaveParameter ExternalProvider
-        }
-        It "Should have Force parameter" {
-            $Command | Should -HaveParameter Force
-        }
-        It "Should have EnableException parameter" {
-            $Command | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Login",
+                "InputObject",
+                "LoginRenameHashtable",
+                "SecurePassword",
+                "HashedPassword",
+                "MapToCertificate",
+                "MapToAsymmetricKey",
+                "MapToCredential",
+                "Sid",
+                "DefaultDatabase",
+                "Language",
+                "PasswordExpirationEnabled",
+                "PasswordPolicyEnforced",
+                "PasswordMustChange",
+                "Disabled",
+                "DenyWindowsLogin",
+                "NewSid",
+                "ExternalProvider",
+                "Force",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $Command | Should -HaveParameter $param
+            }
         }
     }
 

@@ -10,11 +10,15 @@ Describe "Test-DbaDbDataGeneratorConfig" {
         BeforeAll {
             $CommandUnderTest = Get-Command Test-DbaDbDataGeneratorConfig
         }
-        It "Should have FilePath as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter FilePath
-        }
-        It "Should have EnableException as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "FilePath",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

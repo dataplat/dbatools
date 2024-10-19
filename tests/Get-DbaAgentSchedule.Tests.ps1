@@ -9,13 +9,19 @@ Describe "Get-DbaAgentSchedule Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandName = Get-Command Get-DbaAgentSchedule
         }
-        It "Should have the correct parameters" {
-            $CommandName | Should -HaveParameter SqlInstance
-            $CommandName | Should -HaveParameter SqlCredential
-            $CommandName | Should -HaveParameter Schedule
-            $CommandName | Should -HaveParameter ScheduleUid
-            $CommandName | Should -HaveParameter Id
-            $CommandName | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Schedule",
+                "ScheduleUid",
+                "Id",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandName | Should -HaveParameter $param
+            }
         }
     }
 }

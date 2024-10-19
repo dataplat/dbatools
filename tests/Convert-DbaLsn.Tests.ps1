@@ -11,11 +11,14 @@ Describe "Convert-DbaLSN" {
         BeforeAll {
             $CommandUnderTest = Get-Command Convert-DbaLSN
         }
-        It "Should have LSN as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LSN
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "LSN",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

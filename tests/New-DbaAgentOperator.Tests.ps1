@@ -5,59 +5,31 @@ Describe "New-DbaAgentOperator" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaAgentOperator
         }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Operator parameter" {
-            $CommandUnderTest | Should -HaveParameter Operator
-        }
-        It "Should have EmailAddress parameter" {
-            $CommandUnderTest | Should -HaveParameter EmailAddress
-        }
-        It "Should have NetSendAddress parameter" {
-            $CommandUnderTest | Should -HaveParameter NetSendAddress
-        }
-        It "Should have PagerAddress parameter" {
-            $CommandUnderTest | Should -HaveParameter PagerAddress
-        }
-        It "Should have PagerDay parameter" {
-            $CommandUnderTest | Should -HaveParameter PagerDay
-        }
-        It "Should have SaturdayStartTime parameter" {
-            $CommandUnderTest | Should -HaveParameter SaturdayStartTime
-        }
-        It "Should have SaturdayEndTime parameter" {
-            $CommandUnderTest | Should -HaveParameter SaturdayEndTime
-        }
-        It "Should have SundayStartTime parameter" {
-            $CommandUnderTest | Should -HaveParameter SundayStartTime
-        }
-        It "Should have SundayEndTime parameter" {
-            $CommandUnderTest | Should -HaveParameter SundayEndTime
-        }
-        It "Should have WeekdayStartTime parameter" {
-            $CommandUnderTest | Should -HaveParameter WeekdayStartTime
-        }
-        It "Should have WeekdayEndTime parameter" {
-            $CommandUnderTest | Should -HaveParameter WeekdayEndTime
-        }
-        It "Should have IsFailsafeOperator parameter" {
-            $CommandUnderTest | Should -HaveParameter IsFailsafeOperator
-        }
-        It "Should have FailsafeNotificationMethod parameter" {
-            $CommandUnderTest | Should -HaveParameter FailsafeNotificationMethod
-        }
-        It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force
-        }
-        It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Operator",
+                "EmailAddress",
+                "NetSendAddress",
+                "PagerAddress",
+                "PagerDay",
+                "SaturdayStartTime",
+                "SaturdayEndTime",
+                "SundayStartTime",
+                "SundayEndTime",
+                "WeekdayStartTime",
+                "WeekdayEndTime",
+                "IsFailsafeOperator",
+                "FailsafeNotificationMethod",
+                "Force",
+                "InputObject",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

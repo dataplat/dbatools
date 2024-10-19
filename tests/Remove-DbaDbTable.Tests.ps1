@@ -5,23 +5,19 @@ Describe "Remove-DbaDbTable" {
         BeforeAll {
             $CommandUnderTest = Get-Command Remove-DbaDbTable
         }
-        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a non-mandatory parameter of type System.Management.Automation.PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database as a non-mandatory parameter of type System.String[]" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have Table as a non-mandatory parameter of type System.String[]" {
-            $CommandUnderTest | Should -HaveParameter Table
-        }
-        It "Should have InputObject as a non-mandatory parameter of type [Microsoft.SqlServer.Management.Smo.Table[]]" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "Table",
+                "InputObject",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

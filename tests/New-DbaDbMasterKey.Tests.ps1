@@ -5,26 +5,20 @@ Describe "New-DbaDbMasterKey" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaDbMasterKey
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential
-        }
-        It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have SecurePassword as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SecurePassword
-        }
-        It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Credential",
+                "Database",
+                "SecurePassword",
+                "InputObject",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 
@@ -57,7 +51,7 @@ Describe "New-DbaDbMasterKey" {
                 $mastercert | Remove-DbaDbCertificate
             }
             if ($delmasterkey) {
-                $masterkey | Remove-DbaDbMasterKey
+                $masterkey | Remove-DbaMasterKey
             }
         }
 

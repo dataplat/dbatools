@@ -5,17 +5,16 @@ Describe "Remove-DbaCmConnection" {
         BeforeAll {
             $CommandUnderTest = Get-Command Remove-DbaCmConnection
         }
-        It "Should have ComputerName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
-        }
-        It "Should have WhatIf as a parameter" {
-            $CommandUnderTest | Should -HaveParameter WhatIf
-        }
-        It "Should have Confirm as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Confirm
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "ComputerName",
+                "EnableException",
+                "WhatIf",
+                "Confirm"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

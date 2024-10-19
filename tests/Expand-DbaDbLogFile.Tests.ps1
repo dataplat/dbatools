@@ -13,41 +13,25 @@ Describe "Expand-DbaDbLogFile" {
         BeforeAll {
             $CommandUnderTest = Get-Command Expand-DbaDbLogFile
         }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have ExcludeDatabase parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
-        }
-        It "Should have TargetLogSize parameter" {
-            $CommandUnderTest | Should -HaveParameter TargetLogSize
-        }
-        It "Should have IncrementSize parameter" {
-            $CommandUnderTest | Should -HaveParameter IncrementSize
-        }
-        It "Should have LogFileId parameter" {
-            $CommandUnderTest | Should -HaveParameter LogFileId
-        }
-        It "Should have ShrinkLogFile parameter" {
-            $CommandUnderTest | Should -HaveParameter ShrinkLogFile
-        }
-        It "Should have ShrinkSize parameter" {
-            $CommandUnderTest | Should -HaveParameter ShrinkSize
-        }
-        It "Should have BackupDirectory parameter" {
-            $CommandUnderTest | Should -HaveParameter BackupDirectory
-        }
-        It "Should have ExcludeDiskSpaceValidation parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDiskSpaceValidation
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "TargetLogSize",
+                "IncrementSize",
+                "LogFileId",
+                "ShrinkLogFile",
+                "ShrinkSize",
+                "BackupDirectory",
+                "ExcludeDiskSpaceValidation",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

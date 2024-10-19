@@ -11,35 +11,22 @@ Describe "Get-DbaProcess" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaProcess
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Spid as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Spid
-        }
-        It "Should have ExcludeSpid as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSpid
-        }
-        It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have Login as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Login
-        }
-        It "Should have Hostname as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Hostname
-        }
-        It "Should have Program as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Program
-        }
-        It "Should have ExcludeSystemSpids as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSystemSpids
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Spid",
+                "ExcludeSpid",
+                "Database",
+                "Login",
+                "Hostname",
+                "Program",
+                "ExcludeSystemSpids",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

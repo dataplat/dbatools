@@ -11,17 +11,16 @@ Describe "Get-DbaPfDataCollectorSetTemplate" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaPfDataCollectorSetTemplate
         }
-        It "Should have Path as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Path
-        }
-        It "Should have Pattern as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Pattern
-        }
-        It "Should have Template as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Template
-        }
-        It "Should have EnableException as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Path",
+                "Pattern",
+                "Template",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

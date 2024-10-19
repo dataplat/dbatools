@@ -10,23 +10,18 @@ Describe "Test-DbaDiskSpeed Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Test-DbaDiskSpeed
         }
-        It "Should have SqlInstance as a non-mandatory Dataplat.Dbatools.Parameter.DbaInstanceParameter[] parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a non-mandatory System.Management.Automation.PSCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database as a non-mandatory System.Object[] parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have ExcludeDatabase as a non-mandatory System.Object[] parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
-        }
-        It "Should have AggregateBy as a non-mandatory System.String parameter" {
-            $CommandUnderTest | Should -HaveParameter AggregateBy
-        }
-        It "Should have EnableException as a non-mandatory System.Management.Automation.SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "AggregateBy",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

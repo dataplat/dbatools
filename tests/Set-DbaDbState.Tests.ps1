@@ -10,56 +10,30 @@ Describe "Set-DbaDbState Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaDbState
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have ExcludeDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
-        }
-        It "Should have AllDatabases as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter AllDatabases
-        }
-        It "Should have ReadOnly as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ReadOnly
-        }
-        It "Should have ReadWrite as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ReadWrite
-        }
-        It "Should have Online as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Online
-        }
-        It "Should have Offline as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Offline
-        }
-        It "Should have Emergency as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Emergency
-        }
-        It "Should have Detached as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Detached
-        }
-        It "Should have SingleUser as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter SingleUser
-        }
-        It "Should have RestrictedUser as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter RestrictedUser
-        }
-        It "Should have MultiUser as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter MultiUser
-        }
-        It "Should have Force as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force
-        }
-        It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
-        }
-        It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "AllDatabases",
+                "ReadOnly",
+                "ReadWrite",
+                "Online",
+                "Offline",
+                "Emergency",
+                "Detached",
+                "SingleUser",
+                "RestrictedUser",
+                "MultiUser",
+                "Force",
+                "EnableException",
+                "InputObject"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

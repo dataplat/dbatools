@@ -10,17 +10,16 @@ Describe "Invoke-DbaDbccDropCleanBuffer" {
         BeforeAll {
             $CommandUnderTest = Get-Command Invoke-DbaDbccDropCleanBuffer
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have NoInformationalMessages as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoInformationalMessages
-        }
-        It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "NoInformationalMessages",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

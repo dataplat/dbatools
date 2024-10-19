@@ -9,35 +9,23 @@ Describe "Set-DbaNetworkConfiguration" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaNetworkConfiguration
         }
-        It "Should have SqlInstance as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have Credential as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential
-        }
-        It "Should have EnableProtocol as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableProtocol
-        }
-        It "Should have DisableProtocol as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter DisableProtocol
-        }
-        It "Should have DynamicPortForIPAll as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter DynamicPortForIPAll
-        }
-        It "Should have StaticPortForIPAll as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter StaticPortForIPAll
-        }
-        It "Should have IpAddress as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter IpAddress
-        }
-        It "Should have RestartService as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter RestartService
-        }
-        It "Should have InputObject as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "Credential",
+                "EnableProtocol",
+                "DisableProtocol",
+                "DynamicPortForIPAll",
+                "StaticPortForIPAll",
+                "IpAddress",
+                "RestartService",
+                "InputObject",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

@@ -9,35 +9,23 @@ Describe "Get-DbaDbLogShipError Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandName = Get-Command Get-DbaDbLogShipError
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandName | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandName | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database as a parameter" {
-            $CommandName | Should -HaveParameter Database
-        }
-        It "Should have ExcludeDatabase as a parameter" {
-            $CommandName | Should -HaveParameter ExcludeDatabase
-        }
-        It "Should have Action as a parameter" {
-            $CommandName | Should -HaveParameter Action
-        }
-        It "Should have DateTimeFrom as a parameter" {
-            $CommandName | Should -HaveParameter DateTimeFrom
-        }
-        It "Should have DateTimeTo as a parameter" {
-            $CommandName | Should -HaveParameter DateTimeTo
-        }
-        It "Should have Primary as a parameter" {
-            $CommandName | Should -HaveParameter Primary
-        }
-        It "Should have Secondary as a parameter" {
-            $CommandName | Should -HaveParameter Secondary
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandName | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "Action",
+                "DateTimeFrom",
+                "DateTimeTo",
+                "Primary",
+                "Secondary",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandName | Should -HaveParameter $param
+            }
         }
     }
 }

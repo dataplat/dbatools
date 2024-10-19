@@ -5,8 +5,15 @@ Describe "Get-DbaXESmartTarget" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaXESmartTarget
         }
-        It "Should have EnableException as a Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "EnableException",
+                "SqlInstance",
+                "SqlCredential"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

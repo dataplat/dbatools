@@ -5,17 +5,17 @@ Describe "ConvertTo-DbaXESession" {
         BeforeAll {
             $CommandUnderTest = Get-Command ConvertTo-DbaXESession
         }
-        It "Accepts InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Accepts Name as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Name
-        }
-        It "Accepts OutputScriptOnly as a parameter" {
-            $CommandUnderTest | Should -HaveParameter OutputScriptOnly
-        }
-        It "Accepts EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "InputObject",
+                "Name",
+                "OutputScriptOnly",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

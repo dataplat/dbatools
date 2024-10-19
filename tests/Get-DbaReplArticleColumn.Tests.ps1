@@ -10,26 +10,20 @@ Describe "Get-DbaReplArticleColumn" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaReplArticleColumn
         }
-        It "Should have SqlInstance as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have Publication as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Publication
-        }
-        It "Should have Article as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Article
-        }
-        It "Should have Column as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Column
-        }
-        It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "Publication",
+                "Article",
+                "Column",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

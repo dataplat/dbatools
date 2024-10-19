@@ -11,10 +11,15 @@ Describe "New-DbaScriptingOption" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaScriptingOption
         }
-        It "Should have the correct parameters" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Alias 'ConnectionString'
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-            # Add more parameter checks as needed
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

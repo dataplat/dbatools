@@ -25,35 +25,22 @@ Describe "New-DbaDbDataGeneratorConfig" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaDbDataGeneratorConfig
         }
-        It "Should have SqlInstance as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have Table as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Table
-        }
-        It "Should have ResetIdentity as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ResetIdentity
-        }
-        It "Should have TruncateTable as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter TruncateTable
-        }
-        It "Should have Rows as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Rows
-        }
-        It "Should have Path as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Path
-        }
-        It "Should have Force as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force
-        }
-        It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "Table",
+                "Rows",
+                "Path",
+                "ResetIdentity",
+                "TruncateTable",
+                "Force",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

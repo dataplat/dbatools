@@ -5,29 +5,20 @@ Describe "Remove-DbaDbPartitionScheme" {
         BeforeAll {
             $CommandUnderTest = Get-Command Remove-DbaDbPartitionScheme
         }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have ExcludeDatabase parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
-        }
-        It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
-        }
-        It "Should have WhatIf parameter" {
-            $CommandUnderTest | Should -HaveParameter WhatIf
-        }
-        It "Should have Confirm parameter" {
-            $CommandUnderTest | Should -HaveParameter Confirm
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "InputObject",
+                "EnableException",
+                "WhatIf",
+                "Confirm"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

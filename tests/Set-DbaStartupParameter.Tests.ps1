@@ -15,68 +15,34 @@ Describe "Set-DbaStartupParameter" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaStartupParameter
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential
-        }
-        It "Should have MasterData as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MasterData
-        }
-        It "Should have MasterLog as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MasterLog
-        }
-        It "Should have ErrorLog as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ErrorLog
-        }
-        It "Should have TraceFlag as a parameter" {
-            $CommandUnderTest | Should -HaveParameter TraceFlag
-        }
-        It "Should have CommandPromptStart as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter CommandPromptStart
-        }
-        It "Should have MinimalStart as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter MinimalStart
-        }
-        It "Should have MemoryToReserve as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MemoryToReserve
-        }
-        It "Should have SingleUser as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter SingleUser
-        }
-        It "Should have SingleUserDetails as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SingleUserDetails
-        }
-        It "Should have NoLoggingToWinEvents as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoLoggingToWinEvents
-        }
-        It "Should have StartAsNamedInstance as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter StartAsNamedInstance
-        }
-        It "Should have DisableMonitoring as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter DisableMonitoring
-        }
-        It "Should have IncreasedExtents as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncreasedExtents
-        }
-        It "Should have TraceFlagOverride as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter TraceFlagOverride
-        }
-        It "Should have StartupConfig as a parameter" {
-            $CommandUnderTest | Should -HaveParameter StartupConfig
-        }
-        It "Should have Offline as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Offline
-        }
-        It "Should have Force as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force
-        }
-        It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Credential",
+                "MasterData",
+                "MasterLog",
+                "ErrorLog",
+                "TraceFlag",
+                "CommandPromptStart",
+                "MinimalStart",
+                "MemoryToReserve",
+                "SingleUser",
+                "SingleUserDetails",
+                "NoLoggingToWinEvents",
+                "StartAsNamedInstance",
+                "DisableMonitoring",
+                "IncreasedExtents",
+                "TraceFlagOverride",
+                "StartupConfig",
+                "Offline",
+                "Force",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

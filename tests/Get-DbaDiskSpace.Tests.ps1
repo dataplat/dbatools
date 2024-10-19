@@ -5,29 +5,21 @@ Describe "Get-DbaDiskSpace" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaDiskSpace
         }
-        It "Should have ComputerName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName
-        }
-        It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential
-        }
-        It "Should have Unit as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Unit
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have ExcludeDrive as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDrive
-        }
-        It "Should have CheckFragmentation as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter CheckFragmentation
-        }
-        It "Should have Force as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force
-        }
-        It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "ComputerName",
+                "Credential",
+                "Unit",
+                "SqlCredential",
+                "ExcludeDrive",
+                "CheckFragmentation",
+                "Force",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

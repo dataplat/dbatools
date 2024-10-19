@@ -11,32 +11,22 @@ Describe "Select-DbaBackupInformation" {
         BeforeAll {
             $CommandUnderTest = Get-Command Select-DbaBackupInformation
         }
-        It "Should have BackupHistory as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter BackupHistory
-        }
-        It "Should have RestoreTime as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter RestoreTime
-        }
-        It "Should have IgnoreLogs as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IgnoreLogs
-        }
-        It "Should have IgnoreDiffs as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IgnoreDiffs
-        }
-        It "Should have DatabaseName as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter DatabaseName
-        }
-        It "Should have ServerName as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter ServerName
-        }
-        It "Should have ContinuePoints as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter ContinuePoints
-        }
-        It "Should have LastRestoreType as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter LastRestoreType
-        }
-        It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "BackupHistory",
+                "RestoreTime",
+                "IgnoreLogs",
+                "IgnoreDiffs",
+                "DatabaseName",
+                "ServerName",
+                "ContinuePoints",
+                "LastRestoreType",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

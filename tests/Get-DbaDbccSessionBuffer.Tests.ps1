@@ -5,26 +5,19 @@ Describe "Get-DbaDbccSessionBuffer" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaDbccSessionBuffer
         }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Operation parameter" {
-            $CommandUnderTest | Should -HaveParameter Operation
-        }
-        It "Should have SessionId parameter" {
-            $CommandUnderTest | Should -HaveParameter SessionId
-        }
-        It "Should have RequestId parameter" {
-            $CommandUnderTest | Should -HaveParameter RequestId
-        }
-        It "Should have All parameter" {
-            $CommandUnderTest | Should -HaveParameter All
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Operation",
+                "SessionId",
+                "RequestId",
+                "All",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

@@ -5,14 +5,16 @@ Describe "Read-DbaAuditFile" {
         BeforeAll {
             $CommandUnderTest = Get-Command Read-DbaAuditFile
         }
-        It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path
-        }
-        It "Should have Raw as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Raw
-        }
-        It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Path",
+                "Raw",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

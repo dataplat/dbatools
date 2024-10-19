@@ -59,56 +59,29 @@ Describe "Copy-DbaLogin" {
         BeforeAll {
             $CommandUnderTest = Get-Command Copy-DbaLogin
         }
-        It "Should have Source parameter" {
-            $CommandUnderTest | Should -HaveParameter Source
-        }
-        It "Should have SourceSqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SourceSqlCredential
-        }
-        It "Should have Destination parameter" {
-            $CommandUnderTest | Should -HaveParameter Destination
-        }
-        It "Should have DestinationSqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential
-        }
-        It "Should have Login parameter" {
-            $CommandUnderTest | Should -HaveParameter Login
-        }
-        It "Should have ExcludeLogin parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeLogin
-        }
-        It "Should have ExcludeSystemLogins parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSystemLogins
-        }
-        It "Should have SyncSaName parameter" {
-            $CommandUnderTest | Should -HaveParameter SyncSaName
-        }
-        It "Should have OutFile parameter" {
-            $CommandUnderTest | Should -HaveParameter OutFile
-        }
-        It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have LoginRenameHashtable parameter" {
-            $CommandUnderTest | Should -HaveParameter LoginRenameHashtable
-        }
-        It "Should have KillActiveConnection parameter" {
-            $CommandUnderTest | Should -HaveParameter KillActiveConnection
-        }
-        It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force
-        }
-        It "Should have ExcludePermissionSync parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludePermissionSync
-        }
-        It "Should have NewSid parameter" {
-            $CommandUnderTest | Should -HaveParameter NewSid
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
-        }
-        It "Should have ObjectLevel parameter" {
-            $CommandUnderTest | Should -HaveParameter ObjectLevel
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Source",
+                "SourceSqlCredential",
+                "Destination",
+                "DestinationSqlCredential",
+                "Login",
+                "ExcludeLogin",
+                "ExcludeSystemLogins",
+                "SyncSaName",
+                "OutFile",
+                "InputObject",
+                "LoginRenameHashtable",
+                "KillActiveConnection",
+                "Force",
+                "ExcludePermissionSync",
+                "NewSid",
+                "EnableException",
+                "ObjectLevel"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

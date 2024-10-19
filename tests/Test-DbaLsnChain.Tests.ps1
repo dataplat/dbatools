@@ -10,14 +10,16 @@ Describe "Test-DbaLsnChain" {
         BeforeAll {
             $CommandUnderTest = Get-Command Test-DbaLsnChain
         }
-        It "Should have FilteredRestoreFiles as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FilteredRestoreFiles
-        }
-        It "Should have Continue as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Continue
-        }
-        It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "FilteredRestoreFiles",
+                "Continue",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

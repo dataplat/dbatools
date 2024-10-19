@@ -5,44 +5,26 @@ Describe "Add-DbaRegServer" {
         BeforeAll {
             $CommandUnderTest = Get-Command Add-DbaRegServer
         }
-        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have ServerName as a non-mandatory parameter of type System.String" {
-            $CommandUnderTest | Should -HaveParameter ServerName
-        }
-        It "Should have Name as a non-mandatory parameter of type System.String" {
-            $CommandUnderTest | Should -HaveParameter Name
-        }
-        It "Should have Description as a non-mandatory parameter of type System.String" {
-            $CommandUnderTest | Should -HaveParameter Description
-        }
-        It "Should have Group as a non-mandatory parameter of type System.Object" {
-            $CommandUnderTest | Should -HaveParameter Group
-        }
-        It "Should have ActiveDirectoryTenant as a non-mandatory parameter of type System.String" {
-            $CommandUnderTest | Should -HaveParameter ActiveDirectoryTenant
-        }
-        It "Should have ActiveDirectoryUserId as a non-mandatory parameter of type System.String" {
-            $CommandUnderTest | Should -HaveParameter ActiveDirectoryUserId
-        }
-        It "Should have ConnectionString as a non-mandatory parameter of type System.String" {
-            $CommandUnderTest | Should -HaveParameter ConnectionString
-        }
-        It "Should have OtherParams as a non-mandatory parameter of type System.String" {
-            $CommandUnderTest | Should -HaveParameter OtherParams
-        }
-        It "Should have InputObject as a non-mandatory parameter of type Microsoft.SqlServer.Management.RegisteredServers.ServerGroup[]" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have ServerObject as a non-mandatory parameter of type Microsoft.SqlServer.Management.Smo.Server[]" {
-            $CommandUnderTest | Should -HaveParameter ServerObject
-        }
-        It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "ServerName",
+                "Name",
+                "Description",
+                "Group",
+                "ActiveDirectoryTenant",
+                "ActiveDirectoryUserId",
+                "ConnectionString",
+                "OtherParams",
+                "InputObject",
+                "ServerObject",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

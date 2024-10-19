@@ -9,8 +9,16 @@ Describe "Get-DbatoolsPath" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbatoolsPath
         }
-        It "Should have Name as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Name
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Name",
+                "SqlInstance",
+                "SqlCredential"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

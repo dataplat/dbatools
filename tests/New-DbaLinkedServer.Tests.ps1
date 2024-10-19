@@ -30,47 +30,26 @@ Describe "New-DbaLinkedServer" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaLinkedServer
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have LinkedServer as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LinkedServer
-        }
-        It "Should have ServerProduct as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ServerProduct
-        }
-        It "Should have Provider as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Provider
-        }
-        It "Should have DataSource as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DataSource
-        }
-        It "Should have Location as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Location
-        }
-        It "Should have ProviderString as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ProviderString
-        }
-        It "Should have Catalog as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Catalog
-        }
-        It "Should have SecurityContext as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SecurityContext
-        }
-        It "Should have SecurityContextRemoteUser as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SecurityContextRemoteUser
-        }
-        It "Should have SecurityContextRemoteUserPassword as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SecurityContextRemoteUserPassword
-        }
-        It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "LinkedServer",
+                "ServerProduct",
+                "Provider",
+                "DataSource",
+                "Location",
+                "ProviderString",
+                "Catalog",
+                "SecurityContext",
+                "SecurityContextRemoteUser",
+                "SecurityContextRemoteUserPassword",
+                "InputObject",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

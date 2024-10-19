@@ -11,24 +11,22 @@ Describe "Copy-DbaAgentJob" {
         BeforeAll {
             $CommandUnderTest = Get-Command Copy-DbaAgentJob
         }
-        It "Should have Source as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Source
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Source",
+                "SourceSqlCredential",
+                "Destination",
+                "DestinationSqlCredential",
+                "Job",
+                "ExcludeJob",
+                "InputObject"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
-        It "Should have SourceSqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SourceSqlCredential
-        }
-        It "Should have Destination as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Destination
-        }
-        It "Should have DestinationSqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential
-        }
-        It "Should have Job as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Job
-        }
-        It "Should have ExcludeJob as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeJob
-        }
+
         It "Should have DisableOnSource as a switch parameter" {
             $CommandUnderTest | Should -HaveParameter DisableOnSource
         }
@@ -37,9 +35,6 @@ Describe "Copy-DbaAgentJob" {
         }
         It "Should have Force as a switch parameter" {
             $CommandUnderTest | Should -HaveParameter Force
-        }
-        It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException as a switch parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException

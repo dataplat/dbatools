@@ -11,14 +11,15 @@ Describe "Update-Dbatools" {
         BeforeAll {
             $CommandUnderTest = Get-Command Update-Dbatools
         }
-        It "Should have Development as a Switch" {
-            $CommandUnderTest | Should -HaveParameter Development
-        }
-        It "Should have Cleanup as a Switch" {
-            $CommandUnderTest | Should -HaveParameter Cleanup
-        }
-        It "Should have EnableException as a Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Development",
+                "Cleanup",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

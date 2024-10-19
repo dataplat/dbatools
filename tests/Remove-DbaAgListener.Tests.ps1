@@ -4,23 +4,19 @@ Describe "Remove-DbaAgListener" {
         BeforeAll {
             $CommandUnderTest = Get-Command Remove-DbaAgListener
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Listener as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Listener
-        }
-        It "Should have AvailabilityGroup as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AvailabilityGroup
-        }
-        It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Listener",
+                "AvailabilityGroup",
+                "InputObject",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

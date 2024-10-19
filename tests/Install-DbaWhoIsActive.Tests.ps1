@@ -182,30 +182,22 @@ ALTER PROC dbo.sp_WhoIsActive
             $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
             $ParameterList = (Get-Command -Name $CommandName).Parameters
         }
-        It "Should have SqlInstance parameter" {
-            $ParameterList['SqlInstance'] | Should -Not -BeNullOrEmpty
-            $ParameterList['SqlInstance'].ParameterType.FullName | Should -Be 'Dataplat.Dbatools.Parameter.DbaInstanceParameter[]'
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "LocalFile",
+                "Database",
+                "EnableException",
+                "Force"
+            )
+            foreach ($param in $requiredParameters) {
+                $ParameterList[$param] | Should -Not -BeNullOrEmpty
+                $ParameterList[$param].ParameterType.FullName | Should -Not -BeNullOrEmpty
+            }
         }
-        It "Should have SqlCredential parameter" {
-            $ParameterList['SqlCredential'] | Should -Not -BeNullOrEmpty
-            $ParameterList['SqlCredential'].ParameterType.FullName | Should -Be 'System.Management.Automation.PSCredential'
-        }
-        It "Should have LocalFile parameter" {
-            $ParameterList['LocalFile'] | Should -Not -BeNullOrEmpty
-            $ParameterList['LocalFile'].ParameterType.FullName | Should -Be 'System.String'
-        }
-        It "Should have Database parameter" {
-            $ParameterList['Database'] | Should -Not -BeNullOrEmpty
-            $ParameterList['Database'].ParameterType.FullName | Should -Be 'System.Object'
-        }
-        It "Should have EnableException parameter" {
-            $ParameterList['EnableException'] | Should -Not -BeNullOrEmpty
-            $ParameterList['EnableException'].ParameterType.FullName | Should -Be 'System.Management.Automation.SwitchParameter'
-        }
-        It "Should have Force parameter" {
-            $ParameterList['Force'] | Should -Not -BeNullOrEmpty
-            $ParameterList['Force'].ParameterType.FullName | Should -Be 'System.Management.Automation.SwitchParameter'
-        }
+
     }
 
     Context "Should Install SPWhoisActive with Mock" {

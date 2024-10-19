@@ -45,77 +45,37 @@ Describe "Copy-DbaDbTableData" {
         BeforeAll {
             $CommandUnderTest = Get-Command Copy-DbaDbTableData
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Destination as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Destination
-        }
-        It "Should have DestinationSqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential
-        }
-        It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have DestinationDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationDatabase
-        }
-        It "Should have Table as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Table
-        }
-        It "Should have View as a parameter" {
-            $CommandUnderTest | Should -HaveParameter View
-        }
-        It "Should have Query as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Query
-        }
-        It "Should have AutoCreateTable as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter AutoCreateTable
-        }
-        It "Should have BatchSize as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BatchSize
-        }
-        It "Should have NotifyAfter as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NotifyAfter
-        }
-        It "Should have DestinationTable as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationTable
-        }
-        It "Should have NoTableLock as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoTableLock
-        }
-        It "Should have CheckConstraints as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter CheckConstraints
-        }
-        It "Should have FireTriggers as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter FireTriggers
-        }
-        It "Should have KeepIdentity as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter KeepIdentity
-        }
-        It "Should have KeepNulls as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter KeepNulls
-        }
-        It "Should have Truncate as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Truncate
-        }
-        It "Should have BulkCopyTimeout as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BulkCopyTimeout
-        }
-        It "Should have CommandTimeout as a parameter" {
-            $CommandUnderTest | Should -HaveParameter CommandTimeout
-        }
-        It "Should have UseDefaultFileGroup as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter UseDefaultFileGroup
-        }
-        It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Destination",
+                "DestinationSqlCredential",
+                "Database",
+                "DestinationDatabase",
+                "Table",
+                "View",
+                "Query",
+                "AutoCreateTable",
+                "BatchSize",
+                "NotifyAfter",
+                "DestinationTable",
+                "NoTableLock",
+                "CheckConstraints",
+                "FireTriggers",
+                "KeepIdentity",
+                "KeepNulls",
+                "Truncate",
+                "BulkCopyTimeout",
+                "CommandTimeout",
+                "UseDefaultFileGroup",
+                "InputObject",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

@@ -8,23 +8,19 @@ Describe "Set-DbaAgentJobCategory" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaAgentJobCategory
         }
-        It "Should have SqlInstance as a non-mandatory parameter of type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a non-mandatory parameter of type System.Management.Automation.PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Category as a non-mandatory parameter of type System.String[]" {
-            $CommandUnderTest | Should -HaveParameter Category
-        }
-        It "Should have NewName as a non-mandatory parameter of type System.String[]" {
-            $CommandUnderTest | Should -HaveParameter NewName
-        }
-        It "Should have Force as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force
-        }
-        It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Category",
+                "NewName",
+                "Force",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

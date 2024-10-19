@@ -5,26 +5,20 @@ Describe "New-DbaDbMailProfile" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaDbMailProfile
         }
-        It "Should have SqlInstance as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Mandatory:$false
-        }
-        It "Should have SqlCredential as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Mandatory:$false
-        }
-        It "Should have Profile as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Profile -Mandatory:$false
-        }
-        It "Should have Description as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Description -Mandatory:$false
-        }
-        It "Should have MailAccountName as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter MailAccountName -Mandatory:$false
-        }
-        It "Should have MailAccountPriority as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter MailAccountPriority -Mandatory:$false
-        }
-        It "Should have EnableException as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Mandatory:$false
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Profile",
+                "Description",
+                "MailAccountName",
+                "MailAccountPriority",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param -Mandatory:$false
+            }
         }
     }
 

@@ -14,32 +14,21 @@ Describe "Get-DbaBuild" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaBuild
         }
-        It "Should have Build parameter" {
-            $CommandUnderTest | Should -HaveParameter Build
-        }
-        It "Should have Kb parameter" {
-            $CommandUnderTest | Should -HaveParameter Kb
-        }
-        It "Should have MajorVersion parameter" {
-            $CommandUnderTest | Should -HaveParameter MajorVersion
-        }
-        It "Should have ServicePack parameter" {
-            $CommandUnderTest | Should -HaveParameter ServicePack
-        }
-        It "Should have CumulativeUpdate parameter" {
-            $CommandUnderTest | Should -HaveParameter CumulativeUpdate
-        }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Update parameter" {
-            $CommandUnderTest | Should -HaveParameter Update
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Build",
+                "Kb",
+                "MajorVersion",
+                "ServicePack",
+                "CumulativeUpdate",
+                "SqlInstance",
+                "SqlCredential",
+                "Update",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

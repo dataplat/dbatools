@@ -11,35 +11,22 @@ Describe "Get-DbaDbUdf Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaDbUdf
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have ExcludeDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
-        }
-        It "Should have ExcludeSystemUdf as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSystemUdf
-        }
-        It "Should have Schema as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Schema
-        }
-        It "Should have ExcludeSchema as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSchema
-        }
-        It "Should have Name as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Name
-        }
-        It "Should have ExcludeName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeName
-        }
-        It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "ExcludeSystemUdf",
+                "Schema",
+                "ExcludeSchema",
+                "Name",
+                "ExcludeName",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

@@ -5,32 +5,22 @@ Describe "Test-DbaBuild" {
         BeforeAll {
             $CommandUnderTest = Get-Command Test-DbaBuild
         }
-        It "Should have Build parameter" {
-            $CommandUnderTest | Should -HaveParameter Build
-        }
-        It "Should have MinimumBuild parameter" {
-            $CommandUnderTest | Should -HaveParameter MinimumBuild
-        }
-        It "Should have MaxBehind parameter" {
-            $CommandUnderTest | Should -HaveParameter MaxBehind
-        }
-        It "Should have Latest parameter" {
-            $CommandUnderTest | Should -HaveParameter Latest
-        }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Update parameter" {
-            $CommandUnderTest | Should -HaveParameter Update
-        }
-        It "Should have Quiet parameter" {
-            $CommandUnderTest | Should -HaveParameter Quiet
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Build",
+                "MinimumBuild",
+                "MaxBehind",
+                "Latest",
+                "SqlInstance",
+                "SqlCredential",
+                "Update",
+                "Quiet",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

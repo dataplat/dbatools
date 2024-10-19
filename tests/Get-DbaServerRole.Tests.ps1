@@ -9,23 +9,19 @@ Describe "Get-DbaServerRole" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaServerRole
         }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have ServerRole parameter" {
-            $CommandUnderTest | Should -HaveParameter ServerRole
-        }
-        It "Should have ExcludeServerRole parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeServerRole
-        }
-        It "Should have ExcludeFixedRole parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeFixedRole
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "ServerRole",
+                "ExcludeServerRole",
+                "ExcludeFixedRole",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

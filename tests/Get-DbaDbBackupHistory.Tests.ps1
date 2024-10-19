@@ -5,68 +5,34 @@ Describe "Get-DbaDbBackupHistory Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaDbBackupHistory
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have ExcludeDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
-        }
-        It "Should have IncludeCopyOnly as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeCopyOnly
-        }
-        It "Should have Force as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force
-        }
-        It "Should have Since as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Since
-        }
-        It "Should have RecoveryFork as a parameter" {
-            $CommandUnderTest | Should -HaveParameter RecoveryFork
-        }
-        It "Should have Last as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Last
-        }
-        It "Should have LastFull as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter LastFull
-        }
-        It "Should have LastDiff as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter LastDiff
-        }
-        It "Should have LastLog as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter LastLog
-        }
-        It "Should have DeviceType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DeviceType
-        }
-        It "Should have Raw as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Raw
-        }
-        It "Should have LastLsn as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LastLsn
-        }
-        It "Should have IncludeMirror as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeMirror
-        }
-        It "Should have Type as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Type
-        }
-        It "Should have AgCheck as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter AgCheck
-        }
-        It "Should have IgnoreDiffBackup as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IgnoreDiffBackup
-        }
-        It "Should have LsnSort as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LsnSort
-        }
-        It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "IncludeCopyOnly",
+                "Force",
+                "Since",
+                "RecoveryFork",
+                "Last",
+                "LastFull",
+                "LastDiff",
+                "LastLog",
+                "DeviceType",
+                "Raw",
+                "LastLsn",
+                "IncludeMirror",
+                "Type",
+                "AgCheck",
+                "IgnoreDiffBackup",
+                "LsnSort",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

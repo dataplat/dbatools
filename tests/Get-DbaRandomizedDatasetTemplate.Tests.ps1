@@ -11,17 +11,16 @@ Describe "Get-DbaRandomizedDatasetTemplate" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaRandomizedDatasetTemplate
         }
-        It "Should have Template as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Template
-        }
-        It "Should have Path as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Path
-        }
-        It "Should have ExcludeDefault as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDefault
-        }
-        It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Template",
+                "Path",
+                "ExcludeDefault",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

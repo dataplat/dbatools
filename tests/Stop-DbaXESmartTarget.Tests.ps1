@@ -5,11 +5,14 @@ Describe "Stop-DbaXESmartTarget" {
         BeforeAll {
             $CommandUnderTest = Get-Command Stop-DbaXESmartTarget
         }
-        It "Accepts InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Accepts EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "InputObject",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

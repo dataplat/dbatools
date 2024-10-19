@@ -11,32 +11,22 @@ Describe "Add-DbaComputerCertificate" {
         BeforeAll {
             $CommandUnderTest = Get-Command Add-DbaComputerCertificate
         }
-        It "Should have ComputerName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName
-        }
-        It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential
-        }
-        It "Should have SecurePassword as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SecurePassword
-        }
-        It "Should have Certificate as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Certificate
-        }
-        It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path
-        }
-        It "Should have Store as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Store
-        }
-        It "Should have Folder as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Folder
-        }
-        It "Should have Flag as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Flag
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "ComputerName",
+                "Credential",
+                "SecurePassword",
+                "Certificate",
+                "Path",
+                "Store",
+                "Folder",
+                "Flag",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

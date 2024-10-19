@@ -11,32 +11,21 @@ Describe "Set-DbaDbMirror" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaDbMirror
         }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have Partner parameter" {
-            $CommandUnderTest | Should -HaveParameter Partner
-        }
-        It "Should have Witness parameter" {
-            $CommandUnderTest | Should -HaveParameter Witness
-        }
-        It "Should have SafetyLevel parameter" {
-            $CommandUnderTest | Should -HaveParameter SafetyLevel
-        }
-        It "Should have State parameter" {
-            $CommandUnderTest | Should -HaveParameter State
-        }
-        It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "Partner",
+                "Witness",
+                "SafetyLevel",
+                "State",
+                "InputObject",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

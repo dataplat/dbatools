@@ -11,41 +11,24 @@ Describe "Export-DbaBinaryFile" {
         BeforeAll {
             $CommandUnderTest = Get-Command Export-DbaBinaryFile
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have Table as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Table
-        }
-        It "Should have Schema as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Schema
-        }
-        It "Should have FileNameColumn as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FileNameColumn
-        }
-        It "Should have BinaryColumn as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BinaryColumn
-        }
-        It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path
-        }
-        It "Should have Query as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Query
-        }
-        It "Should have FilePath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FilePath
-        }
-        It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "Table",
+                "Schema",
+                "FileNameColumn",
+                "BinaryColumn",
+                "Path",
+                "Query",
+                "FilePath",
+                "InputObject",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

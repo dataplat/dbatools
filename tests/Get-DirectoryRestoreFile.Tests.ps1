@@ -10,14 +10,15 @@ Describe "Get-DirectoryRestoreFile" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DirectoryRestoreFile
         }
-        It "Should have Path as a non-mandatory System.String parameter" {
-            $CommandUnderTest | Should -HaveParameter Path
-        }
-        It "Should have Recurse as a non-mandatory System.Management.Automation.Switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Recurse
-        }
-        It "Should have EnableException as a non-mandatory System.Management.Automation.Switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Path",
+                "Recurse",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

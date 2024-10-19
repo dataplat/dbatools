@@ -5,44 +5,26 @@ Describe "Copy-DbaDbCertificate" {
         BeforeAll {
             $CommandUnderTest = Get-Command Copy-DbaDbCertificate
         }
-        It "Should have Source as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Source
-        }
-        It "Should have SourceSqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SourceSqlCredential
-        }
-        It "Should have Destination as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Destination
-        }
-        It "Should have DestinationSqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential
-        }
-        It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have ExcludeDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
-        }
-        It "Should have Certificate as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Certificate
-        }
-        It "Should have ExcludeCertificate as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeCertificate
-        }
-        It "Should have SharedPath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SharedPath
-        }
-        It "Should have MasterKeyPassword as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MasterKeyPassword
-        }
-        It "Should have EncryptionPassword as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EncryptionPassword
-        }
-        It "Should have DecryptionPassword as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DecryptionPassword
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Source",
+                "SourceSqlCredential",
+                "Destination",
+                "DestinationSqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "Certificate",
+                "ExcludeCertificate",
+                "SharedPath",
+                "MasterKeyPassword",
+                "EncryptionPassword",
+                "DecryptionPassword",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

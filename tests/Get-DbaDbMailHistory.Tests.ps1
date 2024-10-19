@@ -5,20 +5,17 @@ Describe "Get-DbaDbMailHistory" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaDbMailHistory
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Since as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Since
-        }
-        It "Should have Status as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Status
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Since",
+                "Status",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

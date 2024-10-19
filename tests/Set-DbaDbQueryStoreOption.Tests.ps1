@@ -11,62 +11,32 @@ Describe "Set-DbaDbQueryStoreOption" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaDbQueryStoreOption
         }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have ExcludeDatabase parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
-        }
-        It "Should have AllDatabases parameter" {
-            $CommandUnderTest | Should -HaveParameter AllDatabases
-        }
-        It "Should have State parameter" {
-            $CommandUnderTest | Should -HaveParameter State
-        }
-        It "Should have FlushInterval parameter" {
-            $CommandUnderTest | Should -HaveParameter FlushInterval
-        }
-        It "Should have CollectionInterval parameter" {
-            $CommandUnderTest | Should -HaveParameter CollectionInterval
-        }
-        It "Should have MaxSize parameter" {
-            $CommandUnderTest | Should -HaveParameter MaxSize
-        }
-        It "Should have CaptureMode parameter" {
-            $CommandUnderTest | Should -HaveParameter CaptureMode
-        }
-        It "Should have CleanupMode parameter" {
-            $CommandUnderTest | Should -HaveParameter CleanupMode
-        }
-        It "Should have StaleQueryThreshold parameter" {
-            $CommandUnderTest | Should -HaveParameter StaleQueryThreshold
-        }
-        It "Should have MaxPlansPerQuery parameter" {
-            $CommandUnderTest | Should -HaveParameter MaxPlansPerQuery
-        }
-        It "Should have WaitStatsCaptureMode parameter" {
-            $CommandUnderTest | Should -HaveParameter WaitStatsCaptureMode
-        }
-        It "Should have CustomCapturePolicyExecutionCount parameter" {
-            $CommandUnderTest | Should -HaveParameter CustomCapturePolicyExecutionCount
-        }
-        It "Should have CustomCapturePolicyTotalCompileCPUTimeMS parameter" {
-            $CommandUnderTest | Should -HaveParameter CustomCapturePolicyTotalCompileCPUTimeMS
-        }
-        It "Should have CustomCapturePolicyTotalExecutionCPUTimeMS parameter" {
-            $CommandUnderTest | Should -HaveParameter CustomCapturePolicyTotalExecutionCPUTimeMS
-        }
-        It "Should have CustomCapturePolicyStaleThresholdHours parameter" {
-            $CommandUnderTest | Should -HaveParameter CustomCapturePolicyStaleThresholdHours
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "AllDatabases",
+                "State",
+                "FlushInterval",
+                "CollectionInterval",
+                "MaxSize",
+                "CaptureMode",
+                "CleanupMode",
+                "StaleQueryThreshold",
+                "MaxPlansPerQuery",
+                "WaitStatsCaptureMode",
+                "CustomCapturePolicyExecutionCount",
+                "CustomCapturePolicyTotalCompileCPUTimeMS",
+                "CustomCapturePolicyTotalExecutionCPUTimeMS",
+                "CustomCapturePolicyStaleThresholdHours",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

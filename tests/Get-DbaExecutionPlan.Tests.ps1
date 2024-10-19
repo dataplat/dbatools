@@ -5,32 +5,21 @@ Describe "Get-DbaExecutionPlan" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaExecutionPlan
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have ExcludeDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
-        }
-        It "Should have SinceCreation as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SinceCreation
-        }
-        It "Should have SinceLastExecution as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SinceLastExecution
-        }
-        It "Should have ExcludeEmptyQueryPlan as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeEmptyQueryPlan
-        }
-        It "Should have Force as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Force
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "SinceCreation",
+                "SinceLastExecution",
+                "ExcludeEmptyQueryPlan",
+                "Force",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

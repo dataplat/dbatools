@@ -66,68 +66,33 @@ Describe "Copy-DbaDbViewData" {
         BeforeAll {
             $CommandUnderTest = Get-Command Copy-DbaDbViewData
         }
-        It "Should have SqlInstance as a Dataplat.Dbatools.Parameter.DbaInstanceParameter parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a System.Management.Automation.PSCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Destination as a Dataplat.Dbatools.Parameter.DbaInstanceParameter[] parameter" {
-            $CommandUnderTest | Should -HaveParameter Destination
-        }
-        It "Should have DestinationSqlCredential as a System.Management.Automation.PSCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential
-        }
-        It "Should have Database as a System.String parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have DestinationDatabase as a System.String parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationDatabase
-        }
-        It "Should have View as a System.String[] parameter" {
-            $CommandUnderTest | Should -HaveParameter View
-        }
-        It "Should have Query as a System.String parameter" {
-            $CommandUnderTest | Should -HaveParameter Query
-        }
-        It "Should have AutoCreateTable as a System.Management.Automation.SwitchParameter parameter" {
-            $CommandUnderTest | Should -HaveParameter AutoCreateTable
-        }
-        It "Should have BatchSize as a System.Int32 parameter" {
-            $CommandUnderTest | Should -HaveParameter BatchSize
-        }
-        It "Should have NotifyAfter as a System.Int32 parameter" {
-            $CommandUnderTest | Should -HaveParameter NotifyAfter
-        }
-        It "Should have DestinationTable as a System.String parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationTable
-        }
-        It "Should have NoTableLock as a System.Management.Automation.SwitchParameter parameter" {
-            $CommandUnderTest | Should -HaveParameter NoTableLock
-        }
-        It "Should have CheckConstraints as a System.Management.Automation.SwitchParameter parameter" {
-            $CommandUnderTest | Should -HaveParameter CheckConstraints
-        }
-        It "Should have FireTriggers as a System.Management.Automation.SwitchParameter parameter" {
-            $CommandUnderTest | Should -HaveParameter FireTriggers
-        }
-        It "Should have KeepIdentity as a System.Management.Automation.SwitchParameter parameter" {
-            $CommandUnderTest | Should -HaveParameter KeepIdentity
-        }
-        It "Should have KeepNulls as a System.Management.Automation.SwitchParameter parameter" {
-            $CommandUnderTest | Should -HaveParameter KeepNulls
-        }
-        It "Should have Truncate as a System.Management.Automation.SwitchParameter parameter" {
-            $CommandUnderTest | Should -HaveParameter Truncate
-        }
-        It "Should have BulkCopyTimeOut as a System.Int32 parameter" {
-            $CommandUnderTest | Should -HaveParameter BulkCopyTimeOut
-        }
-        It "Should have InputObject as a Microsoft.SqlServer.Management.Smo.TableViewBase[] parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have EnableException as a System.Management.Automation.SwitchParameter parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Destination",
+                "DestinationSqlCredential",
+                "Database",
+                "DestinationDatabase",
+                "View",
+                "Query",
+                "AutoCreateTable",
+                "BatchSize",
+                "NotifyAfter",
+                "DestinationTable",
+                "NoTableLock",
+                "CheckConstraints",
+                "FireTriggers",
+                "KeepIdentity",
+                "KeepNulls",
+                "Truncate",
+                "BulkCopyTimeOut",
+                "InputObject",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

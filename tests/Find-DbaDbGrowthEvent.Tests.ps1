@@ -11,29 +11,21 @@ Describe "Find-DbaDbGrowthEvent" {
         BeforeAll {
             $CommandUnderTest = Get-Command Find-DbaDbGrowthEvent
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have ExcludeDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
-        }
-        It "Should have EventType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EventType
-        }
-        It "Should have FileType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FileType
-        }
-        It "Should have UseLocalTime as a parameter" {
-            $CommandUnderTest | Should -HaveParameter UseLocalTime
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "EventType",
+                "FileType",
+                "UseLocalTime",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

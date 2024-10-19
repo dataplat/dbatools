@@ -5,56 +5,30 @@ Describe "Export-DbaUser Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Export-DbaUser
         }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have ExcludeDatabase parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
-        }
-        It "Should have User parameter" {
-            $CommandUnderTest | Should -HaveParameter User
-        }
-        It "Should have DestinationVersion parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationVersion
-        }
-        It "Should have Path parameter" {
-            $CommandUnderTest | Should -HaveParameter Path
-        }
-        It "Should have FilePath parameter" {
-            $CommandUnderTest | Should -HaveParameter FilePath
-        }
-        It "Should have Encoding parameter" {
-            $CommandUnderTest | Should -HaveParameter Encoding
-        }
-        It "Should have NoClobber parameter" {
-            $CommandUnderTest | Should -HaveParameter NoClobber
-        }
-        It "Should have Append parameter" {
-            $CommandUnderTest | Should -HaveParameter Append
-        }
-        It "Should have Passthru parameter" {
-            $CommandUnderTest | Should -HaveParameter Passthru
-        }
-        It "Should have Template parameter" {
-            $CommandUnderTest | Should -HaveParameter Template
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
-        }
-        It "Should have ScriptingOptionsObject parameter" {
-            $CommandUnderTest | Should -HaveParameter ScriptingOptionsObject
-        }
-        It "Should have ExcludeGoBatchSeparator parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeGoBatchSeparator
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "InputObject",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "User",
+                "DestinationVersion",
+                "Path",
+                "FilePath",
+                "Encoding",
+                "NoClobber",
+                "Append",
+                "Passthru",
+                "Template",
+                "EnableException",
+                "ScriptingOptionsObject",
+                "ExcludeGoBatchSeparator"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

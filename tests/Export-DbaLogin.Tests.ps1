@@ -60,68 +60,33 @@ Describe "Export-DbaLogin" {
         BeforeAll {
             $CommandUnderTest = Get-Command Export-DbaLogin
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have Login as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Login
-        }
-        It "Should have ExcludeLogin as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeLogin
-        }
-        It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have ExcludeJobs as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeJobs
-        }
-        It "Should have ExcludeDatabase as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
-        }
-        It "Should have ExcludePassword as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludePassword
-        }
-        It "Should have DefaultDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DefaultDatabase
-        }
-        It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path
-        }
-        It "Should have FilePath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FilePath
-        }
-        It "Should have Encoding as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Encoding
-        }
-        It "Should have NoClobber as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoClobber
-        }
-        It "Should have Append as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Append
-        }
-        It "Should have BatchSeparator as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BatchSeparator
-        }
-        It "Should have DestinationVersion as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationVersion
-        }
-        It "Should have NoPrefix as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoPrefix
-        }
-        It "Should have Passthru as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Passthru
-        }
-        It "Should have ObjectLevel as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ObjectLevel
-        }
-        It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "InputObject",
+                "Login",
+                "ExcludeLogin",
+                "Database",
+                "ExcludeJobs",
+                "ExcludeDatabase",
+                "ExcludePassword",
+                "DefaultDatabase",
+                "Path",
+                "FilePath",
+                "Encoding",
+                "NoClobber",
+                "Append",
+                "BatchSeparator",
+                "DestinationVersion",
+                "NoPrefix",
+                "Passthru",
+                "ObjectLevel",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

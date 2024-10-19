@@ -5,32 +5,22 @@ Describe "Set-DbaAgentAlert" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaAgentAlert
         }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Alert parameter" {
-            $CommandUnderTest | Should -HaveParameter Alert
-        }
-        It "Should have NewName parameter" {
-            $CommandUnderTest | Should -HaveParameter NewName
-        }
-        It "Should have Enabled parameter" {
-            $CommandUnderTest | Should -HaveParameter Enabled
-        }
-        It "Should have Disabled parameter" {
-            $CommandUnderTest | Should -HaveParameter Disabled
-        }
-        It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force
-        }
-        It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Alert",
+                "NewName",
+                "Enabled",
+                "Disabled",
+                "Force",
+                "InputObject",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

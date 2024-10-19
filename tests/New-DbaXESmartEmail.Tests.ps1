@@ -11,47 +11,26 @@ Describe "New-DbaXESmartEmail" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaXESmartEmail
         }
-        It "Should have SmtpServer parameter" {
-            $CommandUnderTest | Should -HaveParameter SmtpServer
-        }
-        It "Should have Sender parameter" {
-            $CommandUnderTest | Should -HaveParameter Sender
-        }
-        It "Should have To parameter" {
-            $CommandUnderTest | Should -HaveParameter To
-        }
-        It "Should have Cc parameter" {
-            $CommandUnderTest | Should -HaveParameter Cc
-        }
-        It "Should have Bcc parameter" {
-            $CommandUnderTest | Should -HaveParameter Bcc
-        }
-        It "Should have Credential parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential
-        }
-        It "Should have Subject parameter" {
-            $CommandUnderTest | Should -HaveParameter Subject
-        }
-        It "Should have Body parameter" {
-            $CommandUnderTest | Should -HaveParameter Body
-        }
-        It "Should have Attachment parameter" {
-            $CommandUnderTest | Should -HaveParameter Attachment
-        }
-        It "Should have AttachmentFileName parameter" {
-            $CommandUnderTest | Should -HaveParameter AttachmentFileName
-        }
-        It "Should have PlainText parameter" {
-            $CommandUnderTest | Should -HaveParameter PlainText
-        }
-        It "Should have Event parameter" {
-            $CommandUnderTest | Should -HaveParameter Event
-        }
-        It "Should have Filter parameter" {
-            $CommandUnderTest | Should -HaveParameter Filter
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SmtpServer",
+                "Sender",
+                "To",
+                "Cc",
+                "Bcc",
+                "Credential",
+                "Subject",
+                "Body",
+                "Attachment",
+                "AttachmentFileName",
+                "PlainText",
+                "Event",
+                "Filter",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

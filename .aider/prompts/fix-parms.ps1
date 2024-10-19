@@ -20,12 +20,26 @@ foreach ($test in $tests) {
 }
 #>
 
-$tests = Get-ChildItem -Path /workspace/tests -Filter *.Tests.ps1 | Select-Object -First 1
+$tests = Get-ChildItem -Path /workspace/tests -Filter *.Tests.ps1
 
-$prompt = "This is a Pester v5 test suite. I want all HaveParameter tests to be grouped into ONE It block titled has all the required parameters."
+$prompt = 'All HaveParameter tests must be grouped into ONE It block titled "has all the required parameters". Like this:
+
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
+        }'
 
 
 foreach ($test in $tests) {
     Write-Host "Processing $test"
+    if ((Get-Content $test.FullName | Select-String -SimpleMatch -Pattern 'Should -HaveParameter $param')) {
+        Write-Host "Skipping $($test.Name) because it already has the correct structure"
+        continue
+    }
     aider --message "$prompt" --file $test.FullName --model azure/gpt-4o-mini --no-stream
 }

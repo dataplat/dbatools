@@ -5,23 +5,19 @@ Describe "New-DbaSsisCatalog" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaSsisCatalog
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential
-        }
-        It "Should have SecurePassword as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SecurePassword
-        }
-        It "Should have SsisCatalog as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SsisCatalog
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Credential",
+                "SecurePassword",
+                "SsisCatalog",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

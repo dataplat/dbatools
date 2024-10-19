@@ -5,53 +5,29 @@ Describe "New-DbaDbMaskingConfig" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaDbMaskingConfig
         }
-        It "Should have SqlInstance as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have Table as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Table
-        }
-        It "Should have Column as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Column
-        }
-        It "Should have Path as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Path
-        }
-        It "Should have Locale as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Locale
-        }
-        It "Should have CharacterString as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter CharacterString
-        }
-        It "Should have SampleCount as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SampleCount
-        }
-        It "Should have KnownNameFilePath as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter KnownNameFilePath
-        }
-        It "Should have PatternFilePath as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter PatternFilePath
-        }
-        It "Should have ExcludeDefaultKnownName as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDefaultKnownName
-        }
-        It "Should have ExcludeDefaultPattern as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDefaultPattern
-        }
-        It "Should have Force as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force
-        }
-        It "Should have InputObject as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "Table",
+                "Column",
+                "Path",
+                "Locale",
+                "CharacterString",
+                "SampleCount",
+                "KnownNameFilePath",
+                "PatternFilePath",
+                "ExcludeDefaultKnownName",
+                "ExcludeDefaultPattern",
+                "Force",
+                "InputObject",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

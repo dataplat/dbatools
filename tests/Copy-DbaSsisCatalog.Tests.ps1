@@ -11,38 +11,23 @@ Describe "Copy-DbaSsisCatalog" {
         BeforeAll {
             $CommandUnderTest = Get-Command Copy-DbaSsisCatalog
         }
-        It "Should have Source parameter" {
-            $CommandUnderTest | Should -HaveParameter Source
-        }
-        It "Should have Destination parameter" {
-            $CommandUnderTest | Should -HaveParameter Destination
-        }
-        It "Should have SourceSqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SourceSqlCredential
-        }
-        It "Should have DestinationSqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential
-        }
-        It "Should have Project parameter" {
-            $CommandUnderTest | Should -HaveParameter Project
-        }
-        It "Should have Folder parameter" {
-            $CommandUnderTest | Should -HaveParameter Folder
-        }
-        It "Should have Environment parameter" {
-            $CommandUnderTest | Should -HaveParameter Environment
-        }
-        It "Should have CreateCatalogPassword parameter" {
-            $CommandUnderTest | Should -HaveParameter CreateCatalogPassword
-        }
-        It "Should have EnableSqlClr parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableSqlClr
-        }
-        It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Source",
+                "Destination",
+                "SourceSqlCredential",
+                "DestinationSqlCredential",
+                "Project",
+                "Folder",
+                "Environment",
+                "CreateCatalogPassword",
+                "EnableSqlClr",
+                "Force",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

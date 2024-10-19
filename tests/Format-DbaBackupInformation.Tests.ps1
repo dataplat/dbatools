@@ -11,47 +11,26 @@ Describe "Format-DbaBackupInformation" {
         BeforeAll {
             $CommandUnderTest = Get-Command Format-DbaBackupInformation
         }
-        It "Should have BackupHistory as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BackupHistory
-        }
-        It "Should have ReplaceDatabaseName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ReplaceDatabaseName
-        }
-        It "Should have ReplaceDbNameInFile as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ReplaceDbNameInFile
-        }
-        It "Should have DataFileDirectory as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DataFileDirectory
-        }
-        It "Should have LogFileDirectory as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LogFileDirectory
-        }
-        It "Should have DestinationFileStreamDirectory as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationFileStreamDirectory
-        }
-        It "Should have DatabaseNamePrefix as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DatabaseNamePrefix
-        }
-        It "Should have DatabaseFilePrefix as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DatabaseFilePrefix
-        }
-        It "Should have DatabaseFileSuffix as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DatabaseFileSuffix
-        }
-        It "Should have RebaseBackupFolder as a parameter" {
-            $CommandUnderTest | Should -HaveParameter RebaseBackupFolder
-        }
-        It "Should have Continue as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Continue
-        }
-        It "Should have FileMapping as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FileMapping
-        }
-        It "Should have PathSep as a parameter" {
-            $CommandUnderTest | Should -HaveParameter PathSep
-        }
-        It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "BackupHistory",
+                "ReplaceDatabaseName",
+                "ReplaceDbNameInFile",
+                "DataFileDirectory",
+                "LogFileDirectory",
+                "DestinationFileStreamDirectory",
+                "DatabaseNamePrefix",
+                "DatabaseFilePrefix",
+                "DatabaseFileSuffix",
+                "RebaseBackupFolder",
+                "Continue",
+                "FileMapping",
+                "PathSep",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

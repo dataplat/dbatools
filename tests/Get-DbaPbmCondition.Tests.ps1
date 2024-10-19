@@ -5,22 +5,17 @@ Describe "Get-DbaPbmCondition" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaPbmCondition
         }
-        It "Should have SqlInstance as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Condition as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Condition
-        }
-        It "Should have InputObject as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have IncludeSystemObject as a non-mandatory switch parameter" {
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Condition",
+                "InputObject"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
             $CommandUnderTest | Should -HaveParameter IncludeSystemObject
-        }
-        It "Should have EnableException as a non-mandatory switch parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException
         }
     }

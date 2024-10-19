@@ -9,29 +9,21 @@ Describe "Copy-DbaXESession" {
         BeforeAll {
             $CommandUnderTest = Get-Command Copy-DbaXESession
         }
-        It "Should have Source parameter" {
-            $CommandUnderTest | Should -HaveParameter Source
-        }
-        It "Should have Destination parameter" {
-            $CommandUnderTest | Should -HaveParameter Destination
-        }
-        It "Should have SourceSqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SourceSqlCredential
-        }
-        It "Should have DestinationSqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential
-        }
-        It "Should have XeSession parameter" {
-            $CommandUnderTest | Should -HaveParameter XeSession
-        }
-        It "Should have ExcludeXeSession parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeXeSession
-        }
-        It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Source",
+                "Destination",
+                "SourceSqlCredential",
+                "DestinationSqlCredential",
+                "XeSession",
+                "ExcludeXeSession",
+                "Force",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

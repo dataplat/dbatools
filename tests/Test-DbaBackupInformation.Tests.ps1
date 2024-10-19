@@ -11,29 +11,20 @@ Describe "Test-DbaBackupInformation Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Test-DbaBackupInformation
         }
-        It "Should have BackupHistory as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BackupHistory
-        }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have WithReplace as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter WithReplace
-        }
-        It "Should have Continue as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Continue
-        }
-        It "Should have VerifyOnly as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter VerifyOnly
-        }
-        It "Should have OutputScriptOnly as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter OutputScriptOnly
-        }
-        It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "BackupHistory",
+                "SqlInstance",
+                "SqlCredential",
+                "WithReplace",
+                "Continue",
+                "VerifyOnly",
+                "OutputScriptOnly",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

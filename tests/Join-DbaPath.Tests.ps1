@@ -9,14 +9,16 @@ Describe "Join-DbaPath" {
         BeforeAll {
             $CommandUnderTest = Get-Command Join-DbaPath
         }
-        It "Should have Path as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Path
-        }
-        It "Should have SqlInstance as a non-mandatory DbaInstanceParameter parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have Child as a non-mandatory String[] parameter" {
-            $CommandUnderTest | Should -HaveParameter Child
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Path",
+                "SqlInstance",
+                "Child"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

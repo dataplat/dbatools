@@ -5,23 +5,19 @@ Describe "Remove-DbaComputerCertificate" {
         BeforeAll {
             $CommandUnderTest = Get-Command Remove-DbaComputerCertificate
         }
-        It "Should have ComputerName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName
-        }
-        It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential
-        }
-        It "Should have Thumbprint as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Thumbprint
-        }
-        It "Should have Store as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Store
-        }
-        It "Should have Folder as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Folder
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "ComputerName",
+                "Credential",
+                "Thumbprint",
+                "Store",
+                "Folder",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

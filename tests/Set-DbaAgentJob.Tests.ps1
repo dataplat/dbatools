@@ -5,74 +5,35 @@ Describe "Set-DbaAgentJob" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaAgentJob
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Job as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Job
-        }
-        It "Should have Schedule as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Schedule
-        }
-        It "Should have ScheduleId as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ScheduleId
-        }
-        It "Should have NewName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NewName
-        }
-        It "Should have Enabled as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Enabled
-        }
-        It "Should have Disabled as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Disabled
-        }
-        It "Should have Description as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Description
-        }
-        It "Should have StartStepId as a parameter" {
-            $CommandUnderTest | Should -HaveParameter StartStepId
-        }
-        It "Should have Category as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Category
-        }
-        It "Should have OwnerLogin as a parameter" {
-            $CommandUnderTest | Should -HaveParameter OwnerLogin
-        }
-        It "Should have EventLogLevel as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EventLogLevel
-        }
-        It "Should have EmailLevel as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EmailLevel
-        }
-        It "Should have NetsendLevel as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NetsendLevel
-        }
-        It "Should have PageLevel as a parameter" {
-            $CommandUnderTest | Should -HaveParameter PageLevel
-        }
-        It "Should have EmailOperator as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EmailOperator
-        }
-        It "Should have NetsendOperator as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NetsendOperator
-        }
-        It "Should have PageOperator as a parameter" {
-            $CommandUnderTest | Should -HaveParameter PageOperator
-        }
-        It "Should have DeleteLevel as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DeleteLevel
-        }
-        It "Should have Force as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force
-        }
-        It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Job",
+                "Schedule",
+                "ScheduleId",
+                "NewName",
+                "Enabled",
+                "Disabled",
+                "Description",
+                "StartStepId",
+                "Category",
+                "OwnerLogin",
+                "EventLogLevel",
+                "EmailLevel",
+                "NetsendLevel",
+                "PageLevel",
+                "EmailOperator",
+                "NetsendOperator",
+                "PageOperator",
+                "DeleteLevel",
+                "Force",
+                "InputObject",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

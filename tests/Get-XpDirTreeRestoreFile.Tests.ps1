@@ -9,20 +9,17 @@ Describe "Get-XpDirTreeRestoreFile" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-XpDirTreeRestoreFile
         }
-        It "Should have Path as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Path
-        }
-        It "Should have SqlInstance as a non-mandatory DbaInstanceParameter parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a non-mandatory PSCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have EnableException as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException
-        }
-        It "Should have NoRecurse as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter NoRecurse
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Path",
+                "SqlInstance",
+                "SqlCredential",
+                "EnableException",
+                "NoRecurse"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

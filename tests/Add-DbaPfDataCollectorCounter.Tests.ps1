@@ -5,26 +5,19 @@ Describe "Add-DbaPfDataCollectorCounter" {
         BeforeAll {
             $CommandUnderTest = Get-Command Add-DbaPfDataCollectorCounter
         }
-        It "Should have ComputerName as a non-mandatory Dataplat.Dbatools.Parameter.DbaInstanceParameter[] parameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName
-        }
-        It "Should have Credential as a non-mandatory System.Management.Automation.PSCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential
-        }
-        It "Should have CollectorSet as a non-mandatory System.String[] parameter" {
-            $CommandUnderTest | Should -HaveParameter CollectorSet
-        }
-        It "Should have Collector as a non-mandatory System.String[] parameter" {
-            $CommandUnderTest | Should -HaveParameter Collector
-        }
-        It "Should have Counter as a non-mandatory System.Object[] parameter" {
-            $CommandUnderTest | Should -HaveParameter Counter
-        }
-        It "Should have InputObject as a non-mandatory System.Object[] parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have EnableException as a non-mandatory System.Management.Automation.SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "ComputerName",
+                "Credential",
+                "CollectorSet",
+                "Collector",
+                "Counter",
+                "InputObject",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

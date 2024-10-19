@@ -11,50 +11,28 @@ Describe "New-DbaEndpoint" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaEndpoint
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Name as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Name
-        }
-        It "Should have Type as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Type
-        }
-        It "Should have Protocol as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Protocol
-        }
-        It "Should have Role as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Role
-        }
-        It "Should have EndpointEncryption as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EndpointEncryption
-        }
-        It "Should have EncryptionAlgorithm as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EncryptionAlgorithm
-        }
-        It "Should have AuthenticationOrder as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AuthenticationOrder
-        }
-        It "Should have Certificate as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Certificate
-        }
-        It "Should have IPAddress as a parameter" {
-            $CommandUnderTest | Should -HaveParameter IPAddress
-        }
-        It "Should have Port as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Port
-        }
-        It "Should have SslPort as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SslPort
-        }
-        It "Should have Owner as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Owner
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Name",
+                "Type",
+                "Protocol",
+                "Role",
+                "EndpointEncryption",
+                "EncryptionAlgorithm",
+                "AuthenticationOrder",
+                "Certificate",
+                "IPAddress",
+                "Port",
+                "SslPort",
+                "Owner",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

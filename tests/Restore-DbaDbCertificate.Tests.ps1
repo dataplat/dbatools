@@ -5,32 +5,22 @@ Describe "Restore-DbaDbCertificate" {
         BeforeAll {
             $CommandUnderTest = Get-Command Restore-DbaDbCertificate
         }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Path parameter" {
-            $CommandUnderTest | Should -HaveParameter Path
-        }
-        It "Should have KeyFilePath parameter" {
-            $CommandUnderTest | Should -HaveParameter KeyFilePath
-        }
-        It "Should have EncryptionPassword parameter" {
-            $CommandUnderTest | Should -HaveParameter EncryptionPassword
-        }
-        It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have Name parameter" {
-            $CommandUnderTest | Should -HaveParameter Name
-        }
-        It "Should have DecryptionPassword parameter" {
-            $CommandUnderTest | Should -HaveParameter DecryptionPassword
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Path",
+                "KeyFilePath",
+                "EncryptionPassword",
+                "Database",
+                "Name",
+                "DecryptionPassword",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

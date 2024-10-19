@@ -5,56 +5,29 @@ Describe "New-DbaComputerCertificate" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaComputerCertificate
         }
-        It "Should have ComputerName as a non-mandatory DbaInstanceParameter[] parameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName
-        }
-        It "Should have Credential as a non-mandatory PSCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential
-        }
-        It "Should have CaServer as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter CaServer
-        }
-        It "Should have CaName as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter CaName
-        }
-        It "Should have ClusterInstanceName as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter ClusterInstanceName
-        }
-        It "Should have SecurePassword as a non-mandatory SecureString parameter" {
-            $CommandUnderTest | Should -HaveParameter SecurePassword
-        }
-        It "Should have FriendlyName as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter FriendlyName
-        }
-        It "Should have CertificateTemplate as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter CertificateTemplate
-        }
-        It "Should have KeyLength as a non-mandatory Int32 parameter" {
-            $CommandUnderTest | Should -HaveParameter KeyLength
-        }
-        It "Should have Store as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Store
-        }
-        It "Should have Folder as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Folder
-        }
-        It "Should have Flag as a non-mandatory String[] parameter" {
-            $CommandUnderTest | Should -HaveParameter Flag
-        }
-        It "Should have Dns as a non-mandatory String[] parameter" {
-            $CommandUnderTest | Should -HaveParameter Dns
-        }
-        It "Should have SelfSigned as a non-mandatory Switch parameter" {
-            $CommandUnderTest | Should -HaveParameter SelfSigned
-        }
-        It "Should have EnableException as a non-mandatory Switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
-        }
-        It "Should have HashAlgorithm as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter HashAlgorithm
-        }
-        It "Should have MonthsValid as a non-mandatory Int32 parameter" {
-            $CommandUnderTest | Should -HaveParameter MonthsValid
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "ComputerName",
+                "Credential",
+                "CaServer",
+                "CaName",
+                "ClusterInstanceName",
+                "SecurePassword",
+                "FriendlyName",
+                "CertificateTemplate",
+                "KeyLength",
+                "Store",
+                "Folder",
+                "Flag",
+                "Dns",
+                "SelfSigned",
+                "EnableException",
+                "HashAlgorithm",
+                "MonthsValid"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

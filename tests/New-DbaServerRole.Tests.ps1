@@ -9,20 +9,18 @@ Describe "New-DbaServerRole" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaServerRole
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have ServerRole as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ServerRole
-        }
-        It "Should have Owner as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Owner
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "ServerRole",
+                "Owner",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

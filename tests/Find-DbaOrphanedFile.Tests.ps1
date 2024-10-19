@@ -5,29 +5,21 @@ Describe "Find-DbaOrphanedFile" {
         BeforeAll {
             $CommandUnderTest = Get-Command Find-DbaOrphanedFile
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path
-        }
-        It "Should have FileType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FileType
-        }
-        It "Should have LocalOnly as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter LocalOnly
-        }
-        It "Should have RemoteOnly as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter RemoteOnly
-        }
-        It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
-        }
-        It "Should have Recurse as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Recurse
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Path",
+                "FileType",
+                "LocalOnly",
+                "RemoteOnly",
+                "EnableException",
+                "Recurse"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

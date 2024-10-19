@@ -12,38 +12,24 @@ Describe "Get-DbaHelpIndex Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaHelpIndex
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have ExcludeDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
-        }
-        It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have ObjectName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ObjectName
-        }
-        It "Should have IncludeStats as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeStats
-        }
-        It "Should have IncludeDataTypes as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeDataTypes
-        }
-        It "Should have Raw as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Raw
-        }
-        It "Should have IncludeFragmentation as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeFragmentation
-        }
-        It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "InputObject",
+                "ObjectName",
+                "IncludeStats",
+                "IncludeDataTypes",
+                "Raw",
+                "IncludeFragmentation",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

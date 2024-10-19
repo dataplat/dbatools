@@ -41,29 +41,20 @@ Describe "Start-DbaXESession" {
         BeforeAll {
             $CommandUnderTest = Get-Command Start-DbaXESession
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Session as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Session
-        }
-        It "Should have StartAt as a parameter" {
-            $CommandUnderTest | Should -HaveParameter StartAt
-        }
-        It "Should have StopAt as a parameter" {
-            $CommandUnderTest | Should -HaveParameter StopAt
-        }
-        It "Should have AllSessions as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AllSessions
-        }
-        It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Session",
+                "StartAt",
+                "StopAt",
+                "AllSessions",
+                "InputObject",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

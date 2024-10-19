@@ -9,17 +9,16 @@ Describe "Stop-DbaExternalProcess" {
         BeforeAll {
             $CommandUnderTest = Get-Command Stop-DbaExternalProcess
         }
-        It "Should have ComputerName as a non-mandatory DbaInstanceParameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName
-        }
-        It "Should have Credential as a non-mandatory PSCredential" {
-            $CommandUnderTest | Should -HaveParameter Credential
-        }
-        It "Should have ProcessId as a non-mandatory Int32" {
-            $CommandUnderTest | Should -HaveParameter ProcessId
-        }
-        It "Should have EnableException as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "ComputerName",
+                "Credential",
+                "ProcessId",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

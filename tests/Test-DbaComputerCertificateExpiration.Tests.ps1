@@ -5,32 +5,22 @@ Describe "Test-DbaComputerCertificateExpiration" {
         BeforeAll {
             $CommandUnderTest = Get-Command Test-DbaComputerCertificateExpiration
         }
-        It "Should have ComputerName as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName
-        }
-        It "Should have Credential as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential
-        }
-        It "Should have Store as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Store
-        }
-        It "Should have Folder as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Folder
-        }
-        It "Should have Type as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Type
-        }
-        It "Should have Path as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Path
-        }
-        It "Should have Thumbprint as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Thumbprint
-        }
-        It "Should have Threshold as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Threshold
-        }
-        It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "ComputerName",
+                "Credential",
+                "Store",
+                "Folder",
+                "Type",
+                "Path",
+                "Thumbprint",
+                "Threshold",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

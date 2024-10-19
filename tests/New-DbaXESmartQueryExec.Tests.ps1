@@ -11,26 +11,19 @@ Describe "New-DbaXESmartQueryExec" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaXESmartQueryExec
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have Query as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Query
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
-        }
-        It "Should have Event as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Event
-        }
-        It "Should have Filter as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Filter
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "Query",
+                "EnableException",
+                "Event",
+                "Filter"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

@@ -5,35 +5,23 @@ Describe "Test-DbaDbCompression Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Test-DbaDbCompression
         }
-        It "Should have SqlInstance as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have ExcludeDatabase as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
-        }
-        It "Should have Schema as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Schema
-        }
-        It "Should have Table as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Table
-        }
-        It "Should have ResultSize as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter ResultSize
-        }
-        It "Should have Rank as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Rank
-        }
-        It "Should have FilterBy as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter FilterBy
-        }
-        It "Should have EnableException as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "Schema",
+                "Table",
+                "ResultSize",
+                "Rank",
+                "FilterBy",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

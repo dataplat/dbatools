@@ -16,23 +16,18 @@ Describe "Remove-DbaBackup" {
         BeforeAll {
             $CommandUnderTest = Get-Command Remove-DbaBackup
         }
-        It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path
-        }
-        It "Should have BackupFileExtension as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BackupFileExtension
-        }
-        It "Should have RetentionPeriod as a parameter" {
-            $CommandUnderTest | Should -HaveParameter RetentionPeriod
-        }
-        It "Should have CheckArchiveBit as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter CheckArchiveBit
-        }
-        It "Should have RemoveEmptyBackupFolder as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter RemoveEmptyBackupFolder
-        }
-        It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Path",
+                "BackupFileExtension",
+                "RetentionPeriod",
+                "CheckArchiveBit",
+                "RemoveEmptyBackupFolder",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

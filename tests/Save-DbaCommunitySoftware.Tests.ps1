@@ -11,23 +11,19 @@ Describe "Save-DbaCommunitySoftware" {
         BeforeAll {
             $CommandUnderTest = Get-Command Save-DbaCommunitySoftware
         }
-        It "Should have Software as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Software
-        }
-        It "Should have Branch as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Branch
-        }
-        It "Should have LocalFile as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter LocalFile
-        }
-        It "Should have Url as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Url
-        }
-        It "Should have LocalDirectory as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter LocalDirectory
-        }
-        It "Should have EnableException as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Software",
+                "Branch",
+                "LocalFile",
+                "Url",
+                "LocalDirectory",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

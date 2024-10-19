@@ -25,29 +25,20 @@ Describe "Copy-DbaStartupProcedure" {
         BeforeAll {
             $CommandUnderTest = Get-Command Copy-DbaStartupProcedure
         }
-        It "Should have Source as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Source
-        }
-        It "Should have SourceSqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SourceSqlCredential
-        }
-        It "Should have Destination as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Destination
-        }
-        It "Should have DestinationSqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential
-        }
-        It "Should have Procedure as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Procedure
-        }
-        It "Should have ExcludeProcedure as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeProcedure
-        }
-        It "Should have Force as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Force
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Source",
+                "SourceSqlCredential",
+                "Destination",
+                "DestinationSqlCredential",
+                "Procedure",
+                "ExcludeProcedure",
+                "Force",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

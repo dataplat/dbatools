@@ -20,92 +20,41 @@ Describe "Invoke-DbaWhoIsActive" {
         BeforeAll {
             $CommandUnderTest = Get-Command Invoke-DbaWhoIsActive
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have Filter as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Filter
-        }
-        It "Should have FilterType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FilterType
-        }
-        It "Should have NotFilter as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NotFilter
-        }
-        It "Should have NotFilterType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NotFilterType
-        }
-        It "Should have ShowOwnSpid as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ShowOwnSpid
-        }
-        It "Should have ShowSystemSpids as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ShowSystemSpids
-        }
-        It "Should have ShowSleepingSpids as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ShowSleepingSpids
-        }
-        It "Should have GetFullInnerText as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter GetFullInnerText
-        }
-        It "Should have GetPlans as a parameter" {
-            $CommandUnderTest | Should -HaveParameter GetPlans
-        }
-        It "Should have GetOuterCommand as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter GetOuterCommand
-        }
-        It "Should have GetTransactionInfo as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter GetTransactionInfo
-        }
-        It "Should have GetTaskInfo as a parameter" {
-            $CommandUnderTest | Should -HaveParameter GetTaskInfo
-        }
-        It "Should have GetLocks as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter GetLocks
-        }
-        It "Should have GetAverageTime as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter GetAverageTime
-        }
-        It "Should have GetAdditonalInfo as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter GetAdditonalInfo
-        }
-        It "Should have FindBlockLeaders as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter FindBlockLeaders
-        }
-        It "Should have DeltaInterval as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DeltaInterval
-        }
-        It "Should have OutputColumnList as a parameter" {
-            $CommandUnderTest | Should -HaveParameter OutputColumnList
-        }
-        It "Should have SortOrder as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SortOrder
-        }
-        It "Should have FormatOutput as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FormatOutput
-        }
-        It "Should have DestinationTable as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationTable
-        }
-        It "Should have ReturnSchema as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ReturnSchema
-        }
-        It "Should have Schema as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Schema
-        }
-        It "Should have Help as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Help
-        }
-        It "Should have As as a parameter" {
-            $CommandUnderTest | Should -HaveParameter As
-        }
-        It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "Filter",
+                "FilterType",
+                "NotFilter",
+                "NotFilterType",
+                "ShowOwnSpid",
+                "ShowSystemSpids",
+                "ShowSleepingSpids",
+                "GetFullInnerText",
+                "GetPlans",
+                "GetOuterCommand",
+                "GetTransactionInfo",
+                "GetTaskInfo",
+                "GetLocks",
+                "GetAverageTime",
+                "GetAdditonalInfo",
+                "FindBlockLeaders",
+                "DeltaInterval",
+                "OutputColumnList",
+                "SortOrder",
+                "FormatOutput",
+                "DestinationTable",
+                "ReturnSchema",
+                "Schema",
+                "Help",
+                "As",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

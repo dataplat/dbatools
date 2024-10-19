@@ -14,11 +14,14 @@ Describe "Test-DbaDbDataMaskingConfig" {
         BeforeAll {
             $CommandUnderTest = Get-Command Test-DbaDbDataMaskingConfig
         }
-        It "Should have FilePath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FilePath
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "FilePath",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

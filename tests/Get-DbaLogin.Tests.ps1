@@ -20,47 +20,26 @@ Describe "Get-DbaLogin" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaLogin
         }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Login parameter" {
-            $CommandUnderTest | Should -HaveParameter Login
-        }
-        It "Should have IncludeFilter parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeFilter
-        }
-        It "Should have ExcludeLogin parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeLogin
-        }
-        It "Should have ExcludeFilter parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeFilter
-        }
-        It "Should have ExcludeSystemLogin parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSystemLogin
-        }
-        It "Should have Type parameter" {
-            $CommandUnderTest | Should -HaveParameter Type
-        }
-        It "Should have HasAccess parameter" {
-            $CommandUnderTest | Should -HaveParameter HasAccess
-        }
-        It "Should have Locked parameter" {
-            $CommandUnderTest | Should -HaveParameter Locked
-        }
-        It "Should have Disabled parameter" {
-            $CommandUnderTest | Should -HaveParameter Disabled
-        }
-        It "Should have MustChangePassword parameter" {
-            $CommandUnderTest | Should -HaveParameter MustChangePassword
-        }
-        It "Should have Detailed parameter" {
-            $CommandUnderTest | Should -HaveParameter Detailed
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Login",
+                "IncludeFilter",
+                "ExcludeLogin",
+                "ExcludeFilter",
+                "ExcludeSystemLogin",
+                "Type",
+                "HasAccess",
+                "Locked",
+                "Disabled",
+                "MustChangePassword",
+                "Detailed",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

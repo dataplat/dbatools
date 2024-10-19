@@ -9,38 +9,24 @@ Describe "Get-DbatoolsLog" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbatoolsLog
         }
-        It "Should have FunctionName as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter FunctionName
-        }
-        It "Should have ModuleName as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter ModuleName
-        }
-        It "Should have Target as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Target
-        }
-        It "Should have Tag as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Tag
-        }
-        It "Should have Last as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Last
-        }
-        It "Should have LastError as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter LastError
-        }
-        It "Should have Skip as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Skip
-        }
-        It "Should have Runspace as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Runspace
-        }
-        It "Should have Level as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Level
-        }
-        It "Should have Raw as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Raw
-        }
-        It "Should have Errors as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Errors
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "FunctionName",
+                "ModuleName",
+                "Target",
+                "Tag",
+                "Last",
+                "LastError",
+                "Skip",
+                "Runspace",
+                "Level",
+                "Raw",
+                "Errors"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

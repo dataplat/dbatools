@@ -11,32 +11,22 @@ Describe "Get-DbaDbStoredProcedure Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaDbStoredProcedure
         }
-        It "Should have SqlInstance as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Mandatory:$false
-        }
-        It "Should have SqlCredential as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Mandatory:$false
-        }
-        It "Should have Database as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Mandatory:$false
-        }
-        It "Should have ExcludeDatabase as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Mandatory:$false
-        }
-        It "Should have ExcludeSystemSp as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSystemSp -Mandatory:$false
-        }
-        It "Should have Name as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Name -Mandatory:$false
-        }
-        It "Should have Schema as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Schema -Mandatory:$false
-        }
-        It "Should have InputObject as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Mandatory:$false
-        }
-        It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Mandatory:$false
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "ExcludeSystemSp",
+                "Name",
+                "Schema",
+                "InputObject",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param -Mandatory:$false
+            }
         }
     }
 }

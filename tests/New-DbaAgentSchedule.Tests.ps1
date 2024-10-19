@@ -9,59 +9,31 @@ Describe "New-DbaAgentSchedule Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaAgentSchedule
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Job as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Job
-        }
-        It "Should have Schedule as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Schedule
-        }
-        It "Should have Disabled as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Disabled
-        }
-        It "Should have FrequencyType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FrequencyType
-        }
-        It "Should have FrequencyInterval as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FrequencyInterval
-        }
-        It "Should have FrequencySubdayType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FrequencySubdayType
-        }
-        It "Should have FrequencySubdayInterval as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FrequencySubdayInterval
-        }
-        It "Should have FrequencyRelativeInterval as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FrequencyRelativeInterval
-        }
-        It "Should have FrequencyRecurrenceFactor as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FrequencyRecurrenceFactor
-        }
-        It "Should have StartDate as a parameter" {
-            $CommandUnderTest | Should -HaveParameter StartDate
-        }
-        It "Should have EndDate as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EndDate
-        }
-        It "Should have StartTime as a parameter" {
-            $CommandUnderTest | Should -HaveParameter StartTime
-        }
-        It "Should have EndTime as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EndTime
-        }
-        It "Should have Owner as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Owner
-        }
-        It "Should have Force as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Force
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Job",
+                "Schedule",
+                "Disabled",
+                "FrequencyType",
+                "FrequencyInterval",
+                "FrequencySubdayType",
+                "FrequencySubdayInterval",
+                "FrequencyRelativeInterval",
+                "FrequencyRecurrenceFactor",
+                "StartDate",
+                "EndDate",
+                "StartTime",
+                "EndTime",
+                "Owner",
+                "Force",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

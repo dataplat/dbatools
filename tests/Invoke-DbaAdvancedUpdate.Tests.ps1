@@ -26,32 +26,21 @@ Describe "Invoke-DbaAdvancedUpdate" {
         BeforeAll {
             $CommandUnderTest = Get-Command Invoke-DbaAdvancedUpdate
         }
-        It "Should have ComputerName as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName
-        }
-        It "Should have Action as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Action
-        }
-        It "Should have Restart as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Restart
-        }
-        It "Should have Authentication as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Authentication
-        }
-        It "Should have Credential as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential
-        }
-        It "Should have ExtractPath as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter ExtractPath
-        }
-        It "Should have ArgumentList as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter ArgumentList
-        }
-        It "Should have NoPendingRenameCheck as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter NoPendingRenameCheck
-        }
-        It "Should have EnableException as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "ComputerName",
+                "Action",
+                "Restart",
+                "Authentication",
+                "Credential",
+                "ExtractPath",
+                "ArgumentList",
+                "NoPendingRenameCheck",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

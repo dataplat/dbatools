@@ -11,41 +11,25 @@ Describe "Add-DbaAgDatabase" {
         BeforeAll {
             $CommandUnderTest = Get-Command Add-DbaAgDatabase
         }
-        It "Should have SqlInstance as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have AvailabilityGroup as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter AvailabilityGroup
-        }
-        It "Should have Database as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have Secondary as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Secondary
-        }
-        It "Should have SecondarySqlCredential as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SecondarySqlCredential
-        }
-        It "Should have InputObject as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have SeedingMode as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SeedingMode
-        }
-        It "Should have SharedPath as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SharedPath
-        }
-        It "Should have UseLastBackup as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter UseLastBackup
-        }
-        It "Should have AdvancedBackupParams as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter AdvancedBackupParams
-        }
-        It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "AvailabilityGroup",
+                "Database",
+                "Secondary",
+                "SecondarySqlCredential",
+                "InputObject",
+                "SeedingMode",
+                "SharedPath",
+                "UseLastBackup",
+                "AdvancedBackupParams",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

@@ -11,14 +11,16 @@ Describe "Set-DbatoolsInsecureConnection" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbatoolsInsecureConnection
         }
-        It "Should have SessionOnly as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter SessionOnly
-        }
-        It "Should have Scope as a non-mandatory ConfigScope parameter" {
-            $CommandUnderTest | Should -HaveParameter Scope
-        }
-        It "Should have Register as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter Register
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SessionOnly",
+                "Scope",
+                "Register"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

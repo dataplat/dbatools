@@ -28,110 +28,47 @@ Describe "Install-DbaInstance" {
         BeforeAll {
             $command = Get-Command -Name Install-DbaInstance
         }
-        It "Should have SqlInstance parameter" {
-            $command | Should -HaveParameter SqlInstance
-        }
-        It "Should have Version parameter" {
-            $command | Should -HaveParameter Version
-        }
-        It "Should have InstanceName parameter" {
-            $command | Should -HaveParameter InstanceName
-        }
-        It "Should have SaCredential parameter" {
-            $command | Should -HaveParameter SaCredential
-        }
-        It "Should have Credential parameter" {
-            $command | Should -HaveParameter Credential
-        }
-        It "Should have Authentication parameter" {
-            $command | Should -HaveParameter Authentication
-        }
-        It "Should have ConfigurationFile parameter" {
-            $command | Should -HaveParameter ConfigurationFile
-        }
-        It "Should have Configuration parameter" {
-            $command | Should -HaveParameter Configuration
-        }
-        It "Should have Path parameter" {
-            $command | Should -HaveParameter Path
-        }
-        It "Should have Feature parameter" {
-            $command | Should -HaveParameter Feature
-        }
-        It "Should have AuthenticationMode parameter" {
-            $command | Should -HaveParameter AuthenticationMode
-        }
-        It "Should have InstancePath parameter" {
-            $command | Should -HaveParameter InstancePath
-        }
-        It "Should have DataPath parameter" {
-            $command | Should -HaveParameter DataPath
-        }
-        It "Should have LogPath parameter" {
-            $command | Should -HaveParameter LogPath
-        }
-        It "Should have TempPath parameter" {
-            $command | Should -HaveParameter TempPath
-        }
-        It "Should have BackupPath parameter" {
-            $command | Should -HaveParameter BackupPath
-        }
-        It "Should have UpdateSourcePath parameter" {
-            $command | Should -HaveParameter UpdateSourcePath
-        }
-        It "Should have AdminAccount parameter" {
-            $command | Should -HaveParameter AdminAccount
-        }
-        It "Should have Port parameter" {
-            $command | Should -HaveParameter Port
-        }
-        It "Should have Throttle parameter" {
-            $command | Should -HaveParameter Throttle
-        }
-        It "Should have ProductID parameter" {
-            $command | Should -HaveParameter ProductID
-        }
-        It "Should have AsCollation parameter" {
-            $command | Should -HaveParameter AsCollation
-        }
-        It "Should have SqlCollation parameter" {
-            $command | Should -HaveParameter SqlCollation
-        }
-        It "Should have EngineCredential parameter" {
-            $command | Should -HaveParameter EngineCredential
-        }
-        It "Should have AgentCredential parameter" {
-            $command | Should -HaveParameter AgentCredential
-        }
-        It "Should have ASCredential parameter" {
-            $command | Should -HaveParameter ASCredential
-        }
-        It "Should have ISCredential parameter" {
-            $command | Should -HaveParameter ISCredential
-        }
-        It "Should have RSCredential parameter" {
-            $command | Should -HaveParameter RSCredential
-        }
-        It "Should have FTCredential parameter" {
-            $command | Should -HaveParameter FTCredential
-        }
-        It "Should have PBEngineCredential parameter" {
-            $command | Should -HaveParameter PBEngineCredential
-        }
-        It "Should have SaveConfiguration parameter" {
-            $command | Should -HaveParameter SaveConfiguration
-        }
-        It "Should have PerformVolumeMaintenanceTasks parameter" {
-            $command | Should -HaveParameter PerformVolumeMaintenanceTasks
-        }
-        It "Should have Restart parameter" {
-            $command | Should -HaveParameter Restart
-        }
-        It "Should have NoPendingRenameCheck parameter" {
-            $command | Should -HaveParameter NoPendingRenameCheck
-        }
-        It "Should have EnableException parameter" {
-            $command | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "Version",
+                "InstanceName",
+                "SaCredential",
+                "Credential",
+                "Authentication",
+                "ConfigurationFile",
+                "Configuration",
+                "Path",
+                "Feature",
+                "AuthenticationMode",
+                "InstancePath",
+                "DataPath",
+                "LogPath",
+                "TempPath",
+                "BackupPath",
+                "UpdateSourcePath",
+                "AdminAccount",
+                "Port",
+                "Throttle",
+                "ProductID",
+                "AsCollation",
+                "SqlCollation",
+                "EngineCredential",
+                "AgentCredential",
+                "ASCredential",
+                "ISCredential",
+                "RSCredential",
+                "FTCredential",
+                "PBEngineCredential",
+                "SaveConfiguration",
+                "PerformVolumeMaintenanceTasks",
+                "Restart",
+                "NoPendingRenameCheck",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $command | Should -HaveParameter $param
+            }
         }
     }
 

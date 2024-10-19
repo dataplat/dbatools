@@ -11,17 +11,16 @@ Describe "Export-DbaXECsv" {
         BeforeAll {
             $CommandUnderTest = Get-Command Export-DbaXECsv
         }
-        It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path
-        }
-        It "Should have FilePath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FilePath
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "InputObject",
+                "Path",
+                "FilePath",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

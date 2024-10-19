@@ -10,26 +10,19 @@ Describe "Save-DbaKbUpdate" {
         BeforeAll {
             $CommandUnderTest = Get-Command Save-DbaKbUpdate
         }
-        It "Should have Name as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Name
-        }
-        It "Should have Path as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Path
-        }
-        It "Should have FilePath as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter FilePath
-        }
-        It "Should have Architecture as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Architecture
-        }
-        It "Should have Language as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Language
-        }
-        It "Should have InputObject as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have EnableException as a non-mandatory SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Name",
+                "Path",
+                "FilePath",
+                "Architecture",
+                "Language",
+                "InputObject",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

@@ -37,62 +37,31 @@ Describe "Invoke-DbaDbDataMasking" {
         BeforeAll {
             $CommandUnderTest = Get-Command Invoke-DbaDbDataMasking
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have FilePath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FilePath
-        }
-        It "Should have Locale as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Locale
-        }
-        It "Should have CharacterString as a parameter" {
-            $CommandUnderTest | Should -HaveParameter CharacterString
-        }
-        It "Should have Table as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Table
-        }
-        It "Should have Column as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Column
-        }
-        It "Should have ExcludeTable as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeTable
-        }
-        It "Should have ExcludeColumn as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeColumn
-        }
-        It "Should have MaxValue as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MaxValue
-        }
-        It "Should have ModulusFactor as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ModulusFactor
-        }
-        It "Should have ExactLength as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExactLength
-        }
-        It "Should have CommandTimeout as a parameter" {
-            $CommandUnderTest | Should -HaveParameter CommandTimeout
-        }
-        It "Should have BatchSize as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BatchSize
-        }
-        It "Should have Retry as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Retry
-        }
-        It "Should have DictionaryFilePath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DictionaryFilePath
-        }
-        It "Should have DictionaryExportPath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DictionaryExportPath
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "FilePath",
+                "Locale",
+                "CharacterString",
+                "Table",
+                "Column",
+                "ExcludeTable",
+                "ExcludeColumn",
+                "MaxValue",
+                "ModulusFactor",
+                "ExactLength",
+                "CommandTimeout",
+                "BatchSize",
+                "Retry",
+                "DictionaryFilePath",
+                "DictionaryExportPath",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

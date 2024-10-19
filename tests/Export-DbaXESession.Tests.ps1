@@ -18,44 +18,25 @@ Describe "Export-DbaXESession" {
         BeforeAll {
             $CommandUnderTest = Get-Command Export-DbaXESession
         }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have Session parameter" {
-            $CommandUnderTest | Should -HaveParameter Session
-        }
-        It "Should have Path parameter" {
-            $CommandUnderTest | Should -HaveParameter Path
-        }
-        It "Should have FilePath parameter" {
-            $CommandUnderTest | Should -HaveParameter FilePath
-        }
-        It "Should have Encoding parameter" {
-            $CommandUnderTest | Should -HaveParameter Encoding
-        }
-        It "Should have Passthru parameter" {
-            $CommandUnderTest | Should -HaveParameter Passthru
-        }
-        It "Should have BatchSeparator parameter" {
-            $CommandUnderTest | Should -HaveParameter BatchSeparator
-        }
-        It "Should have NoPrefix parameter" {
-            $CommandUnderTest | Should -HaveParameter NoPrefix
-        }
-        It "Should have NoClobber parameter" {
-            $CommandUnderTest | Should -HaveParameter NoClobber
-        }
-        It "Should have Append parameter" {
-            $CommandUnderTest | Should -HaveParameter Append
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "InputObject",
+                "Session",
+                "Path",
+                "FilePath",
+                "Encoding",
+                "Passthru",
+                "BatchSeparator",
+                "NoPrefix",
+                "NoClobber",
+                "Append",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

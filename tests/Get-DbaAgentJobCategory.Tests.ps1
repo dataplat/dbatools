@@ -5,20 +5,17 @@ Describe "Get-DbaAgentJobCategory" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaAgentJobCategory
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Category as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Category
-        }
-        It "Should have CategoryType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter CategoryType
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Category",
+                "CategoryType",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

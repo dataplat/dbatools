@@ -10,53 +10,29 @@ Describe "Install-DbaAgentAdminAlert" {
         BeforeAll {
             $CommandUnderTest = Get-Command Install-DbaAgentAdminAlert
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Category as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Category
-        }
-        It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have Operator as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Operator
-        }
-        It "Should have OperatorEmail as a parameter" {
-            $CommandUnderTest | Should -HaveParameter OperatorEmail
-        }
-        It "Should have DelayBetweenResponses as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DelayBetweenResponses
-        }
-        It "Should have Disabled as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Disabled
-        }
-        It "Should have EventDescriptionKeyword as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EventDescriptionKeyword
-        }
-        It "Should have EventSource as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EventSource
-        }
-        It "Should have JobId as a parameter" {
-            $CommandUnderTest | Should -HaveParameter JobId
-        }
-        It "Should have ExcludeSeverity as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSeverity
-        }
-        It "Should have ExcludeMessageId as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeMessageId
-        }
-        It "Should have NotificationMessage as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NotificationMessage
-        }
-        It "Should have NotifyMethod as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NotifyMethod
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Category",
+                "Database",
+                "Operator",
+                "OperatorEmail",
+                "DelayBetweenResponses",
+                "Disabled",
+                "EventDescriptionKeyword",
+                "EventSource",
+                "JobId",
+                "ExcludeSeverity",
+                "ExcludeMessageId",
+                "NotificationMessage",
+                "NotifyMethod",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

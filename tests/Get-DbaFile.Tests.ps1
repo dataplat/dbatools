@@ -5,23 +5,19 @@ Describe "Get-DbaFile" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaFile
         }
-        It "Should have SqlInstance as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Mandatory:$false
-        }
-        It "Should have SqlCredential as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Mandatory:$false
-        }
-        It "Should have Path as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Mandatory:$false
-        }
-        It "Should have FileType as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter FileType -Mandatory:$false
-        }
-        It "Should have Depth as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Depth -Mandatory:$false
-        }
-        It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Mandatory:$false
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Path",
+                "FileType",
+                "Depth",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

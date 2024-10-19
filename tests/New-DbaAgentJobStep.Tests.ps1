@@ -9,74 +9,36 @@ Describe "New-DbaAgentJobStep" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaAgentJobStep
         }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Job parameter" {
-            $CommandUnderTest | Should -HaveParameter Job
-        }
-        It "Should have StepId parameter" {
-            $CommandUnderTest | Should -HaveParameter StepId
-        }
-        It "Should have StepName parameter" {
-            $CommandUnderTest | Should -HaveParameter StepName
-        }
-        It "Should have Subsystem parameter" {
-            $CommandUnderTest | Should -HaveParameter Subsystem
-        }
-        It "Should have SubsystemServer parameter" {
-            $CommandUnderTest | Should -HaveParameter SubsystemServer
-        }
-        It "Should have Command parameter" {
-            $CommandUnderTest | Should -HaveParameter Command
-        }
-        It "Should have CmdExecSuccessCode parameter" {
-            $CommandUnderTest | Should -HaveParameter CmdExecSuccessCode
-        }
-        It "Should have OnSuccessAction parameter" {
-            $CommandUnderTest | Should -HaveParameter OnSuccessAction
-        }
-        It "Should have OnSuccessStepId parameter" {
-            $CommandUnderTest | Should -HaveParameter OnSuccessStepId
-        }
-        It "Should have OnFailAction parameter" {
-            $CommandUnderTest | Should -HaveParameter OnFailAction
-        }
-        It "Should have OnFailStepId parameter" {
-            $CommandUnderTest | Should -HaveParameter OnFailStepId
-        }
-        It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have DatabaseUser parameter" {
-            $CommandUnderTest | Should -HaveParameter DatabaseUser
-        }
-        It "Should have RetryAttempts parameter" {
-            $CommandUnderTest | Should -HaveParameter RetryAttempts
-        }
-        It "Should have RetryInterval parameter" {
-            $CommandUnderTest | Should -HaveParameter RetryInterval
-        }
-        It "Should have OutputFileName parameter" {
-            $CommandUnderTest | Should -HaveParameter OutputFileName
-        }
-        It "Should have Insert parameter" {
-            $CommandUnderTest | Should -HaveParameter Insert
-        }
-        It "Should have Flag parameter" {
-            $CommandUnderTest | Should -HaveParameter Flag
-        }
-        It "Should have ProxyName parameter" {
-            $CommandUnderTest | Should -HaveParameter ProxyName
-        }
-        It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Job",
+                "StepId",
+                "StepName",
+                "Subsystem",
+                "SubsystemServer",
+                "Command",
+                "CmdExecSuccessCode",
+                "OnSuccessAction",
+                "OnSuccessStepId",
+                "OnFailAction",
+                "OnFailStepId",
+                "Database",
+                "DatabaseUser",
+                "RetryAttempts",
+                "RetryInterval",
+                "OutputFileName",
+                "Insert",
+                "Flag",
+                "ProxyName",
+                "Force",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

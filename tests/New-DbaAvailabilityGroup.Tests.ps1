@@ -5,107 +5,47 @@ Describe "New-DbaAvailabilityGroup" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaAvailabilityGroup
         }
-        It "Should have Primary as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Primary
-        }
-        It "Should have PrimarySqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter PrimarySqlCredential
-        }
-        It "Should have Secondary as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Secondary
-        }
-        It "Should have SecondarySqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SecondarySqlCredential
-        }
-        It "Should have Name as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Name
-        }
-        It "Should have IsContained as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IsContained
-        }
-        It "Should have ReuseSystemDatabases as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ReuseSystemDatabases
-        }
-        It "Should have DtcSupport as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter DtcSupport
-        }
-        It "Should have ClusterType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ClusterType
-        }
-        It "Should have AutomatedBackupPreference as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AutomatedBackupPreference
-        }
-        It "Should have FailureConditionLevel as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FailureConditionLevel
-        }
-        It "Should have HealthCheckTimeout as a parameter" {
-            $CommandUnderTest | Should -HaveParameter HealthCheckTimeout
-        }
-        It "Should have Basic as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Basic
-        }
-        It "Should have DatabaseHealthTrigger as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter DatabaseHealthTrigger
-        }
-        It "Should have Passthru as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Passthru
-        }
-        It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have SharedPath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SharedPath
-        }
-        It "Should have UseLastBackup as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter UseLastBackup
-        }
-        It "Should have Force as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force
-        }
-        It "Should have AvailabilityMode as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AvailabilityMode
-        }
-        It "Should have FailoverMode as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FailoverMode
-        }
-        It "Should have BackupPriority as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BackupPriority
-        }
-        It "Should have ConnectionModeInPrimaryRole as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ConnectionModeInPrimaryRole
-        }
-        It "Should have ConnectionModeInSecondaryRole as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ConnectionModeInSecondaryRole
-        }
-        It "Should have SeedingMode as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SeedingMode
-        }
-        It "Should have Endpoint as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Endpoint
-        }
-        It "Should have EndpointUrl as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EndpointUrl
-        }
-        It "Should have Certificate as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Certificate
-        }
-        It "Should have ConfigureXESession as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ConfigureXESession
-        }
-        It "Should have IPAddress as a parameter" {
-            $CommandUnderTest | Should -HaveParameter IPAddress
-        }
-        It "Should have SubnetMask as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SubnetMask
-        }
-        It "Should have Port as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Port
-        }
-        It "Should have Dhcp as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Dhcp
-        }
-        It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Primary",
+                "PrimarySqlCredential",
+                "Secondary",
+                "SecondarySqlCredential",
+                "Name",
+                "IsContained",
+                "ReuseSystemDatabases",
+                "DtcSupport",
+                "ClusterType",
+                "AutomatedBackupPreference",
+                "FailureConditionLevel",
+                "HealthCheckTimeout",
+                "Basic",
+                "DatabaseHealthTrigger",
+                "Passthru",
+                "Database",
+                "SharedPath",
+                "UseLastBackup",
+                "Force",
+                "AvailabilityMode",
+                "FailoverMode",
+                "BackupPriority",
+                "ConnectionModeInPrimaryRole",
+                "ConnectionModeInSecondaryRole",
+                "SeedingMode",
+                "Endpoint",
+                "EndpointUrl",
+                "Certificate",
+                "ConfigureXESession",
+                "IPAddress",
+                "SubnetMask",
+                "Port",
+                "Dhcp",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

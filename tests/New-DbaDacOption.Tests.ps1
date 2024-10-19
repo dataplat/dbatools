@@ -5,19 +5,19 @@ Describe "New-DbaDacOption" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaDacOption
         }
-        It "Should have Type as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Type
-        }
-        It "Should have Action as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Action
-        }
-        It "Should have PublishXml as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter PublishXml
-        }
-        It "Should have Property as a non-mandatory parameter" {
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Type",
+                "Action",
+                "PublishXml",
+                "Property",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
             $CommandUnderTest | Should -HaveParameter Property -Type System.Collections.Hashtable
-        }
-        It "Should have EnableException as a non-mandatory SwitchParameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }

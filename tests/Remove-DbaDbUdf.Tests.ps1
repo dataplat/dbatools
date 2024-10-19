@@ -5,38 +5,24 @@ Describe "Remove-DbaDbUdf" {
         BeforeAll {
             $CommandUnderTest = Get-Command Remove-DbaDbUdf
         }
-        It "Should have SqlInstance as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have ExcludeDatabase as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
-        }
-        It "Should have ExcludeSystemUdf as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSystemUdf
-        }
-        It "Should have Schema as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Schema
-        }
-        It "Should have ExcludeSchema as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSchema
-        }
-        It "Should have Name as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Name
-        }
-        It "Should have ExcludeName as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeName
-        }
-        It "Should have InputObject as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "ExcludeSystemUdf",
+                "Schema",
+                "ExcludeSchema",
+                "Name",
+                "ExcludeName",
+                "InputObject",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

@@ -5,26 +5,19 @@ Describe "Set-DbaAgentJobOwner" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaAgentJobOwner
         }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Job parameter" {
-            $CommandUnderTest | Should -HaveParameter Job
-        }
-        It "Should have ExcludeJob parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeJob
-        }
-        It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have Login parameter" {
-            $CommandUnderTest | Should -HaveParameter Login
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Job",
+                "ExcludeJob",
+                "InputObject",
+                "Login",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

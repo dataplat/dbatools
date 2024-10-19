@@ -65,29 +65,20 @@ ALTER RESOURCE GOVERNOR RECONFIGURE;
         BeforeAll {
             $CommandUnderTest = Get-Command Copy-DbaResourceGovernor
         }
-        It "Should have Source parameter" {
-            $CommandUnderTest | Should -HaveParameter Source
-        }
-        It "Should have SourceSqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SourceSqlCredential
-        }
-        It "Should have Destination parameter" {
-            $CommandUnderTest | Should -HaveParameter Destination
-        }
-        It "Should have DestinationSqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential
-        }
-        It "Should have ResourcePool parameter" {
-            $CommandUnderTest | Should -HaveParameter ResourcePool
-        }
-        It "Should have ExcludeResourcePool parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeResourcePool
-        }
-        It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Source",
+                "SourceSqlCredential",
+                "Destination",
+                "DestinationSqlCredential",
+                "ResourcePool",
+                "ExcludeResourcePool",
+                "Force",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

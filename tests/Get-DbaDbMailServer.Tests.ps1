@@ -5,23 +5,19 @@ Describe "Get-DbaDbMailServer" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaDbMailServer
         }
-        It "Should have SqlInstance as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Server as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Server
-        }
-        It "Should have Account as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Account
-        }
-        It "Should have InputObject as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have EnableException as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Server",
+                "Account",
+                "InputObject",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

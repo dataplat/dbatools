@@ -29,26 +29,31 @@ Describe "Set-DbaLogin" {
             $systemRoles = @('bulkadmin', 'dbcreator', 'diskadmin', 'processadmin', 'public', 'securityadmin', 'serveradmin', 'setupadmin', 'sysadmin')
         }
 
-        It "Should have the correct parameters" {
-            $command | Should -HaveParameter SqlInstance
-            $command | Should -HaveParameter SqlCredential
-            $command | Should -HaveParameter Login
-            $command | Should -HaveParameter SecurePassword
-            $command | Should -HaveParameter DefaultDatabase
-            $command | Should -HaveParameter Unlock
-            $command | Should -HaveParameter PasswordMustChange
-            $command | Should -HaveParameter NewName
-            $command | Should -HaveParameter Disable
-            $command | Should -HaveParameter Enable
-            $command | Should -HaveParameter DenyLogin
-            $command | Should -HaveParameter GrantLogin
-            $command | Should -HaveParameter PasswordPolicyEnforced
-            $command | Should -HaveParameter PasswordExpirationEnabled
-            $command | Should -HaveParameter AddRole
-            $command | Should -HaveParameter RemoveRole
-            $command | Should -HaveParameter InputObject
-            $command | Should -HaveParameter Force
-            $command | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Login",
+                "SecurePassword",
+                "DefaultDatabase",
+                "Unlock",
+                "PasswordMustChange",
+                "NewName",
+                "Disable",
+                "Enable",
+                "DenyLogin",
+                "GrantLogin",
+                "PasswordPolicyEnforced",
+                "PasswordExpirationEnabled",
+                "AddRole",
+                "RemoveRole",
+                "InputObject",
+                "Force",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $command | Should -HaveParameter $param
+            }
         }
 
         It "Validates -AddRole contains <_>" -ForEach $systemRoles {

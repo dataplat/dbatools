@@ -36,35 +36,22 @@ Describe "Move-DbaDbFile" {
         BeforeAll {
             $CommandUnderTest = Get-Command Move-DbaDbFile
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have FileType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FileType
-        }
-        It "Should have FileDestination as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FileDestination
-        }
-        It "Should have FileToMove as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FileToMove
-        }
-        It "Should have DeleteAfterMove as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter DeleteAfterMove
-        }
-        It "Should have FileStructureOnly as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter FileStructureOnly
-        }
-        It "Should have Force as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force
-        }
-        It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "FileType",
+                "FileDestination",
+                "FileToMove",
+                "DeleteAfterMove",
+                "FileStructureOnly",
+                "Force",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

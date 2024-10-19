@@ -41,38 +41,23 @@ Describe "Copy-DbaCredential" {
         BeforeAll {
             $CommandUnderTest = Get-Command Copy-DbaCredential
         }
-        It "Should have Source parameter" {
-            $CommandUnderTest | Should -HaveParameter Source
-        }
-        It "Should have SourceSqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SourceSqlCredential
-        }
-        It "Should have Credential parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential
-        }
-        It "Should have Destination parameter" {
-            $CommandUnderTest | Should -HaveParameter Destination
-        }
-        It "Should have DestinationSqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential
-        }
-        It "Should have Name parameter" {
-            $CommandUnderTest | Should -HaveParameter Name
-        }
-        It "Should have ExcludeName parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeName
-        }
-        It "Should have Identity parameter" {
-            $CommandUnderTest | Should -HaveParameter Identity
-        }
-        It "Should have ExcludeIdentity parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeIdentity
-        }
-        It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Source",
+                "SourceSqlCredential",
+                "Credential",
+                "Destination",
+                "DestinationSqlCredential",
+                "Name",
+                "ExcludeName",
+                "Identity",
+                "ExcludeIdentity",
+                "Force",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

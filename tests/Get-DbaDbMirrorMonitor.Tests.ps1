@@ -11,26 +11,19 @@ Describe "Get-DbaDbMirrorMonitor" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaDbMirrorMonitor
         }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have Update parameter" {
-            $CommandUnderTest | Should -HaveParameter Update
-        }
-        It "Should have LimitResults parameter" {
-            $CommandUnderTest | Should -HaveParameter LimitResults
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "InputObject",
+                "Update",
+                "LimitResults",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

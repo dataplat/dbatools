@@ -20,6 +20,16 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         }
 
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandName | Should -HaveParameter $param
+            }
+        }
+
         It "Should only contain our specific parameters" {
             @(Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params).Count | Should -Be 0
         }

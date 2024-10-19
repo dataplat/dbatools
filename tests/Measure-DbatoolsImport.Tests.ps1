@@ -9,6 +9,17 @@ Describe "Measure-DbatoolsImport" {
         BeforeAll {
             $CommandUnderTest = Get-Command Measure-DbatoolsImport
         }
+
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
+        }
+
         It "Should have no parameters" {
             $CommandUnderTest.Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') } | Should -BeNullOrEmpty
         }

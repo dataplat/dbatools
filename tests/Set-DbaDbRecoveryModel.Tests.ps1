@@ -9,29 +9,21 @@ Describe "Set-DbaDbRecoveryModel" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaDbRecoveryModel
         }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have RecoveryModel parameter" {
-            $CommandUnderTest | Should -HaveParameter RecoveryModel
-        }
-        It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have ExcludeDatabase parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
-        }
-        It "Should have AllDatabases parameter" {
-            $CommandUnderTest | Should -HaveParameter AllDatabases
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
-        }
-        It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "RecoveryModel",
+                "Database",
+                "ExcludeDatabase",
+                "AllDatabases",
+                "EnableException",
+                "InputObject"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

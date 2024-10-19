@@ -22,50 +22,27 @@ Describe "Read-DbaTraceFile" {
         BeforeAll {
             $CommandUnderTest = Get-Command Read-DbaTraceFile
         }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Path parameter" {
-            $CommandUnderTest | Should -HaveParameter Path
-        }
-        It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have Login parameter" {
-            $CommandUnderTest | Should -HaveParameter Login
-        }
-        It "Should have Spid parameter" {
-            $CommandUnderTest | Should -HaveParameter Spid
-        }
-        It "Should have EventClass parameter" {
-            $CommandUnderTest | Should -HaveParameter EventClass
-        }
-        It "Should have ObjectType parameter" {
-            $CommandUnderTest | Should -HaveParameter ObjectType
-        }
-        It "Should have ErrorId parameter" {
-            $CommandUnderTest | Should -HaveParameter ErrorId
-        }
-        It "Should have EventSequence parameter" {
-            $CommandUnderTest | Should -HaveParameter EventSequence
-        }
-        It "Should have TextData parameter" {
-            $CommandUnderTest | Should -HaveParameter TextData
-        }
-        It "Should have ApplicationName parameter" {
-            $CommandUnderTest | Should -HaveParameter ApplicationName
-        }
-        It "Should have ObjectName parameter" {
-            $CommandUnderTest | Should -HaveParameter ObjectName
-        }
-        It "Should have Where parameter" {
-            $CommandUnderTest | Should -HaveParameter Where
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Path",
+                "Database",
+                "Login",
+                "Spid",
+                "EventClass",
+                "ObjectType",
+                "ErrorId",
+                "EventSequence",
+                "TextData",
+                "ApplicationName",
+                "ObjectName",
+                "Where",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

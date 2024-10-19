@@ -5,41 +5,25 @@ Describe "New-DbaAgentProxy" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaAgentProxy
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Name as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Name
-        }
-        It "Should have ProxyCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ProxyCredential
-        }
-        It "Should have SubSystem as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SubSystem
-        }
-        It "Should have Description as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Description
-        }
-        It "Should have Login as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Login
-        }
-        It "Should have ServerRole as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ServerRole
-        }
-        It "Should have MsdbRole as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MsdbRole
-        }
-        It "Should have Disabled as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Disabled
-        }
-        It "Should have Force as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force
-        }
-        It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Name",
+                "ProxyCredential",
+                "SubSystem",
+                "Description",
+                "Login",
+                "ServerRole",
+                "MsdbRole",
+                "Disabled",
+                "Force",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

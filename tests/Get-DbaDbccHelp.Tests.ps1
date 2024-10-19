@@ -5,20 +5,18 @@ Describe "Get-DbaDbccHelp" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaDbccHelp
         }
-        It "Should have SqlInstance as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Statement as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Statement
-        }
-        It "Should have IncludeUndocumented as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeUndocumented
-        }
-        It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Statement",
+                "IncludeUndocumented",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

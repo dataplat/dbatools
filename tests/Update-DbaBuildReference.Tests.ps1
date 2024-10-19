@@ -10,11 +10,14 @@ Describe "Update-DbaBuildReference" {
         BeforeAll {
             $CommandUnderTest = Get-Command Update-DbaBuildReference
         }
-        It "Should have LocalFile as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LocalFile
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "LocalFile",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

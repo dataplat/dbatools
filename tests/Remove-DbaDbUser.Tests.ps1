@@ -11,29 +11,21 @@ Describe "Remove-DbaDbUser Unit Tests" -Tag 'UnitTests' {
             $CommandName = 'Remove-DbaDbUser'
             $command = Get-Command -Name $CommandName
         }
-        It "Should have SqlInstance parameter" {
-            $command | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential parameter" {
-            $command | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database parameter" {
-            $command | Should -HaveParameter Database
-        }
-        It "Should have ExcludeDatabase parameter" {
-            $command | Should -HaveParameter ExcludeDatabase
-        }
-        It "Should have User parameter" {
-            $command | Should -HaveParameter User
-        }
-        It "Should have InputObject parameter" {
-            $command | Should -HaveParameter InputObject
-        }
-        It "Should have Force parameter" {
-            $command | Should -HaveParameter Force
-        }
-        It "Should have EnableException parameter" {
-            $command | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "User",
+                "InputObject",
+                "Force",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $command | Should -HaveParameter $param
+            }
         }
     }
 }

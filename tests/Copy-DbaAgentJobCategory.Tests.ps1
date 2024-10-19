@@ -5,35 +5,23 @@ Describe "Copy-DbaAgentJobCategory" {
         BeforeAll {
             $CommandUnderTest = Get-Command Copy-DbaAgentJobCategory
         }
-        It "Should have Source parameter" {
-            $CommandUnderTest | Should -HaveParameter Source
-        }
-        It "Should have SourceSqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SourceSqlCredential
-        }
-        It "Should have Destination parameter" {
-            $CommandUnderTest | Should -HaveParameter Destination
-        }
-        It "Should have DestinationSqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential
-        }
-        It "Should have CategoryType parameter" {
-            $CommandUnderTest | Should -HaveParameter CategoryType
-        }
-        It "Should have JobCategory parameter" {
-            $CommandUnderTest | Should -HaveParameter JobCategory
-        }
-        It "Should have AgentCategory parameter" {
-            $CommandUnderTest | Should -HaveParameter AgentCategory
-        }
-        It "Should have OperatorCategory parameter" {
-            $CommandUnderTest | Should -HaveParameter OperatorCategory
-        }
-        It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Source",
+                "SourceSqlCredential",
+                "Destination",
+                "DestinationSqlCredential",
+                "CategoryType",
+                "JobCategory",
+                "AgentCategory",
+                "OperatorCategory",
+                "Force",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

@@ -5,29 +5,21 @@ Describe "Get-DbaTopResourceUsage" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaTopResourceUsage
         }
-        It "Should have SqlInstance as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Mandatory:$false
-        }
-        It "Should have SqlCredential as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Mandatory:$false
-        }
-        It "Should have Database as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Mandatory:$false
-        }
-        It "Should have ExcludeDatabase as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Mandatory:$false
-        }
-        It "Should have Type as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Type -Mandatory:$false
-        }
-        It "Should have Limit as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Limit -Mandatory:$false
-        }
-        It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Mandatory:$false
-        }
-        It "Should have ExcludeSystem as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSystem -Mandatory:$false
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "Type",
+                "Limit",
+                "EnableException",
+                "ExcludeSystem"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param -Mandatory:$false
+            }
         }
     }
 

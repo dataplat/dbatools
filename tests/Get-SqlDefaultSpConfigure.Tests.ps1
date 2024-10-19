@@ -10,8 +10,16 @@ Describe "Get-SqlDefaultSPConfigure" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-SqlDefaultSPConfigure
         }
-        It "Should have SqlVersion as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlVersion
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "SqlVersion"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

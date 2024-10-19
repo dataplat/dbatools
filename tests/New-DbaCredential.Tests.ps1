@@ -13,32 +13,22 @@ Describe 'New-DbaCredential' -Tag 'UnitTests', 'IntegrationTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command -Name $CommandName
         }
-        It "Accepts SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter -Name 'SqlInstance'
-        }
-        It "Accepts SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter -Name 'SqlCredential'
-        }
-        It "Accepts Name as a parameter" {
-            $CommandUnderTest | Should -HaveParameter -Name 'Name'
-        }
-        It "Accepts Identity as a parameter" {
-            $CommandUnderTest | Should -HaveParameter -Name 'Identity'
-        }
-        It "Accepts SecurePassword as a parameter" {
-            $CommandUnderTest | Should -HaveParameter -Name 'SecurePassword'
-        }
-        It "Accepts MappedClassType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter -Name 'MappedClassType'
-        }
-        It "Accepts ProviderName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter -Name 'ProviderName'
-        }
-        It "Accepts Force as a parameter" {
-            $CommandUnderTest | Should -HaveParameter -Name 'Force'
-        }
-        It "Accepts EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter -Name 'EnableException'
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Name",
+                "Identity",
+                "SecurePassword",
+                "MappedClassType",
+                "ProviderName",
+                "Force",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

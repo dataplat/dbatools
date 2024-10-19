@@ -5,23 +5,19 @@ Describe "Set-DbaResourceGovernor" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaResourceGovernor
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Enabled as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Enabled
-        }
-        It "Should have Disabled as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Disabled
-        }
-        It "Should have ClassifierFunction as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ClassifierFunction
-        }
-        It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Enabled",
+                "Disabled",
+                "ClassifierFunction",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

@@ -10,29 +10,21 @@ Describe "Get-DbaMemoryUsage" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaMemoryUsage
         }
-        It "Should have ComputerName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName
-        }
-        It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential
-        }
-        It "Should have MemoryCounterRegex as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MemoryCounterRegex
-        }
-        It "Should have PlanCounterRegex as a parameter" {
-            $CommandUnderTest | Should -HaveParameter PlanCounterRegex
-        }
-        It "Should have BufferCounterRegex as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BufferCounterRegex
-        }
-        It "Should have SSASCounterRegex as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SSASCounterRegex
-        }
-        It "Should have SSISCounterRegex as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SSISCounterRegex
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "ComputerName",
+                "Credential",
+                "MemoryCounterRegex",
+                "PlanCounterRegex",
+                "BufferCounterRegex",
+                "SSASCounterRegex",
+                "SSISCounterRegex",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

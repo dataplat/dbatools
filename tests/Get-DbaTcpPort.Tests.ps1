@@ -11,23 +11,19 @@ Describe "Get-DbaTcpPort" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaTcpPort
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential
-        }
-        It "Should have All as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter All
-        }
-        It "Should have ExcludeIpv6 as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeIpv6
-        }
-        It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Credential",
+                "All",
+                "ExcludeIpv6",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

@@ -5,29 +5,21 @@ Describe "Copy-DbaInstanceTrigger" {
         BeforeAll {
             $CommandUnderTest = Get-Command Copy-DbaInstanceTrigger
         }
-        It "Should have Source as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Source
-        }
-        It "Should have SourceSqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SourceSqlCredential
-        }
-        It "Should have Destination as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Destination
-        }
-        It "Should have DestinationSqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential
-        }
-        It "Should have ServerTrigger as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ServerTrigger
-        }
-        It "Should have ExcludeServerTrigger as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeServerTrigger
-        }
-        It "Should have Force as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force
-        }
-        It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Source",
+                "SourceSqlCredential",
+                "Destination",
+                "DestinationSqlCredential",
+                "ServerTrigger",
+                "ExcludeServerTrigger",
+                "Force",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

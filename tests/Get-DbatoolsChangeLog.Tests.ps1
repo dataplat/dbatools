@@ -5,11 +5,15 @@ Describe "Get-DbatoolsChangeLog" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbatoolsChangeLog
         }
-        It "Should have Local as a Switch" {
-            $CommandUnderTest | Should -HaveParameter Local
-        }
-        It "Should have EnableException as a Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Local",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

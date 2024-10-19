@@ -8,26 +8,20 @@ Describe "Remove-DbaDbLogShipping Unit Tests" -Tag "UnitTests" {
         BeforeAll {
             $CommandUnderTest = Get-Command Remove-DbaDbLogShipping
         }
-        It "Should have PrimarySqlInstance as a non-mandatory Dataplat.Dbatools.Parameter.DbaInstanceParameter" {
-            $CommandUnderTest | Should -HaveParameter PrimarySqlInstance
-        }
-        It "Should have SecondarySqlInstance as a non-mandatory Dataplat.Dbatools.Parameter.DbaInstanceParameter" {
-            $CommandUnderTest | Should -HaveParameter SecondarySqlInstance
-        }
-        It "Should have PrimarySqlCredential as a non-mandatory System.Management.Automation.PSCredential" {
-            $CommandUnderTest | Should -HaveParameter PrimarySqlCredential
-        }
-        It "Should have SecondarySqlCredential as a non-mandatory System.Management.Automation.PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SecondarySqlCredential
-        }
-        It "Should have Database as a non-mandatory System.Object[]" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have RemoveSecondaryDatabase as a non-mandatory System.Management.Automation.SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter RemoveSecondaryDatabase
-        }
-        It "Should have EnableException as a non-mandatory System.Management.Automation.SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "PrimarySqlInstance",
+                "SecondarySqlInstance",
+                "PrimarySqlCredential",
+                "SecondarySqlCredential",
+                "Database",
+                "RemoveSecondaryDatabase",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

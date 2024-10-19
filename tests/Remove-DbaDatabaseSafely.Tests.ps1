@@ -11,47 +11,27 @@ Describe "Remove-DbaDatabaseSafely" {
         BeforeAll {
             $CommandUnderTest = Get-Command Remove-DbaDatabaseSafely
         }
-        It "Should have SqlInstance as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have Destination as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Destination
-        }
-        It "Should have DestinationSqlCredential as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential
-        }
-        It "Should have NoDbccCheckDb as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoDbccCheckDb
-        }
-        It "Should have BackupFolder as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter BackupFolder
-        }
-        It "Should have CategoryName as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter CategoryName
-        }
-        It "Should have JobOwner as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter JobOwner
-        }
-        It "Should have AllDatabases as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter AllDatabases
-        }
-        It "Should have BackupCompression as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter BackupCompression
-        }
-        It "Should have ReuseSourceFolderStructure as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ReuseSourceFolderStructure
-        }
-        It "Should have Force as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force
-        }
-        It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "Destination",
+                "DestinationSqlCredential",
+                "NoDbccCheckDb",
+                "BackupFolder",
+                "CategoryName",
+                "JobOwner",
+                "AllDatabases",
+                "BackupCompression",
+                "ReuseSourceFolderStructure",
+                "Force",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

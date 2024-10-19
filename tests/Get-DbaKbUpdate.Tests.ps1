@@ -10,17 +10,16 @@ Describe "Get-DbaKbUpdate" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaKbUpdate
         }
-        It "Should have Name as a non-mandatory System.String[] parameter" {
-            $CommandUnderTest | Should -HaveParameter Name
-        }
-        It "Should have Simple as a non-mandatory System.Management.Automation.SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter Simple
-        }
-        It "Should have Language as a non-mandatory System.String parameter" {
-            $CommandUnderTest | Should -HaveParameter Language
-        }
-        It "Should have EnableException as a non-mandatory System.Management.Automation.SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Name",
+                "Simple",
+                "Language",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

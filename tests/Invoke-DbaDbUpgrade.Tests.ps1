@@ -9,41 +9,25 @@ Describe "Invoke-DbaDbUpgrade" {
         BeforeAll {
             $CommandUnderTest = Get-Command Invoke-DbaDbUpgrade
         }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have ExcludeDatabase parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
-        }
-        It "Should have NoCheckDb parameter" {
-            $CommandUnderTest | Should -HaveParameter NoCheckDb
-        }
-        It "Should have NoUpdateUsage parameter" {
-            $CommandUnderTest | Should -HaveParameter NoUpdateUsage
-        }
-        It "Should have NoUpdateStats parameter" {
-            $CommandUnderTest | Should -HaveParameter NoUpdateStats
-        }
-        It "Should have NoRefreshView parameter" {
-            $CommandUnderTest | Should -HaveParameter NoRefreshView
-        }
-        It "Should have AllUserDatabases parameter" {
-            $CommandUnderTest | Should -HaveParameter AllUserDatabases
-        }
-        It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force
-        }
-        It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "NoCheckDb",
+                "NoUpdateUsage",
+                "NoUpdateStats",
+                "NoRefreshView",
+                "AllUserDatabases",
+                "Force",
+                "InputObject",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

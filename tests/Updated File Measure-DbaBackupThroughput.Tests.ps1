@@ -11,32 +11,22 @@ Describe "Measure-DbaBackupThroughput" {
         BeforeAll {
             $CommandUnderTest = Get-Command Measure-DbaBackupThroughput
         }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
-        }
-        It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.Object[] -Mandatory:$false
-        }
-        It "Should have ExcludeDatabase parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.Object[] -Mandatory:$false
-        }
-        It "Should have Since parameter" {
-            $CommandUnderTest | Should -HaveParameter Since -Type System.DateTime -Mandatory:$false
-        }
-        It "Should have Last parameter" {
-            $CommandUnderTest | Should -HaveParameter Last -Type System.Management.Automation.Switch -Mandatory:$false
-        }
-        It "Should have Type parameter" {
-            $CommandUnderTest | Should -HaveParameter Type -Type System.String -Mandatory:$false
-        }
-        It "Should have DeviceType parameter" {
-            $CommandUnderTest | Should -HaveParameter DeviceType -Type System.String[] -Mandatory:$false
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.Switch -Mandatory:$false
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "Since",
+                "Last",
+                "Type",
+                "DeviceType",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

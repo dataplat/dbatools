@@ -11,47 +11,26 @@ Describe "Find-DbaAgentJob Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Find-DbaAgentJob
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have JobName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter JobName
-        }
-        It "Should have ExcludeJobName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeJobName
-        }
-        It "Should have StepName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter StepName
-        }
-        It "Should have LastUsed as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LastUsed
-        }
-        It "Should have IsDisabled as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IsDisabled
-        }
-        It "Should have IsFailed as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IsFailed
-        }
-        It "Should have IsNotScheduled as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IsNotScheduled
-        }
-        It "Should have IsNoEmailNotification as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IsNoEmailNotification
-        }
-        It "Should have Category as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Category
-        }
-        It "Should have Owner as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Owner
-        }
-        It "Should have Since as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Since
-        }
-        It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "JobName",
+                "ExcludeJobName",
+                "StepName",
+                "LastUsed",
+                "IsDisabled",
+                "IsFailed",
+                "IsNotScheduled",
+                "IsNoEmailNotification",
+                "Category",
+                "Owner",
+                "Since",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

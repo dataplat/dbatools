@@ -5,65 +5,32 @@ Describe "New-DbaSqlParameter" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaSqlParameter
         }
-        It "Should have CompareInfo as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter CompareInfo
-        }
-        It "Should have DbType as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter DbType
-        }
-        It "Should have Direction as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Direction
-        }
-        It "Should have ForceColumnEncryption as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter ForceColumnEncryption
-        }
-        It "Should have IsNullable as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter IsNullable
-        }
-        It "Should have LocaleId as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter LocaleId
-        }
-        It "Should have Offset as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Offset
-        }
-        It "Should have ParameterName as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter ParameterName
-        }
-        It "Should have Precision as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Precision
-        }
-        It "Should have Scale as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Scale
-        }
-        It "Should have Size as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Size
-        }
-        It "Should have SourceColumn as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SourceColumn
-        }
-        It "Should have SourceColumnNullMapping as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SourceColumnNullMapping
-        }
-        It "Should have SourceVersion as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SourceVersion
-        }
-        It "Should have SqlDbType as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlDbType
-        }
-        It "Should have SqlValue as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlValue
-        }
-        It "Should have TypeName as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter TypeName
-        }
-        It "Should have UdtTypeName as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter UdtTypeName
-        }
-        It "Should have Value as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Value
-        }
-        It "Should have EnableException as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "CompareInfo",
+                "DbType",
+                "Direction",
+                "ForceColumnEncryption",
+                "IsNullable",
+                "LocaleId",
+                "Offset",
+                "ParameterName",
+                "Precision",
+                "Scale",
+                "Size",
+                "SourceColumn",
+                "SourceColumnNullMapping",
+                "SourceVersion",
+                "SqlDbType",
+                "SqlValue",
+                "TypeName",
+                "UdtTypeName",
+                "Value",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

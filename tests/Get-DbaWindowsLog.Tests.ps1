@@ -11,26 +11,19 @@ Describe "Get-DbaWindowsLog" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaWindowsLog
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have Start as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Start
-        }
-        It "Should have End as a parameter" {
-            $CommandUnderTest | Should -HaveParameter End
-        }
-        It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential
-        }
-        It "Should have MaxThreads as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MaxThreads
-        }
-        It "Should have MaxRemoteThreads as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MaxRemoteThreads
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "Start",
+                "End",
+                "Credential",
+                "MaxThreads",
+                "MaxRemoteThreads",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

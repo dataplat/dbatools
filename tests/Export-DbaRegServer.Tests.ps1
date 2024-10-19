@@ -8,35 +8,23 @@ Describe "Export-DbaRegServer" {
         BeforeAll {
             $CommandUnderTest = Get-Command Export-DbaRegServer
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path
-        }
-        It "Should have FilePath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FilePath
-        }
-        It "Should have CredentialPersistenceType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter CredentialPersistenceType
-        }
-        It "Should have Group as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Group
-        }
-        It "Should have ExcludeGroup as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeGroup
-        }
-        It "Should have Overwrite as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Overwrite
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "InputObject",
+                "Path",
+                "FilePath",
+                "CredentialPersistenceType",
+                "Group",
+                "ExcludeGroup",
+                "Overwrite",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

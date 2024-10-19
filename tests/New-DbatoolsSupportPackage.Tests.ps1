@@ -10,23 +10,19 @@ Describe "New-DbatoolsSupportPackage" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbatoolsSupportPackage
         }
-        It "Should have Path as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Path
-        }
-        It "Should have Variables as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Variables
-        }
-        It "Should have PassThru as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter PassThru
-        }
-        It "Should have EnableException as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
-        }
-        It "Should have WhatIf as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter WhatIf
-        }
-        It "Should have Confirm as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Confirm
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Path",
+                "Variables",
+                "PassThru",
+                "EnableException",
+                "WhatIf",
+                "Confirm"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

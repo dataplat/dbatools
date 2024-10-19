@@ -9,101 +9,45 @@ Describe "Connect-DbaInstance" {
         BeforeAll {
             $CommandUnderTest = Get-Command Connect-DbaInstance
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have ApplicationIntent as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ApplicationIntent
-        }
-        It "Should have AzureUnsupported as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AzureUnsupported
-        }
-        It "Should have BatchSeparator as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BatchSeparator
-        }
-        It "Should have ClientName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ClientName
-        }
-        It "Should have ConnectTimeout as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ConnectTimeout
-        }
-        It "Should have EncryptConnection as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EncryptConnection
-        }
-        It "Should have FailoverPartner as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FailoverPartner
-        }
-        It "Should have LockTimeout as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LockTimeout
-        }
-        It "Should have MaxPoolSize as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MaxPoolSize
-        }
-        It "Should have MinPoolSize as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MinPoolSize
-        }
-        It "Should have MinimumVersion as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MinimumVersion
-        }
-        It "Should have MultipleActiveResultSets as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MultipleActiveResultSets
-        }
-        It "Should have MultiSubnetFailover as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MultiSubnetFailover
-        }
-        It "Should have NetworkProtocol as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NetworkProtocol
-        }
-        It "Should have NonPooledConnection as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NonPooledConnection
-        }
-        It "Should have PacketSize as a parameter" {
-            $CommandUnderTest | Should -HaveParameter PacketSize
-        }
-        It "Should have PooledConnectionLifetime as a parameter" {
-            $CommandUnderTest | Should -HaveParameter PooledConnectionLifetime
-        }
-        It "Should have SqlExecutionModes as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlExecutionModes
-        }
-        It "Should have StatementTimeout as a parameter" {
-            $CommandUnderTest | Should -HaveParameter StatementTimeout
-        }
-        It "Should have TrustServerCertificate as a parameter" {
-            $CommandUnderTest | Should -HaveParameter TrustServerCertificate
-        }
-        It "Should have WorkstationId as a parameter" {
-            $CommandUnderTest | Should -HaveParameter WorkstationId
-        }
-        It "Should have AlwaysEncrypted as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AlwaysEncrypted
-        }
-        It "Should have AppendConnectionString as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AppendConnectionString
-        }
-        It "Should have SqlConnectionOnly as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlConnectionOnly
-        }
-        It "Should have AzureDomain as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AzureDomain
-        }
-        It "Should have Tenant as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Tenant
-        }
-        It "Should have AccessToken as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AccessToken
-        }
-        It "Should have DedicatedAdminConnection as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DedicatedAdminConnection
-        }
-        It "Should have DisableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DisableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ApplicationIntent",
+                "AzureUnsupported",
+                "BatchSeparator",
+                "ClientName",
+                "ConnectTimeout",
+                "EncryptConnection",
+                "FailoverPartner",
+                "LockTimeout",
+                "MaxPoolSize",
+                "MinPoolSize",
+                "MinimumVersion",
+                "MultipleActiveResultSets",
+                "MultiSubnetFailover",
+                "NetworkProtocol",
+                "NonPooledConnection",
+                "PacketSize",
+                "PooledConnectionLifetime",
+                "SqlExecutionModes",
+                "StatementTimeout",
+                "TrustServerCertificate",
+                "WorkstationId",
+                "AlwaysEncrypted",
+                "AppendConnectionString",
+                "SqlConnectionOnly",
+                "AzureDomain",
+                "Tenant",
+                "AccessToken",
+                "DedicatedAdminConnection",
+                "DisableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

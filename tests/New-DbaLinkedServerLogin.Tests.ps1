@@ -5,32 +5,21 @@ Describe "New-DbaLinkedServerLogin" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaLinkedServerLogin
         }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have LinkedServer parameter" {
-            $CommandUnderTest | Should -HaveParameter LinkedServer
-        }
-        It "Should have LocalLogin parameter" {
-            $CommandUnderTest | Should -HaveParameter LocalLogin
-        }
-        It "Should have RemoteUser parameter" {
-            $CommandUnderTest | Should -HaveParameter RemoteUser
-        }
-        It "Should have RemoteUserPassword parameter" {
-            $CommandUnderTest | Should -HaveParameter RemoteUserPassword
-        }
-        It "Should have Impersonate parameter" {
-            $CommandUnderTest | Should -HaveParameter Impersonate
-        }
-        It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "LinkedServer",
+                "LocalLogin",
+                "RemoteUser",
+                "RemoteUserPassword",
+                "Impersonate",
+                "InputObject",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

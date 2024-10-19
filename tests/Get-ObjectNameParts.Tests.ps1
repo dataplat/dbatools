@@ -10,8 +10,13 @@ Describe "Get-ObjectNameParts" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-ObjectNameParts
         }
-        It "Should have ObjectName as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter ObjectName
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "ObjectName"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

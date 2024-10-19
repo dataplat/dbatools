@@ -5,23 +5,19 @@ Describe "Register-DbatoolsConfig" {
         BeforeAll {
             $CommandUnderTest = Get-Command Register-DbatoolsConfig
         }
-        It "Accepts Config as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Config
-        }
-        It "Accepts FullName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FullName
-        }
-        It "Accepts Module as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Module
-        }
-        It "Accepts Name as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Name
-        }
-        It "Accepts Scope as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Scope
-        }
-        It "Accepts EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Config",
+                "FullName",
+                "Module",
+                "Name",
+                "Scope",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

@@ -11,50 +11,28 @@ Describe "Invoke-DbaDbPiiScan Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Invoke-DbaDbPiiScan
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have Table as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Table
-        }
-        It "Should have Column as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Column
-        }
-        It "Should have Country as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Country
-        }
-        It "Should have CountryCode as a parameter" {
-            $CommandUnderTest | Should -HaveParameter CountryCode
-        }
-        It "Should have ExcludeTable as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeTable
-        }
-        It "Should have ExcludeColumn as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeColumn
-        }
-        It "Should have SampleCount as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SampleCount
-        }
-        It "Should have KnownNameFilePath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter KnownNameFilePath
-        }
-        It "Should have PatternFilePath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter PatternFilePath
-        }
-        It "Should have ExcludeDefaultKnownName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDefaultKnownName
-        }
-        It "Should have ExcludeDefaultPattern as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDefaultPattern
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "Table",
+                "Column",
+                "Country",
+                "CountryCode",
+                "ExcludeTable",
+                "ExcludeColumn",
+                "SampleCount",
+                "KnownNameFilePath",
+                "PatternFilePath",
+                "ExcludeDefaultKnownName",
+                "ExcludeDefaultPattern",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

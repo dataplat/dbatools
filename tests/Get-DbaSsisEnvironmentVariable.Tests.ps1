@@ -5,26 +5,19 @@ Describe "Get-DbaSsisEnvironmentVariable" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaSsisEnvironmentVariable
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Environment as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Environment
-        }
-        It "Should have EnvironmentExclude as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnvironmentExclude
-        }
-        It "Should have Folder as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Folder
-        }
-        It "Should have FolderExclude as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FolderExclude
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Environment",
+                "EnvironmentExclude",
+                "Folder",
+                "FolderExclude",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

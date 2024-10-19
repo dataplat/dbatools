@@ -5,29 +5,21 @@ Describe "Install-DbaDarlingData" {
         BeforeAll {
             $CommandUnderTest = Get-Command Install-DbaDarlingData
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have Branch as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Branch
-        }
-        It "Should have Procedure as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Procedure
-        }
-        It "Should have LocalFile as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LocalFile
-        }
-        It "Should have Force as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Force
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "Branch",
+                "Procedure",
+                "LocalFile",
+                "Force",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

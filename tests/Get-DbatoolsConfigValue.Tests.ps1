@@ -11,14 +11,15 @@ Describe "Get-DbatoolsConfigValue" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbatoolsConfigValue
         }
-        It "Should have FullName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FullName
-        }
-        It "Should have Fallback as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Fallback
-        }
-        It "Should have NotNull as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NotNull
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "FullName",
+                "Fallback",
+                "NotNull"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

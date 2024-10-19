@@ -5,25 +5,19 @@ Describe "Get-DbaAgentJobStep" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaAgentJobStep
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Job as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Job
-        }
-        It "Should have ExcludeJob as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeJob
-        }
-        It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have ExcludeDisabledJobs as a switch parameter" {
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Job",
+                "ExcludeJob",
+                "InputObject"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
             $CommandUnderTest | Should -HaveParameter ExcludeDisabledJobs
-        }
-        It "Should have EnableException as a switch parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException
         }
     }

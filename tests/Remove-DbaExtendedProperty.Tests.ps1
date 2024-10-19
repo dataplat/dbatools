@@ -5,32 +5,22 @@ Describe "Remove-DbaExtendedProperty" {
         BeforeAll {
             $CommandUnderTest = Get-Command Remove-DbaExtendedProperty
         }
-        It "Accepts InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Accepts EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
-        }
-        It "Accepts WarningVariable as a parameter" {
-            $CommandUnderTest | Should -HaveParameter WarningVariable
-        }
-        It "Accepts InformationVariable as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InformationVariable
-        }
-        It "Accepts OutVariable as a parameter" {
-            $CommandUnderTest | Should -HaveParameter OutVariable
-        }
-        It "Accepts OutBuffer as a parameter" {
-            $CommandUnderTest | Should -HaveParameter OutBuffer
-        }
-        It "Accepts PipelineVariable as a parameter" {
-            $CommandUnderTest | Should -HaveParameter PipelineVariable
-        }
-        It "Accepts WhatIf as a parameter" {
-            $CommandUnderTest | Should -HaveParameter WhatIf
-        }
-        It "Accepts Confirm as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Confirm
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "InputObject",
+                "EnableException",
+                "WarningVariable",
+                "InformationVariable",
+                "OutVariable",
+                "OutBuffer",
+                "PipelineVariable",
+                "WhatIf",
+                "Confirm"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

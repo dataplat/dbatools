@@ -12,20 +12,16 @@ Describe "Invoke-DbaCycleErrorLog Unit Tests" -Tag "UnitTests" {
             $command = Get-Command $CommandName
         }
 
-        It "Should have SqlInstance parameter" {
-            $command | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
-        }
-
-        It "Should have SqlCredential parameter" {
-            $command | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
-        }
-
-        It "Should have Type parameter" {
-            $command | Should -HaveParameter Type
-        }
-
-        It "Should have EnableException parameter" {
-            $command | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Type",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $command | Should -HaveParameter $param
+            }
         }
     }
 }

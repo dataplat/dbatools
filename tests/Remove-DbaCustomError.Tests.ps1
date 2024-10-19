@@ -41,20 +41,17 @@ Describe "Remove-DbaCustomError" {
         BeforeAll {
             $CommandUnderTest = Get-Command Remove-DbaCustomError
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have MessageID as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MessageID
-        }
-        It "Should have Language as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Language
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "MessageID",
+                "Language",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

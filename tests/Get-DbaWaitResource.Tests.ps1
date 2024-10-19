@@ -5,20 +5,17 @@ Describe "Get-DbaWaitResource" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaWaitResource
         }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have WaitResource parameter" {
-            $CommandUnderTest | Should -HaveParameter WaitResource
-        }
-        It "Should have Row parameter" {
-            $CommandUnderTest | Should -HaveParameter Row
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "WaitResource",
+                "Row",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

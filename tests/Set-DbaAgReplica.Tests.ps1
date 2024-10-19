@@ -10,53 +10,28 @@ Describe "Set-DbaAgReplica" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaAgReplica
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have AvailabilityGroup as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AvailabilityGroup
-        }
-        It "Should have Replica as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Replica
-        }
-        It "Should have AvailabilityMode as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AvailabilityMode
-        }
-        It "Should have FailoverMode as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FailoverMode
-        }
-        It "Should have BackupPriority as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BackupPriority
-        }
-        It "Should have ConnectionModeInPrimaryRole as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ConnectionModeInPrimaryRole
-        }
-        It "Should have ConnectionModeInSecondaryRole as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ConnectionModeInSecondaryRole
-        }
-        It "Should have SeedingMode as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SeedingMode
-        }
-        It "Should have SessionTimeout as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SessionTimeout
-        }
-        It "Should have EndpointUrl as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EndpointUrl
-        }
-        It "Should have ReadonlyRoutingConnectionUrl as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ReadonlyRoutingConnectionUrl
-        }
-        It "Should have ReadOnlyRoutingList as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ReadOnlyRoutingList
-        }
-        It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "AvailabilityGroup",
+                "Replica",
+                "AvailabilityMode",
+                "FailoverMode",
+                "BackupPriority",
+                "ConnectionModeInPrimaryRole",
+                "ConnectionModeInSecondaryRole",
+                "SeedingMode",
+                "SessionTimeout",
+                "EndpointUrl",
+                "ReadonlyRoutingConnectionUrl",
+                "ReadOnlyRoutingList",
+                "InputObject",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

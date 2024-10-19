@@ -11,38 +11,24 @@ Describe "New-DbaDbCertificate" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaDbCertificate
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Name as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Name
-        }
-        It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have Subject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Subject
-        }
-        It "Should have StartDate as a parameter" {
-            $CommandUnderTest | Should -HaveParameter StartDate
-        }
-        It "Should have ExpirationDate as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExpirationDate
-        }
-        It "Should have ActiveForServiceBrokerDialog as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ActiveForServiceBrokerDialog
-        }
-        It "Should have SecurePassword as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SecurePassword
-        }
-        It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Name",
+                "Database",
+                "Subject",
+                "StartDate",
+                "ExpirationDate",
+                "ActiveForServiceBrokerDialog",
+                "SecurePassword",
+                "InputObject",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

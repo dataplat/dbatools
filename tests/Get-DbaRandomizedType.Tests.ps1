@@ -10,17 +10,16 @@ Describe "Get-DbaRandomizedType" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaRandomizedType
         }
-        It "Should have RandomizedType as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter RandomizedType
-        }
-        It "Should have RandomizedSubType as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter RandomizedSubType
-        }
-        It "Should have Pattern as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Pattern
-        }
-        It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "RandomizedType",
+                "RandomizedSubType",
+                "Pattern",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

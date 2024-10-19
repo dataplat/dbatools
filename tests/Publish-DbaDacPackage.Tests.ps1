@@ -5,47 +5,27 @@ Describe "Publish-DbaDacPackage" {
         BeforeAll {
             $CommandUnderTest = Get-Command Publish-DbaDacPackage
         }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Path parameter" {
-            $CommandUnderTest | Should -HaveParameter Path
-        }
-        It "Should have PublishXml parameter" {
-            $CommandUnderTest | Should -HaveParameter PublishXml
-        }
-        It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have ConnectionString parameter" {
-            $CommandUnderTest | Should -HaveParameter ConnectionString
-        }
-        It "Should have GenerateDeploymentReport parameter" {
-            $CommandUnderTest | Should -HaveParameter GenerateDeploymentReport
-        }
-        It "Should have ScriptOnly parameter" {
-            $CommandUnderTest | Should -HaveParameter ScriptOnly
-        }
-        It "Should have Type parameter" {
-            $CommandUnderTest | Should -HaveParameter Type
-        }
-        It "Should have OutputPath parameter" {
-            $CommandUnderTest | Should -HaveParameter OutputPath
-        }
-        It "Should have IncludeSqlCmdVars parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeSqlCmdVars
-        }
-        It "Should have DacOption parameter" {
-            $CommandUnderTest | Should -HaveParameter DacOption
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
-        }
-        It "Should have DacFxPath parameter" {
-            $CommandUnderTest | Should -HaveParameter DacFxPath
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Path",
+                "PublishXml",
+                "Database",
+                "ConnectionString",
+                "GenerateDeploymentReport",
+                "ScriptOnly",
+                "Type",
+                "OutputPath",
+                "IncludeSqlCmdVars",
+                "DacOption",
+                "EnableException",
+                "DacFxPath"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

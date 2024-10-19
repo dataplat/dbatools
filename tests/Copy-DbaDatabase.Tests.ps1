@@ -37,38 +37,43 @@ Describe "Copy-DbaDatabase" {
             [object[]]$params = (Get-Command Copy-DbaDatabase).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
         }
 
-        It "Should have the correct parameters" {
-            $params | Should -Contain 'Source'
-            $params | Should -Contain 'SourceSqlCredential'
-            $params | Should -Contain 'Destination'
-            $params | Should -Contain 'DestinationSqlCredential'
-            $params | Should -Contain 'Database'
-            $params | Should -Contain 'ExcludeDatabase'
-            $params | Should -Contain 'AllDatabases'
-            $params | Should -Contain 'BackupRestore'
-            $params | Should -Contain 'AdvancedBackupParams'
-            $params | Should -Contain 'SharedPath'
-            $params | Should -Contain 'AzureCredential'
-            $params | Should -Contain 'WithReplace'
-            $params | Should -Contain 'NoRecovery'
-            $params | Should -Contain 'NoBackupCleanup'
-            $params | Should -Contain 'NumberFiles'
-            $params | Should -Contain 'DetachAttach'
-            $params | Should -Contain 'Reattach'
-            $params | Should -Contain 'SetSourceReadOnly'
-            $params | Should -Contain 'ReuseSourceFolderStructure'
-            $params | Should -Contain 'IncludeSupportDbs'
-            $params | Should -Contain 'UseLastBackup'
-            $params | Should -Contain 'Continue'
-            $params | Should -Contain 'InputObject'
-            $params | Should -Contain 'NoCopyOnly'
-            $params | Should -Contain 'SetSourceOffline'
-            $params | Should -Contain 'NewName'
-            $params | Should -Contain 'Prefix'
-            $params | Should -Contain 'Force'
-            $params | Should -Contain 'EnableException'
-            $params | Should -Contain 'KeepCDC'
-            $params | Should -Contain 'KeepReplication'
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Source",
+                "SourceSqlCredential",
+                "Destination",
+                "DestinationSqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "AllDatabases",
+                "BackupRestore",
+                "AdvancedBackupParams",
+                "SharedPath",
+                "AzureCredential",
+                "WithReplace",
+                "NoRecovery",
+                "NoBackupCleanup",
+                "NumberFiles",
+                "DetachAttach",
+                "Reattach",
+                "SetSourceReadOnly",
+                "ReuseSourceFolderStructure",
+                "IncludeSupportDbs",
+                "UseLastBackup",
+                "Continue",
+                "InputObject",
+                "NoCopyOnly",
+                "SetSourceOffline",
+                "NewName",
+                "Prefix",
+                "Force",
+                "EnableException",
+                "KeepCDC",
+                "KeepReplication"
+            )
+            foreach ($param in $requiredParameters) {
+                (Get-Command Copy-DbaDatabase) | Should -HaveParameter $param
+            }
         }
 
         It "Source should be a Dataplat.Dbatools.Parameter.DbaInstanceParameter" {

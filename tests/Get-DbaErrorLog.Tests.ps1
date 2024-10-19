@@ -5,29 +5,21 @@ Describe "Get-DbaErrorLog" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaErrorLog
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have LogNumber as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LogNumber
-        }
-        It "Should have Source as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Source
-        }
-        It "Should have Text as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Text
-        }
-        It "Should have After as a parameter" {
-            $CommandUnderTest | Should -HaveParameter After
-        }
-        It "Should have Before as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Before
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "LogNumber",
+                "Source",
+                "Text",
+                "After",
+                "Before",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

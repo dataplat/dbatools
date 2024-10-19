@@ -5,41 +5,25 @@ Describe "Start-DbaAgentJob" {
         BeforeAll {
             $CommandUnderTest = Get-Command Start-DbaAgentJob
         }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Job parameter" {
-            $CommandUnderTest | Should -HaveParameter Job
-        }
-        It "Should have StepName parameter" {
-            $CommandUnderTest | Should -HaveParameter StepName
-        }
-        It "Should have ExcludeJob parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeJob
-        }
-        It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have AllJobs parameter" {
-            $CommandUnderTest | Should -HaveParameter AllJobs
-        }
-        It "Should have Wait parameter" {
-            $CommandUnderTest | Should -HaveParameter Wait
-        }
-        It "Should have Parallel parameter" {
-            $CommandUnderTest | Should -HaveParameter Parallel
-        }
-        It "Should have WaitPeriod parameter" {
-            $CommandUnderTest | Should -HaveParameter WaitPeriod
-        }
-        It "Should have SleepPeriod parameter" {
-            $CommandUnderTest | Should -HaveParameter SleepPeriod
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Job",
+                "StepName",
+                "ExcludeJob",
+                "InputObject",
+                "AllJobs",
+                "Wait",
+                "Parallel",
+                "WaitPeriod",
+                "SleepPeriod",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

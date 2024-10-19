@@ -11,32 +11,22 @@ Describe "Invoke-DbaDbClone" {
         BeforeAll {
             $CommandUnderTest = Get-Command Invoke-DbaDbClone
         }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have CloneDatabase parameter" {
-            $CommandUnderTest | Should -HaveParameter CloneDatabase
-        }
-        It "Should have ExcludeStatistics parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeStatistics
-        }
-        It "Should have ExcludeQueryStore parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeQueryStore
-        }
-        It "Should have UpdateStatistics parameter" {
-            $CommandUnderTest | Should -HaveParameter UpdateStatistics
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "InputObject",
+                "CloneDatabase",
+                "ExcludeStatistics",
+                "ExcludeQueryStore",
+                "UpdateStatistics",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

@@ -11,26 +11,19 @@ Describe "Export-DbaDiagnosticQuery" {
         BeforeAll {
             $CommandUnderTest = Get-Command Export-DbaDiagnosticQuery
         }
-        It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have ConvertTo as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ConvertTo
-        }
-        It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path
-        }
-        It "Should have Suffix as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Suffix
-        }
-        It "Should have NoPlanExport as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoPlanExport
-        }
-        It "Should have NoQueryExport as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoQueryExport
-        }
-        It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "InputObject",
+                "ConvertTo",
+                "Path",
+                "Suffix",
+                "NoPlanExport",
+                "NoQueryExport",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

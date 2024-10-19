@@ -11,29 +11,20 @@ Describe "Remove-DbaAgentSchedule Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Remove-DbaAgentSchedule
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Schedule as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Schedule
-        }
-        It "Should have ScheduleUid as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ScheduleUid
-        }
-        It "Should have Id as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Id
-        }
-        It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
-        }
-        It "Should have Force as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Force
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Schedule",
+                "ScheduleUid",
+                "Id",
+                "InputObject",
+                "EnableException",
+                "Force"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

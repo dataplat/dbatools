@@ -5,38 +5,24 @@ Describe "Export-DbaSysDbUserObject" {
         BeforeAll {
             $CommandUnderTest = Get-Command Export-DbaSysDbUserObject
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have IncludeDependencies as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeDependencies
-        }
-        It "Should have BatchSeparator as a string parameter" {
-            $CommandUnderTest | Should -HaveParameter BatchSeparator
-        }
-        It "Should have Path as a string parameter" {
-            $CommandUnderTest | Should -HaveParameter Path
-        }
-        It "Should have FilePath as a string parameter" {
-            $CommandUnderTest | Should -HaveParameter FilePath
-        }
-        It "Should have NoPrefix as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoPrefix
-        }
-        It "Should have ScriptingOptionsObject as a ScriptingOptions parameter" {
-            $CommandUnderTest | Should -HaveParameter ScriptingOptionsObject
-        }
-        It "Should have NoClobber as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoClobber
-        }
-        It "Should have PassThru as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter PassThru
-        }
-        It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "IncludeDependencies",
+                "BatchSeparator",
+                "Path",
+                "FilePath",
+                "NoPrefix",
+                "ScriptingOptionsObject",
+                "NoClobber",
+                "PassThru",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

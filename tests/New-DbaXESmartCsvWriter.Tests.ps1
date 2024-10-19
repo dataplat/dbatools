@@ -11,23 +11,18 @@ Describe "New-DbaXESmartCsvWriter" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaXESmartCsvWriter
         }
-        It "Should have OutputFile as a non-mandatory System.String parameter" {
-            $CommandUnderTest | Should -HaveParameter OutputFile
-        }
-        It "Should have Overwrite as a non-mandatory System.Management.Automation.SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter Overwrite
-        }
-        It "Should have Event as a non-mandatory System.String[] parameter" {
-            $CommandUnderTest | Should -HaveParameter Event
-        }
-        It "Should have OutputColumn as a non-mandatory System.String[] parameter" {
-            $CommandUnderTest | Should -HaveParameter OutputColumn
-        }
-        It "Should have Filter as a non-mandatory System.String parameter" {
-            $CommandUnderTest | Should -HaveParameter Filter
-        }
-        It "Should have EnableException as a non-mandatory System.Management.Automation.SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "OutputFile",
+                "Overwrite",
+                "Event",
+                "OutputColumn",
+                "Filter",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

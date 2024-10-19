@@ -11,59 +11,31 @@ Describe "Set-DbaAgentOperator" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaAgentOperator
         }
-        It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Operator as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Operator
-        }
-        It "Should have Name as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Name
-        }
-        It "Should have EmailAddress as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EmailAddress
-        }
-        It "Should have NetSendAddress as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NetSendAddress
-        }
-        It "Should have PagerAddress as a parameter" {
-            $CommandUnderTest | Should -HaveParameter PagerAddress
-        }
-        It "Should have PagerDay as a parameter" {
-            $CommandUnderTest | Should -HaveParameter PagerDay
-        }
-        It "Should have SaturdayStartTime as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SaturdayStartTime
-        }
-        It "Should have SaturdayEndTime as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SaturdayEndTime
-        }
-        It "Should have SundayStartTime as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SundayStartTime
-        }
-        It "Should have SundayEndTime as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SundayEndTime
-        }
-        It "Should have WeekdayStartTime as a parameter" {
-            $CommandUnderTest | Should -HaveParameter WeekdayStartTime
-        }
-        It "Should have WeekdayEndTime as a parameter" {
-            $CommandUnderTest | Should -HaveParameter WeekdayEndTime
-        }
-        It "Should have IsFailsafeOperator as a parameter" {
-            $CommandUnderTest | Should -HaveParameter IsFailsafeOperator
-        }
-        It "Should have FailsafeNotificationMethod as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FailsafeNotificationMethod
-        }
-        It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Operator",
+                "Name",
+                "EmailAddress",
+                "NetSendAddress",
+                "PagerAddress",
+                "PagerDay",
+                "SaturdayStartTime",
+                "SaturdayEndTime",
+                "SundayStartTime",
+                "SundayEndTime",
+                "WeekdayStartTime",
+                "WeekdayEndTime",
+                "IsFailsafeOperator",
+                "FailsafeNotificationMethod",
+                "InputObject",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

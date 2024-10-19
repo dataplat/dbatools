@@ -9,23 +9,19 @@ Describe "New-DbaAgentJobCategory" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaAgentJobCategory
         }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Category parameter" {
-            $CommandUnderTest | Should -HaveParameter Category
-        }
-        It "Should have CategoryType parameter" {
-            $CommandUnderTest | Should -HaveParameter CategoryType
-        }
-        It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Category",
+                "CategoryType",
+                "Force",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

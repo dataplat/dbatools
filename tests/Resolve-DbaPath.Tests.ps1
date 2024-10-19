@@ -11,17 +11,16 @@ Describe "Resolve-DbaPath Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Resolve-DbaPath
         }
-        It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path
-        }
-        It "Should have Provider as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Provider
-        }
-        It "Should have SingleItem as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SingleItem
-        }
-        It "Should have NewChild as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NewChild
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Path",
+                "Provider",
+                "SingleItem",
+                "NewChild"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

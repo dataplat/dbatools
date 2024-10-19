@@ -10,26 +10,20 @@ Describe "New-DbaReplPublication" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaReplPublication
         }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have Name parameter" {
-            $CommandUnderTest | Should -HaveParameter Name
-        }
-        It "Should have Type parameter" {
-            $CommandUnderTest | Should -HaveParameter Type
-        }
-        It "Should have LogReaderAgentCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter LogReaderAgentCredential
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "Name",
+                "Type",
+                "LogReaderAgentCredential",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

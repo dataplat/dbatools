@@ -5,20 +5,18 @@ Describe "Set-DbaSpn" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaSpn
         }
-        It "Should have SPN as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SPN
-        }
-        It "Should have ServiceAccount as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ServiceAccount
-        }
-        It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential
-        }
-        It "Should have NoDelegation as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoDelegation
-        }
-        It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SPN",
+                "ServiceAccount",
+                "Credential",
+                "NoDelegation",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

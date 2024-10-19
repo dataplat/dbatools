@@ -5,44 +5,25 @@ Describe "New-DbaConnectionStringBuilder" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaConnectionStringBuilder
         }
-        It "Should have ConnectionString as a non-mandatory String[] parameter" {
-            $CommandUnderTest | Should -HaveParameter ConnectionString
-        }
-        It "Should have ApplicationName as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter ApplicationName
-        }
-        It "Should have DataSource as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter DataSource
-        }
-        It "Should have SqlCredential as a non-mandatory PSCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have InitialCatalog as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter InitialCatalog
-        }
-        It "Should have IntegratedSecurity as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter IntegratedSecurity
-        }
-        It "Should have UserName as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter UserName
-        }
-        It "Should have Password as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Password
-        }
-        It "Should have MultipleActiveResultSets as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter MultipleActiveResultSets
-        }
-        It "Should have ColumnEncryptionSetting as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter ColumnEncryptionSetting
-        }
-        It "Should have Legacy as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter Legacy
-        }
-        It "Should have NonPooledConnection as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter NonPooledConnection
-        }
-        It "Should have WorkstationId as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter WorkstationId
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "ConnectionString",
+                "ApplicationName",
+                "DataSource",
+                "SqlCredential",
+                "InitialCatalog",
+                "IntegratedSecurity",
+                "UserName",
+                "Password",
+                "MultipleActiveResultSets",
+                "ColumnEncryptionSetting",
+                "Legacy",
+                "NonPooledConnection",
+                "WorkstationId"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

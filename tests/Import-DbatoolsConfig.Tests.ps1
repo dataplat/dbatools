@@ -11,29 +11,20 @@ Describe "Import-DbatoolsConfig" {
         BeforeAll {
             $CommandUnderTest = Get-Command Import-DbatoolsConfig
         }
-        It "Should have Path as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Path
-        }
-        It "Should have ModuleName as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter ModuleName
-        }
-        It "Should have ModuleVersion as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter ModuleVersion
-        }
-        It "Should have Scope as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Scope
-        }
-        It "Should have IncludeFilter as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeFilter
-        }
-        It "Should have ExcludeFilter as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeFilter
-        }
-        It "Should have Peek as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter Peek
-        }
-        It "Should have EnableException as a non-mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Path",
+                "ModuleName",
+                "ModuleVersion",
+                "Scope",
+                "IncludeFilter",
+                "ExcludeFilter",
+                "Peek",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 }

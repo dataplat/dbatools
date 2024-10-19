@@ -11,47 +11,27 @@ Describe "Invoke-DbaDbMirroring" {
         BeforeAll {
             $CommandUnderTest = Get-Command Invoke-DbaDbMirroring
         }
-        It "Should have Primary parameter" {
-            $CommandUnderTest | Should -HaveParameter Primary
-        }
-        It "Should have PrimarySqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter PrimarySqlCredential
-        }
-        It "Should have Mirror parameter" {
-            $CommandUnderTest | Should -HaveParameter Mirror
-        }
-        It "Should have MirrorSqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter MirrorSqlCredential
-        }
-        It "Should have Witness parameter" {
-            $CommandUnderTest | Should -HaveParameter Witness
-        }
-        It "Should have WitnessSqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter WitnessSqlCredential
-        }
-        It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database
-        }
-        It "Should have EndpointEncryption parameter" {
-            $CommandUnderTest | Should -HaveParameter EndpointEncryption
-        }
-        It "Should have EncryptionAlgorithm parameter" {
-            $CommandUnderTest | Should -HaveParameter EncryptionAlgorithm
-        }
-        It "Should have SharedPath parameter" {
-            $CommandUnderTest | Should -HaveParameter SharedPath
-        }
-        It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have UseLastBackup parameter" {
-            $CommandUnderTest | Should -HaveParameter UseLastBackup
-        }
-        It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "Primary",
+                "PrimarySqlCredential",
+                "Mirror",
+                "MirrorSqlCredential",
+                "Witness",
+                "WitnessSqlCredential",
+                "Database",
+                "EndpointEncryption",
+                "EncryptionAlgorithm",
+                "SharedPath",
+                "InputObject",
+                "UseLastBackup",
+                "Force",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

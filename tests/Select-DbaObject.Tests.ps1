@@ -30,59 +30,30 @@ Describe "Select-DbaObject" {
         BeforeAll {
             $CommandUnderTest = Get-Command Select-DbaObject
         }
-        It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have Property as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Property
-        }
-        It "Should have ExcludeProperty as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeProperty
-        }
-        It "Should have ExpandProperty as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExpandProperty
-        }
-        It "Should have Alias as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Alias
-        }
-        It "Should have ScriptProperty as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ScriptProperty
-        }
-        It "Should have ScriptMethod as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ScriptMethod
-        }
-        It "Should have Unique as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Unique
-        }
-        It "Should have Last as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Last
-        }
-        It "Should have First as a parameter" {
-            $CommandUnderTest | Should -HaveParameter First
-        }
-        It "Should have Skip as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Skip
-        }
-        It "Should have SkipLast as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SkipLast
-        }
-        It "Should have Wait as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Wait
-        }
-        It "Should have Index as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Index
-        }
-        It "Should have ShowProperty as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ShowProperty
-        }
-        It "Should have ShowExcludeProperty as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ShowExcludeProperty
-        }
-        It "Should have TypeName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter TypeName
-        }
-        It "Should have KeepInputObject as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter KeepInputObject
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "InputObject",
+                "Property",
+                "ExcludeProperty",
+                "ExpandProperty",
+                "Alias",
+                "ScriptProperty",
+                "ScriptMethod",
+                "Unique",
+                "Last",
+                "First",
+                "Skip",
+                "SkipLast",
+                "Wait",
+                "Index",
+                "ShowProperty",
+                "ShowExcludeProperty",
+                "TypeName",
+                "KeepInputObject"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

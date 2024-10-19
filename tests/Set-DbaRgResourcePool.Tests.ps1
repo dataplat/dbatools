@@ -4,50 +4,28 @@ Describe "Set-DbaRgResourcePool" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaRgResourcePool
         }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential
-        }
-        It "Should have ResourcePool parameter" {
-            $CommandUnderTest | Should -HaveParameter ResourcePool
-        }
-        It "Should have Type parameter" {
-            $CommandUnderTest | Should -HaveParameter Type
-        }
-        It "Should have MinimumCpuPercentage parameter" {
-            $CommandUnderTest | Should -HaveParameter MinimumCpuPercentage
-        }
-        It "Should have MaximumCpuPercentage parameter" {
-            $CommandUnderTest | Should -HaveParameter MaximumCpuPercentage
-        }
-        It "Should have CapCpuPercentage parameter" {
-            $CommandUnderTest | Should -HaveParameter CapCpuPercentage
-        }
-        It "Should have MinimumMemoryPercentage parameter" {
-            $CommandUnderTest | Should -HaveParameter MinimumMemoryPercentage
-        }
-        It "Should have MaximumMemoryPercentage parameter" {
-            $CommandUnderTest | Should -HaveParameter MaximumMemoryPercentage
-        }
-        It "Should have MinimumIOPSPerVolume parameter" {
-            $CommandUnderTest | Should -HaveParameter MinimumIOPSPerVolume
-        }
-        It "Should have MaximumIOPSPerVolume parameter" {
-            $CommandUnderTest | Should -HaveParameter MaximumIOPSPerVolume
-        }
-        It "Should have MaximumProcesses parameter" {
-            $CommandUnderTest | Should -HaveParameter MaximumProcesses
-        }
-        It "Should have SkipReconfigure parameter" {
-            $CommandUnderTest | Should -HaveParameter SkipReconfigure
-        }
-        It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "ResourcePool",
+                "Type",
+                "MinimumCpuPercentage",
+                "MaximumCpuPercentage",
+                "CapCpuPercentage",
+                "MinimumMemoryPercentage",
+                "MaximumMemoryPercentage",
+                "MinimumIOPSPerVolume",
+                "MaximumIOPSPerVolume",
+                "MaximumProcesses",
+                "SkipReconfigure",
+                "InputObject",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

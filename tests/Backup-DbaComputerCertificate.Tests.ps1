@@ -10,23 +10,19 @@ Describe "Backup-DbaComputerCertificate" {
         BeforeAll {
             $CommandUnderTest = Get-Command Backup-DbaComputerCertificate
         }
-        It "Should have SecurePassword as a non-mandatory SecureString parameter" {
-            $CommandUnderTest | Should -HaveParameter SecurePassword
-        }
-        It "Should have InputObject as a non-mandatory System.Object[] parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject
-        }
-        It "Should have Path as a non-mandatory System.String parameter" {
-            $CommandUnderTest | Should -HaveParameter Path
-        }
-        It "Should have FilePath as a non-mandatory System.String parameter" {
-            $CommandUnderTest | Should -HaveParameter FilePath
-        }
-        It "Should have Type as a non-mandatory System.String parameter" {
-            $CommandUnderTest | Should -HaveParameter Type
-        }
-        It "Should have EnableException as a non-mandatory System.Management.Automation.SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SecurePassword",
+                "InputObject",
+                "Path",
+                "FilePath",
+                "Type",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 

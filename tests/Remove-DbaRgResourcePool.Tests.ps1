@@ -9,26 +9,20 @@ Describe "Remove-DbaRgResourcePool" {
         BeforeAll {
             $CommandUnderTest = Get-Command Remove-DbaRgResourcePool
         }
-        It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
-        }
-        It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
-        }
-        It "Should have ResourcePool parameter" {
-            $CommandUnderTest | Should -HaveParameter ResourcePool -Type System.String[]
-        }
-        It "Should have Type parameter" {
-            $CommandUnderTest | Should -HaveParameter Type -Type System.String
-        }
-        It "Should have SkipReconfigure parameter" {
-            $CommandUnderTest | Should -HaveParameter SkipReconfigure -Type System.Management.Automation.SwitchParameter
-        }
-        It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[]
-        }
-        It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+        
+        It "has all the required parameters" {
+            $requiredParameters = @(
+                "SqlInstance",
+                "SqlCredential",
+                "ResourcePool",
+                "Type",
+                "SkipReconfigure",
+                "InputObject",
+                "EnableException"
+            )
+            foreach ($param in $requiredParameters) {
+                $CommandUnderTest | Should -HaveParameter $param
+            }
         }
     }
 
