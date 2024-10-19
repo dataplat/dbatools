@@ -35,34 +35,34 @@ $TestsRunGroups = @{
         'Invoke-DbaWhoisActive',  # Works locally aganint a SQL Server 2022 instance without problems.
         'Install-DbaDarlingData',
         # previous tests that were failing on older versions too
-        'Remove-DbaAvailabilityGroup',
+        #'Remove-DbaAvailabilityGroup',
         'Read-DbaAuditFile',
         'Sync-DbaLoginPermission',
         'Read-DbaXEFile',
-        'Stop-DbaXESession',
-        'Test-DbaTempDbConfig',
+        #'Stop-DbaXESession',
+        #'Test-DbaTempDbConfig',
         #'New-DbaDbUser',
-        'Stop-DbaXESession',
+        #'Stop-DbaXESession',
         'New-DbaLogin',
         'Watch-DbaDbLogin',
         'ConvertTo-DbaXESession',
-        'Test-DbaInstanceName',
+        #'Test-DbaInstanceName',
         'Test-DbaDeprecatedFeature',
-        'Remove-DbaDatabaseSafely',
-        'Get-DbaDbMasterKey',
-        'Get-DbaPermission',
-        'Test-DbaManagementObject',
+        #'Remove-DbaDatabaseSafely',
+        #'Get-DbaDbMasterKey',
+        #'Get-DbaPermission',
+        #'Test-DbaManagementObject',
         'Export-DbaDacPackage',
-        'New-DbaDbTransfer',
-        'Get-DbaDbSynonym',
-        'Get-DbaDbVirtualLogFile',
-        'Get-DbaFile',
-        'Get-DbaHelpIndex',
-        'Get-DbaExternalProcess',
+        'New-DbaDbTransfer'
+        #'Get-DbaDbSynonym',
+        #'Get-DbaDbVirtualLogFile',
+        #'Get-DbaFile',
+        #'Get-DbaHelpIndex',
+        #'Get-DbaExternalProcess',
         # just fails too often
-        'Test-DbaMaxDop',
-        'Test-DbaOptimizeForAdHoc',
-        'New-DbaDbSnapshot'
+        #'Test-DbaMaxDop',
+        #'Test-DbaOptimizeForAdHoc',
+        #'New-DbaDbSnapshot'
     )
     # do not run everywhere
     "disabled"          = @()
