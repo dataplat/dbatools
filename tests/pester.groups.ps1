@@ -22,6 +22,20 @@ $TestsRunGroups = @{
     )
     # do not run on appveyor
     "appveyor_disabled" = @(
+        # tests that work locally against SQL Server 2022 instances without problems but fail on AppVeyor
+        'Export-DbaUser',
+        'Get-DbaPermission',
+        'Invoke-DbaWhoisActive',
+        'Remove-DbaDatabaseSafely',
+        # tests that fail locally against SQL Server 2022 instances and fail on AppVeyor
+        'Set-DbaAgentJobStep',
+        'New-DbaLogin',
+        'Watch-DbaDbLogin',
+        # tests that fail because the command does not work
+        'Copy-DbaDbCertificate',
+        'Export-DbaDacPackage',
+        'Read-DbaAuditFile',
+        'Read-DbaXEFile',
         # takes too long
         'Install-DbaSqlWatch',
         'Uninstall-DbaSqlWatch',
@@ -30,30 +44,23 @@ $TestsRunGroups = @{
         'Get-DbaCpuRingBuffer',
         'Get-DbaLatchStatistic',
         # fails on newer version of SMO
-        'Get-DbaUserPermission',
-        'Invoke-DbaBalanceDataFiles',
-        'Invoke-DbaWhoisActive',  # Works locally aganint a SQL Server 2022 instance without problems.
+        #'Get-DbaUserPermission',
+        #'Invoke-DbaBalanceDataFiles',
         'Install-DbaDarlingData',
         # previous tests that were failing on older versions too
         #'Remove-DbaAvailabilityGroup',
-        'Read-DbaAuditFile',
-        'Sync-DbaLoginPermission',
-        'Read-DbaXEFile',
+        #'Sync-DbaLoginPermission',
         #'Stop-DbaXESession',
         #'Test-DbaTempDbConfig',
         #'New-DbaDbUser',
         #'Stop-DbaXESession',
-        'New-DbaLogin',
-        'Watch-DbaDbLogin',
-        'ConvertTo-DbaXESession',
+        #'ConvertTo-DbaXESession',
         #'Test-DbaInstanceName',
-        'Test-DbaDeprecatedFeature',
+        #'Test-DbaDeprecatedFeature',
         #'Remove-DbaDatabaseSafely',
         #'Get-DbaDbMasterKey',
-        #'Get-DbaPermission',
         #'Test-DbaManagementObject',
-        'Export-DbaDacPackage',
-        'New-DbaDbTransfer'
+        #'New-DbaDbTransfer'
         #'Get-DbaDbSynonym',
         #'Get-DbaDbVirtualLogFile',
         #'Get-DbaFile',

@@ -20,7 +20,8 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
     Context "removes the newly created ag" {
         It "removes the ag" {
-            $results = Remove-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup $agname -Confirm:$false
+            $results = Remove-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup $agname -Confirm:$false -WarningVariable warn
+            $warn | Should -BeNullorEmpty
             $results.Status | Should -Be 'Removed'
             $results.AvailabilityGroup | Should -Be $agname
         }
