@@ -46,7 +46,7 @@ $TestsRunGroups = @{
         # fails on newer version of SMO
         #'Get-DbaUserPermission',
         #'Invoke-DbaBalanceDataFiles',
-        'Install-DbaDarlingData',
+        'Install-DbaDarlingData'
         # previous tests that were failing on older versions too
         #'Remove-DbaAvailabilityGroup',
         #'Sync-DbaLoginPermission',
