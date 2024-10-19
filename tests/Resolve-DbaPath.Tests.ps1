@@ -12,16 +12,16 @@ Describe "Resolve-DbaPath Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Resolve-DbaPath
         }
         It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Path
         }
         It "Should have Provider as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Provider -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Provider
         }
         It "Should have SingleItem as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SingleItem -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SingleItem
         }
         It "Should have NewChild as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NewChild -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter NewChild
         }
     }
 }

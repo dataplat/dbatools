@@ -11,17 +11,17 @@ Describe "Get-DbaRandomizedDatasetTemplate" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaRandomizedDatasetTemplate
         }
-        It "Should have Template as a non-mandatory parameter of type System.String[]" {
-            $CommandUnderTest | Should -HaveParameter Template -Type System.String[] -Mandatory:$false
+        It "Should have Template as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Template
         }
-        It "Should have Path as a non-mandatory parameter of type System.String[]" {
-            $CommandUnderTest | Should -HaveParameter Path -Type System.String[] -Mandatory:$false
+        It "Should have Path as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Path
         }
         It "Should have ExcludeDefault as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDefault -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeDefault
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

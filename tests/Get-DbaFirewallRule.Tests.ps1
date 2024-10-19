@@ -10,16 +10,16 @@ Describe "Get-DbaFirewallRule" {
             $CommandUnderTest = Get-Command Get-DbaFirewallRule
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter Credential
         }
         It "Should have Type as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Type -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Type
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

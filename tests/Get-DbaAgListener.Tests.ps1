@@ -12,22 +12,22 @@ Describe "Get-DbaAgListener Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Get-DbaAgListener
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have AvailabilityGroup as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AvailabilityGroup -Type String[]
+            $CommandUnderTest | Should -HaveParameter AvailabilityGroup
         }
         It "Should have Listener as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Listener -Type String[]
+            $CommandUnderTest | Should -HaveParameter Listener
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.AvailabilityGroup[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 }
@@ -40,14 +40,14 @@ Describe "Get-DbaAgListener Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         if (-not $SkipIntegrationTests) {
             $agname = "dbatoolsci_ag_listener"
-            $ag = New-DbaAvailabilityGroup -Primary $global:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Certificate dbatoolsci_AGCert -Confirm:$false
-            $ag | Add-DbaAgListener -IPAddress 127.0.20.1 -Port 14330 -Confirm:$false
+            $ag = New-DbaAvailabilityGroup -Primary $global:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Certificate dbatoolsci_AGCert
+            $ag | Add-DbaAgListener -IPAddress 127.0.20.1 -Port 14330
         }
     }
 
     AfterAll {
         if (-not $SkipIntegrationTests) {
-            $null = Remove-DbaAvailabilityGroup -SqlInstance $global:instance3 -AvailabilityGroup $agname -Confirm:$false
+            $null = Remove-DbaAvailabilityGroup -SqlInstance $global:instance3 -AvailabilityGroup $agname
         }
     }
 

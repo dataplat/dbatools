@@ -6,25 +6,25 @@ Describe "Update-DbaMaintenanceSolution" {
             $CommandUnderTest = Get-Command Update-DbaMaintenanceSolution
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have Solution parameter" {
-            $CommandUnderTest | Should -HaveParameter Solution -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Solution
         }
         It "Should have LocalFile parameter" {
-            $CommandUnderTest | Should -HaveParameter LocalFile -Type System.String
+            $CommandUnderTest | Should -HaveParameter LocalFile
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Force
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

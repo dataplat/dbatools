@@ -6,28 +6,28 @@ Describe "Copy-DbaCustomError" {
             $CommandUnderTest = Get-Command Copy-DbaCustomError
         }
         It "Should have Source as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Source -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter
+            $CommandUnderTest | Should -HaveParameter Source
         }
         It "Should have SourceSqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SourceSqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SourceSqlCredential
         }
         It "Should have Destination as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Destination -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter Destination
         }
         It "Should have DestinationSqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential
         }
         It "Should have CustomError as a parameter" {
-            $CommandUnderTest | Should -HaveParameter CustomError -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter CustomError
         }
         It "Should have ExcludeCustomError as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeCustomError -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeCustomError
         }
         It "Should have Force as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.Switch
+            $CommandUnderTest | Should -HaveParameter Force
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.Switch
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

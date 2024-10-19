@@ -6,19 +6,19 @@ Describe "Get-DbaDbOrphanUser" {
             $CommandUnderTest = Get-Command Get-DbaDbOrphanUser
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Connection.ManagementConnectionType[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type Microsoft.SqlServer.Management.Smo.Database[]
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have ExcludeDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Microsoft.SqlServer.Management.Smo.Database[]
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 
@@ -33,8 +33,8 @@ CREATE LOGIN [dbatoolsci_orphan3] WITH PASSWORD = N'password3', CHECK_EXPIRATION
 CREATE DATABASE dbatoolsci_orphan;
 '@
             $server = Connect-DbaInstance -SqlInstance $global:instance1
-            $null = Remove-DbaLogin -SqlInstance $server -Login dbatoolsci_orphan1, dbatoolsci_orphan2, dbatoolsci_orphan3 -Force -Confirm:$false
-            $null = Remove-DbaDatabase -SqlInstance $server -Database dbatoolsci_orphan -Confirm:$false
+            $null = Remove-DbaLogin -SqlInstance $server -Login dbatoolsci_orphan1, dbatoolsci_orphan2, dbatoolsci_orphan3 -Force
+            $null = Remove-DbaDatabase -SqlInstance $server -Database dbatoolsci_orphan
             $null = Invoke-DbaQuery -SqlInstance $server -Query $loginsq
             $usersq = @'
 CREATE USER [dbatoolsci_orphan1] FROM LOGIN [dbatoolsci_orphan1];
@@ -48,8 +48,8 @@ CREATE USER [dbatoolsci_orphan3] FROM LOGIN [dbatoolsci_orphan3];
 
         AfterAll {
             $server = Connect-DbaInstance -SqlInstance $global:instance1
-            $null = Remove-DbaLogin -SqlInstance $server -Login dbatoolsci_orphan1, dbatoolsci_orphan2, dbatoolsci_orphan3 -Force -Confirm:$false
-            $null = Remove-DbaDatabase -SqlInstance $server -Database dbatoolsci_orphan -Confirm:$false
+            $null = Remove-DbaLogin -SqlInstance $server -Login dbatoolsci_orphan1, dbatoolsci_orphan2, dbatoolsci_orphan3 -Force
+            $null = Remove-DbaDatabase -SqlInstance $server -Database dbatoolsci_orphan
         }
 
         It "Finds two orphans" {

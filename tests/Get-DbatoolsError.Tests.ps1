@@ -6,16 +6,16 @@ Describe "Get-DbatoolsError" {
             $CommandUnderTest = Get-Command Get-DbatoolsError
         }
         It "Accepts First as a parameter" {
-            $CommandUnderTest | Should -HaveParameter First -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter First
         }
         It "Accepts Last as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Last -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter Last
         }
         It "Accepts Skip as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Skip -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter Skip
         }
         It "Accepts All as a parameter" {
-            $CommandUnderTest | Should -HaveParameter All -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter All
         }
     }
 

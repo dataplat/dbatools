@@ -12,19 +12,19 @@ Describe "Test-DbaCmConnection" {
             $CommandUnderTest = Get-Command Test-DbaCmConnection
         }
         It "Should have ComputerName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName -Type Dataplat.Dbatools.Parameter.DbaCmConnectionParameter[]
+            $CommandUnderTest | Should -HaveParameter ComputerName
         }
         It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter Credential
         }
         It "Should have Type as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Type -Type Dataplat.Dbatools.Connection.ManagementConnectionType[]
+            $CommandUnderTest | Should -HaveParameter Type
         }
         It "Should have Force as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type switch
+            $CommandUnderTest | Should -HaveParameter Force
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type switch
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

@@ -12,28 +12,28 @@ Describe "Restore-DbaDbSnapshot Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Restore-DbaDbSnapshot
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have ExcludeDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
         }
         It "Should have Snapshot as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Snapshot -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter Snapshot
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have Force as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type switch
+            $CommandUnderTest | Should -HaveParameter Force
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type switch
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 }

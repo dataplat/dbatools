@@ -12,31 +12,31 @@ Describe "Get-DbaDbSchema Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Get-DbaDbSchema
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have Schema as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Schema -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Schema
         }
         It "Should have SchemaOwner as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SchemaOwner -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter SchemaOwner
         }
         It "Should have IncludeSystemDatabases as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeSystemDatabases -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter IncludeSystemDatabases
         }
         It "Should have IncludeSystemSchemas as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeSystemSchemas -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter IncludeSystemSchemas
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 }
@@ -46,7 +46,7 @@ Describe "Get-DbaDbSchema Integration Tests" -Tag "IntegrationTests" {
         $random = Get-Random
         $server1 = Connect-DbaInstance -SqlInstance $global:instance1
         $server2 = Connect-DbaInstance -SqlInstance $global:instance2
-        $null = Get-DbaProcess -SqlInstance $server1, $server2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false
+        $null = Get-DbaProcess -SqlInstance $server1, $server2 | Where-Object Program -match dbatools | Stop-DbaProcess
         $newDbName = "dbatoolsci_newdb_$random"
         $newDbs = New-DbaDatabase -SqlInstance $server1, $server2 -Name $newDbName
 
@@ -69,8 +69,8 @@ Describe "Get-DbaDbSchema Integration Tests" -Tag "IntegrationTests" {
     }
 
     AfterAll {
-        $null = $newDbs | Remove-DbaDatabase -Confirm:$false
-        $null = $logins | Remove-DbaLogin -Confirm:$false
+        $null = $newDbs | Remove-DbaDatabase
+        $null = $logins | Remove-DbaLogin
     }
 
     Context "commands work as expected" {

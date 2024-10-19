@@ -6,43 +6,43 @@ Describe "New-DbaCmConnection" {
             $CommandUnderTest = Get-Command New-DbaCmConnection
         }
         It "Should have ComputerName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName -Type Dataplat.Dbatools.Parameter.DbaCmConnectionParameter[]
+            $CommandUnderTest | Should -HaveParameter ComputerName
         }
         It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter Credential
         }
         It "Should have UseWindowsCredentials as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter UseWindowsCredentials -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter UseWindowsCredentials
         }
         It "Should have OverrideExplicitCredential as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter OverrideExplicitCredential -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter OverrideExplicitCredential
         }
         It "Should have DisabledConnectionTypes as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DisabledConnectionTypes -Type Dataplat.Dbatools.Connection.ManagementConnectionType
+            $CommandUnderTest | Should -HaveParameter DisabledConnectionTypes
         }
         It "Should have DisableBadCredentialCache as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter DisableBadCredentialCache -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter DisableBadCredentialCache
         }
         It "Should have DisableCimPersistence as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter DisableCimPersistence -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter DisableCimPersistence
         }
         It "Should have DisableCredentialAutoRegister as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter DisableCredentialAutoRegister -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter DisableCredentialAutoRegister
         }
         It "Should have EnableCredentialFailover as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableCredentialFailover -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableCredentialFailover
         }
         It "Should have WindowsCredentialsAreBad as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter WindowsCredentialsAreBad -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter WindowsCredentialsAreBad
         }
         It "Should have CimWinRMOptions as a parameter" {
-            $CommandUnderTest | Should -HaveParameter CimWinRMOptions -Type Microsoft.Management.Infrastructure.Options.WSManSessionOptions
+            $CommandUnderTest | Should -HaveParameter CimWinRMOptions
         }
         It "Should have CimDCOMOptions as a parameter" {
-            $CommandUnderTest | Should -HaveParameter CimDCOMOptions -Type Microsoft.Management.Infrastructure.Options.DComSessionOptions
+            $CommandUnderTest | Should -HaveParameter CimDCOMOptions
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 }

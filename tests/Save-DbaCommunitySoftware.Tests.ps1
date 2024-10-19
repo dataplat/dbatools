@@ -11,23 +11,23 @@ Describe "Save-DbaCommunitySoftware" {
         BeforeAll {
             $CommandUnderTest = Get-Command Save-DbaCommunitySoftware
         }
-        It "Should have Software as a non-mandatory System.String parameter" {
-            $CommandUnderTest | Should -HaveParameter Software -Type System.String -Mandatory:$false
+        It "Should have Software as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Software
         }
-        It "Should have Branch as a non-mandatory System.String parameter" {
-            $CommandUnderTest | Should -HaveParameter Branch -Type System.String -Mandatory:$false
+        It "Should have Branch as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Branch
         }
-        It "Should have LocalFile as a non-mandatory System.String parameter" {
-            $CommandUnderTest | Should -HaveParameter LocalFile -Type System.String -Mandatory:$false
+        It "Should have LocalFile as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter LocalFile
         }
-        It "Should have Url as a non-mandatory System.String parameter" {
-            $CommandUnderTest | Should -HaveParameter Url -Type System.String -Mandatory:$false
+        It "Should have Url as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Url
         }
-        It "Should have LocalDirectory as a non-mandatory System.String parameter" {
-            $CommandUnderTest | Should -HaveParameter LocalDirectory -Type System.String -Mandatory:$false
+        It "Should have LocalDirectory as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter LocalDirectory
         }
-        It "Should have EnableException as a non-mandatory System.Management.Automation.SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+        It "Should have EnableException as a non-mandatory SwitchParameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

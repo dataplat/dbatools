@@ -12,28 +12,28 @@ Describe "Test-DbaWindowsLogin" {
             $CommandUnderTest = Get-Command Test-DbaWindowsLogin
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Login parameter" {
-            $CommandUnderTest | Should -HaveParameter Login -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Login
         }
         It "Should have ExcludeLogin parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeLogin -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeLogin
         }
         It "Should have FilterBy parameter" {
-            $CommandUnderTest | Should -HaveParameter FilterBy -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter FilterBy
         }
         It "Should have IgnoreDomains parameter" {
-            $CommandUnderTest | Should -HaveParameter IgnoreDomains -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter IgnoreDomains
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Login[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

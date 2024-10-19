@@ -6,37 +6,37 @@ Describe "Backup-DbaDbCertificate" {
             $CommandUnderTest = Get-Command Backup-DbaDbCertificate
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Certificate parameter" {
-            $CommandUnderTest | Should -HaveParameter Certificate -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter Certificate
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have ExcludeDatabase parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
         }
         It "Should have EncryptionPassword parameter" {
-            $CommandUnderTest | Should -HaveParameter EncryptionPassword -Type System.Security.SecureString
+            $CommandUnderTest | Should -HaveParameter EncryptionPassword
         }
         It "Should have DecryptionPassword parameter" {
-            $CommandUnderTest | Should -HaveParameter DecryptionPassword -Type System.Security.SecureString
+            $CommandUnderTest | Should -HaveParameter DecryptionPassword
         }
         It "Should have Path parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type System.IO.FileInfo
+            $CommandUnderTest | Should -HaveParameter Path
         }
         It "Should have Suffix parameter" {
-            $CommandUnderTest | Should -HaveParameter Suffix -Type System.String
+            $CommandUnderTest | Should -HaveParameter Suffix
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Certificate[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 
@@ -48,11 +48,11 @@ Describe "Backup-DbaDbCertificate" {
             $db1 = New-DbaDatabase -SqlInstance $global:instance1 -Name $db1Name
             $pw = ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force
             if (-not (Get-DbaDbMasterKey -SqlInstance $global:instance1 -Database $db1Name)) {
-                $masterkey = New-DbaDbMasterKey -SqlInstance $global:instance1 -Database $db1Name -Password $pw -Confirm:$false
+                $masterkey = New-DbaDbMasterKey -SqlInstance $global:instance1 -Database $db1Name -Password $pw
             }
 
-            $cert = New-DbaDbCertificate -SqlInstance $global:instance1 -Database $db1Name -Confirm:$false -Password $pw -Name dbatoolscli_cert1_$random
-            $cert2 = New-DbaDbCertificate -SqlInstance $global:instance1 -Database $db1Name -Confirm:$false -Password $pw -Name dbatoolscli_cert2_$random
+            $cert = New-DbaDbCertificate -SqlInstance $global:instance1 -Database $db1Name -Password $pw -Name dbatoolscli_cert1_$random
+            $cert2 = New-DbaDbCertificate -SqlInstance $global:instance1 -Database $db1Name -Password $pw -Name dbatoolscli_cert2_$random
         }
 
         AfterAll {

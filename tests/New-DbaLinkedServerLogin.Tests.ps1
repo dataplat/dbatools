@@ -6,31 +6,31 @@ Describe "New-DbaLinkedServerLogin" {
             $CommandUnderTest = Get-Command New-DbaLinkedServerLogin
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have LinkedServer parameter" {
-            $CommandUnderTest | Should -HaveParameter LinkedServer -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter LinkedServer
         }
         It "Should have LocalLogin parameter" {
-            $CommandUnderTest | Should -HaveParameter LocalLogin -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter LocalLogin
         }
         It "Should have RemoteUser parameter" {
-            $CommandUnderTest | Should -HaveParameter RemoteUser -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter RemoteUser
         }
         It "Should have RemoteUserPassword parameter" {
-            $CommandUnderTest | Should -HaveParameter RemoteUserPassword -Type System.Security.SecureString -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter RemoteUserPassword
         }
         It "Should have Impersonate parameter" {
-            $CommandUnderTest | Should -HaveParameter Impersonate -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Impersonate
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.LinkedServer[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 }

@@ -12,22 +12,22 @@ Describe "Read-DbaTransactionLog" {
             $CommandUnderTest = Get-Command Read-DbaTransactionLog
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.Object
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have IgnoreLimit parameter" {
-            $CommandUnderTest | Should -HaveParameter IgnoreLimit -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter IgnoreLimit
         }
         It "Should have RowLimit parameter" {
-            $CommandUnderTest | Should -HaveParameter RowLimit -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter RowLimit
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 }

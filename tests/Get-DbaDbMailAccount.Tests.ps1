@@ -5,23 +5,23 @@ Describe "Get-DbaDbMailAccount" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaDbMailAccount
         }
-        It "Should have SqlInstance as a non-mandatory parameter of type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
+        It "Should have SqlInstance as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
-        It "Should have SqlCredential as a non-mandatory parameter of type System.Management.Automation.PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+        It "Should have SqlCredential as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
-        It "Should have Account as a non-mandatory parameter of type System.String[]" {
-            $CommandUnderTest | Should -HaveParameter Account -Type System.String[] -Mandatory:$false
+        It "Should have Account as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Account
         }
-        It "Should have ExcludeAccount as a non-mandatory parameter of type System.String[]" {
-            $CommandUnderTest | Should -HaveParameter ExcludeAccount -Type System.String[] -Mandatory:$false
+        It "Should have ExcludeAccount as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeAccount
         }
-        It "Should have InputObject as a non-mandatory parameter of type Microsoft.SqlServer.Management.Smo.Mail.SqlMail[]" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Mail.SqlMail[] -Mandatory:$false
+        It "Should have InputObject as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

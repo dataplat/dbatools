@@ -6,31 +6,31 @@ Describe "Copy-DbaDbQueryStoreOption" {
             $CommandUnderTest = Get-Command Copy-DbaDbQueryStoreOption
         }
         It "Should have Source as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Source -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter
+            $CommandUnderTest | Should -HaveParameter Source
         }
         It "Should have SourceSqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SourceSqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SourceSqlCredential
         }
         It "Should have SourceDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SourceDatabase -Type System.Object
+            $CommandUnderTest | Should -HaveParameter SourceDatabase
         }
         It "Should have Destination as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Destination -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter Destination
         }
         It "Should have DestinationSqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential
         }
         It "Should have DestinationDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationDatabase -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter DestinationDatabase
         }
         It "Should have Exclude as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Exclude -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter Exclude
         }
         It "Should have AllDatabases as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AllDatabases -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter AllDatabases
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 }

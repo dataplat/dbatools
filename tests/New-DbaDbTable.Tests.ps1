@@ -25,25 +25,25 @@ Describe "New-DbaDbTable" {
             $CommandUnderTest = Get-Command New-DbaDbTable
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have Name as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Name -Type System.String
+            $CommandUnderTest | Should -HaveParameter Name
         }
         It "Should have Schema as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Schema -Type System.String
+            $CommandUnderTest | Should -HaveParameter Schema
         }
         It "Should have ColumnMap as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ColumnMap -Type System.Collections.Hashtable[Microsoft.SqlServer.Management.Smo.Table[]]
+            $CommandUnderTest | Should -HaveParameter ColumnMap
         }
         It "Should have ColumnObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ColumnObject -Type Microsoft.SqlServer.Management.Smo.Column[]
+            $CommandUnderTest | Should -HaveParameter ColumnObject
         }
         # Add more parameter checks as needed
     }

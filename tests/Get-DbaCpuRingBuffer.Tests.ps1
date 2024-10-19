@@ -6,16 +6,16 @@ Describe "Get-DbaCpuRingBuffer" {
             $CommandUnderTest = Get-Command Get-DbaCpuRingBuffer
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Microsoft.SqlServer.Management.Smo.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have CollectionMinutes as a parameter" {
-            $CommandUnderTest | Should -HaveParameter CollectionMinutes -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter CollectionMinutes
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

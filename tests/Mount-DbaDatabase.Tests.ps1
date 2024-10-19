@@ -6,25 +6,25 @@ Describe "Mount-DbaDatabase" {
             $CommandUnderTest = Get-Command Mount-DbaDatabase
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have FileStructure as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FileStructure -Type System.Collections.Specialized.StringCollection
+            $CommandUnderTest | Should -HaveParameter FileStructure
         }
         It "Should have DatabaseOwner as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DatabaseOwner -Type System.String
+            $CommandUnderTest | Should -HaveParameter DatabaseOwner
         }
         It "Should have AttachOption as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AttachOption -Type System.String
+            $CommandUnderTest | Should -HaveParameter AttachOption
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

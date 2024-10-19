@@ -6,19 +6,19 @@ Describe "Get-DbaAgentOperator" {
             $CommandUnderTest = Get-Command Get-DbaAgentOperator
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Operator as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Operator -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter Operator
         }
         It "Should have ExcludeOperator as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeOperator -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeOperator
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

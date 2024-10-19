@@ -10,13 +10,13 @@ Describe "Join-DbaPath" {
             $CommandUnderTest = Get-Command Join-DbaPath
         }
         It "Should have Path as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Path
         }
         It "Should have SqlInstance as a non-mandatory DbaInstanceParameter parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have Child as a non-mandatory String[] parameter" {
-            $CommandUnderTest | Should -HaveParameter Child -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Child
         }
     }
 

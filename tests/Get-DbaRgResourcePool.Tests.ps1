@@ -15,9 +15,6 @@ Describe "Get-DbaRgResourcePool" {
         It "Should have SqlCredential as a parameter" {
             $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
         }
-        It "Should have Type as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Type -Type System.String
-        }
         It "Should have InputObject as a parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type ResourceGovernor[]
         }

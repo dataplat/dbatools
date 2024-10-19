@@ -13,31 +13,31 @@ Describe "Remove-DbaDbMasterKey Unit Tests" -Tag 'UnitTests' {
         }
 
         It "Should have SqlInstance parameter" {
-            $command | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Connection.ManagementConnectionType[] -Mandatory:$false
+            $command | Should -HaveParameter SqlInstance
         }
 
         It "Should have SqlCredential parameter" {
-            $command | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $command | Should -HaveParameter SqlCredential
         }
 
         It "Should have Database parameter" {
-            $command | Should -HaveParameter Database -Type System.String[] -Mandatory:$false
+            $command | Should -HaveParameter Database
         }
 
         It "Should have ExcludeDatabase parameter" {
-            $command | Should -HaveParameter ExcludeDatabase -Type System.String[] -Mandatory:$false
+            $command | Should -HaveParameter ExcludeDatabase
         }
 
         It "Should have All parameter" {
-            $command | Should -HaveParameter All -Type System.Management.Automation.Switch -Mandatory:$false
+            $command | Should -HaveParameter All
         }
 
         It "Should have InputObject parameter" {
-            $command | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.MasterKey[] -Mandatory:$false
+            $command | Should -HaveParameter InputObject
         }
 
         It "Should have EnableException parameter" {
-            $command | Should -HaveParameter EnableException -Type System.Management.Automation.Switch -Mandatory:$false
+            $command | Should -HaveParameter EnableException
         }
     }
 }

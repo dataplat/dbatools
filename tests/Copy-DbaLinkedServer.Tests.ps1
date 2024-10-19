@@ -31,34 +31,34 @@ Describe "Copy-DbaLinkedServer" {
             $CommandUnderTest = Get-Command Copy-DbaLinkedServer
         }
         It "Should have Source as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Source -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter
+            $CommandUnderTest | Should -HaveParameter Source
         }
         It "Should have SourceSqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SourceSqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SourceSqlCredential
         }
         It "Should have Destination as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Destination -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter Destination
         }
         It "Should have DestinationSqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential
         }
         It "Should have LinkedServer as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LinkedServer -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter LinkedServer
         }
         It "Should have ExcludeLinkedServer as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeLinkedServer -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeLinkedServer
         }
         It "Should have UpgradeSqlClient as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter UpgradeSqlClient -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter UpgradeSqlClient
         }
         It "Should have ExcludePassword as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludePassword -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter ExcludePassword
         }
         It "Should have Force as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Force
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

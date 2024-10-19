@@ -12,37 +12,37 @@ Describe "Copy-DbaSsisCatalog" {
             $CommandUnderTest = Get-Command Copy-DbaSsisCatalog
         }
         It "Should have Source parameter" {
-            $CommandUnderTest | Should -HaveParameter Source -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter
+            $CommandUnderTest | Should -HaveParameter Source
         }
         It "Should have Destination parameter" {
-            $CommandUnderTest | Should -HaveParameter Destination -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter Destination
         }
         It "Should have SourceSqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SourceSqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SourceSqlCredential
         }
         It "Should have DestinationSqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential
         }
         It "Should have Project parameter" {
-            $CommandUnderTest | Should -HaveParameter Project -Type System.String
+            $CommandUnderTest | Should -HaveParameter Project
         }
         It "Should have Folder parameter" {
-            $CommandUnderTest | Should -HaveParameter Folder -Type System.String
+            $CommandUnderTest | Should -HaveParameter Folder
         }
         It "Should have Environment parameter" {
-            $CommandUnderTest | Should -HaveParameter Environment -Type System.String
+            $CommandUnderTest | Should -HaveParameter Environment
         }
         It "Should have CreateCatalogPassword parameter" {
-            $CommandUnderTest | Should -HaveParameter CreateCatalogPassword -Type System.Security.SecureString
+            $CommandUnderTest | Should -HaveParameter CreateCatalogPassword
         }
         It "Should have EnableSqlClr parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableSqlClr -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableSqlClr
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Force
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 }

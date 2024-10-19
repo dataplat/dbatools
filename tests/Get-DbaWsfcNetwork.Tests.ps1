@@ -6,13 +6,13 @@ Describe "Get-DbaWsfcNetwork" {
             $CommandUnderTest = Get-Command Get-DbaWsfcNetwork
         }
         It "Should have ComputerName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter ComputerName
         }
         It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter Credential
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

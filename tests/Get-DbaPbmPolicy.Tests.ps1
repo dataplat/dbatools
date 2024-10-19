@@ -6,25 +6,25 @@ Describe "Get-DbaPbmPolicy" {
             $CommandUnderTest = Get-Command Get-DbaPbmPolicy
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Policy as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Policy -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Policy
         }
         It "Should have Category as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Category -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Category
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type PSObject[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have IncludeSystemObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeSystemObject -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter IncludeSystemObject
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

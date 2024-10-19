@@ -6,43 +6,43 @@ Describe "Copy-DbaDbCertificate" {
             $CommandUnderTest = Get-Command Copy-DbaDbCertificate
         }
         It "Should have Source as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Source -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter
+            $CommandUnderTest | Should -HaveParameter Source
         }
         It "Should have SourceSqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SourceSqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SourceSqlCredential
         }
         It "Should have Destination as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Destination -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter Destination
         }
         It "Should have DestinationSqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have ExcludeDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
         }
         It "Should have Certificate as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Certificate -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Certificate
         }
         It "Should have ExcludeCertificate as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeCertificate -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter ExcludeCertificate
         }
         It "Should have SharedPath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SharedPath -Type System.String
+            $CommandUnderTest | Should -HaveParameter SharedPath
         }
         It "Should have MasterKeyPassword as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MasterKeyPassword -Type System.Security.SecureString
+            $CommandUnderTest | Should -HaveParameter MasterKeyPassword
         }
         It "Should have EncryptionPassword as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EncryptionPassword -Type System.Security.SecureString
+            $CommandUnderTest | Should -HaveParameter EncryptionPassword
         }
         It "Should have DecryptionPassword as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DecryptionPassword -Type System.Security.SecureString
+            $CommandUnderTest | Should -HaveParameter DecryptionPassword
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 }

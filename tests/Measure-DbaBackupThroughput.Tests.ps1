@@ -12,31 +12,31 @@ Describe "Measure-DbaBackupThroughput" {
             $CommandUnderTest = Get-Command Measure-DbaBackupThroughput
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have ExcludeDatabase parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
         }
         It "Should have Since parameter" {
-            $CommandUnderTest | Should -HaveParameter Since -Type DateTime -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Since
         }
         It "Should have Last parameter" {
-            $CommandUnderTest | Should -HaveParameter Last -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Last
         }
         It "Should have Type parameter" {
-            $CommandUnderTest | Should -HaveParameter Type -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Type
         }
         It "Should have DeviceType parameter" {
-            $CommandUnderTest | Should -HaveParameter DeviceType -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter DeviceType
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

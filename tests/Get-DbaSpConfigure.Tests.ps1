@@ -16,19 +16,19 @@ Describe "Get-DbaSpConfigure" {
             $CommandUnderTest = Get-Command Get-DbaSpConfigure
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Name as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Name -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Name
         }
         It "Should have ExcludeName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeName -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeName
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

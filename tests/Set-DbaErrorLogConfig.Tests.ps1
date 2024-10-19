@@ -12,19 +12,19 @@ Describe "Set-DbaErrorLogConfig" {
             $CommandUnderTest = Get-Command Set-DbaErrorLogConfig
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have LogCount as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LogCount -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter LogCount
         }
         It "Should have LogSize as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LogSize -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter LogSize
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

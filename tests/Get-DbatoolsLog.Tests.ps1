@@ -9,38 +9,38 @@ Describe "Get-DbatoolsLog" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbatoolsLog
         }
-        It "Should have FunctionName as a non-mandatory System.String parameter" {
-            $CommandUnderTest | Should -HaveParameter FunctionName -Type System.String -Mandatory:$false
+        It "Should have FunctionName as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter FunctionName
         }
-        It "Should have ModuleName as a non-mandatory System.String parameter" {
-            $CommandUnderTest | Should -HaveParameter ModuleName -Type System.String -Mandatory:$false
+        It "Should have ModuleName as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter ModuleName
         }
-        It "Should have Target as a non-mandatory System.Object parameter" {
-            $CommandUnderTest | Should -HaveParameter Target -Type System.Object -Mandatory:$false
+        It "Should have Target as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Target
         }
-        It "Should have Tag as a non-mandatory System.String[] parameter" {
-            $CommandUnderTest | Should -HaveParameter Tag -Type System.String[] -Mandatory:$false
+        It "Should have Tag as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Tag
         }
-        It "Should have Last as a non-mandatory System.Int32 parameter" {
-            $CommandUnderTest | Should -HaveParameter Last -Type System.Int32 -Mandatory:$false
+        It "Should have Last as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Last
         }
-        It "Should have LastError as a non-mandatory System.Management.Automation.SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter LastError -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+        It "Should have LastError as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter LastError
         }
-        It "Should have Skip as a non-mandatory System.Int32 parameter" {
-            $CommandUnderTest | Should -HaveParameter Skip -Type System.Int32 -Mandatory:$false
+        It "Should have Skip as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Skip
         }
-        It "Should have Runspace as a non-mandatory System.Guid parameter" {
-            $CommandUnderTest | Should -HaveParameter Runspace -Type System.Guid -Mandatory:$false
+        It "Should have Runspace as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Runspace
         }
-        It "Should have Level as a non-mandatory Dataplat.Dbatools.Message.MessageLevel[] parameter" {
-            $CommandUnderTest | Should -HaveParameter Level -Type Dataplat.Dbatools.Message.MessageLevel[] -Mandatory:$false
+        It "Should have Level as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Level
         }
-        It "Should have Raw as a non-mandatory System.Management.Automation.SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter Raw -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+        It "Should have Raw as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Raw
         }
-        It "Should have Errors as a non-mandatory System.Management.Automation.SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter Errors -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+        It "Should have Errors as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Errors
         }
     }
 

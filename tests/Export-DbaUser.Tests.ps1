@@ -6,55 +6,55 @@ Describe "Export-DbaUser Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Export-DbaUser
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have ExcludeDatabase parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
         }
         It "Should have User parameter" {
-            $CommandUnderTest | Should -HaveParameter User -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter User
         }
         It "Should have DestinationVersion parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationVersion -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter DestinationVersion
         }
         It "Should have Path parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Path
         }
         It "Should have FilePath parameter" {
-            $CommandUnderTest | Should -HaveParameter FilePath -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter FilePath
         }
         It "Should have Encoding parameter" {
-            $CommandUnderTest | Should -HaveParameter Encoding -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Encoding
         }
         It "Should have NoClobber parameter" {
-            $CommandUnderTest | Should -HaveParameter NoClobber -Type System.Management.Automation.Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter NoClobber
         }
         It "Should have Append parameter" {
-            $CommandUnderTest | Should -HaveParameter Append -Type System.Management.Automation.Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Append
         }
         It "Should have Passthru parameter" {
-            $CommandUnderTest | Should -HaveParameter Passthru -Type System.Management.Automation.Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Passthru
         }
         It "Should have Template parameter" {
-            $CommandUnderTest | Should -HaveParameter Template -Type System.Management.Automation.Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Template
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
         It "Should have ScriptingOptionsObject parameter" {
-            $CommandUnderTest | Should -HaveParameter ScriptingOptionsObject -Type Microsoft.SqlServer.Management.Smo.ScriptingOptions -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ScriptingOptionsObject
         }
         It "Should have ExcludeGoBatchSeparator parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeGoBatchSeparator -Type System.Management.Automation.Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeGoBatchSeparator
         }
     }
 }

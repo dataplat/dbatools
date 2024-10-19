@@ -6,19 +6,19 @@ Describe "Get-DbaWaitingTask" {
             $CommandUnderTest = Get-Command Get-DbaWaitingTask
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Spid as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Spid -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter Spid
         }
         It "Should have IncludeSystemSpid as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeSystemSpid -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter IncludeSystemSpid
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

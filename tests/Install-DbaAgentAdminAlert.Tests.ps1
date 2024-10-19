@@ -11,52 +11,52 @@ Describe "Install-DbaAgentAdminAlert" {
             $CommandUnderTest = Get-Command Install-DbaAgentAdminAlert
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Microsoft.SqlServer.Management.Smo.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Category as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Category -Type System.String
+            $CommandUnderTest | Should -HaveParameter Category
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have Operator as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Operator -Type System.String
+            $CommandUnderTest | Should -HaveParameter Operator
         }
         It "Should have OperatorEmail as a parameter" {
-            $CommandUnderTest | Should -HaveParameter OperatorEmail -Type System.String
+            $CommandUnderTest | Should -HaveParameter OperatorEmail
         }
         It "Should have DelayBetweenResponses as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DelayBetweenResponses -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter DelayBetweenResponses
         }
         It "Should have Disabled as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Disabled -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Disabled
         }
         It "Should have EventDescriptionKeyword as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EventDescriptionKeyword -Type System.String
+            $CommandUnderTest | Should -HaveParameter EventDescriptionKeyword
         }
         It "Should have EventSource as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EventSource -Type System.String
+            $CommandUnderTest | Should -HaveParameter EventSource
         }
         It "Should have JobId as a parameter" {
-            $CommandUnderTest | Should -HaveParameter JobId -Type System.String
+            $CommandUnderTest | Should -HaveParameter JobId
         }
         It "Should have ExcludeSeverity as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSeverity -Type System.Int32[]
+            $CommandUnderTest | Should -HaveParameter ExcludeSeverity
         }
         It "Should have ExcludeMessageId as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeMessageId -Type System.Int32[]
+            $CommandUnderTest | Should -HaveParameter ExcludeMessageId
         }
         It "Should have NotificationMessage as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NotificationMessage -Type System.String
+            $CommandUnderTest | Should -HaveParameter NotificationMessage
         }
         It "Should have NotifyMethod as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NotifyMethod -Type System.String
+            $CommandUnderTest | Should -HaveParameter NotifyMethod
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

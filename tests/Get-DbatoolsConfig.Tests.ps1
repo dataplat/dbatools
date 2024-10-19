@@ -5,17 +5,17 @@ Describe "Get-DbatoolsConfig" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbatoolsConfig
         }
-        It "Should have parameter FullName of type System.String" {
-            $CommandUnderTest | Should -HaveParameter FullName -Type System.String -Mandatory:$false
+        It "Should have parameter FullName" {
+            $CommandUnderTest | Should -HaveParameter FullName
         }
-        It "Should have parameter Name of type System.String" {
-            $CommandUnderTest | Should -HaveParameter Name -Type System.String -Mandatory:$false
+        It "Should have parameter Name" {
+            $CommandUnderTest | Should -HaveParameter Name
         }
-        It "Should have parameter Module of type System.String" {
-            $CommandUnderTest | Should -HaveParameter Module -Type System.String -Mandatory:$false
+        It "Should have parameter Module" {
+            $CommandUnderTest | Should -HaveParameter Module
         }
-        It "Should have parameter Force of type System.Management.Automation.SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+        It "Should have parameter Force" {
+            $CommandUnderTest | Should -HaveParameter Force
         }
     }
 

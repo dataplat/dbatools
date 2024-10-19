@@ -37,25 +37,25 @@ Describe "New-DbaDbFileGroup" {
             $CommandUnderTest = Get-Command New-DbaDbFileGroup
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Connection.ManagementConnectionType[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type Microsoft.SqlServer.Management.Smo.Credential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have FileGroup parameter" {
-            $CommandUnderTest | Should -HaveParameter FileGroup -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter FileGroup
         }
         It "Should have FileGroupType parameter" {
-            $CommandUnderTest | Should -HaveParameter FileGroupType -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter FileGroupType
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

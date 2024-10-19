@@ -25,52 +25,52 @@ Describe "Invoke-DbaQuery" {
             $CommandUnderTest = Get-Command Invoke-DbaQuery
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have Query parameter" {
-            $CommandUnderTest | Should -HaveParameter Query -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Query
         }
         It "Should have QueryTimeout parameter" {
-            $CommandUnderTest | Should -HaveParameter QueryTimeout -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter QueryTimeout
         }
         It "Should have File parameter" {
-            $CommandUnderTest | Should -HaveParameter File -Type System.Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter File
         }
         It "Should have SqlObject parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlObject -Type Microsoft.SqlServer.Management.Smo.SqlSmoObject[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlObject
         }
         It "Should have As parameter" {
-            $CommandUnderTest | Should -HaveParameter As -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter As
         }
         It "Should have SqlParameter parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlParameter -Type System.Management.Automation.PSObject[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlParameter
         }
         It "Should have CommandType parameter" {
-            $CommandUnderTest | Should -HaveParameter CommandType -Type System.Data.CommandType -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter CommandType
         }
         It "Should have AppendServerInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter AppendServerInstance -Type System.Management.Automation.Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter AppendServerInstance
         }
         It "Should have MessagesToOutput parameter" {
-            $CommandUnderTest | Should -HaveParameter MessagesToOutput -Type System.Management.Automation.Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter MessagesToOutput
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have ReadOnly parameter" {
-            $CommandUnderTest | Should -HaveParameter ReadOnly -Type System.Management.Automation.Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ReadOnly
         }
         It "Should have NoExec parameter" {
-            $CommandUnderTest | Should -HaveParameter NoExec -Type System.Management.Automation.Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter NoExec
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

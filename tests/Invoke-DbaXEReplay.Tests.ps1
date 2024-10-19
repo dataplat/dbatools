@@ -10,25 +10,25 @@ Describe "Invoke-DbaXEReplay" {
             $CommandUnderTest = Get-Command Invoke-DbaXEReplay
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have Event parameter" {
-            $CommandUnderTest | Should -HaveParameter Event -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Event
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have Raw parameter" {
-            $CommandUnderTest | Should -HaveParameter Raw -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Raw
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

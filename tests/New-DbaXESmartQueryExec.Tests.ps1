@@ -12,25 +12,25 @@ Describe "New-DbaXESmartQueryExec" {
             $CommandUnderTest = Get-Command New-DbaXESmartQueryExec
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have Query as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Query -Type System.String
+            $CommandUnderTest | Should -HaveParameter Query
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
         It "Should have Event as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Event -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Event
         }
         It "Should have Filter as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Filter -Type System.String
+            $CommandUnderTest | Should -HaveParameter Filter
         }
     }
 

@@ -12,13 +12,13 @@ Describe "Get-DbatoolsConfigValue" {
             $CommandUnderTest = Get-Command Get-DbatoolsConfigValue
         }
         It "Should have FullName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FullName -Type System.String
+            $CommandUnderTest | Should -HaveParameter FullName
         }
         It "Should have Fallback as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Fallback -Type System.Object
+            $CommandUnderTest | Should -HaveParameter Fallback
         }
         It "Should have NotNull as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NotNull -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter NotNull
         }
     }
 

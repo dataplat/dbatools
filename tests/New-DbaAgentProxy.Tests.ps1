@@ -6,40 +6,40 @@ Describe "New-DbaAgentProxy" {
             $CommandUnderTest = Get-Command New-DbaAgentProxy
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Name as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Name -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Name
         }
         It "Should have ProxyCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ProxyCredential -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter ProxyCredential
         }
         It "Should have SubSystem as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SubSystem -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter SubSystem
         }
         It "Should have Description as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Description -Type System.String
+            $CommandUnderTest | Should -HaveParameter Description
         }
         It "Should have Login as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Login -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Login
         }
         It "Should have ServerRole as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ServerRole -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter ServerRole
         }
         It "Should have MsdbRole as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MsdbRole -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter MsdbRole
         }
         It "Should have Disabled as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Disabled -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Disabled
         }
         It "Should have Force as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Force
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

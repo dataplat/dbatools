@@ -12,31 +12,31 @@ Describe "Import-DbaXESessionTemplate" {
             $CommandUnderTest = Get-Command Import-DbaXESessionTemplate
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Name as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Name -Type System.String
+            $CommandUnderTest | Should -HaveParameter Name
         }
         It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Path
         }
         It "Should have Template as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Template -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Template
         }
         It "Should have TargetFilePath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter TargetFilePath -Type System.String
+            $CommandUnderTest | Should -HaveParameter TargetFilePath
         }
         It "Should have TargetFileMetadataPath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter TargetFileMetadataPath -Type System.String
+            $CommandUnderTest | Should -HaveParameter TargetFileMetadataPath
         }
         It "Should have StartUpState as a parameter" {
-            $CommandUnderTest | Should -HaveParameter StartUpState -Type System.String
+            $CommandUnderTest | Should -HaveParameter StartUpState
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

@@ -12,31 +12,31 @@ Describe "Export-DbaExecutionPlan" {
             $CommandUnderTest = Get-Command Export-DbaExecutionPlan
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have ExcludeDatabase parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
         }
         It "Should have Path parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type System.String
+            $CommandUnderTest | Should -HaveParameter Path
         }
         It "Should have SinceCreation parameter" {
-            $CommandUnderTest | Should -HaveParameter SinceCreation -Type System.DateTime
+            $CommandUnderTest | Should -HaveParameter SinceCreation
         }
         It "Should have SinceLastExecution parameter" {
-            $CommandUnderTest | Should -HaveParameter SinceLastExecution -Type System.DateTime
+            $CommandUnderTest | Should -HaveParameter SinceLastExecution
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 }

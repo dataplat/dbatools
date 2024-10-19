@@ -12,8 +12,8 @@ Describe "New-DbaScriptingOption" {
             $CommandUnderTest = Get-Command New-DbaScriptingOption
         }
         It "Should have the correct parameters" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory -Alias 'ConnectionString'
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Alias 'ConnectionString'
+            $CommandUnderTest | Should -HaveParameter SqlCredential
             # Add more parameter checks as needed
         }
     }

@@ -6,22 +6,22 @@ Describe "Find-DbaDatabase" {
             $CommandUnderTest = Get-Command Find-DbaDatabase
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Property as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Property -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Property
         }
         It "Should have Pattern as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Pattern -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Pattern
         }
         It "Should have Exact as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Exact -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Exact
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

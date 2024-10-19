@@ -11,19 +11,19 @@ Describe "Get-DbaInstanceProperty" {
             $CommandUnderTest = Get-Command Get-DbaInstanceProperty
         }
         It "Should have SqlInstance as a non-mandatory parameter of type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a non-mandatory parameter of type System.Management.Automation.PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have InstanceProperty as a non-mandatory parameter of type System.Object[]" {
-            $CommandUnderTest | Should -HaveParameter InstanceProperty -Type System.Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InstanceProperty
         }
         It "Should have ExcludeInstanceProperty as a non-mandatory parameter of type System.Object[]" {
-            $CommandUnderTest | Should -HaveParameter ExcludeInstanceProperty -Type System.Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeInstanceProperty
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

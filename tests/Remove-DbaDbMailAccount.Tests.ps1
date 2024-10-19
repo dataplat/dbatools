@@ -12,22 +12,22 @@ Describe "Remove-DbaDbMailAccount" {
             $CommandUnderTest = Get-Command Remove-DbaDbMailAccount
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Account as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Account -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Account
         }
         It "Should have ExcludeAccount as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeAccount -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeAccount
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type MailAccount[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

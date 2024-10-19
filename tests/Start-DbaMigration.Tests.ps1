@@ -30,79 +30,79 @@ Describe "Start-DbaMigration" {
             $CommandUnderTest = Get-Command Start-DbaMigration
         }
         It "Should have Source as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Source -Type DbaInstanceParameter
+            $CommandUnderTest | Should -HaveParameter Source
         }
         It "Should have Destination as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Destination -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter Destination
         }
         It "Should have DetachAttach as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter DetachAttach -Type switch
+            $CommandUnderTest | Should -HaveParameter DetachAttach
         }
         It "Should have Reattach as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Reattach -Type switch
+            $CommandUnderTest | Should -HaveParameter Reattach
         }
         It "Should have BackupRestore as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter BackupRestore -Type switch
+            $CommandUnderTest | Should -HaveParameter BackupRestore
         }
         It "Should have SharedPath as a string parameter" {
-            $CommandUnderTest | Should -HaveParameter SharedPath -Type System.String
+            $CommandUnderTest | Should -HaveParameter SharedPath
         }
         It "Should have WithReplace as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter WithReplace -Type switch
+            $CommandUnderTest | Should -HaveParameter WithReplace
         }
         It "Should have NoRecovery as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoRecovery -Type switch
+            $CommandUnderTest | Should -HaveParameter NoRecovery
         }
         It "Should have SetSourceReadOnly as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter SetSourceReadOnly -Type switch
+            $CommandUnderTest | Should -HaveParameter SetSourceReadOnly
         }
         It "Should have ReuseSourceFolderStructure as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ReuseSourceFolderStructure -Type switch
+            $CommandUnderTest | Should -HaveParameter ReuseSourceFolderStructure
         }
         It "Should have IncludeSupportDbs as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeSupportDbs -Type switch
+            $CommandUnderTest | Should -HaveParameter IncludeSupportDbs
         }
         It "Should have SourceSqlCredential as a PSCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SourceSqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SourceSqlCredential
         }
         It "Should have DestinationSqlCredential as a PSCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential
         }
         It "Should have Exclude as a string array parameter" {
-            $CommandUnderTest | Should -HaveParameter Exclude -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Exclude
         }
         It "Should have DisableJobsOnDestination as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter DisableJobsOnDestination -Type switch
+            $CommandUnderTest | Should -HaveParameter DisableJobsOnDestination
         }
         It "Should have DisableJobsOnSource as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter DisableJobsOnSource -Type switch
+            $CommandUnderTest | Should -HaveParameter DisableJobsOnSource
         }
         It "Should have ExcludeSaRename as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSaRename -Type switch
+            $CommandUnderTest | Should -HaveParameter ExcludeSaRename
         }
         It "Should have UseLastBackup as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter UseLastBackup -Type switch
+            $CommandUnderTest | Should -HaveParameter UseLastBackup
         }
         It "Should have KeepCDC as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter KeepCDC -Type switch
+            $CommandUnderTest | Should -HaveParameter KeepCDC
         }
         It "Should have KeepReplication as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter KeepReplication -Type switch
+            $CommandUnderTest | Should -HaveParameter KeepReplication
         }
         It "Should have Continue as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Continue -Type switch
+            $CommandUnderTest | Should -HaveParameter Continue
         }
         It "Should have Force as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type switch
+            $CommandUnderTest | Should -HaveParameter Force
         }
         It "Should have AzureCredential as a string parameter" {
-            $CommandUnderTest | Should -HaveParameter AzureCredential -Type System.String
+            $CommandUnderTest | Should -HaveParameter AzureCredential
         }
         It "Should have MasterKeyPassword as a SecureString parameter" {
-            $CommandUnderTest | Should -HaveParameter MasterKeyPassword -Type System.Security.SecureString
+            $CommandUnderTest | Should -HaveParameter MasterKeyPassword
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type switch
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

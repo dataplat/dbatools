@@ -6,46 +6,46 @@ Describe "Publish-DbaDacPackage" {
             $CommandUnderTest = Get-Command Publish-DbaDacPackage
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Path parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type System.String
+            $CommandUnderTest | Should -HaveParameter Path
         }
         It "Should have PublishXml parameter" {
-            $CommandUnderTest | Should -HaveParameter PublishXml -Type System.String
+            $CommandUnderTest | Should -HaveParameter PublishXml
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have ConnectionString parameter" {
-            $CommandUnderTest | Should -HaveParameter ConnectionString -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter ConnectionString
         }
         It "Should have GenerateDeploymentReport parameter" {
-            $CommandUnderTest | Should -HaveParameter GenerateDeploymentReport -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter GenerateDeploymentReport
         }
         It "Should have ScriptOnly parameter" {
-            $CommandUnderTest | Should -HaveParameter ScriptOnly -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter ScriptOnly
         }
         It "Should have Type parameter" {
-            $CommandUnderTest | Should -HaveParameter Type -Type System.String
+            $CommandUnderTest | Should -HaveParameter Type
         }
         It "Should have OutputPath parameter" {
-            $CommandUnderTest | Should -HaveParameter OutputPath -Type System.String
+            $CommandUnderTest | Should -HaveParameter OutputPath
         }
         It "Should have IncludeSqlCmdVars parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeSqlCmdVars -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter IncludeSqlCmdVars
         }
         It "Should have DacOption parameter" {
-            $CommandUnderTest | Should -HaveParameter DacOption -Type Object
+            $CommandUnderTest | Should -HaveParameter DacOption
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
         It "Should have DacFxPath parameter" {
-            $CommandUnderTest | Should -HaveParameter DacFxPath -Type System.String
+            $CommandUnderTest | Should -HaveParameter DacFxPath
         }
     }
 

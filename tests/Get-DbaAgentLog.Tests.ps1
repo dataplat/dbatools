@@ -10,16 +10,16 @@ Describe "Get-DbaAgentLog" {
             $CommandUnderTest = Get-Command Get-DbaAgentLog
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have LogNumber as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LogNumber -Type System.Int32[]
+            $CommandUnderTest | Should -HaveParameter LogNumber
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

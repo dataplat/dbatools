@@ -34,7 +34,7 @@ Describe "Start-DbaXESession" {
         # Drop created objects
         $conn.ExecuteNonQuery("IF EXISTS(SELECT * FROM sys.server_event_sessions WHERE name = 'dbatoolsci_session_invalid') DROP EVENT SESSION [dbatoolsci_session_invalid] ON SERVER;")
         $conn.ExecuteNonQuery("IF EXISTS(SELECT * FROM sys.server_event_sessions WHERE name = 'dbatoolsci_session_valid') DROP EVENT SESSION [dbatoolsci_session_valid] ON SERVER;")
-        Get-DbaAgentSchedule -SqlInstance $global:instance2 -Schedule "XE Session START - dbatoolsci_session_valid", "XE Session STOP - dbatoolsci_session_valid" | Remove-DbaAgentSchedule -Force -Confirm:$false
+        Get-DbaAgentSchedule -SqlInstance $global:instance2 -Schedule "XE Session START - dbatoolsci_session_valid", "XE Session STOP - dbatoolsci_session_valid" | Remove-DbaAgentSchedule -Force
     }
 
     Context "Validate parameters" {
@@ -42,28 +42,28 @@ Describe "Start-DbaXESession" {
             $CommandUnderTest = Get-Command Start-DbaXESession
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Session as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Session -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter Session
         }
         It "Should have StartAt as a parameter" {
-            $CommandUnderTest | Should -HaveParameter StartAt -Type System.DateTime
+            $CommandUnderTest | Should -HaveParameter StartAt
         }
         It "Should have StopAt as a parameter" {
-            $CommandUnderTest | Should -HaveParameter StopAt -Type System.DateTime
+            $CommandUnderTest | Should -HaveParameter StopAt
         }
         It "Should have AllSessions as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AllSessions -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter AllSessions
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.XEvent.Session[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

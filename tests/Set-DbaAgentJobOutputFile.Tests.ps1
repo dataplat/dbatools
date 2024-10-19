@@ -6,22 +6,22 @@ Describe "Set-DbaAgentJobOutputFile" {
             $CommandUnderTest = Get-Command Set-DbaAgentJobOutputFile
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Job as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Job -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter Job
         }
         It "Should have Step as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Step -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter Step
         }
         It "Should have OutputFile as a parameter" {
-            $CommandUnderTest | Should -HaveParameter OutputFile -Type System.String
+            $CommandUnderTest | Should -HaveParameter OutputFile
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 }

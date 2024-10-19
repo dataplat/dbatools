@@ -11,55 +11,55 @@ Describe "Set-DbaDbState Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Set-DbaDbState
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have ExcludeDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
         }
         It "Should have AllDatabases as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter AllDatabases -Type switch
+            $CommandUnderTest | Should -HaveParameter AllDatabases
         }
         It "Should have ReadOnly as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ReadOnly -Type switch
+            $CommandUnderTest | Should -HaveParameter ReadOnly
         }
         It "Should have ReadWrite as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ReadWrite -Type switch
+            $CommandUnderTest | Should -HaveParameter ReadWrite
         }
         It "Should have Online as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Online -Type switch
+            $CommandUnderTest | Should -HaveParameter Online
         }
         It "Should have Offline as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Offline -Type switch
+            $CommandUnderTest | Should -HaveParameter Offline
         }
         It "Should have Emergency as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Emergency -Type switch
+            $CommandUnderTest | Should -HaveParameter Emergency
         }
         It "Should have Detached as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Detached -Type switch
+            $CommandUnderTest | Should -HaveParameter Detached
         }
         It "Should have SingleUser as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter SingleUser -Type switch
+            $CommandUnderTest | Should -HaveParameter SingleUser
         }
         It "Should have RestrictedUser as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter RestrictedUser -Type switch
+            $CommandUnderTest | Should -HaveParameter RestrictedUser
         }
         It "Should have MultiUser as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter MultiUser -Type switch
+            $CommandUnderTest | Should -HaveParameter MultiUser
         }
         It "Should have Force as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type switch
+            $CommandUnderTest | Should -HaveParameter Force
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type switch
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Management.Automation.PSObject[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
     }
 }

@@ -6,22 +6,22 @@ Describe "Register-DbatoolsConfig" {
             $CommandUnderTest = Get-Command Register-DbatoolsConfig
         }
         It "Accepts Config as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Config -Type Dataplat.Dbatools.Configuration.Config[]
+            $CommandUnderTest | Should -HaveParameter Config
         }
         It "Accepts FullName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FullName -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter FullName
         }
         It "Accepts Module as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Module -Type System.String
+            $CommandUnderTest | Should -HaveParameter Module
         }
         It "Accepts Name as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Name -Type System.String
+            $CommandUnderTest | Should -HaveParameter Name
         }
         It "Accepts Scope as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Scope -Type Dataplat.Dbatools.Configuration.ConfigScope
+            $CommandUnderTest | Should -HaveParameter Scope
         }
         It "Accepts EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

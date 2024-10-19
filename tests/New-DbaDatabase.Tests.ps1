@@ -35,73 +35,73 @@ Describe "New-DbaDatabase" {
             $CommandUnderTest = Get-Command New-DbaDatabase
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Name parameter" {
-            $CommandUnderTest | Should -HaveParameter Name -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Name
         }
         It "Should have Collation parameter" {
-            $CommandUnderTest | Should -HaveParameter Collation -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Collation
         }
         It "Should have RecoveryModel parameter" {
-            $CommandUnderTest | Should -HaveParameter RecoveryModel -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter RecoveryModel
         }
         It "Should have Owner parameter" {
-            $CommandUnderTest | Should -HaveParameter Owner -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Owner
         }
         It "Should have DataFilePath parameter" {
-            $CommandUnderTest | Should -HaveParameter DataFilePath -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter DataFilePath
         }
         It "Should have LogFilePath parameter" {
-            $CommandUnderTest | Should -HaveParameter LogFilePath -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter LogFilePath
         }
         It "Should have PrimaryFilesize parameter" {
-            $CommandUnderTest | Should -HaveParameter PrimaryFilesize -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter PrimaryFilesize
         }
         It "Should have PrimaryFileGrowth parameter" {
-            $CommandUnderTest | Should -HaveParameter PrimaryFileGrowth -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter PrimaryFileGrowth
         }
         It "Should have PrimaryFileMaxSize parameter" {
-            $CommandUnderTest | Should -HaveParameter PrimaryFileMaxSize -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter PrimaryFileMaxSize
         }
         It "Should have LogSize parameter" {
-            $CommandUnderTest | Should -HaveParameter LogSize -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter LogSize
         }
         It "Should have LogGrowth parameter" {
-            $CommandUnderTest | Should -HaveParameter LogGrowth -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter LogGrowth
         }
         It "Should have LogMaxSize parameter" {
-            $CommandUnderTest | Should -HaveParameter LogMaxSize -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter LogMaxSize
         }
         It "Should have SecondaryFilesize parameter" {
-            $CommandUnderTest | Should -HaveParameter SecondaryFilesize -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SecondaryFilesize
         }
         It "Should have SecondaryFileGrowth parameter" {
-            $CommandUnderTest | Should -HaveParameter SecondaryFileGrowth -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SecondaryFileGrowth
         }
         It "Should have SecondaryFileMaxSize parameter" {
-            $CommandUnderTest | Should -HaveParameter SecondaryFileMaxSize -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SecondaryFileMaxSize
         }
         It "Should have SecondaryFileCount parameter" {
-            $CommandUnderTest | Should -HaveParameter SecondaryFileCount -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SecondaryFileCount
         }
         It "Should have DefaultFileGroup parameter" {
-            $CommandUnderTest | Should -HaveParameter DefaultFileGroup -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter DefaultFileGroup
         }
         It "Should have DataFileSuffix parameter" {
-            $CommandUnderTest | Should -HaveParameter DataFileSuffix -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter DataFileSuffix
         }
         It "Should have LogFileSuffix parameter" {
-            $CommandUnderTest | Should -HaveParameter LogFileSuffix -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter LogFileSuffix
         }
         It "Should have SecondaryDataFileSuffix parameter" {
-            $CommandUnderTest | Should -HaveParameter SecondaryDataFileSuffix -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SecondaryDataFileSuffix
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

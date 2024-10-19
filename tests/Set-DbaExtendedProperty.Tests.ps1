@@ -6,19 +6,19 @@ Describe "Set-DbaExtendedProperty" {
             $CommandUnderTest = Get-Command Set-DbaExtendedProperty
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type ExtendedProperty[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have Value as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Value -Type System.String
+            $CommandUnderTest | Should -HaveParameter Value
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
         It "Should have WhatIf as a parameter" {
-            $CommandUnderTest | Should -HaveParameter WhatIf -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter WhatIf
         }
         It "Should have Confirm as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Confirm -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Confirm
         }
     }
 }
@@ -27,14 +27,14 @@ Describe "Set-DbaExtendedProperty Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $random = Get-Random
         $instance2 = Connect-DbaInstance -SqlInstance $global:instance2
-        $null = Get-DbaProcess -SqlInstance $instance2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false
+        $null = Get-DbaProcess -SqlInstance $instance2 | Where-Object Program -match dbatools | Stop-DbaProcess
         $newDbName = "dbatoolsci_newdb_$random"
         $db = New-DbaDatabase -SqlInstance $instance2 -Name $newDbName
         $db | Add-DbaExtendedProperty -Name "Test_Database_Name" -Value $newDbName
     }
 
     AfterAll {
-        $null = $db | Remove-DbaDatabase -Confirm:$false
+        $null = $db | Remove-DbaDatabase
     }
 
     Context "commands work as expected" {

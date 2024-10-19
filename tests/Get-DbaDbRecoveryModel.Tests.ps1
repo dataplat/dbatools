@@ -12,22 +12,22 @@ Describe "Get-DbaDbRecoveryModel" {
             $CommandUnderTest = Get-Command Get-DbaDbRecoveryModel
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have RecoveryModel as a parameter" {
-            $CommandUnderTest | Should -HaveParameter RecoveryModel -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter RecoveryModel
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have ExcludeDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

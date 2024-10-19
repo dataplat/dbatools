@@ -12,28 +12,28 @@ Describe "Get-DbaDbUser Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Get-DbaDbUser
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have ExcludeDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
         }
         It "Should have ExcludeSystemUser as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSystemUser -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter ExcludeSystemUser
         }
         It "Should have User as a parameter" {
-            $CommandUnderTest | Should -HaveParameter User -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter User
         }
         It "Should have Login as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Login -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Login
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 }

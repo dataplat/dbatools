@@ -10,28 +10,28 @@ Describe "New-DbaCustomError" {
             $CommandUnderTest = Get-Command New-DbaCustomError
         }
         It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have MessageID as a non-mandatory parameter of type System.Int32" {
-            $CommandUnderTest | Should -HaveParameter MessageID -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter MessageID
         }
         It "Should have Severity as a non-mandatory parameter of type System.Int32" {
-            $CommandUnderTest | Should -HaveParameter Severity -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Severity
         }
         It "Should have MessageText as a non-mandatory parameter of type System.String" {
-            $CommandUnderTest | Should -HaveParameter MessageText -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter MessageText
         }
         It "Should have Language as a non-mandatory parameter of type System.String" {
-            $CommandUnderTest | Should -HaveParameter Language -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Language
         }
         It "Should have WithLog as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter WithLog -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter WithLog
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

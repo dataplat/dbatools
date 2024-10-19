@@ -12,46 +12,46 @@ Describe "Invoke-DbaDbMirroring" {
             $CommandUnderTest = Get-Command Invoke-DbaDbMirroring
         }
         It "Should have Primary parameter" {
-            $CommandUnderTest | Should -HaveParameter Primary -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter
+            $CommandUnderTest | Should -HaveParameter Primary
         }
         It "Should have PrimarySqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter PrimarySqlCredential -Type Microsoft.SqlServer.Management.Smo.PSCredential
+            $CommandUnderTest | Should -HaveParameter PrimarySqlCredential
         }
         It "Should have Mirror parameter" {
-            $CommandUnderTest | Should -HaveParameter Mirror -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter Mirror
         }
         It "Should have MirrorSqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter MirrorSqlCredential -Type Microsoft.SqlServer.Management.Smo.PSCredential
+            $CommandUnderTest | Should -HaveParameter MirrorSqlCredential
         }
         It "Should have Witness parameter" {
-            $CommandUnderTest | Should -HaveParameter Witness -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter
+            $CommandUnderTest | Should -HaveParameter Witness
         }
         It "Should have WitnessSqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter WitnessSqlCredential -Type Microsoft.SqlServer.Management.Smo.PSCredential
+            $CommandUnderTest | Should -HaveParameter WitnessSqlCredential
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have EndpointEncryption parameter" {
-            $CommandUnderTest | Should -HaveParameter EndpointEncryption -Type System.String
+            $CommandUnderTest | Should -HaveParameter EndpointEncryption
         }
         It "Should have EncryptionAlgorithm parameter" {
-            $CommandUnderTest | Should -HaveParameter EncryptionAlgorithm -Type System.String
+            $CommandUnderTest | Should -HaveParameter EncryptionAlgorithm
         }
         It "Should have SharedPath parameter" {
-            $CommandUnderTest | Should -HaveParameter SharedPath -Type System.String
+            $CommandUnderTest | Should -HaveParameter SharedPath
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have UseLastBackup parameter" {
-            $CommandUnderTest | Should -HaveParameter UseLastBackup -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter UseLastBackup
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Force
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

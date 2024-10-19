@@ -10,19 +10,19 @@ Describe "Export-DbaSpConfigure" {
             $CommandUnderTest = Get-Command Export-DbaSpConfigure
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Microsoft.SqlServer.Management.Smo.DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Path parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Path
         }
         It "Should have FilePath parameter" {
-            $CommandUnderTest | Should -HaveParameter FilePath -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter FilePath
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

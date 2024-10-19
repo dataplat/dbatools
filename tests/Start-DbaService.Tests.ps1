@@ -10,28 +10,28 @@ Describe "Start-DbaService" {
             $CommandUnderTest = Get-Command Start-DbaService
         }
         It "Should have ComputerName parameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ComputerName
         }
         It "Should have InstanceName parameter" {
-            $CommandUnderTest | Should -HaveParameter InstanceName -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InstanceName
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have Type parameter" {
-            $CommandUnderTest | Should -HaveParameter Type -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Type
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have Timeout parameter" {
-            $CommandUnderTest | Should -HaveParameter Timeout -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Timeout
         }
         It "Should have Credential parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Credential
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

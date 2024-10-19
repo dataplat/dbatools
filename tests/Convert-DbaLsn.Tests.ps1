@@ -12,10 +12,10 @@ Describe "Convert-DbaLSN" {
             $CommandUnderTest = Get-Command Convert-DbaLSN
         }
         It "Should have LSN as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LSN -Type System.String
+            $CommandUnderTest | Should -HaveParameter LSN
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

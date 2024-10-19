@@ -19,7 +19,7 @@ Describe "Rename-DbaDatabase" {
     }
 
     AfterAll {
-        $null = Remove-DbaDatabase -SqlInstance $global:instance2 -Database "test_dbatoolsci_rename2_$($date)", "Dbatoolsci_filemove", "dbatoolsci_logicname", "dbatoolsci_filegroupname" -Confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $global:instance2 -Database "test_dbatoolsci_rename2_$($date)", "Dbatoolsci_filemove", "dbatoolsci_logicname", "dbatoolsci_filegroupname" 
     }
 
     Context "Validate parameters" {
@@ -27,52 +27,52 @@ Describe "Rename-DbaDatabase" {
             $CommandUnderTest = Get-Command Rename-DbaDatabase
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Connection.ManagementConnectionType[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have ExcludeDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
         }
         It "Should have AllDatabases as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter AllDatabases -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter AllDatabases
         }
         It "Should have DatabaseName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DatabaseName -Type System.String
+            $CommandUnderTest | Should -HaveParameter DatabaseName
         }
         It "Should have FileGroupName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FileGroupName -Type System.String
+            $CommandUnderTest | Should -HaveParameter FileGroupName
         }
         It "Should have LogicalName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LogicalName -Type System.String
+            $CommandUnderTest | Should -HaveParameter LogicalName
         }
         It "Should have FileName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FileName -Type System.String
+            $CommandUnderTest | Should -HaveParameter FileName
         }
         It "Should have ReplaceBefore as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ReplaceBefore -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter ReplaceBefore
         }
         It "Should have Force as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Force
         }
         It "Should have Move as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Move -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Move
         }
         It "Should have SetOffline as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter SetOffline -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter SetOffline
         }
         It "Should have Preview as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Preview -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Preview
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

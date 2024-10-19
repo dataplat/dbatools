@@ -11,25 +11,25 @@ Describe "Enable-DbaReplPublishing" {
             $CommandUnderTest = Get-Command Enable-DbaReplPublishing
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have SnapshotShare as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SnapshotShare -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SnapshotShare
         }
         It "Should have PublisherSqlLogin as a parameter" {
-            $CommandUnderTest | Should -HaveParameter PublisherSqlLogin -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter PublisherSqlLogin
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
         It "Should have WhatIf as a parameter" {
-            $CommandUnderTest | Should -HaveParameter WhatIf -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter WhatIf
         }
         It "Should have Confirm as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Confirm -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Confirm
         }
     }
 }

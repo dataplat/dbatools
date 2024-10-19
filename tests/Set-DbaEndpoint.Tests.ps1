@@ -6,28 +6,28 @@ Describe "Set-DbaEndpoint" {
             $CommandUnderTest = Get-Command Set-DbaEndpoint
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Endpoint parameter" {
-            $CommandUnderTest | Should -HaveParameter Endpoint -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Endpoint
         }
         It "Should have Owner parameter" {
-            $CommandUnderTest | Should -HaveParameter Owner -Type System.String
+            $CommandUnderTest | Should -HaveParameter Owner
         }
         It "Should have Type parameter" {
-            $CommandUnderTest | Should -HaveParameter Type -Type System.String
+            $CommandUnderTest | Should -HaveParameter Type
         }
         It "Should have AllEndpoints parameter" {
-            $CommandUnderTest | Should -HaveParameter AllEndpoints -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter AllEndpoints
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Endpoint[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 }

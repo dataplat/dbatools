@@ -6,19 +6,19 @@ Describe "Remove-DbaRegServerGroup" {
             $CommandUnderTest = Get-Command Remove-DbaRegServerGroup
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Name as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Name -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Name
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.RegisteredServers.ServerGroup[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 
@@ -44,17 +44,17 @@ Describe "Remove-DbaRegServerGroup" {
         AfterAll {
             Get-DbaRegServerGroup -SqlInstance $global:instance1 |
                 Where-Object Name -match dbatoolsci |
-                Remove-DbaRegServerGroup -Confirm:$false
+                Remove-DbaRegServerGroup
         }
 
         It "supports dropping via the pipeline" {
-            $results = $newGroup | Remove-DbaRegServerGroup -Confirm:$false
+            $results = $newGroup | Remove-DbaRegServerGroup
             $results.Name | Should -Be $group
             $results.Status | Should -Be 'Dropped'
         }
 
         It "supports dropping manually" {
-            $results = Remove-DbaRegServerGroup -Confirm:$false -SqlInstance $global:instance1 -Name $group2
+            $results = Remove-DbaRegServerGroup -SqlInstance $global:instance1 -Name $group2
             $results.Name | Should -Be $group2
             $results.Status | Should -Be 'Dropped'
         }

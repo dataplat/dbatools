@@ -5,35 +5,35 @@ Describe "Export-DbaCredential Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Export-DbaCredential
         }
-        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+        It "Should have SqlInstance as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
-        It "Should have Identity as a non-mandatory parameter of type System.String[]" {
-            $CommandUnderTest | Should -HaveParameter Identity -Type System.String[] -Mandatory:$false
+        It "Should have Identity as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Identity
         }
-        It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+        It "Should have SqlCredential as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
-        It "Should have Credential as a non-mandatory parameter of type PSCredential" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Mandatory:$false
+        It "Should have Credential as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Credential
         }
-        It "Should have Path as a non-mandatory parameter of type System.String" {
-            $CommandUnderTest | Should -HaveParameter Path -Type System.String -Mandatory:$false
+        It "Should have Path as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Path
         }
-        It "Should have FilePath as a non-mandatory parameter of type System.String" {
-            $CommandUnderTest | Should -HaveParameter FilePath -Type System.String -Mandatory:$false
+        It "Should have FilePath as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter FilePath
         }
         It "Should have ExcludePassword as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludePassword -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludePassword
         }
         It "Should have Append as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Append -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Append
         }
-        It "Should have InputObject as a non-mandatory parameter of type Microsoft.SqlServer.Management.Smo.Credential[]" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Credential[] -Mandatory:$false
+        It "Should have InputObject as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 }

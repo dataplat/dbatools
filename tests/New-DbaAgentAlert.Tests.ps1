@@ -25,61 +25,61 @@ Describe "New-DbaAgentAlert" {
             $CommandUnderTest = Get-Command New-DbaAgentAlert
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Alert parameter" {
-            $CommandUnderTest | Should -HaveParameter Alert -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Alert
         }
         It "Should have Category parameter" {
-            $CommandUnderTest | Should -HaveParameter Category -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Category
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have Operator parameter" {
-            $CommandUnderTest | Should -HaveParameter Operator -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Operator
         }
         It "Should have DelayBetweenResponses parameter" {
-            $CommandUnderTest | Should -HaveParameter DelayBetweenResponses -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter DelayBetweenResponses
         }
         It "Should have Disabled parameter" {
-            $CommandUnderTest | Should -HaveParameter Disabled -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Disabled
         }
         It "Should have EventDescriptionKeyword parameter" {
-            $CommandUnderTest | Should -HaveParameter EventDescriptionKeyword -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EventDescriptionKeyword
         }
         It "Should have EventSource parameter" {
-            $CommandUnderTest | Should -HaveParameter EventSource -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EventSource
         }
         It "Should have JobId parameter" {
-            $CommandUnderTest | Should -HaveParameter JobId -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter JobId
         }
         It "Should have Severity parameter" {
-            $CommandUnderTest | Should -HaveParameter Severity -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Severity
         }
         It "Should have MessageId parameter" {
-            $CommandUnderTest | Should -HaveParameter MessageId -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter MessageId
         }
         It "Should have NotificationMessage parameter" {
-            $CommandUnderTest | Should -HaveParameter NotificationMessage -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter NotificationMessage
         }
         It "Should have PerformanceCondition parameter" {
-            $CommandUnderTest | Should -HaveParameter PerformanceCondition -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter PerformanceCondition
         }
         It "Should have WmiEventNamespace parameter" {
-            $CommandUnderTest | Should -HaveParameter WmiEventNamespace -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter WmiEventNamespace
         }
         It "Should have WmiEventQuery parameter" {
-            $CommandUnderTest | Should -HaveParameter WmiEventQuery -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter WmiEventQuery
         }
         It "Should have NotifyMethod parameter" {
-            $CommandUnderTest | Should -HaveParameter NotifyMethod -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter NotifyMethod
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

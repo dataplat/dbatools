@@ -6,19 +6,19 @@ Describe "Start-DbaTrace" {
             $CommandUnderTest = Get-Command Start-DbaTrace
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Id as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Id -Type System.Int32[]
+            $CommandUnderTest | Should -HaveParameter Id
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.Switch
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

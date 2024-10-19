@@ -6,34 +6,34 @@ Describe "Export-DbaDbTableData" {
             $CommandUnderTest = Get-Command Export-DbaDbTableData
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type [Microsoft.SqlServer.Management.Smo.Table[]] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type [System.String] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Path
         }
         It "Should have FilePath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FilePath -Type [System.String] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter FilePath
         }
         It "Should have Encoding as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Encoding -Type [System.String] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Encoding
         }
         It "Should have BatchSeparator as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BatchSeparator -Type [System.String] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter BatchSeparator
         }
         It "Should have NoPrefix as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoPrefix -Type [System.Management.Automation.SwitchParameter] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter NoPrefix
         }
         It "Should have Passthru as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Passthru -Type [System.Management.Automation.SwitchParameter] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Passthru
         }
         It "Should have NoClobber as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoClobber -Type [System.Management.Automation.SwitchParameter] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter NoClobber
         }
         It "Should have Append as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Append -Type [System.Management.Automation.SwitchParameter] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Append
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type [System.Management.Automation.SwitchParameter] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

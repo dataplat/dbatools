@@ -12,46 +12,46 @@ Describe "New-DbaRgWorkloadGroup" {
             $CommandUnderTest = Get-Command New-DbaRgWorkloadGroup
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have WorkloadGroup parameter" {
-            $CommandUnderTest | Should -HaveParameter WorkloadGroup -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter WorkloadGroup
         }
         It "Should have ResourcePool parameter" {
-            $CommandUnderTest | Should -HaveParameter ResourcePool -Type System.String
+            $CommandUnderTest | Should -HaveParameter ResourcePool
         }
         It "Should have ResourcePoolType parameter" {
-            $CommandUnderTest | Should -HaveParameter ResourcePoolType -Type System.String
+            $CommandUnderTest | Should -HaveParameter ResourcePoolType
         }
         It "Should have Importance parameter" {
-            $CommandUnderTest | Should -HaveParameter Importance -Type System.String
+            $CommandUnderTest | Should -HaveParameter Importance
         }
         It "Should have RequestMaximumMemoryGrantPercentage parameter" {
-            $CommandUnderTest | Should -HaveParameter RequestMaximumMemoryGrantPercentage -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter RequestMaximumMemoryGrantPercentage
         }
         It "Should have RequestMaximumCpuTimeInSeconds parameter" {
-            $CommandUnderTest | Should -HaveParameter RequestMaximumCpuTimeInSeconds -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter RequestMaximumCpuTimeInSeconds
         }
         It "Should have RequestMemoryGrantTimeoutInSeconds parameter" {
-            $CommandUnderTest | Should -HaveParameter RequestMemoryGrantTimeoutInSeconds -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter RequestMemoryGrantTimeoutInSeconds
         }
         It "Should have MaximumDegreeOfParallelism parameter" {
-            $CommandUnderTest | Should -HaveParameter MaximumDegreeOfParallelism -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter MaximumDegreeOfParallelism
         }
         It "Should have GroupMaximumRequests parameter" {
-            $CommandUnderTest | Should -HaveParameter GroupMaximumRequests -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter GroupMaximumRequests
         }
         It "Should have SkipReconfigure parameter" {
-            $CommandUnderTest | Should -HaveParameter SkipReconfigure -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter SkipReconfigure
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Force
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

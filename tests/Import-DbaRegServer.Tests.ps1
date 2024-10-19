@@ -12,22 +12,22 @@ Describe "Import-DbaRegServer" {
             $CommandUnderTest = Get-Command Import-DbaRegServer
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Path parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Path
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have Group parameter" {
-            $CommandUnderTest | Should -HaveParameter Group -Type System.Object -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Group
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

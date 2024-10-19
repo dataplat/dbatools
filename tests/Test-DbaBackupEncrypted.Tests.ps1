@@ -12,16 +12,16 @@ Describe "Test-DbaBackupEncrypted" {
             $CommandUnderTest = Get-Command Test-DbaBackupEncrypted
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have FilePath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FilePath -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter FilePath
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

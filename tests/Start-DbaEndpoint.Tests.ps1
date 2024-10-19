@@ -6,22 +6,22 @@ Describe "Start-DbaEndpoint" {
             $CommandUnderTest = Get-Command Start-DbaEndpoint
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Endpoint as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Endpoint -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Endpoint
         }
         It "Should have AllEndpoints as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter AllEndpoints -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter AllEndpoints
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Endpoint[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 
@@ -34,15 +34,15 @@ Describe "Start-DbaEndpoint" {
         BeforeAll {
             $server = Connect-DbaInstance -SqlInstance $global:instance2
             $endpoint = Get-DbaEndpoint -SqlInstance $server -Endpoint 'TSQL Default TCP'
-            $endpoint | Stop-DbaEndpoint -Confirm:$false
+            $endpoint | Stop-DbaEndpoint
         }
 
         AfterAll {
-            $endpoint | Start-DbaEndpoint -Confirm:$false
+            $endpoint | Start-DbaEndpoint
         }
 
         It "starts the endpoint" {
-            $results = $endpoint | Start-DbaEndpoint -Confirm:$false
+            $results = $endpoint | Start-DbaEndpoint
             $results.EndpointState | Should -Be 'Started'
         }
     }

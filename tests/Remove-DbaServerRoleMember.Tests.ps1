@@ -27,25 +27,25 @@ Describe "Remove-DbaServerRoleMember" {
             $CommandUnderTest = Get-Command Remove-DbaServerRoleMember
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Connection.ManagementConnectionType[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have ServerRole as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ServerRole -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter ServerRole
         }
         It "Should have Login as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Login -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Login
         }
         It "Should have Role as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Role -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Role
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

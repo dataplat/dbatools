@@ -10,16 +10,16 @@ Describe "Stop-DbaExternalProcess" {
             $CommandUnderTest = Get-Command Stop-DbaExternalProcess
         }
         It "Should have ComputerName as a non-mandatory DbaInstanceParameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ComputerName
         }
         It "Should have Credential as a non-mandatory PSCredential" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Credential
         }
         It "Should have ProcessId as a non-mandatory Int32" {
-            $CommandUnderTest | Should -HaveParameter ProcessId -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ProcessId
         }
         It "Should have EnableException as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 }

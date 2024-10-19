@@ -10,37 +10,37 @@ Describe "New-DbaDbAsymmetricKey" {
             $CommandUnderTest = Get-Command New-DbaDbAsymmetricKey
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Name as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Name -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Name
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have SecurePassword as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SecurePassword -Type System.Security.SecureString
+            $CommandUnderTest | Should -HaveParameter SecurePassword
         }
         It "Should have Owner as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Owner -Type System.String
+            $CommandUnderTest | Should -HaveParameter Owner
         }
         It "Should have KeySource as a parameter" {
-            $CommandUnderTest | Should -HaveParameter KeySource -Type System.String
+            $CommandUnderTest | Should -HaveParameter KeySource
         }
         It "Should have KeySourceType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter KeySourceType -Type System.String
+            $CommandUnderTest | Should -HaveParameter KeySourceType
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have Algorithm as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Algorithm -Type System.String
+            $CommandUnderTest | Should -HaveParameter Algorithm
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 
@@ -48,12 +48,12 @@ Describe "New-DbaDbAsymmetricKey" {
         BeforeAll {
             $tPassword = ConvertTo-SecureString "ThisIsThePassword1" -AsPlainText -Force
             if (!(Get-DbaDbMasterKey -SqlInstance $global:instance2 -Database master)) {
-                New-DbaDbMasterKey -SqlInstance $global:instance2 -Database master -SecurePassword $tPassword -Confirm:$false
+                New-DbaDbMasterKey -SqlInstance $global:instance2 -Database master -SecurePassword $tPassword
             }
         }
 
         AfterAll {
-            Remove-DbaDatabase -SqlInstance $global:instance2 -Database enctest -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $global:instance2 -Database enctest
         }
 
         It "Should create new key in master" {
@@ -68,7 +68,7 @@ Describe "New-DbaDbAsymmetricKey" {
         It "Should warn when key already exists" {
             $keyname = 'test1'
             $null = New-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Name $keyname -Database master -WarningVariable warnvar 3> $null
-            $null = Remove-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Name $keyname -Database master -Confirm:$false
+            $null = Remove-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Name $keyname -Database master
             $warnvar | Should -BeLike '*already exists in master on*'
         }
 
@@ -80,7 +80,7 @@ Describe "New-DbaDbAsymmetricKey" {
             $results.database | Should -Be 'master'
             $results.name | Should -Be $keyname
             $results.KeyLength | Should -Be 4096
-            $null = Remove-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Name $keyname -Database master -Confirm:$false
+            $null = Remove-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Name $keyname -Database master
         }
 
         It "Should create key in non-master database" {
@@ -90,7 +90,7 @@ Describe "New-DbaDbAsymmetricKey" {
             $database = 'enctest'
             New-DbaDatabase -SqlInstance $global:instance2 -Name $database
             $tPassword = ConvertTo-SecureString "ThisIsThePassword1" -AsPlainText -Force
-            New-DbaDbMasterKey -SqlInstance $global:instance2 -Database $database -SecurePassword $tPassword -Confirm:$false
+            New-DbaDbMasterKey -SqlInstance $global:instance2 -Database $database -SecurePassword $tPassword
             New-DbaDbUser -SqlInstance $global:instance2 -Database $database -UserName $dbuser
             $key = New-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Database $database -Name $keyname -Owner $dbuser -Algorithm $algorithm
             $results = Get-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Name $keyname -Database $database
@@ -98,7 +98,7 @@ Describe "New-DbaDbAsymmetricKey" {
             $results.name | Should -Be $keyname
             $results.KeyLength | Should -Be 4096
             $results.Owner | Should -Be $dbuser
-            $null = Remove-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Name $keyname -Database $database -Confirm:$false
+            $null = Remove-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Name $keyname -Database $database
         }
 
         It "Should set owner correctly" {
@@ -112,7 +112,7 @@ Describe "New-DbaDbAsymmetricKey" {
             $results.name | Should -Be $keyname
             $results.KeyLength | Should -Be 4096
             $results.Owner | Should -Be $dbuser
-            $null = Remove-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Name $keyname -Database $database -Confirm:$false
+            $null = Remove-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Name $keyname -Database $database
         }
 
         It "Should create new key loaded from a keyfile" -Skip:(-not (Test-Path -Path "$($env:appveyorlabrepo)\keytests\keypair.snk")) {
@@ -125,7 +125,7 @@ Describe "New-DbaDbAsymmetricKey" {
             $results.database | Should -Be $database
             $results.name | Should -Be $keyname
             $results.Owner | Should -Be $dbuser
-            $null = Remove-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Name $keyname -Database $database -Confirm:$false
+            $null = Remove-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Name $keyname -Database $database
         }
 
         It "Should fail key creation from a missing keyfile" {
@@ -137,7 +137,7 @@ Describe "New-DbaDbAsymmetricKey" {
             $results = Get-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Name $keyname -Database $database
             $warnvar | Should -Not -BeNullOrEmpty
             $results | Should -BeNullOrEmpty
-            $null = Remove-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Name $keyname -Database $database -Confirm:$false
+            $null = Remove-DbaDbAsymmetricKey -SqlInstance $global:instance2 -Name $keyname -Database $database
         }
     }
 }

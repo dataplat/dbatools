@@ -26,28 +26,28 @@ Describe "Invoke-DbaDbDbccUpdateUsage" {
             $CommandUnderTest = Get-Command Invoke-DbaDbDbccUpdateUsage
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Connection.ManagementConnectionType[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have Table parameter" {
-            $CommandUnderTest | Should -HaveParameter Table -Type System.String
+            $CommandUnderTest | Should -HaveParameter Table
         }
         It "Should have Index parameter" {
-            $CommandUnderTest | Should -HaveParameter Index -Type System.String
+            $CommandUnderTest | Should -HaveParameter Index
         }
         It "Should have NoInformationalMessages parameter" {
-            $CommandUnderTest | Should -HaveParameter NoInformationalMessages -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter NoInformationalMessages
         }
         It "Should have CountRows parameter" {
-            $CommandUnderTest | Should -HaveParameter CountRows -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter CountRows
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

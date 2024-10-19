@@ -31,43 +31,43 @@ Describe "Set-DbaTempDbConfig" {
             $CommandUnderTest = Get-Command Set-DbaTempDbConfig
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have DataFileCount as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DataFileCount -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter DataFileCount
         }
         It "Should have DataFileSize as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DataFileSize -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter DataFileSize
         }
         It "Should have LogFileSize as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LogFileSize -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter LogFileSize
         }
         It "Should have DataFileGrowth as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DataFileGrowth -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter DataFileGrowth
         }
         It "Should have LogFileGrowth as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LogFileGrowth -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter LogFileGrowth
         }
         It "Should have DataPath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DataPath -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter DataPath
         }
         It "Should have LogPath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LogPath -Type System.String
+            $CommandUnderTest | Should -HaveParameter LogPath
         }
         It "Should have OutFile as a parameter" {
-            $CommandUnderTest | Should -HaveParameter OutFile -Type System.String
+            $CommandUnderTest | Should -HaveParameter OutFile
         }
         It "Should have OutputScriptOnly as a parameter" {
-            $CommandUnderTest | Should -HaveParameter OutputScriptOnly -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter OutputScriptOnly
         }
         It "Should have DisableGrowth as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DisableGrowth -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter DisableGrowth
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

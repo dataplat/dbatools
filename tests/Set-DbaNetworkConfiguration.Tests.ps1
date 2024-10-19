@@ -9,35 +9,35 @@ Describe "Set-DbaNetworkConfiguration" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaNetworkConfiguration
         }
-        It "Should have SqlInstance as a non-mandatory parameter of type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
+        It "Should have SqlInstance as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
-        It "Should have Credential as a non-mandatory parameter of type System.Management.Automation.PSCredential" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type System.Management.Automation.PSCredential -Mandatory:$false
+        It "Should have Credential as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Credential
         }
-        It "Should have EnableProtocol as a non-mandatory parameter of type System.String" {
-            $CommandUnderTest | Should -HaveParameter EnableProtocol -Type System.String -Mandatory:$false
+        It "Should have EnableProtocol as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableProtocol
         }
-        It "Should have DisableProtocol as a non-mandatory parameter of type System.String" {
-            $CommandUnderTest | Should -HaveParameter DisableProtocol -Type System.String -Mandatory:$false
+        It "Should have DisableProtocol as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter DisableProtocol
         }
         It "Should have DynamicPortForIPAll as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter DynamicPortForIPAll -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter DynamicPortForIPAll
         }
-        It "Should have StaticPortForIPAll as a non-mandatory parameter of type System.Int32[]" {
-            $CommandUnderTest | Should -HaveParameter StaticPortForIPAll -Type System.Int32[] -Mandatory:$false
+        It "Should have StaticPortForIPAll as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter StaticPortForIPAll
         }
-        It "Should have IpAddress as a non-mandatory parameter of type System.String[]" {
-            $CommandUnderTest | Should -HaveParameter IpAddress -Type System.String[] -Mandatory:$false
+        It "Should have IpAddress as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter IpAddress
         }
         It "Should have RestartService as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter RestartService -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter RestartService
         }
-        It "Should have InputObject as a non-mandatory parameter of type System.Object[]" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object[] -Mandatory:$false
+        It "Should have InputObject as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

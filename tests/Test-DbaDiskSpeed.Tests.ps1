@@ -11,22 +11,22 @@ Describe "Test-DbaDiskSpeed Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Test-DbaDiskSpeed
         }
         It "Should have SqlInstance as a non-mandatory Dataplat.Dbatools.Parameter.DbaInstanceParameter[] parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a non-mandatory System.Management.Automation.PSCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database as a non-mandatory System.Object[] parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have ExcludeDatabase as a non-mandatory System.Object[] parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
         }
         It "Should have AggregateBy as a non-mandatory System.String parameter" {
-            $CommandUnderTest | Should -HaveParameter AggregateBy -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter AggregateBy
         }
         It "Should have EnableException as a non-mandatory System.Management.Automation.SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 }

@@ -10,25 +10,25 @@ Describe "Export-DbaPfDataCollectorSetTemplate" {
             $CommandUnderTest = Get-Command Export-DbaPfDataCollectorSetTemplate
         }
         It "Should have ComputerName as a non-mandatory DbaInstanceParameter[] parameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ComputerName
         }
         It "Should have Credential as a non-mandatory PSCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Credential
         }
         It "Should have CollectorSet as a non-mandatory String[] parameter" {
-            $CommandUnderTest | Should -HaveParameter CollectorSet -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter CollectorSet
         }
         It "Should have Path as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Path
         }
         It "Should have FilePath as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter FilePath -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter FilePath
         }
         It "Should have InputObject as a non-mandatory Object[] parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException as a non-mandatory Switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

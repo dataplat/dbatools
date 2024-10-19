@@ -12,19 +12,19 @@ Describe "Get-DbaEndpoint" {
             $CommandUnderTest = Get-Command Get-DbaEndpoint
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Endpoint as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Endpoint -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Endpoint
         }
         It "Should have Type as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Type -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Type
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

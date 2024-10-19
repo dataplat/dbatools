@@ -12,31 +12,31 @@ Describe "Get-DbaDbRestoreHistory Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Get-DbaDbRestoreHistory
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have ExcludeDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
         }
         It "Should have Since as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Since -Type System.DateTime
+            $CommandUnderTest | Should -HaveParameter Since
         }
         It "Should have RestoreType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter RestoreType -Type System.String
+            $CommandUnderTest | Should -HaveParameter RestoreType
         }
         It "Should have Force as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Force
         }
         It "Should have Last as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Last -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Last
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 }

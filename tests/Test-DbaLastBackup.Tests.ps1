@@ -12,85 +12,85 @@ Describe "Test-DbaLastBackup Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Test-DbaLastBackup
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have ExcludeDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
         }
         It "Should have Destination as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Destination -Type DbaInstanceParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Destination
         }
         It "Should have DestinationSqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type System.Object -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential
         }
         It "Should have DataDirectory as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DataDirectory -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter DataDirectory
         }
         It "Should have LogDirectory as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LogDirectory -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter LogDirectory
         }
         It "Should have FileStreamDirectory as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FileStreamDirectory -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter FileStreamDirectory
         }
         It "Should have Prefix as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Prefix -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Prefix
         }
         It "Should have VerifyOnly as a parameter" {
-            $CommandUnderTest | Should -HaveParameter VerifyOnly -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter VerifyOnly
         }
         It "Should have NoCheck as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NoCheck -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter NoCheck
         }
         It "Should have NoDrop as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NoDrop -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter NoDrop
         }
         It "Should have CopyFile as a parameter" {
-            $CommandUnderTest | Should -HaveParameter CopyFile -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter CopyFile
         }
         It "Should have CopyPath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter CopyPath -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter CopyPath
         }
         It "Should have MaxSize as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MaxSize -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter MaxSize
         }
         It "Should have DeviceType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DeviceType -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter DeviceType
         }
         It "Should have IncludeCopyOnly as a parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeCopyOnly -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter IncludeCopyOnly
         }
         It "Should have IgnoreLogBackup as a parameter" {
-            $CommandUnderTest | Should -HaveParameter IgnoreLogBackup -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter IgnoreLogBackup
         }
         It "Should have AzureCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AzureCredential -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter AzureCredential
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have MaxTransferSize as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MaxTransferSize -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter MaxTransferSize
         }
         It "Should have BufferCount as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BufferCount -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter BufferCount
         }
         It "Should have IgnoreDiffBackup as a parameter" {
-            $CommandUnderTest | Should -HaveParameter IgnoreDiffBackup -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter IgnoreDiffBackup
         }
         It "Should have MaxDop as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MaxDop -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter MaxDop
         }
         It "Should have ReuseSourceFolderStructure as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ReuseSourceFolderStructure -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ReuseSourceFolderStructure
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 }

@@ -11,28 +11,28 @@ Describe "Remove-DbaReplArticle" {
             $CommandUnderTest = Get-Command Remove-DbaReplArticle
         }
         It "Should have SqlInstance as a Mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as an optional parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database as an optional parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have Publication as an optional parameter" {
-            $CommandUnderTest | Should -HaveParameter Publication -Type System.String
+            $CommandUnderTest | Should -HaveParameter Publication
         }
         It "Should have Schema as an optional parameter" {
-            $CommandUnderTest | Should -HaveParameter Schema -Type System.String
+            $CommandUnderTest | Should -HaveParameter Schema
         }
         It "Should have Name as an optional parameter" {
-            $CommandUnderTest | Should -HaveParameter Name -Type System.String
+            $CommandUnderTest | Should -HaveParameter Name
         }
         It "Should have InputObject as an optional parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Replication.Article[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException as an optional parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 }

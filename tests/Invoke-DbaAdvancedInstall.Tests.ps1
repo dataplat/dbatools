@@ -33,52 +33,52 @@ Describe "Invoke-DbaAdvancedInstall" {
             $CommandUnderTest = Get-Command Invoke-DbaAdvancedInstall
         }
         It "Should have ComputerName as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ComputerName -Type System.String
         }
         It "Should have InstanceName as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter InstanceName -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InstanceName -Type System.String
         }
         It "Should have Port as a non-mandatory Nullable`1 parameter" {
-            $CommandUnderTest | Should -HaveParameter Port -Type ([System.Nullable`1]) -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Port -Type ([System.Nullable`1])
         }
         It "Should have InstallationPath as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter InstallationPath -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InstallationPath -Type System.String
         }
         It "Should have ConfigurationPath as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter ConfigurationPath -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ConfigurationPath -Type System.String
         }
         It "Should have ArgumentList as a non-mandatory String[] parameter" {
-            $CommandUnderTest | Should -HaveParameter ArgumentList -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ArgumentList -Type System.String[]
         }
         It "Should have Version as a non-mandatory Version parameter" {
-            $CommandUnderTest | Should -HaveParameter Version -Type System.Version -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Version -Type System.Version
         }
         It "Should have Configuration as a non-mandatory Hashtable parameter" {
-            $CommandUnderTest | Should -HaveParameter Configuration -Type System.Collections.Hashtable -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Configuration -Type System.Collections.Hashtable
         }
         It "Should have Restart as a non-mandatory Boolean parameter" {
-            $CommandUnderTest | Should -HaveParameter Restart -Type System.Boolean -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Restart -Type System.Boolean
         }
         It "Should have PerformVolumeMaintenanceTasks as a non-mandatory Boolean parameter" {
-            $CommandUnderTest | Should -HaveParameter PerformVolumeMaintenanceTasks -Type System.Boolean -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter PerformVolumeMaintenanceTasks -Type System.Boolean
         }
         It "Should have SaveConfiguration as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter SaveConfiguration -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SaveConfiguration -Type System.String
         }
         It "Should have Authentication as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Authentication -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Authentication -Type System.String
         }
         It "Should have Credential as a non-mandatory PSCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Credential -Type System.Management.Automation.PSCredential
         }
         It "Should have SaCredential as a non-mandatory PSCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SaCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SaCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have NoPendingRenameCheck as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter NoPendingRenameCheck -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter NoPendingRenameCheck -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

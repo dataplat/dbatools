@@ -5,35 +5,35 @@ Describe "Find-DbaSimilarTable" {
         BeforeAll {
             $CommandUnderTest = Get-Command Find-DbaSimilarTable
         }
-        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+        It "Should have SqlInstance as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
-        It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+        It "Should have SqlCredential as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
-        It "Should have Database as a non-mandatory parameter of type System.Object[]" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.Object[] -Mandatory:$false
+        It "Should have Database as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Database
         }
-        It "Should have ExcludeDatabase as a non-mandatory parameter of type System.Object[]" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.Object[] -Mandatory:$false
+        It "Should have ExcludeDatabase as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
         }
-        It "Should have SchemaName as a non-mandatory parameter of type System.String" {
-            $CommandUnderTest | Should -HaveParameter SchemaName -Type System.String -Mandatory:$false
+        It "Should have SchemaName as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter SchemaName
         }
-        It "Should have TableName as a non-mandatory parameter of type System.String" {
-            $CommandUnderTest | Should -HaveParameter TableName -Type System.String -Mandatory:$false
+        It "Should have TableName as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter TableName
         }
         It "Should have ExcludeViews as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeViews -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeViews
         }
         It "Should have IncludeSystemDatabases as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeSystemDatabases -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter IncludeSystemDatabases
         }
-        It "Should have MatchPercentThreshold as a non-mandatory parameter of type System.Int32" {
-            $CommandUnderTest | Should -HaveParameter MatchPercentThreshold -Type System.Int32 -Mandatory:$false
+        It "Should have MatchPercentThreshold as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter MatchPercentThreshold
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

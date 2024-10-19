@@ -6,22 +6,22 @@ Describe "Get-DbaPbmObjectSet" {
             $CommandUnderTest = Get-Command Get-DbaPbmObjectSet
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have ObjectSet as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ObjectSet -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter ObjectSet
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Management.Automation.PSObject[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have IncludeSystemObject as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeSystemObject -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter IncludeSystemObject
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

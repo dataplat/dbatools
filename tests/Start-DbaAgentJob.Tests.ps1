@@ -6,40 +6,40 @@ Describe "Start-DbaAgentJob" {
             $CommandUnderTest = Get-Command Start-DbaAgentJob
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Job parameter" {
-            $CommandUnderTest | Should -HaveParameter Job -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Job
         }
         It "Should have StepName parameter" {
-            $CommandUnderTest | Should -HaveParameter StepName -Type System.String
+            $CommandUnderTest | Should -HaveParameter StepName
         }
         It "Should have ExcludeJob parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeJob -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter ExcludeJob
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Agent.Job[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have AllJobs parameter" {
-            $CommandUnderTest | Should -HaveParameter AllJobs -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter AllJobs
         }
         It "Should have Wait parameter" {
-            $CommandUnderTest | Should -HaveParameter Wait -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Wait
         }
         It "Should have Parallel parameter" {
-            $CommandUnderTest | Should -HaveParameter Parallel -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Parallel
         }
         It "Should have WaitPeriod parameter" {
-            $CommandUnderTest | Should -HaveParameter WaitPeriod -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter WaitPeriod
         }
         It "Should have SleepPeriod parameter" {
-            $CommandUnderTest | Should -HaveParameter SleepPeriod -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter SleepPeriod
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

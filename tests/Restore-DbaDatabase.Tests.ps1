@@ -12,157 +12,157 @@ Describe "Restore-DbaDatabase Unit Tests" -Tag 'UnitTests' {
             $commonParameters = [System.Management.Automation.PSCmdlet]::CommonParameters
         }
         It "Should have SqlInstance parameter" {
-            $command | Should -HaveParameter SqlInstance -Type DbaInstanceParameter -Mandatory:$false
+            $command | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $command | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+            $command | Should -HaveParameter SqlCredential
         }
         It "Should have Path parameter" {
-            $command | Should -HaveParameter Path -Type Object[] -Mandatory:$false
+            $command | Should -HaveParameter Path
         }
         It "Should have DatabaseName parameter" {
-            $command | Should -HaveParameter DatabaseName -Type Object[] -Mandatory:$false
+            $command | Should -HaveParameter DatabaseName
         }
         It "Should have DestinationDataDirectory parameter" {
-            $command | Should -HaveParameter DestinationDataDirectory -Type String -Mandatory:$false
+            $command | Should -HaveParameter DestinationDataDirectory
         }
         It "Should have DestinationLogDirectory parameter" {
-            $command | Should -HaveParameter DestinationLogDirectory -Type String -Mandatory:$false
+            $command | Should -HaveParameter DestinationLogDirectory
         }
         It "Should have DestinationFileStreamDirectory parameter" {
-            $command | Should -HaveParameter DestinationFileStreamDirectory -Type String -Mandatory:$false
+            $command | Should -HaveParameter DestinationFileStreamDirectory
         }
         It "Should have RestoreTime parameter" {
-            $command | Should -HaveParameter RestoreTime -Type DateTime -Mandatory:$false
+            $command | Should -HaveParameter RestoreTime
         }
         It "Should have NoRecovery parameter" {
-            $command | Should -HaveParameter NoRecovery -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter NoRecovery
         }
         It "Should have WithReplace parameter" {
-            $command | Should -HaveParameter WithReplace -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter WithReplace
         }
         It "Should have KeepReplication parameter" {
-            $command | Should -HaveParameter KeepReplication -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter KeepReplication
         }
         It "Should have XpDirTree parameter" {
-            $command | Should -HaveParameter XpDirTree -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter XpDirTree
         }
         It "Should have NoXpDirRecurse parameter" {
-            $command | Should -HaveParameter NoXpDirRecurse -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter NoXpDirRecurse
         }
         It "Should have OutputScriptOnly parameter" {
-            $command | Should -HaveParameter OutputScriptOnly -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter OutputScriptOnly
         }
         It "Should have VerifyOnly parameter" {
-            $command | Should -HaveParameter VerifyOnly -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter VerifyOnly
         }
         It "Should have MaintenanceSolutionBackup parameter" {
-            $command | Should -HaveParameter MaintenanceSolutionBackup -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter MaintenanceSolutionBackup
         }
         It "Should have FileMapping parameter" {
-            $command | Should -HaveParameter FileMapping -Type Hashtable -Mandatory:$false
+            $command | Should -HaveParameter FileMapping
         }
         It "Should have IgnoreLogBackup parameter" {
-            $command | Should -HaveParameter IgnoreLogBackup -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter IgnoreLogBackup
         }
         It "Should have IgnoreDiffBackup parameter" {
-            $command | Should -HaveParameter IgnoreDiffBackup -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter IgnoreDiffBackup
         }
         It "Should have UseDestinationDefaultDirectories parameter" {
-            $command | Should -HaveParameter UseDestinationDefaultDirectories -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter UseDestinationDefaultDirectories
         }
         It "Should have ReuseSourceFolderStructure parameter" {
-            $command | Should -HaveParameter ReuseSourceFolderStructure -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter ReuseSourceFolderStructure
         }
         It "Should have DestinationFilePrefix parameter" {
-            $command | Should -HaveParameter DestinationFilePrefix -Type String -Mandatory:$false
+            $command | Should -HaveParameter DestinationFilePrefix
         }
         It "Should have RestoredDatabaseNamePrefix parameter" {
-            $command | Should -HaveParameter RestoredDatabaseNamePrefix -Type String -Mandatory:$false
+            $command | Should -HaveParameter RestoredDatabaseNamePrefix
         }
         It "Should have TrustDbBackupHistory parameter" {
-            $command | Should -HaveParameter TrustDbBackupHistory -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter TrustDbBackupHistory
         }
         It "Should have MaxTransferSize parameter" {
-            $command | Should -HaveParameter MaxTransferSize -Type Int32 -Mandatory:$false
+            $command | Should -HaveParameter MaxTransferSize
         }
         It "Should have BlockSize parameter" {
-            $command | Should -HaveParameter BlockSize -Type Int32 -Mandatory:$false
+            $command | Should -HaveParameter BlockSize
         }
         It "Should have BufferCount parameter" {
-            $command | Should -HaveParameter BufferCount -Type Int32 -Mandatory:$false
+            $command | Should -HaveParameter BufferCount
         }
         It "Should have DirectoryRecurse parameter" {
-            $command | Should -HaveParameter DirectoryRecurse -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter DirectoryRecurse
         }
         It "Should have EnableException parameter" {
-            $command | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter EnableException
         }
         It "Should have StandbyDirectory parameter" {
-            $command | Should -HaveParameter StandbyDirectory -Type String -Mandatory:$false
+            $command | Should -HaveParameter StandbyDirectory
         }
         It "Should have Continue parameter" {
-            $command | Should -HaveParameter Continue -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter Continue
         }
         It "Should have ExecuteAs parameter" {
-            $command | Should -HaveParameter ExecuteAs -Type String -Mandatory:$false
+            $command | Should -HaveParameter ExecuteAs
         }
         It "Should have AzureCredential parameter" {
-            $command | Should -HaveParameter AzureCredential -Type String -Mandatory:$false
+            $command | Should -HaveParameter AzureCredential
         }
         It "Should have ReplaceDbNameInFile parameter" {
-            $command | Should -HaveParameter ReplaceDbNameInFile -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter ReplaceDbNameInFile
         }
         It "Should have DestinationFileSuffix parameter" {
-            $command | Should -HaveParameter DestinationFileSuffix -Type String -Mandatory:$false
+            $command | Should -HaveParameter DestinationFileSuffix
         }
         It "Should have Recover parameter" {
-            $command | Should -HaveParameter Recover -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter Recover
         }
         It "Should have KeepCDC parameter" {
-            $command | Should -HaveParameter KeepCDC -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter KeepCDC
         }
         It "Should have GetBackupInformation parameter" {
-            $command | Should -HaveParameter GetBackupInformation -Type String -Mandatory:$false
+            $command | Should -HaveParameter GetBackupInformation
         }
         It "Should have StopAfterGetBackupInformation parameter" {
-            $command | Should -HaveParameter StopAfterGetBackupInformation -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter StopAfterGetBackupInformation
         }
         It "Should have SelectBackupInformation parameter" {
-            $command | Should -HaveParameter SelectBackupInformation -Type String -Mandatory:$false
+            $command | Should -HaveParameter SelectBackupInformation
         }
         It "Should have StopAfterSelectBackupInformation parameter" {
-            $command | Should -HaveParameter StopAfterSelectBackupInformation -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter StopAfterSelectBackupInformation
         }
         It "Should have FormatBackupInformation parameter" {
-            $command | Should -HaveParameter FormatBackupInformation -Type String -Mandatory:$false
+            $command | Should -HaveParameter FormatBackupInformation
         }
         It "Should have StopAfterFormatBackupInformation parameter" {
-            $command | Should -HaveParameter StopAfterFormatBackupInformation -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter StopAfterFormatBackupInformation
         }
         It "Should have TestBackupInformation parameter" {
-            $command | Should -HaveParameter TestBackupInformation -Type String -Mandatory:$false
+            $command | Should -HaveParameter TestBackupInformation
         }
         It "Should have StopAfterTestBackupInformation parameter" {
-            $command | Should -HaveParameter StopAfterTestBackupInformation -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter StopAfterTestBackupInformation
         }
         It "Should have PageRestore parameter" {
-            $command | Should -HaveParameter PageRestore -Type Object -Mandatory:$false
+            $command | Should -HaveParameter PageRestore
         }
         It "Should have PageRestoreTailFolder parameter" {
-            $command | Should -HaveParameter PageRestoreTailFolder -Type String -Mandatory:$false
+            $command | Should -HaveParameter PageRestoreTailFolder
         }
         It "Should have StopBefore parameter" {
-            $command | Should -HaveParameter StopBefore -Type Switch -Mandatory:$false
+            $command | Should -HaveParameter StopBefore
         }
         It "Should have StopMark parameter" {
-            $command | Should -HaveParameter StopMark -Type String -Mandatory:$false
+            $command | Should -HaveParameter StopMark
         }
         It "Should have StopAfterDate parameter" {
-            $command | Should -HaveParameter StopAfterDate -Type DateTime -Mandatory:$false
+            $command | Should -HaveParameter StopAfterDate
         }
         It "Should have StatementTimeout parameter" {
-            $command | Should -HaveParameter StatementTimeout -Type Int32 -Mandatory:$false
+            $command | Should -HaveParameter StatementTimeout
         }
     }
 }

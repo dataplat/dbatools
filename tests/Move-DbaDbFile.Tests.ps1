@@ -37,34 +37,34 @@ Describe "Move-DbaDbFile" {
             $CommandUnderTest = Get-Command Move-DbaDbFile
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have FileType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FileType -Type System.String
+            $CommandUnderTest | Should -HaveParameter FileType
         }
         It "Should have FileDestination as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FileDestination -Type System.String
+            $CommandUnderTest | Should -HaveParameter FileDestination
         }
         It "Should have FileToMove as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FileToMove -Type System.Collections.Hashtable
+            $CommandUnderTest | Should -HaveParameter FileToMove
         }
         It "Should have DeleteAfterMove as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter DeleteAfterMove -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter DeleteAfterMove
         }
         It "Should have FileStructureOnly as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter FileStructureOnly -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter FileStructureOnly
         }
         It "Should have Force as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Force
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

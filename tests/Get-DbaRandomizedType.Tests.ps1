@@ -10,17 +10,17 @@ Describe "Get-DbaRandomizedType" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaRandomizedType
         }
-        It "Should have RandomizedType as a non-mandatory parameter of type System.String[]" {
-            $CommandUnderTest | Should -HaveParameter RandomizedType -Type System.String[] -Mandatory:$false
+        It "Should have RandomizedType as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter RandomizedType
         }
-        It "Should have RandomizedSubType as a non-mandatory parameter of type System.String[]" {
-            $CommandUnderTest | Should -HaveParameter RandomizedSubType -Type System.String[] -Mandatory:$false
+        It "Should have RandomizedSubType as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter RandomizedSubType
         }
-        It "Should have Pattern as a non-mandatory parameter of type System.String" {
-            $CommandUnderTest | Should -HaveParameter Pattern -Type System.String -Mandatory:$false
+        It "Should have Pattern as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Pattern
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

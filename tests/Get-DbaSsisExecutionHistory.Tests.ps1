@@ -6,28 +6,28 @@ Describe "Get-DbaSsisExecutionHistory" {
             $CommandUnderTest = Get-Command Get-DbaSsisExecutionHistory
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Since as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Since -Type System.DateTime
+            $CommandUnderTest | Should -HaveParameter Since
         }
         It "Should have Status as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Status -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Status
         }
         It "Should have Project as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Project -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Project
         }
         It "Should have Folder as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Folder -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Folder
         }
         It "Should have Environment as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Environment -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Environment
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 }

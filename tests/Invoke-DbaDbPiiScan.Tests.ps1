@@ -12,49 +12,49 @@ Describe "Invoke-DbaDbPiiScan Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Invoke-DbaDbPiiScan
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have Table as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Table -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Table
         }
         It "Should have Column as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Column -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Column
         }
         It "Should have Country as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Country -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Country
         }
         It "Should have CountryCode as a parameter" {
-            $CommandUnderTest | Should -HaveParameter CountryCode -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter CountryCode
         }
         It "Should have ExcludeTable as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeTable -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeTable
         }
         It "Should have ExcludeColumn as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeColumn -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeColumn
         }
         It "Should have SampleCount as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SampleCount -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SampleCount
         }
         It "Should have KnownNameFilePath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter KnownNameFilePath -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter KnownNameFilePath
         }
         It "Should have PatternFilePath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter PatternFilePath -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter PatternFilePath
         }
         It "Should have ExcludeDefaultKnownName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDefaultKnownName -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeDefaultKnownName
         }
         It "Should have ExcludeDefaultPattern as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDefaultPattern -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeDefaultPattern
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 }

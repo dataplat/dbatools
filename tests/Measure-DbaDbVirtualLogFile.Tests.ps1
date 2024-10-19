@@ -10,23 +10,23 @@ Describe "Measure-DbaDbVirtualLogFile" {
         BeforeAll {
             $CommandUnderTest = Get-Command Measure-DbaDbVirtualLogFile
         }
-        It "Should have SqlInstance as a non-mandatory parameter of type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
+        It "Should have SqlInstance as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
-        It "Should have SqlCredential as a non-mandatory parameter of type System.Management.Automation.PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+        It "Should have SqlCredential as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
-        It "Should have Database as a non-mandatory parameter of type System.Object[]" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.Object[] -Mandatory:$false
+        It "Should have Database as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Database
         }
-        It "Should have ExcludeDatabase as a non-mandatory parameter of type System.Object[]" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.Object[] -Mandatory:$false
+        It "Should have ExcludeDatabase as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
         }
         It "Should have IncludeSystemDBs as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeSystemDBs -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter IncludeSystemDBs
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

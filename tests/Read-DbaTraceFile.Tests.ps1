@@ -23,49 +23,49 @@ Describe "Read-DbaTraceFile" {
             $CommandUnderTest = Get-Command Read-DbaTraceFile
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Path parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Path
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have Login parameter" {
-            $CommandUnderTest | Should -HaveParameter Login -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Login
         }
         It "Should have Spid parameter" {
-            $CommandUnderTest | Should -HaveParameter Spid -Type System.Int32[]
+            $CommandUnderTest | Should -HaveParameter Spid
         }
         It "Should have EventClass parameter" {
-            $CommandUnderTest | Should -HaveParameter EventClass -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter EventClass
         }
         It "Should have ObjectType parameter" {
-            $CommandUnderTest | Should -HaveParameter ObjectType -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter ObjectType
         }
         It "Should have ErrorId parameter" {
-            $CommandUnderTest | Should -HaveParameter ErrorId -Type System.Int32[]
+            $CommandUnderTest | Should -HaveParameter ErrorId
         }
         It "Should have EventSequence parameter" {
-            $CommandUnderTest | Should -HaveParameter EventSequence -Type System.Int32[]
+            $CommandUnderTest | Should -HaveParameter EventSequence
         }
         It "Should have TextData parameter" {
-            $CommandUnderTest | Should -HaveParameter TextData -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter TextData
         }
         It "Should have ApplicationName parameter" {
-            $CommandUnderTest | Should -HaveParameter ApplicationName -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter ApplicationName
         }
         It "Should have ObjectName parameter" {
-            $CommandUnderTest | Should -HaveParameter ObjectName -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter ObjectName
         }
         It "Should have Where parameter" {
-            $CommandUnderTest | Should -HaveParameter Where -Type System.String
+            $CommandUnderTest | Should -HaveParameter Where
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

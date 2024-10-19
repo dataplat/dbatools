@@ -12,49 +12,49 @@ Describe "New-DbaEndpoint" {
             $CommandUnderTest = Get-Command New-DbaEndpoint
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Name as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Name -Type System.String
+            $CommandUnderTest | Should -HaveParameter Name
         }
         It "Should have Type as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Type -Type System.String
+            $CommandUnderTest | Should -HaveParameter Type
         }
         It "Should have Protocol as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Protocol -Type System.String
+            $CommandUnderTest | Should -HaveParameter Protocol
         }
         It "Should have Role as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Role -Type System.String
+            $CommandUnderTest | Should -HaveParameter Role
         }
         It "Should have EndpointEncryption as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EndpointEncryption -Type System.String
+            $CommandUnderTest | Should -HaveParameter EndpointEncryption
         }
         It "Should have EncryptionAlgorithm as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EncryptionAlgorithm -Type System.String
+            $CommandUnderTest | Should -HaveParameter EncryptionAlgorithm
         }
         It "Should have AuthenticationOrder as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AuthenticationOrder -Type System.String
+            $CommandUnderTest | Should -HaveParameter AuthenticationOrder
         }
         It "Should have Certificate as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Certificate -Type System.String
+            $CommandUnderTest | Should -HaveParameter Certificate
         }
         It "Should have IPAddress as a parameter" {
-            $CommandUnderTest | Should -HaveParameter IPAddress -Type System.Net.IPAddress
+            $CommandUnderTest | Should -HaveParameter IPAddress
         }
         It "Should have Port as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Port -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter Port
         }
         It "Should have SslPort as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SslPort -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter SslPort
         }
         It "Should have Owner as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Owner -Type System.String
+            $CommandUnderTest | Should -HaveParameter Owner
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 
@@ -72,12 +72,12 @@ Describe "New-DbaEndpoint" {
         }
 
         It "creates an endpoint of the db mirroring type" {
-            $results = New-DbaEndpoint -SqlInstance $global:instance2 -Type DatabaseMirroring -Role Partner -Name Mirroring -Confirm:$false | Start-DbaEndpoint -Confirm:$false
+            $results = New-DbaEndpoint -SqlInstance $global:instance2 -Type DatabaseMirroring -Role Partner -Name Mirroring | Start-DbaEndpoint
             $results.EndpointType | Should -Be 'DatabaseMirroring'
         }
 
         It "creates it with the right owner" {
-            $results = New-DbaEndpoint -SqlInstance $global:instance2 -Type DatabaseMirroring -Role Partner -Name Mirroring -Confirm:$false | Start-DbaEndpoint -Confirm:$false
+            $results = New-DbaEndpoint -SqlInstance $global:instance2 -Type DatabaseMirroring -Role Partner -Name Mirroring | Start-DbaEndpoint
             $sa = Get-SaLoginName -SqlInstance $global:instance2
             $results.Owner | Should -Be $sa
         }

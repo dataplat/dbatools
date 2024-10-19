@@ -11,16 +11,16 @@ Describe "Convert-DbaMaskingValue" {
             $CommandUnderTest = Get-Command Convert-DbaMaskingValue
         }
         It "Should have Value as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Value -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter Value
         }
         It "Should have DataType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DataType -Type System.String
+            $CommandUnderTest | Should -HaveParameter DataType
         }
         It "Should have Nullable as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Nullable -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Nullable
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

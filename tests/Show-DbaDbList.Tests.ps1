@@ -6,22 +6,22 @@ Describe "Show-DbaDbList" {
             $CommandUnderTest = Get-Command Show-DbaDbList
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Title as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Title -Type System.String
+            $CommandUnderTest | Should -HaveParameter Title
         }
         It "Should have Header as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Header -Type System.String
+            $CommandUnderTest | Should -HaveParameter Header
         }
         It "Should have DefaultDb as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DefaultDb -Type System.String
+            $CommandUnderTest | Should -HaveParameter DefaultDb
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

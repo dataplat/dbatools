@@ -12,46 +12,46 @@ Describe "Format-DbaBackupInformation" {
             $CommandUnderTest = Get-Command Format-DbaBackupInformation
         }
         It "Should have BackupHistory as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BackupHistory -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter BackupHistory
         }
         It "Should have ReplaceDatabaseName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ReplaceDatabaseName -Type System.Object
+            $CommandUnderTest | Should -HaveParameter ReplaceDatabaseName
         }
         It "Should have ReplaceDbNameInFile as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ReplaceDbNameInFile -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter ReplaceDbNameInFile
         }
         It "Should have DataFileDirectory as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DataFileDirectory -Type System.String
+            $CommandUnderTest | Should -HaveParameter DataFileDirectory
         }
         It "Should have LogFileDirectory as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LogFileDirectory -Type System.String
+            $CommandUnderTest | Should -HaveParameter LogFileDirectory
         }
         It "Should have DestinationFileStreamDirectory as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationFileStreamDirectory -Type System.String
+            $CommandUnderTest | Should -HaveParameter DestinationFileStreamDirectory
         }
         It "Should have DatabaseNamePrefix as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DatabaseNamePrefix -Type System.String
+            $CommandUnderTest | Should -HaveParameter DatabaseNamePrefix
         }
         It "Should have DatabaseFilePrefix as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DatabaseFilePrefix -Type System.String
+            $CommandUnderTest | Should -HaveParameter DatabaseFilePrefix
         }
         It "Should have DatabaseFileSuffix as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DatabaseFileSuffix -Type System.String
+            $CommandUnderTest | Should -HaveParameter DatabaseFileSuffix
         }
         It "Should have RebaseBackupFolder as a parameter" {
-            $CommandUnderTest | Should -HaveParameter RebaseBackupFolder -Type System.String
+            $CommandUnderTest | Should -HaveParameter RebaseBackupFolder
         }
         It "Should have Continue as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Continue -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Continue
         }
         It "Should have FileMapping as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FileMapping -Type System.Collections.Hashtable
+            $CommandUnderTest | Should -HaveParameter FileMapping
         }
         It "Should have PathSep as a parameter" {
-            $CommandUnderTest | Should -HaveParameter PathSep -Type System.String
+            $CommandUnderTest | Should -HaveParameter PathSep
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

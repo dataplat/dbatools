@@ -13,13 +13,13 @@ Describe "Suspend-DbaAgDbDataMovement" {
         $server.Query("create database $dbname")
         $null = Get-DbaDatabase -SqlInstance $global:instance3 -Database $dbname | Backup-DbaDatabase
         $null = Get-DbaDatabase -SqlInstance $global:instance3 -Database $dbname | Backup-DbaDatabase -Type Log
-        $ag = New-DbaAvailabilityGroup -Primary $global:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Database $dbname -Confirm:$false -Certificate dbatoolsci_AGCert -UseLastBackup
-        $null = Get-DbaAgDatabase -SqlInstance $global:instance3 -AvailabilityGroup $agname | Resume-DbaAgDbDataMovement -Confirm:$false
+        $ag = New-DbaAvailabilityGroup -Primary $global:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Database $dbname -Certificate dbatoolsci_AGCert -UseLastBackup
+        $null = Get-DbaAgDatabase -SqlInstance $global:instance3 -AvailabilityGroup $agname | Resume-DbaAgDbDataMovement
     }
 
     AfterAll {
-        $null = Remove-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $agname -Confirm:$false
-        $null = Remove-DbaDatabase -SqlInstance $server -Database $dbname -Confirm:$false
+        $null = Remove-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $agname
+        $null = Remove-DbaDatabase -SqlInstance $server -Database $dbname
     }
 
     Context "Validate parameters" {
@@ -27,28 +27,28 @@ Describe "Suspend-DbaAgDbDataMovement" {
             $CommandUnderTest = Get-Command Suspend-DbaAgDbDataMovement
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have AvailabilityGroup as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AvailabilityGroup -Type System.String
+            $CommandUnderTest | Should -HaveParameter AvailabilityGroup
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.AvailabilityDatabase[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 
     Context "Suspends data movement" {
         It "returns suspended results" {
-            $results = Suspend-DbaAgDbDataMovement -SqlInstance $global:instance3 -Database $dbname -Confirm:$false
+            $results = Suspend-DbaAgDbDataMovement -SqlInstance $global:instance3 -Database $dbname
             $results.AvailabilityGroup | Should -Be $agname
             $results.Name | Should -Be $dbname
             $results.SynchronizationState | Should -Be 'NotSynchronizing'

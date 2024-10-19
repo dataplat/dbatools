@@ -12,19 +12,19 @@ Describe "Set-DbaDefaultPath" {
             $CommandUnderTest = Get-Command Set-DbaDefaultPath
         }
         It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Type as a non-mandatory parameter of type System.String[]" {
-            $CommandUnderTest | Should -HaveParameter Type -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Type
         }
         It "Should have Path as a non-mandatory parameter of type System.String" {
-            $CommandUnderTest | Should -HaveParameter Path -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Path
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

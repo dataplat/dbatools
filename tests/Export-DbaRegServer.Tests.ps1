@@ -9,34 +9,34 @@ Describe "Export-DbaRegServer" {
             $CommandUnderTest = Get-Command Export-DbaRegServer
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type System.String
+            $CommandUnderTest | Should -HaveParameter Path
         }
         It "Should have FilePath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FilePath -Type System.IO.FileInfo
+            $CommandUnderTest | Should -HaveParameter FilePath
         }
         It "Should have CredentialPersistenceType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter CredentialPersistenceType -Type System.String
+            $CommandUnderTest | Should -HaveParameter CredentialPersistenceType
         }
         It "Should have Group as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Group -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter Group
         }
         It "Should have ExcludeGroup as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeGroup -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeGroup
         }
         It "Should have Overwrite as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Overwrite -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Overwrite
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

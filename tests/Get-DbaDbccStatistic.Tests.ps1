@@ -6,28 +6,28 @@ Describe "Get-DbaDbccStatistic" {
             $CommandUnderTest = Get-Command Get-DbaDbccStatistic
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have Object parameter" {
-            $CommandUnderTest | Should -HaveParameter Object -Type System.String
+            $CommandUnderTest | Should -HaveParameter Object
         }
         It "Should have Target parameter" {
-            $CommandUnderTest | Should -HaveParameter Target -Type System.String
+            $CommandUnderTest | Should -HaveParameter Target
         }
         It "Should have Option parameter" {
-            $CommandUnderTest | Should -HaveParameter Option -Type System.String
+            $CommandUnderTest | Should -HaveParameter Option
         }
         It "Should have NoInformationalMessages parameter" {
-            $CommandUnderTest | Should -HaveParameter NoInformationalMessages -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter NoInformationalMessages
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

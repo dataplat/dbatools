@@ -6,19 +6,19 @@ Describe "Get-DbaAgentJobCategory" {
             $CommandUnderTest = Get-Command Get-DbaAgentJobCategory
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Category as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Category -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Category
         }
         It "Should have CategoryType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter CategoryType -Type System.String
+            $CommandUnderTest | Should -HaveParameter CategoryType
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

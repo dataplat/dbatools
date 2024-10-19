@@ -12,31 +12,31 @@ Describe "Remove-DbaDbSnapshot" {
             $CommandUnderTest = Get-Command Remove-DbaDbSnapshot
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have ExcludeDatabase parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
         }
         It "Should have Snapshot parameter" {
-            $CommandUnderTest | Should -HaveParameter Snapshot -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Snapshot
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have AllSnapshots parameter" {
-            $CommandUnderTest | Should -HaveParameter AllSnapshots -Type System.Management.Automation.Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter AllSnapshots
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Force
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

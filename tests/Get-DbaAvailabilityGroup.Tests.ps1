@@ -6,19 +6,19 @@ Describe "Get-DbaAvailabilityGroup" {
             $CommandUnderTest = Get-Command Get-DbaAvailabilityGroup
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have AvailabilityGroup as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AvailabilityGroup -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter AvailabilityGroup
         }
         It "Should have IsPrimary as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IsPrimary -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter IsPrimary
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

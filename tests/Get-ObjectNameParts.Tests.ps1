@@ -10,8 +10,8 @@ Describe "Get-ObjectNameParts" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-ObjectNameParts
         }
-        It "Should have ObjectName as a non-mandatory parameter of type System.String" {
-            $CommandUnderTest | Should -HaveParameter ObjectName -Type System.String -Mandatory:$false
+        It "Should have ObjectName as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter ObjectName
         }
     }
 

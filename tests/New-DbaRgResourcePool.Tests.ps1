@@ -10,49 +10,49 @@ Describe "New-DbaRgResourcePool" {
             $CommandUnderTest = Get-Command New-DbaRgResourcePool
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
         }
         It "Should have ResourcePool parameter" {
-            $CommandUnderTest | Should -HaveParameter ResourcePool -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ResourcePool -Type System.String[]
         }
         It "Should have Type parameter" {
-            $CommandUnderTest | Should -HaveParameter Type -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Type -Type System.String
         }
         It "Should have MinimumCpuPercentage parameter" {
-            $CommandUnderTest | Should -HaveParameter MinimumCpuPercentage -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter MinimumCpuPercentage -Type System.Int32
         }
         It "Should have MaximumCpuPercentage parameter" {
-            $CommandUnderTest | Should -HaveParameter MaximumCpuPercentage -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter MaximumCpuPercentage -Type System.Int32
         }
         It "Should have CapCpuPercentage parameter" {
-            $CommandUnderTest | Should -HaveParameter CapCpuPercentage -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter CapCpuPercentage -Type System.Int32
         }
         It "Should have MinimumMemoryPercentage parameter" {
-            $CommandUnderTest | Should -HaveParameter MinimumMemoryPercentage -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter MinimumMemoryPercentage -Type System.Int32
         }
         It "Should have MaximumMemoryPercentage parameter" {
-            $CommandUnderTest | Should -HaveParameter MaximumMemoryPercentage -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter MaximumMemoryPercentage -Type System.Int32
         }
         It "Should have MinimumIOPSPerVolume parameter" {
-            $CommandUnderTest | Should -HaveParameter MinimumIOPSPerVolume -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter MinimumIOPSPerVolume -Type System.Int32
         }
         It "Should have MaximumIOPSPerVolume parameter" {
-            $CommandUnderTest | Should -HaveParameter MaximumIOPSPerVolume -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter MaximumIOPSPerVolume -Type System.Int32
         }
         It "Should have MaximumProcesses parameter" {
-            $CommandUnderTest | Should -HaveParameter MaximumProcesses -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter MaximumProcesses -Type System.Int32
         }
         It "Should have SkipReconfigure parameter" {
-            $CommandUnderTest | Should -HaveParameter SkipReconfigure -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SkipReconfigure -Type System.Management.Automation.SwitchParameter
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }
     }
 

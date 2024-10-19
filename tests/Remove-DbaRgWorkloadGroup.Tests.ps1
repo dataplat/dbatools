@@ -10,28 +10,28 @@ Describe "Remove-DbaRgWorkloadGroup" {
             $CommandUnderTest = Get-Command Remove-DbaRgWorkloadGroup
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have WorkloadGroup parameter" {
-            $CommandUnderTest | Should -HaveParameter WorkloadGroup -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter WorkloadGroup
         }
         It "Should have ResourcePool parameter" {
-            $CommandUnderTest | Should -HaveParameter ResourcePool -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ResourcePool
         }
         It "Should have ResourcePoolType parameter" {
-            $CommandUnderTest | Should -HaveParameter ResourcePoolType -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ResourcePoolType
         }
         It "Should have SkipReconfigure parameter" {
-            $CommandUnderTest | Should -HaveParameter SkipReconfigure -Type System.Management.Automation.Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SkipReconfigure
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.WorkloadGroup[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

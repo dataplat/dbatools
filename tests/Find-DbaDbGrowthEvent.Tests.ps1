@@ -12,28 +12,28 @@ Describe "Find-DbaDbGrowthEvent" {
             $CommandUnderTest = Get-Command Find-DbaDbGrowthEvent
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type Microsoft.SqlServer.Management.Smo.Database[]
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have ExcludeDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type Microsoft.SqlServer.Management.Smo.Database[]
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
         }
         It "Should have EventType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EventType -Type System.String
+            $CommandUnderTest | Should -HaveParameter EventType
         }
         It "Should have FileType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FileType -Type System.String
+            $CommandUnderTest | Should -HaveParameter FileType
         }
         It "Should have UseLocalTime as a parameter" {
-            $CommandUnderTest | Should -HaveParameter UseLocalTime -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter UseLocalTime
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

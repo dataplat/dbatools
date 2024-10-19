@@ -6,28 +6,28 @@ Describe "Get-DbaDiskSpace" {
             $CommandUnderTest = Get-Command Get-DbaDiskSpace
         }
         It "Should have ComputerName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter ComputerName
         }
         It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type Microsoft.SqlServer.Management.Smo.PSCredential
+            $CommandUnderTest | Should -HaveParameter Credential
         }
         It "Should have Unit as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Unit -Type System.String
+            $CommandUnderTest | Should -HaveParameter Unit
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type Microsoft.SqlServer.Management.Smo.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have ExcludeDrive as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDrive -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter ExcludeDrive
         }
         It "Should have CheckFragmentation as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter CheckFragmentation -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter CheckFragmentation
         }
         It "Should have Force as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Force
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

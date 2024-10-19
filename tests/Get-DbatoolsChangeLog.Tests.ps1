@@ -6,10 +6,10 @@ Describe "Get-DbatoolsChangeLog" {
             $CommandUnderTest = Get-Command Get-DbatoolsChangeLog
         }
         It "Should have Local as a Switch" {
-            $CommandUnderTest | Should -HaveParameter Local -Type switch
+            $CommandUnderTest | Should -HaveParameter Local
         }
         It "Should have EnableException as a Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type switch
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

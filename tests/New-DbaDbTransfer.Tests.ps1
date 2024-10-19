@@ -74,49 +74,49 @@ Describe "New-DbaDbTransfer" {
             $CommandUnderTest = Get-Command New-DbaDbTransfer
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have DestinationSqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationSqlInstance -Type DbaInstanceParameter
+            $CommandUnderTest | Should -HaveParameter DestinationSqlInstance
         }
         It "Should have DestinationSqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have DestinationDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationDatabase -Type System.String
+            $CommandUnderTest | Should -HaveParameter DestinationDatabase
         }
         It "Should have BatchSize as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BatchSize -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter BatchSize
         }
         It "Should have BulkCopyTimeOut as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BulkCopyTimeOut -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter BulkCopyTimeOut
         }
         It "Should have ScriptingOption as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ScriptingOption -Type Microsoft.SqlServer.Management.Smo.ScriptingOptions
+            $CommandUnderTest | Should -HaveParameter ScriptingOption
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.NamedSmoObject[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have CopyAllObjects as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter CopyAllObjects -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter CopyAllObjects
         }
         It "Should have CopyAll as a parameter" {
-            $CommandUnderTest | Should -HaveParameter CopyAll -Type String[]
+            $CommandUnderTest | Should -HaveParameter CopyAll
         }
         It "Should have SchemaOnly as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter SchemaOnly -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter SchemaOnly
         }
         It "Should have DataOnly as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter DataOnly -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter DataOnly
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

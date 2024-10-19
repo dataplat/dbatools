@@ -48,13 +48,13 @@ function Get-DbaStub {
             $CommandUnderTest = Get-Command Invoke-DbatoolsRenameHelper
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.FileInfo[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have Encoding as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Encoding -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Encoding
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

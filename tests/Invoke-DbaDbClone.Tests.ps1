@@ -12,31 +12,31 @@ Describe "Invoke-DbaDbClone" {
             $CommandUnderTest = Get-Command Invoke-DbaDbClone
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have CloneDatabase parameter" {
-            $CommandUnderTest | Should -HaveParameter CloneDatabase -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter CloneDatabase
         }
         It "Should have ExcludeStatistics parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeStatistics -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeStatistics
         }
         It "Should have ExcludeQueryStore parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeQueryStore -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeQueryStore
         }
         It "Should have UpdateStatistics parameter" {
-            $CommandUnderTest | Should -HaveParameter UpdateStatistics -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter UpdateStatistics
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

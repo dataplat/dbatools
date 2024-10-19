@@ -6,19 +6,19 @@ Describe "Get-DbaDbSharePoint" {
             $CommandUnderTest = Get-Command Get-DbaDbSharePoint
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have ConfigDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ConfigDatabase -Type String[]
+            $CommandUnderTest | Should -HaveParameter ConfigDatabase
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

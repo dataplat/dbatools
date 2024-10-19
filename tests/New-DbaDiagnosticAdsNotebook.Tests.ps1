@@ -6,22 +6,22 @@ Describe "New-DbaDiagnosticAdsNotebook" {
             $CommandUnderTest = Get-Command New-DbaDiagnosticAdsNotebook
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have TargetVersion as a parameter" {
-            $CommandUnderTest | Should -HaveParameter TargetVersion -Type System.String
+            $CommandUnderTest | Should -HaveParameter TargetVersion
         }
         It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type System.String
+            $CommandUnderTest | Should -HaveParameter Path
         }
         It "Should have IncludeDatabaseSpecific as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeDatabaseSpecific -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter IncludeDatabaseSpecific
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

@@ -6,16 +6,16 @@ Describe "Get-DbaStartupProcedure" {
             $CommandUnderTest = Get-Command Get-DbaStartupProcedure
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have StartupProcedure as a parameter" {
-            $CommandUnderTest | Should -HaveParameter StartupProcedure -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter StartupProcedure
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

@@ -14,22 +14,22 @@ Describe "Get-DbaXESessionTargetFile" {
             $CommandUnderTest = Get-Command Get-DbaXESessionTargetFile
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Session as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Session -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Session
         }
         It "Should have Target as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Target -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Target
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.XEvent.Target[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 }

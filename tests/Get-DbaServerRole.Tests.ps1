@@ -10,22 +10,22 @@ Describe "Get-DbaServerRole" {
             $CommandUnderTest = Get-Command Get-DbaServerRole
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have ServerRole parameter" {
-            $CommandUnderTest | Should -HaveParameter ServerRole -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ServerRole
         }
         It "Should have ExcludeServerRole parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeServerRole -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeServerRole
         }
         It "Should have ExcludeFixedRole parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeFixedRole -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeFixedRole
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

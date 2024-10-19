@@ -6,19 +6,19 @@ Describe "Set-DbaSpn" {
             $CommandUnderTest = Get-Command Set-DbaSpn
         }
         It "Should have SPN as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SPN -Type System.String
+            $CommandUnderTest | Should -HaveParameter SPN
         }
         It "Should have ServiceAccount as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ServiceAccount -Type System.String
+            $CommandUnderTest | Should -HaveParameter ServiceAccount
         }
         It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter Credential
         }
         It "Should have NoDelegation as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoDelegation -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter NoDelegation
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

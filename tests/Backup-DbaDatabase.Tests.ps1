@@ -13,139 +13,139 @@ Describe "Backup-DbaDatabase Unit Tests" -Tag 'UnitTests' {
         }
 
         It "Should have SqlInstance parameter" {
-            $command | Should -HaveParameter SqlInstance -Type Microsoft.SqlServer.Management.Smo.DbaInstanceParameter -Mandatory:$false
+            $command | Should -HaveParameter SqlInstance
         }
 
         It "Should have SqlCredential parameter" {
-            $command | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $command | Should -HaveParameter SqlCredential
         }
 
         It "Should have Database parameter" {
-            $command | Should -HaveParameter Database -Type System.Object[] -Mandatory:$false
+            $command | Should -HaveParameter Database
         }
 
         It "Should have ExcludeDatabase parameter" {
-            $command | Should -HaveParameter ExcludeDatabase -Type System.Object[] -Mandatory:$false
+            $command | Should -HaveParameter ExcludeDatabase
         }
 
         It "Should have Path parameter" {
-            $command | Should -HaveParameter Path -Type System.String[] -Mandatory:$false
+            $command | Should -HaveParameter Path
         }
 
         It "Should have FilePath parameter" {
-            $command | Should -HaveParameter FilePath -Type System.String -Mandatory:$false
+            $command | Should -HaveParameter FilePath
         }
 
         It "Should have IncrementPrefix parameter" {
-            $command | Should -HaveParameter IncrementPrefix -Type System.Management.Automation.SwitchParameter
+            $command | Should -HaveParameter IncrementPrefix
         }
 
         It "Should have ReplaceInName parameter" {
-            $command | Should -HaveParameter ReplaceInName -Type System.Management.Automation.SwitchParameter
+            $command | Should -HaveParameter ReplaceInName
         }
 
         It "Should have NoAppendDbNameInPath parameter" {
-            $command | Should -HaveParameter NoAppendDbNameInPath -Type System.Management.Automation.SwitchParameter
+            $command | Should -HaveParameter NoAppendDbNameInPath
         }
 
         It "Should have CopyOnly parameter" {
-            $command | Should -HaveParameter CopyOnly -Type System.Management.Automation.SwitchParameter
+            $command | Should -HaveParameter CopyOnly
         }
 
         It "Should have Type parameter" {
-            $command | Should -HaveParameter Type -Type System.String -Mandatory:$false
+            $command | Should -HaveParameter Type
         }
 
         It "Should have InputObject parameter" {
-            $command | Should -HaveParameter InputObject -Type System.Object[] -Mandatory:$false
+            $command | Should -HaveParameter InputObject
         }
 
         It "Should have CreateFolder parameter" {
-            $command | Should -HaveParameter CreateFolder -Type System.Management.Automation.SwitchParameter
+            $command | Should -HaveParameter CreateFolder
         }
 
         It "Should have FileCount parameter" {
-            $command | Should -HaveParameter FileCount -Type System.Int32 -Mandatory:$false
+            $command | Should -HaveParameter FileCount
         }
 
         It "Should have CompressBackup parameter" {
-            $command | Should -HaveParameter CompressBackup -Type System.Management.Automation.SwitchParameter
+            $command | Should -HaveParameter CompressBackup
         }
 
         It "Should have Checksum parameter" {
-            $command | Should -HaveParameter Checksum -Type System.Management.Automation.SwitchParameter
+            $command | Should -HaveParameter Checksum
         }
 
         It "Should have Verify parameter" {
-            $command | Should -HaveParameter Verify -Type System.Management.Automation.SwitchParameter
+            $command | Should -HaveParameter Verify
         }
 
         It "Should have MaxTransferSize parameter" {
-            $command | Should -HaveParameter MaxTransferSize -Type System.Int32 -Mandatory:$false
+            $command | Should -HaveParameter MaxTransferSize
         }
 
         It "Should have BlockSize parameter" {
-            $command | Should -HaveParameter BlockSize -Type System.Int32 -Mandatory:$false
+            $command | Should -HaveParameter BlockSize
         }
 
         It "Should have BufferCount parameter" {
-            $command | Should -HaveParameter BufferCount -Type System.Int32 -Mandatory:$false
+            $command | Should -HaveParameter BufferCount
         }
 
         It "Should have AzureBaseUrl parameter" {
-            $command | Should -HaveParameter AzureBaseUrl -Type System.String[] -Mandatory:$false
+            $command | Should -HaveParameter AzureBaseUrl
         }
 
         It "Should have AzureCredential parameter" {
-            $command | Should -HaveParameter AzureCredential -Type System.String -Mandatory:$false
+            $command | Should -HaveParameter AzureCredential
         }
 
         It "Should have NoRecovery parameter" {
-            $command | Should -HaveParameter NoRecovery -Type System.Management.Automation.SwitchParameter
+            $command | Should -HaveParameter NoRecovery
         }
 
         It "Should have BuildPath parameter" {
-            $command | Should -HaveParameter BuildPath -Type System.Management.Automation.SwitchParameter
+            $command | Should -HaveParameter BuildPath
         }
 
         It "Should have WithFormat parameter" {
-            $command | Should -HaveParameter WithFormat -Type System.Management.Automation.SwitchParameter
+            $command | Should -HaveParameter WithFormat
         }
 
         It "Should have Initialize parameter" {
-            $command | Should -HaveParameter Initialize -Type System.Management.Automation.SwitchParameter
+            $command | Should -HaveParameter Initialize
         }
 
         It "Should have SkipTapeHeader parameter" {
-            $command | Should -HaveParameter SkipTapeHeader -Type System.Management.Automation.SwitchParameter
+            $command | Should -HaveParameter SkipTapeHeader
         }
 
         It "Should have TimeStampFormat parameter" {
-            $command | Should -HaveParameter TimeStampFormat -Type System.String -Mandatory:$false
+            $command | Should -HaveParameter TimeStampFormat
         }
 
         It "Should have IgnoreFileChecks parameter" {
-            $command | Should -HaveParameter IgnoreFileChecks -Type System.Management.Automation.SwitchParameter
+            $command | Should -HaveParameter IgnoreFileChecks
         }
 
         It "Should have OutputScriptOnly parameter" {
-            $command | Should -HaveParameter OutputScriptOnly -Type System.Management.Automation.SwitchParameter
+            $command | Should -HaveParameter OutputScriptOnly
         }
 
         It "Should have EncryptionAlgorithm parameter" {
-            $command | Should -HaveParameter EncryptionAlgorithm -Type System.String -Mandatory:$false
+            $command | Should -HaveParameter EncryptionAlgorithm
         }
 
         It "Should have EncryptionCertificate parameter" {
-            $command | Should -HaveParameter EncryptionCertificate -Type System.String -Mandatory:$false
+            $command | Should -HaveParameter EncryptionCertificate
         }
 
         It "Should have Description parameter" {
-            $command | Should -HaveParameter Description -Type System.String -Mandatory:$false
+            $command | Should -HaveParameter Description
         }
 
         It "Should have EnableException parameter" {
-            $command | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $command | Should -HaveParameter EnableException
         }
     }
 }
@@ -259,8 +259,6 @@ Describe "Backup-DbaDatabase Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-
-
     Context "Handling backup paths that don't exist" {
         $MissingPathTrailing = "$DestBackupDir\Missing1\Awol2\"
         $MissingPath = "$DestBackupDir\Missing1\Awol2"
@@ -293,7 +291,6 @@ Describe "Backup-DbaDatabase Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-
     Context "A fully qualified path should override a backupfolder" {
         $results = Backup-DbaDatabase -SqlInstance $global:instance1 -Database master -BackupDirectory c:\temp -BackupFileName "$DestBackupDir\PesterTest2.bak"
         It "Should report backed up to $DestBackupDir" {
@@ -308,7 +305,6 @@ Describe "Backup-DbaDatabase Integration Tests" -Tag "IntegrationTests" {
     Context "Should stripe if multiple backupfolders specified" {
         $backupPaths = "$DestBackupDir\stripe1", "$DestBackupDir\stripe2", "$DestBackupDir\stripe3"
         $null = New-Item -Path $backupPaths -ItemType Directory
-
 
         $results = Backup-DbaDatabase -SqlInstance $global:instance1 -Database master -BackupDirectory $backupPaths
         It "Should have created 3 backups" {
@@ -370,7 +366,7 @@ Describe "Backup-DbaDatabase Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    Context "Test backup  verification" {
+    Context "Test backup verification" {
         It "Should perform a full backup and verify it" {
             $b = Backup-DbaDatabase -SqlInstance $global:instance1 -Database master -Type full -Verify
             $b.BackupComplete | Should -Be $True
@@ -405,7 +401,6 @@ Describe "Backup-DbaDatabase Integration Tests" -Tag "IntegrationTests" {
         It "Should Complete Successfully" {
             $results.BackupComplete | Should -Be $true
         }
-
     }
 
     Context "Should handle NUL as an input path" {

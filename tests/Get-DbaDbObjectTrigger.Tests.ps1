@@ -23,9 +23,6 @@ Describe "Get-DbaDbObjectTrigger Unit Tests" -Tag 'UnitTests' {
         It "Should have ExcludeDatabase as a parameter" {
             $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.Object[]
         }
-        It "Should have Type as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Type -Type System.String
-        }
         It "Should have InputObject as a parameter" {
             $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object[]
         }

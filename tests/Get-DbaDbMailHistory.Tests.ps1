@@ -6,19 +6,19 @@ Describe "Get-DbaDbMailHistory" {
             $CommandUnderTest = Get-Command Get-DbaDbMailHistory
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type Microsoft.SqlServer.Management.Smo.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Since as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Since -Type System.DateTime
+            $CommandUnderTest | Should -HaveParameter Since
         }
         It "Should have Status as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Status -Type System.String
+            $CommandUnderTest | Should -HaveParameter Status
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

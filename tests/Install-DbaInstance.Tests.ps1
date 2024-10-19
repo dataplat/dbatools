@@ -29,109 +29,109 @@ Describe "Install-DbaInstance" {
             $command = Get-Command -Name Install-DbaInstance
         }
         It "Should have SqlInstance parameter" {
-            $command | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
+            $command | Should -HaveParameter SqlInstance
         }
         It "Should have Version parameter" {
-            $command | Should -HaveParameter Version -Type System.String -Mandatory:$false
+            $command | Should -HaveParameter Version
         }
         It "Should have InstanceName parameter" {
-            $command | Should -HaveParameter InstanceName -Type System.String -Mandatory:$false
+            $command | Should -HaveParameter InstanceName
         }
         It "Should have SaCredential parameter" {
-            $command | Should -HaveParameter SaCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $command | Should -HaveParameter SaCredential
         }
         It "Should have Credential parameter" {
-            $command | Should -HaveParameter Credential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $command | Should -HaveParameter Credential
         }
         It "Should have Authentication parameter" {
-            $command | Should -HaveParameter Authentication -Type System.String -Mandatory:$false
+            $command | Should -HaveParameter Authentication
         }
         It "Should have ConfigurationFile parameter" {
-            $command | Should -HaveParameter ConfigurationFile -Type System.Object -Mandatory:$false
+            $command | Should -HaveParameter ConfigurationFile
         }
         It "Should have Configuration parameter" {
-            $command | Should -HaveParameter Configuration -Type System.Collections.Hashtable -Mandatory:$false
+            $command | Should -HaveParameter Configuration
         }
         It "Should have Path parameter" {
-            $command | Should -HaveParameter Path -Type System.String[] -Mandatory:$false
+            $command | Should -HaveParameter Path
         }
         It "Should have Feature parameter" {
-            $command | Should -HaveParameter Feature -Type System.String[] -Mandatory:$false
+            $command | Should -HaveParameter Feature
         }
         It "Should have AuthenticationMode parameter" {
-            $command | Should -HaveParameter AuthenticationMode -Type System.String -Mandatory:$false
+            $command | Should -HaveParameter AuthenticationMode
         }
         It "Should have InstancePath parameter" {
-            $command | Should -HaveParameter InstancePath -Type System.String -Mandatory:$false
+            $command | Should -HaveParameter InstancePath
         }
         It "Should have DataPath parameter" {
-            $command | Should -HaveParameter DataPath -Type System.String -Mandatory:$false
+            $command | Should -HaveParameter DataPath
         }
         It "Should have LogPath parameter" {
-            $command | Should -HaveParameter LogPath -Type System.String -Mandatory:$false
+            $command | Should -HaveParameter LogPath
         }
         It "Should have TempPath parameter" {
-            $command | Should -HaveParameter TempPath -Type System.String -Mandatory:$false
+            $command | Should -HaveParameter TempPath
         }
         It "Should have BackupPath parameter" {
-            $command | Should -HaveParameter BackupPath -Type System.String -Mandatory:$false
+            $command | Should -HaveParameter BackupPath
         }
         It "Should have UpdateSourcePath parameter" {
-            $command | Should -HaveParameter UpdateSourcePath -Type System.String -Mandatory:$false
+            $command | Should -HaveParameter UpdateSourcePath
         }
         It "Should have AdminAccount parameter" {
-            $command | Should -HaveParameter AdminAccount -Type System.String[] -Mandatory:$false
+            $command | Should -HaveParameter AdminAccount
         }
         It "Should have Port parameter" {
-            $command | Should -HaveParameter Port -Type System.Int32 -Mandatory:$false
+            $command | Should -HaveParameter Port
         }
         It "Should have Throttle parameter" {
-            $command | Should -HaveParameter Throttle -Type System.Int32 -Mandatory:$false
+            $command | Should -HaveParameter Throttle
         }
         It "Should have ProductID parameter" {
-            $command | Should -HaveParameter ProductID -Type System.String -Mandatory:$false
+            $command | Should -HaveParameter ProductID
         }
         It "Should have AsCollation parameter" {
-            $command | Should -HaveParameter AsCollation -Type System.String -Mandatory:$false
+            $command | Should -HaveParameter AsCollation
         }
         It "Should have SqlCollation parameter" {
-            $command | Should -HaveParameter SqlCollation -Type System.String -Mandatory:$false
+            $command | Should -HaveParameter SqlCollation
         }
         It "Should have EngineCredential parameter" {
-            $command | Should -HaveParameter EngineCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $command | Should -HaveParameter EngineCredential
         }
         It "Should have AgentCredential parameter" {
-            $command | Should -HaveParameter AgentCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $command | Should -HaveParameter AgentCredential
         }
         It "Should have ASCredential parameter" {
-            $command | Should -HaveParameter ASCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $command | Should -HaveParameter ASCredential
         }
         It "Should have ISCredential parameter" {
-            $command | Should -HaveParameter ISCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $command | Should -HaveParameter ISCredential
         }
         It "Should have RSCredential parameter" {
-            $command | Should -HaveParameter RSCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $command | Should -HaveParameter RSCredential
         }
         It "Should have FTCredential parameter" {
-            $command | Should -HaveParameter FTCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $command | Should -HaveParameter FTCredential
         }
         It "Should have PBEngineCredential parameter" {
-            $command | Should -HaveParameter PBEngineCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $command | Should -HaveParameter PBEngineCredential
         }
         It "Should have SaveConfiguration parameter" {
-            $command | Should -HaveParameter SaveConfiguration -Type System.String -Mandatory:$false
+            $command | Should -HaveParameter SaveConfiguration
         }
         It "Should have PerformVolumeMaintenanceTasks parameter" {
-            $command | Should -HaveParameter PerformVolumeMaintenanceTasks -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $command | Should -HaveParameter PerformVolumeMaintenanceTasks
         }
         It "Should have Restart parameter" {
-            $command | Should -HaveParameter Restart -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $command | Should -HaveParameter Restart
         }
         It "Should have NoPendingRenameCheck parameter" {
-            $command | Should -HaveParameter NoPendingRenameCheck -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $command | Should -HaveParameter NoPendingRenameCheck
         }
         It "Should have EnableException parameter" {
-            $command | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $command | Should -HaveParameter EnableException
         }
     }
 

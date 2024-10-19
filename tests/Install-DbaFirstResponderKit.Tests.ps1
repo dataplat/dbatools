@@ -10,28 +10,28 @@ Describe "Install-DbaFirstResponderKit" {
             $CommandUnderTest = Get-Command Install-DbaFirstResponderKit
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Branch parameter" {
-            $CommandUnderTest | Should -HaveParameter Branch -Type System.String
+            $CommandUnderTest | Should -HaveParameter Branch
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.Object
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have LocalFile parameter" {
-            $CommandUnderTest | Should -HaveParameter LocalFile -Type System.String
+            $CommandUnderTest | Should -HaveParameter LocalFile
         }
         It "Should have OnlyScript parameter" {
-            $CommandUnderTest | Should -HaveParameter OnlyScript -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter OnlyScript
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Force
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

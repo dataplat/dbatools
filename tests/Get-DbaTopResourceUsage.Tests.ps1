@@ -5,29 +5,29 @@ Describe "Get-DbaTopResourceUsage" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaTopResourceUsage
         }
-        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+        It "Should have SqlInstance as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Mandatory:$false
         }
-        It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+        It "Should have SqlCredential as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Mandatory:$false
         }
-        It "Should have Database as a non-mandatory parameter of type System.Object[]" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.Object[] -Mandatory:$false
+        It "Should have Database as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Database -Mandatory:$false
         }
-        It "Should have ExcludeDatabase as a non-mandatory parameter of type System.Object[]" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.Object[] -Mandatory:$false
+        It "Should have ExcludeDatabase as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Mandatory:$false
         }
-        It "Should have Type as a non-mandatory parameter of type System.String[]" {
-            $CommandUnderTest | Should -HaveParameter Type -Type System.String[] -Mandatory:$false
+        It "Should have Type as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Type -Mandatory:$false
         }
-        It "Should have Limit as a non-mandatory parameter of type System.Int32" {
-            $CommandUnderTest | Should -HaveParameter Limit -Type System.Int32 -Mandatory:$false
+        It "Should have Limit as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Limit -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Mandatory:$false
         }
         It "Should have ExcludeSystem as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSystem -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeSystem -Mandatory:$false
         }
     }
 

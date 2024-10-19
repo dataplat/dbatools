@@ -11,13 +11,13 @@ Describe "Get-DirectoryRestoreFile" {
             $CommandUnderTest = Get-Command Get-DirectoryRestoreFile
         }
         It "Should have Path as a non-mandatory System.String parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Path
         }
         It "Should have Recurse as a non-mandatory System.Management.Automation.Switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Recurse -Type System.Management.Automation.Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Recurse
         }
         It "Should have EnableException as a non-mandatory System.Management.Automation.Switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

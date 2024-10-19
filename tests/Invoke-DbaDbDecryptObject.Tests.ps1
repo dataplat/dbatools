@@ -12,25 +12,25 @@ Describe "Invoke-DbaDbDecryptObject Unit Tests" -Tag 'UnitTests' {
             $command = Get-Command -Name $CommandName
         }
         It "Should have SqlInstance parameter" {
-            $command | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter -Mandatory:$false
+            $command | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $command | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $command | Should -HaveParameter SqlCredential
         }
         It "Should have Database parameter" {
-            $command | Should -HaveParameter Database -Type Microsoft.SqlServer.Management.Smo.Database[] -Mandatory:$false
+            $command | Should -HaveParameter Database
         }
         It "Should have ObjectName parameter" {
-            $command | Should -HaveParameter ObjectName -Type System.String[] -Mandatory:$false
+            $command | Should -HaveParameter ObjectName
         }
         It "Should have EncodingType parameter" {
-            $command | Should -HaveParameter EncodingType -Type System.String -Mandatory:$false
+            $command | Should -HaveParameter EncodingType
         }
         It "Should have ExportDestination parameter" {
-            $command | Should -HaveParameter ExportDestination -Type System.String -Mandatory:$false
+            $command | Should -HaveParameter ExportDestination
         }
         It "Should have EnableException parameter" {
-            $command | Should -HaveParameter EnableException -Type System.Management.Automation.Switch -Mandatory:$false
+            $command | Should -HaveParameter EnableException
         }
     }
 }

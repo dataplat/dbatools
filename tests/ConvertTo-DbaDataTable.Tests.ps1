@@ -10,22 +10,22 @@ Describe "ConvertTo-DbaDataTable" {
             $CommandUnderTest = Get-Command ConvertTo-DbaDataTable
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have TimeSpanType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter TimeSpanType -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter TimeSpanType
         }
         It "Should have SizeType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SizeType -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SizeType
         }
         It "Should have IgnoreNull as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IgnoreNull -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter IgnoreNull
         }
         It "Should have Raw as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Raw -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Raw
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

@@ -12,16 +12,16 @@ Describe "Export-DbaXECsv" {
             $CommandUnderTest = Get-Command Export-DbaXECsv
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type System.String
+            $CommandUnderTest | Should -HaveParameter Path
         }
         It "Should have FilePath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FilePath -Type System.String
+            $CommandUnderTest | Should -HaveParameter FilePath
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 }

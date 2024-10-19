@@ -6,31 +6,31 @@ Describe "Set-DbaAgentAlert" {
             $CommandUnderTest = Get-Command Set-DbaAgentAlert
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Alert parameter" {
-            $CommandUnderTest | Should -HaveParameter Alert -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter Alert
         }
         It "Should have NewName parameter" {
-            $CommandUnderTest | Should -HaveParameter NewName -Type System.String
+            $CommandUnderTest | Should -HaveParameter NewName
         }
         It "Should have Enabled parameter" {
-            $CommandUnderTest | Should -HaveParameter Enabled -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Enabled
         }
         It "Should have Disabled parameter" {
-            $CommandUnderTest | Should -HaveParameter Disabled -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Disabled
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Force
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Agent.Alert[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

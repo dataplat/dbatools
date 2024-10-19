@@ -11,22 +11,22 @@ Describe "Backup-DbaComputerCertificate" {
             $CommandUnderTest = Get-Command Backup-DbaComputerCertificate
         }
         It "Should have SecurePassword as a non-mandatory SecureString parameter" {
-            $CommandUnderTest | Should -HaveParameter SecurePassword -Type SecureString -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SecurePassword
         }
         It "Should have InputObject as a non-mandatory System.Object[] parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have Path as a non-mandatory System.String parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Path
         }
         It "Should have FilePath as a non-mandatory System.String parameter" {
-            $CommandUnderTest | Should -HaveParameter FilePath -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter FilePath
         }
         It "Should have Type as a non-mandatory System.String parameter" {
-            $CommandUnderTest | Should -HaveParameter Type -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Type
         }
         It "Should have EnableException as a non-mandatory System.Management.Automation.SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

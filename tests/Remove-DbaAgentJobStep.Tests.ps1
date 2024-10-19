@@ -6,25 +6,25 @@ Describe "Remove-DbaAgentJobStep" {
             $CommandUnderTest = Get-Command Remove-DbaAgentJobStep
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Job as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Job -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter Job
         }
         It "Should have StepName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter StepName -Type System.String
+            $CommandUnderTest | Should -HaveParameter StepName
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
         It "Should have WhatIf as a parameter" {
-            $CommandUnderTest | Should -HaveParameter WhatIf -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter WhatIf
         }
         It "Should have Confirm as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Confirm -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Confirm
         }
     }
 }

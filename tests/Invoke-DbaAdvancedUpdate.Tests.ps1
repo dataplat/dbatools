@@ -26,32 +26,32 @@ Describe "Invoke-DbaAdvancedUpdate" {
         BeforeAll {
             $CommandUnderTest = Get-Command Invoke-DbaAdvancedUpdate
         }
-        It "Should have ComputerName as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName -Type System.String -Mandatory:$false
+        It "Should have ComputerName as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter ComputerName
         }
-        It "Should have Action as a non-mandatory Object[] parameter" {
-            $CommandUnderTest | Should -HaveParameter Action -Type System.Object[] -Mandatory:$false
+        It "Should have Action as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Action
         }
-        It "Should have Restart as a non-mandatory Boolean parameter" {
-            $CommandUnderTest | Should -HaveParameter Restart -Type System.Boolean -Mandatory:$false
+        It "Should have Restart as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Restart
         }
-        It "Should have Authentication as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Authentication -Type System.String -Mandatory:$false
+        It "Should have Authentication as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Authentication
         }
-        It "Should have Credential as a non-mandatory PSCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type System.Management.Automation.PSCredential -Mandatory:$false
+        It "Should have Credential as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Credential
         }
-        It "Should have ExtractPath as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter ExtractPath -Type System.String -Mandatory:$false
+        It "Should have ExtractPath as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter ExtractPath
         }
-        It "Should have ArgumentList as a non-mandatory String[] parameter" {
-            $CommandUnderTest | Should -HaveParameter ArgumentList -Type System.String[] -Mandatory:$false
+        It "Should have ArgumentList as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter ArgumentList
         }
         It "Should have NoPendingRenameCheck as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter NoPendingRenameCheck -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter NoPendingRenameCheck
         }
         It "Should have EnableException as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

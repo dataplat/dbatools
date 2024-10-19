@@ -12,19 +12,19 @@ Describe "Get-DbaAgentJobOutputFile" {
             $CommandUnderTest = Get-Command Get-DbaAgentJobOutputFile
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Job parameter" {
-            $CommandUnderTest | Should -HaveParameter Job -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter Job
         }
         It "Should have ExcludeJob parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeJob -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeJob
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

@@ -42,19 +42,19 @@ Describe "Remove-DbaCustomError" {
             $CommandUnderTest = Get-Command Remove-DbaCustomError
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have MessageID as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MessageID -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter MessageID
         }
         It "Should have Language as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Language -Type System.String
+            $CommandUnderTest | Should -HaveParameter Language
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

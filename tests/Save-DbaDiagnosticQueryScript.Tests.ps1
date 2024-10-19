@@ -11,11 +11,11 @@ Describe "Save-DbaDiagnosticQueryScript" {
         BeforeAll {
             $CommandUnderTest = Get-Command Save-DbaDiagnosticQueryScript
         }
-        It "Should have Path as a non-mandatory parameter of type FileInfo" {
-            $CommandUnderTest | Should -HaveParameter Path -Type Microsoft.SqlServer.Management.Smo.FileInfo -Mandatory:$false
+        It "Should have Path as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Path
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

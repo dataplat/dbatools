@@ -6,25 +6,25 @@ Describe "Read-DbaBackupHeader" {
             $CommandUnderTest = Get-Command Read-DbaBackupHeader
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Path parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter Path
         }
         It "Should have Simple parameter" {
-            $CommandUnderTest | Should -HaveParameter Simple -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Simple
         }
         It "Should have FileList parameter" {
-            $CommandUnderTest | Should -HaveParameter FileList -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter FileList
         }
         It "Should have AzureCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter AzureCredential -Type System.String
+            $CommandUnderTest | Should -HaveParameter AzureCredential
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

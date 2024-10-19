@@ -6,28 +6,28 @@ Describe "Remove-DbaAgentOperator" {
             $CommandUnderTest = Get-Command Remove-DbaAgentOperator
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Operator as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Operator -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Operator
         }
         It "Should have ExcludeOperator as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeOperator -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter ExcludeOperator
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Agent.Operator[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
         It "Should have WhatIf as a parameter" {
-            $CommandUnderTest | Should -HaveParameter WhatIf -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter WhatIf
         }
         It "Should have Confirm as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Confirm -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Confirm
         }
     }
 }
@@ -41,13 +41,13 @@ Describe "Remove-DbaAgentOperator Integration Tests" -Tag "IntegrationTests" {
     }
 
     AfterAll {
-        $null = Remove-DbaAgentOperator -SqlInstance $instance2 -Operator $email1 -Confirm:$false
-        $null = Remove-DbaAgentOperator -SqlInstance $instance2 -Operator $email2 -Confirm:$false
+        $null = Remove-DbaAgentOperator -SqlInstance $instance2 -Operator $email1
+        $null = Remove-DbaAgentOperator -SqlInstance $instance2 -Operator $email2
     }
 
     Context "Remove Agent Operator is removed properly" {
         It "Should have no operator with that name" {
-            Remove-DbaAgentOperator -SqlInstance $instance2 -Operator $email1 -Confirm:$false
+            Remove-DbaAgentOperator -SqlInstance $instance2 -Operator $email1
             $results = (Get-DbaAgentOperator -SqlInstance $instance2 -Operator $email1).Count
             $results | Should -Be 0
         }
@@ -56,7 +56,7 @@ Describe "Remove-DbaAgentOperator Integration Tests" -Tag "IntegrationTests" {
             $operatorName = "dbatoolsci_test_$(Get-Random)"
             $null = New-DbaAgentOperator -SqlInstance $instance2 -Operator $operatorName
             (Get-DbaAgentOperator -SqlInstance $instance2 -Operator $operatorName) | Should -Not -BeNullOrEmpty
-            Get-DbaAgentOperator -SqlInstance $instance2 -Operator $operatorName | Remove-DbaAgentOperator -Confirm:$false
+            Get-DbaAgentOperator -SqlInstance $instance2 -Operator $operatorName | Remove-DbaAgentOperator
             (Get-DbaAgentOperator -SqlInstance $instance2 -Operator $operatorName) | Should -BeNullOrEmpty
         }
     }

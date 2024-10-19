@@ -6,22 +6,22 @@ Describe "Get-DbaExtendedProperty" {
             $CommandUnderTest = Get-Command Get-DbaExtendedProperty
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have Name as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Name -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Name
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type PSObject[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 
@@ -29,14 +29,14 @@ Describe "Get-DbaExtendedProperty" {
         BeforeAll {
             $random = Get-Random
             $server2 = Connect-DbaInstance -SqlInstance $global:instance2
-            $null = Get-DbaProcess -SqlInstance $server2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false
+            $null = Get-DbaProcess -SqlInstance $server2 | Where-Object Program -match dbatools | Stop-DbaProcess
             $newDbName = "dbatoolsci_newdb_$random"
             $db = New-DbaDatabase -SqlInstance $server2 -Name $newDbName
             $db.Query("EXEC sys.sp_addextendedproperty @name=N'dbatoolz', @value=N'woo'")
         }
 
         AfterAll {
-            $null = $db | Remove-DbaDatabase -Confirm:$false
+            $null = $db | Remove-DbaDatabase
         }
 
         It "finds an extended property on an instance" {

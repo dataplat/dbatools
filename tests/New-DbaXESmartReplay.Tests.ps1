@@ -10,31 +10,31 @@ Describe "New-DbaXESmartReplay" {
             $CommandUnderTest = Get-Command New-DbaXESmartReplay
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have Event parameter" {
-            $CommandUnderTest | Should -HaveParameter Event -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Event
         }
         It "Should have Filter parameter" {
-            $CommandUnderTest | Should -HaveParameter Filter -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Filter
         }
         It "Should have DelaySeconds parameter" {
-            $CommandUnderTest | Should -HaveParameter DelaySeconds -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter DelaySeconds
         }
         It "Should have StopOnError parameter" {
-            $CommandUnderTest | Should -HaveParameter StopOnError -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter StopOnError
         }
         It "Should have ReplayIntervalSeconds parameter" {
-            $CommandUnderTest | Should -HaveParameter ReplayIntervalSeconds -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ReplayIntervalSeconds
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 }

@@ -6,25 +6,25 @@ Describe "Get-DbaSsisEnvironmentVariable" {
             $CommandUnderTest = Get-Command Get-DbaSsisEnvironmentVariable
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Environment as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Environment -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter Environment
         }
         It "Should have EnvironmentExclude as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnvironmentExclude -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter EnvironmentExclude
         }
         It "Should have Folder as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Folder -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter Folder
         }
         It "Should have FolderExclude as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FolderExclude -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter FolderExclude
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 }

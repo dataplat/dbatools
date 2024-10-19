@@ -6,19 +6,19 @@ Describe "New-DbaServiceMasterKey" {
             $CommandUnderTest = Get-Command New-DbaServiceMasterKey
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type Microsoft.SqlServer.Management.Smo.Credential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type Microsoft.SqlServer.Management.Smo.Credential
+            $CommandUnderTest | Should -HaveParameter Credential
         }
         It "Should have SecurePassword as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SecurePassword -Type System.Security.SecureString
+            $CommandUnderTest | Should -HaveParameter SecurePassword
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 }

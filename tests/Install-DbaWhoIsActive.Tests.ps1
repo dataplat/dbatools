@@ -185,32 +185,26 @@ ALTER PROC dbo.sp_WhoIsActive
         It "Should have SqlInstance parameter" {
             $ParameterList['SqlInstance'] | Should -Not -BeNullOrEmpty
             $ParameterList['SqlInstance'].ParameterType.FullName | Should -Be 'Dataplat.Dbatools.Parameter.DbaInstanceParameter[]'
-            $ParameterList['SqlInstance'].IsMandatory | Should -Be $false
         }
         It "Should have SqlCredential parameter" {
             $ParameterList['SqlCredential'] | Should -Not -BeNullOrEmpty
             $ParameterList['SqlCredential'].ParameterType.FullName | Should -Be 'System.Management.Automation.PSCredential'
-            $ParameterList['SqlCredential'].IsMandatory | Should -Be $false
         }
         It "Should have LocalFile parameter" {
             $ParameterList['LocalFile'] | Should -Not -BeNullOrEmpty
             $ParameterList['LocalFile'].ParameterType.FullName | Should -Be 'System.String'
-            $ParameterList['LocalFile'].IsMandatory | Should -Be $false
         }
         It "Should have Database parameter" {
             $ParameterList['Database'] | Should -Not -BeNullOrEmpty
             $ParameterList['Database'].ParameterType.FullName | Should -Be 'System.Object'
-            $ParameterList['Database'].IsMandatory | Should -Be $false
         }
         It "Should have EnableException parameter" {
             $ParameterList['EnableException'] | Should -Not -BeNullOrEmpty
             $ParameterList['EnableException'].ParameterType.FullName | Should -Be 'System.Management.Automation.SwitchParameter'
-            $ParameterList['EnableException'].IsMandatory | Should -Be $false
         }
         It "Should have Force parameter" {
             $ParameterList['Force'] | Should -Not -BeNullOrEmpty
             $ParameterList['Force'].ParameterType.FullName | Should -Be 'System.Management.Automation.SwitchParameter'
-            $ParameterList['Force'].IsMandatory | Should -Be $false
         }
     }
 

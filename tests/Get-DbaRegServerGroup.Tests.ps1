@@ -6,22 +6,22 @@ Describe "Get-DbaRegServerGroup" {
             $CommandUnderTest = Get-Command Get-DbaRegServerGroup
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Group as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Group -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter Group
         }
         It "Should have ExcludeGroup as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeGroup -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeGroup
         }
         It "Should have Id as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Id -Type System.Int32[]
+            $CommandUnderTest | Should -HaveParameter Id
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

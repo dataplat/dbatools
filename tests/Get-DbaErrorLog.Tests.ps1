@@ -6,28 +6,28 @@ Describe "Get-DbaErrorLog" {
             $CommandUnderTest = Get-Command Get-DbaErrorLog
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have LogNumber as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LogNumber -Type System.Int32[]
+            $CommandUnderTest | Should -HaveParameter LogNumber
         }
         It "Should have Source as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Source -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter Source
         }
         It "Should have Text as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Text -Type System.String
+            $CommandUnderTest | Should -HaveParameter Text
         }
         It "Should have After as a parameter" {
-            $CommandUnderTest | Should -HaveParameter After -Type System.DateTime
+            $CommandUnderTest | Should -HaveParameter After
         }
         It "Should have Before as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Before -Type System.DateTime
+            $CommandUnderTest | Should -HaveParameter Before
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

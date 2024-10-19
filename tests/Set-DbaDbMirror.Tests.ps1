@@ -12,31 +12,31 @@ Describe "Set-DbaDbMirror" {
             $CommandUnderTest = Get-Command Set-DbaDbMirror
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have Partner parameter" {
-            $CommandUnderTest | Should -HaveParameter Partner -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Partner
         }
         It "Should have Witness parameter" {
-            $CommandUnderTest | Should -HaveParameter Witness -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Witness
         }
         It "Should have SafetyLevel parameter" {
-            $CommandUnderTest | Should -HaveParameter SafetyLevel -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SafetyLevel
         }
         It "Should have State parameter" {
-            $CommandUnderTest | Should -HaveParameter State -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter State
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 }

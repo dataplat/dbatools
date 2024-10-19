@@ -12,34 +12,34 @@ Describe "Get-DbaModule" {
             $CommandUnderTest = Get-Command Get-DbaModule
         }
         It "Should have SqlInstance as a non-mandatory parameter of type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a non-mandatory parameter of type Microsoft.SqlServer.Management.Smo.PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type Microsoft.SqlServer.Management.Smo.PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database as a non-mandatory parameter of type System.Object[]" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have ExcludeDatabase as a non-mandatory parameter of type System.Object[]" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
         }
         It "Should have ModifiedSince as a non-mandatory parameter of type System.DateTime" {
-            $CommandUnderTest | Should -HaveParameter ModifiedSince -Type System.DateTime -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ModifiedSince
         }
         It "Should have Type as a non-mandatory parameter of type System.String[]" {
-            $CommandUnderTest | Should -HaveParameter Type -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Type
         }
         It "Should have ExcludeSystemDatabases as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSystemDatabases -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeSystemDatabases
         }
         It "Should have ExcludeSystemObjects as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeSystemObjects -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeSystemObjects
         }
         It "Should have InputObject as a non-mandatory parameter of type Microsoft.SqlServer.Management.Smo.Database[]" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

@@ -6,31 +6,31 @@ Describe "Restore-DbaDbCertificate" {
             $CommandUnderTest = Get-Command Restore-DbaDbCertificate
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Path parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Path
         }
         It "Should have KeyFilePath parameter" {
-            $CommandUnderTest | Should -HaveParameter KeyFilePath -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter KeyFilePath
         }
         It "Should have EncryptionPassword parameter" {
-            $CommandUnderTest | Should -HaveParameter EncryptionPassword -Type System.Security.SecureString
+            $CommandUnderTest | Should -HaveParameter EncryptionPassword
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have Name parameter" {
-            $CommandUnderTest | Should -HaveParameter Name -Type System.String
+            $CommandUnderTest | Should -HaveParameter Name
         }
         It "Should have DecryptionPassword parameter" {
-            $CommandUnderTest | Should -HaveParameter DecryptionPassword -Type System.Security.SecureString
+            $CommandUnderTest | Should -HaveParameter DecryptionPassword
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

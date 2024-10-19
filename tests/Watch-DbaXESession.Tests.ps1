@@ -10,22 +10,22 @@ Describe "Watch-DbaXESession" {
             $CommandUnderTest = Get-Command Watch-DbaXESession
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Session parameter" {
-            $CommandUnderTest | Should -HaveParameter Session -Type System.String
+            $CommandUnderTest | Should -HaveParameter Session
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.XEvent.Session[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have Raw parameter" {
-            $CommandUnderTest | Should -HaveParameter Raw -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Raw
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

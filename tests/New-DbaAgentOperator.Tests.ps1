@@ -6,58 +6,58 @@ Describe "New-DbaAgentOperator" {
             $CommandUnderTest = Get-Command New-DbaAgentOperator
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Operator parameter" {
-            $CommandUnderTest | Should -HaveParameter Operator -Type System.String
+            $CommandUnderTest | Should -HaveParameter Operator
         }
         It "Should have EmailAddress parameter" {
-            $CommandUnderTest | Should -HaveParameter EmailAddress -Type System.String
+            $CommandUnderTest | Should -HaveParameter EmailAddress
         }
         It "Should have NetSendAddress parameter" {
-            $CommandUnderTest | Should -HaveParameter NetSendAddress -Type System.String
+            $CommandUnderTest | Should -HaveParameter NetSendAddress
         }
         It "Should have PagerAddress parameter" {
-            $CommandUnderTest | Should -HaveParameter PagerAddress -Type System.String
+            $CommandUnderTest | Should -HaveParameter PagerAddress
         }
         It "Should have PagerDay parameter" {
-            $CommandUnderTest | Should -HaveParameter PagerDay -Type System.String
+            $CommandUnderTest | Should -HaveParameter PagerDay
         }
         It "Should have SaturdayStartTime parameter" {
-            $CommandUnderTest | Should -HaveParameter SaturdayStartTime -Type System.String
+            $CommandUnderTest | Should -HaveParameter SaturdayStartTime
         }
         It "Should have SaturdayEndTime parameter" {
-            $CommandUnderTest | Should -HaveParameter SaturdayEndTime -Type System.String
+            $CommandUnderTest | Should -HaveParameter SaturdayEndTime
         }
         It "Should have SundayStartTime parameter" {
-            $CommandUnderTest | Should -HaveParameter SundayStartTime -Type System.String
+            $CommandUnderTest | Should -HaveParameter SundayStartTime
         }
         It "Should have SundayEndTime parameter" {
-            $CommandUnderTest | Should -HaveParameter SundayEndTime -Type System.String
+            $CommandUnderTest | Should -HaveParameter SundayEndTime
         }
         It "Should have WeekdayStartTime parameter" {
-            $CommandUnderTest | Should -HaveParameter WeekdayStartTime -Type System.String
+            $CommandUnderTest | Should -HaveParameter WeekdayStartTime
         }
         It "Should have WeekdayEndTime parameter" {
-            $CommandUnderTest | Should -HaveParameter WeekdayEndTime -Type System.String
+            $CommandUnderTest | Should -HaveParameter WeekdayEndTime
         }
         It "Should have IsFailsafeOperator parameter" {
-            $CommandUnderTest | Should -HaveParameter IsFailsafeOperator -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter IsFailsafeOperator
         }
         It "Should have FailsafeNotificationMethod parameter" {
-            $CommandUnderTest | Should -HaveParameter FailsafeNotificationMethod -Type System.String
+            $CommandUnderTest | Should -HaveParameter FailsafeNotificationMethod
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Force
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Server[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

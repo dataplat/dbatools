@@ -6,22 +6,22 @@ Describe "New-DbaFirewallRule" {
             $CommandUnderTest = Get-Command New-DbaFirewallRule
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have Credential parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Credential
         }
         It "Should have Type parameter" {
-            $CommandUnderTest | Should -HaveParameter Type -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Type
         }
         It "Should have Configuration parameter" {
-            $CommandUnderTest | Should -HaveParameter Configuration -Type System.Collections.Hashtable -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Configuration
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Force
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

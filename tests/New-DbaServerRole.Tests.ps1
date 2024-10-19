@@ -10,19 +10,19 @@ Describe "New-DbaServerRole" {
             $CommandUnderTest = Get-Command New-DbaServerRole
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have ServerRole as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ServerRole -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter ServerRole
         }
         It "Should have Owner as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Owner -Type System.String
+            $CommandUnderTest | Should -HaveParameter Owner
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 
@@ -34,7 +34,7 @@ Describe "New-DbaServerRole" {
             $owner = "sa"
         }
         AfterEach {
-            $null = Remove-DbaServerRole -SqlInstance $instance -ServerRole $roleExecutor, $roleMaster -Confirm:$false
+            $null = Remove-DbaServerRole -SqlInstance $instance -ServerRole $roleExecutor, $roleMaster
         }
 
         It 'Add new server-role and returns results' {

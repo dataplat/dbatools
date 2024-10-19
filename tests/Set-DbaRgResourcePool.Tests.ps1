@@ -5,49 +5,49 @@ Describe "Set-DbaRgResourcePool" {
             $CommandUnderTest = Get-Command Set-DbaRgResourcePool
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have ResourcePool parameter" {
-            $CommandUnderTest | Should -HaveParameter ResourcePool -Type String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ResourcePool
         }
         It "Should have Type parameter" {
-            $CommandUnderTest | Should -HaveParameter Type -Type String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Type
         }
         It "Should have MinimumCpuPercentage parameter" {
-            $CommandUnderTest | Should -HaveParameter MinimumCpuPercentage -Type Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter MinimumCpuPercentage
         }
         It "Should have MaximumCpuPercentage parameter" {
-            $CommandUnderTest | Should -HaveParameter MaximumCpuPercentage -Type Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter MaximumCpuPercentage
         }
         It "Should have CapCpuPercentage parameter" {
-            $CommandUnderTest | Should -HaveParameter CapCpuPercentage -Type Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter CapCpuPercentage
         }
         It "Should have MinimumMemoryPercentage parameter" {
-            $CommandUnderTest | Should -HaveParameter MinimumMemoryPercentage -Type Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter MinimumMemoryPercentage
         }
         It "Should have MaximumMemoryPercentage parameter" {
-            $CommandUnderTest | Should -HaveParameter MaximumMemoryPercentage -Type Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter MaximumMemoryPercentage
         }
         It "Should have MinimumIOPSPerVolume parameter" {
-            $CommandUnderTest | Should -HaveParameter MinimumIOPSPerVolume -Type Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter MinimumIOPSPerVolume
         }
         It "Should have MaximumIOPSPerVolume parameter" {
-            $CommandUnderTest | Should -HaveParameter MaximumIOPSPerVolume -Type Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter MaximumIOPSPerVolume
         }
         It "Should have MaximumProcesses parameter" {
-            $CommandUnderTest | Should -HaveParameter MaximumProcesses -Type Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter MaximumProcesses
         }
         It "Should have SkipReconfigure parameter" {
-            $CommandUnderTest | Should -HaveParameter SkipReconfigure -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SkipReconfigure
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

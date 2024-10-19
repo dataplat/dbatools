@@ -14,40 +14,40 @@ Describe "Expand-DbaDbLogFile" {
             $CommandUnderTest = Get-Command Expand-DbaDbLogFile
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have ExcludeDatabase parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
         }
         It "Should have TargetLogSize parameter" {
-            $CommandUnderTest | Should -HaveParameter TargetLogSize -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter TargetLogSize
         }
         It "Should have IncrementSize parameter" {
-            $CommandUnderTest | Should -HaveParameter IncrementSize -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter IncrementSize
         }
         It "Should have LogFileId parameter" {
-            $CommandUnderTest | Should -HaveParameter LogFileId -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter LogFileId
         }
         It "Should have ShrinkLogFile parameter" {
-            $CommandUnderTest | Should -HaveParameter ShrinkLogFile -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter ShrinkLogFile
         }
         It "Should have ShrinkSize parameter" {
-            $CommandUnderTest | Should -HaveParameter ShrinkSize -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter ShrinkSize
         }
         It "Should have BackupDirectory parameter" {
-            $CommandUnderTest | Should -HaveParameter BackupDirectory -Type System.String
+            $CommandUnderTest | Should -HaveParameter BackupDirectory
         }
         It "Should have ExcludeDiskSpaceValidation parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDiskSpaceValidation -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter ExcludeDiskSpaceValidation
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

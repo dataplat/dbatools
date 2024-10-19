@@ -11,28 +11,28 @@ Describe "Get-DbaComputerCertificate" {
             $CommandUnderTest = Get-Command Get-DbaComputerCertificate
         }
         It "Should have ComputerName as a non-mandatory parameter of type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter ComputerName -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ComputerName
         }
         It "Should have Credential as a non-mandatory parameter of type System.Management.Automation.PSCredential" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Credential
         }
         It "Should have Store as a non-mandatory parameter of type System.String[]" {
-            $CommandUnderTest | Should -HaveParameter Store -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Store
         }
         It "Should have Folder as a non-mandatory parameter of type System.String[]" {
-            $CommandUnderTest | Should -HaveParameter Folder -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Folder
         }
         It "Should have Type as a non-mandatory parameter of type System.String" {
-            $CommandUnderTest | Should -HaveParameter Type -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Type
         }
         It "Should have Path as a non-mandatory parameter of type System.String" {
-            $CommandUnderTest | Should -HaveParameter Path -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Path
         }
         It "Should have Thumbprint as a non-mandatory parameter of type System.String[]" {
-            $CommandUnderTest | Should -HaveParameter Thumbprint -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Thumbprint
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

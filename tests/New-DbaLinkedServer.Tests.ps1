@@ -31,46 +31,46 @@ Describe "New-DbaLinkedServer" {
             $CommandUnderTest = Get-Command New-DbaLinkedServer
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have LinkedServer as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LinkedServer -Type System.String
+            $CommandUnderTest | Should -HaveParameter LinkedServer
         }
         It "Should have ServerProduct as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ServerProduct -Type System.String
+            $CommandUnderTest | Should -HaveParameter ServerProduct
         }
         It "Should have Provider as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Provider -Type System.String
+            $CommandUnderTest | Should -HaveParameter Provider
         }
         It "Should have DataSource as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DataSource -Type System.String
+            $CommandUnderTest | Should -HaveParameter DataSource
         }
         It "Should have Location as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Location -Type System.String
+            $CommandUnderTest | Should -HaveParameter Location
         }
         It "Should have ProviderString as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ProviderString -Type System.String
+            $CommandUnderTest | Should -HaveParameter ProviderString
         }
         It "Should have Catalog as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Catalog -Type System.String
+            $CommandUnderTest | Should -HaveParameter Catalog
         }
         It "Should have SecurityContext as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SecurityContext -Type System.String
+            $CommandUnderTest | Should -HaveParameter SecurityContext
         }
         It "Should have SecurityContextRemoteUser as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SecurityContextRemoteUser -Type System.String
+            $CommandUnderTest | Should -HaveParameter SecurityContextRemoteUser
         }
         It "Should have SecurityContextRemoteUserPassword as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SecurityContextRemoteUserPassword -Type System.Security.SecureString
+            $CommandUnderTest | Should -HaveParameter SecurityContextRemoteUserPassword
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Server[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

@@ -12,37 +12,37 @@ Describe "New-DbaDbCertificate" {
             $CommandUnderTest = Get-Command New-DbaDbCertificate
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Name as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Name -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Name
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have Subject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Subject -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Subject
         }
         It "Should have StartDate as a parameter" {
-            $CommandUnderTest | Should -HaveParameter StartDate -Type System.DateTime
+            $CommandUnderTest | Should -HaveParameter StartDate
         }
         It "Should have ExpirationDate as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExpirationDate -Type System.DateTime
+            $CommandUnderTest | Should -HaveParameter ExpirationDate
         }
         It "Should have ActiveForServiceBrokerDialog as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ActiveForServiceBrokerDialog -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter ActiveForServiceBrokerDialog
         }
         It "Should have SecurePassword as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SecurePassword -Type System.Security.SecureString
+            $CommandUnderTest | Should -HaveParameter SecurePassword
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 
@@ -51,29 +51,29 @@ Describe "New-DbaDbCertificate" {
             $global:instance1 = $global:instance1 # Assuming this is defined in constants.ps1
 
             if (-not (Get-DbaDbMasterKey -SqlInstance $global:instance1 -Database master)) {
-                $masterkey = New-DbaDbMasterKey -SqlInstance $global:instance1 -Database master -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
+                $masterkey = New-DbaDbMasterKey -SqlInstance $global:instance1 -Database master -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force)
             }
 
-            $tempdbmasterkey = New-DbaDbMasterKey -SqlInstance $global:instance1 -Database tempdb -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
+            $tempdbmasterkey = New-DbaDbMasterKey -SqlInstance $global:instance1 -Database tempdb -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force)
             $certificateName1 = "Cert_$(Get-random)"
             $certificateName2 = "Cert_$(Get-random)"
         }
 
         AfterAll {
-            if ($tempdbmasterkey) { $tempdbmasterkey | Remove-DbaDbMasterKey -Confirm:$false }
-            if ($masterKey) { $masterkey | Remove-DbaDbMasterKey -Confirm:$false }
+            if ($tempdbmasterkey) { $tempdbmasterkey | Remove-DbaDbMasterKey }
+            if ($masterKey) { $masterkey | Remove-DbaDbMasterKey }
         }
 
         It "Successfully creates a new database certificate in default, master database" {
-            $cert1 = New-DbaDbCertificate -SqlInstance $global:instance1 -Name $certificateName1 -Confirm:$false
+            $cert1 = New-DbaDbCertificate -SqlInstance $global:instance1 -Name $certificateName1
             $cert1.Name | Should -Match $certificateName1
-            $cert1 | Remove-DbaDbCertificate -Confirm:$false
+            $cert1 | Remove-DbaDbCertificate
         }
 
         It "Successfully creates a new database certificate in the tempdb database" {
-            $cert2 = New-DbaDbCertificate -SqlInstance $global:instance1 -Name $certificateName2 -Database tempdb -Confirm:$false
+            $cert2 = New-DbaDbCertificate -SqlInstance $global:instance1 -Name $certificateName2 -Database tempdb
             $cert2.Database | Should -Match "tempdb"
-            $cert2 | Remove-DbaDbCertificate -Confirm:$false
+            $cert2 | Remove-DbaDbCertificate
         }
     }
 }

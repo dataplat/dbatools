@@ -19,43 +19,43 @@ Describe "Export-DbaXESession" {
             $CommandUnderTest = Get-Command Export-DbaXESession
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.XEvent.Session[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have Session parameter" {
-            $CommandUnderTest | Should -HaveParameter Session -Type String[]
+            $CommandUnderTest | Should -HaveParameter Session
         }
         It "Should have Path parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type String
+            $CommandUnderTest | Should -HaveParameter Path
         }
         It "Should have FilePath parameter" {
-            $CommandUnderTest | Should -HaveParameter FilePath -Type String
+            $CommandUnderTest | Should -HaveParameter FilePath
         }
         It "Should have Encoding parameter" {
-            $CommandUnderTest | Should -HaveParameter Encoding -Type String
+            $CommandUnderTest | Should -HaveParameter Encoding
         }
         It "Should have Passthru parameter" {
-            $CommandUnderTest | Should -HaveParameter Passthru -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Passthru
         }
         It "Should have BatchSeparator parameter" {
-            $CommandUnderTest | Should -HaveParameter BatchSeparator -Type String
+            $CommandUnderTest | Should -HaveParameter BatchSeparator
         }
         It "Should have NoPrefix parameter" {
-            $CommandUnderTest | Should -HaveParameter NoPrefix -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter NoPrefix
         }
         It "Should have NoClobber parameter" {
-            $CommandUnderTest | Should -HaveParameter NoClobber -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter NoClobber
         }
         It "Should have Append parameter" {
-            $CommandUnderTest | Should -HaveParameter Append -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Append
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

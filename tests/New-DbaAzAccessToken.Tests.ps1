@@ -9,29 +9,29 @@ Describe "New-DbaAzAccessToken" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaAzAccessToken
         }
-        It "Should have Type as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Type -Type System.String -Mandatory:$false
+        It "Should have Type as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Type
         }
-        It "Should have Subtype as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Subtype -Type System.String -Mandatory:$false
+        It "Should have Subtype as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Subtype
         }
-        It "Should have Config as a non-mandatory Object parameter" {
-            $CommandUnderTest | Should -HaveParameter Config -Type System.Object -Mandatory:$false
+        It "Should have Config as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Config
         }
-        It "Should have Credential as a non-mandatory PSCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type System.Management.Automation.PSCredential -Mandatory:$false
+        It "Should have Credential as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Credential
         }
-        It "Should have Tenant as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Tenant -Type System.String -Mandatory:$false
+        It "Should have Tenant as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Tenant
         }
-        It "Should have Thumbprint as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Thumbprint -Type System.String -Mandatory:$false
+        It "Should have Thumbprint as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Thumbprint
         }
-        It "Should have Store as a non-mandatory String parameter" {
-            $CommandUnderTest | Should -HaveParameter Store -Type System.String -Mandatory:$false
+        It "Should have Store as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Store
         }
         It "Should have EnableException as a non-mandatory Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 }

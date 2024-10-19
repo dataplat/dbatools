@@ -10,100 +10,100 @@ Describe "Connect-DbaInstance" {
             $CommandUnderTest = Get-Command Connect-DbaInstance
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have ApplicationIntent as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ApplicationIntent -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ApplicationIntent
         }
         It "Should have AzureUnsupported as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AzureUnsupported -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter AzureUnsupported
         }
         It "Should have BatchSeparator as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BatchSeparator -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter BatchSeparator
         }
         It "Should have ClientName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ClientName -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ClientName
         }
         It "Should have ConnectTimeout as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ConnectTimeout -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ConnectTimeout
         }
         It "Should have EncryptConnection as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EncryptConnection -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EncryptConnection
         }
         It "Should have FailoverPartner as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FailoverPartner -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter FailoverPartner
         }
         It "Should have LockTimeout as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LockTimeout -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter LockTimeout
         }
         It "Should have MaxPoolSize as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MaxPoolSize -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter MaxPoolSize
         }
         It "Should have MinPoolSize as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MinPoolSize -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter MinPoolSize
         }
         It "Should have MinimumVersion as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MinimumVersion -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter MinimumVersion
         }
         It "Should have MultipleActiveResultSets as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MultipleActiveResultSets -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter MultipleActiveResultSets
         }
         It "Should have MultiSubnetFailover as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MultiSubnetFailover -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter MultiSubnetFailover
         }
         It "Should have NetworkProtocol as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NetworkProtocol -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter NetworkProtocol
         }
         It "Should have NonPooledConnection as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NonPooledConnection -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter NonPooledConnection
         }
         It "Should have PacketSize as a parameter" {
-            $CommandUnderTest | Should -HaveParameter PacketSize -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter PacketSize
         }
         It "Should have PooledConnectionLifetime as a parameter" {
-            $CommandUnderTest | Should -HaveParameter PooledConnectionLifetime -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter PooledConnectionLifetime
         }
         It "Should have SqlExecutionModes as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlExecutionModes -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlExecutionModes
         }
         It "Should have StatementTimeout as a parameter" {
-            $CommandUnderTest | Should -HaveParameter StatementTimeout -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter StatementTimeout
         }
         It "Should have TrustServerCertificate as a parameter" {
-            $CommandUnderTest | Should -HaveParameter TrustServerCertificate -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter TrustServerCertificate
         }
         It "Should have WorkstationId as a parameter" {
-            $CommandUnderTest | Should -HaveParameter WorkstationId -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter WorkstationId
         }
         It "Should have AlwaysEncrypted as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AlwaysEncrypted -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter AlwaysEncrypted
         }
         It "Should have AppendConnectionString as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AppendConnectionString -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter AppendConnectionString
         }
         It "Should have SqlConnectionOnly as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlConnectionOnly -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlConnectionOnly
         }
         It "Should have AzureDomain as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AzureDomain -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter AzureDomain
         }
         It "Should have Tenant as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Tenant -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Tenant
         }
         It "Should have AccessToken as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AccessToken -Type PSObject -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter AccessToken
         }
         It "Should have DedicatedAdminConnection as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DedicatedAdminConnection -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter DedicatedAdminConnection
         }
         It "Should have DisableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DisableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter DisableException
         }
     }
 

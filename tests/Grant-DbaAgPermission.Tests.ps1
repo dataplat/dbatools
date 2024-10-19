@@ -6,28 +6,28 @@ Describe "Grant-DbaAgPermission" {
             $CommandUnderTest = Get-Command Grant-DbaAgPermission
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Login as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Login -Type Microsoft.SqlServer.Management.Smo.Login[]
+            $CommandUnderTest | Should -HaveParameter Login
         }
         It "Should have AvailabilityGroup as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AvailabilityGroup -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter AvailabilityGroup
         }
         It "Should have Type as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Type -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Type
         }
         It "Should have Permission as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Permission -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Permission
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Login[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 }

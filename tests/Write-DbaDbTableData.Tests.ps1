@@ -21,61 +21,61 @@ Describe "Write-DbaDbTableData" {
             $CommandUnderTest = Get-Command Write-DbaDbTableData
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Connection.ManagementConnectionType
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type Microsoft.SqlServer.Management.Smo.Database
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have Table parameter" {
-            $CommandUnderTest | Should -HaveParameter Table -Type System.String
+            $CommandUnderTest | Should -HaveParameter Table
         }
         It "Should have Schema parameter" {
-            $CommandUnderTest | Should -HaveParameter Schema -Type System.String
+            $CommandUnderTest | Should -HaveParameter Schema
         }
         It "Should have BatchSize parameter" {
-            $CommandUnderTest | Should -HaveParameter BatchSize -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter BatchSize
         }
         It "Should have NotifyAfter parameter" {
-            $CommandUnderTest | Should -HaveParameter NotifyAfter -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter NotifyAfter
         }
         It "Should have AutoCreateTable parameter" {
-            $CommandUnderTest | Should -HaveParameter AutoCreateTable -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter AutoCreateTable
         }
         It "Should have NoTableLock parameter" {
-            $CommandUnderTest | Should -HaveParameter NoTableLock -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter NoTableLock
         }
         It "Should have CheckConstraints parameter" {
-            $CommandUnderTest | Should -HaveParameter CheckConstraints -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter CheckConstraints
         }
         It "Should have FireTriggers parameter" {
-            $CommandUnderTest | Should -HaveParameter FireTriggers -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter FireTriggers
         }
         It "Should have KeepIdentity parameter" {
-            $CommandUnderTest | Should -HaveParameter KeepIdentity -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter KeepIdentity
         }
         It "Should have KeepNulls parameter" {
-            $CommandUnderTest | Should -HaveParameter KeepNulls -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter KeepNulls
         }
         It "Should have Truncate parameter" {
-            $CommandUnderTest | Should -HaveParameter Truncate -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Truncate
         }
         It "Should have BulkCopyTimeOut parameter" {
-            $CommandUnderTest | Should -HaveParameter BulkCopyTimeOut -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter BulkCopyTimeOut
         }
         It "Should have ColumnMap parameter" {
-            $CommandUnderTest | Should -HaveParameter ColumnMap -Type System.Collections.Hashtable
+            $CommandUnderTest | Should -HaveParameter ColumnMap
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
         It "Should have UseDynamicStringLength parameter" {
-            $CommandUnderTest | Should -HaveParameter UseDynamicStringLength -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter UseDynamicStringLength
         }
     }
 

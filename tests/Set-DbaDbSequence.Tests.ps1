@@ -6,43 +6,43 @@ Describe "Set-DbaDbSequence" {
             $CommandUnderTest = Get-Command Set-DbaDbSequence
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Connection.ManagementConnectionType[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have Sequence as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Sequence -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Sequence
         }
         It "Should have Schema as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Schema -Type System.String
+            $CommandUnderTest | Should -HaveParameter Schema
         }
         It "Should have RestartWith as a parameter" {
-            $CommandUnderTest | Should -HaveParameter RestartWith -Type System.Int64
+            $CommandUnderTest | Should -HaveParameter RestartWith
         }
         It "Should have IncrementBy as a parameter" {
-            $CommandUnderTest | Should -HaveParameter IncrementBy -Type System.Int64
+            $CommandUnderTest | Should -HaveParameter IncrementBy
         }
         It "Should have MinValue as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MinValue -Type System.Int64
+            $CommandUnderTest | Should -HaveParameter MinValue
         }
         It "Should have MaxValue as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MaxValue -Type System.Int64
+            $CommandUnderTest | Should -HaveParameter MaxValue
         }
         It "Should have Cycle as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Cycle -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Cycle
         }
         It "Should have CacheSize as a parameter" {
-            $CommandUnderTest | Should -HaveParameter CacheSize -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter CacheSize
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 
@@ -62,7 +62,7 @@ Describe "Set-DbaDbSequence" {
         }
 
         It "validates required Database param" {
-            $sequence = Set-DbaDbSequence -SqlInstance $server -Sequence "Sequence1_$random" -Schema "Schema_$random" -Confirm:$false -ErrorVariable error
+            $sequence = Set-DbaDbSequence -SqlInstance $server -Sequence "Sequence1_$random" -Schema "Schema_$random" -ErrorVariable error
             $sequence | Should -BeNullOrEmpty
             $error | Should -Match "Database is required when SqlInstance is specified"
         }

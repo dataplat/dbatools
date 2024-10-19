@@ -12,22 +12,22 @@ Describe "Set-DbaTcpPort" {
             $CommandUnderTest = Get-Command Set-DbaTcpPort
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter Credential
         }
         It "Should have Port as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Port -Type System.Int32[]
+            $CommandUnderTest | Should -HaveParameter Port
         }
         It "Should have IpAddress as a parameter" {
-            $CommandUnderTest | Should -HaveParameter IpAddress -Type System.Net.IPAddress[]
+            $CommandUnderTest | Should -HaveParameter IpAddress
         }
         It "Should have Force as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Force
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

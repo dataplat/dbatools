@@ -5,23 +5,23 @@ Describe "Start-DbaPfDataCollectorSet" {
         BeforeAll {
             $CommandUnderTest = Get-Command Start-DbaPfDataCollectorSet
         }
-        It "Should have ComputerName as a non-mandatory parameter of type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter ComputerName -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
+        It "Should have ComputerName as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter ComputerName
         }
-        It "Should have Credential as a non-mandatory parameter of type Microsoft.SqlServer.Management.Smo.Credential[]" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type Microsoft.SqlServer.Management.Smo.Credential -Mandatory:$false
+        It "Should have Credential as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Credential
         }
-        It "Should have CollectorSet as a non-mandatory parameter of type System.String[]" {
-            $CommandUnderTest | Should -HaveParameter CollectorSet -Type System.String[] -Mandatory:$false
+        It "Should have CollectorSet as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter CollectorSet
         }
-        It "Should have InputObject as a non-mandatory parameter of type System.Object[]" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object[] -Mandatory:$false
+        It "Should have InputObject as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have NoWait as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoWait -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter NoWait
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

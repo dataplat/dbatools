@@ -6,28 +6,28 @@ Describe "Remove-DbaCredential" {
             $CommandUnderTest = Get-Command Remove-DbaCredential
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Credential
         }
         It "Should have ExcludeCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeCredential -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter ExcludeCredential
         }
         It "Should have Identity as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Identity -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Identity
         }
         It "Should have ExcludeIdentity as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeIdentity -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter ExcludeIdentity
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Credential[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.Switch
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

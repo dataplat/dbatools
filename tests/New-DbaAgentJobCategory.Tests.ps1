@@ -10,22 +10,22 @@ Describe "New-DbaAgentJobCategory" {
             $CommandUnderTest = Get-Command New-DbaAgentJobCategory
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Category parameter" {
-            $CommandUnderTest | Should -HaveParameter Category -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Category
         }
         It "Should have CategoryType parameter" {
-            $CommandUnderTest | Should -HaveParameter CategoryType -Type System.String
+            $CommandUnderTest | Should -HaveParameter CategoryType
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Force
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

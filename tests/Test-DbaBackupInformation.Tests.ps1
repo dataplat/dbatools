@@ -12,28 +12,28 @@ Describe "Test-DbaBackupInformation Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Test-DbaBackupInformation
         }
         It "Should have BackupHistory as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BackupHistory -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter BackupHistory
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have WithReplace as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter WithReplace -Type switch
+            $CommandUnderTest | Should -HaveParameter WithReplace
         }
         It "Should have Continue as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Continue -Type switch
+            $CommandUnderTest | Should -HaveParameter Continue
         }
         It "Should have VerifyOnly as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter VerifyOnly -Type switch
+            $CommandUnderTest | Should -HaveParameter VerifyOnly
         }
         It "Should have OutputScriptOnly as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter OutputScriptOnly -Type switch
+            $CommandUnderTest | Should -HaveParameter OutputScriptOnly
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type switch
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 }

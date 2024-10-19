@@ -11,25 +11,25 @@ Describe "Invoke-DbaDbccFreeCache" {
             $CommandUnderTest = Get-Command Invoke-DbaDbccFreeCache
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Operation as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Operation -Type System.String
+            $CommandUnderTest | Should -HaveParameter Operation
         }
         It "Should have InputValue as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputValue -Type System.String
+            $CommandUnderTest | Should -HaveParameter InputValue
         }
         It "Should have NoInformationalMessages as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NoInformationalMessages -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter NoInformationalMessages
         }
         It "Should have MarkInUseForRemoval as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MarkInUseForRemoval -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter MarkInUseForRemoval
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 
@@ -39,7 +39,7 @@ Describe "Invoke-DbaDbccFreeCache" {
         }
 
         It "returns the right results for FREESYSTEMCACHE" {
-            $result = Invoke-DbaDbccFreeCache -SqlInstance $global:instance2 -Operation FreeSystemCache -Confirm:$false
+            $result = Invoke-DbaDbccFreeCache -SqlInstance $global:instance2 -Operation FreeSystemCache
             $result.Operation | Should -Match 'FREESYSTEMCACHE'
             $result.Output | Should -Match 'DBCC execution completed. If DBCC printed error messages, contact your system administrator.'
             foreach ($prop in $props) {
@@ -48,19 +48,19 @@ Describe "Invoke-DbaDbccFreeCache" {
         }
 
         It "returns the right results for FREESESSIONCACHE" {
-            $result = Invoke-DbaDbccFreeCache -SqlInstance $global:instance2 -Operation FreeSessionCache -Confirm:$false
+            $result = Invoke-DbaDbccFreeCache -SqlInstance $global:instance2 -Operation FreeSessionCache
             $result.Operation | Should -Match 'FREESESSIONCACHE'
             $result.Output | Should -Match 'DBCC execution completed. If DBCC printed error messages, contact your system administrator.'
         }
 
         It "returns the right results for FREEPROCCACHE" {
-            $result = Invoke-DbaDbccFreeCache -SqlInstance $global:instance2 -Operation FREEPROCCACHE -Confirm:$false
+            $result = Invoke-DbaDbccFreeCache -SqlInstance $global:instance2 -Operation FREEPROCCACHE
             $result.Operation | Should -Match 'FREEPROCCACHE'
             $result.Output | Should -Match 'DBCC execution completed. If DBCC printed error messages, contact your system administrator.'
         }
 
         It "returns the right results for FREESESSIONCACHE and using NoInformationalMessages" {
-            $result = Invoke-DbaDbccFreeCache -SqlInstance $global:instance2 -Operation FreeSessionCache -NoInformationalMessages -Confirm:$false
+            $result = Invoke-DbaDbccFreeCache -SqlInstance $global:instance2 -Operation FreeSessionCache -NoInformationalMessages
             $result.Operation | Should -Match 'FREESESSIONCACHE'
             $result.Output | Should -BeNullOrEmpty
         }

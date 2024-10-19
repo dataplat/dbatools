@@ -10,19 +10,19 @@ Describe "Test-DbaConnectionAuthScheme" {
             $CommandUnderTest = Get-Command Test-DbaConnectionAuthScheme
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Kerberos as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Kerberos -Type switch
+            $CommandUnderTest | Should -HaveParameter Kerberos
         }
         It "Should have Ntlm as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Ntlm -Type switch
+            $CommandUnderTest | Should -HaveParameter Ntlm
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type switch
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

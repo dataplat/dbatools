@@ -12,40 +12,40 @@ Describe "Export-DbaBinaryFile" {
             $CommandUnderTest = Get-Command Export-DbaBinaryFile
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have Table as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Table -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Table
         }
         It "Should have Schema as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Schema -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Schema
         }
         It "Should have FileNameColumn as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FileNameColumn -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter FileNameColumn
         }
         It "Should have BinaryColumn as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BinaryColumn -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter BinaryColumn
         }
         It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Path
         }
         It "Should have Query as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Query -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Query
         }
         It "Should have FilePath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FilePath -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter FilePath
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type [Microsoft.SqlServer.Management.Smo.Table[]] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

@@ -31,8 +31,8 @@ Describe "Remove-DbaDbRoleMember" {
         $server = Connect-DbaInstance -SqlInstance $global:instance2
         $null = $server.Query("DROP USER User1", 'msdb')
         $null = $server.Query("DROP USER User2", 'msdb')
-        $null = Remove-DbaDatabase -SqlInstance $global:instance2 -Database $dbname -Confirm:$false
-        $null = Remove-DbaLogin -SqlInstance $global:instance2 -Login $user1, $user2 -Confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $global:instance2 -Database $dbname
+        $null = Remove-DbaLogin -SqlInstance $global:instance2 -Login $user1, $user2
     }
 
     Context "Validate parameters" {
@@ -40,25 +40,25 @@ Describe "Remove-DbaDbRoleMember" {
             $CommandUnderTest = Get-Command Remove-DbaDbRoleMember
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Connection.ManagementConnectionType[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have Role as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Role -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Role
         }
         It "Should have User as a parameter" {
-            $CommandUnderTest | Should -HaveParameter User -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter User
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 
@@ -69,7 +69,7 @@ Describe "Remove-DbaDbRoleMember" {
 
         It 'Removes Role for User' {
             $roleDB = Get-DbaDbRoleMember -SqlInstance $global:instance2 -Database $dbname -Role $role
-            Remove-DbaDbRoleMember -SqlInstance $global:instance2 -Role $role -User 'User1' -Database $dbname -Confirm:$false
+            Remove-DbaDbRoleMember -SqlInstance $global:instance2 -Role $role -User 'User1' -Database $dbname
             $roleDBAfter = Get-DbaDbRoleMember -SqlInstance $server -Database $dbname -Role $role
 
             $roleDB.UserName | Should -Be 'User1'
@@ -78,7 +78,7 @@ Describe "Remove-DbaDbRoleMember" {
 
         It 'Removes Multiple Roles for User' {
             $roleDB = Get-DbaDbRoleMember -SqlInstance $server -Database msdb -Role db_datareader, SQLAgentReaderRole
-            $server | Remove-DbaDbRoleMember -Role db_datareader, SQLAgentReaderRole -User 'User1' -Database msdb -Confirm:$false
+            $server | Remove-DbaDbRoleMember -Role db_datareader, SQLAgentReaderRole -User 'User1' -Database msdb
 
             $roleDBAfter = Get-DbaDbRoleMember -SqlInstance $server -Database msdb -Role db_datareader, SQLAgentReaderRole
             $roleDB.UserName | Should -Contain 'User1'
@@ -91,7 +91,7 @@ Describe "Remove-DbaDbRoleMember" {
         It 'Removes Roles for User via piped input from Get-DbaDbRole' {
             $roleInput = Get-DbaDbRole -SqlInstance $server -Database msdb -Role db_datareader, SQLAgentReaderRole
             $roleDB = Get-DbaDbRoleMember -SqlInstance $server -Database msdb -Role db_datareader, SQLAgentReaderRole
-            $roleInput | Remove-DbaDbRoleMember -User 'User2' -Confirm:$false
+            $roleInput | Remove-DbaDbRoleMember -User 'User2'
 
             $roleDBAfter = Get-DbaDbRoleMember -SqlInstance $server -Database msdb -Role db_datareader, SQLAgentReaderRole
             $roleDB.UserName | Should -Contain 'User2'

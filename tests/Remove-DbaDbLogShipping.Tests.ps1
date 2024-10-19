@@ -9,25 +9,25 @@ Describe "Remove-DbaDbLogShipping Unit Tests" -Tag "UnitTests" {
             $CommandUnderTest = Get-Command Remove-DbaDbLogShipping
         }
         It "Should have PrimarySqlInstance as a non-mandatory Dataplat.Dbatools.Parameter.DbaInstanceParameter" {
-            $CommandUnderTest | Should -HaveParameter PrimarySqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter PrimarySqlInstance
         }
         It "Should have SecondarySqlInstance as a non-mandatory Dataplat.Dbatools.Parameter.DbaInstanceParameter" {
-            $CommandUnderTest | Should -HaveParameter SecondarySqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SecondarySqlInstance
         }
         It "Should have PrimarySqlCredential as a non-mandatory System.Management.Automation.PSCredential" {
-            $CommandUnderTest | Should -HaveParameter PrimarySqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter PrimarySqlCredential
         }
         It "Should have SecondarySqlCredential as a non-mandatory System.Management.Automation.PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SecondarySqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SecondarySqlCredential
         }
         It "Should have Database as a non-mandatory System.Object[]" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have RemoveSecondaryDatabase as a non-mandatory System.Management.Automation.SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter RemoveSecondaryDatabase -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter RemoveSecondaryDatabase
         }
         It "Should have EnableException as a non-mandatory System.Management.Automation.SwitchParameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 }

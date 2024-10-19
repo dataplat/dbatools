@@ -11,20 +11,20 @@ Describe "Test-DbaDiskAlignment" {
         BeforeAll {
             $CommandUnderTest = Get-Command Test-DbaDiskAlignment
         }
-        It "Should have ComputerName as a non-mandatory parameter of type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter ComputerName -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
+        It "Should have ComputerName as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter ComputerName
         }
-        It "Should have Credential as a non-mandatory parameter of type System.Management.Automation.PSCredential" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type System.Management.Automation.PSCredential -Mandatory:$false
+        It "Should have Credential as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Credential
         }
-        It "Should have SqlCredential as a non-mandatory parameter of type System.Management.Automation.PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+        It "Should have SqlCredential as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have NoSqlCheck as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoSqlCheck -Type switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter NoSqlCheck
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

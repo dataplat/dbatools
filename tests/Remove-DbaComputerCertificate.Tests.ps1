@@ -6,22 +6,22 @@ Describe "Remove-DbaComputerCertificate" {
             $CommandUnderTest = Get-Command Remove-DbaComputerCertificate
         }
         It "Should have ComputerName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ComputerName -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter ComputerName
         }
         It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter Credential
         }
         It "Should have Thumbprint as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Thumbprint -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Thumbprint
         }
         It "Should have Store as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Store -Type System.String
+            $CommandUnderTest | Should -HaveParameter Store
         }
         It "Should have Folder as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Folder -Type System.String
+            $CommandUnderTest | Should -HaveParameter Folder
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

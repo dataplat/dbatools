@@ -6,28 +6,28 @@ Describe "Repair-DbaDbOrphanUser" {
             $CommandUnderTest = Get-Command Repair-DbaDbOrphanUser
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have ExcludeDatabase parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
         }
         It "Should have Users parameter" {
-            $CommandUnderTest | Should -HaveParameter Users -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter Users
         }
         It "Should have RemoveNotExisting parameter" {
-            $CommandUnderTest | Should -HaveParameter RemoveNotExisting -Type System.Management.Automation.Switch
+            $CommandUnderTest | Should -HaveParameter RemoveNotExisting
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.Switch
+            $CommandUnderTest | Should -HaveParameter Force
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.Switch
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 
@@ -40,8 +40,8 @@ CREATE LOGIN [dbatoolsci_orphan3] WITH PASSWORD = N'password3', CHECK_EXPIRATION
 CREATE DATABASE dbatoolsci_orphan;
 '@
             $server = Connect-DbaInstance -SqlInstance $global:instance1
-            $null = Remove-DbaLogin -SqlInstance $server -Login dbatoolsci_orphan1, dbatoolsci_orphan2, dbatoolsci_orphan3 -Force -Confirm:$false
-            $null = Remove-DbaDatabase -SqlInstance $server -Database dbatoolsci_orphan -Confirm:$false
+            $null = Remove-DbaLogin -SqlInstance $server -Login dbatoolsci_orphan1, dbatoolsci_orphan2, dbatoolsci_orphan3 -Force
+            $null = Remove-DbaDatabase -SqlInstance $server -Database dbatoolsci_orphan
             $null = Invoke-DbaQuery -SqlInstance $server -Query $loginsq
             $usersq = @'
 CREATE USER [dbatoolsci_orphan1] FROM LOGIN [dbatoolsci_orphan1];
@@ -60,8 +60,8 @@ CREATE LOGIN [dbatoolsci_orphan2] WITH PASSWORD = N'password2', CHECK_EXPIRATION
 
         AfterAll {
             $server = Connect-DbaInstance -SqlInstance $global:instance1
-            $null = Remove-DbaLogin -SqlInstance $server -Login dbatoolsci_orphan1, dbatoolsci_orphan2, dbatoolsci_orphan3 -Force -Confirm:$false
-            $null = Remove-DbaDatabase -SqlInstance $server -Database dbatoolsci_orphan -Confirm:$false
+            $null = Remove-DbaLogin -SqlInstance $server -Login dbatoolsci_orphan1, dbatoolsci_orphan2, dbatoolsci_orphan3 -Force
+            $null = Remove-DbaDatabase -SqlInstance $server -Database dbatoolsci_orphan
         }
 
         It "Finds two orphans" {

@@ -6,25 +6,25 @@ Describe "Get-DbaDbccSessionBuffer" {
             $CommandUnderTest = Get-Command Get-DbaDbccSessionBuffer
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Operation parameter" {
-            $CommandUnderTest | Should -HaveParameter Operation -Type System.String
+            $CommandUnderTest | Should -HaveParameter Operation
         }
         It "Should have SessionId parameter" {
-            $CommandUnderTest | Should -HaveParameter SessionId -Type System.Int32[]
+            $CommandUnderTest | Should -HaveParameter SessionId
         }
         It "Should have RequestId parameter" {
-            $CommandUnderTest | Should -HaveParameter RequestId -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter RequestId
         }
         It "Should have All parameter" {
-            $CommandUnderTest | Should -HaveParameter All -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter All
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

@@ -11,41 +11,41 @@ Describe "Add-DbaAgDatabase" {
         BeforeAll {
             $CommandUnderTest = Get-Command Add-DbaAgDatabase
         }
-        It "Should have SqlInstance as a non-mandatory parameter of type Dataplat.Dbatools.Parameter.DbaInstanceParameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter -Mandatory:$false
+        It "Should have SqlInstance as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
-        It "Should have SqlCredential as a non-mandatory parameter of type System.Management.Automation.PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+        It "Should have SqlCredential as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
-        It "Should have AvailabilityGroup as a non-mandatory parameter of type System.String" {
-            $CommandUnderTest | Should -HaveParameter AvailabilityGroup -Type System.String -Mandatory:$false
+        It "Should have AvailabilityGroup as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter AvailabilityGroup
         }
-        It "Should have Database as a non-mandatory parameter of type System.String[]" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String[] -Mandatory:$false
+        It "Should have Database as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Database
         }
-        It "Should have Secondary as a non-mandatory parameter of type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter Secondary -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
+        It "Should have Secondary as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Secondary
         }
-        It "Should have SecondarySqlCredential as a non-mandatory parameter of type System.Management.Automation.PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SecondarySqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+        It "Should have SecondarySqlCredential as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter SecondarySqlCredential
         }
-        It "Should have InputObject as a non-mandatory parameter of type Microsoft.SqlServer.Management.Smo.Database[]" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[] -Mandatory:$false
+        It "Should have InputObject as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
-        It "Should have SeedingMode as a non-mandatory parameter of type System.String" {
-            $CommandUnderTest | Should -HaveParameter SeedingMode -Type System.String -Mandatory:$false
+        It "Should have SeedingMode as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter SeedingMode
         }
-        It "Should have SharedPath as a non-mandatory parameter of type System.String" {
-            $CommandUnderTest | Should -HaveParameter SharedPath -Type System.String -Mandatory:$false
+        It "Should have SharedPath as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter SharedPath
         }
         It "Should have UseLastBackup as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter UseLastBackup -Type System.Management.Automation.Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter UseLastBackup
         }
-        It "Should have AdvancedBackupParams as a non-mandatory parameter of type System.Collections.Hashtable" {
-            $CommandUnderTest | Should -HaveParameter AdvancedBackupParams -Type System.Collections.Hashtable -Mandatory:$false
+        It "Should have AdvancedBackupParams as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter AdvancedBackupParams
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

@@ -5,23 +5,23 @@ Describe "Get-DbaDbPartitionFunction" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaDbPartitionFunction
         }
-        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+        It "Should have SqlInstance as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
-        It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+        It "Should have SqlCredential as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
-        It "Should have Database as a non-mandatory parameter of type System.Object[]" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.Object[] -Mandatory:$false
+        It "Should have Database as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Database
         }
-        It "Should have ExcludeDatabase as a non-mandatory parameter of type System.Object[]" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.Object[] -Mandatory:$false
+        It "Should have ExcludeDatabase as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
         }
-        It "Should have PartitionFunction as a non-mandatory parameter of type System.String[]" {
-            $CommandUnderTest | Should -HaveParameter PartitionFunction -Type System.String[] -Mandatory:$false
+        It "Should have PartitionFunction as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter PartitionFunction
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

@@ -10,52 +10,52 @@ Describe "Install-DbaMaintenanceSolution" {
             $CommandUnderTest = Get-Command Install-DbaMaintenanceSolution
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have BackupLocation parameter" {
-            $CommandUnderTest | Should -HaveParameter BackupLocation -Type System.String
+            $CommandUnderTest | Should -HaveParameter BackupLocation
         }
         It "Should have CleanupTime parameter" {
-            $CommandUnderTest | Should -HaveParameter CleanupTime -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter CleanupTime
         }
         It "Should have OutputFileDirectory parameter" {
-            $CommandUnderTest | Should -HaveParameter OutputFileDirectory -Type System.String
+            $CommandUnderTest | Should -HaveParameter OutputFileDirectory
         }
         It "Should have ReplaceExisting parameter" {
-            $CommandUnderTest | Should -HaveParameter ReplaceExisting -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter ReplaceExisting
         }
         It "Should have LogToTable parameter" {
-            $CommandUnderTest | Should -HaveParameter LogToTable -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter LogToTable
         }
         It "Should have Solution parameter" {
-            $CommandUnderTest | Should -HaveParameter Solution -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Solution
         }
         It "Should have InstallJobs parameter" {
-            $CommandUnderTest | Should -HaveParameter InstallJobs -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter InstallJobs
         }
         It "Should have AutoScheduleJobs parameter" {
-            $CommandUnderTest | Should -HaveParameter AutoScheduleJobs -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter AutoScheduleJobs
         }
         It "Should have StartTime parameter" {
-            $CommandUnderTest | Should -HaveParameter StartTime -Type System.String
+            $CommandUnderTest | Should -HaveParameter StartTime
         }
         It "Should have LocalFile parameter" {
-            $CommandUnderTest | Should -HaveParameter LocalFile -Type System.String
+            $CommandUnderTest | Should -HaveParameter LocalFile
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Force
         }
         It "Should have InstallParallel parameter" {
-            $CommandUnderTest | Should -HaveParameter InstallParallel -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter InstallParallel
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

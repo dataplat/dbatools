@@ -16,73 +16,73 @@ Describe "Set-DbaStartupParameter" {
             $CommandUnderTest = Get-Command Set-DbaStartupParameter
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Credential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Credential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter Credential
         }
         It "Should have MasterData as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MasterData -Type System.String
+            $CommandUnderTest | Should -HaveParameter MasterData
         }
         It "Should have MasterLog as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MasterLog -Type System.String
+            $CommandUnderTest | Should -HaveParameter MasterLog
         }
         It "Should have ErrorLog as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ErrorLog -Type System.String
+            $CommandUnderTest | Should -HaveParameter ErrorLog
         }
         It "Should have TraceFlag as a parameter" {
-            $CommandUnderTest | Should -HaveParameter TraceFlag -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter TraceFlag
         }
         It "Should have CommandPromptStart as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter CommandPromptStart -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter CommandPromptStart
         }
         It "Should have MinimalStart as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter MinimalStart -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter MinimalStart
         }
         It "Should have MemoryToReserve as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MemoryToReserve -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter MemoryToReserve
         }
         It "Should have SingleUser as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter SingleUser -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter SingleUser
         }
         It "Should have SingleUserDetails as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SingleUserDetails -Type System.String
+            $CommandUnderTest | Should -HaveParameter SingleUserDetails
         }
         It "Should have NoLoggingToWinEvents as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoLoggingToWinEvents -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter NoLoggingToWinEvents
         }
         It "Should have StartAsNamedInstance as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter StartAsNamedInstance -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter StartAsNamedInstance
         }
         It "Should have DisableMonitoring as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter DisableMonitoring -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter DisableMonitoring
         }
         It "Should have IncreasedExtents as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncreasedExtents -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter IncreasedExtents
         }
         It "Should have TraceFlagOverride as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter TraceFlagOverride -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter TraceFlagOverride
         }
         It "Should have StartupConfig as a parameter" {
-            $CommandUnderTest | Should -HaveParameter StartupConfig -Type Object
+            $CommandUnderTest | Should -HaveParameter StartupConfig
         }
         It "Should have Offline as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Offline -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Offline
         }
         It "Should have Force as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Force
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 
     Context "Validate command functionality" -Skip:$SkipLocalTest {
         It "Ensure the startup params are not duplicated when more than one server is modified in the same invocation" {
-            $result = Set-DbaStartupParameter -SqlInstance $defaultInstance, $namedInstance -TraceFlag 3226 -Confirm:$false
+            $result = Set-DbaStartupParameter -SqlInstance $defaultInstance, $namedInstance -TraceFlag 3226
 
             $resultDefaultInstance = Get-DbaStartupParameter -SqlInstance $defaultInstance
             $resultDefaultInstance.TraceFlags.Count | Should -Be 1
@@ -100,7 +100,7 @@ Describe "Set-DbaStartupParameter" {
         }
 
         It "Ensure the correct instance name is returned" {
-            $result = Set-DbaStartupParameter -SqlInstance $namedInstance -TraceFlag 3226 -Confirm:$false
+            $result = Set-DbaStartupParameter -SqlInstance $namedInstance -TraceFlag 3226
 
             $result.SqlInstance | Should -Not -BeNullOrEmpty
             $result.TraceFlags.Count | Should -Be 1

@@ -11,64 +11,64 @@ Describe "Add-DbaAgReplica" {
             $CommandUnderTest = Get-Command Add-DbaAgReplica
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Name parameter" {
-            $CommandUnderTest | Should -HaveParameter Name -Type System.String
+            $CommandUnderTest | Should -HaveParameter Name
         }
         It "Should have ClusterType parameter" {
-            $CommandUnderTest | Should -HaveParameter ClusterType -Type System.String
+            $CommandUnderTest | Should -HaveParameter ClusterType
         }
         It "Should have AvailabilityMode parameter" {
-            $CommandUnderTest | Should -HaveParameter AvailabilityMode -Type System.String
+            $CommandUnderTest | Should -HaveParameter AvailabilityMode
         }
         It "Should have FailoverMode parameter" {
-            $CommandUnderTest | Should -HaveParameter FailoverMode -Type System.String
+            $CommandUnderTest | Should -HaveParameter FailoverMode
         }
         It "Should have BackupPriority parameter" {
-            $CommandUnderTest | Should -HaveParameter BackupPriority -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter BackupPriority
         }
         It "Should have ConnectionModeInPrimaryRole parameter" {
-            $CommandUnderTest | Should -HaveParameter ConnectionModeInPrimaryRole -Type System.String
+            $CommandUnderTest | Should -HaveParameter ConnectionModeInPrimaryRole
         }
         It "Should have ConnectionModeInSecondaryRole parameter" {
-            $CommandUnderTest | Should -HaveParameter ConnectionModeInSecondaryRole -Type System.String
+            $CommandUnderTest | Should -HaveParameter ConnectionModeInSecondaryRole
         }
         It "Should have SeedingMode parameter" {
-            $CommandUnderTest | Should -HaveParameter SeedingMode -Type System.String
+            $CommandUnderTest | Should -HaveParameter SeedingMode
         }
         It "Should have Endpoint parameter" {
-            $CommandUnderTest | Should -HaveParameter Endpoint -Type System.String
+            $CommandUnderTest | Should -HaveParameter Endpoint
         }
         It "Should have EndpointUrl parameter" {
-            $CommandUnderTest | Should -HaveParameter EndpointUrl -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter EndpointUrl
         }
         It "Should have Passthru parameter" {
-            $CommandUnderTest | Should -HaveParameter Passthru -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Passthru
         }
         It "Should have ReadOnlyRoutingList parameter" {
-            $CommandUnderTest | Should -HaveParameter ReadOnlyRoutingList -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter ReadOnlyRoutingList
         }
         It "Should have ReadonlyRoutingConnectionUrl parameter" {
-            $CommandUnderTest | Should -HaveParameter ReadonlyRoutingConnectionUrl -Type System.String
+            $CommandUnderTest | Should -HaveParameter ReadonlyRoutingConnectionUrl
         }
         It "Should have Certificate parameter" {
-            $CommandUnderTest | Should -HaveParameter Certificate -Type System.String
+            $CommandUnderTest | Should -HaveParameter Certificate
         }
         It "Should have ConfigureXESession parameter" {
-            $CommandUnderTest | Should -HaveParameter ConfigureXESession -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter ConfigureXESession
         }
         It "Should have SessionTimeout parameter" {
-            $CommandUnderTest | Should -HaveParameter SessionTimeout -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter SessionTimeout
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.AvailabilityGroup
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

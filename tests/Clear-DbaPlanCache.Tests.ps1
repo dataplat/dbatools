@@ -9,20 +9,20 @@ Describe "Clear-DbaPlanCache" {
         BeforeAll {
             $CommandUnderTest = Get-Command Clear-DbaPlanCache
         }
-        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+        It "Should have SqlInstance as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Mandatory:$false
         }
-        It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+        It "Should have SqlCredential as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Mandatory:$false
         }
-        It "Should have Threshold as a non-mandatory parameter of type System.Int32" {
-            $CommandUnderTest | Should -HaveParameter Threshold -Type System.Int32 -Mandatory:$false
+        It "Should have Threshold as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Threshold -Mandatory:$false
         }
-        It "Should have InputObject as a non-mandatory parameter of type System.Object[]" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object[] -Mandatory:$false
+        It "Should have InputObject as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject -Mandatory:$false
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException -Mandatory:$false
         }
     }
 

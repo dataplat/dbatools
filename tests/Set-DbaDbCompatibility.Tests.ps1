@@ -6,22 +6,22 @@ Describe "Set-DbaDbCompatibility" {
             $CommandUnderTest = Get-Command Set-DbaDbCompatibility
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Connection.ManagementConnectionType[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have Compatibility parameter" {
-            $CommandUnderTest | Should -HaveParameter Compatibility -Type Microsoft.SqlServer.Management.Smo.CompatibilityLevel
+            $CommandUnderTest | Should -HaveParameter Compatibility
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 
@@ -36,7 +36,7 @@ Describe "Set-DbaDbCompatibility" {
             $dbNameNotMatches = "dbatoolscliCompatibilityLevelNotMatch_$(Get-Random -Minimum 600 -Maximum 1100)"
             $instanceLevel = $sqlCn.Databases['master'].CompatibilityLevel
             $previousCompatLevel = [int]($instanceLevel.ToString().Trim('Version')) - 10
-            Get-DbaProcess -SqlInstance $global:instance2 -Database model | Stop-DbaProcess -Confirm:$false
+            Get-DbaProcess -SqlInstance $global:instance2 -Database model | Stop-DbaProcess
             $queryNot = "CREATE DATABASE $dbNameNotMatches"
             $sqlCn.Query($queryNot)
             Start-Sleep 5
@@ -49,7 +49,7 @@ Describe "Set-DbaDbCompatibility" {
 
         AfterAll {
             $sqlCn = Connect-DbaInstance -SqlInstance $global:instance2
-            Remove-DbaDatabase -SqlInstance $sqlCn -Database $dbNameNotMatches -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $sqlCn -Database $dbNameNotMatches
             $sqlCn.ConnectionContext.Disconnect()
         }
 

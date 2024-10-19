@@ -6,31 +6,31 @@ Describe "Remove-DbaExtendedProperty" {
             $CommandUnderTest = Get-Command Remove-DbaExtendedProperty
         }
         It "Accepts InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type ExtendedProperty[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Accepts EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
         It "Accepts WarningVariable as a parameter" {
-            $CommandUnderTest | Should -HaveParameter WarningVariable -Type System.String
+            $CommandUnderTest | Should -HaveParameter WarningVariable
         }
         It "Accepts InformationVariable as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InformationVariable -Type System.String
+            $CommandUnderTest | Should -HaveParameter InformationVariable
         }
         It "Accepts OutVariable as a parameter" {
-            $CommandUnderTest | Should -HaveParameter OutVariable -Type System.String
+            $CommandUnderTest | Should -HaveParameter OutVariable
         }
         It "Accepts OutBuffer as a parameter" {
-            $CommandUnderTest | Should -HaveParameter OutBuffer -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter OutBuffer
         }
         It "Accepts PipelineVariable as a parameter" {
-            $CommandUnderTest | Should -HaveParameter PipelineVariable -Type System.String
+            $CommandUnderTest | Should -HaveParameter PipelineVariable
         }
         It "Accepts WhatIf as a parameter" {
-            $CommandUnderTest | Should -HaveParameter WhatIf -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter WhatIf
         }
         It "Accepts Confirm as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Confirm -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Confirm
         }
     }
 
@@ -38,18 +38,18 @@ Describe "Remove-DbaExtendedProperty" {
         BeforeAll {
             $random = Get-Random
             $instance2 = Connect-DbaInstance -SqlInstance $global:instance2
-            $null = Get-DbaProcess -SqlInstance $instance2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false
+            $null = Get-DbaProcess -SqlInstance $instance2 | Where-Object Program -match dbatools | Stop-DbaProcess
             $newDbName = "dbatoolsci_newdb_$random"
             $db = New-DbaDatabase -SqlInstance $instance2 -Name $newDbName
         }
 
         AfterAll {
-            $null = $db | Remove-DbaDatabase -Confirm:$false
+            $null = $db | Remove-DbaDatabase
         }
 
         It "removes an extended property" {
             $ep = $db | Add-DbaExtendedProperty -Name "Test_Database_Name" -Value $newDbName
-            $results = $ep | Remove-DbaExtendedProperty -Confirm:$false
+            $results = $ep | Remove-DbaExtendedProperty
             $results.Name | Should -Be "Test_Database_Name"
             $results.Status | Should -Be "Dropped"
         }

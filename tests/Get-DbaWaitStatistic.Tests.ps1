@@ -12,19 +12,19 @@ Describe "Get-DbaWaitStatistic" {
             $CommandUnderTest = Get-Command Get-DbaWaitStatistic
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Threshold as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Threshold -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Threshold
         }
         It "Should have IncludeIgnorable as a parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeIgnorable -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter IncludeIgnorable
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

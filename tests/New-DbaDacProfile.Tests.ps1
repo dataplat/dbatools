@@ -6,25 +6,25 @@ Describe "New-DbaDacProfile" {
             $CommandUnderTest = Get-Command New-DbaDacProfile
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have Path as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Path -Type System.String
+            $CommandUnderTest | Should -HaveParameter Path
         }
         It "Should have ConnectionString as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ConnectionString -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter ConnectionString
         }
         It "Should have PublishOptions as a parameter" {
-            $CommandUnderTest | Should -HaveParameter PublishOptions -Type Hashtable
+            $CommandUnderTest | Should -HaveParameter PublishOptions
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

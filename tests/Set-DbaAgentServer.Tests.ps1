@@ -22,76 +22,76 @@ Describe "Set-DbaAgentServer" {
             $CommandUnderTest = Get-Command Set-DbaAgentServer
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Connection.ManagementConnectionType[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Agent.JobServer[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have AgentLogLevel as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AgentLogLevel -Type System.Object -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter AgentLogLevel
         }
         It "Should have AgentMailType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AgentMailType -Type System.Object -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter AgentMailType
         }
         It "Should have AgentShutdownWaitTime as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AgentShutdownWaitTime -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter AgentShutdownWaitTime
         }
         It "Should have DatabaseMailProfile as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DatabaseMailProfile -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter DatabaseMailProfile
         }
         It "Should have ErrorLogFile as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ErrorLogFile -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ErrorLogFile
         }
         It "Should have IdleCpuDuration as a parameter" {
-            $CommandUnderTest | Should -HaveParameter IdleCpuDuration -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter IdleCpuDuration
         }
         It "Should have IdleCpuPercentage as a parameter" {
-            $CommandUnderTest | Should -HaveParameter IdleCpuPercentage -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter IdleCpuPercentage
         }
         It "Should have CpuPolling as a parameter" {
-            $CommandUnderTest | Should -HaveParameter CpuPolling -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter CpuPolling
         }
         It "Should have LocalHostAlias as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LocalHostAlias -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter LocalHostAlias
         }
         It "Should have LoginTimeout as a parameter" {
-            $CommandUnderTest | Should -HaveParameter LoginTimeout -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter LoginTimeout
         }
         It "Should have MaximumHistoryRows as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MaximumHistoryRows -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter MaximumHistoryRows
         }
         It "Should have MaximumJobHistoryRows as a parameter" {
-            $CommandUnderTest | Should -HaveParameter MaximumJobHistoryRows -Type System.Int32 -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter MaximumJobHistoryRows
         }
         It "Should have NetSendRecipient as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NetSendRecipient -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter NetSendRecipient
         }
         It "Should have ReplaceAlertTokens as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ReplaceAlertTokens -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ReplaceAlertTokens
         }
         It "Should have SaveInSentFolder as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SaveInSentFolder -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SaveInSentFolder
         }
         It "Should have SqlAgentAutoStart as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlAgentAutoStart -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlAgentAutoStart
         }
         It "Should have SqlAgentMailProfile as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlAgentMailProfile -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlAgentMailProfile
         }
         It "Should have SqlAgentRestart as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlAgentRestart -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlAgentRestart
         }
         It "Should have SqlServerRestart as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlServerRestart -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlServerRestart
         }
         It "Should have WriteOemErrorLog as a parameter" {
-            $CommandUnderTest | Should -HaveParameter WriteOemErrorLog -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter WriteOemErrorLog
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

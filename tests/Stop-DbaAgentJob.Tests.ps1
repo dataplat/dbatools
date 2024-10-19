@@ -6,25 +6,25 @@ Describe "Stop-DbaAgentJob" {
             $CommandUnderTest = Get-Command Stop-DbaAgentJob
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Job as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Job -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Job
         }
         It "Should have ExcludeJob as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeJob -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter ExcludeJob
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Agent.Job[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have Wait as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Wait -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Wait
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

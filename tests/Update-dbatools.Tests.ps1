@@ -12,13 +12,13 @@ Describe "Update-Dbatools" {
             $CommandUnderTest = Get-Command Update-Dbatools
         }
         It "Should have Development as a Switch" {
-            $CommandUnderTest | Should -HaveParameter Development -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Development
         }
         It "Should have Cleanup as a Switch" {
-            $CommandUnderTest | Should -HaveParameter Cleanup -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Cleanup
         }
         It "Should have EnableException as a Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 }

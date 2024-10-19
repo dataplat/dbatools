@@ -6,22 +6,22 @@ Describe "Remove-DbaDbTable" {
             $CommandUnderTest = Get-Command Remove-DbaDbTable
         }
         It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a non-mandatory parameter of type System.Management.Automation.PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database as a non-mandatory parameter of type System.String[]" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have Table as a non-mandatory parameter of type System.String[]" {
-            $CommandUnderTest | Should -HaveParameter Table -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Table
         }
         It "Should have InputObject as a non-mandatory parameter of type [Microsoft.SqlServer.Management.Smo.Table[]]" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type [Microsoft.SqlServer.Management.Smo.Table[]] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

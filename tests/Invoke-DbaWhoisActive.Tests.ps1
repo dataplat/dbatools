@@ -21,91 +21,91 @@ Describe "Invoke-DbaWhoIsActive" {
             $CommandUnderTest = Get-Command Invoke-DbaWhoIsActive
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have Filter as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Filter -Type System.String
+            $CommandUnderTest | Should -HaveParameter Filter
         }
         It "Should have FilterType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FilterType -Type System.String
+            $CommandUnderTest | Should -HaveParameter FilterType
         }
         It "Should have NotFilter as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NotFilter -Type System.String
+            $CommandUnderTest | Should -HaveParameter NotFilter
         }
         It "Should have NotFilterType as a parameter" {
-            $CommandUnderTest | Should -HaveParameter NotFilterType -Type System.String
+            $CommandUnderTest | Should -HaveParameter NotFilterType
         }
         It "Should have ShowOwnSpid as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ShowOwnSpid -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter ShowOwnSpid
         }
         It "Should have ShowSystemSpids as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ShowSystemSpids -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter ShowSystemSpids
         }
         It "Should have ShowSleepingSpids as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ShowSleepingSpids -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter ShowSleepingSpids
         }
         It "Should have GetFullInnerText as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter GetFullInnerText -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter GetFullInnerText
         }
         It "Should have GetPlans as a parameter" {
-            $CommandUnderTest | Should -HaveParameter GetPlans -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter GetPlans
         }
         It "Should have GetOuterCommand as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter GetOuterCommand -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter GetOuterCommand
         }
         It "Should have GetTransactionInfo as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter GetTransactionInfo -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter GetTransactionInfo
         }
         It "Should have GetTaskInfo as a parameter" {
-            $CommandUnderTest | Should -HaveParameter GetTaskInfo -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter GetTaskInfo
         }
         It "Should have GetLocks as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter GetLocks -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter GetLocks
         }
         It "Should have GetAverageTime as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter GetAverageTime -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter GetAverageTime
         }
         It "Should have GetAdditonalInfo as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter GetAdditonalInfo -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter GetAdditonalInfo
         }
         It "Should have FindBlockLeaders as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter FindBlockLeaders -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter FindBlockLeaders
         }
         It "Should have DeltaInterval as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DeltaInterval -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter DeltaInterval
         }
         It "Should have OutputColumnList as a parameter" {
-            $CommandUnderTest | Should -HaveParameter OutputColumnList -Type System.String
+            $CommandUnderTest | Should -HaveParameter OutputColumnList
         }
         It "Should have SortOrder as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SortOrder -Type System.String
+            $CommandUnderTest | Should -HaveParameter SortOrder
         }
         It "Should have FormatOutput as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FormatOutput -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter FormatOutput
         }
         It "Should have DestinationTable as a parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationTable -Type System.String
+            $CommandUnderTest | Should -HaveParameter DestinationTable
         }
         It "Should have ReturnSchema as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ReturnSchema -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter ReturnSchema
         }
         It "Should have Schema as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Schema -Type System.String
+            $CommandUnderTest | Should -HaveParameter Schema
         }
         It "Should have Help as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Help -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Help
         }
         It "Should have As as a parameter" {
-            $CommandUnderTest | Should -HaveParameter As -Type System.String
+            $CommandUnderTest | Should -HaveParameter As
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

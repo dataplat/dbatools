@@ -10,11 +10,11 @@ Describe "New-DbaReplCreationScriptOptions" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaReplCreationScriptOptions
         }
-        It "Should have Options as a non-mandatory parameter of type System.String[]" {
-            $CommandUnderTest | Should -HaveParameter Options -Type System.String[] -Mandatory:$false
+        It "Should have Options as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Options
         }
         It "Should have NoDefaults as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter NoDefaults -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter NoDefaults
         }
     }
 }

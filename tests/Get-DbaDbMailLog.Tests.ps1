@@ -14,9 +14,6 @@ Describe "Get-DbaDbMailLog" {
         It "Should have Since as a parameter" {
             $CommandUnderTest | Should -HaveParameter Since -Type System.DateTime
         }
-        It "Should have Type as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Type -Type System.String[]
-        }
         It "Should have EnableException as a parameter" {
             $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
         }

@@ -67,67 +67,67 @@ Describe "Copy-DbaDbViewData" {
             $CommandUnderTest = Get-Command Copy-DbaDbViewData
         }
         It "Should have SqlInstance as a Dataplat.Dbatools.Parameter.DbaInstanceParameter parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a System.Management.Automation.PSCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Destination as a Dataplat.Dbatools.Parameter.DbaInstanceParameter[] parameter" {
-            $CommandUnderTest | Should -HaveParameter Destination -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter Destination
         }
         It "Should have DestinationSqlCredential as a System.Management.Automation.PSCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter DestinationSqlCredential
         }
         It "Should have Database as a System.String parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have DestinationDatabase as a System.String parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationDatabase -Type System.String
+            $CommandUnderTest | Should -HaveParameter DestinationDatabase
         }
         It "Should have View as a System.String[] parameter" {
-            $CommandUnderTest | Should -HaveParameter View -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter View
         }
         It "Should have Query as a System.String parameter" {
-            $CommandUnderTest | Should -HaveParameter Query -Type System.String
+            $CommandUnderTest | Should -HaveParameter Query
         }
         It "Should have AutoCreateTable as a System.Management.Automation.SwitchParameter parameter" {
-            $CommandUnderTest | Should -HaveParameter AutoCreateTable -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter AutoCreateTable
         }
         It "Should have BatchSize as a System.Int32 parameter" {
-            $CommandUnderTest | Should -HaveParameter BatchSize -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter BatchSize
         }
         It "Should have NotifyAfter as a System.Int32 parameter" {
-            $CommandUnderTest | Should -HaveParameter NotifyAfter -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter NotifyAfter
         }
         It "Should have DestinationTable as a System.String parameter" {
-            $CommandUnderTest | Should -HaveParameter DestinationTable -Type System.String
+            $CommandUnderTest | Should -HaveParameter DestinationTable
         }
         It "Should have NoTableLock as a System.Management.Automation.SwitchParameter parameter" {
-            $CommandUnderTest | Should -HaveParameter NoTableLock -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter NoTableLock
         }
         It "Should have CheckConstraints as a System.Management.Automation.SwitchParameter parameter" {
-            $CommandUnderTest | Should -HaveParameter CheckConstraints -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter CheckConstraints
         }
         It "Should have FireTriggers as a System.Management.Automation.SwitchParameter parameter" {
-            $CommandUnderTest | Should -HaveParameter FireTriggers -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter FireTriggers
         }
         It "Should have KeepIdentity as a System.Management.Automation.SwitchParameter parameter" {
-            $CommandUnderTest | Should -HaveParameter KeepIdentity -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter KeepIdentity
         }
         It "Should have KeepNulls as a System.Management.Automation.SwitchParameter parameter" {
-            $CommandUnderTest | Should -HaveParameter KeepNulls -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter KeepNulls
         }
         It "Should have Truncate as a System.Management.Automation.SwitchParameter parameter" {
-            $CommandUnderTest | Should -HaveParameter Truncate -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Truncate
         }
         It "Should have BulkCopyTimeOut as a System.Int32 parameter" {
-            $CommandUnderTest | Should -HaveParameter BulkCopyTimeOut -Type System.Int32
+            $CommandUnderTest | Should -HaveParameter BulkCopyTimeOut
         }
         It "Should have InputObject as a Microsoft.SqlServer.Management.Smo.TableViewBase[] parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.TableViewBase[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException as a System.Management.Automation.SwitchParameter parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

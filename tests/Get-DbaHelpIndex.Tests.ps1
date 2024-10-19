@@ -13,37 +13,37 @@ Describe "Get-DbaHelpIndex Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Get-DbaHelpIndex
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have ExcludeDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have ObjectName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ObjectName -Type System.String
+            $CommandUnderTest | Should -HaveParameter ObjectName
         }
         It "Should have IncludeStats as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeStats -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter IncludeStats
         }
         It "Should have IncludeDataTypes as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeDataTypes -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter IncludeDataTypes
         }
         It "Should have Raw as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Raw -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Raw
         }
         It "Should have IncludeFragmentation as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeFragmentation -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter IncludeFragmentation
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 }

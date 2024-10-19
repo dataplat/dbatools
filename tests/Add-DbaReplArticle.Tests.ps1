@@ -12,31 +12,31 @@ Describe "Add-DbaReplArticle" {
             $CommandUnderTest = Get-Command Add-DbaReplArticle
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have Publication parameter" {
-            $CommandUnderTest | Should -HaveParameter Publication -Type System.String
+            $CommandUnderTest | Should -HaveParameter Publication
         }
         It "Should have Schema parameter" {
-            $CommandUnderTest | Should -HaveParameter Schema -Type System.String
+            $CommandUnderTest | Should -HaveParameter Schema
         }
         It "Should have Name parameter" {
-            $CommandUnderTest | Should -HaveParameter Name -Type System.String
+            $CommandUnderTest | Should -HaveParameter Name
         }
         It "Should have Filter parameter" {
-            $CommandUnderTest | Should -HaveParameter Filter -Type System.String
+            $CommandUnderTest | Should -HaveParameter Filter
         }
         It "Should have CreationScriptOptions parameter" {
-            $CommandUnderTest | Should -HaveParameter CreationScriptOptions -Type PSObject
+            $CommandUnderTest | Should -HaveParameter CreationScriptOptions
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 }

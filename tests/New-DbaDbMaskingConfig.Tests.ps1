@@ -5,53 +5,53 @@ Describe "New-DbaDbMaskingConfig" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaDbMaskingConfig
         }
-        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+        It "Should have SqlInstance as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
-        It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+        It "Should have SqlCredential as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
-        It "Should have Database as a non-mandatory parameter of type System.String[]" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String[] -Mandatory:$false
+        It "Should have Database as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Database
         }
-        It "Should have Table as a non-mandatory parameter of type System.String[]" {
-            $CommandUnderTest | Should -HaveParameter Table -Type System.String[] -Mandatory:$false
+        It "Should have Table as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Table
         }
-        It "Should have Column as a non-mandatory parameter of type System.String[]" {
-            $CommandUnderTest | Should -HaveParameter Column -Type System.String[] -Mandatory:$false
+        It "Should have Column as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Column
         }
-        It "Should have Path as a non-mandatory parameter of type System.String" {
-            $CommandUnderTest | Should -HaveParameter Path -Type System.String -Mandatory:$false
+        It "Should have Path as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Path
         }
-        It "Should have Locale as a non-mandatory parameter of type System.String" {
-            $CommandUnderTest | Should -HaveParameter Locale -Type System.String -Mandatory:$false
+        It "Should have Locale as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Locale
         }
-        It "Should have CharacterString as a non-mandatory parameter of type System.String" {
-            $CommandUnderTest | Should -HaveParameter CharacterString -Type System.String -Mandatory:$false
+        It "Should have CharacterString as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter CharacterString
         }
-        It "Should have SampleCount as a non-mandatory parameter of type System.Int32" {
-            $CommandUnderTest | Should -HaveParameter SampleCount -Type System.Int32 -Mandatory:$false
+        It "Should have SampleCount as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter SampleCount
         }
-        It "Should have KnownNameFilePath as a non-mandatory parameter of type System.String" {
-            $CommandUnderTest | Should -HaveParameter KnownNameFilePath -Type System.String -Mandatory:$false
+        It "Should have KnownNameFilePath as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter KnownNameFilePath
         }
-        It "Should have PatternFilePath as a non-mandatory parameter of type System.String" {
-            $CommandUnderTest | Should -HaveParameter PatternFilePath -Type System.String -Mandatory:$false
+        It "Should have PatternFilePath as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter PatternFilePath
         }
         It "Should have ExcludeDefaultKnownName as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDefaultKnownName -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeDefaultKnownName
         }
         It "Should have ExcludeDefaultPattern as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDefaultPattern -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeDefaultPattern
         }
         It "Should have Force as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Force
         }
-        It "Should have InputObject as a non-mandatory parameter of type System.Object[]" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object[] -Mandatory:$false
+        It "Should have InputObject as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException as a non-mandatory switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

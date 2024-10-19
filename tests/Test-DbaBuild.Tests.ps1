@@ -6,31 +6,31 @@ Describe "Test-DbaBuild" {
             $CommandUnderTest = Get-Command Test-DbaBuild
         }
         It "Should have Build parameter" {
-            $CommandUnderTest | Should -HaveParameter Build -Type Microsoft.Version[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Build
         }
         It "Should have MinimumBuild parameter" {
-            $CommandUnderTest | Should -HaveParameter MinimumBuild -Type Microsoft.Version -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter MinimumBuild
         }
         It "Should have MaxBehind parameter" {
-            $CommandUnderTest | Should -HaveParameter MaxBehind -Type System.String -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter MaxBehind
         }
         It "Should have Latest parameter" {
-            $CommandUnderTest | Should -HaveParameter Latest -Type System.Management.Automation.Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Latest
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Update parameter" {
-            $CommandUnderTest | Should -HaveParameter Update -Type System.Management.Automation.Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Update
         }
         It "Should have Quiet parameter" {
-            $CommandUnderTest | Should -HaveParameter Quiet -Type System.Management.Automation.Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Quiet
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

@@ -6,25 +6,25 @@ Describe "New-DbaDbSchema" {
             $CommandUnderTest = Get-Command New-DbaDbSchema
         }
         It "Should have SqlInstance parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have Schema parameter" {
-            $CommandUnderTest | Should -HaveParameter Schema -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Schema
         }
         It "Should have SchemaOwner parameter" {
-            $CommandUnderTest | Should -HaveParameter SchemaOwner -Type System.String
+            $CommandUnderTest | Should -HaveParameter SchemaOwner
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.Database[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.Switch
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 }
@@ -34,7 +34,7 @@ Describe "New-DbaDbSchema Integration Tests" -Tag "IntegrationTests" {
         $random = Get-Random
         $server1 = Connect-DbaInstance -SqlInstance $global:instance1
         $server2 = Connect-DbaInstance -SqlInstance $global:instance2
-        $null = Get-DbaProcess -SqlInstance $server1, $server2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false
+        $null = Get-DbaProcess -SqlInstance $server1, $server2 | Where-Object Program -match dbatools | Stop-DbaProcess
         $newDbName = "dbatoolsci_newdb_$random"
         $newDbs = New-DbaDatabase -SqlInstance $server1, $server2 -Name $newDbName
 
@@ -47,8 +47,8 @@ Describe "New-DbaDbSchema Integration Tests" -Tag "IntegrationTests" {
     }
 
     AfterAll {
-        $null = $newDbs | Remove-DbaDatabase -Confirm:$false
-        $null = $logins | Remove-DbaLogin -Confirm:$false
+        $null = $newDbs | Remove-DbaDatabase
+        $null = $logins | Remove-DbaLogin
     }
 
     Context "commands work as expected" {

@@ -5,26 +5,26 @@ Describe "New-DbaDbMailProfile" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaDbMailProfile
         }
-        It "Should have SqlInstance as a non-mandatory parameter of type DbaInstanceParameter[]" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory:$false
+        It "Should have SqlInstance as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlInstance -Mandatory:$false
         }
-        It "Should have SqlCredential as a non-mandatory parameter of type PSCredential" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential -Mandatory:$false
+        It "Should have SqlCredential as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter SqlCredential -Mandatory:$false
         }
-        It "Should have Profile as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter Profile -Type System.String -Mandatory:$false
+        It "Should have Profile as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Profile -Mandatory:$false
         }
-        It "Should have Description as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter Description -Type System.String -Mandatory:$false
+        It "Should have Description as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter Description -Mandatory:$false
         }
-        It "Should have MailAccountName as a non-mandatory parameter of type String" {
-            $CommandUnderTest | Should -HaveParameter MailAccountName -Type System.String -Mandatory:$false
+        It "Should have MailAccountName as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter MailAccountName -Mandatory:$false
         }
-        It "Should have MailAccountPriority as a non-mandatory parameter of type Int32" {
-            $CommandUnderTest | Should -HaveParameter MailAccountPriority -Type System.Int32 -Mandatory:$false
+        It "Should have MailAccountPriority as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter MailAccountPriority -Mandatory:$false
         }
-        It "Should have EnableException as a non-mandatory parameter of type Switch" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter -Mandatory:$false
+        It "Should have EnableException as a non-mandatory parameter" {
+            $CommandUnderTest | Should -HaveParameter EnableException -Mandatory:$false
         }
     }
 

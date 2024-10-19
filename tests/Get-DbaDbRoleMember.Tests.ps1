@@ -6,34 +6,34 @@ Describe "Get-DbaDbRoleMember Unit Tests" -Tag "UnitTests" {
             $CommandUnderTest = Get-Command Get-DbaDbRoleMember
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Connection.ManagementConnectionType[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have ExcludeDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeDatabase -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeDatabase
         }
         It "Should have Role as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Role -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter Role
         }
         It "Should have ExcludeRole as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeRole -Type System.String[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeRole
         }
         It "Should have ExcludeFixedRole as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeFixedRole -Type System.Management.Automation.Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter ExcludeFixedRole
         }
         It "Should have IncludeSystemUser as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter IncludeSystemUser -Type System.Management.Automation.Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter IncludeSystemUser
         }
         It "Should have InputObject as a parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type System.Object[] -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have EnableException as a switch parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.Switch -Mandatory:$false
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 }

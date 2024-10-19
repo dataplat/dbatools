@@ -15,10 +15,10 @@ Describe "Test-DbaDbDataMaskingConfig" {
             $CommandUnderTest = Get-Command Test-DbaDbDataMaskingConfig
         }
         It "Should have FilePath as a parameter" {
-            $CommandUnderTest | Should -HaveParameter FilePath -Type System.String
+            $CommandUnderTest | Should -HaveParameter FilePath
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

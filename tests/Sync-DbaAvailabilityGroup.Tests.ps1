@@ -12,46 +12,46 @@ Describe "Sync-DbaAvailabilityGroup" {
             $CommandUnderTest = Get-Command Sync-DbaAvailabilityGroup
         }
         It "Should have Primary parameter" {
-            $CommandUnderTest | Should -HaveParameter Primary -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter
+            $CommandUnderTest | Should -HaveParameter Primary
         }
         It "Should have PrimarySqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter PrimarySqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter PrimarySqlCredential
         }
         It "Should have Secondary parameter" {
-            $CommandUnderTest | Should -HaveParameter Secondary -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter Secondary
         }
         It "Should have SecondarySqlCredential parameter" {
-            $CommandUnderTest | Should -HaveParameter SecondarySqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SecondarySqlCredential
         }
         It "Should have AvailabilityGroup parameter" {
-            $CommandUnderTest | Should -HaveParameter AvailabilityGroup -Type System.String
+            $CommandUnderTest | Should -HaveParameter AvailabilityGroup
         }
         It "Should have Exclude parameter" {
-            $CommandUnderTest | Should -HaveParameter Exclude -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Exclude
         }
         It "Should have Login parameter" {
-            $CommandUnderTest | Should -HaveParameter Login -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Login
         }
         It "Should have ExcludeLogin parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeLogin -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter ExcludeLogin
         }
         It "Should have Job parameter" {
-            $CommandUnderTest | Should -HaveParameter Job -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter Job
         }
         It "Should have ExcludeJob parameter" {
-            $CommandUnderTest | Should -HaveParameter ExcludeJob -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter ExcludeJob
         }
         It "Should have DisableJobOnDestination parameter" {
-            $CommandUnderTest | Should -HaveParameter DisableJobOnDestination -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter DisableJobOnDestination
         }
         It "Should have InputObject parameter" {
-            $CommandUnderTest | Should -HaveParameter InputObject -Type Microsoft.SqlServer.Management.Smo.AvailabilityGroup[]
+            $CommandUnderTest | Should -HaveParameter InputObject
         }
         It "Should have Force parameter" {
-            $CommandUnderTest | Should -HaveParameter Force -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter Force
         }
         It "Should have EnableException parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 }

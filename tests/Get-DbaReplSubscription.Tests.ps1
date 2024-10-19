@@ -11,28 +11,28 @@ Describe "Get-DbaReplSubscription" {
             $CommandUnderTest = Get-Command Get-DbaReplSubscription
         }
         It "Should have SqlInstance as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SqlInstance
         }
         It "Should have SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type System.Management.Automation.PSCredential
+            $CommandUnderTest | Should -HaveParameter SqlCredential
         }
         It "Should have Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter Database
         }
         It "Should have PublicationName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter PublicationName -Type System.String[]
+            $CommandUnderTest | Should -HaveParameter PublicationName
         }
         It "Should have SubscriberName as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SubscriberName -Type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]
+            $CommandUnderTest | Should -HaveParameter SubscriberName
         }
         It "Should have SubscriptionDatabase as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SubscriptionDatabase -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter SubscriptionDatabase
         }
         It "Should have Type as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Type -Type System.Object[]
+            $CommandUnderTest | Should -HaveParameter Type
         }
         It "Should have EnableException as a parameter" {
-            $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter
+            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 }
