@@ -27,6 +27,7 @@ $TestsRunGroups = @{
         'Export-DbaUser',
         'Get-DbaPermission',
         'Get-DbaUserPermission',
+        'Install-DbaDarlingData',
         'Invoke-DbaWhoisActive',
         'Remove-DbaAvailabilityGroup',
         'Remove-DbaDatabaseSafely',
