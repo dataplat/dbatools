@@ -23,10 +23,14 @@ $TestsRunGroups = @{
     # do not run on appveyor
     "appveyor_disabled" = @(
         # tests that work locally against SQL Server 2022 instances without problems but fail on AppVeyor
+        'ConvertTo-DbaXESession',
         'Export-DbaUser',
         'Get-DbaPermission',
+        'Get-DbaUserPermission',
         'Invoke-DbaWhoisActive',
+        'Remove-DbaAvailabilityGroup',
         'Remove-DbaDatabaseSafely',
+        'Sync-DbaLoginPermission',
         # tests that fail locally against SQL Server 2022 instances and fail on AppVeyor
         'Set-DbaAgentJobStep',
         'New-DbaLogin',
@@ -42,34 +46,7 @@ $TestsRunGroups = @{
         'Get-DbaExecutionPlan',
         # Non-useful info from newly started sql servers
         'Get-DbaCpuRingBuffer',
-        'Get-DbaLatchStatistic',
-        # fails on newer version of SMO
-        #'Get-DbaUserPermission',
-        #'Invoke-DbaBalanceDataFiles',
-        'Install-DbaDarlingData'
-        # previous tests that were failing on older versions too
-        #'Remove-DbaAvailabilityGroup',
-        #'Sync-DbaLoginPermission',
-        #'Stop-DbaXESession',
-        #'Test-DbaTempDbConfig',
-        #'New-DbaDbUser',
-        #'Stop-DbaXESession',
-        #'ConvertTo-DbaXESession',
-        #'Test-DbaInstanceName',
-        #'Test-DbaDeprecatedFeature',
-        #'Remove-DbaDatabaseSafely',
-        #'Get-DbaDbMasterKey',
-        #'Test-DbaManagementObject',
-        #'New-DbaDbTransfer'
-        #'Get-DbaDbSynonym',
-        #'Get-DbaDbVirtualLogFile',
-        #'Get-DbaFile',
-        #'Get-DbaHelpIndex',
-        #'Get-DbaExternalProcess',
-        # just fails too often
-        #'Test-DbaMaxDop',
-        #'Test-DbaOptimizeForAdHoc',
-        #'New-DbaDbSnapshot'
+        'Get-DbaLatchStatistic'
     )
     # do not run everywhere
     "disabled"          = @()
