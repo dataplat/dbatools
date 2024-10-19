@@ -8,11 +8,21 @@ foreach ($test in $tests) {
     Write-Host "Processing $test"
     aider --message "$prompt" --file $test.FullName --model azure/gpt-4o-mini --no-stream --cache-prompts --read /workspace/.aider/prompts/types.md
 }
-#>
 
 $tests = Get-ChildItem -Path /workspace/tests -Filter *.Tests.ps1
 
 $prompt = "This is a Pester v5 test suite. 1. Remove -Type test in HaveParameter tests. 2. Remove -Mandatory test in HaveParameter test. 2. Remove all -Mandatory:`$false from the HaveParameter test."
+
+
+foreach ($test in $tests) {
+    Write-Host "Processing $test"
+    aider --message "$prompt" --file $test.FullName --model azure/gpt-4o-mini --no-stream
+}
+#>
+
+$tests = Get-ChildItem -Path /workspace/tests -Filter *.Tests.ps1 | Select-Object -First 1
+
+$prompt = "This is a Pester v5 test suite. I want all HaveParameter tests to be grouped into ONE It block titled has all the required parameters."
 
 
 foreach ($test in $tests) {
