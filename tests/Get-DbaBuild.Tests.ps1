@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -145,7 +145,7 @@ Describe "$CommandName Unit Test" -Tags Unittest {
             $result.Warning | Should -Be 'This version has been officially retired by Microsoft'
         }
     }
-    
+
     Context "Recognizes version 'aliases', see #8915" {
         It 'works with versions with the minor being either not 0 or 50' {
             $result2016 = Get-DbaBuild -Build '13.3.6300'

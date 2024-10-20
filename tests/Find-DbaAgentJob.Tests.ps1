@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -14,7 +14,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    
+
     Context "Command finds jobs using all parameters" {
         BeforeAll {
             #subsystemServer needs the real underlying name, and it doesn't work if targeting something like localhost\namedinstance
@@ -79,8 +79,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Should find jobs that are owned by sa" {
             $results | Should not be null
         }
-        
-        
+
+
         $results = Find-DbaAgentJob -SqlInstance $TestConfig.instance2 -IsFailed -Since '2016-07-01 10:47:00'
         It "Should find jobs that have been failed since July of 2016" {
             $results | Should not be null

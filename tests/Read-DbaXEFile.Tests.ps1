@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 $base = (Get-Module -Name dbatools | Where-Object ModuleBase -notmatch net).ModuleBase
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {

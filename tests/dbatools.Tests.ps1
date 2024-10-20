@@ -233,17 +233,17 @@ Describe "Manifest" {
 
         {
 
-            $Script:Manifest = Test-ModuleManifest -Path $ManifestPath -ErrorAction Stop -WarningAction SilentlyContinue
+            $TestConfig.Manifest = Test-ModuleManifest -Path $ManifestPath -ErrorAction Stop -WarningAction SilentlyContinue
 
         } | Should Not Throw
 
     }
 ## Should -Be fixed now - Until the issue with requiring full paths for required assemblies is resolved need to keep this commented out RMS 01112016
 
-$Script:Manifest = Test-ModuleManifest -Path $ManifestPath -ErrorAction SilentlyContinue
+$TestConfig.Manifest = Test-ModuleManifest -Path $ManifestPath -ErrorAction SilentlyContinue
     It "has a valid name" {
 
-        $Script:Manifest.Name | Should -Be $ModuleName
+        $TestConfig.Manifest.Name | Should -Be $ModuleName
 
     }
 
@@ -251,7 +251,7 @@ $Script:Manifest = Test-ModuleManifest -Path $ManifestPath -ErrorAction Silently
 
     It "has a valid root module" {
 
-        $Script:Manifest.RootModule | Should -Be "$ModuleName.psm1"
+        $TestConfig.Manifest.RootModule | Should -Be "$ModuleName.psm1"
 
     }
 
@@ -259,33 +259,33 @@ $Script:Manifest = Test-ModuleManifest -Path $ManifestPath -ErrorAction Silently
 
     It "has a valid Description" {
 
-        $Script:Manifest.Description | Should -Be 'Provides extra functionality for SQL Server Database admins and enables SQL Server instance migrations.'
+        $TestConfig.Manifest.Description | Should -Be 'Provides extra functionality for SQL Server Database admins and enables SQL Server instance migrations.'
 
     }
 
     It "has a valid Author" {
-        $Script:Manifest.Author | Should -Be 'Chrissy LeMaire'
+        $TestConfig.Manifest.Author | Should -Be 'Chrissy LeMaire'
     }
 
     It "has a valid Company Name" {
-        $Script:Manifest.CompanyName | Should -Be 'dbatools.io'
+        $TestConfig.Manifest.CompanyName | Should -Be 'dbatools.io'
     }
     It "has a valid guid" {
 
-        $Script:Manifest.Guid | Should -Be '9d139310-ce45-41ce-8e8b-d76335aa1789'
+        $TestConfig.Manifest.Guid | Should -Be '9d139310-ce45-41ce-8e8b-d76335aa1789'
 
     }
     It "has valid PowerShell version" {
-        $Script:Manifest.PowerShellVersion | Should -Be '3.0'
+        $TestConfig.Manifest.PowerShellVersion | Should -Be '3.0'
     }
 
     It "has valid  required assemblies" {
-        {$Script:Manifest.RequiredAssemblies -eq @()} | Should -Be $true
+        {$TestConfig.Manifest.RequiredAssemblies -eq @()} | Should -Be $true
     }
 
     It "has a valid copyright" {
 
-        $Script:Manifest.CopyRight | Should BeLike '* Chrissy LeMaire'
+        $TestConfig.Manifest.CopyRight | Should BeLike '* Chrissy LeMaire'
 
     }
 
@@ -299,7 +299,7 @@ $Script:Manifest = Test-ModuleManifest -Path $ManifestPath -ErrorAction Silently
 
         $FunctionNames = $FunctionFiles
 
-        $ExFunctions = $Script:Manifest.ExportedFunctions.Values.Name
+        $ExFunctions = $TestConfig.Manifest.ExportedFunctions.Values.Name
         $ExFunctions
         foreach ($FunctionName in $FunctionNames)
 
