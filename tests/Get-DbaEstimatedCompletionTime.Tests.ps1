@@ -27,7 +27,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 $null = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job checkdbTestJob -StepName checkdb -Subsystem TransactSql -Command "DBCC CHECKDB('checkdbTestDatabase')" -EnableException
                 $skip = $false
             } catch {
-                Write-Information "Test for $commandname failed in BeforeAll because: $_"
+                Write-Host -Object "Test for $CommandName failed in BeforeAll because: $_" -ForegroundColor Cyan
             }
         }
     }
