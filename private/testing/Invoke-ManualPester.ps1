@@ -1,78 +1,78 @@
 function Invoke-ManualPester {
-    <#
-        .SYNOPSIS
-            Runs dbatools tests.
+<#
+    .SYNOPSIS
+        Runs dbatools tests.
 
-        .DESCRIPTION
-            This is an helper to automate running tests locally
+    .DESCRIPTION
+        This is an helper to automate running tests locally
 
-        .PARAMETER Path
-            The Path to the test files to run. It accepts multiple test file paths passed in (e.g. .\Find-DbaOrphanedFile.Tests.ps1) as well
-            as simple strings (e.g. "orphaned" will run all files matching .\*orphaned*.Tests.ps1)
+    .PARAMETER Path
+        The Path to the test files to run. It accepts multiple test file paths passed in (e.g. .\Find-DbaOrphanedFile.Tests.ps1) as well
+        as simple strings (e.g. "orphaned" will run all files matching .\*orphaned*.Tests.ps1)
 
-        .PARAMETER Show
-            Gets passed down to Pester's -Show parameter (useful if you want to reduce verbosity)
+    .PARAMETER Show
+        Gets passed down to Pester's -Show parameter (useful if you want to reduce verbosity)
 
-        .PARAMETER PassThru
-            Gets passed down to Pester's -PassThru parameter (useful if you want to return an object to analyze)
+    .PARAMETER PassThru
+        Gets passed down to Pester's -PassThru parameter (useful if you want to return an object to analyze)
 
-        .PARAMETER TestIntegration
-            dbatools's suite has unittests and integrationtests. This switch enables IntegrationTests, which need live instances
-            see constants.ps1 for customizations
+    .PARAMETER TestIntegration
+        dbatools's suite has unittests and integrationtests. This switch enables IntegrationTests, which need live instances
+        see constants.ps1 for customizations
 
-        .PARAMETER Coverage
-            Enables measuring code coverage on the tested function
+    .PARAMETER Coverage
+        Enables measuring code coverage on the tested function
 
-        .PARAMETER DependencyCoverage
-            Enables measuring code coverage also of "lower level" (i.e. called) functions
+    .PARAMETER DependencyCoverage
+        Enables measuring code coverage also of "lower level" (i.e. called) functions
 
-        .PARAMETER ScriptAnalyzer
-            Enables checking the called function's code with Invoke-ScriptAnalyzer, with dbatools's profile
+    .PARAMETER ScriptAnalyzer
+        Enables checking the called function's code with Invoke-ScriptAnalyzer, with dbatools's profile
 
-        .EXAMPLE
-            Invoke-ManualPester -Path Find-DbaOrphanedFile.Tests.ps1 -TestIntegration -Coverage -DependencyCoverage -ScriptAnalyzer
+    .EXAMPLE
+        Invoke-ManualPester -Path Find-DbaOrphanedFile.Tests.ps1 -TestIntegration -Coverage -DependencyCoverage -ScriptAnalyzer
 
-            The most complete number of checks:
-            - Runs both unittests and integrationtests
-            - Gathers and shows code coverage measurement for Find-DbaOrphanedFile and all its dependencies
-            - Checks Find-DbaOrphanedFile with Invoke-ScriptAnalyzer
+        The most complete number of checks:
+        - Runs both unittests and integrationtests
+        - Gathers and shows code coverage measurement for Find-DbaOrphanedFile and all its dependencies
+        - Checks Find-DbaOrphanedFile with Invoke-ScriptAnalyzer
 
-        .EXAMPLE
-            Invoke-ManualPester -Path Find-DbaOrphanedFile.Tests.ps1
+    .EXAMPLE
+        Invoke-ManualPester -Path Find-DbaOrphanedFile.Tests.ps1
 
-            Runs unittests stored in Find-DbaOrphanedFile.Tests.ps1
+        Runs unittests stored in Find-DbaOrphanedFile.Tests.ps1
 
-        .EXAMPLE
-            Invoke-ManualPester -Path Find-DbaOrphanedFile.Tests.ps1 -PassThru
+    .EXAMPLE
+        Invoke-ManualPester -Path Find-DbaOrphanedFile.Tests.ps1 -PassThru
 
-            Runs unittests stored in Find-DbaOrphanedFile.Tests.ps1 and returns an object that can be analyzed
+        Runs unittests stored in Find-DbaOrphanedFile.Tests.ps1 and returns an object that can be analyzed
 
-        .EXAMPLE
-            Invoke-ManualPester -Path orphan
+    .EXAMPLE
+        Invoke-ManualPester -Path orphan
 
-            Runs unittests for all tests matching in `*orphan*.Tests.ps1
+        Runs unittests for all tests matching in `*orphan*.Tests.ps1
 
-        .EXAMPLE
-            Invoke-ManualPester -Path Find-DbaOrphanedFile.Tests.ps1 -Show Default
+    .EXAMPLE
+        Invoke-ManualPester -Path Find-DbaOrphanedFile.Tests.ps1 -Show Default
 
-            Runs unittests stored in Find-DbaOrphanedFile.Tests.ps1, with reduced verbosity
+        Runs unittests stored in Find-DbaOrphanedFile.Tests.ps1, with reduced verbosity
 
-        .EXAMPLE
-            Invoke-ManualPester -Path Find-DbaOrphanedFile.Tests.ps1 -TestIntegration
+    .EXAMPLE
+        Invoke-ManualPester -Path Find-DbaOrphanedFile.Tests.ps1 -TestIntegration
 
-            Runs both unittests and integrationtests stored in Find-DbaOrphanedFile.Tests.ps1
+        Runs both unittests and integrationtests stored in Find-DbaOrphanedFile.Tests.ps1
 
-        .EXAMPLE
-            Invoke-ManualPester -Path Find-DbaOrphanedFile.Tests.ps1 -TestIntegration -Coverage
+    .EXAMPLE
+        Invoke-ManualPester -Path Find-DbaOrphanedFile.Tests.ps1 -TestIntegration -Coverage
 
-            Gathers and shows code coverage measurement for Find-DbaOrphanedFile
+        Gathers and shows code coverage measurement for Find-DbaOrphanedFile
 
-        .EXAMPLE
-            Invoke-ManualPester -Path Find-DbaOrphanedFile.Tests.ps1 -TestIntegration -Coverage -DependencyCoverage
+    .EXAMPLE
+        Invoke-ManualPester -Path Find-DbaOrphanedFile.Tests.ps1 -TestIntegration -Coverage -DependencyCoverage
 
-            Gathers and shows code coverage measurement for Find-DbaOrphanedFile and all its dependencies
+        Gathers and shows code coverage measurement for Find-DbaOrphanedFile and all its dependencies
 
-    #>
+#>
 
     [CmdletBinding()]
     param (
