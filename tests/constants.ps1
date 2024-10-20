@@ -42,6 +42,8 @@ if (Test-Path "$PSScriptRoot\constants.local.ps1") {
     $script:azureblobaccount = "dbatools"
     $script:azureserver = 'psdbatools.database.windows.net'
     $script:azuresqldblogin = "appveyor@clemairegmail.onmicrosoft.com"
+    $script:bigDatabaseBackup = 'C:\github\StackOverflowMini.bak'
+    $script:bigDatabaseBackupSourceUrl = 'https://github.com/BrentOzarULTD/Stack-Overflow-Database/releases/download/20230114/StackOverflowMini.bak'
 }
 
 if ($env:appveyor) {
