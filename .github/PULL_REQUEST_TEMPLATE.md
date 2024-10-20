@@ -4,7 +4,7 @@
  - [ ] Bug fix (non-breaking change, fixes #<!--issue number--> )
  - [ ] New feature (non-breaking change, adds functionality, fixes #<!--issue number--> )
  - [ ] Breaking change (affects multiple commands or functionality, fixes #<!--issue number--> )
- - [ ] Ran manual Pester test and has passed (`.\tests\manual.pester.ps1`)
+ - [ ] Ran manual Pester test and has passed (`Invoke-ManualPester`)
  - [ ] Adding code coverage to existing functionality
  - [ ] Pester test is included
  - [ ] If new file reference added for test, has is been added to github.com/dataplat/appveyor-lab ?
