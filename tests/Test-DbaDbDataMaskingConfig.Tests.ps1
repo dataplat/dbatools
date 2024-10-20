@@ -84,7 +84,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $dbname = "dbatools_maskingtest"
         $query = "CREATE DATABASE [$dbname]"
 
-        Invoke-DbaQuery -SqlInstance $script:instance1 -Database master -Query $query
+        Invoke-DbaQuery -SqlInstance $global:instance1 -Database master -Query $query
 
         $query = "
         CREATE TABLE [dbo].[Customer](
@@ -100,13 +100,13 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         ) ON [PRIMARY]
         "
 
-        Invoke-DbaQuery -SqlInstance $script:instance1 -Database $dbname -Query $query
+        Invoke-DbaQuery -SqlInstance $global:instance1 -Database $dbname -Query $query
 
-        $file = New-DbaDbMaskingConfig -SqlInstance $script:instance1 -Database $dbname -Table Customer -Path "C:\temp\datamasking"
+        $file = New-DbaDbMaskingConfig -SqlInstance $global:instance1 -Database $dbname -Table Customer -Path "C:\temp\datamasking"
 
     }
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $global:instance1 -Database $dbname -Confirm:$false
     }
 
     It "gives no errors with a correct json file" {

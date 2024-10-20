@@ -13,14 +13,14 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
     }
 }
 
-# $script:instance3 is used for Availability Group tests and needs Hadr service setting enabled
+# $global:instance3 is used for Availability Group tests and needs Hadr service setting enabled
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     AfterAll {
-        Enable-DbaAgHadr -SqlInstance $script:instance3 -Confirm:$false -Force
+        Enable-DbaAgHadr -SqlInstance $global:instance3 -Confirm:$false -Force
     }
 
-    $results = Disable-DbaAgHadr -SqlInstance $script:instance3 -Confirm:$false -Force
+    $results = Disable-DbaAgHadr -SqlInstance $global:instance3 -Confirm:$false -Force
 
     It "disables hadr" {
         $results.IsHadrEnabled | Should -Be $false

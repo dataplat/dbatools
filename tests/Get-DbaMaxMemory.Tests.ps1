@@ -66,12 +66,12 @@ Describe "$commandname Unit Test" -Tags Unittest {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Connects to multiple instances" {
         It 'Returns multiple objects' {
-            $results = Get-DbaMaxMemory -SqlInstance $script:instance1, $script:instance2
+            $results = Get-DbaMaxMemory -SqlInstance $global:instance1, $global:instance2
             $results.Count | Should BeGreaterThan 1 # and ultimately not throw an exception
         }
         It 'Returns the right amount of ' {
-            $null = Set-DbaMaxMemory -SqlInstance $script:instance1, $script:instance2 -Max 1024
-            $results = Get-DbaMaxMemory -SqlInstance $script:instance1
+            $null = Set-DbaMaxMemory -SqlInstance $global:instance1, $global:instance2 -Max 1024
+            $results = Get-DbaMaxMemory -SqlInstance $global:instance1
             $results.MaxValue | Should Be 1024
         }
     }

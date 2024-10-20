@@ -18,7 +18,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $dbname = "dbatools_datagentest"
         $query = "CREATE DATABASE [$dbname]"
 
-        Invoke-DbaQuery -SqlInstance $script:instance1 -Database master -Query $query
+        Invoke-DbaQuery -SqlInstance $global:instance1 -Database master -Query $query
 
         $query = "
         CREATE TABLE [dbo].[Customer](
@@ -34,13 +34,13 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         ) ON [PRIMARY]
         "
 
-        Invoke-DbaQuery -SqlInstance $script:instance1 -Database $dbname -Query $query
+        Invoke-DbaQuery -SqlInstance $global:instance1 -Database $dbname -Query $query
 
-        $file = New-DbaDbDataGeneratorConfig -SqlInstance $script:instance1 -Database $dbname -Table Customer -Path "C:\temp\datageneration"
+        $file = New-DbaDbDataGeneratorConfig -SqlInstance $global:instance1 -Database $dbname -Table Customer -Path "C:\temp\datageneration"
 
     }
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $global:instance1 -Database $dbname -Confirm:$false
     }
 
     It "gives no errors with a correct json file" {

@@ -271,18 +271,18 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        Get-DbaProcess -SqlInstance $script:instance1 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
+        Get-DbaProcess -SqlInstance $global:instance1 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
         $dbname = "dbatoolsci_testdbowner"
-        $server = Connect-DbaInstance -SqlInstance $script:instance1
+        $server = Connect-DbaInstance -SqlInstance $global:instance1
         $null = $server.Query("Create Database [$dbname]")
     }
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $global:instance1 -Database $dbname -Confirm:$false
     }
 
     It "return the correct information including database, currentowner and targetowner" {
         $whoami = whoami
-        $results = Test-DbaDbOwner -SqlInstance $script:instance1 -Database $dbname
+        $results = Test-DbaDbOwner -SqlInstance $global:instance1 -Database $dbname
         $results.Database -eq $dbname
         $results.CurrentOwner -eq $whoami
         $results.TargetOwner -eq 'sa'

@@ -14,7 +14,7 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
 }
 
 Describe "$CommandName Integration Test" -Tag "IntegrationTests" {
-    $results = Invoke-DbaCycleErrorLog -SqlInstance $script:instance1 -Type instance
+    $results = Invoke-DbaCycleErrorLog -SqlInstance $global:instance1 -Type instance
 
     Context "Validate output" {
         It "Should have correct properties" {
