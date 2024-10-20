@@ -40,7 +40,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         # create objects
-        $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -InputFile $($TestConfig.appveyorlabrepo)\sql2008-scripts\logins.sql
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -InputFile "$($TestConfig.appveyorlabrepo)\sql2008-scripts\logins.sql"
 
         $tableQuery = @("CREATE TABLE tester_table (a int)", "CREATE USER tester FOR LOGIN tester", "GRANT INSERT ON tester_table TO tester;")
         $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database tempdb -Query ($tableQuery -join '; ')
@@ -97,7 +97,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "No overwrite" {
         BeforeAll {
-            $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -InputFile $($TestConfig.appveyorlabrepo)\sql2008-scripts\logins.sql
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -InputFile "$($TestConfig.appveyorlabrepo)\sql2008-scripts\logins.sql"
         }
         $results = Copy-DbaLogin -Source $TestConfig.instance1 -Destination $TestConfig.instance2 -Login tester
         It "Should say skipped" {

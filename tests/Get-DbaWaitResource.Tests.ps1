@@ -18,7 +18,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
         $random = Get-Random
         $WaitResourceDB = "WaitResource$random"
-        Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -DatabaseName $WaitResourceDB -ReplaceDbNameInFile -Path $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak
+        Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -DatabaseName $WaitResourceDB -ReplaceDbNameInFile -Path "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak"
         $sql = "
                 create table waittest (
                 col1 int,

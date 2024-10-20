@@ -41,7 +41,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Should remove a non system database." {
             Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance1 -Database singlerestore
             Get-DbaProcess -SqlInstance $TestConfig.instance1 -Database singlerestore | Stop-DbaProcess
-            Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -Path $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak -WithReplace
+            Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -Path "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak" -WithReplace
             (Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database singlerestore).IsAccessible | Should Be $true
             Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance1 -Database singlerestore
             Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database singlerestore | Should Be $null
@@ -51,7 +51,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Should remove a non system database." {
             Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance1 -Database singlerestore
             Get-DbaProcess -SqlInstance $TestConfig.instance1 -Database singlerestore | Stop-DbaProcess
-            Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -Path $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak -WithReplace -NoRecovery
+            Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -Path "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak" -WithReplace -NoRecovery
             (Connect-DbaInstance -SqlInstance $TestConfig.instance1).Databases['singlerestore'].IsAccessible | Should Be $false
             Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance1 -Database singlerestore
             Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database singlerestore | Should Be $null

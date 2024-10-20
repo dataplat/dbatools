@@ -23,7 +23,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $dbname = "dbatoolsci_history_$random"
         $dbnameForked = "dbatoolsci_history_forked_$random"
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname, $dbnameForked | Remove-DbaDatabase -Confirm:$false
-        $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -Path $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak -DatabaseName $dbname -DestinationFilePrefix $dbname
+        $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -Path "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak" -DatabaseName $dbname -DestinationFilePrefix $dbname
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
         $server.Databases['master'].ExecuteNonQuery("CREATE DATABASE $dbnameForked; ALTER DATABASE $dbnameForked SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
         $db = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname
