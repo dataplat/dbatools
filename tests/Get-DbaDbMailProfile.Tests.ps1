@@ -16,21 +16,21 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $profilename = "dbatoolsci_test_$(get-random)"
-        $server = Connect-DbaInstance -SqlInstance $script:instance2, $script:instance3
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2, $TestConfig.instance3
         $mailProfile = "EXEC msdb.dbo.sysmail_add_profile_sp
             @profile_name='$profilename',
             @description='Profile for system email';"
         $server.query($mailProfile)
     }
     AfterAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2, $script:instance3
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2, $TestConfig.instance3
         $mailProfile = "EXEC msdb.dbo.sysmail_delete_profile_sp
             @profile_name='$profilename';"
         $server.query($mailProfile)
     }
 
     Context "Gets DbMail Profile" {
-        $results = Get-DbaDbMailProfile -SqlInstance $script:instance2 | Where-Object {$_.name -eq "$profilename"}
+        $results = Get-DbaDbMailProfile -SqlInstance $TestConfig.instance2 | Where-Object {$_.name -eq "$profilename"}
         It "Gets results" {
             $results | Should Not Be $null
         }
@@ -47,7 +47,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Gets DbMailProfile when using -Profile" {
-        $results = Get-DbaDbMailProfile -SqlInstance $script:instance2 -Profile $profilename
+        $results = Get-DbaDbMailProfile -SqlInstance $TestConfig.instance2 -Profile $profilename
         It "Gets results" {
             $results | Should Not Be $null
         }
@@ -59,7 +59,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Gets no DbMailProfile when using -ExcludeProfile" {
-        $results = Get-DbaDbMailProfile -SqlInstance $script:instance2 -ExcludeProfile $profilename
+        $results = Get-DbaDbMailProfile -SqlInstance $TestConfig.instance2 -ExcludeProfile $profilename
         It "Gets no results" {
             $results | Should -Not -Contain $profilename
         }

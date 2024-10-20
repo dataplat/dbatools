@@ -16,13 +16,13 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Gets Execution Plan" {
-        $results = Get-DbaExecutionPlan -SqlInstance $script:instance2 | Where-Object {$_.statementtype -eq 'SELECT'} | Select-object -First 1
+        $results = Get-DbaExecutionPlan -SqlInstance $TestConfig.instance2 | Where-Object {$_.statementtype -eq 'SELECT'} | Select-object -First 1
         It "Gets results" {
             $results | Should Not Be $null
         }
     }
     Context "Gets Execution Plan when using -Database" {
-        $results = Get-DbaExecutionPlan -SqlInstance $script:instance2 -Database Master | Select-object -First 1
+        $results = Get-DbaExecutionPlan -SqlInstance $TestConfig.instance2 -Database Master | Select-object -First 1
         It "Gets results" {
             $results | Should Not Be $null
         }
@@ -31,7 +31,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Gets no Execution Plan when using -ExcludeDatabase" {
-        $results = Get-DbaExecutionPlan -SqlInstance $script:instance2 -ExcludeDatabase Master | Select-object -First 1
+        $results = Get-DbaExecutionPlan -SqlInstance $TestConfig.instance2 -ExcludeDatabase Master | Select-object -First 1
         It "Gets results" {
             $results | Should Not Be $null
         }
@@ -40,7 +40,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Gets Execution Plan when using -SinceCreation" {
-        $results = Get-DbaExecutionPlan -SqlInstance $script:instance2 -Database Master -SinceCreation '01-01-2000' | Select-object -First 1
+        $results = Get-DbaExecutionPlan -SqlInstance $TestConfig.instance2 -Database Master -SinceCreation '01-01-2000' | Select-object -First 1
         It "Gets results" {
             $results | Should Not Be $null
         }
@@ -52,7 +52,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Gets Execution Plan when using -SinceLastExecution" {
-        $results = Get-DbaExecutionPlan -SqlInstance $script:instance2 -Database Master -SinceLastExecution '01-01-2000' | Select-object -First 1
+        $results = Get-DbaExecutionPlan -SqlInstance $TestConfig.instance2 -Database Master -SinceLastExecution '01-01-2000' | Select-object -First 1
         It "Gets results" {
             $results | Should Not Be $null
         }
@@ -64,7 +64,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Gets Execution Plan when using -ExcludeDatabase" {
-        $results = Get-DbaExecutionPlan -SqlInstance $script:instance2 -ExcludeEmptyQueryPlan
+        $results = Get-DbaExecutionPlan -SqlInstance $TestConfig.instance2 -ExcludeEmptyQueryPlan
         It "Gets no results" {
             $results | Should Not Be $null
         }

@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $instance = Connect-DbaInstance -SqlInstance $script:instance2
+        $instance = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $roleExecutor = "serverExecuter"
         $roleMaster = "serverMaster"
         $owner = "sa"

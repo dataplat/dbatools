@@ -15,17 +15,17 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command actually works" {
         It "Should return a result" {
-            $results = Test-DbaDbCompatibility -SqlInstance $script:instance2
+            $results = Test-DbaDbCompatibility -SqlInstance $TestConfig.instance2
             $results | Should -Not -Be $null
         }
 
         It "Should return a result for a database" {
-            $results = Test-DbaDbCompatibility -Database Master -SqlInstance $script:instance2
+            $results = Test-DbaDbCompatibility -Database Master -SqlInstance $TestConfig.instance2
             $results | Should -Not -Be $null
         }
 
         It "Should return a result excluding one database" {
-            $results = Test-DbaDbCompatibility -ExcludeDatabase Master -SqlInstance $script:instance2
+            $results = Test-DbaDbCompatibility -ExcludeDatabase Master -SqlInstance $TestConfig.instance2
             $results | Should -Not -Be $null
         }
     }

@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Command returns proper info" {
-        $results = Get-DbaSpinLockStatistic -SqlInstance $script:instance2
+        $results = Get-DbaSpinLockStatistic -SqlInstance $TestConfig.instance2
 
         It "returns results" {
             $results.Count -gt 0 | Should Be $true

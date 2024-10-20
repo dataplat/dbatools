@@ -17,7 +17,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command functions as expected" {
         It "warns if SQL instance version is not supported" {
-            $results = Watch-DbaXESession -SqlInstance $script:instance1 -Session system_health -WarningAction SilentlyContinue -WarningVariable versionwarn
+            $results = Watch-DbaXESession -SqlInstance $TestConfig.instance1 -Session system_health -WarningAction SilentlyContinue -WarningVariable versionwarn
             $versionwarn -join '' -match "SQL Server version 11 required" | Should Be $true
         }
     }

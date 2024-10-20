@@ -17,33 +17,33 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $random = Get-Random
         $db1Name = "dbatoolscli_$random"
-        $db1 = New-DbaDatabase -SqlInstance $script:instance1 -Name $db1Name
+        $db1 = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $db1Name
         $pw = ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force
-        if (-not (Get-DbaDbMasterKey -SqlInstance $script:instance1 -Database $db1Name)) {
-            $masterkey = New-DbaDbMasterKey -SqlInstance $script:instance1 -Database $db1Name -Password $pw -Confirm:$false
+        if (-not (Get-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database $db1Name)) {
+            $masterkey = New-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database $db1Name -Password $pw -Confirm:$false
         }
 
-        $cert = New-DbaDbCertificate -SqlInstance $script:instance1 -Database $db1Name -Confirm:$false -Password $pw -Name dbatoolscli_cert1_$random
-        $cert2 = New-DbaDbCertificate -SqlInstance $script:instance1 -Database $db1Name -Confirm:$false -Password $pw -Name dbatoolscli_cert2_$random
+        $cert = New-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Database $db1Name -Confirm:$false -Password $pw -Name dbatoolscli_cert1_$random
+        $cert2 = New-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Database $db1Name -Confirm:$false -Password $pw -Name dbatoolscli_cert2_$random
     }
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $script:instance1 -Database $db1Name -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $db1Name -Confirm:$false
     }
 
     Context "Can create and backup a database certificate" {
 
         It "backs up the db cert" {
-            $results = Backup-DbaDbCertificate -SqlInstance $script:instance1 -Certificate $cert.Name -Database $db1Name -EncryptionPassword $pw -DecryptionPassword $pw
+            $results = Backup-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Certificate $cert.Name -Database $db1Name -EncryptionPassword $pw -DecryptionPassword $pw
             $null = Get-ChildItem -Path $results.Path -ErrorAction Ignore | Remove-Item -Confirm:$false -ErrorAction Ignore
             $results.Certificate | Should -Be $cert.Name
             $results.Status -match "Success"
-            $results.DatabaseID | Should -Be (Get-DbaDatabase -SqlInstance $script:instance1 -Database $db1Name).ID
+            $results.DatabaseID | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $db1Name).ID
         }
 
         It "warns the caller if the cert cannot be found" {
             $invalidDBCertName = "dbatoolscli_invalidCertName"
             $invalidDBCertName2 = "dbatoolscli_invalidCertName2"
-            $results = Backup-DbaDbCertificate -SqlInstance $script:instance1 -Certificate $invalidDBCertName, $invalidDBCertName2, $cert2.Name -Database $db1Name -EncryptionPassword $pw -DecryptionPassword $pw -WarningVariable warnVariable 3> $null
+            $results = Backup-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Certificate $invalidDBCertName, $invalidDBCertName2, $cert2.Name -Database $db1Name -EncryptionPassword $pw -DecryptionPassword $pw -WarningVariable warnVariable 3> $null
             $null = Get-ChildItem -Path $results.Path -ErrorAction Ignore | Remove-Item -Confirm:$false -ErrorAction Ignore
             #$results.Certificate | Should -Be $cert2.Name
             $warnVariable | Should -BeLike "*Database certificate(s) * not found*"
@@ -51,7 +51,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
 
         # works locally, gah
         It -Skip "backs up all db certs for a database" {
-            $results = Backup-DbaDbCertificate -SqlInstance $script:instance1 -Database $db1Name -EncryptionPassword $pw -DecryptionPassword $pw
+            $results = Backup-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Database $db1Name -EncryptionPassword $pw -DecryptionPassword $pw
             $null = Get-ChildItem -Path $results.Path -ErrorAction Ignore | Remove-Item -Confirm:$false -ErrorAction Ignore
             $results.length | Should -Be 2
             $results.Certificate | Should -Be $cert.Name, $cert2.Name
@@ -59,7 +59,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
 
         # Skip this test as there's a mix of certs, some require a password and some don't and i'll fix later
         It -Skip "backs up all db certs for an instance" {
-            $results = Backup-DbaDbCertificate -SqlInstance $script:instance1 -EncryptionPassword $pw
+            $results = Backup-DbaDbCertificate -SqlInstance $TestConfig.instance1 -EncryptionPassword $pw
             $null = Get-ChildItem -Path $results.Path -ErrorAction Ignore | Remove-Item -Confirm:$false -ErrorAction Ignore
             # $results.length | Should -BeGreaterOrEqual 2
         }

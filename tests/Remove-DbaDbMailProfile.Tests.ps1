@@ -16,7 +16,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     BeforeEach {
 
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $profilename = "dbatoolsci_test_$(get-random)"
         $profilename2 = "dbatoolsci_test_$(get-random)"
 

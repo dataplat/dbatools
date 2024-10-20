@@ -23,7 +23,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $tableFunctionName = "[dbatoolsci_TableFunction_$random]"
         $scalarFunctionName = "[dbatoolsci_ScalarFunction_$random]"
         $ruleName = "[dbatoolsci_Rule_$random]"
-        $server = Connect-DbaInstance -SqlInstance $script:instance2 -SqlCredential $SqlCredential
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2 -SqlCredential $SqlCredential
         $server.query("CREATE TABLE dbo.$tableName (Col1 int);", "master")
         $server.query("CREATE VIEW dbo.$viewName AS SELECT 1 as Col1;", "master")
         $server.query("CREATE PROCEDURE dbo.$procName as select 1;", "master")
@@ -33,7 +33,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $server.query("CREATE RULE dbo.$ruleName AS @range>= 1 AND @range <10;", "master")
     }
     AfterAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2 -SqlCredential $SqlCredential
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2 -SqlCredential $SqlCredential
         $server.query("DROP TABLE dbo.$tableName", "master")
         $server.query("DROP VIEW dbo.$viewName", "master")
         $server.query("DROP PROCEDURE dbo.$procName", "master")
@@ -43,7 +43,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $server.query("DROP RULE dbo.$ruleName", "master")
     }
     Context "works as expected with passthru" {
-        $script = Export-DbaSysDbUserObject -SqlInstance $script:instance2 -PassThru | Out-String
+        $script = Export-DbaSysDbUserObject -SqlInstance $TestConfig.instance2 -PassThru | Out-String
         It "should export text matching table name '$tableName'" {
             $script -match $tableName | Should be $true
         }
@@ -68,7 +68,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "works as expected with filename" {
-        $null = Export-DbaSysDbUserObject -SqlInstance $script:instance2 -FilePath "C:\Temp\objects_$random.sql"
+        $null = Export-DbaSysDbUserObject -SqlInstance $TestConfig.instance2 -FilePath "C:\Temp\objects_$random.sql"
         $file = get-content "C:\Temp\objects_$random.sql" | Out-String
         It "should export text matching table name '$tableName'" {
             $file -match $tableName | Should be $true

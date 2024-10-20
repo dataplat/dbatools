@@ -16,17 +16,17 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $database = 'RemAsy'
-        $null = New-DbaDatabase -SqlInstance $script:instance2 -Name $database
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $database
     }
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $script:instance2 -Database $database -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $database -Confirm:$false
     }
     Context "Remove a certificate" {
         $keyname = 'test1'
         $tPassword = ConvertTo-SecureString "ThisIsThePassword1" -AsPlainText -Force
-        New-DbaDbMasterKey -SqlInstance $script:instance2 -Database $database -SecurePassword $tPassword -confirm:$false
-        $key = New-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Name $keyname -database $database
-        $results = Get-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Name $keyname -Database $database -WarningVariable warnvar
+        New-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database $database -SecurePassword $tPassword -confirm:$false
+        $key = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname -database $database
+        $results = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname -Database $database -WarningVariable warnvar
 
         It  "Should create new key in $database called $keyname" {
             $warnvar | Should -BeNullOrEmpty
@@ -35,8 +35,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results.KeyLength | Should -Be '2048'
         }
 
-        $removeResults = Remove-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Name $keyname -Database $database -confirm:$false
-        $getResults = Get-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Name $keyname -Database $database
+        $removeResults = Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname -Database $database -confirm:$false
+        $getResults = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname -Database $database
         It "Should Remove a certificate" {
             $getResults | Should -HaveCount 0
             $removeResults.Status | Should -Be 'Success'
@@ -46,22 +46,23 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $keyname = 'test1'
         $keyname2 = 'test2'
         $database = 'RemAsy'
-        $key = New-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Name $keyname -Database $database
-        $key2 = New-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Name $keyname2 -Database $database
-        $results = Get-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Database $database -WarningVariable warnvar
+        $key = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname -Database $database
+        $key2 = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname2 -Database $database
+        $results = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Database $database -WarningVariable warnvar
 
         It  "Should created new keys in $database " {
             $warnvar | Should -BeNullOrEmpty
             $results | Should -HaveCount 2
         }
-        $removeResults = Remove-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Name $keyname -Database $database -confirm:$false
-        $getResults = Get-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Database $database
+        $removeResults = Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname -Database $database -confirm:$false
+        $getResults = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Database $database
         It "Should Remove a specific certificate" {
             $getResults | Should -HaveCount 1
             $getResults[0].Name | Should -Be $keyname2
             $removeResults.Status | Should -Be 'Success'
             $removeResults.Name | Should -Be $keyname
         }
-        Remove-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Name $keyname2 -Database $database -confirm:$false
+        Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname2 -Database $database -confirm:$false
     }
 }
+

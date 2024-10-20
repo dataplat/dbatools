@@ -16,7 +16,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     BeforeAll {
 
-        $instance2 = Connect-DbaInstance -SqlInstance $script:instance2
+        $instance2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $null = Get-DbaProcess -SqlInstance $instance2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false
         $dbname1 = "dbatoolsci_$(Get-Random)"
         $null = New-DbaDatabase -SqlInstance $instance2 -Name $dbname1

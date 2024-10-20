@@ -16,8 +16,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Creates a smart object" {
         It "returns the object with all of the correct properties" {
             $columns = "cpu_time", "duration", "physical_reads", "logical_reads", "writes", "row_count", "batch_text"
-            $results = New-DbaXESmartTableWriter -SqlInstance $script:instance2 -Database dbadb -Table deadlocktracker -OutputColumn $columns -Filter "duration > 10000"
-            $results.ServerName | Should -Be $script:instance2
+            $results = New-DbaXESmartTableWriter -SqlInstance $TestConfig.instance2 -Database dbadb -Table deadlocktracker -OutputColumn $columns -Filter "duration > 10000"
+            $results.ServerName | Should -Be $TestConfig.instance2
             $results.DatabaseName | Should -be 'dbadb'
             $results.Password | Should -Be $null
             $results.TableName | Should -Be 'deadlocktracker'

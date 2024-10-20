@@ -15,18 +15,18 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance1
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
         $sql = "EXEC msdb.dbo.sp_addmessage 54321, 9, N'Dbatools is Awesome!';"
         $server.Query($sql)
     }
     Afterall {
-        $server = Connect-DbaInstance -SqlInstance $script:instance1
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
         $sql = "EXEC msdb.dbo.sp_dropmessage 54321;"
         $server.Query($sql)
     }
 
     Context "Gets the backup devices" {
-        $results = Get-DbaCustomError -SqlInstance $script:instance1
+        $results = Get-DbaCustomError -SqlInstance $TestConfig.instance1
         It "Results are not empty" {
             $results | Should Not Be $Null
         }

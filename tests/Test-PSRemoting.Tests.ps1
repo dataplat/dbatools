@@ -27,7 +27,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "handles an instance, using just the computername" {
-        $result = Test-PSRemoting -ComputerName $script:instance1
+        $result = Test-PSRemoting -ComputerName $TestConfig.instance1
         It "returns $true when succeeding" {
             $result | Should Be $true
         }

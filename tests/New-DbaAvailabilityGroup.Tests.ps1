@@ -15,26 +15,26 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $null = Get-DbaProcess -SqlInstance $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
+        $null = Get-DbaProcess -SqlInstance $TestConfig.instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
         $dbname = "dbatoolsci_addag_agroupdb"
         $agname = "dbatoolsci_addag_agroup"
-        $null = New-DbaDatabase -SqlInstance $script:instance3 -Database $dbname | Backup-DbaDatabase
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbname | Backup-DbaDatabase
     }
     AfterEach {
-        $result = Remove-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup $agname -Confirm:$false
+        $result = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname -Confirm:$false
     }
     AfterAll {
-        $null = Remove-DbaDatabase -SqlInstance $script:instance3 -Database $dbname -Confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbname -Confirm:$false
     }
     Context "adds an ag" {
         It "returns an ag with a db named" {
-            $results = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Database $dbname -Confirm:$false -Certificate dbatoolsci_AGCert
+            $results = New-DbaAvailabilityGroup -Primary $TestConfig.instance3 -Name $agname -ClusterType None -FailoverMode Manual -Database $dbname -Confirm:$false -Certificate dbatoolsci_AGCert
             $results.AvailabilityDatabases.Name | Should -Be $dbname
             $results.AvailabilityDatabases.Count | Should -Be 1 -Because "There should be only the named database in the group"
         }
         It "returns an ag with no database if one was not named" {
-            $results = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Confirm:$false -Certificate dbatoolsci_AGCert
+            $results = New-DbaAvailabilityGroup -Primary $TestConfig.instance3 -Name $agname -ClusterType None -FailoverMode Manual -Confirm:$false -Certificate dbatoolsci_AGCert
             $results.AvailabilityDatabases.Count | Should -Be 0 -Because "No database was named"
         }
     }
-} #$script:instance2 for appveyor
+} #$TestConfig.instance2 for appveyor

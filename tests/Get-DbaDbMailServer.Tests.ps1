@@ -16,7 +16,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $accountname = "dbatoolsci_test_$(get-random)"
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $mailAccountSettings = "EXEC msdb.dbo.sysmail_add_account_sp
             @account_name='$accountname',
             @description='Mail account for email alerts',
@@ -27,14 +27,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $server.query($mailAccountSettings)
     }
     AfterAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $mailAccountSettings = "EXEC msdb.dbo.sysmail_delete_account_sp
             @account_name = '$accountname';"
         $server.query($mailAccountSettings)
     }
 
     Context "Gets DbMailServer" {
-        $results = Get-DbaDbMailServer -SqlInstance $script:instance2 | Where-Object {$_.account -eq "$accountname"}
+        $results = Get-DbaDbMailServer -SqlInstance $TestConfig.instance2 | Where-Object {$_.account -eq "$accountname"}
         It "Gets results" {
             $results | Should Not Be $null
         }
@@ -55,13 +55,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Gets DbMailServer using -Server" {
-        $results = Get-DbaDbMailServer -SqlInstance $script:instance2 -Server 'smtp.dbatools.io'
+        $results = Get-DbaDbMailServer -SqlInstance $TestConfig.instance2 -Server 'smtp.dbatools.io'
         It "Gets results" {
             $results | Should Not Be $null
         }
     }
     Context "Gets DbMailServer using -Account" {
-        $results = Get-DbaDbMailServer -SqlInstance $script:instance2 -Account $accounname
+        $results = Get-DbaDbMailServer -SqlInstance $TestConfig.instance2 -Account $accounname
         It "Gets results" {
             $results | Should Not Be $null
         }

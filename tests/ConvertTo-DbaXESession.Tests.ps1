@@ -92,19 +92,19 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
                 -- display trace id for future references
                 select TraceID=@TraceID"
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $traceid = ($server.Query($sql)).TraceID
-        $script:name = "dbatoolsci-session"
+        $TestConfig.name = "dbatoolsci-session"
     }
     AfterAll {
-        $null = Remove-DbaXESession -SqlInstance $script:instance2 -Session $script:name
-        $null = Remove-DbaTrace -SqlInstance $script:instance2 -Id $traceid
+        $null = Remove-DbaXESession -SqlInstance $TestConfig.instance2 -Session $TestConfig.name
+        $null = Remove-DbaTrace -SqlInstance $TestConfig.instance2 -Id $traceid
         Remove-Item C:\windows\temp\temptrace.trc -ErrorAction SilentlyContinue
     }
     Context "Test Trace Conversion" {
-        $results = Get-DbaTrace -SqlInstance $script:instance2 -Id $traceid | ConvertTo-DbaXESession -Name $script:name | Start-DbaXESession
+        $results = Get-DbaTrace -SqlInstance $TestConfig.instance2 -Id $traceid | ConvertTo-DbaXESession -Name $TestConfig.name | Start-DbaXESession
         It "returns the right results" {
-            $results.Name | Should Be $script:name
+            $results.Name | Should Be $TestConfig.name
             $results.Status | Should Be "Running"
             $results.Targets.Name | Should Be "package0.event_file"
         }

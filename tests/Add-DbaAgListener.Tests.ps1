@@ -17,13 +17,13 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $agname = "dbatoolsci_ag_newlistener"
         $listenerName = 'dbatoolsci_listener'
-        $ag = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Confirm:$false -Certificate dbatoolsci_AGCert
+        $ag = New-DbaAvailabilityGroup -Primary $TestConfig.instance3 -Name $agname -ClusterType None -FailoverMode Manual -Confirm:$false -Certificate dbatoolsci_AGCert
     }
     AfterEach {
-        $null = Remove-DbaAgListener -SqlInstance $script:instance3 -Listener $listenerName -AvailabilityGroup $agname -Confirm:$false
+        $null = Remove-DbaAgListener -SqlInstance $TestConfig.instance3 -Listener $listenerName -AvailabilityGroup $agname -Confirm:$false
     }
     AfterAll {
-        $null = Remove-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup $agname -Confirm:$false
+        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname -Confirm:$false
     }
     Context "creates a listener" {
         It "returns results with proper data" {
@@ -31,4 +31,4 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $results.PortNumber | Should -Be 14330
         }
     }
-} #$script:instance2 for appveyor
+} #$TestConfig.instance2 for appveyor

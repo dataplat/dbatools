@@ -17,12 +17,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Context "Command actually works" {
 
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $instanceName = $server.ServiceName
         $computerName = $server.NetName
 
         It "stops some services" {
-            $services = Stop-DbaService -ComputerName $script:instance2 -InstanceName $instanceName -Type Agent
+            $services = Stop-DbaService -ComputerName $TestConfig.instance2 -InstanceName $instanceName -Type Agent
             $services | Should Not Be $null
             foreach ($service in $services) {
                 $service.State | Should Be 'Stopped'
@@ -39,7 +39,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         Get-Service -ComputerName $computerName -Name $serviceName | Start-Service -WarningAction SilentlyContinue | Out-Null
 
         It "stops specific services based on instance name through pipeline" {
-            $services = Get-DbaService -ComputerName $script:instance2 -InstanceName $instanceName -Type Agent, Engine | Stop-DbaService
+            $services = Get-DbaService -ComputerName $TestConfig.instance2 -InstanceName $instanceName -Type Agent, Engine | Stop-DbaService
             $services | Should Not Be $null
             foreach ($service in $services) {
                 $service.State | Should Be 'Stopped'

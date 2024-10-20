@@ -20,7 +20,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 #>
 Describe "Get-DbaMemoryCondition Integration Test" -Tag "IntegrationTests" {
     Context "Command actually works" {
-        $results = Get-DbaMemoryCondition -SqlInstance $script:instance1
+        $results = Get-DbaMemoryCondition -SqlInstance $TestConfig.instance1
 
         It "returns results" {
             $($results | Measure-Object).Count -gt 0 | Should Be $true

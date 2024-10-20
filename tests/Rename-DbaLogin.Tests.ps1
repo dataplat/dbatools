@@ -19,15 +19,15 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $renamed = "dbatoolsci_renamelogin2"
         $password = 'MyV3ry$ecur3P@ssw0rd'
         $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
-        $newlogin = New-DbaLogin -SqlInstance $script:instance1 -Login $login -Password $securePassword
+        $newlogin = New-DbaLogin -SqlInstance $TestConfig.instance1 -Login $login -Password $securePassword
     }
     AfterAll {
-        $null = Stop-DbaProcess -SqlInstance $script:instance1 -Login $renamed
-        $null = Remove-DbaLogin -SqlInstance $script:instance1 -Login $renamed -Confirm:$false
+        $null = Stop-DbaProcess -SqlInstance $TestConfig.instance1 -Login $renamed
+        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance1 -Login $renamed -Confirm:$false
     }
 
     Context "renames the login" {
-        $results = Rename-DbaLogin -SqlInstance $script:instance1 -Login $login -NewLogin $renamed
+        $results = Rename-DbaLogin -SqlInstance $TestConfig.instance1 -Login $login -NewLogin $renamed
         It "rename is successful" {
             $results.Status | Should Be "Successful"
         }
@@ -38,7 +38,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results.NewLogin | Should Be $renamed
         }
         It "results aren't null" {
-            Get-DbaLogin -SqlInstance $script:instance1 -login $renamed | Should Not BeNullOrEmpty
+            Get-DbaLogin -SqlInstance $TestConfig.instance1 -login $renamed | Should Not BeNullOrEmpty
         }
     }
 }

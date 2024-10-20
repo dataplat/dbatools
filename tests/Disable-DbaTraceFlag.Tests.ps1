@@ -16,7 +16,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Verifying TraceFlag output" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance1
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
             $startingtfs = Get-DbaTraceFlag -SqlInstance $server
             $safetraceflag = 3226
 

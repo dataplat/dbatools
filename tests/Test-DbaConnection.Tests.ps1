@@ -16,7 +16,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Testing if command works" {
 
-        $results = Test-DbaConnection -SqlInstance $script:instance1
+        $results = Test-DbaConnection -SqlInstance $TestConfig.instance1
         $whoami = whoami
         It "returns the correct port" {
             $results.TcpPort | Should Be 1433

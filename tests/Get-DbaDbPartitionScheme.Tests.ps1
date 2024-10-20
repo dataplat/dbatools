@@ -25,7 +25,7 @@ GO
 CREATE PARTITION SCHEME $PFScheme AS PARTITION [$PFName] ALL TO ( [PRIMARY] );
 "@
 
-        Invoke-DbaQuery -SqlInstance $script:instance2 -Query $CreateTestPartitionScheme -Database master
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $CreateTestPartitionScheme -Database master
     }
     AfterAll {
         $DropTestPartitionScheme = @"
@@ -33,12 +33,12 @@ DROP PARTITION SCHEME [$PFScheme];
 GO
 DROP PARTITION FUNCTION [$PFName];
 "@
-        Invoke-DbaQuery -SqlInstance $script:instance2 -Query $DropTestPartitionScheme -Database master
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $DropTestPartitionScheme -Database master
     }
 
     Context "Partition Schemes are correctly located" {
-        $results1 = Get-DbaDbPartitionScheme -SqlInstance $script:instance2 -Database master | Select-Object *
-        $results2 = Get-DbaDbPartitionScheme -SqlInstance $script:instance2
+        $results1 = Get-DbaDbPartitionScheme -SqlInstance $TestConfig.instance2 -Database master | Select-Object *
+        $results2 = Get-DbaDbPartitionScheme -SqlInstance $TestConfig.instance2
 
         It "Should execute and return results" {
             $results2 | Should -Not -Be $null
@@ -61,7 +61,7 @@ DROP PARTITION FUNCTION [$PFName];
         }
 
         It "Should not Throw an Error" {
-            {Get-DbaDbPartitionScheme -SqlInstance $script:instance2 -ExcludeDatabase master } | Should -not -Throw
+            {Get-DbaDbPartitionScheme -SqlInstance $TestConfig.instance2 -ExcludeDatabase master } | Should -not -Throw
         }
     }
 }

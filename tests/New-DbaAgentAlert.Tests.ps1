@@ -15,14 +15,14 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeEach {
-        Get-DbaAgentAlert -SqlInstance $script:instance2, $script:instance3 -Alert "Test Alert", "Another Alert" | Remove-DbaAgentAlert -Confirm:$false
+        Get-DbaAgentAlert -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Alert "Test Alert", "Another Alert" | Remove-DbaAgentAlert -Confirm:$false
     }
     AfterAll {
-        Get-DbaAgentAlert -SqlInstance $script:instance2, $script:instance3 -Alert "Test Alert", "Another Alert" | Remove-DbaAgentAlert -Confirm:$false
+        Get-DbaAgentAlert -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Alert "Test Alert", "Another Alert" | Remove-DbaAgentAlert -Confirm:$false
     }
     Context 'Creating a new SQL Server Agent alert' {
         $parms = @{
-            SqlInstance           = $script:instance2
+            SqlInstance           = $TestConfig.instance2
             Alert                 = "Test Alert"
             DelayBetweenResponses = 60
             Disabled              = $false
@@ -41,12 +41,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $alert.IsEnabled | Should -Be $true
             $alert.Severity | Should -Be 17
 
-            Get-DbaAgentAlert -SqlInstance $script:instance2 -Alert $parms.Alert | Should -Not -BeNullOrEmpty
+            Get-DbaAgentAlert -SqlInstance $TestConfig.instance2 -Alert $parms.Alert | Should -Not -BeNullOrEmpty
         }
 
         It 'Should create a new alert' {
             $parms = @{
-                SqlInstance           = $script:instance3
+                SqlInstance           = $TestConfig.instance3
                 Alert                 = "Another Alert"
                 DelayBetweenResponses = 60
                 NotifyMethod          = "NotifyEmail"
@@ -64,7 +64,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $alert.MessageId | Should -Be 826
             $alert.Severity | Should -Be 0
 
-            Get-DbaAgentAlert -SqlInstance $script:instance3 -Alert $parms.Alert | Should -Not -BeNullOrEmpty
+            Get-DbaAgentAlert -SqlInstance $TestConfig.instance3 -Alert $parms.Alert | Should -Not -BeNullOrEmpty
         }
     }
 }

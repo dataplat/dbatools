@@ -15,6 +15,6 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     It "doesn't throw" {
-        { Get-DbaOpenTransaction -SqlInstance $script:instance1 } | Should Not Throw
+        { Get-DbaOpenTransaction -SqlInstance $TestConfig.instance1 } | Should Not Throw
     }
 }

@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $logfiles = $server.NumberOfLogFiles
         $logsize = $server.ErrorLogSizeKb
 
@@ -23,7 +23,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $server.ErrorLogSizeKb = 1024
         $server.Alter()
 
-        $server = Connect-DbaInstance -SqlInstance $script:instance1
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
         $logfiles2 = $server.NumberOfLogFiles
         $logsize2 = $server.ErrorLogSizeKb
 
@@ -31,18 +31,18 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $server.Alter()
     }
     AfterAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance1
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
         $server.NumberOfLogFiles = $logfiles2
         $server.Alter()
 
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $server.NumberOfLogFiles = $logfiles
         $server.ErrorLogSizeKb = $logsize
         $server.Alter()
     }
 
     Context "Apply LogCount to multiple instances" {
-        $results = Set-DbaErrorLogConfig -SqlInstance $script:instance2, $script:instance1 -LogCount 8
+        $results = Set-DbaErrorLogConfig -SqlInstance $TestConfig.instance2, $TestConfig.instance1 -LogCount 8
         foreach ($result in $results) {
             It 'Returns LogCount set to 8 for each instance' {
                 $result.LogCount | Should Be 8
@@ -50,7 +50,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
     Context "Apply LogSize to multiple instances" {
-        $results = Set-DbaErrorLogConfig -SqlInstance $script:instance2, $script:instance1 -LogSize 100 -WarningAction SilentlyContinue -WarningVariable warn2
+        $results = Set-DbaErrorLogConfig -SqlInstance $TestConfig.instance2, $TestConfig.instance1 -LogSize 100 -WarningAction SilentlyContinue -WarningVariable warn2
         foreach ($result in $results) {
             It 'Returns LogSize set to 100 for each instance' {
                 $result.LogSize.Kilobyte | Should Be 100

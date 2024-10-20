@@ -21,29 +21,29 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
                      MAX_CPU_PERCENT = 100,
                      MIN_CPU_PERCENT = 50
                 )"
-        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2 -Query $sql
+        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $TestConfig.instance2 -Query $sql
         $sql = "CREATE WORKLOAD GROUP dbatoolsci_prodprocessing
                 WITH
                 (
                      IMPORTANCE = MEDIUM
                 ) USING dbatoolsci_prod"
-        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2 -Query $sql
+        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $TestConfig.instance2 -Query $sql
         $sql = "CREATE RESOURCE POOL dbatoolsci_offhoursprocessing
                 WITH
                 (
                      MAX_CPU_PERCENT = 50,
                      MIN_CPU_PERCENT = 0
                 )"
-        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2 -Query $sql
+        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $TestConfig.instance2 -Query $sql
         $sql = "CREATE WORKLOAD GROUP dbatoolsci_goffhoursprocessing
                 WITH
                 (
                      IMPORTANCE = LOW
                 )
                 USING dbatoolsci_offhoursprocessing"
-        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2 -Query $sql
+        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $TestConfig.instance2 -Query $sql
         $sql = "ALTER RESOURCE GOVERNOR RECONFIGURE"
-        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2 -Query $sql
+        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $TestConfig.instance2 -Query $sql
         $sql = "CREATE FUNCTION dbatoolsci_fnRG()
                 RETURNS sysname
                 WITH SCHEMABINDING
@@ -51,29 +51,29 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
                 BEGIN
                      RETURN N'dbatoolsci_goffhoursprocessing'
                 END"
-        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2 -Query $sql
+        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $TestConfig.instance2 -Query $sql
         $sql = "ALTER RESOURCE GOVERNOR with (CLASSIFIER_FUNCTION = dbo.dbatoolsci_fnRG); ALTER RESOURCE GOVERNOR RECONFIGURE;"
-        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2 -Query $sql
+        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $TestConfig.instance2 -Query $sql
     }
     AfterAll {
-        Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' |  Stop-DbaProcess -WarningAction SilentlyContinue
-        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2, $script:instance3 -Query "ALTER RESOURCE GOVERNOR WITH (CLASSIFIER_FUNCTION = NULL); ALTER RESOURCE GOVERNOR RECONFIGURE"
-        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2, $script:instance3 -Query "DROP FUNCTION [dbo].[dbatoolsci_fnRG];ALTER RESOURCE GOVERNOR RECONFIGURE"
-        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2, $script:instance3 -Query "DROP WORKLOAD GROUP [dbatoolsci_prodprocessing];ALTER RESOURCE GOVERNOR RECONFIGURE"
-        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2, $script:instance3 -Query "DROP WORKLOAD GROUP [dbatoolsci_goffhoursprocessing];ALTER RESOURCE GOVERNOR RECONFIGURE"
-        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2, $script:instance3 -Query "DROP RESOURCE POOL [dbatoolsci_offhoursprocessing];ALTER RESOURCE GOVERNOR RECONFIGURE"
-        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2, $script:instance3 -Query "DROP RESOURCE POOL [dbatoolsci_prod];ALTER RESOURCE GOVERNOR RECONFIGURE"
+        Get-DbaProcess -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Program 'dbatools PowerShell module - dbatools.io' |  Stop-DbaProcess -WarningAction SilentlyContinue
+        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Query "ALTER RESOURCE GOVERNOR WITH (CLASSIFIER_FUNCTION = NULL); ALTER RESOURCE GOVERNOR RECONFIGURE"
+        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Query "DROP FUNCTION [dbo].[dbatoolsci_fnRG];ALTER RESOURCE GOVERNOR RECONFIGURE"
+        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Query "DROP WORKLOAD GROUP [dbatoolsci_prodprocessing];ALTER RESOURCE GOVERNOR RECONFIGURE"
+        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Query "DROP WORKLOAD GROUP [dbatoolsci_goffhoursprocessing];ALTER RESOURCE GOVERNOR RECONFIGURE"
+        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Query "DROP RESOURCE POOL [dbatoolsci_offhoursprocessing];ALTER RESOURCE GOVERNOR RECONFIGURE"
+        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Query "DROP RESOURCE POOL [dbatoolsci_prod];ALTER RESOURCE GOVERNOR RECONFIGURE"
     }
 
     Context "Command works" {
         It "copies the resource governor successfully" {
-            $results = Copy-DbaResourceGovernor -Source $script:instance2 -Destination $script:instance3 -Force -WarningAction SilentlyContinue
+            $results = Copy-DbaResourceGovernor -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -Force -WarningAction SilentlyContinue
             $results.Status | Select-Object -Unique | Should -Be 'Successful'
             $results.Status.Count | Should -BeGreaterThan 3
             $results.Name | Should -Contain 'dbatoolsci_prod'
         }
         It "returns the proper classifier function" {
-            $results = Get-DbaRgClassifierFunction -SqlInstance $script:instance3
+            $results = Get-DbaRgClassifierFunction -SqlInstance $TestConfig.instance3
             $results.Name | Should -Be 'dbatoolsci_fnRG'
         }
     }

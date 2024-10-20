@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $instance = Connect-DbaInstance -SqlInstance $script:instance2
+        $instance = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $dbname = "dbatoolsci_adddb_newrole"
         $instance.Query("create database $dbname")
         $roleExecutor = "dbExecuter"

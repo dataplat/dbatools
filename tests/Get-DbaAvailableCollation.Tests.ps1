@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Available Collations" {
-        $results = Get-DbaAvailableCollation -SqlInstance $script:instance2
+        $results = Get-DbaAvailableCollation -SqlInstance $TestConfig.instance2
         It "finds a collation that matches Slovenian" {
             ($results.Name -match 'Slovenian').Count -gt 10 | Should Be $true
         }

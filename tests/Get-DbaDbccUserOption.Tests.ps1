@@ -14,7 +14,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 Describe "$commandname  Integration Test" -Tag "IntegrationTests" {
     $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'Option', 'Value'
-    $result = Get-DbaDbccUserOption -SqlInstance $script:instance2
+    $result = Get-DbaDbccUserOption -SqlInstance $TestConfig.instance2
 
     Context "Validate standard output" {
         foreach ($prop in $props) {
@@ -32,7 +32,7 @@ Describe "$commandname  Integration Test" -Tag "IntegrationTests" {
     }
 
     Context "Accepts an Option Value" {
-        $result = Get-DbaDbccUserOption -SqlInstance $script:instance2 -Option ansi_nulls
+        $result = Get-DbaDbccUserOption -SqlInstance $TestConfig.instance2 -Option ansi_nulls
         It "Gets results" {
             $result | Should Not Be $null
         }

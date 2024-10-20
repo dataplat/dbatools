@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     BeforeAll {
-        $testServer = $script:instance2
+        $testServer = $TestConfig.instance2
         $random = Get-Random
         $mailProfileName = "dbatoolsci_$random"
         $mailProfile = New-DbaDbMailProfile -SqlInstance $testServer -Name $mailProfileName

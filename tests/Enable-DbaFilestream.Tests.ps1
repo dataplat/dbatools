@@ -16,19 +16,19 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 <#
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $OriginalFileStream = Get-DbaFilestream -SqlInstance $script:instance1
+        $OriginalFileStream = Get-DbaFilestream -SqlInstance $TestConfig.instance1
     }
     AfterAll {
         if ($OriginalFileStream.InstanceAccessLevel -eq 0) {
-            Disable-DbaFilestream -SqlInstance $script:instance1 -Confirm:$false
+            Disable-DbaFilestream -SqlInstance $TestConfig.instance1 -Confirm:$false
         } else {
-            Enable-DbaFilestream -SqlInstance $script:instance1 -FileStreamLevel $OriginalFileStream.InstanceAccessLevel -Confirm:$false
+            Enable-DbaFilestream -SqlInstance $TestConfig.instance1 -FileStreamLevel $OriginalFileStream.InstanceAccessLevel -Confirm:$false
         }
     }
 
     Context "Changing FileStream Level" {
         $NewLevel = ($OriginalFileStream.FileStreamStateId + 1) % 3 #Move it on one, but keep it less than 4 with modulo division
-        $results = Enable-DbaFilestream -SqlInstance $script:instance1 -FileStreamLevel $NewLevel -Confirm:$false
+        $results = Enable-DbaFilestream -SqlInstance $TestConfig.instance1 -FileStreamLevel $NewLevel -Confirm:$false
         It "Should have changed the FileStream Level" {
             $results.InstanceAccessLevel | Should be $NewLevel
         }

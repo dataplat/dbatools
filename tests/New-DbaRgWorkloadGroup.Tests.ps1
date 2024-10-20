@@ -16,18 +16,18 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Functionality" {
         BeforeAll {
-            $null = Set-DbaResourceGovernor -SqlInstance $script:instance2 -Enabled
+            $null = Set-DbaResourceGovernor -SqlInstance $TestConfig.instance2 -Enabled
         }
         It "Creates a workload group in default resource pool" {
             $wklGroupName = "dbatoolssci_wklgroupTest"
             $splatNewWorkloadGroup = @{
-                SqlInstance   = $script:instance2
+                SqlInstance   = $TestConfig.instance2
                 WorkloadGroup = $wklGroupName
                 Force         = $true
             }
-            $result = Get-DbaRgWorkloadGroup -SqlInstance $script:instance2 | Where-Object Name -eq $wklGroupName
+            $result = Get-DbaRgWorkloadGroup -SqlInstance $TestConfig.instance2 | Where-Object Name -eq $wklGroupName
             $newWorkloadGroup = New-DbaRgWorkloadGroup @splatNewWorkloadGroup
-            $result2 = Get-DbaRgWorkloadGroup -SqlInstance $script:instance2 | Where-Object Name -eq $wklGroupName
+            $result2 = Get-DbaRgWorkloadGroup -SqlInstance $TestConfig.instance2 | Where-Object Name -eq $wklGroupName
 
             $newWorkloadGroup | Should -Not -Be $null
             $result.Count | Should -BeLessThan $result2.Count
@@ -36,7 +36,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Does nothing without -Force if workload group exists" {
             $wklGroupName = "dbatoolssci_wklgroupTest"
             $splatNewWorkloadGroup = @{
-                SqlInstance   = $script:instance2
+                SqlInstance   = $TestConfig.instance2
                 WorkloadGroup = $wklGroupName
             }
             $result1 = New-DbaRgWorkloadGroup @splatNewWorkloadGroup
@@ -50,13 +50,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $resourcePoolName = "dbatoolssci_poolTest"
             $resourcePoolType = "Internal"
             $splatNewResourcePool = @{
-                SqlInstance  = $script:instance2
+                SqlInstance  = $TestConfig.instance2
                 ResourcePool = $resourcePoolName
                 Type         = $resourcePoolType
                 Force        = $true
             }
             $splatNewWorkloadGroup = @{
-                SqlInstance                         = $script:instance2
+                SqlInstance                         = $TestConfig.instance2
                 WorkloadGroup                       = $wklGroupName
                 ResourcePool                        = $resourcePoolName
                 ResourcePoolType                    = $resourcePoolType
@@ -71,8 +71,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $null = New-DbaRgResourcePool @splatNewResourcePool
             $newWorkloadGroup = New-DbaRgWorkloadGroup @splatNewWorkloadGroup
 
-            $null = Remove-DbaRgWorkloadGroup -SqlInstance $script:instance2 -WorkloadGroup $wklGroupName -ResourcePool $resourcePoolName
-            $null = Remove-DbaRgResourcePool -SqlInstance $script:instance2 -ResourcePool $resourcePoolName -Type $resourcePoolType
+            $null = Remove-DbaRgWorkloadGroup -SqlInstance $TestConfig.instance2 -WorkloadGroup $wklGroupName -ResourcePool $resourcePoolName
+            $null = Remove-DbaRgResourcePool -SqlInstance $TestConfig.instance2 -ResourcePool $resourcePoolName -Type $resourcePoolType
 
             $newWorkloadGroup.Parent.Name | Should -Be $resourcePoolName
             $newWorkloadGroup.Parent.GetType().Name | Should -Be "ResourcePool"
@@ -87,12 +87,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $wklGroupName = "dbatoolssci_wklgroupTest"
             $wklGroupName2 = "dbatoolssci_wklgroupTest2"
             $splatNewWorkloadGroup = @{
-                SqlInstance   = $script:instance2
+                SqlInstance   = $TestConfig.instance2
                 Force         = $true
             }
-            $result = Get-DbaRgWorkloadGroup -SqlInstance $script:instance2 | Where-Object Name -in $wklGroupName, $wklGroupName2
+            $result = Get-DbaRgWorkloadGroup -SqlInstance $TestConfig.instance2 | Where-Object Name -in $wklGroupName, $wklGroupName2
             $newWorkloadGroups = New-DbaRgWorkloadGroup @splatNewWorkloadGroup -WorkloadGroup $wklGroupName, $wklGroupName2
-            $result2 = Get-DbaRgWorkloadGroup -SqlInstance $script:instance2 | Where-Object Name -in $wklGroupName, $wklGroupName2
+            $result2 = Get-DbaRgWorkloadGroup -SqlInstance $TestConfig.instance2 | Where-Object Name -in $wklGroupName, $wklGroupName2
 
             $newWorkloadGroups | Should -Not -Be $null
             $result2.Count | Should -Be 2
@@ -101,21 +101,21 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Skips Resource Governor reconfiguration" {
             $wklGroupName = "dbatoolssci_wklgroupTest"
             $splatNewWorkloadGroup = @{
-                SqlInstance     = $script:instance2
+                SqlInstance     = $TestConfig.instance2
                 WorkloadGroup   = $wklGroupName
                 SkipReconfigure = $true
                 Force           = $true
             }
 
             $null = New-DbaRgWorkloadGroup @splatNewWorkloadGroup
-            $result = Get-DbaResourceGovernor -SqlInstance $script:instance2
+            $result = Get-DbaResourceGovernor -SqlInstance $TestConfig.instance2
 
             $result.ReconfigurePending | Should -Be $true
         }
         AfterEach {
             $wklGroupName = "dbatoolssci_wklgroupTest"
             $wklGroupName2 = "dbatoolssci_wklgroupTest2"
-            $null = Remove-DbaRgWorkloadGroup -SqlInstance $script:instance2 -WorkloadGroup $wklGroupName, $wklGroupName2
+            $null = Remove-DbaRgWorkloadGroup -SqlInstance $TestConfig.instance2 -WorkloadGroup $wklGroupName, $wklGroupName2
         }
     }
 }

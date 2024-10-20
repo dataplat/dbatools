@@ -14,7 +14,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-    $server = Connect-DbaInstance -SqlInstance $script:instance2
+    $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
     $null = Invoke-DbaQuery -SqlInstance $server -Query "CREATE CREDENTIAL proxyCred WITH IDENTITY = 'NT AUTHORITY\SYSTEM',  SECRET = 'G31o)lkJ8HNd!';"
     }
 
@@ -26,7 +26,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     BeforeEach {
 
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $proxyName = "dbatoolsci_test_$(get-random)"
         $proxyName2 = "dbatoolsci_test_$(get-random)"
 

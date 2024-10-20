@@ -15,11 +15,11 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Should Measure Disk Space Required " {
-        $server1 = Connect-DbaInstance -SqlInstance $script:instance1
-        $server2 = Connect-DbaInstance -SqlInstance $script:instance2
+        $server1 = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+        $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $Options = @{
-            Source              = $script:instance1
-            Destination         = $script:instance2
+            Source              = $TestConfig.instance1
+            Destination         = $TestConfig.instance2
             Database            = "master"
             DestinationDatabase = "Dbatoolsci_DestinationDB"
         }
@@ -31,13 +31,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             It "Should be sourced from Master" {
                 $r.SourceDatabase | Should -Be $Options.Database
             }
-            It "Should be sourced from the instance $($script:instance1)" {
+            It "Should be sourced from the instance $($TestConfig.instance1)" {
                 $r.SourceSqlInstance | Should -Be $server1.SqlInstance
             }
             It "Should be destined for Dbatoolsci_DestinationDB" {
                 $r.DestinationDatabase | Should -Be $Options.DestinationDatabase
             }
-            It "Should be destined for the instance $($script:instance2)" {
+            It "Should be destined for the instance $($TestConfig.instance2)" {
                 $r.DestinationSqlInstance | Should -Be $server2.SqlInstance
             }
             It "Should be have files on source" {

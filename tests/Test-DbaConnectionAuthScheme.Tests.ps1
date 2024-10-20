@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "returns the proper transport" {
-        $results = Test-DbaConnectionAuthScheme -SqlInstance $script:instance1
+        $results = Test-DbaConnectionAuthScheme -SqlInstance $TestConfig.instance1
         It "returns ntlm auth scheme" {
             $results.AuthScheme | Should Be 'ntlm'
         }

@@ -14,7 +14,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    $results = Get-DbaHideInstance $script:instance1 -EnableException
+    $results = Get-DbaHideInstance $TestConfig.instance1 -EnableException
 
     It "returns true or false" {
         $results.HideInstance -ne $null

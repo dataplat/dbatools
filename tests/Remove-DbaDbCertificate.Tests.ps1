@@ -16,15 +16,15 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Can remove a database certificate" {
         BeforeAll {
-            if (-not (Get-DbaDbMasterKey -SqlInstance $script:instance1 -Database master)) {
-                $masterkey = New-DbaDbMasterKey -SqlInstance $script:instance1 -Database master -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
+            if (-not (Get-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database master)) {
+                $masterkey = New-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database master -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
             }
         }
         AfterAll {
             if ($masterKey) { $masterkey | Remove-DbaDbMasterKey -Confirm:$false }
         }
 
-        $results = New-DbaDbCertificate -SqlInstance $script:instance1 -Confirm:$false | Remove-DbaDbCertificate -Confirm:$false
+        $results = New-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Confirm:$false | Remove-DbaDbCertificate -Confirm:$false
 
         It "Successfully removes database certificate in master" {
             "$($results.Status)" -match 'Success' | Should Be $true

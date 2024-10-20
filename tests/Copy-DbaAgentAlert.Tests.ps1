@@ -19,7 +19,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $alert2 = 'dbatoolsci test alert 2'
         $operatorName = 'Dan the man Levitan'
         $operatorEmail = 'levitan@dbatools.io'
-        $server = Connect-DbaInstance -SqlInstance $script:instance2 -Database master
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2 -Database master
 
         $server.Query("EXEC msdb.dbo.sp_add_alert @name=N'$($alert1)',
         @message_id=0,
@@ -47,34 +47,34 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         @notification_method = 1 ;")
     }
     AfterAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2 -Database master
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2 -Database master
         $server.Query("EXEC msdb.dbo.sp_delete_alert @name=N'$($alert1)'")
         $server.Query("EXEC msdb.dbo.sp_delete_alert @name=N'$($alert2)'")
         $server.Query("EXEC msdb.dbo.sp_delete_operator @name = '$($operatorName)'")
 
-        $server = Connect-DbaInstance -SqlInstance $script:instance3 -Database master
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance3 -Database master
         $server.Query("EXEC msdb.dbo.sp_delete_alert @name=N'$($alert1)'")
     }
 
     It "Copies the sample alert" {
-        $results = Copy-DbaAgentAlert -Source $script:instance2 -Destination $script:instance3 -Alert $alert1
+        $results = Copy-DbaAgentAlert -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -Alert $alert1
         $results.Name -eq 'dbatoolsci test alert', 'dbatoolsci test alert'
         $results.Status -eq 'Successful', 'Successful'
     }
 
     It "Skips alerts where destination is missing the operator" {
-        $results = Copy-DbaAgentAlert -Source $script:instance2 -Destination $script:instance3 -Alert $alert2 -WarningAction SilentlyContinue
+        $results = Copy-DbaAgentAlert -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -Alert $alert2 -WarningAction SilentlyContinue
         $results.Status -eq 'Skipped', 'Skipped'
     }
 
     It "Doesn't overwrite existing alerts" {
-        $results = Copy-DbaAgentAlert -Source $script:instance2 -Destination $script:instance3 -Alert $alert1
+        $results = Copy-DbaAgentAlert -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -Alert $alert1
         $results.Name -eq 'dbatoolsci test alert'
         $results.Status -eq 'Skipped'
     }
 
     It "The newly copied alert exists" {
-        $results = Get-DbaAgentAlert -SqlInstance $script:instance2
+        $results = Get-DbaAgentAlert -SqlInstance $TestConfig.instance2
         $results.Name -contains 'dbatoolsci test alert'
     }
 }

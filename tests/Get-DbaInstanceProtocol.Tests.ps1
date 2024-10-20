@@ -16,7 +16,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Context "Command actually works" {
-        $results = Get-DbaInstanceProtocol -ComputerName $script:instance1, $script:instance2
+        $results = Get-DbaInstanceProtocol -ComputerName $TestConfig.instance1, $TestConfig.instance2
 
         It "shows some services" {
             $results.DisplayName | Should Not Be $null

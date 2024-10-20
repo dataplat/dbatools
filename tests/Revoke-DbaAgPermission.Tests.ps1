@@ -15,17 +15,17 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $null = Invoke-DbaQuery -SqlInstance $script:instance3 -InputFile $script:appveyorlabrepo\sql2008-scripts\logins.sql -ErrorAction SilentlyContinue
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance3 -InputFile $TestConfig.appveyorlabrepo\sql2008-scripts\logins.sql -ErrorAction SilentlyContinue
         $agname = "dbatoolsci_ag_revoke"
-        $null = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Confirm:$false -Certificate dbatoolsci_AGCert
+        $null = New-DbaAvailabilityGroup -Primary $TestConfig.instance3 -Name $agname -ClusterType None -FailoverMode Manual -Confirm:$false -Certificate dbatoolsci_AGCert
     }
     AfterAll {
-        $null = Remove-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup $agname -Confirm:$false
+        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname -Confirm:$false
     }
     Context "revokes big perms" {
         It "returns results with proper data" {
-            $results = Get-DbaLogin -SqlInstance $script:instance3 -Login tester | Revoke-DbaAgPermission -Type EndPoint
+            $results = Get-DbaLogin -SqlInstance $TestConfig.instance3 -Login tester | Revoke-DbaAgPermission -Type EndPoint
             $results.Status | Should -Be 'Success'
         }
     }
-} #$script:instance2 for appveyor
+} #$TestConfig.instance2 for appveyor

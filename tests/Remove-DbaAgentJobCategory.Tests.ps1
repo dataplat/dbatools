@@ -17,7 +17,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "New Agent Job Category is changed properly" {
 
         It "Should have the right name and category type" {
-            $results = New-DbaAgentJobCategory -SqlInstance $script:instance2 -Category CategoryTest1, CategoryTest2, CategoryTest3
+            $results = New-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category CategoryTest1, CategoryTest2, CategoryTest3
             $results[0].Name | Should Be "CategoryTest1"
             $results[0].CategoryType | Should Be "LocalJob"
             $results[1].Name | Should Be "CategoryTest2"
@@ -27,14 +27,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Should actually for sure exist" {
-            $newresults = Get-DbaAgentJobCategory -SqlInstance $script:instance2 -Category CategoryTest1, CategoryTest2, CategoryTest3
+            $newresults = Get-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category CategoryTest1, CategoryTest2, CategoryTest3
             $newresults.Count | Should Be 3
         }
 
         It "Remove the job categories" {
-            Remove-DbaAgentJobCategory -SqlInstance $script:instance2 -Category CategoryTest1, CategoryTest2, Categorytest3 -Confirm:$false
+            Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category CategoryTest1, CategoryTest2, Categorytest3 -Confirm:$false
 
-            $newresults = Get-DbaAgentJobCategory -SqlInstance $script:instance2 -Category CategoryTest1, CategoryTest2, CategoryTest3
+            $newresults = Get-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category CategoryTest1, CategoryTest2, CategoryTest3
 
             $newresults.Count | Should Be 0
         }

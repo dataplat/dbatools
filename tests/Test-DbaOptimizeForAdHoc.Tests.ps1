@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command actually works" {
-        $results = Test-DbaOptimizeForAdHoc -SqlInstance $script:instance2
+        $results = Test-DbaOptimizeForAdHoc -SqlInstance $TestConfig.instance2
         It "Should return result for the server" {
             $results | Should Not Be Null
         }

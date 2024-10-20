@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query "CREATE OR ALTER PROC [dbo].[my_proc]
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database tempdb -Query "CREATE OR ALTER PROC [dbo].[my_proc]
         @json_result nvarchar(max) output
             AS
             BEGIN
@@ -27,14 +27,14 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
     AfterAll {
         try {
-            $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query "DROP PROCEDURE dbo.my_proc"
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database tempdb -Query "DROP PROCEDURE dbo.my_proc"
         } catch {
             $null = 1
         }
     }
     It "creates a usable sql parameter" {
         $output = New-DbaSqlParameter -ParameterName json_result -SqlDbType NVarChar -Size -1 -Direction Output
-        Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -CommandType StoredProcedure -Query my_proc -SqlParameters $output
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database tempdb -CommandType StoredProcedure -Query my_proc -SqlParameters $output
         $output.Value | Should -Be '{"example":"sample"}'
     }
 }

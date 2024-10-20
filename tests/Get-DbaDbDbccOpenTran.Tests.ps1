@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname  Integration Test" -Tag "IntegrationTests" {
     Context "Gets results for Open Transactions" {
         $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Cmd', 'Output', 'Field', 'Data'
-        $result = Get-DbaDbDbccOpenTran -SqlInstance $script:instance1
+        $result = Get-DbaDbDbccOpenTran -SqlInstance $TestConfig.instance1
 
         It "returns results for DBCC OPENTRAN" {
             $result | Should Not Be $null
@@ -32,8 +32,8 @@ Describe "$commandname  Integration Test" -Tag "IntegrationTests" {
             }
         }
 
-        $result = Get-DbaDbDbccOpenTran -SqlInstance $script:instance1 -Database tempDB
-        $tempDB = Get-DbaDatabase -SqlInstance $script:instance1 -Database tempDB
+        $result = Get-DbaDbDbccOpenTran -SqlInstance $TestConfig.instance1 -Database tempDB
+        $tempDB = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database tempDB
 
         It "returns results for a database" {
             $result | Should Not Be $null

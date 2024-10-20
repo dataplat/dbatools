@@ -16,13 +16,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Testing First Responder Kit installer with download" {
         BeforeAll {
             $database = "dbatoolsci_frk_$(Get-Random)"
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
             $server.Query("CREATE DATABASE $database")
 
-            $resultsDownload = Install-DbaFirstResponderKit -SqlInstance $script:instance2 -Database $database -Branch main -Force -Verbose:$false
+            $resultsDownload = Install-DbaFirstResponderKit -SqlInstance $TestConfig.instance2 -Database $database -Branch main -Force -Verbose:$false
         }
         AfterAll {
-            Remove-DbaDatabase -SqlInstance $script:instance2 -Database $database -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $database -Confirm:$false
         }
 
         It "Installs to specified database: $database" {
@@ -40,21 +40,21 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             ($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
         }
         It "Shows status of Updated" {
-            $resultsDownload = Install-DbaFirstResponderKit -SqlInstance $script:instance2 -Database $database -Verbose:$false
+            $resultsDownload = Install-DbaFirstResponderKit -SqlInstance $TestConfig.instance2 -Database $database -Verbose:$false
             $resultsDownload[0].Status -eq 'Updated' | Should -Be $true
         }
         It "Shows status of Error" {
             $folder = Join-Path (Get-DbatoolsConfigValue -FullName Path.DbatoolsData) -Child "SQL-Server-First-Responder-Kit-main"
             $sqlScript = (Get-ChildItem $folder -Filter "sp_*.sql" | Select-Object -First 1).FullName
             Add-Content $sqlScript (New-Guid).ToString()
-            $result = Install-DbaFirstResponderKit -SqlInstance $script:instance2 -Database $database -Verbose:$false
+            $result = Install-DbaFirstResponderKit -SqlInstance $TestConfig.instance2 -Database $database -Verbose:$false
             $result[0].Status -eq "Error" | Should -Be $true
         }
     }
     Context "Testing First Responder Kit installer with LocalFile" {
         BeforeAll {
             $database = "dbatoolsci_frk_$(Get-Random)"
-            $server = Connect-DbaInstance -SqlInstance $script:instance3
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance3
             $server.Query("CREATE DATABASE $database")
 
             $outfile = "SQL-Server-First-Responder-Kit-main.zip"
@@ -62,10 +62,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             if (Test-Path $outfile) {
                 $fullOutfile = (Get-ChildItem $outfile).FullName
             }
-            $resultsLocalFile = Install-DbaFirstResponderKit -SqlInstance $script:instance3 -Database $database -Branch main -LocalFile $fullOutfile  -Force
+            $resultsLocalFile = Install-DbaFirstResponderKit -SqlInstance $TestConfig.instance3 -Database $database -Branch main -LocalFile $fullOutfile  -Force
         }
         AfterAll {
-            Remove-DbaDatabase -SqlInstance $script:instance3 -Database $database -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $database -Confirm:$false
         }
 
         It "Installs to specified database: $database" {
@@ -83,14 +83,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             ($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
         }
         It "Shows status of Updated" {
-            $resultsLocalFile = Install-DbaFirstResponderKit -SqlInstance $script:instance3 -Database $database
+            $resultsLocalFile = Install-DbaFirstResponderKit -SqlInstance $TestConfig.instance3 -Database $database
             $resultsLocalFile[0].Status -eq 'Updated' | Should -Be $true
         }
         It "Shows status of Error" {
             $folder = Join-Path (Get-DbatoolsConfigValue -FullName Path.DbatoolsData) -Child "SQL-Server-First-Responder-Kit-main"
             $sqlScript = (Get-ChildItem $folder -Filter "sp_*.sql" | Select-Object -First 1).FullName
             Add-Content $sqlScript (New-Guid).ToString()
-            $result = Install-DbaFirstResponderKit -SqlInstance $script:instance3 -Database $database
+            $result = Install-DbaFirstResponderKit -SqlInstance $TestConfig.instance3 -Database $database
             $result[0].Status -eq "Error" | Should -Be $true
         }
     }

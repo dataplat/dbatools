@@ -20,8 +20,8 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
-    Context "Command actually works on $script:instance2" {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+    Context "Command actually works on $TestConfig.instance2" {
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $results = Test-DbaTempdbConfig -SqlInstance $server
         It "Should have correct properties" {
             $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Rule,Recommended,CurrentSetting,IsBestPractice,Notes'.Split(',')

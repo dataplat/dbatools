@@ -14,7 +14,7 @@ Describe "$commandname Unit Tests" -Tag "UnitTests" {
 }
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $publishprofile = New-DbaDacProfile -SqlInstance $script:instance1 -Database whatever -Path C:\temp
+        $publishprofile = New-DbaDacProfile -SqlInstance $TestConfig.instance1 -Database whatever -Path C:\temp
     }
     AfterAll {
         Remove-Item -Confirm:$false -Path $publishprofile.FileName -ErrorAction SilentlyContinue

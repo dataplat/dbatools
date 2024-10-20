@@ -16,13 +16,13 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Gets SQL Server Install Date" {
-        $results = Get-DbaInstanceInstallDate -SqlInstance $script:instance2
+        $results = Get-DbaInstanceInstallDate -SqlInstance $TestConfig.instance2
         It "Gets results" {
             $results | Should Not Be $null
         }
     }
     Context "Gets SQL Server Install Date and Windows Install Date" {
-        $results = Get-DbaInstanceInstallDate -SqlInstance $script:instance2 -IncludeWindows
+        $results = Get-DbaInstanceInstallDate -SqlInstance $TestConfig.instance2 -IncludeWindows
         It "Gets results" {
             $results | Should Not Be $null
         }

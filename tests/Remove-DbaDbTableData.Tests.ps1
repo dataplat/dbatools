@@ -14,8 +14,8 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $server2 = Connect-DbaInstance -SqlInstance $script:instance3
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance3
 
         # scenario for testing with a db in the simple recovery model
         $dbnameSimpleModel = "dbatoolsci_$(Get-Random)"
@@ -146,11 +146,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Context "Functionality with bulk_logged recovery model" {
         BeforeEach {
-            $addRowsToBulkLoggedDb = Invoke-DbaQuery -SqlInstance $script:instance2 -Database $dbnameBulkLoggedModel -Query $sqlAddRows
+            $addRowsToBulkLoggedDb = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database $dbnameBulkLoggedModel -Query $sqlAddRows
         }
 
         It 'Removes Data for a specified database' {
-            $server = Connect-DbaInstance -SqlInstance $script:instance2 -Database $dbnameBulkLoggedModel -NonPooledConnection
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2 -Database $dbnameBulkLoggedModel -NonPooledConnection
             $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameBulkLoggedModel -Table dbo.Test -BatchSize 10 -LogBackupPath $logBackupPath -Confirm:$false
             $result.TotalIterations | Should -Be 10
             $result.TotalRowsDeleted | Should -Be 100

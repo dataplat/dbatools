@@ -15,9 +15,9 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        Get-DbaProcess -SqlInstance $script:instance2 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
+        Get-DbaProcess -SqlInstance $TestConfig.instance2 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
         $dbname = "dbatoolsci_test_$(get-random)"
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $null = $server.Query("Create Database [$dbname]")
         $null = $server.Query("Create Schema test", $dbname)
         $null = $server.Query(" select * into syscols from sys.all_columns;
@@ -29,11 +29,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                                 ", $dbname)
     }
     AfterAll {
-        Get-DbaProcess -SqlInstance $script:instance2 -Database $dbname | Stop-DbaProcess -WarningAction SilentlyContinue
-        Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
+        Get-DbaProcess -SqlInstance $TestConfig.instance2 -Database $dbname | Stop-DbaProcess -WarningAction SilentlyContinue
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname -Confirm:$false
     }
     Context "Command gets suggestions" {
-        $results = Test-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname
+        $results = Test-DbaDbCompression -SqlInstance $TestConfig.instance2 -Database $dbname
         It "Should get results for $dbname" {
             $results | Should Not Be $null
         }
@@ -48,7 +48,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Command makes right suggestions" {
-        $results = Test-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname
+        $results = Test-DbaDbCompression -SqlInstance $TestConfig.instance2 -Database $dbname
         It "Should suggest PAGE compression for a table with no updates or scans" {
             $($results | Where-Object { $_.TableName -eq "syscols" -and $_.IndexType -eq "HEAP"}).CompressionTypeRecommendation | Should Be "PAGE"
         }
@@ -58,33 +58,33 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
     Context "Command excludes results for specified database" {
         It "Shouldn't get any results for $dbname" {
-            $(Test-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname -ExcludeDatabase $dbname).Database | Should not Match $dbname
+            $(Test-DbaDbCompression -SqlInstance $TestConfig.instance2 -Database $dbname -ExcludeDatabase $dbname).Database | Should not Match $dbname
         }
     }
     Context "Command gets Schema suggestions" {
         $schema = 'dbo'
-        $results = Test-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname -Schema $schema
+        $results = Test-DbaDbCompression -SqlInstance $TestConfig.instance2 -Database $dbname -Schema $schema
         It "Should get results for Schema:$schema" {
             $results | Should Not Be $null
         }
     }
     Context "Command gets Table suggestions" {
         $table = 'syscols'
-        $results = Test-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname -Table $table
+        $results = Test-DbaDbCompression -SqlInstance $TestConfig.instance2 -Database $dbname -Table $table
         It "Should get results for table:$table" {
             $results | Should Not Be $null
         }
     }
     Context "Command gets limited output" {
         $resultCount = 2
-        $results = Test-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname -ResultSize $resultCount -Rank TotalPages -FilterBy Partition
+        $results = Test-DbaDbCompression -SqlInstance $TestConfig.instance2 -Database $dbname -ResultSize $resultCount -Rank TotalPages -FilterBy Partition
         It "Should get only $resultCount results" {
             $results.Count | Should Be $resultCount
         }
     }
     Context "Returns result for empty table (see #9469)" {
         $table = 'testtable'
-        $results = Test-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname -Table $table
+        $results = Test-DbaDbCompression -SqlInstance $TestConfig.instance2 -Database $dbname -Table $table
         It "Should get results for table:$table" {
             $results | Should Not Be $null
             $results[0].CompressionTypeRecommendation | Should Be '?'

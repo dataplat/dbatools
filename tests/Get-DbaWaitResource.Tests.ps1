@@ -18,7 +18,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
         $random = Get-Random
         $WaitResourceDB = "WaitResource$random"
-        Restore-DbaDatabase -SqlInstance $script:instance1 -DatabaseName $WaitResourceDB -ReplaceDbNameInFile -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak
+        Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -DatabaseName $WaitResourceDB -ReplaceDbNameInFile -Path $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak
         $sql = "
                 create table waittest (
                 col1 int,
@@ -29,10 +29,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 go
             "
 
-        Invoke-DbaQuery -SqlInstance $script:instance1 -Database $WaitResourceDB -Query $sql
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database $WaitResourceDB -Query $sql
     }
     AfterAll {
-        Get-DbaDatabase -SqlInstance $script:instance1 -Database $WaitResourceDB | Remove-DbaDatabase -Confirm:$false
+        Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $WaitResourceDB | Remove-DbaDatabase -Confirm:$false
 
     }
 
@@ -62,9 +62,9 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             select @pageid=PagePid from #TmpIndex where PageType=10
             select 'PAGE: '+convert(varchar(3),DB_ID())+':1:'+convert(varchar(15),@pageid)
         "
-        $page = (Invoke-DbaQuery -SqlInstance $script:instance1 -Database $WaitResourceDB -Query $Pagesql).Column1
-        $file = Get-DbaDbFile -SqlInstance $script:instance1 -Database $WaitResourceDB | Where-Object TypeDescription -eq 'ROWS'
-        $results = Get-DbaWaitResource -SqlInstance $script:instance1 -WaitResource $page
+        $page = (Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database $WaitResourceDB -Query $Pagesql).Column1
+        $file = Get-DbaDbFile -SqlInstance $TestConfig.instance1 -Database $WaitResourceDB | Where-Object TypeDescription -eq 'ROWS'
+        $results = Get-DbaWaitResource -SqlInstance $TestConfig.instance1 -WaitResource $page
         It "Should return databasename $WaitResourceDB" {
             $results.DatabaseName | Should Be $WaitResourceDB
         }
@@ -99,8 +99,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
             select 'KEY: '+convert(varchar(3),db_id())+':'+convert(varchar(30),@hobt_id)+' '+ %%lockres%% from keytest  where col1=1
         "
-        $key = (Invoke-DbaQuery -SqlInstance $script:instance1 -Database $WaitResourceDB -Query $SqlKey).Column1
-        $resultskey = Get-DbaWaitResource -SqlInstance $script:instance1 -WaitResource $key -row
+        $key = (Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database $WaitResourceDB -Query $SqlKey).Column1
+        $resultskey = Get-DbaWaitResource -SqlInstance $TestConfig.instance1 -WaitResource $key -row
         It "Should Return DatabaseName $WaitResourceDB" {
             $results
         }

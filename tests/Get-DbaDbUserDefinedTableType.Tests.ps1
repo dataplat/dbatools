@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $tabletypename = ("dbatools_{0}" -f $(Get-Random))
         $tabletypename1 = ("dbatools_{0}" -f $(Get-Random))
         $server.Query("CREATE TYPE $tabletypename AS TABLE([column1] INT NULL)", 'tempdb')
@@ -27,7 +27,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Gets a Db User Defined Table Type" {
-        $results = Get-DbaDbUserDefinedTableType -SqlInstance $script:instance2 -database tempdb -Type $tabletypename
+        $results = Get-DbaDbUserDefinedTableType -SqlInstance $TestConfig.instance2 -database tempdb -Type $tabletypename
         It "Gets results" {
             $results | Should Not Be $Null
         }
@@ -43,7 +43,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Gets all the Db User Defined Table Type" {
-        $results = Get-DbaDbUserDefinedTableType -SqlInstance $script:instance2 -database tempdb
+        $results = Get-DbaDbUserDefinedTableType -SqlInstance $TestConfig.instance2 -database tempdb
         It "Gets results" {
             $results | Should Not Be $Null
         }

@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $procname = ("dbatools_{0}" -f $(Get-Random))
         $server.Query("CREATE PROCEDURE $procname AS SELECT 1", 'tempdb')
         $queuename = ("dbatools_{0}" -f $(Get-Random))
@@ -27,7 +27,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Gets the service broker queue" {
-        $results = Get-DbaDbServiceBrokerQueue -SqlInstance $script:instance2 -database tempdb -ExcludeSystemQueue:$true
+        $results = Get-DbaDbServiceBrokerQueue -SqlInstance $TestConfig.instance2 -database tempdb -ExcludeSystemQueue:$true
         It "Gets results" {
             $results | Should Not Be $Null
         }

@@ -16,8 +16,8 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $random = Get-Random
-        $instance2 = Connect-DbaInstance -SqlInstance $script:instance2
-        $instance3 = Connect-DbaInstance -SqlInstance $script:instance3
+        $instance2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $instance3 = Connect-DbaInstance -SqlInstance $TestConfig.instance3
 
         $securePassword = ConvertTo-SecureString -String 'securePassword!' -AsPlainText -Force
         $loginName = "dbatoolscli_test_$random"

@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $random = Get-Random
-        $server2 = Connect-DbaInstance -SqlInstance $script:instance2
+        $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $email1 = "test1$($random)@test.com"
         $email2 = "test2$($random)@test.com"
         $email3 = "test3$($random)@test.com"

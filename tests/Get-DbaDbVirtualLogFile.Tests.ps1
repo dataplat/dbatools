@@ -21,10 +21,10 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 # Get-DbaNoun
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $db1 = "dbatoolsci_getvlf"
         $server.Query("CREATE DATABASE $db1")
-        $needed = Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1
+        $needed = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $db1
         $setupright = $true
         if ($needed.Count -ne 1) {
             $setupright = $false
@@ -34,10 +34,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
     }
     AfterAll {
-        Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $db1
+        Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance2 -Database $db1
     }
     Context "Command actually works" {
-        $results = Get-DbaDbVirtualLogFile -SqlInstance $script:instance2 -Database $db1
+        $results = Get-DbaDbVirtualLogFile -SqlInstance $TestConfig.instance2 -Database $db1
         It "Should have correct properties" {
             $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Database,RecoveryUnitId,FileId,FileSize,StartOffset,FSeqNo,Status,Parity,CreateLSN'.Split(',')
             ($results[0].PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)

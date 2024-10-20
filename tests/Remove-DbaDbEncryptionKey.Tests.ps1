@@ -18,18 +18,18 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $PSDefaultParameterValues["*:Confirm"] = $false
         $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
-        $masterkey = Get-DbaDbMasterKey -SqlInstance $script:instance2 -Database master
+        $masterkey = Get-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database master
         if (-not $masterkey) {
             $delmasterkey = $true
-            $masterkey = New-DbaServiceMasterKey -SqlInstance $script:instance2 -SecurePassword $passwd
+            $masterkey = New-DbaServiceMasterKey -SqlInstance $TestConfig.instance2 -SecurePassword $passwd
         }
-        $mastercert = Get-DbaDbCertificate -SqlInstance $script:instance2 -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
+        $mastercert = Get-DbaDbCertificate -SqlInstance $TestConfig.instance2 -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
         if (-not $mastercert) {
             $delmastercert = $true
-            $mastercert = New-DbaDbCertificate -SqlInstance $script:instance2
+            $mastercert = New-DbaDbCertificate -SqlInstance $TestConfig.instance2
         }
 
-        $db = New-DbaDatabase -SqlInstance $script:instance2
+        $db = New-DbaDatabase -SqlInstance $TestConfig.instance2
         $db | New-DbaDbMasterKey -SecurePassword $passwd
         $db | New-DbaDbCertificate
         $dbkey = $db | New-DbaDbEncryptionKey -Force
@@ -56,7 +56,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
         It "should remove encryption key on a database" {
             $null = $db | New-DbaDbEncryptionKey -Force
-            $results = Remove-DbaDbEncryptionKey -SqlInstance $script:instance2 -Database $db.Name
+            $results = Remove-DbaDbEncryptionKey -SqlInstance $TestConfig.instance2 -Database $db.Name
             $results.Status | Should -Be "Success"
             $db.Refresh()
             $db | Get-DbaDbEncryptionKey | Should -Be $null

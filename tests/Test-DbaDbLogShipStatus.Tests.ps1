@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance1
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
         $skip = $false
         if ($server.Edition -notmatch 'Express') {
             $skip = $true
@@ -23,12 +23,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     It -Skip:$skip "warns if SQL instance edition is not supported" {
-        $null = Test-DbaDbLogShipStatus -SqlInstance $script:instance1 -WarningAction SilentlyContinue -WarningVariable editionwarn
+        $null = Test-DbaDbLogShipStatus -SqlInstance $TestConfig.instance1 -WarningAction SilentlyContinue -WarningVariable editionwarn
         $editionwarn -match "Express" | Should Be $true
     }
 
     It "warns if no log shipping found" {
-        $null = Test-DbaDbLogShipStatus -SqlInstance $script:instance2 -Database 'master' -WarningAction SilentlyContinue -WarningVariable doesntexist
+        $null = Test-DbaDbLogShipStatus -SqlInstance $TestConfig.instance2 -Database 'master' -WarningAction SilentlyContinue -WarningVariable doesntexist
         $doesntexist -match "No information available" | Should Be $true
     }
 }

@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Gets Deprecated Features" {
-        $results = Get-DbaDeprecatedFeature -SqlInstance $script:instance1
+        $results = Get-DbaDeprecatedFeature -SqlInstance $TestConfig.instance1
         It "Gets results" {
             $results | Should Not Be $null
         }

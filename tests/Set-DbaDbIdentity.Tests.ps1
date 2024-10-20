@@ -16,7 +16,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 Describe "$commandname Integration Test" -Tag "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $random = Get-Random
         $tableName1 = "dbatools_getdbtbl1"
         $tableName2 = "dbatools_getdbtbl2"
@@ -30,12 +30,12 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
         $null = $server.Query("INSERT $tableName2(Value) SELECT 2", $dbname)
     }
     AfterAll {
-        $null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
     }
 
     Context "Validate standard output " {
         $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Table', 'Cmd', 'IdentityValue', 'ColumnValue', 'Output'
-        $result = Set-DbaDbIdentity -SqlInstance $script:instance2 -Database $dbname -Table $tableName1, $tableName2 -Confirm:$false
+        $result = Set-DbaDbIdentity -SqlInstance $TestConfig.instance2 -Database $dbname -Table $tableName1, $tableName2 -Confirm:$false
 
         foreach ($prop in $props) {
             $p = $result[0].PSObject.Properties[$prop]
@@ -54,7 +54,7 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
     }
 
     Context "Reseed option returns correct results " {
-        $result = Set-DbaDbIdentity -SqlInstance $script:instance2 -Database $dbname -Table $tableName2 -ReSeedValue 400 -Confirm:$false
+        $result = Set-DbaDbIdentity -SqlInstance $TestConfig.instance2 -Database $dbname -Table $tableName2 -ReSeedValue 400 -Confirm:$false
 
         It "returns correct results" {
             $result.cmd -eq "DBCC CHECKIDENT('$tableName2', RESEED, 400)" | Should Be $true

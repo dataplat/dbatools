@@ -55,28 +55,28 @@ CREATE RULE dbo.dbatoolsci_range_rule
 AS
 @range>= $1000 AND @range <$20000;
 "@
-        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query $Function
-        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query $TableFunction
-        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query $Rule
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $Function
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $TableFunction
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $Rule
     }
     AfterAll {
-        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "DROP FUNCTION dbo.dbatoolscs_ISOweek;"
-        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "DROP FUNCTION dbo.dbatoolsci_TableFunction;"
-        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "DROP RULE dbo.dbatoolsci_range_rule;"
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query "DROP FUNCTION dbo.dbatoolscs_ISOweek;"
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query "DROP FUNCTION dbo.dbatoolsci_TableFunction;"
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query "DROP RULE dbo.dbatoolsci_range_rule;"
     }
 
     Context "Should Copy Objects to the same instance" {
-        $results = Copy-DbaSystemDbUserObject -Source $script:instance2 -Destination $script:instance2
+        $results = Copy-DbaSystemDbUserObject -Source $TestConfig.instance2 -Destination $TestConfig.instance2
         It "Should execute with default parameters" {
             $results | Should Not Be Null
         }
 
-        $results = Copy-DbaSystemDbUserObject -Source $script:instance2 -Destination $script:instance2 -Classic
+        $results = Copy-DbaSystemDbUserObject -Source $TestConfig.instance2 -Destination $TestConfig.instance2 -Classic
         It "Should execute with -Classic parameter" {
             $results | Should Not Be Null
         }
 
-        $results = Copy-DbaSystemDbUserObject -Source $script:instance2 -Destination $script:instance2 -Force
+        $results = Copy-DbaSystemDbUserObject -Source $TestConfig.instance2 -Destination $TestConfig.instance2 -Force
         It "Should execute with -Classic parameter" {
             $results | Should Not Be Null
         }

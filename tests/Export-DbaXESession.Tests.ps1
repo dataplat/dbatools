@@ -24,7 +24,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Check if output file was created" {
-        $null = Export-DbaXESession -SqlInstance $script:instance2 -FilePath $outputFile
+        $null = Export-DbaXESession -SqlInstance $TestConfig.instance2 -FilePath $outputFile
         It "Exports results to one sql file" {
             (Get-ChildItem $outputFile).Count | Should Be 1
         }
@@ -34,7 +34,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Check if session parameter is honored" {
-        $null = Export-DbaXESession -SqlInstance $script:instance2 -FilePath $outputFile -Session system_health
+        $null = Export-DbaXESession -SqlInstance $TestConfig.instance2 -FilePath $outputFile -Session system_health
         It "Exports results to one sql file" {
             (Get-ChildItem $outputFile).Count | Should Be 1
         }
@@ -44,7 +44,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Check if supports Pipeline input" {
-        $null = Get-DbaXESession -SqlInstance $script:instance2 -Session system_health | Export-DbaXESession -FilePath $outputFile
+        $null = Get-DbaXESession -SqlInstance $TestConfig.instance2 -Session system_health | Export-DbaXESession -FilePath $outputFile
         It "Exports results to one sql file" {
             (Get-ChildItem $outputFile).Count | Should Be 1
         }

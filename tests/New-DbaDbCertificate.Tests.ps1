@@ -16,11 +16,11 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Can create a database certificate" {
         BeforeAll {
-            if (-not (Get-DbaDbMasterKey -SqlInstance $script:instance1 -Database master)) {
-                $masterkey = New-DbaDbMasterKey -SqlInstance $script:instance1 -Database master -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
+            if (-not (Get-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database master)) {
+                $masterkey = New-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database master -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
             }
 
-            $tempdbmasterkey = New-DbaDbMasterKey -SqlInstance $script:instance1 -Database tempdb -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
+            $tempdbmasterkey = New-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database tempdb -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
             $certificateName1 = "Cert_$(Get-random)"
             $certificateName2 = "Cert_$(Get-random)"
         }
@@ -29,12 +29,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             if ($masterKey) { $masterkey | Remove-DbaDbMasterKey -Confirm:$false }
         }
 
-        $cert1 = New-DbaDbCertificate -SqlInstance $script:instance1 -Name $certificateName1 -Confirm:$false
+        $cert1 = New-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Name $certificateName1 -Confirm:$false
         It "Successfully creates a new database certificate in default, master database" {
             "$($cert1.name)" -match $certificateName1 | Should Be $true
         }
 
-        $cert2 = New-DbaDbCertificate -SqlInstance $script:instance1 -Name $certificateName2 -Database tempdb -Confirm:$false
+        $cert2 = New-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Name $certificateName2 -Database tempdb -Confirm:$false
         It "Successfully creates a new database certificate in the tempdb database" {
             "$($cert2.Database)" -match "tempdb" | Should Be $true
         }

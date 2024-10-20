@@ -20,10 +20,10 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $versionMajor = (Connect-DbaInstance -SqlInstance $script:instance2).VersionMajor
+        $versionMajor = (Connect-DbaInstance -SqlInstance $TestConfig.instance2).VersionMajor
     }
     Context "Command actually works" {
-        $trueResults = Test-DbaManagementObject -ComputerName $script:instance2 -VersionNumber $versionMajor
+        $trueResults = Test-DbaManagementObject -ComputerName $TestConfig.instance2 -VersionNumber $versionMajor
         It "Should have correct properties" {
             $ExpectedProps = 'ComputerName,Version,Exists'.Split(',')
             ($trueResults[0].PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
@@ -33,7 +33,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $trueResults.Exists | Should Be $true
         }
 
-        $falseResults = Test-DbaManagementObject -ComputerName $script:instance2 -VersionNumber -1
+        $falseResults = Test-DbaManagementObject -ComputerName $TestConfig.instance2 -VersionNumber -1
         It "Should return false for VersionNumber -1" {
             $falseResults.Exists | Should Be $false
         }

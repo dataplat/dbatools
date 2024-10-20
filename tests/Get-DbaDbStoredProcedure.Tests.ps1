@@ -21,7 +21,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 # Get-DbaNoun
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $random = Get-Random
         $db1Name = "dbatoolsci_$random"
         $db1 = New-DbaDatabase -SqlInstance $server -Name $db1Name
@@ -38,7 +38,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Command actually works" {
-        $results = Get-DbaDbStoredProcedure -SqlInstance $script:instance2 -Database $db1Name
+        $results = Get-DbaDbStoredProcedure -SqlInstance $TestConfig.instance2 -Database $db1Name
         It "Should have standard properties" {
             $ExpectedProps = 'ComputerName,InstanceName,SqlInstance'.Split(',')
             ($results[0].PsObject.Properties.Name | Where-Object { $_ -in $ExpectedProps } | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
@@ -53,50 +53,50 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Context "Exclusions work correctly" {
         It "Should contain no procs from master database" {
-            $results = Get-DbaDbStoredProcedure -SqlInstance $script:instance2 -ExcludeDatabase master
+            $results = Get-DbaDbStoredProcedure -SqlInstance $TestConfig.instance2 -ExcludeDatabase master
             $results.Database | Should -Not -Contain 'master'
         }
         It "Should exclude system procedures" {
-            $results = Get-DbaDbStoredProcedure -SqlInstance $script:instance2 -Database $db1Name -ExcludeSystemSp
+            $results = Get-DbaDbStoredProcedure -SqlInstance $TestConfig.instance2 -Database $db1Name -ExcludeSystemSp
             $results | Where-Object Name -eq 'sp_helpdb' | Should -BeNullOrEmpty
         }
     }
 
     Context "Piping works" {
         It "Should allow piping from string" {
-            $results = $script:instance2 | Get-DbaDbStoredProcedure -Database $db1Name
+            $results = $TestConfig.instance2 | Get-DbaDbStoredProcedure -Database $db1Name
             ($results | Where-Object Name -eq $procName).Name | Should -Not -BeNullOrEmpty
         }
         It "Should allow piping from Get-DbaDatabase" {
-            $results = Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1Name | Get-DbaDbStoredProcedure
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $db1Name | Get-DbaDbStoredProcedure
             ($results | Where-Object Name -eq $procName).Name | Should -Not -BeNullOrEmpty
         }
     }
 
     Context "Search by name and schema" {
         It "Search by name" {
-            $results = $script:instance2 | Get-DbaDbStoredProcedure -Database $db1Name -Name $procName
+            $results = $TestConfig.instance2 | Get-DbaDbStoredProcedure -Database $db1Name -Name $procName
             $results.Name | Should -Be $procName
             $results.DatabaseId | Should -Be $db1.Id
         }
         It "Search by 2 part name" {
-            $results = $script:instance2 | Get-DbaDbStoredProcedure -Database $db1Name -Name "$schemaName.$procName2"
+            $results = $TestConfig.instance2 | Get-DbaDbStoredProcedure -Database $db1Name -Name "$schemaName.$procName2"
             $results.Name | Should -Be $procName2
             $results.Schema | Should -Be $schemaName
         }
         It "Search by 3 part name and omit the -Database param" {
-            $results = $script:instance2 | Get-DbaDbStoredProcedure -Name "$db1Name.$schemaName.$procName2"
+            $results = $TestConfig.instance2 | Get-DbaDbStoredProcedure -Name "$db1Name.$schemaName.$procName2"
             $results.Name | Should -Be $procName2
             $results.Schema | Should -Be $schemaName
             $results.Database | Should -Be $db1Name
         }
         It "Search by name and schema params" {
-            $results = $script:instance2 | Get-DbaDbStoredProcedure -Database $db1Name -Name $procName2 -Schema $schemaName
+            $results = $TestConfig.instance2 | Get-DbaDbStoredProcedure -Database $db1Name -Name $procName2 -Schema $schemaName
             $results.Name | Should -Be $procName2
             $results.Schema | Should -Be $schemaName
         }
         It "Search by schema name" {
-            $results = $script:instance2 | Get-DbaDbStoredProcedure -Database $db1Name -Schema $schemaName
+            $results = $TestConfig.instance2 | Get-DbaDbStoredProcedure -Database $db1Name -Schema $schemaName
             $results.Name | Should -Be $procName2
             $results.Schema | Should -Be $schemaName
         }

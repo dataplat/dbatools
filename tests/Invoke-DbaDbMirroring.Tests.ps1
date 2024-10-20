@@ -15,27 +15,27 @@ Describe "$commandname Unit Tests" -Tag "UnitTests" {
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $null = Get-DbaProcess -SqlInstance $script:instance2 | Where-Object Program -Match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $null = Get-DbaProcess -SqlInstance $TestConfig.instance2 | Where-Object Program -Match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $db1 = "dbatoolsci_mirroring"
 
-        Remove-DbaDbMirror -SqlInstance $script:instance2 -Database $db1 -Confirm:$false
-        Remove-DbaDatabase -SqlInstance $script:instance2 -Database $db1 -Confirm:$false
-        $null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1 | Remove-DbaDatabase -Confirm:$false
+        Remove-DbaDbMirror -SqlInstance $TestConfig.instance2 -Database $db1 -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $db1 -Confirm:$false
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $db1 | Remove-DbaDatabase -Confirm:$false
         $null = $server.Query("CREATE DATABASE $db1")
 
-        Get-DbaEndpoint -SqlInstance $script:instance2 -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
-        New-DbaEndpoint -SqlInstance $script:instance2 -Name dbatoolsci_MirroringEndpoint -Type DatabaseMirroring -Port 5022 -Owner sa
-        Get-DbaEndpoint -SqlInstance $script:instance3 -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
-        New-DbaEndpoint -SqlInstance $script:instance3 -Name dbatoolsci_MirroringEndpoint -Type DatabaseMirroring -Port 5023 -Owner sa
+        Get-DbaEndpoint -SqlInstance $TestConfig.instance2 -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
+        New-DbaEndpoint -SqlInstance $TestConfig.instance2 -Name dbatoolsci_MirroringEndpoint -Type DatabaseMirroring -Port 5022 -Owner sa
+        Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
+        New-DbaEndpoint -SqlInstance $TestConfig.instance3 -Name dbatoolsci_MirroringEndpoint -Type DatabaseMirroring -Port 5023 -Owner sa
     }
     AfterAll {
-        $null = Remove-DbaDbMirror -SqlInstance $script:instance2, $script:instance3 -Database $db1 -Confirm:$false
-        $null = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2, $script:instance3 -Database $db1 -ErrorAction SilentlyContinue
+        $null = Remove-DbaDbMirror -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $db1 -Confirm:$false
+        $null = Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $db1 -ErrorAction SilentlyContinue
     }
 
     It "returns success" {
-        $results = Invoke-DbaDbMirroring -Primary $script:instance2 -Mirror $script:instance3 -Database $db1 -Confirm:$false -Force -SharedPath C:\temp -WarningVariable warn
+        $results = Invoke-DbaDbMirroring -Primary $TestConfig.instance2 -Mirror $TestConfig.instance3 -Database $db1 -Confirm:$false -Force -SharedPath C:\temp -WarningVariable warn
         $warn | Should -BeNullOrEmpty
         $results.Status | Should -Be 'Success'
     }

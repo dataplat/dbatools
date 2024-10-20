@@ -16,7 +16,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Can get an external process" {
         BeforeAll {
-            $null = Invoke-DbaQuery -SqlInstance $script:instance1 -Query "
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query "
             -- To allow advanced options to be changed.
             EXECUTE sp_configure 'show advanced options', 1;
             GO
@@ -32,7 +32,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $query = @"
             xp_cmdshell 'powershell -command ""sleep 20""'
 "@
-            Start-Process -FilePath sqlcmd -ArgumentList "-S $script:instance1 -Q `"$query`"" -NoNewWindow -RedirectStandardOutput null
+            Start-Process -FilePath sqlcmd -ArgumentList "-S $TestConfig.instance1 -Q `"$query`"" -NoNewWindow -RedirectStandardOutput null
         }
 
         It "returns a process" {
@@ -44,3 +44,4 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
     }
 }
+

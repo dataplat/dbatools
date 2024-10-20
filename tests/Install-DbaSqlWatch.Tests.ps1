@@ -17,15 +17,15 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Testing SqlWatch installer" {
         BeforeAll {
             $database = "dbatoolsci_sqlwatch_$(Get-Random)"
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
             $server.Query("CREATE DATABASE $database")
         }
         AfterAll {
-            Uninstall-DbaSqlWatch -SqlInstance $script:instance2 -Database $database
-            Remove-DbaDatabase -SqlInstance $script:instance2 -Database $database -Confirm:$false
+            Uninstall-DbaSqlWatch -SqlInstance $TestConfig.instance2 -Database $database
+            Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $database -Confirm:$false
         }
 
-        $results = Install-DbaSqlWatch -SqlInstance $script:instance2 -Database $database
+        $results = Install-DbaSqlWatch -SqlInstance $TestConfig.instance2 -Database $database
 
         It "Installs to specified database: $database" {
             $results[0].Database -eq $database | Should Be $true
@@ -36,19 +36,19 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             ($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
         }
         It "Installed tables" {
-            $tableCount = (Get-DbaDbTable -SqlInstance $script:instance2 -Database $Database | Where-Object { $PSItem.Name -like "sqlwatch_*" }).Count
+            $tableCount = (Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database $Database | Where-Object { $PSItem.Name -like "sqlwatch_*" }).Count
             $tableCount | Should -BeGreaterThan 0
         }
         It "Installed views" {
-            $viewCount = (Get-DbaDbView -SqlInstance $script:instance2 -Database $Database | Where-Object { $PSItem.Name -like "vw_sqlwatch_*" }).Count
+            $viewCount = (Get-DbaDbView -SqlInstance $TestConfig.instance2 -Database $Database | Where-Object { $PSItem.Name -like "vw_sqlwatch_*" }).Count
             $viewCount | Should -BeGreaterThan 0
         }
         It "Installed stored procedures" {
-            $sprocCount = (Get-DbaDbStoredProcedure -SqlInstance $script:instance2 -Database $Database | Where-Object { $PSItem.Name -like "usp_sqlwatch_*" }).Count
+            $sprocCount = (Get-DbaDbStoredProcedure -SqlInstance $TestConfig.instance2 -Database $Database | Where-Object { $PSItem.Name -like "usp_sqlwatch_*" }).Count
             $sprocCount | Should -BeGreaterThan 0
         }
         It "Installed SQL Agent jobs" {
-            $agentCount = (Get-DbaAgentJob -SqlInstance $script:instance2 | Where-Object {($PSItem.Name -like "SqlWatch-*") -or ($PSItem.Name -like "DBA-PERF-*")}).Count
+            $agentCount = (Get-DbaAgentJob -SqlInstance $TestConfig.instance2 | Where-Object {($PSItem.Name -like "SqlWatch-*") -or ($PSItem.Name -like "DBA-PERF-*")}).Count
             $agentCount | Should -BeGreaterThan 0
         }
 

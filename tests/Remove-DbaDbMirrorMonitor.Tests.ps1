@@ -15,22 +15,22 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $db = Get-DbaDatabase -SqlInstance $script:instance2 -Database msdb
+        $db = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database msdb
         if (($db.Tables['dbm_monitor_data'].Name)) {
             $putback = $true
         } else {
-            $null = Add-DbaDbMirrorMonitor -SqlInstance $script:instance2 -WarningAction SilentlyContinue
+            $null = Add-DbaDbMirrorMonitor -SqlInstance $TestConfig.instance2 -WarningAction SilentlyContinue
         }
     }
     AfterAll {
         if ($putback) {
             # add it back
-            $results = Add-DbaDbMirrorMonitor -SqlInstance $script:instance2 -WarningAction SilentlyContinue
+            $results = Add-DbaDbMirrorMonitor -SqlInstance $TestConfig.instance2 -WarningAction SilentlyContinue
         }
     }
 
     It "removes the mirror monitor" {
-        $results = Remove-DbaDbMirrorMonitor -SqlInstance $script:instance2 -WarningAction SilentlyContinue
+        $results = Remove-DbaDbMirrorMonitor -SqlInstance $TestConfig.instance2 -WarningAction SilentlyContinue
         $results.MonitorStatus | Should -Be 'Removed'
     }
 }

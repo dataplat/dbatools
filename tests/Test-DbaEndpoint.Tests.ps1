@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     It -Skip "returns success" {
-        $results = Test-DbaEndpoint -SqlInstance $script:instance3
+        $results = Test-DbaEndpoint -SqlInstance $TestConfig.instance3
         $results | Select-Object -First 1 -ExpandProperty Connection | Should -Be 'Success'
     }
-} #$script:instance2 for appveyor
+} #$TestConfig.instance2 for appveyor

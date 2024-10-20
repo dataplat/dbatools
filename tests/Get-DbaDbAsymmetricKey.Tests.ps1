@@ -20,12 +20,12 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $algorithm = 'Rsa4096'
         $dbuser = 'keyowner'
         $database = 'GetAsKey'
-        $newDB = New-DbaDatabase -SqlInstance $script:instance2 -Name $database
+        $newDB = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $database
         $tPassword = ConvertTo-SecureString "ThisIsThePassword1" -AsPlainText -Force
-        New-DbaDbMasterKey -SqlInstance $script:instance2 -Database $database -SecurePassword $tPassword -confirm:$false
-        New-DbaDbUser -SqlInstance $script:instance2 -Database $database -UserName $dbuser
-        $null = New-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Database $database -Name $keyname -Owner keyowner -Algorithm $algorithm -WarningVariable warnvar
-        $results = Get-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Name $keyname -Database $database
+        New-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database $database -SecurePassword $tPassword -confirm:$false
+        New-DbaDbUser -SqlInstance $TestConfig.instance2 -Database $database -UserName $dbuser
+        $null = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Database $database -Name $keyname -Owner keyowner -Algorithm $algorithm -WarningVariable warnvar
+        $results = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname -Database $database
         It "Should Create new key in $database called $keyname" {
             $warnvar | Should -BeNullOrEmpty
             $results.database | Should -Be $database
@@ -34,7 +34,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results.Owner | Should -Be $dbuser
             $results | Should -HaveCount 1
         }
-        $pipeResults = Get-DbaDatabase -SqlInstance $script:instance2 -Database $database | Get-DbaDbAsymmetricKey
+        $pipeResults = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $database | Get-DbaDbAsymmetricKey
         It "Should work with a piped database" {
             $pipeResults.database | Should -Be $database
             $pipeResults.name | Should -Be $keyname
@@ -42,14 +42,14 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $pipeResults | Should -HaveCount 1
         }
 
-        $null = New-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Database $database -Name $keyname2 -Owner keyowner -Algorithm $algorithm -WarningVariable warnvar
-        $multiResults = Get-DbaDatabase -SqlInstance $script:instance2 -Database $database | Get-DbaDbAsymmetricKey
+        $null = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Database $database -Name $keyname2 -Owner keyowner -Algorithm $algorithm -WarningVariable warnvar
+        $multiResults = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $database | Get-DbaDbAsymmetricKey
         It "Should return 2 keys" {
             $multiResults | Should -HaveCount 2
             $multiresults.name | Should -Contain $keyname
             $multiresults.name | Should -Contain $keyname2
         }
-        $drop = Remove-DbaDatabase -SqlInstance $script:instance2 -Database $database -confirm:$false
+        $drop = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $database -confirm:$false
         It "Should drop database" {
             $drop.Status | Should -Be 'Dropped'
         }

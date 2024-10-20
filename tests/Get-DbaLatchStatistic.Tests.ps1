@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Command returns proper info" {
-        $results = Get-DbaLatchStatistic -SqlInstance $script:instance2 -Threshold 100
+        $results = Get-DbaLatchStatistic -SqlInstance $TestConfig.instance2 -Threshold 100
 
         It "returns results" {
             $results | Should -Not -BeNullOrEmpty

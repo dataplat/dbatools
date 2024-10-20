@@ -15,24 +15,24 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        Get-DbaProcess -SqlInstance $script:instance2 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        Get-DbaProcess -SqlInstance $TestConfig.instance2 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $db1 = "dbatoolsci_testMaxDop"
         $server.Query("CREATE DATABASE dbatoolsci_testMaxDop")
-        $needed = Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1
+        $needed = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $db1
         $setupright = $true
         if (-not $needed) {
             $setupright = $false
         }
     }
     AfterAll {
-        Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1 | Remove-DbaDatabase -Confirm:$false
+        Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $db1 | Remove-DbaDatabase -Confirm:$false
     }
 
     # Just not messin with this in appveyor
     if ($setupright) {
         Context "Command works on SQL Server 2016 or higher instances" {
-            $results = Test-DbaMaxDop -SqlInstance $script:instance2
+            $results = Test-DbaMaxDop -SqlInstance $TestConfig.instance2
 
             It "Should have correct properties" {
                 $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Database,DatabaseMaxDop,CurrentInstanceMaxDop,RecommendedMaxDop,Notes'.Split(',')

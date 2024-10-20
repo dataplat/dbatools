@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command returns proper info" {
-        $results = Get-DbaWaitStatistic -SqlInstance $script:instance2 -Threshold 100
+        $results = Get-DbaWaitStatistic -SqlInstance $TestConfig.instance2 -Threshold 100
 
         It "returns results" {
             $results.Count -gt 0 | Should Be $true
@@ -30,7 +30,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Context "Command returns proper info when using parameter IncludeIgnorable" {
         $ignoredWaits = 'REQUEST_FOR_DEADLOCK_SEARCH', 'SLEEP_MASTERDBREADY', 'SLEEP_TASK', 'LAZYWRITER_SLEEP'
-        $results = Get-DbaWaitStatistic -SqlInstance $script:instance2 -Threshold 100 -IncludeIgnorable | Where-Object {
+        $results = Get-DbaWaitStatistic -SqlInstance $TestConfig.instance2 -Threshold 100 -IncludeIgnorable | Where-Object {
             $ignoredWaits -contains $_.WaitType
         }
 

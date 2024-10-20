@@ -14,7 +14,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    $results = Enable-DbaForceNetworkEncryption $script:instance1 -EnableException
+    $results = Enable-DbaForceNetworkEncryption $TestConfig.instance1 -EnableException
 
     It "returns true" {
         $results.ForceEncryption -eq $true

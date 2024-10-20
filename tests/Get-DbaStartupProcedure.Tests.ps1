@@ -14,7 +14,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 Describe "$commandname Integration Test" -Tag "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $random = Get-Random
         $startupProc = "dbo.StartUpProc$random"
         $dbname = 'master'
@@ -27,7 +27,7 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
     }
 
     Context "Validate returns correct output" {
-        $result = Get-DbaStartupProcedure -SqlInstance $script:instance2
+        $result = Get-DbaStartupProcedure -SqlInstance $TestConfig.instance2
         It "returns correct results" {
             $result.Schema -eq 'dbo' | Should Be $true
             $result.Name -eq "StartUpProc$random" | Should Be $true
@@ -35,7 +35,7 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
     }
 
     Context "Validate returns correct output for StartupProcedure parameter " {
-        $result = Get-DbaStartupProcedure -SqlInstance $script:instance2 -StartupProcedure $startupProc
+        $result = Get-DbaStartupProcedure -SqlInstance $TestConfig.instance2 -StartupProcedure $startupProc
         It "returns correct results" {
             $result.Schema -eq 'dbo' | Should Be $true
             $result.Name -eq "StartUpProc$random" | Should Be $true
@@ -43,7 +43,7 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
     }
 
     Context "Validate returns correct output for incorrect StartupProcedure parameter " {
-        $result = Get-DbaStartupProcedure -SqlInstance $script:instance2 -StartupProcedure 'Not.Here'
+        $result = Get-DbaStartupProcedure -SqlInstance $TestConfig.instance2 -StartupProcedure 'Not.Here'
         It "returns correct results" {
             $null -eq $result | Should Be $true
         }

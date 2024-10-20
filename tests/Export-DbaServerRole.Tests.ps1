@@ -22,7 +22,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $login1 = "dbatoolsci_exportdbaserverrole_login1$random"
             $svRole = "dbatoolsci_ScriptPermissions$random"
 
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
             $null = $server.Query("CREATE LOGIN [$login1] WITH PASSWORD = 'GoodPass1234!'")
             $null = $server.Query("CREATE SERVER ROLE [$svRole] AUTHORIZATION [$login1]")
             $null = $server.Query("ALTER SERVER ROLE [dbcreator] ADD MEMBER [$svRole]")
@@ -34,8 +34,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
     AfterAll {
         try {
-            Remove-DbaServerRole -SqlInstance $script:instance2 -ServerRole $svRole -Confirm:$false
-            Remove-DbaLogin -SqlInstance $script:instance2 -Login $login1 -Confirm:$false
+            Remove-DbaServerRole -SqlInstance $TestConfig.instance2 -ServerRole $svRole -Confirm:$false
+            Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login1 -Confirm:$false
 
         } catch { }
         (Get-ChildItem $outputFile -ErrorAction SilentlyContinue) | Remove-Item -ErrorAction SilentlyContinue
@@ -43,7 +43,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Check if output file was created" {
 
-        $null = Export-DbaServerRole -SqlInstance $script:instance2 -FilePath $outputFile
+        $null = Export-DbaServerRole -SqlInstance $TestConfig.instance2 -FilePath $outputFile
         It "Exports results to one sql file" {
             (Get-ChildItem $outputFile).Count | Should Be 1
         }
@@ -53,7 +53,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Check using piped input created" {
-        $role = Get-DbaServerRole -SqlInstance $script:instance2 -ServerRole $svRole
+        $role = Get-DbaServerRole -SqlInstance $TestConfig.instance2 -ServerRole $svRole
         $null = $role | Export-DbaServerRole -FilePath $outputFile
         It "Exports results to one sql file" {
             (Get-ChildItem $outputFile).Count | Should Be 1
@@ -62,27 +62,27 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             (Get-ChildItem $outputFile).Length | Should BeGreaterThan 0
         }
 
-        $script:results = $role | Export-DbaServerRole -Passthru
+        $TestConfig.results = $role | Export-DbaServerRole -Passthru
         It "should include the defined BatchSeparator" {
-            $script:results -match "GO"
+            $TestConfig.results -match "GO"
         }
         It "should include the role" {
-            $script:results -match "CREATE SERVER ROLE [$svRole]"
+            $TestConfig.results -match "CREATE SERVER ROLE [$svRole]"
         }
         It "should include ADD MEMBER" {
-            $script:results -match "ALTER SERVER ROLE [dbcreator] ADD MEMBER [$svRole]"
+            $TestConfig.results -match "ALTER SERVER ROLE [dbcreator] ADD MEMBER [$svRole]"
         }
         It "should include GRANT CREATE TRACE EVENT" {
-            $script:results -match "GRANT CREATE TRACE EVENT NOTIFICATION TO [$svRole]"
+            $TestConfig.results -match "GRANT CREATE TRACE EVENT NOTIFICATION TO [$svRole]"
         }
         It "should include DENY SELECT ALL USER SECURABLES" {
-            $script:results -match "DENY SELECT ALL USER SECURABLES TO [$svRole]"
+            $TestConfig.results -match "DENY SELECT ALL USER SECURABLES TO [$svRole]"
         }
         It "should include VIEW ANY DEFINITION" {
-            $script:results -match "GRANT VIEW ANY DEFINITION TO [$svRole];"
+            $TestConfig.results -match "GRANT VIEW ANY DEFINITION TO [$svRole];"
         }
         It "should include GRANT VIEW ANY DATABASE" {
-            $script:results -match "GRANT VIEW ANY DATABASE TO [$svRole];"
+            $TestConfig.results -match "GRANT VIEW ANY DATABASE TO [$svRole];"
         }
     }
 }

@@ -15,23 +15,23 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $sql = "EXEC msdb.dbo.sp_add_schedule @schedule_name = N'dbatoolsci_DailySchedule' , @freq_type = 4, @freq_interval = 1, @active_start_time = 010000"
         $server.Query($sql)
     }
     AfterAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $sql = "EXEC msdb.dbo.sp_delete_schedule @schedule_name = 'dbatoolsci_DailySchedule'"
         $server.Query($sql)
 
-        $server = Connect-DbaInstance -SqlInstance $script:instance3
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance3
         $sql = "EXEC msdb.dbo.sp_delete_schedule @schedule_name = 'dbatoolsci_DailySchedule'"
         $server.Query($sql)
 
     }
 
     Context "Copies Agent Schedule" {
-        $results = Copy-DbaAgentSchedule -Source $script:instance2 -Destination $script:instance3
+        $results = Copy-DbaAgentSchedule -Source $TestConfig.instance2 -Destination $TestConfig.instance3
 
         It "returns one results" {
             $results.Count | Should -BeGreaterThan 1
@@ -39,7 +39,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "return one result of Start Time 1:00 AM" {
-            $results = Get-DbaAgentSchedule -SqlInstance $script:instance3 -Schedule dbatoolsci_DailySchedule
+            $results = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance3 -Schedule dbatoolsci_DailySchedule
             $results.ActiveStartTimeOfDay -eq '01:00:00'
         }
     }

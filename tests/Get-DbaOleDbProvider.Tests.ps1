@@ -14,7 +14,7 @@ Describe "Get-DbaComputerSystem Unit Tests" -Tag "UnitTests" {
 }
 Describe "$CommandName Integration Test" -Tag "IntegrationTests" {
     Context "Validate output" {
-        $result = Get-DbaOleDbProvider -SqlInstance $script:instance1
+        $result = Get-DbaOleDbProvider -SqlInstance $TestConfig.instance1
         It "has some output" {
             $result | Should -Not -BeNullOrEmpty
         }

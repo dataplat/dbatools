@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "returns the proper transport" {
-        $results = Get-DbaConnection -SqlInstance $script:instance1
+        $results = Get-DbaConnection -SqlInstance $TestConfig.instance1
         foreach ($result in $results) {
             It "returns an scheme" {
                 $result.AuthScheme -eq 'ntlm' -or $result.AuthScheme -eq 'Kerberos' | Should -Be $true

@@ -15,10 +15,10 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $db = Get-DbaDatabase -SqlInstance $script:instance2 -Database tempdb
+        $db = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database tempdb
         $null = $db.Query("CREATE TABLE [dbo].[BunchOFilez]([FileName123] [nvarchar](50) NULL, [TheFile123] [image] NULL)")
-        $null = Import-DbaBinaryFile -SqlInstance $script:instance2 -Database tempdb -Table BunchOFilez -FilePath $script:appveyorlabrepo\azure\adalsql.msi
-        $null = Get-ChildItem $script:appveyorlabrepo\certificates | Import-DbaBinaryFile -SqlInstance $script:instance2 -Database tempdb -Table BunchOFilez
+        $null = Import-DbaBinaryFile -SqlInstance $TestConfig.instance2 -Database tempdb -Table BunchOFilez -FilePath $TestConfig.appveyorlabrepo\azure\adalsql.msi
+        $null = Get-ChildItem $TestConfig.appveyorlabrepo\certificates | Import-DbaBinaryFile -SqlInstance $TestConfig.instance2 -Database tempdb -Table BunchOFilez
     }
     AfterAll {
         try {
@@ -29,12 +29,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     It "returns a table" {
-        $results = Get-DbaBinaryFileTable -SqlInstance $script:instance2 -Database tempdb
+        $results = Get-DbaBinaryFileTable -SqlInstance $TestConfig.instance2 -Database tempdb
         $results.Name.Count | Should -BeGreaterOrEqual 1
     }
 
     It "supports piping" {
-        $results = Get-DbaDbTable -SqlInstance $script:instance2 -Database tempdb | Get-DbaBinaryFileTable
+        $results = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database tempdb | Get-DbaBinaryFileTable
         $results.Name.Count | Should -BeGreaterOrEqual 1
     }
 }

@@ -16,7 +16,7 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "Setup" {
         BeforeAll {
-            $server = Connect-DbaInstance $script:instance1
+            $server = Connect-DbaInstance $TestConfig.instance1
             $regStore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($server.ConnectionContext.SqlConnectionObject)
             $dbStore = $regStore.DatabaseEngineServerGroup
 
@@ -61,12 +61,12 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $newServer3.Create()
         }
         AfterAll {
-            Get-DbaRegServer -SqlInstance $script:instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegServer -Confirm:$false
-            Get-DbaRegServerGroup -SqlInstance $script:instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
+            Get-DbaRegServer -SqlInstance $TestConfig.instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegServer -Confirm:$false
+            Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
         }
 
         It "Should return multiple objects" {
-            $results = Get-DbaRegServer -SqlInstance $script:instance1 -Group $group
+            $results = Get-DbaRegServer -SqlInstance $TestConfig.instance1 -Group $group
             $results.Count | Should Be 2
             $results[0].ParentServer | Should -Not -BeNullOrEmpty
             $results[0].ComputerName | Should -Not -BeNullOrEmpty
@@ -78,15 +78,15 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results[1].SqlInstance | Should -Not -BeNullOrEmpty
         }
         It "Should allow searching subgroups" {
-            $results = Get-DbaRegServer -SqlInstance $script:instance1 -Group "$group\$group2"
+            $results = Get-DbaRegServer -SqlInstance $TestConfig.instance1 -Group "$group\$group2"
             $results.Count | Should Be 1
         }
         It "Should return the root server when excluding (see #3529)" {
-            $results = Get-DbaRegServer -SqlInstance $script:instance1 -ExcludeGroup "$group\$group2"
+            $results = Get-DbaRegServer -SqlInstance $TestConfig.instance1 -ExcludeGroup "$group\$group2"
             @($results | Where-Object Name -eq $srvName3).Count | Should -Be 1
         }
         It "Should filter subgroups" {
-            $results = Get-DbaRegServer -SqlInstance $script:instance1 -Group $group -ExcludeGroup "$group\$group2"
+            $results = Get-DbaRegServer -SqlInstance $TestConfig.instance1 -Group $group -ExcludeGroup "$group\$group2"
             $results.Count | Should Be 1
             $results.Group | Should Be $group
         }

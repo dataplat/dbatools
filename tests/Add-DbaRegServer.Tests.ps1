@@ -20,21 +20,21 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $group = "dbatoolsci-group1"
             $regSrvName = "dbatoolsci-server12"
             $regSrvDesc = "dbatoolsci-server123"
-            $groupobject = Add-DbaRegServerGroup -SqlInstance $script:instance1 -Name $group
+            $groupobject = Add-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Name $group
         }
         AfterAll {
-            Get-DbaRegServer -SqlInstance $script:instance1, $script:instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegServer -Confirm:$false
-            Get-DbaRegServerGroup -SqlInstance $script:instance1, $script:instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
+            Get-DbaRegServer -SqlInstance $TestConfig.instance1, $TestConfig.instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegServer -Confirm:$false
+            Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1, $TestConfig.instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
         }
 
         It "adds a registered server" {
-            $results1 = Add-DbaRegServer -SqlInstance $script:instance1 -ServerName $srvName
+            $results1 = Add-DbaRegServer -SqlInstance $TestConfig.instance1 -ServerName $srvName
             $results1.Name | Should -Be $srvName
             $results1.ServerName | Should -Be $srvName
             $results1.SqlInstance | Should -Not -Be $null
         }
         It "adds a registered server with extended properties" {
-            $results2 = Add-DbaRegServer -SqlInstance $script:instance1 -ServerName $RegsrvName -Name $srvName -Group $groupobject -Description $regSrvDesc
+            $results2 = Add-DbaRegServer -SqlInstance $TestConfig.instance1 -ServerName $RegsrvName -Name $srvName -Group $groupobject -Description $regSrvDesc
             $results2.ServerName | Should -Be $regSrvName
             $results2.Description | Should -Be $regSrvDesc
             $results2.Name | Should -Be $srvName

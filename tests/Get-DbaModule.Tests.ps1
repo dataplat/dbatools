@@ -18,12 +18,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
         # SQL2008R2SP2 returns around 600 of these in freshly installed instance. 100 is a good enough number.
         It "Should have a high count" {
-            $results = Get-DbaModule -SqlInstance $script:instance1 | Select-Object -First 101
+            $results = Get-DbaModule -SqlInstance $TestConfig.instance1 | Select-Object -First 101
             $results.Count | Should BeGreaterThan 100
         }
 
         # SQL2008R2SP2 will return a number of modules from the msdb database so it is a good candidate to test
-        $results = Get-DbaModule -SqlInstance $script:instance1 -Type View -Database msdb
+        $results = Get-DbaModule -SqlInstance $TestConfig.instance1 -Type View -Database msdb
         It "Should only have one type of object" {
             ($results | Select-Object -Unique Type | Measure-Object).Count | Should Be 1
         }
@@ -34,7 +34,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Accepts Piped Input" {
-        $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database msdb, master
+        $db = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database msdb, master
         # SQL2008R2SP2 returns around 600 of these in freshly installed instance. 100 is a good enough number.
         $results = $db | Get-DbaModule
         It "Should have a high count" {
@@ -44,7 +44,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             ($results | Select-Object -Unique Database | Measure-Object).Count | Should Be 2
         }
 
-        $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database msdb
+        $db = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database msdb
         $results = $db | Get-DbaModule -Type View
         It "Should only have one type of object" {
             ($results | Select-Object -Unique Type | Measure-Object).Count | Should Be 1

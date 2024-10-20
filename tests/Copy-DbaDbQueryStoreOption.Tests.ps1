@@ -16,7 +16,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Verifying query store options are copied" {
         BeforeAll {
-            $server2 = Connect-DbaInstance -SqlInstance $script:instance2
+            $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         }
         BeforeEach {
             $db1Name = "dbatoolsci_querystoretest1"

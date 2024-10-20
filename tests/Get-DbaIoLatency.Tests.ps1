@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Command returns proper info" {
-        $results = Get-DbaIoLatency -SqlInstance $script:instance2
+        $results = Get-DbaIoLatency -SqlInstance $TestConfig.instance2
 
         It "returns results" {
             $results.Count -gt 0 | Should Be $true

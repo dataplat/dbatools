@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance1
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
         $sql = "create database [dbatools_dupeindex]"
         $server.Query($sql)
         $sql = "CREATE TABLE [dbatools_dupeindex].[dbo].[WABehaviorEvent](
@@ -47,11 +47,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $server.Query($sql)
     }
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $script:instance1 -Database dbatools_dupeindex -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database dbatools_dupeindex -Confirm:$false
     }
 
     Context "Gets back some results" {
-        $results = Find-DbaDbDuplicateIndex -SqlInstance $script:instance1 -Database dbatools_dupeindex
+        $results = Find-DbaDbDuplicateIndex -SqlInstance $TestConfig.instance1 -Database dbatools_dupeindex
         It "return at least two results" {
             $results.Count -ge 2 | Should Be $true
         }

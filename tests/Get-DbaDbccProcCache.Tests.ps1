@@ -14,7 +14,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 Describe "$commandname  Integration Test" -Tag "IntegrationTests" {
     $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'Count', 'Used', 'Active', 'CacheSize', 'CacheUsed', 'CacheActive'
-    $result = Get-DbaDbccProcCache -SqlInstance $script:instance2
+    $result = Get-DbaDbccProcCache -SqlInstance $TestConfig.instance2
 
     Context "Validate standard output" {
         foreach ($prop in $props) {

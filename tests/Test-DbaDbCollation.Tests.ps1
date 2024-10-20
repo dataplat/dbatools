@@ -17,7 +17,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Context "testing collation of a single database" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance1
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
             $db1 = "dbatoolsci_collation"
             Get-DbaDatabase -SqlInstance $server -Database $db1 | Remove-DbaDatabase -Confirm:$false
             $server.Query("CREATE DATABASE $db1")
@@ -27,7 +27,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "confirms the db is the same collation as the server" {
-            $result = Test-DbaDbCollation -SqlInstance $script:instance1 -Database $db1
+            $result = Test-DbaDbCollation -SqlInstance $TestConfig.instance1 -Database $db1
             $result.IsEqual
         }
     }

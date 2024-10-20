@@ -20,13 +20,13 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $plaintext = "BigOlPassword!"
         $password = ConvertTo-SecureString $plaintext -AsPlainText -Force
 
-        $server2 = Connect-DbaInstance -SqlInstance $script:instance2
-        $server3 = Connect-DbaInstance -SqlInstance $script:instance3
+        $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server3 = Connect-DbaInstance -SqlInstance $TestConfig.instance3
 
         # Add user
         foreach ($login in $logins) {
-            $null = Invoke-Command2 -ScriptBlock { net user $args[0] $args[1] /add *>&1 } -ArgumentList $login, $plaintext -ComputerName $script:instance2
-            $null = Invoke-Command2 -ScriptBlock { net user $args[0] $args[1] /add *>&1 } -ArgumentList $login, $plaintext -ComputerName $script:instance3
+            $null = Invoke-Command2 -ScriptBlock { net user $args[0] $args[1] /add *>&1 } -ArgumentList $login, $plaintext -ComputerName $TestConfig.instance2
+            $null = Invoke-Command2 -ScriptBlock { net user $args[0] $args[1] /add *>&1 } -ArgumentList $login, $plaintext -ComputerName $TestConfig.instance3
         }
 
         <#
@@ -68,8 +68,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         (Get-DbaCredential -SqlInstance $server3 -Identity dbatoolsci_thor, dbatoolsci_thorsmomma, dbatoolsci_thor_crypto -ErrorAction Stop -WarningAction SilentlyContinue).Drop()
 
         foreach ($login in $logins) {
-            $null = Invoke-Command2 -ScriptBlock { net user $args /delete *>&1 } -ArgumentList $login -ComputerName $script:instance2
-            $null = Invoke-Command2 -ScriptBlock { net user $args /delete *>&1 } -ArgumentList $login -ComputerName $script:instance3
+            $null = Invoke-Command2 -ScriptBlock { net user $args /delete *>&1 } -ArgumentList $login -ComputerName $TestConfig.instance2
+            $null = Invoke-Command2 -ScriptBlock { net user $args /delete *>&1 } -ArgumentList $login -ComputerName $TestConfig.instance3
         }
     }
 

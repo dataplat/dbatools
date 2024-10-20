@@ -15,14 +15,14 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $server2 = Connect-DbaInstance -SqlInstance $script:instance2
+        $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
 
         $password1 = ConvertTo-SecureString 'password1' -AsPlainText -Force
         $testLogin = 'getDbaInstanceRoleMemberLogin'
         $null = New-DbaLogin -SqlInstance $server2 -Login $testLogin -Password $password1
         $null = Set-DbaLogin -SqlInstance $server2 -Login $testLogin -AddRole 'dbcreator'
 
-        $server1 = Connect-DbaInstance -SqlInstance $script:instance1
+        $server1 = Connect-DbaInstance -SqlInstance $TestConfig.instance1
         $null = New-DbaLogin -SqlInstance $server1 -Login $testLogin -Password $password1
         $null = Set-DbaLogin -SqlInstance $server1 -Login $testLogin -AddRole 'dbcreator'
     }

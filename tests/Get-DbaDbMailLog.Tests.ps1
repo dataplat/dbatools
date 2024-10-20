@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $server.Query("INSERT INTO msdb.[dbo].[sysmail_log]
         ([event_type]
         ,[log_date]
@@ -33,7 +33,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Gets Db Mail Log" {
-        $results = Get-DbaDbMailLog -SqlInstance $script:instance2 | Where-Object {$_.Login -eq 'dbatools\dbatoolssci'}
+        $results = Get-DbaDbMailLog -SqlInstance $TestConfig.instance2 | Where-Object {$_.Login -eq 'dbatools\dbatoolssci'}
         It "Gets results" {
             $results | Should Not Be $null
         }
@@ -45,7 +45,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Gets Db Mail Log using -Type" {
-        $results = Get-DbaDbMailLog -SqlInstance $script:instance2 -Type Information
+        $results = Get-DbaDbMailLog -SqlInstance $TestConfig.instance2 -Type Information
         It "Gets results" {
             $results | Should Not Be $null
         }
@@ -57,7 +57,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Gets Db Mail History using -Since" {
-        $results = Get-DbaDbMailLog -SqlInstance $script:instance2 -Since '2018-01-01'
+        $results = Get-DbaDbMailLog -SqlInstance $TestConfig.instance2 -Since '2018-01-01'
         It "Gets results" {
             $results | Should Not Be $null
         }

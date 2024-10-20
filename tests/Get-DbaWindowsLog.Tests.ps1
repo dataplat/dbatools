@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command returns proper info" {
-        $results = Get-DbaWindowsLog -SqlInstance $script:instance2
+        $results = Get-DbaWindowsLog -SqlInstance $TestConfig.instance2
 
         It "returns results" {
             $results.Count -gt 0 | Should Be $true

@@ -205,8 +205,8 @@ Describe "$CommandName Unit Test" -Tags Unittest {
 Describe "$commandname Integration Tests" -Tags 'IntegrationTests' {
     Context "piping and params" {
         BeforeAll {
-            $server1 = Connect-DbaInstance -SqlInstance $script:instance1
-            $server2 = Connect-DbaInstance -SqlInstance $script:instance2
+            $server1 = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+            $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         }
         It "works when instances are piped" {
             $res = @($server1, $server2) | Get-DbaBuild
@@ -217,7 +217,7 @@ Describe "$commandname Integration Tests" -Tags 'IntegrationTests' {
         }
     }
     Context "Test retrieving version from instances" {
-        $results = Get-DbaBuild -SqlInstance $script:instance1, $script:instance2
+        $results = Get-DbaBuild -SqlInstance $TestConfig.instance1, $TestConfig.instance2
         It "Should return an exact match" {
             $results | Should -Not -BeNullOrEmpty
             foreach ($r in $results) {

@@ -16,26 +16,27 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $agname = "dbatoolsci_arepgroup"
-        $ag = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Certificate dbatoolsci_AGCert -Confirm:$false
+        $ag = New-DbaAvailabilityGroup -Primary $TestConfig.instance3 -Name $agname -ClusterType None -FailoverMode Manual -Certificate dbatoolsci_AGCert -Confirm:$false
         $replicaName = $ag.PrimaryReplica
     }
     AfterAll {
-        Remove-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup $agname -Confirm:$false
+        Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname -Confirm:$false
     }
     Context "sets ag properties" {
         It "returns modified results" {
-            $results = Set-DbaAgReplica -SqlInstance $script:instance3 -AvailabilityGroup $agname -Replica $replicaName -BackupPriority 100 -Confirm:$false
+            $results = Set-DbaAgReplica -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname -Replica $replicaName -BackupPriority 100 -Confirm:$false
             $results.AvailabilityGroup | Should -Be $agname
             $results.BackupPriority | Should -Be 100
         }
         It "returns modified results" {
-            $results = Set-DbaAgReplica -SqlInstance $script:instance3 -AvailabilityGroup $agname -Replica $replicaName -SeedingMode Automatic -Confirm:$false
+            $results = Set-DbaAgReplica -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname -Replica $replicaName -SeedingMode Automatic -Confirm:$false
             $results.AvailabilityGroup | Should -Be $agname
             $results.SeedingMode | Should -Be Automatic
         }
         It "attempts to add a ReadOnlyRoutingList" {
-            $null = Get-DbaAgReplica -SqlInstance $script:instance3 -AvailabilityGroup $agname | Select-Object -First 1 | Set-DbaAgReplica -ReadOnlyRoutingList nondockersql -WarningAction SilentlyContinue -WarningVariable warn -Confirm:$false
+            $null = Get-DbaAgReplica -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname | Select-Object -First 1 | Set-DbaAgReplica -ReadOnlyRoutingList nondockersql -WarningAction SilentlyContinue -WarningVariable warn -Confirm:$false
             $warn | Should -match "does not exist. Only availability"
         }
     }
-} #$script:instance2 for appveyor
+} #$TestConfig.instance2 for appveyor
+

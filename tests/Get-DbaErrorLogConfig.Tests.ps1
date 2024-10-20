@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "Get NumberErrorLog for multiple instances" {
-        $results = Get-DbaErrorLogConfig -SqlInstance $script:instance3, $script:instance2
+        $results = Get-DbaErrorLogConfig -SqlInstance $TestConfig.instance3, $TestConfig.instance2
         foreach ($result in $results) {
             It 'returns 3 values' {
                 $result.LogCount | Should -Not -Be $null

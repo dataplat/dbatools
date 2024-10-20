@@ -16,7 +16,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $dbname = "dbatoolsci_test_$(get-random)"
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $server.Query("Create Database [$dbname]")
         $server.Query("Create Table [$dbname].dbo.TestCompression
             (Column1 nvarchar(10),
@@ -28,13 +28,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $server.Query("DROP Database [$dbname]")
     }
     Context "Gets Feature Usage" {
-        $results = Get-DbaDbFeatureUsage -SqlInstance $script:instance2
+        $results = Get-DbaDbFeatureUsage -SqlInstance $TestConfig.instance2
         It "Gets results" {
             $results | Should Not Be $null
         }
     }
     Context "Gets Feature Usage using -Database" {
-        $results = Get-DbaDbFeatureUsage -SqlInstance $script:instance2 -Database $dbname
+        $results = Get-DbaDbFeatureUsage -SqlInstance $TestConfig.instance2 -Database $dbname
         It "Gets results" {
             $results | Should Not Be $null
         }
@@ -43,7 +43,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Gets Feature Usage using -ExcludeDatabase" {
-        $results = Get-DbaDbFeatureUsage -SqlInstance $script:instance2 -ExcludeDatabase $dbname
+        $results = Get-DbaDbFeatureUsage -SqlInstance $TestConfig.instance2 -ExcludeDatabase $dbname
         It "Gets results" {
             $results.database | Should Not Contain $dbname
         }

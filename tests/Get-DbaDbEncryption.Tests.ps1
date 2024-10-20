@@ -23,12 +23,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $random = Get-Random
             $cert = "dbatoolsci_getcert$random"
             $password = ConvertTo-SecureString -String Get-Random -AsPlainText -Force
-            New-DbaDbCertificate -SqlInstance $script:instance1 -Name $cert -password $password
+            New-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Name $cert -password $password
         }
         AfterAll {
-            Get-DbaDbCertificate -SqlInstance $script:instance1 -Certificate $cert | Remove-DbaDbCertificate -confirm:$false
+            Get-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Certificate $cert | Remove-DbaDbCertificate -confirm:$false
         }
-        $results = Get-DbaDbEncryption -SqlInstance $script:instance1
+        $results = Get-DbaDbEncryption -SqlInstance $TestConfig.instance1
         It "Should find a certificate named $cert" {
             ($results.Name -match 'dbatoolsci').Count -gt 0 | Should Be $true
         }

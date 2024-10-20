@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Command tests servername" {
-        $results = Test-DbaInstanceName -SqlInstance $script:instance2
+        $results = Test-DbaInstanceName -SqlInstance $TestConfig.instance2
         It "should say rename is not required" {
             $results.RenameRequired | Should -Be $false
         }

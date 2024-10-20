@@ -14,7 +14,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 Describe "$commandname Integration Test" -Tag "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $random = Get-Random
         $tableName = "dbatools_getdbtbl1"
         $tableName2 = "dbatools_getdbtbl2"
@@ -32,12 +32,12 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
         $null = $server.Query("UPDATE STATISTICS $tableName", $dbname)
     }
     AfterAll {
-        $null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
     }
 
     Context "Validate standard output for StatHeader option " {
         $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Object', 'Target', 'Cmd', 'Name', 'Updated', 'Rows', 'RowsSampled', 'Steps', 'Density', 'AverageKeyLength', 'StringIndex', 'FilterExpression', 'UnfilteredRows', 'PersistedSamplePercent'
-        $result = Get-DbaDbccStatistic -SqlInstance $script:instance2 -Database $dbname -Option StatHeader
+        $result = Get-DbaDbccStatistic -SqlInstance $TestConfig.instance2 -Database $dbname -Option StatHeader
 
         It "returns correct results" {
             $result.Count -eq 3 | Should Be $true
@@ -53,7 +53,7 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
 
     Context "Validate standard output for DensityVector option " {
         $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Object', 'Target', 'Cmd', 'AllDensity', 'AverageLength', 'Columns'
-        $result = Get-DbaDbccStatistic -SqlInstance $script:instance2 -Database $dbname -Option DensityVector
+        $result = Get-DbaDbccStatistic -SqlInstance $TestConfig.instance2 -Database $dbname -Option DensityVector
 
         It "returns results" {
             $result.Count -gt 0 | Should Be $true
@@ -70,7 +70,7 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
 
     Context "Validate standard output for Histogram option " {
         $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Object', 'Target', 'Cmd', 'RangeHiKey', 'RangeRows', 'EqualRows', 'DistinctRangeRows', 'AverageRangeRows'
-        $result = Get-DbaDbccStatistic -SqlInstance $script:instance2 -Database $dbname -Option Histogram
+        $result = Get-DbaDbccStatistic -SqlInstance $TestConfig.instance2 -Database $dbname -Option Histogram
 
         It "returns results" {
             $result.Count -gt 0 | Should Be $true
@@ -87,7 +87,7 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
 
     Context "Validate standard output for StatsStream option " {
         $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Object', 'Target', 'Cmd', 'StatsStream', 'Rows', 'DataPages'
-        $result = Get-DbaDbccStatistic -SqlInstance $script:instance2 -Database $dbname -Option StatsStream
+        $result = Get-DbaDbccStatistic -SqlInstance $TestConfig.instance2 -Database $dbname -Option StatsStream
 
         It "returns results" {
             $result.Count -gt 0 | Should Be $true
@@ -103,7 +103,7 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
     }
 
     Context "Validate returns results for single Object " {
-        $result = Get-DbaDbccStatistic -SqlInstance $script:instance2 -Database $dbname -Object $tableName2 -Option StatsStream
+        $result = Get-DbaDbccStatistic -SqlInstance $TestConfig.instance2 -Database $dbname -Object $tableName2 -Option StatsStream
 
         It "returns results" {
             $result.Count -gt 0 | Should Be $true
@@ -111,7 +111,7 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
     }
 
     Context "Validate returns results for single Object and Target " {
-        $result = Get-DbaDbccStatistic -SqlInstance $script:instance2 -Database $dbname -Object $tableName2 -Target 'TestStat2'  -Option DensityVector
+        $result = Get-DbaDbccStatistic -SqlInstance $TestConfig.instance2 -Database $dbname -Object $tableName2 -Target 'TestStat2'  -Option DensityVector
 
         It "returns results" {
             $result.Count -gt 0 | Should Be $true

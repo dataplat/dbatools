@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "returns proper information" {
-        $results = Set-DbaDefaultPath -SqlInstance $script:instance1 -Type Backup -Path C:\temp
+        $results = Set-DbaDefaultPath -SqlInstance $TestConfig.instance1 -Type Backup -Path C:\temp
         It "Data returns a value that contains :\" {
             $results.Data -match "\:\\"
         }

@@ -18,21 +18,21 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $tPassword = ConvertTo-SecureString "ThisIsThePassword1" -AsPlainText -Force
         $tUserName = "dbatoolsci_proxytest"
         New-LocalUser -Name $tUserName -Password $tPassword -Disabled:$false
-        New-DbaCredential -SqlInstance $script:instance2 -Name "$tUserName" -Identity "$env:COMPUTERNAME\$tUserName" -Password $tPassword
-        New-DbaAgentProxy -SqlInstance $script:instance2 -Name STIG -ProxyCredential "$tUserName"
-        New-DbaAgentProxy -SqlInstance $script:instance2 -Name STIGX -ProxyCredential "$tUserName"
+        New-DbaCredential -SqlInstance $TestConfig.instance2 -Name "$tUserName" -Identity "$env:COMPUTERNAME\$tUserName" -Password $tPassword
+        New-DbaAgentProxy -SqlInstance $TestConfig.instance2 -Name STIG -ProxyCredential "$tUserName"
+        New-DbaAgentProxy -SqlInstance $TestConfig.instance2 -Name STIGX -ProxyCredential "$tUserName"
     }
     Afterall {
         $tUserName = "dbatoolsci_proxytest"
         Remove-LocalUser -Name $tUserName
-        $credential = Get-DbaCredential -SqlInstance $script:instance2 -Name $tUserName
+        $credential = Get-DbaCredential -SqlInstance $TestConfig.instance2 -Name $tUserName
         $credential.DROP()
-        $proxy = Get-DbaAgentProxy -SqlInstance $script:instance2 -Proxy "STIG", "STIGX"
+        $proxy = Get-DbaAgentProxy -SqlInstance $TestConfig.instance2 -Proxy "STIG", "STIGX"
         $proxy.DROP()
     }
 
     Context "Gets the list of Proxy" {
-        $results = Get-DbaAgentProxy -SqlInstance $script:instance2
+        $results = Get-DbaAgentProxy -SqlInstance $TestConfig.instance2
         It "Results are not empty" {
             $results | Should Not Be $Null
         }
@@ -44,7 +44,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Gets a single Proxy" {
-        $results = Get-DbaAgentProxy -SqlInstance $script:instance2 -Proxy "STIG"
+        $results = Get-DbaAgentProxy -SqlInstance $TestConfig.instance2 -Proxy "STIG"
         It "Results are not empty" {
             $results | Should Not Be $Null
         }
@@ -56,7 +56,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Gets the list of Proxy without excluded" {
-        $results = Get-DbaAgentProxy -SqlInstance $script:instance2 -ExcludeProxy "STIG"
+        $results = Get-DbaAgentProxy -SqlInstance $TestConfig.instance2 -ExcludeProxy "STIG"
         It "Results are not empty" {
             $results | Should Not Be $Null
         }

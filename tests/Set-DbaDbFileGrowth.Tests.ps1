@@ -15,13 +15,13 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $newdb = New-DbaDatabase -SqlInstance $script:instance2 -Name newdb
+        $newdb = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name newdb
     }
     AfterAll {
         $newdb | Remove-DbaDatabase -Confirm:$false
     }
     Context "Should return file information for only newdb" {
-        $result = Set-DbaDbFileGrowth -SqlInstance $script:instance2 -Database newdb | Select-Object -First 1
+        $result = Set-DbaDbFileGrowth -SqlInstance $TestConfig.instance2 -Database newdb | Select-Object -First 1
         It "returns the proper info" {
             $result.Database | Should -Be "newdb"
             $result.GrowthType | Should -Be "kb"
@@ -29,7 +29,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Supports piping" {
-        $result = Get-DbaDatabase $script:instance2 -Database newdb | Set-DbaDbFileGrowth | Select-Object -First 1
+        $result = Get-DbaDatabase $TestConfig.instance2 -Database newdb | Set-DbaDbFileGrowth | Select-Object -First 1
         It "returns only newdb files" {
             $result.Database | Should -Be "newdb"
         }

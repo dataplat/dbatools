@@ -18,10 +18,10 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 # Get-DbaNoun
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $db1 = "dbatoolsci_testvlf"
         $server.Query("CREATE DATABASE $db1")
-        $needed = Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1
+        $needed = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $db1
         $setupright = $true
         if ($needed.Count -ne 1) {
             $setupright = $false
@@ -31,11 +31,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
     }
     AfterAll {
-        Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $db1
+        Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance2 -Database $db1
     }
 
     Context "Command actually works" {
-        $results = Measure-DbaDbVirtualLogFile -SqlInstance $script:instance2 -Database $db1
+        $results = Measure-DbaDbVirtualLogFile -SqlInstance $TestConfig.instance2 -Database $db1
 
         It "Should have correct properties" {
             $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Database,Total,TotalCount,Inactive,Active,LogFileName,LogFileGrowth,LogFileGrowthType'.Split(',')

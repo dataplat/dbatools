@@ -24,17 +24,17 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
         $random = Get-Random
         $dbname = "dbatoolsci_Backuphistory_$random"
-        $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname | Remove-DbaDatabase -Confirm:$false
-        $null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $dbname -DestinationFilePrefix $dbname
-        $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname | Remove-DbaDatabase -Confirm:$false
+        $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -Path $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $dbname -DestinationFilePrefix $dbname
+        $db = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname
         $db | Backup-DbaDatabase -Type Full -BackupDirectory $DestBackupDir
         $db | Backup-DbaDatabase -Type Differential -BackupDirectory $DestBackupDir
         $db | Backup-DbaDatabase -Type Log -BackupDirectory $DestBackupDir
 
         $dbname2 = "dbatoolsci_Backuphistory2_$random"
-        $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname2 | Remove-DbaDatabase -Confirm:$false
-        $null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $dbname2 -DestinationFilePrefix $dbname2
-        $db2 = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname2
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname2 | Remove-DbaDatabase -Confirm:$false
+        $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -Path $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $dbname2 -DestinationFilePrefix $dbname2
+        $db2 = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname2
         $db2 | Backup-DbaDatabase -Type Full -BackupDirectory $DestBackupDir
         $db2 | Backup-DbaDatabase -Type Differential -BackupDirectory $DestBackupDir
         $db2 | Backup-DbaDatabase -Type Log -BackupDirectory $DestBackupDir
@@ -52,20 +52,20 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         $dbname3 = "dbatoolsci_BackuphistoryOla_$random"
-        $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname3 | Remove-DbaDatabase -Confirm:$false
-        $null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $dbname3 -DestinationFilePrefix $dbname3
-        $db3 = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname3
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname3 | Remove-DbaDatabase -Confirm:$false
+        $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -Path $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $dbname3 -DestinationFilePrefix $dbname3
+        $db3 = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname3
         $db3 | Backup-DbaDatabase -Type Full -BackupDirectory "$DestBackupDirOla\FULL"
         $db3 | Backup-DbaDatabase -Type Differential -BackupDirectory "$DestBackupDirOla\Diff"
         $db3 | Backup-DbaDatabase -Type Log -BackupDirectory "$DestBackupDirOla\LOG"
     }
 
     AfterAll {
-        $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname, $dbname2, $dbname3 | Remove-DbaDatabase -Confirm:$false
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname, $dbname2, $dbname3 | Remove-DbaDatabase -Confirm:$false
     }
 
     Context "Get history for all database" {
-        $results = Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $DestBackupDir
+        $results = Get-DbaBackupInformation -SqlInstance $TestConfig.instance1 -Path $DestBackupDir
         It "Should be 6 backups returned" {
             $results.count | Should Be 6
         }
@@ -78,7 +78,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Get history for one database" {
-        $results = Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $DestBackupDir -DatabaseName $dbname2
+        $results = Get-DbaBackupInformation -SqlInstance $TestConfig.instance1 -Path $DestBackupDir -DatabaseName $dbname2
         It "Should be 3 backups returned" {
             $results.count | Should Be 3
         }
@@ -95,10 +95,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Context "Check the export/import of backup history" {
         # This one used to cause all sorts of red
-        $results = Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $DestBackupDir -DatabaseName $dbname2 -ExportPath "$DestBackupDir\history.xml"
+        $results = Get-DbaBackupInformation -SqlInstance $TestConfig.instance1 -Path $DestBackupDir -DatabaseName $dbname2 -ExportPath "$DestBackupDir\history.xml"
 
         # the command below returns just a warning
-        # Get-DbaBackupInformation -Import -Path "$DestBackupDir\history.xml" | Restore-DbaDatabase -SqlInstance $script:instance1 -DestinationFilePrefix hist -RestoredDatabaseNamePrefix hist -TrustDbBackupHistory
+        # Get-DbaBackupInformation -Import -Path "$DestBackupDir\history.xml" | Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -DestinationFilePrefix hist -RestoredDatabaseNamePrefix hist -TrustDbBackupHistory
 
         It "Should restore cleanly" {
             ($results | Where-Object {$_.RestoreComplete -eq $false}).count | Should be 0
@@ -106,7 +106,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Test Maintenance solution options" {
-        $results = Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $DestBackupDirOla -MaintenanceSolution
+        $results = Get-DbaBackupInformation -SqlInstance $TestConfig.instance1 -Path $DestBackupDirOla -MaintenanceSolution
         It "Should be 3 backups returned" {
             $results.count | Should Be 3
         }
@@ -119,7 +119,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Should only be backups of $dbname3" {
             ($results | Where-Object {$_.Database -ne $dbname3 }).count | Should Be 0
         }
-        $ResultsSanLog = Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $DestBackupDirOla -MaintenanceSolution -IgnoreLogBackup
+        $ResultsSanLog = Get-DbaBackupInformation -SqlInstance $TestConfig.instance1 -Path $DestBackupDirOla -MaintenanceSolution -IgnoreLogBackup
         It "Should be 2 backups returned" {
             $ResultsSanLog.count | Should Be 2
         }
@@ -129,7 +129,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Should be 0 log backups" {
             ($resultsSanLog | Where-Object {$_.Type -eq 'Transaction Log'}).count | Should be 0
         }
-        $ResultsSanLog = Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $DestBackupDirOla -IgnoreLogBackup -WarningVariable warnvar -WarningAction SilentlyContinue 3> $null
+        $ResultsSanLog = Get-DbaBackupInformation -SqlInstance $TestConfig.instance1 -Path $DestBackupDirOla -IgnoreLogBackup -WarningVariable warnvar -WarningAction SilentlyContinue 3> $null
         It "Should Warn if IgnoreLogBackup without MaintenanceSolution" {
             $warnVar | Should -Match "IgnoreLogBackup can only by used with MaintenanceSolution. Will not be used"
         }

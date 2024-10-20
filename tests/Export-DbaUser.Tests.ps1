@@ -37,16 +37,16 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $role02 = "dbatoolsci_exportdbauser_role02"
             $role03 = "dbatoolsci_exportdbauser_role03"
 
-            $server = Connect-DbaInstance -SqlInstance $script:instance1
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
             $null = $server.Query("CREATE DATABASE [$dbname]")
 
             $securePassword = $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force)
-            $null = New-DbaLogin -SqlInstance $script:instance1 -Login $login -Password $securePassword
-            $null = New-DbaLogin -SqlInstance $script:instance1 -Login $login2 -Password $securePassword
-            $null = New-DbaLogin -SqlInstance $script:instance1 -Login $login01 -Password $securePassword
-            $null = New-DbaLogin -SqlInstance $script:instance1 -Login $login02 -Password $securePassword
+            $null = New-DbaLogin -SqlInstance $TestConfig.instance1 -Login $login -Password $securePassword
+            $null = New-DbaLogin -SqlInstance $TestConfig.instance1 -Login $login2 -Password $securePassword
+            $null = New-DbaLogin -SqlInstance $TestConfig.instance1 -Login $login01 -Password $securePassword
+            $null = New-DbaLogin -SqlInstance $TestConfig.instance1 -Login $login02 -Password $securePassword
 
-            $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname
+            $db = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname
             $null = $db.Query("CREATE USER [$user] FOR LOGIN [$login]")
             $null = $db.Query("CREATE USER [$user2] FOR LOGIN [$login2]")
             $null = $db.Query("CREATE USER [$user01] FOR LOGIN [$login01]")
@@ -67,17 +67,17 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         } catch { } # No idea why appveyor can't handle this
     }
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
-        Remove-DbaLogin -SqlInstance $script:instance1 -Login $login -Confirm:$false
-        Remove-DbaLogin -SqlInstance $script:instance1 -Login $login2 -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname -Confirm:$false
+        Remove-DbaLogin -SqlInstance $TestConfig.instance1 -Login $login -Confirm:$false
+        Remove-DbaLogin -SqlInstance $TestConfig.instance1 -Login $login2 -Confirm:$false
         (Get-ChildItem $outputFile -ErrorAction SilentlyContinue) | Remove-Item -ErrorAction SilentlyContinue
         (Get-ChildItem $outputFile2 -ErrorAction SilentlyContinue) | Remove-Item -ErrorAction SilentlyContinue
         Remove-Item -Path $outputPath -Recurse -ErrorAction SilentlyContinue -Confirm:$false
     }
 
     Context "Check if output file was created" {
-        if (Get-DbaDbUser -SqlInstance $script:instance1 -Database $dbname | Where-Object Name -eq $user) {
-            $null = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -User $user -FilePath $outputFile
+        if (Get-DbaDbUser -SqlInstance $TestConfig.instance1 -Database $dbname | Where-Object Name -eq $user) {
+            $null = Export-DbaUser -SqlInstance $TestConfig.instance1 -Database $dbname -User $user -FilePath $outputFile
             It "Exports results to one sql file" {
                 (Get-ChildItem $outputFile).Count | Should Be 1
             }
@@ -91,7 +91,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It 'Excludes database context' {
             $scriptingOptions = New-DbaScriptingOption
             $scriptingOptions.IncludeDatabaseContext = $false
-            $null = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -ScriptingOptionsObject $scriptingOptions -FilePath $outputFile2 -WarningAction SilentlyContinue
+            $null = Export-DbaUser -SqlInstance $TestConfig.instance1 -Database $dbname -ScriptingOptionsObject $scriptingOptions -FilePath $outputFile2 -WarningAction SilentlyContinue
             $results = Get-Content -Path $outputFile2 -Raw
             $results | Should Not BeLike ('*USE `[' + $dbname + '`]*')
             (Get-ChildItem $outputFile2 -ErrorAction SilentlyContinue) | Remove-Item -ErrorAction SilentlyContinue
@@ -99,19 +99,19 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It 'Includes database context' {
             $scriptingOptions = New-DbaScriptingOption
             $scriptingOptions.IncludeDatabaseContext = $true
-            $null = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -ScriptingOptionsObject $scriptingOptions -FilePath $outputFile2 -WarningAction SilentlyContinue
+            $null = Export-DbaUser -SqlInstance $TestConfig.instance1 -Database $dbname -ScriptingOptionsObject $scriptingOptions -FilePath $outputFile2 -WarningAction SilentlyContinue
             $results = Get-Content -Path $outputFile2 -Raw
             $results | Should BeLike ('*USE `[' + $dbname + '`]*')
             (Get-ChildItem $outputFile2 -ErrorAction SilentlyContinue) | Remove-Item -ErrorAction SilentlyContinue
         }
         It 'Defaults to include database context' {
-            $null = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -FilePath $outputFile2 -WarningAction SilentlyContinue
+            $null = Export-DbaUser -SqlInstance $TestConfig.instance1 -Database $dbname -FilePath $outputFile2 -WarningAction SilentlyContinue
             $results = Get-Content -Path $outputFile2 -Raw
             $results | Should BeLike ('*USE `[' + $dbname + '`]*')
             (Get-ChildItem $outputFile2 -ErrorAction SilentlyContinue) | Remove-Item -ErrorAction SilentlyContinue
         }
         It 'Exports as template' {
-            $results = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -User $user -Template -DestinationVersion SQLServer2016 -WarningAction SilentlyContinue -Passthru
+            $results = Export-DbaUser -SqlInstance $TestConfig.instance1 -Database $dbname -User $user -Template -DestinationVersion SQLServer2016 -WarningAction SilentlyContinue -Passthru
             $results | Should BeLike "*CREATE USER ``[{templateUser}``] FOR LOGIN ``[{templateLogin}``]*"
             $results | Should BeLike "*GRANT SELECT ON OBJECT::``[dbo``].``[$table``] TO ``[{templateUser}``]*"
             $results | Should BeLike "*ALTER ROLE ``[$role``] ADD MEMBER ``[{templateUser}``]*"
@@ -119,9 +119,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Check if one output file per user was created" {
-        $null = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -Path $outputPath
+        $null = Export-DbaUser -SqlInstance $TestConfig.instance1 -Database $dbname -Path $outputPath
         It "Exports files to the path" {
-            $userCount = (Get-DbaDbUser -SqlInstance $script:instance1 -Database $dbname | Where-Object { $_.Name -notin @("dbo", "guest", "sys", "INFORMATION_SCHEMA") } | Measure-Object).Count
+            $userCount = (Get-DbaDbUser -SqlInstance $TestConfig.instance1 -Database $dbname | Where-Object { $_.Name -notin @("dbo", "guest", "sys", "INFORMATION_SCHEMA") } | Measure-Object).Count
             (Get-ChildItem $outputPath).Count | Should Be $userCount
         }
         It "Exported file name contains username '$user'" {
@@ -135,7 +135,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Check if the output scripts were self-contained" {
         # Clean up the output folder
         Remove-Item -Path $outputPath -Recurse -ErrorAction SilentlyContinue
-        $null = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -Path $outputPath
+        $null = Export-DbaUser -SqlInstance $TestConfig.instance1 -Database $dbname -Path $outputPath
 
         It "Contains the CREATE ROLE and ALTER ROLE statements for its own roles" {
             Get-ChildItem $outputPath | Where-Object Name -like ('*' + $user01 + '*') | ForEach-Object {

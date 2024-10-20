@@ -30,7 +30,7 @@ USE Master;
 CREATE USER [$DBUserName2] FOR LOGIN [$DBUserName2]
     WITH DEFAULT_SCHEMA = dbo;
 "@
-        Invoke-DbaQuery -SqlInstance $script:instance2 -Query $CreateTestUser -Database master
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $CreateTestUser -Database master
     }
     AfterAll {
         $DropTestUser = @"
@@ -39,18 +39,18 @@ DROP USER [$DBUserName2];
 DROP LOGIN [$DBUserName];
 DROP LOGIN [$DBUserName2];
 "@
-        Invoke-DbaQuery -SqlInstance $script:instance2 -Query $DropTestUser -Database master
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $DropTestUser -Database master
     }
 
     Context "Users are correctly located" {
-        $results1 = Get-DbaDbUser -SqlInstance $script:instance2 -Database master | Where-Object { $_.name -eq "$DBUserName" } | Select-Object *
-        $results2 = Get-DbaDbUser -SqlInstance $script:instance2
+        $results1 = Get-DbaDbUser -SqlInstance $TestConfig.instance2 -Database master | Where-Object { $_.name -eq "$DBUserName" } | Select-Object *
+        $results2 = Get-DbaDbUser -SqlInstance $TestConfig.instance2
 
-        $resultsByUser = Get-DbaDbUser -SqlInstance $script:instance2 -Database master -User $DBUserName2
-        $resultsByMultipleUser = Get-DbaDbUser -SqlInstance $script:instance2 -User $DBUserName, $DBUserName2
+        $resultsByUser = Get-DbaDbUser -SqlInstance $TestConfig.instance2 -Database master -User $DBUserName2
+        $resultsByMultipleUser = Get-DbaDbUser -SqlInstance $TestConfig.instance2 -User $DBUserName, $DBUserName2
 
-        $resultsByLogin = Get-DbaDbUser -SqlInstance $script:instance2 -Database master -Login $DBUserName2
-        $resultsByMultipleLogin = Get-DbaDbUser -SqlInstance $script:instance2 -Login $DBUserName, $DBUserName2
+        $resultsByLogin = Get-DbaDbUser -SqlInstance $TestConfig.instance2 -Database master -Login $DBUserName2
+        $resultsByMultipleLogin = Get-DbaDbUser -SqlInstance $TestConfig.instance2 -Login $DBUserName, $DBUserName2
 
         It "Should execute and return results" {
             $results2 | Should -Not -Be $null
@@ -78,7 +78,7 @@ DROP LOGIN [$DBUserName2];
         }
 
         It "Should not Throw an Error" {
-            { Get-DbaDbUser -SqlInstance $script:instance2 -ExcludeDatabase master -ExcludeSystemUser } | Should -not -Throw
+            { Get-DbaDbUser -SqlInstance $TestConfig.instance2 -ExcludeDatabase master -ExcludeSystemUser } | Should -not -Throw
         }
 
         It "Should return a specific user" {

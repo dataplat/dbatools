@@ -19,7 +19,7 @@ Describe "Get-DbaComputerSystem Unit Tests" -Tag "UnitTests" {
     }
 }
 Describe "Get-DbaComputerSystem Integration Test" -Tag "IntegrationTests" {
-    $result = Get-DbaComputerSystem -ComputerName $script:instance1
+    $result = Get-DbaComputerSystem -ComputerName $TestConfig.instance1
 
     $props = 'ComputerName', 'Domain', 'IsDaylightSavingsTime', 'Manufacturer', 'Model', 'NumberLogicalProcessors'
     , 'NumberProcessors', 'IsHyperThreading', 'SystemFamily', 'SystemSkuNumber', 'SystemType', 'IsSystemManagedPageFile', 'TotalPhysicalMemory'

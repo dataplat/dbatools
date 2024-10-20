@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $server.Query("INSERT INTO msdb.[dbo].[sysmail_profile]
            ([name]
            ,[description]
@@ -66,7 +66,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Gets Db Mail History" {
-        $results = Get-DbaDbMailHistory -SqlInstance $script:instance2 | Where-Object {$_.Subject -eq 'Test Job'}
+        $results = Get-DbaDbMailHistory -SqlInstance $TestConfig.instance2 | Where-Object {$_.Subject -eq 'Test Job'}
         It "Gets results" {
             $results | Should Not Be $null
         }
@@ -78,7 +78,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Gets Db Mail History using -Status" {
-        $results = Get-DbaDbMailHistory -SqlInstance $script:instance2 -Status Sent
+        $results = Get-DbaDbMailHistory -SqlInstance $TestConfig.instance2 -Status Sent
         It "Gets results" {
             $results | Should Not Be $null
         }
@@ -93,7 +93,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Gets Db Mail History using -Since" {
-        $results = Get-DbaDbMailHistory -SqlInstance $script:instance2 -Since '2018-01-01'
+        $results = Get-DbaDbMailHistory -SqlInstance $TestConfig.instance2 -Since '2018-01-01'
         It "Gets results" {
             $results | Should Not Be $null
         }

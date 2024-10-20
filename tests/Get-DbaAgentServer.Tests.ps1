@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Command gets server agent" {
-        $results = Get-DbaAgentServer -SqlInstance $script:instance2
+        $results = Get-DbaAgentServer -SqlInstance $TestConfig.instance2
         It "Should get 1 agent server" {
             $results.count | Should Be 1
         }

@@ -16,7 +16,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $dbname = "dbatoolsci_test_$(Get-Random)"
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $null = $server.Query("Create Database [$dbname]")
         $null = $server.Query("select * into syscols from sys.all_columns
                                 select * into sysallparams from sys.all_parameters
@@ -24,10 +24,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                                 create nonclustered index NC_syscols on syscols (precision) include (collation_name)", $dbname)
     }
     AfterAll {
-        Get-DbaProcess -SqlInstance $script:instance2 -Database $dbname | Stop-DbaProcess -WarningAction SilentlyContinue
-        Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
+        Get-DbaProcess -SqlInstance $TestConfig.instance2 -Database $dbname | Stop-DbaProcess -WarningAction SilentlyContinue
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname -Confirm:$false
     }
-    $results = Get-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname
+    $results = Get-DbaDbCompression -SqlInstance $TestConfig.instance2 -Database $dbname
 
     Context "Command handles heaps and clustered indexes" {
         It "Gets results" {
@@ -54,7 +54,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Command excludes results for specified database" {
         It "Shouldn't get any results for $dbname" {
-            $(Get-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname -ExcludeDatabase $dbname) | Should not Match $dbname
+            $(Get-DbaDbCompression -SqlInstance $TestConfig.instance2 -Database $dbname -ExcludeDatabase $dbname) | Should not Match $dbname
         }
     }
 }

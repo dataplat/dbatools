@@ -14,8 +14,8 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command actually works" {
-        $resultsFull = Get-DbaNetworkConfiguration -SqlInstance $script:instance2
-        $resultsTcpIpProperties = Get-DbaNetworkConfiguration -SqlInstance $script:instance2 -OutputType TcpIpProperties
+        $resultsFull = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2
+        $resultsTcpIpProperties = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2 -OutputType TcpIpProperties
 
         It "Should Return a Result" {
             $resultsFull | Should -Not -Be $null

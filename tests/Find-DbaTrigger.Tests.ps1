@@ -27,17 +27,17 @@ AS
     PRINT 'dbatoolsci Database Created.'
     SELECT EVENTDATA().value('(/EVENT_INSTANCE/TSQLCommand/CommandText)[1]','nvarchar(max)')
 "@
-            $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query $ServerTrigger
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $ServerTrigger
         }
         AfterAll {
             $DropTrigger = @"
 DROP TRIGGER dbatoolsci_ddl_trig_database
 ON ALL SERVER;
 "@
-            $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Database 'Master' -Query $DropTrigger
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database 'Master' -Query $DropTrigger
         }
 
-        $results = Find-DbaTrigger -SqlInstance $script:instance2 -Pattern dbatoolsci* -IncludeSystemDatabases -IncludeSystemObjects -TriggerLevel Server
+        $results = Find-DbaTrigger -SqlInstance $TestConfig.instance2 -Pattern dbatoolsci* -IncludeSystemDatabases -IncludeSystemObjects -TriggerLevel Server
         It "Should find a specific Trigger at the Server Level" {
             $results.TriggerLevel | Should Be "Server"
             $results.DatabaseId | Should -BeNullOrEmpty
@@ -45,7 +45,7 @@ ON ALL SERVER;
         It "Should find a specific Trigger named dbatoolsci_ddl_trig_database" {
             $results.Name | Should Be "dbatoolsci_ddl_trig_database"
         }
-        $results = Find-DbaTrigger -SqlInstance $script:instance2 -Pattern dbatoolsci* -TriggerLevel All
+        $results = Find-DbaTrigger -SqlInstance $TestConfig.instance2 -Pattern dbatoolsci* -TriggerLevel All
         It "Should find a specific Trigger when TriggerLevel is All" {
             $results.Name | Should Be "dbatoolsci_ddl_trig_database"
         }
@@ -55,7 +55,7 @@ ON ALL SERVER;
             ## All Triggers adapted from examples on:
             ## https://docs.microsoft.com/en-us/sql/t-sql/statements/create-trigger-transact-sql?view=sql-server-2017
 
-            $dbatoolsci_triggerdb = New-DbaDatabase -SqlInstance $script:instance2 -Name 'dbatoolsci_triggerdb'
+            $dbatoolsci_triggerdb = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name 'dbatoolsci_triggerdb'
             $DatabaseTrigger = @"
 CREATE TRIGGER dbatoolsci_safety
 ON DATABASE
@@ -66,7 +66,7 @@ RETURN;
    RAISERROR ('You must disable Trigger "safety" to drop synonyms!',10, 1)
    ROLLBACK
 "@
-            $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Database 'dbatoolsci_triggerdb' -Query $DatabaseTrigger
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database 'dbatoolsci_triggerdb' -Query $DatabaseTrigger
             $TableTrigger = @"
 CREATE TABLE dbo.Customer (id int, PRIMARY KEY (id));
 GO
@@ -76,13 +76,13 @@ AFTER INSERT, UPDATE
 AS RAISERROR ('Notify Customer Relations', 16, 10);
 GO
 "@
-            $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Database 'dbatoolsci_triggerdb' -Query $TableTrigger
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database 'dbatoolsci_triggerdb' -Query $TableTrigger
         }
         AfterAll {
-            $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database 'dbatoolsci_triggerdb' -Confirm:$false
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database 'dbatoolsci_triggerdb' -Confirm:$false
         }
 
-        $results = Find-DbaTrigger -SqlInstance $script:instance2 -Pattern dbatoolsci* -Database 'dbatoolsci_triggerdb' -TriggerLevel Database
+        $results = Find-DbaTrigger -SqlInstance $TestConfig.instance2 -Pattern dbatoolsci* -Database 'dbatoolsci_triggerdb' -TriggerLevel Database
         It "Should find a specific Trigger at the Database Level" {
             $results.TriggerLevel | Should Be "Database"
             $results.DatabaseId | Should -Be $dbatoolsci_triggerdb.ID
@@ -91,7 +91,7 @@ GO
             $results.Name | Should Be "dbatoolsci_safety"
         }
 
-        $results = Find-DbaTrigger -SqlInstance $script:instance2 -Pattern dbatoolsci* -Database 'dbatoolsci_triggerdb' -ExcludeDatabase Master -TriggerLevel Object
+        $results = Find-DbaTrigger -SqlInstance $TestConfig.instance2 -Pattern dbatoolsci* -Database 'dbatoolsci_triggerdb' -ExcludeDatabase Master -TriggerLevel Object
         It "Should find a specific Trigger at the Object Level" {
             $results.TriggerLevel | Should Be "Object"
             $results.DatabaseId | Should -Be $dbatoolsci_triggerdb.ID
@@ -102,7 +102,7 @@ GO
         It "Should find a specific Trigger on the Table [dbo].[Customer]" {
             $results.Object | Should Be "[dbo].[Customer]"
         }
-        $results = Find-DbaTrigger -SqlInstance $script:instance2 -Pattern dbatoolsci* -TriggerLevel All
+        $results = Find-DbaTrigger -SqlInstance $TestConfig.instance2 -Pattern dbatoolsci* -TriggerLevel All
         It "Should find 2 Triggers when TriggerLevel is All" {
             $results.name | Should Be @('dbatoolsci_safety', 'dbatoolsci_reminder1')
             $results.DatabaseId | Should -Be $dbatoolsci_triggerdb.ID, $dbatoolsci_triggerdb.ID

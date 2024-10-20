@@ -24,7 +24,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $user1 = "dbatoolsci_exportdbadbrole_user1$random"
             $dbRole = "dbatoolsci_SpExecute$random"
 
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
             $null = $server.Query("CREATE DATABASE [$dbname1]")
             $null = $server.Query("CREATE LOGIN [$login1] WITH PASSWORD = 'GoodPass1234!'")
             $server.Databases[$dbname1].ExecuteNonQuery("CREATE USER [$user1] FOR LOGIN [$login1]")
@@ -37,15 +37,15 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
     AfterAll {
         try {
-            Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname1 -Confirm:$false
-            Remove-DbaLogin -SqlInstance $script:instance2 -Login $login1 -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1 -Confirm:$false
+            Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login1 -Confirm:$false
         } catch { }
         (Get-ChildItem $outputFile1 -ErrorAction SilentlyContinue) | Remove-Item -ErrorAction SilentlyContinue
     }
 
     Context "Check if output file was created" {
 
-        $null = Export-DbaDbRole -SqlInstance $script:instance2 -Database msdb -FilePath $outputFile1
+        $null = Export-DbaDbRole -SqlInstance $TestConfig.instance2 -Database msdb -FilePath $outputFile1
         It "Exports results to one sql file" {
             (Get-ChildItem $outputFile1).Count | Should Be 1
         }
@@ -56,7 +56,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Check piping support" {
 
-        $role = Get-DbaDbRole -SqlInstance $script:instance2 -Database $dbname1 -Role $dbRole
+        $role = Get-DbaDbRole -SqlInstance $TestConfig.instance2 -Database $dbname1 -Role $dbRole
         $null = $role | Export-DbaDbRole -FilePath $outputFile1
         It "Exports results to one sql file" {
             (Get-ChildItem $outputFile1).Count | Should Be 1
@@ -65,24 +65,24 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             (Get-ChildItem $outputFile1).Length | Should BeGreaterThan 0
         }
 
-        $script:results = $role | Export-DbaDbRole -Passthru
+        $TestConfig.results = $role | Export-DbaDbRole -Passthru
         It "should include the defined BatchSeparator" {
-            $script:results -match "GO"
+            $TestConfig.results -match "GO"
         }
         It "should include the role" {
-            $script:results -match "CREATE ROLE [$dbRole]"
+            $TestConfig.results -match "CREATE ROLE [$dbRole]"
         }
         It "should include GRANT EXECUTE ON SCHEMA" {
-            $script:results -match "GRANT EXECUTE ON SCHEMA::[dbo] TO [$dbRole];"
+            $TestConfig.results -match "GRANT EXECUTE ON SCHEMA::[dbo] TO [$dbRole];"
         }
         It "should include GRANT SELECT ON SCHEMA" {
-            $script:results -match "GRANT SELECT ON SCHEMA::[dbo] TO [$dbRole];"
+            $TestConfig.results -match "GRANT SELECT ON SCHEMA::[dbo] TO [$dbRole];"
         }
         It "should include GRANT VIEW DEFINITION ON SCHEMA" {
-            $script:results -match "GRANT VIEW DEFINITION ON SCHEMA::[dbo] TO [$dbRole];"
+            $TestConfig.results -match "GRANT VIEW DEFINITION ON SCHEMA::[dbo] TO [$dbRole];"
         }
         It "should include ALTER ROLE ADD MEMBER" {
-            $script:results -match "ALTER ROLE [$dbRole] ADD MEMBER [$user1];"
+            $TestConfig.results -match "ALTER ROLE [$dbRole] ADD MEMBER [$user1];"
         }
     }
 }

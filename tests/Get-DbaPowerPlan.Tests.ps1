@@ -16,7 +16,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "Command actually works" {
         It "Should return result for the server" {
-            $results = Get-DbaPowerPlan -ComputerName $script:instance2
+            $results = Get-DbaPowerPlan -ComputerName $TestConfig.instance2
             $results | Should Not Be Null
         }
     }

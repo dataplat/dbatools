@@ -21,24 +21,24 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                     [LastName] [varchar](50) NULL,
                     [City] [varchar](100) NULL
                 ) ON [PRIMARY];"
-        New-DbaDatabase -SqlInstance $script:instance2 -Name $db
-        Invoke-DbaQuery -SqlInstance $script:instance2 -Database $db -Query $sql
+        New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $db
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database $db -Query $sql
     }
 
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $script:instance2 -Database $db -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $db -Confirm:$false
         $file | Remove-Item -Confirm:$false -ErrorAction Ignore
     }
 
     Context "Command works" {
         It "Starts with the right data" {
-            Invoke-DbaQuery -SqlInstance $script:instance2 -Database $db -Query "select * from people" | Should -Be $null
+            Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database $db -Query "select * from people" | Should -Be $null
         }
 
         It "Returns the proper output" {
-            $file = New-DbaDbDataGeneratorConfig -SqlInstance $script:instance2 -Database $db -Path C:\temp -Rows 10
+            $file = New-DbaDbDataGeneratorConfig -SqlInstance $TestConfig.instance2 -Database $db -Path C:\temp -Rows 10
 
-            $results = Invoke-DbaDbDataGenerator -SqlInstance $script:instance2 -Database $db -Confirm:$false -FilePath $file.FullName
+            $results = Invoke-DbaDbDataGenerator -SqlInstance $TestConfig.instance2 -Database $db -Confirm:$false -FilePath $file.FullName
 
             foreach ($result in $results) {
                 $result.Rows | Should -Be 10
@@ -47,7 +47,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
         }
         It "Generates the data" {
-            Invoke-DbaQuery -SqlInstance $script:instance2 -Database $db -Query "select * from people" | Should -Not -Be $null
+            Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database $db -Query "select * from people" | Should -Not -Be $null
         }
     }
 }

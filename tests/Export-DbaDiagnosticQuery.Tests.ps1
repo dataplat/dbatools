@@ -20,7 +20,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
     Context "Verifying output" {
         It "exports results to one file and creates directory if required" {
-            $null = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -QueryName 'Memory Clerk Usage' | Export-DbaDiagnosticQuery -Path "C:\temp\dbatoolsci"
+            $null = Invoke-DbaDiagnosticQuery -SqlInstance $TestConfig.instance2 -QueryName 'Memory Clerk Usage' | Export-DbaDiagnosticQuery -Path "C:\temp\dbatoolsci"
             (Get-ChildItem "C:\temp\dbatoolsci").Count | Should Be 1
         }
     }

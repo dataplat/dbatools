@@ -17,13 +17,13 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     Context "doesn't clear plan cache" {
         It "returns correct datatypes" {
             # Make plan cache way higher than likely for a test rig
-            $results = Clear-DbaPlanCache -SqlInstance $script:instance1 -Threshold 10240
+            $results = Clear-DbaPlanCache -SqlInstance $TestConfig.instance1 -Threshold 10240
             $results.Size -is [dbasize] | Should -Be $true
             $results.Status -match 'below' | Should -Be $true
         }
         It "supports piping" {
             # Make plan cache way higher than likely for a test rig
-            $results = Get-DbaPlanCache -SqlInstance $script:instance1 | Clear-DbaPlanCache -Threshold 10240
+            $results = Get-DbaPlanCache -SqlInstance $TestConfig.instance1 | Clear-DbaPlanCache -Threshold 10240
             $results.Size -is [dbasize] | Should -Be $true
             $results.Status -match 'below' | Should -Be $true
         }

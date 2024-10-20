@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 if (-not $env:appveyor) {
     Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-        $results = Get-DbaForceNetworkEncryption $script:instance1 -EnableException
+        $results = Get-DbaForceNetworkEncryption $TestConfig.instance1 -EnableException
 
         It "returns true or false" {
             $results.ForceEncryption -ne $null

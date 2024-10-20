@@ -14,7 +14,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 Describe "$commandname Integration Test" -Tag "IntegrationTests" {
     $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'Cmd', 'Output'
-    $result = Invoke-DbaDbccDropCleanBuffer -SqlInstance $script:instance1 -Confirm:$false
+    $result = Invoke-DbaDbccDropCleanBuffer -SqlInstance $TestConfig.instance1 -Confirm:$false
 
     Context "Validate standard output" {
         foreach ($prop in $props) {
@@ -31,7 +31,7 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
         }
 
         It "returns the right results for -NoInformationalMessages" {
-            $result = Invoke-DbaDbccDropCleanBuffer -SqlInstance $script:instance1 -NoInformationalMessages -Confirm:$false
+            $result = Invoke-DbaDbccDropCleanBuffer -SqlInstance $TestConfig.instance1 -NoInformationalMessages -Confirm:$false
             $result.Cmd -match 'DBCC DROPCLEANBUFFERS WITH NO_INFOMSGS' | Should Be $true
             $result.Output -eq $null | Should Be $true
         }

@@ -5315,32 +5315,32 @@ GO
     }
     AfterAll {
         Remove-Item -Path $testfilepath, $testzippath, "$testtemp\who_MOCKED_is_active_v11_32.sql", "$DbatoolsData\spwhoisactive.zip" -Force -ErrorAction SilentlyContinue
-        Invoke-DbaQuery -SqlInstance $script:instance1 -Database Master -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database Master -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
     }
     Context "Should Install SPWhoisActive with Mock" {
         AfterAll {
-            Invoke-DbaQuery -SqlInstance $script:instance1 -Database Master -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
+            Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database Master -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
         }
 
-        $results = Install-DbaWhoIsActive -SqlInstance $script:instance1 -Database Master
+        $results = Install-DbaWhoIsActive -SqlInstance $TestConfig.instance1 -Database Master
         It "Should simulate install from internet" {
             $results | Should Not Be Null
         }
     }
     Context "Should Install SPWhoisActive from File" {
         AfterAll {
-            Invoke-DbaQuery -SqlInstance $script:instance1 -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
+            Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
         }
-        $results = Install-DbaWhoIsActive -SqlInstance $script:instance1 -LocalFile $testfilepath -Database Master
+        $results = Install-DbaWhoIsActive -SqlInstance $TestConfig.instance1 -LocalFile $testfilepath -Database Master
         It "Should install against .sql file" {
             $results | Should Not Be Null
         }
     }
     Context "Should Install SPWhoisActive from Zip" {
         AfterAll {
-            Invoke-DbaQuery -SqlInstance $script:instance1 -Database tempdb -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
+            Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database tempdb -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
         }
-        $results = Install-DbaWhoIsActive -SqlInstance $script:instance1 -LocalFile $testzippath -Database tempdb
+        $results = Install-DbaWhoIsActive -SqlInstance $TestConfig.instance1 -LocalFile $testzippath -Database tempdb
         It "Should install against ZIP" {
             $results | Should Not Be Null
         }

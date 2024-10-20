@@ -20,7 +20,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $clonedb = "dbatoolsci_clonetest_CLONE"
             $clonedb2 = "dbatoolsci_clonetest_CLONE2"
 
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
             $server.Query("CREATE DATABASE $dbname")
         }
 
@@ -29,24 +29,24 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "warns if SQL instance version is not supported" {
-            $results = Invoke-DbaDbClone -SqlInstance $script:instance1 -Database $dbname -CloneDatabase $clonedb -WarningAction SilentlyContinue -WarningVariable versionwarn
+            $results = Invoke-DbaDbClone -SqlInstance $TestConfig.instance1 -Database $dbname -CloneDatabase $clonedb -WarningAction SilentlyContinue -WarningVariable versionwarn
             $versionwarn = $versionwarn | Out-String
             $versionwarn -match "required"
         }
 
         It "warns if destination database already exists" {
-            $results = Invoke-DbaDbClone -SqlInstance $script:instance2 -Database $dbname -CloneDatabase tempdb -WarningAction SilentlyContinue -WarningVariable dbwarn
+            $results = Invoke-DbaDbClone -SqlInstance $TestConfig.instance2 -Database $dbname -CloneDatabase tempdb -WarningAction SilentlyContinue -WarningVariable dbwarn
             $dbwarn = $dbwarn | Out-String
             $dbwarn -match "exists"
         }
 
         It "warns if a system db is specified to clone" {
-            $results = Invoke-DbaDbClone -SqlInstance $script:instance2 -Database master -CloneDatabase $clonedb -WarningAction SilentlyContinue -WarningVariable systemwarn
+            $results = Invoke-DbaDbClone -SqlInstance $TestConfig.instance2 -Database master -CloneDatabase $clonedb -WarningAction SilentlyContinue -WarningVariable systemwarn
             $systemwarn = $systemwarn | Out-String
             $systemwarn -match "user database"
         }
 
-        $results = Invoke-DbaDbClone -SqlInstance $script:instance2 -Database $dbname -CloneDatabase $clonedb -WarningAction SilentlyContinue
+        $results = Invoke-DbaDbClone -SqlInstance $TestConfig.instance2 -Database $dbname -CloneDatabase $clonedb -WarningAction SilentlyContinue
 
         It "returns 1 result" {
             ($results).Count -eq 1
@@ -59,3 +59,4 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
     }
 }
+

@@ -18,15 +18,15 @@ if (-not $env:appveyor) {
         Context "Setup" {
             BeforeAll {
                 $devicename = "dbatoolsci-backupdevice"
-                $backupdir = (Get-DbaDefaultPath -SqlInstance $script:instance1).Backup
+                $backupdir = (Get-DbaDefaultPath -SqlInstance $TestConfig.instance1).Backup
                 $backupfilename = "$backupdir\$devicename.bak"
-                $server = Connect-DbaInstance -SqlInstance $script:instance1
+                $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
                 $server.Query("EXEC master.dbo.sp_addumpdevice  @devtype = N'disk', @logicalname = N'$devicename',@physicalname = N'$backupfilename'")
                 $server.Query("BACKUP DATABASE master TO DISK = '$backupfilename'")
             }
             AfterAll {
                 $server.Query("EXEC master.dbo.sp_dropdevice @logicalname = N'$devicename'")
-                $server1 = Connect-DbaInstance -SqlInstance $script:instance2
+                $server1 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
                 try {
                     $server1.Query("EXEC master.dbo.sp_dropdevice @logicalname = N'$devicename'")
                 } catch {
@@ -35,7 +35,7 @@ if (-not $env:appveyor) {
                 Get-ChildItem -Path $backupfilename | Remove-Item
             }
 
-            $results = Copy-DbaBackupDevice -Source $script:instance1 -Destination $script:instance2 -WarningVariable warn -WarningAction SilentlyContinue 3> $null
+            $results = Copy-DbaBackupDevice -Source $TestConfig.instance1 -Destination $TestConfig.instance2 -WarningVariable warn -WarningAction SilentlyContinue 3> $null
             if ($warn) {
                 It "warns if it has a problem moving (issue for local to local)" {
                     $warn | Should -Match "backup device to destination"
@@ -46,7 +46,7 @@ if (-not $env:appveyor) {
                 }
             }
 
-            $results = Copy-DbaBackupDevice -Source $script:instance1 -Destination $script:instance2
+            $results = Copy-DbaBackupDevice -Source $TestConfig.instance1 -Destination $TestConfig.instance2
             It "Should say skipped" {
                 $results.Status -ne "Successful" | Should be $true
             }

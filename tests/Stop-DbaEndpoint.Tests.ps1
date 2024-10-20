@@ -15,14 +15,14 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        Get-DbaEndpoint -SqlInstance $script:instance2 -Endpoint 'TSQL Default TCP' | Start-DbaEndpoint
+        Get-DbaEndpoint -SqlInstance $TestConfig.instance2 -Endpoint 'TSQL Default TCP' | Start-DbaEndpoint
     }
     AfterAll {
-        Get-DbaEndpoint -SqlInstance $script:instance2 -Endpoint 'TSQL Default TCP' | Start-DbaEndpoint
+        Get-DbaEndpoint -SqlInstance $TestConfig.instance2 -Endpoint 'TSQL Default TCP' | Start-DbaEndpoint
     }
 
     It "stops the endpoint" {
-        $endpoint = Get-DbaEndpoint -SqlInstance $script:instance2 -Endpoint 'TSQL Default TCP'
+        $endpoint = Get-DbaEndpoint -SqlInstance $TestConfig.instance2 -Endpoint 'TSQL Default TCP'
         $results = $endpoint | Stop-DbaEndpoint -Confirm:$false
         $results.EndpointState | Should -Be 'Stopped'
     }

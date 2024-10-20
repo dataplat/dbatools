@@ -18,7 +18,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $PSDefaultParameterValues["*:Confirm"] = $false
         $alldbs = @()
-        1..5 | ForEach-Object { $alldbs += New-DbaDatabase -SqlInstance $script:instance2 }
+        1..5 | ForEach-Object { $alldbs += New-DbaDatabase -SqlInstance $TestConfig.instance2 }
     }
 
     AfterAll {
@@ -31,7 +31,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "should mass enable encryption" {
             $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
             $splat = @{
-                SqlInstance             = $script:instance2
+                SqlInstance             = $TestConfig.instance2
                 Database                = $alldbs.Name
                 MasterKeySecurePassword = $passwd
                 BackupSecurePassword    = $passwd

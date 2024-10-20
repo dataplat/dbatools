@@ -47,7 +47,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             EXEC msdb.dbo.sp_syspolicy_add_policy @name=N'dbatoolsci_TestPolicy', @condition_name=N'dbatoolsci_Condition', @policy_category=N'', @description=N'', @help_text=N'', @help_link=N'', @schedule_uid=N'00000000-0000-0000-0000-000000000000', @execution_mode=2, @is_enabled=True, @policy_id=@policy_id OUTPUT, @root_condition_name=N'', @object_set=N'dbatoolsci_TestPolicy_ObjectSet'
             SELECT @policy_id"
 
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
             $conditionid = $server.ConnectionContext.ExecuteScalar($sqlconditionid)
             $objectsetid = $server.ConnectionContext.ExecuteScalar($sqlobjectsetid)
             $policyid = $server.ConnectionContext.ExecuteScalar($sqlpolicyid)
@@ -59,13 +59,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $server.Query("EXEC msdb.dbo.sp_syspolicy_delete_condition @condition_id=$conditionid")
         }
 
-        $results = Get-DbaPbmPolicy -SqlInstance $script:instance2
+        $results = Get-DbaPbmPolicy -SqlInstance $TestConfig.instance2
 
         It "returns the test policy" {
             $results.Name -contains 'dbatoolsci_TestPolicy' | Should Be $true
         }
 
-        $results = Get-DbaPbmPolicy -SqlInstance $script:instance2 -Policy dbatoolsci_TestPolicy
+        $results = Get-DbaPbmPolicy -SqlInstance $TestConfig.instance2 -Policy dbatoolsci_TestPolicy
 
         It "returns only the test policy named dbatoolsci_TestPolicy" {
             $results.Name -eq 'dbatoolsci_TestPolicy' | Should Be $true

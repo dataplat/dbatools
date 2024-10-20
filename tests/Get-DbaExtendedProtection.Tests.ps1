@@ -14,7 +14,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    $results = Get-DbaExtendedProtection $script:instance1 -EnableException
+    $results = Get-DbaExtendedProtection $TestConfig.instance1 -EnableException
 
     It "returns a value" {
         $results.ExtendedProtection -ne $null

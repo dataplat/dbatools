@@ -13,7 +13,7 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $null = Get-DbaDatabase -SqlInstance $script:instance1
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1
     }
     Context "gets connected objects" {
         It "returns some results" {
