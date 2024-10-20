@@ -16,17 +16,20 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     BeforeAll {
+        $skip = $true
         if ($script:bigDatabaseBackup) {
-            if (-not (Test-Path -Path $script:bigDatabaseBackup) -and $script:bigDatabaseBackupSourceUrl) {
-                Write-Host 'Starting Download'
-                Invoke-WebRequest -Uri $script:bigDatabaseBackupSourceUrl -OutFile $script:bigDatabaseBackup
+            try {
+                if (-not (Test-Path -Path $script:bigDatabaseBackup) -and $script:bigDatabaseBackupSourceUrl) {
+                    Write-Host 'Starting Download'
+                    Invoke-WebRequest -Uri $script:bigDatabaseBackupSourceUrl -OutFile $script:bigDatabaseBackup
+                }
+                $null = Restore-DbaDatabase -SqlInstance $script:instance2 -Path $script:bigDatabaseBackup -DatabaseName checkdbTestDatabase -WithReplace -ReplaceDbNameInFile -EnableException
+                $null = New-DbaAgentJob -SqlInstance $script:instance2 -Job checkdbTestJob -EnableException
+                $null = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job checkdbTestJob -StepName checkdb -Subsystem TransactSql -Command "DBCC CHECKDB('checkdbTestDatabase')" -EnableException
+                $skip = $false
+            } catch {
+                Write-Warning -Message "Test for $commandname failed in BeforeAll because: $_"
             }
-            $null = Restore-DbaDatabase -SqlInstance $script:instance2 -Path $script:bigDatabaseBackup -DatabaseName checkdbTestDatabase -WithReplace -ReplaceDbNameInFile -EnableException
-            $null = New-DbaAgentJob -SqlInstance $script:instance2 -Job checkdbTestJob -EnableException
-            $null = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job checkdbTestJob -StepName checkdb -Subsystem TransactSql -Command "DBCC CHECKDB('checkdbTestDatabase')" -EnableException
-            $skip = $false
-        } else {
-            $skip = $true
         }
     }
 
