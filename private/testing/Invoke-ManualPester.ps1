@@ -144,9 +144,10 @@ function Invoke-ManualPester {
     }
 
     #removes previously imported dbatools, if any
-    Remove-Module dbatools -ErrorAction Ignore
+    # No need the force will do it
+    # Remove-Module dbatools -ErrorAction Ignore
     #imports the module making sure DLL is loaded ok
-    Import-Module "$ModuleBase\dbatools.psd1" -DisableNameChecking
+    Import-Module "$ModuleBase\dbatools.psd1" -DisableNameChecking -Force
     #imports the psm1 to be able to use internal functions in tests
     Import-Module "$ModuleBase\dbatools.psm1" -DisableNameChecking -Force
 
