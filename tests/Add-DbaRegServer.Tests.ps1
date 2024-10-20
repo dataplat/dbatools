@@ -53,7 +53,7 @@ Describe "Add-DbaRegServer" {
         }
 
         It "adds a registered server with extended properties" {
-            $results2 = Add-DbaRegServer -SqlInstance $global:instance1 -ServerName $RegsrvName -Name $srvName -Group $groupobject -Description $regSrvDesc
+            $results2 = Add-DbaRegServer -SqlInstance $global:instance1 -ServerName $regSrvName -Name $srvName -Group $groupobject -Description $regSrvDesc
             $results2.ServerName | Should -Be $regSrvName
             $results2.Description | Should -Be $regSrvDesc
             $results2.Name | Should -Be $srvName
