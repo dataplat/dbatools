@@ -17,8 +17,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $db = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database tempdb
         $null = $db.Query("CREATE TABLE [dbo].[BunchOFilez]([FileName123] [nvarchar](50) NULL, [TheFile123] [image] NULL)")
-        $null = Import-DbaBinaryFile -SqlInstance $TestConfig.instance2 -Database tempdb -Table BunchOFilez -FilePath $($TestConfig.appveyorlabrepo)\azure\adalsql.msi
-        $null = Get-ChildItem $($TestConfig.appveyorlabrepo)\certificates | Import-DbaBinaryFile -SqlInstance $TestConfig.instance2 -Database tempdb -Table BunchOFilez
+        $null = Import-DbaBinaryFile -SqlInstance $TestConfig.instance2 -Database tempdb -Table BunchOFilez -FilePath "$($TestConfig.appveyorlabrepo)\azure\adalsql.msi"
+        $null = Get-ChildItem "$($TestConfig.appveyorlabrepo)\certificates" | Import-DbaBinaryFile -SqlInstance $TestConfig.instance2 -Database tempdb -Table BunchOFilez
     }
     AfterAll {
         try {

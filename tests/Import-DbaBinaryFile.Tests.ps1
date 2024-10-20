@@ -27,18 +27,18 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     It "imports files into table data" {
-        $results = Import-DbaBinaryFile -SqlInstance $TestConfig.instance2 -Database tempdb -Table BunchOFiles -FilePath $($TestConfig.appveyorlabrepo)\azure\adalsql.msi -WarningAction Continue -ErrorAction Stop -EnableException
+        $results = Import-DbaBinaryFile -SqlInstance $TestConfig.instance2 -Database tempdb -Table BunchOFiles -FilePath "$($TestConfig.appveyorlabrepo)\azure\adalsql.msi" -WarningAction Continue -ErrorAction Stop -EnableException
         $results.Database | Should -Be "tempdb"
         $results.FilePath | Should -match "adalsql.msi"
     }
     It "imports files into table data from piped" {
-        $results = Get-ChildItem -Path $($TestConfig.appveyorlabrepo)\certificates | Import-DbaBinaryFile -SqlInstance $TestConfig.instance2 -Database tempdb -Table BunchOFiles -WarningAction Continue -ErrorAction Stop -EnableException
+        $results = Get-ChildItem -Path "$($TestConfig.appveyorlabrepo)\certificates" | Import-DbaBinaryFile -SqlInstance $TestConfig.instance2 -Database tempdb -Table BunchOFiles -WarningAction Continue -ErrorAction Stop -EnableException
         $results.Database | Should -Be @("tempdb", "tempdb")
         Split-Path -Path $results.FilePath -Leaf | Should -Be @("localhost.crt", "localhost.pfx")
     }
 
     It "piping from Get-DbaBinaryFileTable works" {
-        $results = Get-DbaBinaryFileTable -SqlInstance $TestConfig.instance2 -Database tempdb -Table BunchOFiles | Import-DbaBinaryFile -WarningAction Continue -ErrorAction Stop -EnableException -Path  $($TestConfig.appveyorlabrepo)\certificates
+        $results = Get-DbaBinaryFileTable -SqlInstance $TestConfig.instance2 -Database tempdb -Table BunchOFiles | Import-DbaBinaryFile -WarningAction Continue -ErrorAction Stop -EnableException -Path "$($TestConfig.appveyorlabrepo)\certificates"
         $results.Database | Should -Be @("tempdb", "tempdb")
         Split-Path -Path $results.FilePath -Leaf | Should -Be @("localhost.crt", "localhost.pfx")
     }
