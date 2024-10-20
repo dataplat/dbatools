@@ -16,57 +16,66 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $null = Get-DbaDatabase -SqlInstance $server -Database checkdbTestDatabase | Remove-DbaDatabase -Confirm:$false
-        $null = Restore-DbaDatabase -SqlInstance $server -Path $script:appveyorlabrepo\sql2008-backups\db1\SQL2008_db1_FULL_20170518_041738.bak -DatabaseName checkdbTestDatabase
-        $null = New-DbaAgentJob -SqlInstance $server -Job checkdbTestJob
-        $null = New-DbaAgentJobStep -SqlInstance $server -Job checkdbTestJob -StepName checkdb -Subsystem TransactSql -Command "DBCC CHECKDB('checkdbTestDatabase')"
+        $skip = $true
+        if ($script:bigDatabaseBackup) {
+            try {
+                if (-not (Test-Path -Path $script:bigDatabaseBackup) -and $script:bigDatabaseBackupSourceUrl) {
+                    Invoke-WebRequest -Uri $script:bigDatabaseBackupSourceUrl -OutFile $script:bigDatabaseBackup -ErrorAction Stop
+                }
+                $null = Restore-DbaDatabase -SqlInstance $script:instance2 -Path $script:bigDatabaseBackup -DatabaseName checkdbTestDatabase -WithReplace -ReplaceDbNameInFile -EnableException
+                $null = New-DbaAgentJob -SqlInstance $script:instance2 -Job checkdbTestJob -EnableException
+                $null = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job checkdbTestJob -StepName checkdb -Subsystem TransactSql -Command "DBCC CHECKDB('checkdbTestDatabase')" -EnableException
+                $skip = $false
+            } catch {
+                Write-Host -Object "Test for $CommandName failed in BeforeAll because: $_" -ForegroundColor Cyan
+            }
+        }
     }
 
     AfterAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $null = Remove-DbaAgentJob -SqlInstance $server -Job checkdbTestJob -Confirm:$false
-        $null = Get-DbaDatabase -SqlInstance $erver -Database checkdbTestDatabase | Remove-DbaDatabase -Confirm:$false
+        $null = Get-DbaAgentJob -SqlInstance $script:instance2 -Job checkdbTestJob | Remove-DbaAgentJob -Confirm:$false
+        $null = Get-DbaDatabase -SqlInstance $script:instance2 -Database checkdbTestDatabase | Remove-DbaDatabase -Confirm:$false
     }
 
-    Context "Gets Query Estimated Completion" {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $null = Start-DbaAgentJob -SqlInstance $server -Job checkdbTestJob
-        $results = Get-DbaEstimatedCompletionTime -SqlInstance $server
-        $null = Remove-DbaAgentJob -SqlInstance $server -Job checkdb -Confirm:$false
-        Start-Sleep -Seconds 5
-        It "Gets results" {
-            $results | Should Not Be $null
+    Context "Gets correct results" {
+        It -Skip:$skip "Gets Query Estimated Completion" {
+            $job = Start-DbaAgentJob -SqlInstance $script:instance2 -Job checkdbTestJob
+            Start-Sleep -Seconds 1
+            $results = Get-DbaEstimatedCompletionTime -SqlInstance $script:instance2
+            while ($job.CurrentRunStatus -eq 'Executing') {
+                Start-Sleep -Seconds 1
+                $job.Refresh()
+            }
+
+            $results | Should -Not -BeNullOrEmpty
+            $results.Command | Should -Match 'DBCC'
+            $results.Database | Should -Be checkdbTestDatabase
         }
-        It "Should be SELECT" {
-            $results.Command | Should Match 'DBCC'
+
+        It -Skip:$skip "Gets Query Estimated Completion when using -Database" {
+            $job = Start-DbaAgentJob -SqlInstance $script:instance2 -Job checkdbTestJob
+            Start-Sleep -Seconds 1
+            $results = Get-DbaEstimatedCompletionTime -SqlInstance $script:instance2 -Database checkdbTestDatabase
+            while ($job.CurrentRunStatus -eq 'Executing') {
+                Start-Sleep -Seconds 1
+                $job.Refresh()
+            }
+
+            $results | Should -Not -BeNullOrEmpty
+            $results.Command | Should -Match 'DBCC'
+            $results.Database | Should -Be checkdbTestDatabase
         }
-        It "Should be login dbo" {
-            $results.login | Should Be 'dbo'
-        }
-    }
-    Context "Gets Query Estimated Completion when using -Database" {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $null = Start-DbaAgentJob -SqlInstance $server -Job checkdbTestJob
-        $results = Get-DbaEstimatedCompletionTime -SqlInstance $server -Database checkdbTestDatabase
-        Start-Sleep -Seconds 5
-        It "Gets results" {
-            $results | Should Not Be $null
-        }
-        It "Should be SELECT" {
-            $results.Command | Should Match 'DBCC'
-        }
-        It "Should be login dbo" {
-            $results.login | Should Be 'dbo'
-        }
-    }
-    Context "Gets no Query Estimated Completion when using -ExcludeDatabase" {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $null = Start-DbaAgentJob -SqlInstance $server -Job checkdbTestJob
-        $results = Get-DbaEstimatedCompletionTime -SqlInstance $server -ExcludeDatabase checkdbTestDatabase
-        Start-Sleep -Seconds 5
-        It "Gets no results" {
-            $results | Should Be $null
+
+        It -Skip:$skip "Gets no Query Estimated Completion when using -ExcludeDatabase" {
+            $job = Start-DbaAgentJob -SqlInstance $script:instance2 -Job checkdbTestJob
+            Start-Sleep -Seconds 1
+            $results = Get-DbaEstimatedCompletionTime -SqlInstance $script:instance2 -ExcludeDatabase checkdbTestDatabase
+            while ($job.CurrentRunStatus -eq 'Executing') {
+                Start-Sleep -Seconds 1
+                $job.Refresh()
+            }
+
+            $results | Should -BeNullOrEmpty
         }
     }
 }
