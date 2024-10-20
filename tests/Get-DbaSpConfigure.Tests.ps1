@@ -15,17 +15,15 @@ Describe "Get-DbaSpConfigure" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaSpConfigure
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Name",
-                "ExcludeName",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Name",
+            "ExcludeName",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

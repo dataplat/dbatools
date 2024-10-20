@@ -11,18 +11,16 @@ Describe "Get-DbaDbFileMapping" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaDbFileMapping
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "InputObject",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

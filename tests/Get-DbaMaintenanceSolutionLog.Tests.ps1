@@ -11,16 +11,16 @@ Describe "Get-DbaMaintenanceSolutionLog" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaMaintenanceSolutionLog
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "LogType",
-                "Since",
-                "Path",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "LogType",
+            "Since",
+            "Path",
+            "EnableException"
+        )
+        foreach ($param in $params) {
+            It "has the required parameter: $param" {
                 $CommandUnderTest | Should -HaveParameter $param
             }
         }

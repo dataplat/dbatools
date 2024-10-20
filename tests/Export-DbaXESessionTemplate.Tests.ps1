@@ -5,20 +5,18 @@ Describe "Export-DbaXESessionTemplate" {
         BeforeAll {
             $CommandUnderTest = Get-Command Export-DbaXESessionTemplate
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Session",
-                "Path",
-                "FilePath",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Session",
+            "Path",
+            "FilePath",
+            "InputObject",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

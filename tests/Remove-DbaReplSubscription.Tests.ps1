@@ -10,9 +10,9 @@ Describe "Remove-DbaReplSubscription" {
         BeforeAll {
             $CommandUnderTest = Get-Command Remove-DbaReplSubscription
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Database",
@@ -24,8 +24,8 @@ Describe "Remove-DbaReplSubscription" {
                 "WhatIf",
                 "Confirm"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

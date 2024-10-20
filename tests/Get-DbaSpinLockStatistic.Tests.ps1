@@ -11,15 +11,13 @@ Describe "Get-DbaSpinLockStatistic" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaSpinLockStatistic
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

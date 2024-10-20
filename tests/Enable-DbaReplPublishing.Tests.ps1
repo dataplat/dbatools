@@ -10,20 +10,18 @@ Describe "Enable-DbaReplPublishing" {
         BeforeAll {
             $CommandUnderTest = Get-Command Enable-DbaReplPublishing
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "SnapshotShare",
-                "PublisherSqlLogin",
-                "EnableException",
-                "WhatIf",
-                "Confirm"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "SnapshotShare",
+            "PublisherSqlLogin",
+            "EnableException",
+            "WhatIf",
+            "Confirm"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 }

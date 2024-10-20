@@ -5,32 +5,32 @@ Describe "Get-DbaAgBackupHistory" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaAgBackupHistory
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "AvailabilityGroup",
-                "Database",
-                "ExcludeDatabase",
-                "IncludeCopyOnly",
-                "Force",
-                "Since",
-                "RecoveryFork",
-                "Last",
-                "LastFull",
-                "LastDiff",
-                "LastLog",
-                "DeviceType",
-                "Raw",
-                "LastLsn",
-                "IncludeMirror",
-                "Type",
-                "LsnSort",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "AvailabilityGroup",
+            "Database",
+            "ExcludeDatabase",
+            "IncludeCopyOnly",
+            "Force",
+            "Since",
+            "RecoveryFork",
+            "Last",
+            "LastFull",
+            "LastDiff",
+            "LastLog",
+            "DeviceType",
+            "Raw",
+            "LastLsn",
+            "IncludeMirror",
+            "Type",
+            "LsnSort",
+            "EnableException"
+        )
+
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 }

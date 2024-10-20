@@ -58,30 +58,28 @@ Describe "Get-DbaBackupInformation" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaBackupInformation
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "Path",
-                "SqlInstance",
-                "SqlCredential",
-                "DatabaseName",
-                "SourceInstance",
-                "NoXpDirTree",
-                "NoXpDirRecurse",
-                "DirectoryRecurse",
-                "EnableException",
-                "MaintenanceSolution",
-                "IgnoreLogBackup",
-                "IgnoreDiffBackup",
-                "ExportPath",
-                "AzureCredential",
-                "Import",
-                "Anonymise",
-                "NoClobber",
-                "PassThru"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "Path",
+            "SqlInstance",
+            "SqlCredential",
+            "DatabaseName",
+            "SourceInstance",
+            "NoXpDirTree",
+            "NoXpDirRecurse",
+            "DirectoryRecurse",
+            "EnableException",
+            "MaintenanceSolution",
+            "IgnoreLogBackup",
+            "IgnoreDiffBackup",
+            "ExportPath",
+            "AzureCredential",
+            "Import",
+            "Anonymise",
+            "NoClobber",
+            "PassThru"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

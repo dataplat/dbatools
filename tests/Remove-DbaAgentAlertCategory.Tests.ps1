@@ -5,18 +5,9 @@ Describe "Remove-DbaAgentAlertCategory" {
         BeforeAll {
             $CommandUnderTest = Get-Command Remove-DbaAgentAlertCategory
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Category",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        It "has the required parameter: SqlInstance" -ForEach @("SqlInstance", "SqlCredential", "Category", "InputObject", "EnableException") {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

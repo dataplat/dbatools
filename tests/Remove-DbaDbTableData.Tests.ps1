@@ -53,24 +53,22 @@ Describe "Remove-DbaDbTableData" {
         BeforeAll {
             $CommandUnderTest = Get-Command Remove-DbaDbTableData
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "BatchSize",
-                "Table",
-                "DeleteSql",
-                "LogBackupPath",
-                "LogBackupTimeStampFormat",
-                "AzureBaseUrl",
-                "AzureCredential",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "BatchSize",
+            "Table",
+            "DeleteSql",
+            "LogBackupPath",
+            "LogBackupTimeStampFormat",
+            "AzureBaseUrl",
+            "AzureCredential",
+            "InputObject",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

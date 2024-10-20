@@ -11,17 +11,17 @@ Describe "Add-DbaDbMirrorMonitor" {
         BeforeAll {
             $CommandUnderTest = Get-Command Add-DbaDbMirrorMonitor
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "EnableException",
                 "WhatIf",
                 "Confirm"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

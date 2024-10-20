@@ -10,14 +10,12 @@ Describe "Measure-DbatoolsImport" {
             $CommandUnderTest = Get-Command Measure-DbatoolsImport
         }
 
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
 
         It "Should have no parameters" {

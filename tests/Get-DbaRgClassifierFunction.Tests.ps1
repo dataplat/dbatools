@@ -5,16 +5,17 @@ Describe "Get-DbaRgClassifierFunction" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaRgClassifierFunction
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        It "has the required parameter: SqlInstance" {
+            $CommandUnderTest | Should -HaveParameter "SqlInstance"
+        }
+        It "has the required parameter: SqlCredential" {
+            $CommandUnderTest | Should -HaveParameter "SqlCredential"
+        }
+        It "has the required parameter: InputObject" {
+            $CommandUnderTest | Should -HaveParameter "InputObject"
+        }
+        It "has the required parameter: EnableException" {
+            $CommandUnderTest | Should -HaveParameter "EnableException"
         }
     }
 

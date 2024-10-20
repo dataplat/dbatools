@@ -5,20 +5,18 @@ Describe "Find-DbaCommand" {
         BeforeAll {
             $CommandUnderTest = Get-Command Find-DbaCommand
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "Pattern",
-                "Tag",
-                "Author",
-                "MinimumVersion",
-                "MaximumVersion",
-                "Rebuild",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $requiredParameters = @(
+            "Pattern",
+            "Tag",
+            "Author",
+            "MinimumVersion",
+            "MaximumVersion",
+            "Rebuild",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $requiredParameters {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

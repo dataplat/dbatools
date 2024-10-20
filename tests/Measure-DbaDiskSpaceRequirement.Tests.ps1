@@ -10,9 +10,9 @@ Describe "Measure-DbaDiskSpaceRequirement" {
         BeforeAll {
             $CommandUnderTest = Get-Command Measure-DbaDiskSpaceRequirement
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "Source",
                 "Database",
                 "SourceSqlCredential",
@@ -22,8 +22,8 @@ Describe "Measure-DbaDiskSpaceRequirement" {
                 "Credential",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

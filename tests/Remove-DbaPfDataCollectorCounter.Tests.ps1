@@ -4,19 +4,17 @@ Describe "Remove-DbaPfDataCollectorCounter" {
         BeforeAll {
             $CommandUnderTest = Get-Command Remove-DbaPfDataCollectorCounter
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "ComputerName",
-                "Credential",
-                "CollectorSet",
-                "Collector",
-                "Counter",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "ComputerName",
+            "Credential",
+            "CollectorSet",
+            "Collector",
+            "Counter",
+            "InputObject",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 }

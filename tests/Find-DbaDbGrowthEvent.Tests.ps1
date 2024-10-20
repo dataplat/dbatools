@@ -11,21 +11,18 @@ Describe "Find-DbaDbGrowthEvent" {
         BeforeAll {
             $CommandUnderTest = Get-Command Find-DbaDbGrowthEvent
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "ExcludeDatabase",
-                "EventType",
-                "FileType",
-                "UseLocalTime",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        It "has the required parameter: <_>" -ForEach @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "ExcludeDatabase",
+            "EventType",
+            "FileType",
+            "UseLocalTime",
+            "EnableException"
+        ) {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

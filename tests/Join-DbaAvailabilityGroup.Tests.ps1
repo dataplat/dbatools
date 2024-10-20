@@ -9,19 +9,17 @@ Describe "Join-DbaAvailabilityGroup" {
         BeforeAll {
             $CommandUnderTest = Get-Command Join-DbaAvailabilityGroup
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "AvailabilityGroup",
-                "ClusterType",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "AvailabilityGroup",
+            "ClusterType",
+            "InputObject",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

@@ -12,7 +12,7 @@ Describe "Find-DbaTrigger Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Find-DbaTrigger
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Database",
@@ -20,8 +20,8 @@ Describe "Find-DbaTrigger Unit Tests" -Tag 'UnitTests' {
                 "Pattern",
                 "TriggerLevel"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
         It "Should have IncludeSystemObjects as a switch parameter" {

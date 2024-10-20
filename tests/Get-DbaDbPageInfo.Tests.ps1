@@ -5,20 +5,17 @@ Describe "Get-DbaDbPageInfo" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaDbPageInfo
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "Schema",
-                "Table",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        It "has the required parameter: <_>" -ForEach @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "Schema",
+            "Table",
+            "InputObject",
+            "EnableException"
+        ) {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

@@ -9,9 +9,9 @@ Describe "New-DbaAgentJobStep" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaAgentJobStep
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
+
+        It "has all the required parameters" -ForEach $requiredParameters {
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Job",
@@ -36,9 +36,7 @@ Describe "New-DbaAgentJobStep" {
                 "Force",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

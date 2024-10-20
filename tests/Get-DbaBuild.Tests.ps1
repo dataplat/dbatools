@@ -14,8 +14,8 @@ Describe "Get-DbaBuild" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaBuild
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
+        It "has the required parameters" {
+            $params = @(
                 "Build",
                 "Kb",
                 "MajorVersion",
@@ -26,8 +26,8 @@ Describe "Get-DbaBuild" {
                 "Update",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

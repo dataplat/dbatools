@@ -37,7 +37,7 @@ Describe "New-DbaDbFileGroup" {
             $CommandUnderTest = Get-Command New-DbaDbFileGroup
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Database",
@@ -46,8 +46,8 @@ Describe "New-DbaDbFileGroup" {
                 "InputObject",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

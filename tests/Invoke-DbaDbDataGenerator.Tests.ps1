@@ -11,26 +11,24 @@ Describe "Invoke-DbaDbDataGenerator" {
         BeforeAll {
             $CommandUnderTest = Get-Command Invoke-DbaDbDataGenerator
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "FilePath",
-                "Locale",
-                "CharacterString",
-                "Table",
-                "Column",
-                "ExcludeTable",
-                "ExcludeColumn",
-                "MaxValue",
-                "ExactLength",
-                "ModulusFactor",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "FilePath",
+            "Locale",
+            "CharacterString",
+            "Table",
+            "Column",
+            "ExcludeTable",
+            "ExcludeColumn",
+            "MaxValue",
+            "ExactLength",
+            "ModulusFactor",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

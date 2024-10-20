@@ -5,20 +5,18 @@ Describe "Install-DbaSqlWatch" {
         BeforeAll {
             $CommandUnderTest = Get-Command Install-DbaSqlWatch
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "LocalFile",
-                "PreRelease",
-                "Force",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "LocalFile",
+            "PreRelease",
+            "Force",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

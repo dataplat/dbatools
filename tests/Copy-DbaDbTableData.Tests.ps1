@@ -45,37 +45,35 @@ Describe "Copy-DbaDbTableData" {
         BeforeAll {
             $CommandUnderTest = Get-Command Copy-DbaDbTableData
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Destination",
-                "DestinationSqlCredential",
-                "Database",
-                "DestinationDatabase",
-                "Table",
-                "View",
-                "Query",
-                "AutoCreateTable",
-                "BatchSize",
-                "NotifyAfter",
-                "DestinationTable",
-                "NoTableLock",
-                "CheckConstraints",
-                "FireTriggers",
-                "KeepIdentity",
-                "KeepNulls",
-                "Truncate",
-                "BulkCopyTimeout",
-                "CommandTimeout",
-                "UseDefaultFileGroup",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Destination",
+            "DestinationSqlCredential",
+            "Database",
+            "DestinationDatabase",
+            "Table",
+            "View",
+            "Query",
+            "AutoCreateTable",
+            "BatchSize",
+            "NotifyAfter",
+            "DestinationTable",
+            "NoTableLock",
+            "CheckConstraints",
+            "FireTriggers",
+            "KeepIdentity",
+            "KeepNulls",
+            "Truncate",
+            "BulkCopyTimeout",
+            "CommandTimeout",
+            "UseDefaultFileGroup",
+            "InputObject",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

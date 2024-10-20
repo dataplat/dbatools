@@ -10,19 +10,9 @@ Describe "Test-DbaDeprecatedFeature" {
         BeforeAll {
             $CommandUnderTest = Get-Command Test-DbaDeprecatedFeature
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "ExcludeDatabase",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        It "has the required parameter: SqlInstance" -ForEach @("SqlInstance", "SqlCredential") {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

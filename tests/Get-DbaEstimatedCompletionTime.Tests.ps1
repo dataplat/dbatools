@@ -5,17 +5,17 @@ Describe "Get-DbaEstimatedCompletionTime" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaEstimatedCompletionTime
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Database",
                 "ExcludeDatabase",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

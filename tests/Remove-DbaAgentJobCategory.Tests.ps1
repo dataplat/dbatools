@@ -5,20 +5,18 @@ Describe "Remove-DbaAgentJobCategory" {
         BeforeAll {
             $CommandUnderTest = Get-Command Remove-DbaAgentJobCategory
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Category",
-                "CategoryType",
-                "InputObject"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
-            $CommandUnderTest | Should -HaveParameter EnableException
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Category",
+            "CategoryType",
+            "InputObject"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
+        $CommandUnderTest | Should -HaveParameter EnableException
     }
 }
 

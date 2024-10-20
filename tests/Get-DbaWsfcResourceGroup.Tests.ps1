@@ -9,17 +9,15 @@ Describe "Get-DbaWsfcResourceGroup" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaWsfcResourceGroup
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "ComputerName",
-                "Credential",
-                "Name",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "ComputerName",
+            "Credential",
+            "Name",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 }

@@ -61,7 +61,7 @@ Describe "Export-DbaLogin" {
             $CommandUnderTest = Get-Command Export-DbaLogin
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "InputObject",
@@ -84,8 +84,8 @@ Describe "Export-DbaLogin" {
                 "ObjectLevel",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

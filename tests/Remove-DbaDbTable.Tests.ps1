@@ -5,9 +5,9 @@ Describe "Remove-DbaDbTable" {
         BeforeAll {
             $CommandUnderTest = Get-Command Remove-DbaDbTable
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
+
+        It "has the required parameter: SqlInstance" {
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Database",
@@ -15,8 +15,8 @@ Describe "Remove-DbaDbTable" {
                 "InputObject",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            $params | ForEach-Object {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

@@ -18,16 +18,14 @@ Describe "Remove-DbaClientAlias" {
         BeforeAll {
             $CommandUnderTest = Get-Command Remove-DbaClientAlias
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "ComputerName",
-                "Credential",
-                "Alias",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "ComputerName",
+            "Credential",
+            "Alias",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

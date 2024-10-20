@@ -5,20 +5,18 @@ Describe "Set-DbaEndpoint" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaEndpoint
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Endpoint",
-                "Owner",
-                "Type",
-                "AllEndpoints",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Endpoint",
+            "Owner",
+            "Type",
+            "AllEndpoints",
+            "InputObject",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 }

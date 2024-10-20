@@ -25,20 +25,20 @@ Describe "New-DbaDbDataGeneratorConfig" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaDbDataGeneratorConfig
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "Table",
-                "Rows",
-                "Path",
-                "ResetIdentity",
-                "TruncateTable",
-                "Force",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "Table",
+            "Rows",
+            "Path",
+            "ResetIdentity",
+            "TruncateTable",
+            "Force",
+            "EnableException"
+        )
+        foreach ($param in $params) {
+            It "has the required parameter: $param" {
                 $CommandUnderTest | Should -HaveParameter $param
             }
         }

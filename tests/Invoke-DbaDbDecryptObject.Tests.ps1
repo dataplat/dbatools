@@ -11,20 +11,18 @@ Describe "Invoke-DbaDbDecryptObject Unit Tests" -Tag 'UnitTests' {
             $ParameterFilter = {-not $PSItem.IsInherited}
             $command = Get-Command -Name $CommandName
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "ObjectName",
-                "EncodingType",
-                "ExportDestination",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $command | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "ObjectName",
+            "EncodingType",
+            "ExportDestination",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $command | Should -HaveParameter $PSItem
         }
     }
 }

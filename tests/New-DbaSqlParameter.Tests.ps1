@@ -5,32 +5,30 @@ Describe "New-DbaSqlParameter" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaSqlParameter
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "CompareInfo",
-                "DbType",
-                "Direction",
-                "ForceColumnEncryption",
-                "IsNullable",
-                "LocaleId",
-                "Offset",
-                "ParameterName",
-                "Precision",
-                "Scale",
-                "Size",
-                "SourceColumn",
-                "SourceColumnNullMapping",
-                "SourceVersion",
-                "SqlDbType",
-                "SqlValue",
-                "TypeName",
-                "UdtTypeName",
-                "Value",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $requiredParameters = @(
+            "CompareInfo",
+            "DbType",
+            "Direction",
+            "ForceColumnEncryption",
+            "IsNullable",
+            "LocaleId",
+            "Offset",
+            "ParameterName",
+            "Precision",
+            "Scale",
+            "Size",
+            "SourceColumn",
+            "SourceColumnNullMapping",
+            "SourceVersion",
+            "SqlDbType",
+            "SqlValue",
+            "TypeName",
+            "UdtTypeName",
+            "Value",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $requiredParameters {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 }

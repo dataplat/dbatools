@@ -5,9 +5,9 @@ Describe "Register-DbatoolsConfig" {
         BeforeAll {
             $CommandUnderTest = Get-Command Register-DbatoolsConfig
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "Config",
                 "FullName",
                 "Module",
@@ -15,8 +15,8 @@ Describe "Register-DbatoolsConfig" {
                 "Scope",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

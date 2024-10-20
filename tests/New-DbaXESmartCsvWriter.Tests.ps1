@@ -11,18 +11,16 @@ Describe "New-DbaXESmartCsvWriter" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaXESmartCsvWriter
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "OutputFile",
-                "Overwrite",
-                "Event",
-                "OutputColumn",
-                "Filter",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "OutputFile",
+            "Overwrite",
+            "Event",
+            "OutputColumn",
+            "Filter",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

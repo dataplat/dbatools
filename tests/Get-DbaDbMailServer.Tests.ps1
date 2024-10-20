@@ -5,9 +5,9 @@ Describe "Get-DbaDbMailServer" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaDbMailServer
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Server",
@@ -15,8 +15,8 @@ Describe "Get-DbaDbMailServer" {
                 "InputObject",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

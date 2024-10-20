@@ -5,9 +5,9 @@ Describe "Export-DbaUser Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Export-DbaUser
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "InputObject",
                 "SqlCredential",
@@ -26,8 +26,8 @@ Describe "Export-DbaUser Unit Tests" -Tag 'UnitTests' {
                 "ScriptingOptionsObject",
                 "ExcludeGoBatchSeparator"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

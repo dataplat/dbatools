@@ -5,20 +5,17 @@ Describe "New-DbaDbMasterKey" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaDbMasterKey
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Credential",
-                "Database",
-                "SecurePassword",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        It "has the required parameter: <_>" -ForEach @(
+            "SqlInstance",
+            "SqlCredential",
+            "Credential",
+            "Database",
+            "SecurePassword",
+            "InputObject",
+            "EnableException"
+        ) {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

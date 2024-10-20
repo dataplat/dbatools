@@ -11,9 +11,9 @@ Describe "Invoke-DbaDbShrink Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Invoke-DbaDbShrink
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
+
+        It "has the required parameter: <_>" -ForEach $params {
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Database",
@@ -28,9 +28,7 @@ Describe "Invoke-DbaDbShrink Unit Tests" -Tag 'UnitTests' {
                 "ExcludeUpdateUsage",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 }
@@ -48,7 +46,7 @@ Describe "Invoke-DbaDbShrink Integration Tests" -Tags "IntegrationTests" {
 
             $primaryFileGroup = New-Object Microsoft.SqlServer.Management.Smo.Filegroup($db, "PRIMARY")
             $db.FileGroups.Add($primaryFileGroup)
-            $primaryFile = New-Object Microsoft.SqlServer.Management.Smo.DataFile($primaryFileGroup, $db.Name)
+            $primaryFile = New-Object Microsoft.SqlServer.Management.SMO.DataFile($primaryFileGroup, $db.Name)
             $primaryFile.FileName = "$($defaultPath.Data)\$($db.Name).mdf"
             $primaryFile.Size = 8 * 1024
             $primaryFile.Growth = 8 * 1024

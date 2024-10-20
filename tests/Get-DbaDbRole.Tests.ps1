@@ -5,22 +5,20 @@ Describe "Get-DbaDbRole" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaDbRole
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "ExcludeDatabase",
-                "Role",
-                "ExcludeRole",
-                "ExcludeFixedRole",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "ExcludeDatabase",
+            "Role",
+            "ExcludeRole",
+            "ExcludeFixedRole",
+            "InputObject",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

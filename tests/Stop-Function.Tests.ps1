@@ -10,9 +10,9 @@ Describe "Stop-Function" {
         BeforeAll {
             $CommandUnderTest = Get-Command Stop-Function
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "Message",
                 "EnableException",
                 "Category",
@@ -28,8 +28,8 @@ Describe "Stop-Function" {
                 "SilentlyContinue",
                 "ContinueLabel"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

@@ -4,28 +4,26 @@ Describe "Set-DbaRgResourcePool" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaRgResourcePool
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "ResourcePool",
-                "Type",
-                "MinimumCpuPercentage",
-                "MaximumCpuPercentage",
-                "CapCpuPercentage",
-                "MinimumMemoryPercentage",
-                "MaximumMemoryPercentage",
-                "MinimumIOPSPerVolume",
-                "MaximumIOPSPerVolume",
-                "MaximumProcesses",
-                "SkipReconfigure",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "ResourcePool",
+            "Type",
+            "MinimumCpuPercentage",
+            "MaximumCpuPercentage",
+            "CapCpuPercentage",
+            "MinimumMemoryPercentage",
+            "MaximumMemoryPercentage",
+            "MinimumIOPSPerVolume",
+            "MaximumIOPSPerVolume",
+            "MaximumProcesses",
+            "SkipReconfigure",
+            "InputObject",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

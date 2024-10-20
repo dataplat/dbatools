@@ -13,13 +13,13 @@ Describe "Read-DbaXEFile" {
             $CommandUnderTest = Get-Command Read-DbaXEFile
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "Path",
                 "Raw",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

@@ -12,7 +12,7 @@ Describe "Export-DbatoolsConfig" {
             $CommandUnderTest = Get-Command Export-DbatoolsConfig
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "FullName",
                 "Module",
                 "Name",
@@ -24,8 +24,8 @@ Describe "Export-DbatoolsConfig" {
                 "SkipUnchanged",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

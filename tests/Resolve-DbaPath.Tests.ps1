@@ -12,14 +12,14 @@ Describe "Resolve-DbaPath Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Resolve-DbaPath
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "Path",
                 "Provider",
                 "SingleItem",
                 "NewChild"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

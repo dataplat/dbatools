@@ -11,9 +11,9 @@ Describe "Export-DbaScript" {
         BeforeAll {
             $CommandUnderTest = Get-Command Export-DbaScript
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "InputObject",
                 "ScriptingOptionsObject",
                 "Path",
@@ -26,8 +26,8 @@ Describe "Export-DbaScript" {
                 "Append",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

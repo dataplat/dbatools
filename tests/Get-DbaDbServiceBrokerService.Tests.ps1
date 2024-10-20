@@ -5,19 +5,16 @@ Describe "Get-DbaDbServiceBrokerService" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaDbServiceBrokerService
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "ExcludeDatabase",
-                "ExcludeSystemService",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        It "has the required parameter: <_>" -ForEach @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "ExcludeDatabase",
+            "ExcludeSystemService",
+            "EnableException"
+        ) {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

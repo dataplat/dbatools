@@ -66,7 +66,7 @@ ALTER RESOURCE GOVERNOR RECONFIGURE;
             $CommandUnderTest = Get-Command Copy-DbaResourceGovernor
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "Source",
                 "SourceSqlCredential",
                 "Destination",
@@ -76,8 +76,8 @@ ALTER RESOURCE GOVERNOR RECONFIGURE;
                 "Force",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

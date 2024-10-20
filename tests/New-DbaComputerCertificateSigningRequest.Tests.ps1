@@ -5,21 +5,19 @@ Describe "New-DbaComputerCertificateSigningRequest" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaComputerCertificateSigningRequest
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "ComputerName",
-                "Credential",
-                "ClusterInstanceName",
-                "Path",
-                "FriendlyName",
-                "KeyLength",
-                "Dns",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $requiredParameters = @(
+            "ComputerName",
+            "Credential",
+            "ClusterInstanceName",
+            "Path",
+            "FriendlyName",
+            "KeyLength",
+            "Dns",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $requiredParameters {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

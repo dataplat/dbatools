@@ -17,15 +17,15 @@ Describe "Find-DbaBackup" {
             $CommandUnderTest = Get-Command Find-DbaBackup
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "Path",
                 "BackupFileExtension",
                 "RetentionPeriod",
                 "CheckArchiveBit",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            $params | ForEach-Object {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

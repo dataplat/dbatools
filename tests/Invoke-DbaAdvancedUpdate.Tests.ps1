@@ -26,21 +26,19 @@ Describe "Invoke-DbaAdvancedUpdate" {
         BeforeAll {
             $CommandUnderTest = Get-Command Invoke-DbaAdvancedUpdate
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "ComputerName",
-                "Action",
-                "Restart",
-                "Authentication",
-                "Credential",
-                "ExtractPath",
-                "ArgumentList",
-                "NoPendingRenameCheck",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "ComputerName",
+            "Action",
+            "Restart",
+            "Authentication",
+            "Credential",
+            "ExtractPath",
+            "ArgumentList",
+            "NoPendingRenameCheck",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

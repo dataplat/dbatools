@@ -5,9 +5,9 @@ Describe "Remove-DbaAvailabilityGroup" {
         BeforeAll {
             $CommandUnderTest = Get-Command Remove-DbaAvailabilityGroup
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
+
+        It "has the required parameter: <_>" -ForEach $params {
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "AvailabilityGroup",
@@ -15,9 +15,7 @@ Describe "Remove-DbaAvailabilityGroup" {
                 "InputObject",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

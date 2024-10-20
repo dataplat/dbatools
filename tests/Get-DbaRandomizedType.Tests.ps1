@@ -10,16 +10,14 @@ Describe "Get-DbaRandomizedType" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaRandomizedType
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "RandomizedType",
-                "RandomizedSubType",
-                "Pattern",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "RandomizedType",
+            "RandomizedSubType",
+            "Pattern",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

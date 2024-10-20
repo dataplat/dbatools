@@ -12,7 +12,7 @@ Describe "Export-DbaServerRole Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Export-DbaServerRole
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "InputObject",
@@ -31,8 +31,8 @@ Describe "Export-DbaServerRole Unit Tests" -Tag 'UnitTests' {
                 "Encoding",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

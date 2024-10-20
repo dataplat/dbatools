@@ -8,20 +8,18 @@ Describe "Remove-DbaDbLogShipping Unit Tests" -Tag "UnitTests" {
         BeforeAll {
             $CommandUnderTest = Get-Command Remove-DbaDbLogShipping
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "PrimarySqlInstance",
-                "SecondarySqlInstance",
-                "PrimarySqlCredential",
-                "SecondarySqlCredential",
-                "Database",
-                "RemoveSecondaryDatabase",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "PrimarySqlInstance",
+            "SecondarySqlInstance",
+            "PrimarySqlCredential",
+            "SecondarySqlCredential",
+            "Database",
+            "RemoveSecondaryDatabase",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 }

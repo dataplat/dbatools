@@ -5,19 +5,17 @@ Describe "Start-DbaPfDataCollectorSet" {
         BeforeAll {
             $CommandUnderTest = Get-Command Start-DbaPfDataCollectorSet
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "ComputerName",
-                "Credential",
-                "CollectorSet",
-                "InputObject",
-                "NoWait",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "ComputerName",
+            "Credential",
+            "CollectorSet",
+            "InputObject",
+            "NoWait",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

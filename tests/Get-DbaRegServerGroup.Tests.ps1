@@ -5,18 +5,16 @@ Describe "Get-DbaRegServerGroup" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaRegServerGroup
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Group",
-                "ExcludeGroup",
-                "Id",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Group",
+            "ExcludeGroup",
+            "Id",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

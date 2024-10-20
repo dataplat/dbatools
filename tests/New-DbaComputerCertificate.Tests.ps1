@@ -5,29 +5,27 @@ Describe "New-DbaComputerCertificate" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaComputerCertificate
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "ComputerName",
-                "Credential",
-                "CaServer",
-                "CaName",
-                "ClusterInstanceName",
-                "SecurePassword",
-                "FriendlyName",
-                "CertificateTemplate",
-                "KeyLength",
-                "Store",
-                "Folder",
-                "Flag",
-                "Dns",
-                "SelfSigned",
-                "EnableException",
-                "HashAlgorithm",
-                "MonthsValid"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $requiredParameters = @(
+            "ComputerName",
+            "Credential",
+            "CaServer",
+            "CaName",
+            "ClusterInstanceName",
+            "SecurePassword",
+            "FriendlyName",
+            "CertificateTemplate",
+            "KeyLength",
+            "Store",
+            "Folder",
+            "Flag",
+            "Dns",
+            "SelfSigned",
+            "EnableException",
+            "HashAlgorithm",
+            "MonthsValid"
+        )
+        It "has the required parameter: <_>" -ForEach $requiredParameters {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 }

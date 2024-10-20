@@ -12,7 +12,7 @@ Describe "Add-DbaAgListener" {
             $CommandUnderTest = Get-Command Add-DbaAgListener
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "AvailabilityGroup",
@@ -26,8 +26,8 @@ Describe "Add-DbaAgListener" {
                 "InputObject",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

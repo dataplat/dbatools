@@ -37,43 +37,51 @@ Describe "Copy-DbaDatabase" {
             [object[]]$params = (Get-Command Copy-DbaDatabase).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
         }
 
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "Source",
-                "SourceSqlCredential",
-                "Destination",
-                "DestinationSqlCredential",
-                "Database",
-                "ExcludeDatabase",
-                "AllDatabases",
-                "BackupRestore",
-                "AdvancedBackupParams",
-                "SharedPath",
-                "AzureCredential",
-                "WithReplace",
-                "NoRecovery",
-                "NoBackupCleanup",
-                "NumberFiles",
-                "DetachAttach",
-                "Reattach",
-                "SetSourceReadOnly",
-                "ReuseSourceFolderStructure",
-                "IncludeSupportDbs",
-                "UseLastBackup",
-                "Continue",
-                "InputObject",
-                "NoCopyOnly",
-                "SetSourceOffline",
-                "NewName",
-                "Prefix",
-                "Force",
-                "EnableException",
-                "KeepCDC",
-                "KeepReplication"
-            )
-            foreach ($param in $requiredParameters) {
-                (Get-Command Copy-DbaDatabase) | Should -HaveParameter $param
-            }
+        $requiredParameters = @(
+            "Source",
+            "SourceSqlCredential",
+            "Destination",
+            "DestinationSqlCredential",
+            "Database",
+            "ExcludeDatabase",
+            "AllDatabases",
+            "BackupRestore",
+            "AdvancedBackupParams",
+            "SharedPath",
+            "AzureCredential",
+            "WithReplace",
+            "NoRecovery",
+            "NoBackupCleanup",
+            "NumberFiles",
+            "DetachAttach",
+            "Reattach",
+            "SetSourceReadOnly",
+            "ReuseSourceFolderStructure",
+            "IncludeSupportDbs",
+            "UseLastBackup",
+            "Continue",
+            "InputObject",
+            "NoCopyOnly",
+            "SetSourceOffline",
+            "NewName",
+            "Prefix",
+            "Force",
+            "EnableException",
+            "KeepCDC",
+            "KeepReplication"
+        )
+        It "has all the required parameters" -ForEach $requiredParameters {
+            (Get-Command Copy-DbaDatabase) | Should -HaveParameter $PSItem
+        }
+
+        $params = @(
+            "Source",
+            "SourceSqlCredential",
+            "Destination",
+            "DestinationSqlCredential"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            (Get-Command Copy-DbaDatabase) | Should -HaveParameter $PSItem
         }
 
         It "Source should be a Dataplat.Dbatools.Parameter.DbaInstanceParameter" {

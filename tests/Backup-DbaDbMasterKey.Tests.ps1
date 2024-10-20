@@ -5,9 +5,9 @@ Describe "Backup-DbaDbMasterKey" {
         BeforeAll {
             $CommandUnderTest = Get-Command Backup-DbaDbMasterKey
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Credential",
@@ -18,8 +18,8 @@ Describe "Backup-DbaDbMasterKey" {
                 "InputObject",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param -Mandatory:$false
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

@@ -5,20 +5,18 @@ Describe "Get-DbaDbMailAccount" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaDbMailAccount
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Account",
-                "ExcludeAccount",
-                "InputObject"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
-            $CommandUnderTest | Should -HaveParameter EnableException -AsSwitch
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Account",
+            "ExcludeAccount",
+            "InputObject"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
+        $CommandUnderTest | Should -HaveParameter EnableException -AsSwitch
     }
 
     Context "Command usage" {

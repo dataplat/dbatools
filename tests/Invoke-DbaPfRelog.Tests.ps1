@@ -11,9 +11,9 @@ Describe "Invoke-DbaPfRelog Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Invoke-DbaPfRelog
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "Path",
                 "Destination",
                 "Type",
@@ -32,8 +32,8 @@ Describe "Invoke-DbaPfRelog Unit Tests" -Tag 'UnitTests' {
                 "Raw",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

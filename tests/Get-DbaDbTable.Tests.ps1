@@ -22,7 +22,7 @@ Describe "Get-DbaDbTable" {
             $CommandUnderTest = Get-Command Get-DbaDbTable
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Database",
@@ -33,8 +33,8 @@ Describe "Get-DbaDbTable" {
                 "InputObject",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

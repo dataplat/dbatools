@@ -5,9 +5,9 @@ Describe "Get-DbaRandomizedDataset" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaRandomizedDataset
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "Template",
                 "TemplateFile",
                 "Rows",
@@ -15,8 +15,8 @@ Describe "Get-DbaRandomizedDataset" {
                 "InputObject",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

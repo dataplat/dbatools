@@ -22,9 +22,9 @@ Describe "New-DbaDbRole" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaDbRole
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
+
+        It "has the required parameters" {
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Database",
@@ -34,8 +34,8 @@ Describe "New-DbaDbRole" {
                 "InputObject",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

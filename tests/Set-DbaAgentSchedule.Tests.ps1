@@ -9,9 +9,9 @@ Describe "Set-DbaAgentSchedule" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaAgentSchedule
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Job",
@@ -32,8 +32,8 @@ Describe "Set-DbaAgentSchedule" {
                 "EnableException",
                 "Force"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

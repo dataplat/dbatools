@@ -5,20 +5,18 @@ Describe "Update-DbaMaintenanceSolution" {
         BeforeAll {
             $CommandUnderTest = Get-Command Update-DbaMaintenanceSolution
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "Solution",
-                "LocalFile",
-                "Force",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "Solution",
+            "LocalFile",
+            "Force",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

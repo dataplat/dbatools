@@ -5,17 +5,15 @@ Describe "Get-DbatoolsConfig" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbatoolsConfig
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "FullName",
-                "Name",
-                "Module",
-                "Force"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "FullName",
+            "Name",
+            "Module",
+            "Force"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

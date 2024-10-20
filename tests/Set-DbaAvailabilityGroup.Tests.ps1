@@ -5,27 +5,25 @@ Describe "Set-DbaAvailabilityGroup" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaAvailabilityGroup
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "AvailabilityGroup",
-                "AllAvailabilityGroups",
-                "DtcSupportEnabled",
-                "ClusterType",
-                "AutomatedBackupPreference",
-                "FailureConditionLevel",
-                "HealthCheckTimeout",
-                "BasicAvailabilityGroup",
-                "DatabaseHealthTrigger",
-                "IsDistributedAvailabilityGroup",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "AvailabilityGroup",
+            "AllAvailabilityGroups",
+            "DtcSupportEnabled",
+            "ClusterType",
+            "AutomatedBackupPreference",
+            "FailureConditionLevel",
+            "HealthCheckTimeout",
+            "BasicAvailabilityGroup",
+            "DatabaseHealthTrigger",
+            "IsDistributedAvailabilityGroup",
+            "InputObject",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 }

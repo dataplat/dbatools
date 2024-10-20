@@ -11,16 +11,13 @@ Describe "Resolve-DbaNetworkName Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Resolve-DbaNetworkName
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "ComputerName",
-                "Credential",
-                "Turbo",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        It "has the required parameter: <_>" -ForEach @(
+            "ComputerName",
+            "Credential",
+            "Turbo",
+            "EnableException"
+        ) {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

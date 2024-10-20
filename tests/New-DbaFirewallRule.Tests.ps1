@@ -5,19 +5,17 @@ Describe "New-DbaFirewallRule" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaFirewallRule
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "Credential",
-                "Type",
-                "Configuration",
-                "Force",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "Credential",
+            "Type",
+            "Configuration",
+            "Force",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

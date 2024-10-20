@@ -11,9 +11,9 @@ Describe "Sync-DbaAvailabilityGroup" {
         BeforeAll {
             $CommandUnderTest = Get-Command Sync-DbaAvailabilityGroup
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "Primary",
                 "PrimarySqlCredential",
                 "Secondary",
@@ -29,8 +29,10 @@ Describe "Sync-DbaAvailabilityGroup" {
                 "Force",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            $params | ForEach-Object {
+                It "has the required parameter: $_" {
+                    $CommandUnderTest | Should -HaveParameter $PSItem
+                }
             }
         }
     }

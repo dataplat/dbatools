@@ -24,23 +24,20 @@ Describe "Set-DbaDbCompression" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaDbCompression
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "ExcludeDatabase",
-                "Table",
-                "CompressionType",
-                "MaxRunTime",
-                "PercentCompression",
-                "ForceOfflineRebuilds",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        It "has the required parameter: <_>" -ForEach @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "ExcludeDatabase",
+            "Table",
+            "CompressionType",
+            "MaxRunTime",
+            "PercentCompression",
+            "ForceOfflineRebuilds",
+            "InputObject",
+            "EnableException"
+        ) {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

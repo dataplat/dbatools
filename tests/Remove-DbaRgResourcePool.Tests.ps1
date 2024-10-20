@@ -9,20 +9,18 @@ Describe "Remove-DbaRgResourcePool" {
         BeforeAll {
             $CommandUnderTest = Get-Command Remove-DbaRgResourcePool
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "ResourcePool",
-                "Type",
-                "SkipReconfigure",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "ResourcePool",
+            "Type",
+            "SkipReconfigure",
+            "InputObject",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

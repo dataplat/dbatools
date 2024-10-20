@@ -28,47 +28,45 @@ Describe "Install-DbaInstance" {
         BeforeAll {
             $command = Get-Command -Name Install-DbaInstance
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "Version",
-                "InstanceName",
-                "SaCredential",
-                "Credential",
-                "Authentication",
-                "ConfigurationFile",
-                "Configuration",
-                "Path",
-                "Feature",
-                "AuthenticationMode",
-                "InstancePath",
-                "DataPath",
-                "LogPath",
-                "TempPath",
-                "BackupPath",
-                "UpdateSourcePath",
-                "AdminAccount",
-                "Port",
-                "Throttle",
-                "ProductID",
-                "AsCollation",
-                "SqlCollation",
-                "EngineCredential",
-                "AgentCredential",
-                "ASCredential",
-                "ISCredential",
-                "RSCredential",
-                "FTCredential",
-                "PBEngineCredential",
-                "SaveConfiguration",
-                "PerformVolumeMaintenanceTasks",
-                "Restart",
-                "NoPendingRenameCheck",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $command | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "Version",
+            "InstanceName",
+            "SaCredential",
+            "Credential",
+            "Authentication",
+            "ConfigurationFile",
+            "Configuration",
+            "Path",
+            "Feature",
+            "AuthenticationMode",
+            "InstancePath",
+            "DataPath",
+            "LogPath",
+            "TempPath",
+            "BackupPath",
+            "UpdateSourcePath",
+            "AdminAccount",
+            "Port",
+            "Throttle",
+            "ProductID",
+            "AsCollation",
+            "SqlCollation",
+            "EngineCredential",
+            "AgentCredential",
+            "ASCredential",
+            "ISCredential",
+            "RSCredential",
+            "FTCredential",
+            "PBEngineCredential",
+            "SaveConfiguration",
+            "PerformVolumeMaintenanceTasks",
+            "Restart",
+            "NoPendingRenameCheck",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $command | Should -HaveParameter $PSItem
         }
     }
 

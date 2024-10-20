@@ -5,11 +5,13 @@ Describe "Move-DbaRegServerGroup" {
         BeforeAll {
             $CommandUnderTest = Get-Command Move-DbaRegServerGroup
         }
-        
+
+        It "has the required parameter: SqlInstance" -ForEach @("SqlInstance", "SqlCredential") {
+            $CommandUnderTest | Should -HaveParameter $PSItem
+        }
+
         It "has all the required parameters" {
             $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
                 "Group",
                 "NewGroup",
                 "InputObject",

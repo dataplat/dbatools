@@ -13,25 +13,23 @@ Describe "Expand-DbaDbLogFile" {
         BeforeAll {
             $CommandUnderTest = Get-Command Expand-DbaDbLogFile
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "ExcludeDatabase",
-                "TargetLogSize",
-                "IncrementSize",
-                "LogFileId",
-                "ShrinkLogFile",
-                "ShrinkSize",
-                "BackupDirectory",
-                "ExcludeDiskSpaceValidation",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "ExcludeDatabase",
+            "TargetLogSize",
+            "IncrementSize",
+            "LogFileId",
+            "ShrinkLogFile",
+            "ShrinkSize",
+            "BackupDirectory",
+            "ExcludeDiskSpaceValidation",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

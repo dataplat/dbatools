@@ -30,30 +30,28 @@ Describe "Select-DbaObject" {
         BeforeAll {
             $CommandUnderTest = Get-Command Select-DbaObject
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "InputObject",
-                "Property",
-                "ExcludeProperty",
-                "ExpandProperty",
-                "Alias",
-                "ScriptProperty",
-                "ScriptMethod",
-                "Unique",
-                "Last",
-                "First",
-                "Skip",
-                "SkipLast",
-                "Wait",
-                "Index",
-                "ShowProperty",
-                "ShowExcludeProperty",
-                "TypeName",
-                "KeepInputObject"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $requiredParameters = @(
+            "InputObject",
+            "Property",
+            "ExcludeProperty",
+            "ExpandProperty",
+            "Alias",
+            "ScriptProperty",
+            "ScriptMethod",
+            "Unique",
+            "Last",
+            "First",
+            "Skip",
+            "SkipLast",
+            "Wait",
+            "Index",
+            "ShowProperty",
+            "ShowExcludeProperty",
+            "TypeName",
+            "KeepInputObject"
+        )
+        It "has the required parameter: <_>" -ForEach $requiredParameters {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

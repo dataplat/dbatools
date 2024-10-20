@@ -5,21 +5,19 @@ Describe "Set-DbaDbFileGrowth" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaDbFileGrowth
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "GrowthType",
-                "Growth",
-                "FileType",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "GrowthType",
+            "Growth",
+            "FileType",
+            "InputObject",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 }

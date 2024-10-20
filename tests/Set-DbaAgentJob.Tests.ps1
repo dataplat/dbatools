@@ -5,35 +5,33 @@ Describe "Set-DbaAgentJob" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaAgentJob
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Job",
-                "Schedule",
-                "ScheduleId",
-                "NewName",
-                "Enabled",
-                "Disabled",
-                "Description",
-                "StartStepId",
-                "Category",
-                "OwnerLogin",
-                "EventLogLevel",
-                "EmailLevel",
-                "NetsendLevel",
-                "PageLevel",
-                "EmailOperator",
-                "NetsendOperator",
-                "PageOperator",
-                "DeleteLevel",
-                "Force",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $requiredParameters = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Job",
+            "Schedule",
+            "ScheduleId",
+            "NewName",
+            "Enabled",
+            "Disabled",
+            "Description",
+            "StartStepId",
+            "Category",
+            "OwnerLogin",
+            "EventLogLevel",
+            "EmailLevel",
+            "NetsendLevel",
+            "PageLevel",
+            "EmailOperator",
+            "NetsendOperator",
+            "PageOperator",
+            "DeleteLevel",
+            "Force",
+            "InputObject",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $requiredParameters {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 }

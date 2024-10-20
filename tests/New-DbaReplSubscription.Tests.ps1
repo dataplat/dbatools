@@ -10,23 +10,23 @@ Describe "New-DbaReplSubscription" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaReplSubscription
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "SubscriberSqlInstance",
-                "SubscriberSqlCredential",
-                "SubscriptionDatabase",
-                "PublicationName",
-                "SubscriptionSqlCredential",
-                "Type",
-                "EnableException",
-                "Confirm"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "SubscriberSqlInstance",
+            "SubscriberSqlCredential",
+            "SubscriptionDatabase",
+            "PublicationName",
+            "SubscriptionSqlCredential",
+            "Type",
+            "EnableException",
+            "Confirm"
+        )
+
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 }

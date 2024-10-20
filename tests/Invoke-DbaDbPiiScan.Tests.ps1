@@ -11,28 +11,26 @@ Describe "Invoke-DbaDbPiiScan Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Invoke-DbaDbPiiScan
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "Table",
-                "Column",
-                "Country",
-                "CountryCode",
-                "ExcludeTable",
-                "ExcludeColumn",
-                "SampleCount",
-                "KnownNameFilePath",
-                "PatternFilePath",
-                "ExcludeDefaultKnownName",
-                "ExcludeDefaultPattern",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "Table",
+            "Column",
+            "Country",
+            "CountryCode",
+            "ExcludeTable",
+            "ExcludeColumn",
+            "SampleCount",
+            "KnownNameFilePath",
+            "PatternFilePath",
+            "ExcludeDefaultKnownName",
+            "ExcludeDefaultPattern",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 }

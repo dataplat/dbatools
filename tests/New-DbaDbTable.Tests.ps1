@@ -24,19 +24,17 @@ Describe "New-DbaDbTable" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaDbTable
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "Name",
-                "Schema",
-                "ColumnMap",
-                "ColumnObject"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "Name",
+            "Schema",
+            "ColumnMap",
+            "ColumnObject"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

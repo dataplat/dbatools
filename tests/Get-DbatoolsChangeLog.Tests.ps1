@@ -5,15 +5,13 @@ Describe "Get-DbatoolsChangeLog" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbatoolsChangeLog
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "Local",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "Local",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

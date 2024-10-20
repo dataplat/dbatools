@@ -5,20 +5,18 @@ Describe "Remove-DbaAgentOperator" {
         BeforeAll {
             $CommandUnderTest = Get-Command Remove-DbaAgentOperator
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Operator",
-                "ExcludeOperator",
-                "InputObject",
-                "EnableException",
-                "WhatIf",
-                "Confirm"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Operator",
+            "ExcludeOperator",
+            "InputObject",
+            "EnableException",
+            "WhatIf",
+            "Confirm"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 }

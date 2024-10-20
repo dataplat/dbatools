@@ -34,8 +34,8 @@ CREATE LOGIN [$DBUserName]
         BeforeAll {
             $CommandUnderTest = Get-Command Sync-DbaLoginPermission
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
+        It "has the required parameter: <_>" -ForEach $params {
+            $params = @(
                 "Source",
                 "SourceSqlCredential",
                 "Destination",
@@ -44,9 +44,7 @@ CREATE LOGIN [$DBUserName]
                 "ExcludeLogin",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

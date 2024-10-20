@@ -12,18 +12,16 @@ Describe "Remove-DbaDbCertificate Unit Tests" -Tag 'UnitTests' {
             $command = Get-Command -Name $CommandName
         }
 
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "Certificate",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $command | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "Certificate",
+            "InputObject",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $command | Should -HaveParameter $PSItem
         }
     }
 }

@@ -11,31 +11,29 @@ Describe "Set-DbaAgentOperator" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaAgentOperator
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Operator",
-                "Name",
-                "EmailAddress",
-                "NetSendAddress",
-                "PagerAddress",
-                "PagerDay",
-                "SaturdayStartTime",
-                "SaturdayEndTime",
-                "SundayStartTime",
-                "SundayEndTime",
-                "WeekdayStartTime",
-                "WeekdayEndTime",
-                "IsFailsafeOperator",
-                "FailsafeNotificationMethod",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Operator",
+            "Name",
+            "EmailAddress",
+            "NetSendAddress",
+            "PagerAddress",
+            "PagerDay",
+            "SaturdayStartTime",
+            "SaturdayEndTime",
+            "SundayStartTime",
+            "SundayEndTime",
+            "WeekdayStartTime",
+            "WeekdayEndTime",
+            "IsFailsafeOperator",
+            "FailsafeNotificationMethod",
+            "InputObject",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

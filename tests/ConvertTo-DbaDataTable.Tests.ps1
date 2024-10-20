@@ -9,19 +9,17 @@ Describe "ConvertTo-DbaDataTable" {
         BeforeAll {
             $CommandUnderTest = Get-Command ConvertTo-DbaDataTable
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "InputObject",
-                "TimeSpanType",
-                "SizeType",
-                "IgnoreNull",
-                "Raw",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "InputObject",
+            "TimeSpanType",
+            "SizeType",
+            "IgnoreNull",
+            "Raw",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

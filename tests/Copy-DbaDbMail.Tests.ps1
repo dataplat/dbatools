@@ -60,19 +60,17 @@ Describe "Copy-DbaDbMail" {
         BeforeAll {
             $CommandUnderTest = Get-Command Copy-DbaDbMail
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "Source",
-                "Destination",
-                "Type",
-                "SourceSqlCredential",
-                "DestinationSqlCredential",
-                "Force",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "Source",
+            "Destination",
+            "Type",
+            "SourceSqlCredential",
+            "DestinationSqlCredential",
+            "Force",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

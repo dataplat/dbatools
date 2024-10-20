@@ -10,16 +10,14 @@ Describe "Test-DbaLsnChain" {
         BeforeAll {
             $CommandUnderTest = Get-Command Test-DbaLsnChain
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "FilteredRestoreFiles",
-                "Continue",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "FilteredRestoreFiles",
+            "Continue",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

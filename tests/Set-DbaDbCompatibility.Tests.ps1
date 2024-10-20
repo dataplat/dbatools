@@ -5,9 +5,9 @@ Describe "Set-DbaDbCompatibility" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaDbCompatibility
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
+
+        It "has the required parameter: SqlInstance" {
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Database",
@@ -15,8 +15,8 @@ Describe "Set-DbaDbCompatibility" {
                 "InputObject",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            $params | ForEach-Object {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

@@ -11,9 +11,9 @@ Describe "Add-DbaAgDatabase" {
         BeforeAll {
             $CommandUnderTest = Get-Command Add-DbaAgDatabase
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "AvailabilityGroup",
@@ -27,8 +27,8 @@ Describe "Add-DbaAgDatabase" {
                 "AdvancedBackupParams",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

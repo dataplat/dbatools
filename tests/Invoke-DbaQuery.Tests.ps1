@@ -24,28 +24,26 @@ Describe "Invoke-DbaQuery" {
         BeforeAll {
             $CommandUnderTest = Get-Command Invoke-DbaQuery
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "Query",
-                "QueryTimeout",
-                "File",
-                "SqlObject",
-                "As",
-                "SqlParameter",
-                "CommandType",
-                "AppendServerInstance",
-                "MessagesToOutput",
-                "InputObject",
-                "ReadOnly",
-                "NoExec",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "Query",
+            "QueryTimeout",
+            "File",
+            "SqlObject",
+            "As",
+            "SqlParameter",
+            "CommandType",
+            "AppendServerInstance",
+            "MessagesToOutput",
+            "InputObject",
+            "ReadOnly",
+            "NoExec",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

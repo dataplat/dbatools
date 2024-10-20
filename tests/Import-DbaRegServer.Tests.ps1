@@ -11,18 +11,16 @@ Describe "Import-DbaRegServer" {
         BeforeAll {
             $CommandUnderTest = Get-Command Import-DbaRegServer
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Path",
-                "InputObject",
-                "Group",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Path",
+            "InputObject",
+            "Group",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

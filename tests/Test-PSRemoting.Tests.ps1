@@ -10,16 +10,14 @@ Describe "Test-PSRemoting" {
         BeforeAll {
             $CommandUnderTest = Get-Command Test-PSRemoting
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "ComputerName",
-                "Credential",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "ComputerName",
+            "Credential",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

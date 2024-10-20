@@ -12,7 +12,7 @@ Describe "Copy-DbaEndpoint" {
             $CommandUnderTest = Get-Command Copy-DbaEndpoint
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "Source",
                 "SourceSqlCredential",
                 "Destination",
@@ -22,8 +22,8 @@ Describe "Copy-DbaEndpoint" {
                 "Force",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

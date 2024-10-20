@@ -11,19 +11,17 @@ Describe "Get-DbaTcpPort" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaTcpPort
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Credential",
-                "All",
-                "ExcludeIpv6",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Credential",
+            "All",
+            "ExcludeIpv6",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

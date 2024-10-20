@@ -5,11 +5,13 @@ Describe "Remove-DbaDbView" {
         BeforeAll {
             $CommandUnderTest = Get-Command Remove-DbaDbView
         }
-        
+
+        It "has the required parameter: SqlInstance" -ForEach @("SqlInstance", "SqlCredential") {
+            $CommandUnderTest | Should -HaveParameter $PSItem
+        }
+
         It "has all the required parameters" {
             $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
                 "Database",
                 "View",
                 "InputObject",

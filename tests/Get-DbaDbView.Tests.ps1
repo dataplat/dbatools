@@ -11,8 +11,8 @@ Describe "Get-DbaDbView Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaDbView
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
+        It "has the required parameter: <_>" -ForEach $params {
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Database",
@@ -23,9 +23,7 @@ Describe "Get-DbaDbView Unit Tests" -Tag 'UnitTests' {
                 "InputObject",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 }

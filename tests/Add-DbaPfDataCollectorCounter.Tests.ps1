@@ -6,7 +6,7 @@ Describe "Add-DbaPfDataCollectorCounter" {
             $CommandUnderTest = Get-Command Add-DbaPfDataCollectorCounter
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "ComputerName",
                 "Credential",
                 "CollectorSet",
@@ -15,8 +15,8 @@ Describe "Add-DbaPfDataCollectorCounter" {
                 "InputObject",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

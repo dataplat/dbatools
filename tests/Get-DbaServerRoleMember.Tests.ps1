@@ -5,16 +5,16 @@ Describe "Get-DbaServerRoleMember Unit Tests" -Tag "UnitTests" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaServerRoleMember
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
+        It "has the required parameter: SqlInstance" {
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "ServerRole",
                 "ExcludeServerRole",
                 "Login"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            $params | ForEach-Object {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
             $CommandUnderTest | Should -HaveParameter ExcludeFixedRole
             $CommandUnderTest | Should -HaveParameter EnableException

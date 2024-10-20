@@ -23,7 +23,7 @@ Describe "Read-DbaTraceFile" {
             $CommandUnderTest = Get-Command Read-DbaTraceFile
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Path",
@@ -40,8 +40,8 @@ Describe "Read-DbaTraceFile" {
                 "Where",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            $params | ForEach-Object {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

@@ -5,9 +5,9 @@ Describe "Mount-DbaDatabase" {
         BeforeAll {
             $CommandUnderTest = Get-Command Mount-DbaDatabase
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Database",
@@ -16,8 +16,8 @@ Describe "Mount-DbaDatabase" {
                 "AttachOption",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

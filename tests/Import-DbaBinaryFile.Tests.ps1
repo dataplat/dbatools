@@ -22,25 +22,22 @@ Describe "Import-DbaBinaryFile" {
         BeforeAll {
             $CommandUnderTest = Get-Command Import-DbaBinaryFile
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "Table",
-                "Schema",
-                "Statement",
-                "FileNameColumn",
-                "BinaryColumn",
-                "NoFileNameColumn",
-                "InputObject",
-                "FilePath",
-                "Path",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        It "has the required parameter: <_>" -ForEach @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "Table",
+            "Schema",
+            "Statement",
+            "FileNameColumn",
+            "BinaryColumn",
+            "NoFileNameColumn",
+            "InputObject",
+            "FilePath",
+            "Path",
+            "EnableException"
+        ) {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

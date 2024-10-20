@@ -22,22 +22,20 @@ foreach ($test in $tests) {
 
 $tests = Get-ChildItem -Path /workspace/tests -Filter *.Tests.ps1
 
-$prompt = 'All HaveParameter tests must be grouped into ONE It block titled "has all the required parameters". Like this:
+$prompt = 'HaveParameter tests must be structured exactly like this:
 
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }'
 
 
 foreach ($test in $tests) {
     Write-Host "Processing $test"
-    if ((Get-Content $test.FullName | Select-String -SimpleMatch -Pattern 'Should -HaveParameter $param')) {
+    if ((Get-Content $test.FullName | Select-String -SimpleMatch -Pattern 'has the required parameter: <_>" -ForEach')) {
         Write-Host "Skipping $($test.Name) because it already has the correct structure"
         continue
     }

@@ -26,8 +26,8 @@ Describe "Suspend-DbaAgDbDataMovement" {
         BeforeAll {
             $CommandUnderTest = Get-Command Suspend-DbaAgDbDataMovement
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
+        It "has the required parameter: <_>" -ForEach $params {
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "AvailabilityGroup",
@@ -35,7 +35,7 @@ Describe "Suspend-DbaAgDbDataMovement" {
                 "InputObject",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
+            foreach ($param in $params) {
                 $CommandUnderTest | Should -HaveParameter $param
             }
         }

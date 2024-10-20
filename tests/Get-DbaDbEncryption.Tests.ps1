@@ -5,20 +5,18 @@ Describe "Get-DbaDbEncryption" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaDbEncryption
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "ExcludeDatabase"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
-            $CommandUnderTest | Should -HaveParameter IncludeSystemDBs
-            $CommandUnderTest | Should -HaveParameter EnableException
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "ExcludeDatabase"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
+        $CommandUnderTest | Should -HaveParameter IncludeSystemDBs
+        $CommandUnderTest | Should -HaveParameter EnableException
     }
 
     Context "Integration Tests" -Tag "IntegrationTests" {

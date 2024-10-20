@@ -5,17 +5,15 @@ Describe "Disconnect-DbaInstance" {
         BeforeAll {
             $CommandUnderTest = Get-Command Disconnect-DbaInstance
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "InputObject",
-                "EnableException",
-                "WhatIf",
-                "Confirm"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "InputObject",
+            "EnableException",
+            "WhatIf",
+            "Confirm"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

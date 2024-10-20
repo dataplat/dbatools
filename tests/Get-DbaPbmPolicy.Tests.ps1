@@ -5,9 +5,9 @@ Describe "Get-DbaPbmPolicy" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaPbmPolicy
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Policy",
@@ -16,8 +16,8 @@ Describe "Get-DbaPbmPolicy" {
                 "IncludeSystemObject",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

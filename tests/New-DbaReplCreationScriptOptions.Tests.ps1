@@ -10,14 +10,14 @@ Describe "New-DbaReplCreationScriptOptions" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaReplCreationScriptOptions
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "Options",
                 "NoDefaults"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

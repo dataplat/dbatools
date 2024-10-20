@@ -11,9 +11,9 @@ Describe "New-DbaRgWorkloadGroup" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaRgWorkloadGroup
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "WorkloadGroup",
@@ -29,8 +29,8 @@ Describe "New-DbaRgWorkloadGroup" {
                 "Force",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

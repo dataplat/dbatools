@@ -15,34 +15,32 @@ Describe "Set-DbaStartupParameter" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaStartupParameter
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Credential",
-                "MasterData",
-                "MasterLog",
-                "ErrorLog",
-                "TraceFlag",
-                "CommandPromptStart",
-                "MinimalStart",
-                "MemoryToReserve",
-                "SingleUser",
-                "SingleUserDetails",
-                "NoLoggingToWinEvents",
-                "StartAsNamedInstance",
-                "DisableMonitoring",
-                "IncreasedExtents",
-                "TraceFlagOverride",
-                "StartupConfig",
-                "Offline",
-                "Force",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Credential",
+            "MasterData",
+            "MasterLog",
+            "ErrorLog",
+            "TraceFlag",
+            "CommandPromptStart",
+            "MinimalStart",
+            "MemoryToReserve",
+            "SingleUser",
+            "SingleUserDetails",
+            "NoLoggingToWinEvents",
+            "StartAsNamedInstance",
+            "DisableMonitoring",
+            "IncreasedExtents",
+            "TraceFlagOverride",
+            "StartupConfig",
+            "Offline",
+            "Force",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

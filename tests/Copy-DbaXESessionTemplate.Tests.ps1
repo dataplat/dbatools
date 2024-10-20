@@ -5,16 +5,14 @@ Describe "Copy-DbaXESessionTemplate" {
         BeforeAll {
             $CommandUnderTest = Get-Command Copy-DbaXESessionTemplate
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "Path",
-                "Destination",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "Path",
+            "Destination",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

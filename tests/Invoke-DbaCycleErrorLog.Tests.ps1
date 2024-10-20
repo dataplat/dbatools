@@ -12,16 +12,14 @@ Describe "Invoke-DbaCycleErrorLog Unit Tests" -Tag "UnitTests" {
             $command = Get-Command $CommandName
         }
 
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Type",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $command | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Type",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $command | Should -HaveParameter $PSItem
         }
     }
 }

@@ -11,23 +11,21 @@ Describe "Get-DbaModule" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaModule
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "ExcludeDatabase",
-                "ModifiedSince",
-                "Type",
-                "ExcludeSystemDatabases",
-                "ExcludeSystemObjects",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "ExcludeDatabase",
+            "ModifiedSince",
+            "Type",
+            "ExcludeSystemDatabases",
+            "ExcludeSystemObjects",
+            "InputObject",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

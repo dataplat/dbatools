@@ -3,7 +3,7 @@ param($ModuleName = 'dbatools')
 Describe "New-DbaAgentAlert" {
     BeforeAll {
         . "$PSScriptRoot\constants.ps1"
-        
+
         # Mock Get-DbaAgentAlert at the Describe level
         Mock Get-DbaAgentAlert {
             @(
@@ -15,7 +15,7 @@ Describe "New-DbaAgentAlert" {
                 }
             )
         }
-        
+
         # Mock Remove-DbaAgentAlert at the Describe level
         Mock Remove-DbaAgentAlert {}
     }
@@ -24,9 +24,9 @@ Describe "New-DbaAgentAlert" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaAgentAlert
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
+
+        It "has the required parameter: SqlInstance" {
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Alert",
@@ -47,8 +47,8 @@ Describe "New-DbaAgentAlert" {
                 "NotifyMethod",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            $params | ForEach-Object {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

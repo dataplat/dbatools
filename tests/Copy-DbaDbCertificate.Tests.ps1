@@ -5,26 +5,24 @@ Describe "Copy-DbaDbCertificate" {
         BeforeAll {
             $CommandUnderTest = Get-Command Copy-DbaDbCertificate
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "Source",
-                "SourceSqlCredential",
-                "Destination",
-                "DestinationSqlCredential",
-                "Database",
-                "ExcludeDatabase",
-                "Certificate",
-                "ExcludeCertificate",
-                "SharedPath",
-                "MasterKeyPassword",
-                "EncryptionPassword",
-                "DecryptionPassword",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "Source",
+            "SourceSqlCredential",
+            "Destination",
+            "DestinationSqlCredential",
+            "Database",
+            "ExcludeDatabase",
+            "Certificate",
+            "ExcludeCertificate",
+            "SharedPath",
+            "MasterKeyPassword",
+            "EncryptionPassword",
+            "DecryptionPassword",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 }

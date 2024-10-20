@@ -30,21 +30,19 @@ Describe "Set-DbaDbFileGroup" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaDbFileGroup
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "FileGroup",
-                "Default",
-                "ReadOnly",
-                "AutoGrowAllFiles",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "FileGroup",
+            "Default",
+            "ReadOnly",
+            "AutoGrowAllFiles",
+            "InputObject",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

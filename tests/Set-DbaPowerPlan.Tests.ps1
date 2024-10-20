@@ -5,17 +5,15 @@ Describe "Set-DbaPowerPlan" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaPowerPlan
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "ComputerName",
-                "Credential",
-                "PowerPlan",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "ComputerName",
+            "Credential",
+            "PowerPlan",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

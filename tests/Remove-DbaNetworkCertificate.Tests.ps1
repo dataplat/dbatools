@@ -6,15 +6,15 @@ Describe "Remove-DbaNetworkCertificate" {
             $CommandUnderTest = Get-Command Remove-DbaNetworkCertificate
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "Credential",
                 "EnableException",
                 "WhatIf",
                 "Confirm"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

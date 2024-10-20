@@ -5,20 +5,18 @@ Describe "Get-DbaDbLogSpace" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaDbLogSpace
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "ExcludeDatabase"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param -Mandatory:$false
-            }
-            $CommandUnderTest | Should -HaveParameter ExcludeSystemDatabase -Mandatory:$false
-            $CommandUnderTest | Should -HaveParameter EnableException -Mandatory:$false
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "ExcludeDatabase"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
+        $CommandUnderTest | Should -HaveParameter ExcludeSystemDatabase -Mandatory:$false
+        $CommandUnderTest | Should -HaveParameter EnableException -Mandatory:$false
     }
 
     Context "Command actually works" {

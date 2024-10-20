@@ -5,20 +5,18 @@ Describe "Get-DbaSsisExecutionHistory" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaSsisExecutionHistory
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Since",
-                "Status",
-                "Project",
-                "Folder",
-                "Environment",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Since",
+            "Status",
+            "Project",
+            "Folder",
+            "Environment",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 }

@@ -11,18 +11,16 @@ Describe "New-DbaClientAlias" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaClientAlias
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "ComputerName",
-                "Credential",
-                "ServerName",
-                "Alias",
-                "Protocol",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "ComputerName",
+            "Credential",
+            "ServerName",
+            "Alias",
+            "Protocol",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

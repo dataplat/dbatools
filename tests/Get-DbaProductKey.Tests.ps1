@@ -5,17 +5,15 @@ Describe "Get-DbaProductKey" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaProductKey
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "ComputerName",
-                "SqlCredential",
-                "Credential",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "ComputerName",
+            "SqlCredential",
+            "Credential",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

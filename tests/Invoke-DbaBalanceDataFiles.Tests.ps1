@@ -5,19 +5,17 @@ Describe "Invoke-DbaBalanceDataFiles" {
         BeforeAll {
             $CommandUnderTest = Get-Command Invoke-DbaBalanceDataFiles
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "Table",
-                "RebuildOffline",
-                "EnableException",
-                "Force"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "Table",
+            "RebuildOffline",
+            "EnableException",
+            "Force"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 }

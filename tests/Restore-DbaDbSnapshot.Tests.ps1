@@ -11,9 +11,9 @@ Describe "Restore-DbaDbSnapshot Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Restore-DbaDbSnapshot
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
+
+        It "has the required parameters" {
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Database",
@@ -21,8 +21,8 @@ Describe "Restore-DbaDbSnapshot Unit Tests" -Tag 'UnitTests' {
                 "Snapshot",
                 "InputObject"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
             $CommandUnderTest | Should -HaveParameter Force
             $CommandUnderTest | Should -HaveParameter EnableException

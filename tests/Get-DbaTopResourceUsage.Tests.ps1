@@ -5,9 +5,9 @@ Describe "Get-DbaTopResourceUsage" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaTopResourceUsage
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Database",
@@ -17,8 +17,8 @@ Describe "Get-DbaTopResourceUsage" {
                 "EnableException",
                 "ExcludeSystem"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param -Mandatory:$false
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

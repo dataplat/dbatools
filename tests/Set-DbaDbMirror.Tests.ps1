@@ -11,19 +11,19 @@ Describe "Set-DbaDbMirror" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaDbMirror
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "Partner",
-                "Witness",
-                "SafetyLevel",
-                "State",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "Partner",
+            "Witness",
+            "SafetyLevel",
+            "State",
+            "InputObject",
+            "EnableException"
+        )
+        foreach ($param in $params) {
+            It "has the required parameter: $param" {
                 $CommandUnderTest | Should -HaveParameter $param
             }
         }

@@ -11,9 +11,9 @@ Describe "Add-DbaComputerCertificate" {
         BeforeAll {
             $CommandUnderTest = Get-Command Add-DbaComputerCertificate
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "ComputerName",
                 "Credential",
                 "SecurePassword",
@@ -24,8 +24,8 @@ Describe "Add-DbaComputerCertificate" {
                 "Flag",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

@@ -11,7 +11,7 @@ Describe "Set-DbaAgReplica" {
             $CommandUnderTest = Get-Command Set-DbaAgReplica
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "AvailabilityGroup",
@@ -29,8 +29,8 @@ Describe "Set-DbaAgReplica" {
                 "InputObject",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

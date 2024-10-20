@@ -5,19 +5,17 @@ Describe "Get-DbaSsisEnvironmentVariable" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaSsisEnvironmentVariable
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Environment",
-                "EnvironmentExclude",
-                "Folder",
-                "FolderExclude",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Environment",
+            "EnvironmentExclude",
+            "Folder",
+            "FolderExclude",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 }

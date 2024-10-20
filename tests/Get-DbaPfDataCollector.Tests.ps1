@@ -11,18 +11,16 @@ Describe "Get-DbaPfDataCollector" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaPfDataCollector
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "ComputerName",
-                "Credential",
-                "CollectorSet",
-                "Collector",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "ComputerName",
+            "Credential",
+            "CollectorSet",
+            "Collector",
+            "InputObject",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

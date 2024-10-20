@@ -5,17 +5,15 @@ Describe "Get-DbaPfAvailableCounter" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaPfAvailableCounter
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
+
+        It "has the required parameter: <_>" -ForEach $params {
+            $params = @(
                 "ComputerName",
                 "Credential",
                 "Pattern",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

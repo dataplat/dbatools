@@ -10,24 +10,21 @@ Describe "New-DbaDbSnapshot" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaDbSnapshot
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "ExcludeDatabase",
-                "AllDatabases",
-                "Name",
-                "NameSuffix",
-                "Path",
-                "Force",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        It "has the required parameter: <_>" -ForEach @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "ExcludeDatabase",
+            "AllDatabases",
+            "Name",
+            "NameSuffix",
+            "Path",
+            "Force",
+            "InputObject",
+            "EnableException"
+        ) {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

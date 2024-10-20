@@ -6,7 +6,7 @@ Describe "New-DbaCmConnection" {
             $CommandUnderTest = Get-Command New-DbaCmConnection
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "ComputerName",
                 "Credential",
                 "UseWindowsCredentials",
@@ -21,8 +21,8 @@ Describe "New-DbaCmConnection" {
                 "CimDCOMOptions",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

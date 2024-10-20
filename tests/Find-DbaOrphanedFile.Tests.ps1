@@ -5,21 +5,19 @@ Describe "Find-DbaOrphanedFile" {
         BeforeAll {
             $CommandUnderTest = Get-Command Find-DbaOrphanedFile
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Path",
-                "FileType",
-                "LocalOnly",
-                "RemoteOnly",
-                "EnableException",
-                "Recurse"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Path",
+            "FileType",
+            "LocalOnly",
+            "RemoteOnly",
+            "EnableException",
+            "Recurse"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

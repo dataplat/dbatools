@@ -11,22 +11,20 @@ Describe "Get-DbaProcess" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaProcess
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Spid",
-                "ExcludeSpid",
-                "Database",
-                "Login",
-                "Hostname",
-                "Program",
-                "ExcludeSystemSpids",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Spid",
+            "ExcludeSpid",
+            "Database",
+            "Login",
+            "Hostname",
+            "Program",
+            "ExcludeSystemSpids",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

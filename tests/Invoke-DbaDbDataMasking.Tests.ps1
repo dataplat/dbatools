@@ -37,31 +37,29 @@ Describe "Invoke-DbaDbDataMasking" {
         BeforeAll {
             $CommandUnderTest = Get-Command Invoke-DbaDbDataMasking
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "FilePath",
-                "Locale",
-                "CharacterString",
-                "Table",
-                "Column",
-                "ExcludeTable",
-                "ExcludeColumn",
-                "MaxValue",
-                "ModulusFactor",
-                "ExactLength",
-                "CommandTimeout",
-                "BatchSize",
-                "Retry",
-                "DictionaryFilePath",
-                "DictionaryExportPath",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "FilePath",
+            "Locale",
+            "CharacterString",
+            "Table",
+            "Column",
+            "ExcludeTable",
+            "ExcludeColumn",
+            "MaxValue",
+            "ModulusFactor",
+            "ExactLength",
+            "CommandTimeout",
+            "BatchSize",
+            "Retry",
+            "DictionaryFilePath",
+            "DictionaryExportPath",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

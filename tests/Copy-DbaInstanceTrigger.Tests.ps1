@@ -5,9 +5,9 @@ Describe "Copy-DbaInstanceTrigger" {
         BeforeAll {
             $CommandUnderTest = Get-Command Copy-DbaInstanceTrigger
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "Source",
                 "SourceSqlCredential",
                 "Destination",
@@ -17,8 +17,8 @@ Describe "Copy-DbaInstanceTrigger" {
                 "Force",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

@@ -11,22 +11,20 @@ Describe "Copy-DbaAgentSchedule" {
         BeforeAll {
             $CommandUnderTest = Get-Command Copy-DbaAgentSchedule
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "Source",
-                "SourceSqlCredential",
-                "Destination",
-                "DestinationSqlCredential",
-                "Schedule",
-                "Id",
-                "InputObject",
-                "Force",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "Source",
+            "SourceSqlCredential",
+            "Destination",
+            "DestinationSqlCredential",
+            "Schedule",
+            "Id",
+            "InputObject",
+            "Force",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

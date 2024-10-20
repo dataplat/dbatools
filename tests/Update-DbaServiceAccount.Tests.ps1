@@ -73,22 +73,20 @@ Describe "Update-DbaServiceAccount" {
         BeforeAll {
             $CommandUnderTest = Get-Command Update-DbaServiceAccount
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "ComputerName",
-                "Credential",
-                "InputObject",
-                "ServiceName",
-                "Username",
-                "ServiceCredential",
-                "PreviousPassword",
-                "SecurePassword",
-                "NoRestart",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "ComputerName",
+            "Credential",
+            "InputObject",
+            "ServiceName",
+            "Username",
+            "ServiceCredential",
+            "PreviousPassword",
+            "SecurePassword",
+            "NoRestart",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

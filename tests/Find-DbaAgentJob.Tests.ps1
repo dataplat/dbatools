@@ -12,7 +12,7 @@ Describe "Find-DbaAgentJob Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Find-DbaAgentJob
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "JobName",
@@ -28,8 +28,8 @@ Describe "Find-DbaAgentJob Unit Tests" -Tag 'UnitTests' {
                 "Since",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

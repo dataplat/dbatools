@@ -9,18 +9,16 @@ Describe "Clear-DbaPlanCache" {
         BeforeAll {
             $CommandUnderTest = Get-Command Clear-DbaPlanCache
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Threshold",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param -Mandatory:$false
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Threshold",
+            "InputObject",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

@@ -5,9 +5,9 @@ Describe "Add-DbaServerRoleMember" {
         BeforeAll {
             $CommandUnderTest = Get-Command Add-DbaServerRoleMember
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "ServerRole",
@@ -16,8 +16,8 @@ Describe "Add-DbaServerRoleMember" {
                 "InputObject",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

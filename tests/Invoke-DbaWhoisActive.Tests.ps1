@@ -20,41 +20,39 @@ Describe "Invoke-DbaWhoIsActive" {
         BeforeAll {
             $CommandUnderTest = Get-Command Invoke-DbaWhoIsActive
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "Filter",
-                "FilterType",
-                "NotFilter",
-                "NotFilterType",
-                "ShowOwnSpid",
-                "ShowSystemSpids",
-                "ShowSleepingSpids",
-                "GetFullInnerText",
-                "GetPlans",
-                "GetOuterCommand",
-                "GetTransactionInfo",
-                "GetTaskInfo",
-                "GetLocks",
-                "GetAverageTime",
-                "GetAdditonalInfo",
-                "FindBlockLeaders",
-                "DeltaInterval",
-                "OutputColumnList",
-                "SortOrder",
-                "FormatOutput",
-                "DestinationTable",
-                "ReturnSchema",
-                "Schema",
-                "Help",
-                "As",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "Filter",
+            "FilterType",
+            "NotFilter",
+            "NotFilterType",
+            "ShowOwnSpid",
+            "ShowSystemSpids",
+            "ShowSleepingSpids",
+            "GetFullInnerText",
+            "GetPlans",
+            "GetOuterCommand",
+            "GetTransactionInfo",
+            "GetTaskInfo",
+            "GetLocks",
+            "GetAverageTime",
+            "GetAdditonalInfo",
+            "FindBlockLeaders",
+            "DeltaInterval",
+            "OutputColumnList",
+            "SortOrder",
+            "FormatOutput",
+            "DestinationTable",
+            "ReturnSchema",
+            "Schema",
+            "Help",
+            "As",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

@@ -5,21 +5,19 @@ Describe "New-DbaLinkedServerLogin" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaLinkedServerLogin
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "LinkedServer",
-                "LocalLogin",
-                "RemoteUser",
-                "RemoteUserPassword",
-                "Impersonate",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "LinkedServer",
+            "LocalLogin",
+            "RemoteUser",
+            "RemoteUserPassword",
+            "Impersonate",
+            "InputObject",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 }

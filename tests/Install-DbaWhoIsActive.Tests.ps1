@@ -180,22 +180,19 @@ ALTER PROC dbo.sp_WhoIsActive
     Context "Validate parameters" {
         BeforeAll {
             $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-            $ParameterList = (Get-Command -Name $CommandName).Parameters
+            $CommandUnderTest = Get-Command -Name $CommandName
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "LocalFile",
-                "Database",
-                "EnableException",
-                "Force"
-            )
-            foreach ($param in $requiredParameters) {
-                $ParameterList[$param] | Should -Not -BeNullOrEmpty
-                $ParameterList[$param].ParameterType.FullName | Should -Not -BeNullOrEmpty
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "LocalFile",
+            "Database",
+            "EnableException",
+            "Force"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
 
     }

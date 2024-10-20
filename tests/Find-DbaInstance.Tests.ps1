@@ -5,22 +5,20 @@ Describe "Find-DbaInstance" {
         BeforeAll {
             $CommandUnderTest = Get-Command Find-DbaInstance
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "ComputerName",
-                "DiscoveryType",
-                "Credential",
-                "SqlCredential",
-                "ScanType",
-                "IpAddress",
-                "DomainController",
-                "TCPPort",
-                "MinimumConfidence",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "ComputerName",
+            "DiscoveryType",
+            "Credential",
+            "SqlCredential",
+            "ScanType",
+            "IpAddress",
+            "DomainController",
+            "TCPPort",
+            "MinimumConfidence",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

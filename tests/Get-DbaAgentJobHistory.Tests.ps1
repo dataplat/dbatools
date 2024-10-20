@@ -11,23 +11,21 @@ Describe "Get-DbaAgentJobHistory Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $command = Get-Command -Name $CommandName
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Job",
-                "ExcludeJob",
-                "StartDate",
-                "EndDate",
-                "OutcomeType",
-                "ExcludeJobSteps",
-                "WithOutputFile",
-                "JobCollection",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $command | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Job",
+            "ExcludeJob",
+            "StartDate",
+            "EndDate",
+            "OutcomeType",
+            "ExcludeJobSteps",
+            "WithOutputFile",
+            "JobCollection",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $command | Should -HaveParameter $PSItem
         }
     }
 }

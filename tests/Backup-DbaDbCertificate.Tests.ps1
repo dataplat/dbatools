@@ -5,23 +5,21 @@ Describe "Backup-DbaDbCertificate" {
         BeforeAll {
             $CommandUnderTest = Get-Command Backup-DbaDbCertificate
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Certificate",
-                "Database",
-                "ExcludeDatabase",
-                "EncryptionPassword",
-                "DecryptionPassword",
-                "Path",
-                "Suffix",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Certificate",
+            "Database",
+            "ExcludeDatabase",
+            "EncryptionPassword",
+            "DecryptionPassword",
+            "Path",
+            "Suffix",
+            "InputObject",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

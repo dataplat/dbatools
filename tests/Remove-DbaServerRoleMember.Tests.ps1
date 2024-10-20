@@ -26,19 +26,17 @@ Describe "Remove-DbaServerRoleMember" {
         BeforeAll {
             $CommandUnderTest = Get-Command Remove-DbaServerRoleMember
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "ServerRole",
-                "Login",
-                "Role",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "ServerRole",
+            "Login",
+            "Role",
+            "InputObject",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

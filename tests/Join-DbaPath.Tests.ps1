@@ -9,16 +9,14 @@ Describe "Join-DbaPath" {
         BeforeAll {
             $CommandUnderTest = Get-Command Join-DbaPath
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "Path",
-                "SqlInstance",
-                "Child"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "Path",
+            "SqlInstance",
+            "Child"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

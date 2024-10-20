@@ -12,14 +12,14 @@ Describe "Set-DbatoolsPath" {
             $CommandUnderTest = Get-Command Set-DbatoolsPath
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "Name",
                 "Path",
                 "Register",
                 "Scope"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

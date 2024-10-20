@@ -10,29 +10,27 @@ Describe "Install-DbaAgentAdminAlert" {
         BeforeAll {
             $CommandUnderTest = Get-Command Install-DbaAgentAdminAlert
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Category",
-                "Database",
-                "Operator",
-                "OperatorEmail",
-                "DelayBetweenResponses",
-                "Disabled",
-                "EventDescriptionKeyword",
-                "EventSource",
-                "JobId",
-                "ExcludeSeverity",
-                "ExcludeMessageId",
-                "NotificationMessage",
-                "NotifyMethod",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Category",
+            "Database",
+            "Operator",
+            "OperatorEmail",
+            "DelayBetweenResponses",
+            "Disabled",
+            "EventDescriptionKeyword",
+            "EventSource",
+            "JobId",
+            "ExcludeSeverity",
+            "ExcludeMessageId",
+            "NotificationMessage",
+            "NotifyMethod",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

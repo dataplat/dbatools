@@ -74,7 +74,7 @@ Describe "New-DbaDbTransfer" {
             $CommandUnderTest = Get-Command New-DbaDbTransfer
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "DestinationSqlInstance",
@@ -91,8 +91,8 @@ Describe "New-DbaDbTransfer" {
                 "DataOnly",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            $params | ForEach-Object {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

@@ -33,26 +33,12 @@ Describe "Connect-DbaInstance" {
         BeforeAll {
             $CommandUnderTest = Get-Command Connect-DbaInstance
         }
-        It "Requires SqlInstance as a Mandatory parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlInstance -Type DbaInstanceParameter[] -Mandatory -Alias 'ConnectionString'
-        }
-        It "Accepts SqlCredential as a parameter" {
-            $CommandUnderTest | Should -HaveParameter SqlCredential -Type PSCredential
-        }
-        It "Accepts Database as a parameter" {
-            $CommandUnderTest | Should -HaveParameter Database -Type String -DefaultValue "(Get-DbatoolsConfigValue -FullName 'sql.connection.database')"
-        }
-        It "Accepts ApplicationIntent as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ApplicationIntent -Type String
-        }
-        It "Accepts AzureUnsupported as a parameter" {
-            $CommandUnderTest | Should -HaveParameter AzureUnsupported -Type Switch
-        }
-        It "Accepts BatchSeparator as a parameter" {
-            $CommandUnderTest | Should -HaveParameter BatchSeparator -Type String
-        }
-        It "Accepts ConnectTimeout as a parameter" {
-            $CommandUnderTest | Should -HaveParameter ConnectTimeout -Type int -DefaultValue "([Dataplat.Dbatools.Connection.ConnectionHost]::SqlConnectionTimeout)"
+        $params = @(
+            "SqlInstance",
+            "SqlCredential"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
     Context "Command usage" {

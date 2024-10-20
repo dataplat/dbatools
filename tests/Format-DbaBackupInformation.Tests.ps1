@@ -12,7 +12,7 @@ Describe "Format-DbaBackupInformation" {
             $CommandUnderTest = Get-Command Format-DbaBackupInformation
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "BackupHistory",
                 "ReplaceDatabaseName",
                 "ReplaceDbNameInFile",
@@ -28,8 +28,8 @@ Describe "Format-DbaBackupInformation" {
                 "PathSep",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            $params | ForEach-Object {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

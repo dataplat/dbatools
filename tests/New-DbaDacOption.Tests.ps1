@@ -5,17 +5,17 @@ Describe "New-DbaDacOption" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaDacOption
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "Type",
                 "Action",
                 "PublishXml",
                 "Property",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
             $CommandUnderTest | Should -HaveParameter Property -Type System.Collections.Hashtable
             $CommandUnderTest | Should -HaveParameter EnableException -Type System.Management.Automation.SwitchParameter

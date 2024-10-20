@@ -11,22 +11,20 @@ Describe "Import-DbaXESessionTemplate" {
         BeforeAll {
             $CommandUnderTest = Get-Command Import-DbaXESessionTemplate
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Name",
-                "Path",
-                "Template",
-                "TargetFilePath",
-                "TargetFileMetadataPath",
-                "StartUpState",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Name",
+            "Path",
+            "Template",
+            "TargetFilePath",
+            "TargetFileMetadataPath",
+            "StartUpState",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

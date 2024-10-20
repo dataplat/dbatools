@@ -11,21 +11,9 @@ Describe "Measure-DbaBackupThroughput" {
         BeforeAll {
             $CommandUnderTest = Get-Command Measure-DbaBackupThroughput
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "ExcludeDatabase",
-                "Since",
-                "Last",
-                "Type",
-                "DeviceType",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        It "has the required parameter: SqlInstance" -ForEach @("SqlInstance", "SqlCredential", "Database", "ExcludeDatabase", "Since", "Last", "Type", "DeviceType", "EnableException") {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

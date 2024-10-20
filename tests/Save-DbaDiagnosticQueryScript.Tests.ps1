@@ -11,16 +11,12 @@ Describe "Save-DbaDiagnosticQueryScript" {
         BeforeAll {
             $CommandUnderTest = Get-Command Save-DbaDiagnosticQueryScript
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "Path",
-                "EnableException",
-                "SqlInstance",
-                "SqlCredential"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

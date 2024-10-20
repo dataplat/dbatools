@@ -5,7 +5,7 @@ Describe "Set-DbaDbSequence" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaDbSequence
         }
-        
+
         It "has all the required parameters" {
             $requiredParameters = @(
                 "SqlInstance",
@@ -22,8 +22,8 @@ Describe "Set-DbaDbSequence" {
                 "InputObject",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            $requiredParameters | ForEach-Object {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

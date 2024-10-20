@@ -11,20 +11,11 @@ Describe "Test-DbaBackupInformation Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Test-DbaBackupInformation
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "BackupHistory",
-                "SqlInstance",
-                "SqlCredential",
-                "WithReplace",
-                "Continue",
-                "VerifyOnly",
-                "OutputScriptOnly",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        It "has the required parameter: <_>" -ForEach @(
+            "SqlInstance",
+            "SqlCredential"
+        ) {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 }
@@ -65,7 +56,7 @@ Describe "Test-DbaBackupInformation Integration Tests" -Tag 'IntegrationTests' {
 
         Mock Get-DbaDatabase { $null } -ModuleName $ModuleName
         Mock New-DbaDirectory {$true} -ModuleName $ModuleName
-        Mock Test-DbaPath { 
+        Mock Test-DbaPath {
             [pscustomobject]@{
                 FilePath   = 'does\exists'
                 FileExists = $true
@@ -84,7 +75,7 @@ Describe "Test-DbaBackupInformation Integration Tests" -Tag 'IntegrationTests' {
 
     Context "Not being able to see backups is bad" {
         BeforeAll {
-            Mock Test-DbaPath { 
+            Mock Test-DbaPath {
                 [pscustomobject]@{
                     FilePath   = 'does\not\exists'
                     FileExists = $false

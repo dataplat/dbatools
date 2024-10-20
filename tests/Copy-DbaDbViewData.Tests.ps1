@@ -67,7 +67,7 @@ Describe "Copy-DbaDbViewData" {
             $CommandUnderTest = Get-Command Copy-DbaDbViewData
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Destination",
@@ -90,8 +90,10 @@ Describe "Copy-DbaDbViewData" {
                 "InputObject",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            $params | ForEach-Object {
+                It "has the required parameter: $_" {
+                    $CommandUnderTest | Should -HaveParameter $PSItem
+                }
             }
         }
     }

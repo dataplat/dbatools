@@ -47,16 +47,14 @@ function Get-DbaStub {
         BeforeAll {
             $CommandUnderTest = Get-Command Invoke-DbatoolsRenameHelper
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "InputObject",
-                "Encoding",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "InputObject",
+            "Encoding",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

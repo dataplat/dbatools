@@ -5,16 +5,14 @@ Describe "Get-DbaSuspectPage" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaSuspectPage
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "Database",
-                "SqlCredential",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "Database",
+            "SqlCredential",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

@@ -5,9 +5,9 @@ Describe "Remove-DbaComputerCertificate" {
         BeforeAll {
             $CommandUnderTest = Get-Command Remove-DbaComputerCertificate
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
+
+        It "has the required parameters" {
+            $params = @(
                 "ComputerName",
                 "Credential",
                 "Thumbprint",
@@ -15,8 +15,8 @@ Describe "Remove-DbaComputerCertificate" {
                 "Folder",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

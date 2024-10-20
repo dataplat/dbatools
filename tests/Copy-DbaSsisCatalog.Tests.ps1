@@ -12,7 +12,7 @@ Describe "Copy-DbaSsisCatalog" {
             $CommandUnderTest = Get-Command Copy-DbaSsisCatalog
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "Source",
                 "Destination",
                 "SourceSqlCredential",
@@ -25,8 +25,8 @@ Describe "Copy-DbaSsisCatalog" {
                 "Force",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

@@ -13,16 +13,16 @@ Describe "Get-DbaXESessionTargetFile" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaXESessionTargetFile
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Session",
-                "Target",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Session",
+            "Target",
+            "InputObject",
+            "EnableException"
+        )
+        foreach ($param in $params) {
+            It "has the required parameter: $param" {
                 $CommandUnderTest | Should -HaveParameter $param
             }
         }

@@ -12,7 +12,7 @@ Describe "Remove-DbaAgentSchedule Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Remove-DbaAgentSchedule
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Schedule",
@@ -22,8 +22,8 @@ Describe "Remove-DbaAgentSchedule Unit Tests" -Tag 'UnitTests' {
                 "EnableException",
                 "Force"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

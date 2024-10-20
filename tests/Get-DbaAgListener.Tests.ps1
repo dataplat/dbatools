@@ -11,8 +11,8 @@ Describe "Get-DbaAgListener Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaAgListener
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
+        It "has the required parameter: SqlInstance" {
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "AvailabilityGroup",
@@ -20,8 +20,8 @@ Describe "Get-DbaAgListener Unit Tests" -Tag 'UnitTests' {
                 "InputObject",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            $params | ForEach-Object {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

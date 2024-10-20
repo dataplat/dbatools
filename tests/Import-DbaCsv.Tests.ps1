@@ -21,49 +21,47 @@ Describe "Import-DbaCsv" {
         BeforeAll {
             $CommandUnderTest = Get-Command Import-DbaCsv
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "Path",
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "Table",
-                "Schema",
-                "Truncate",
-                "Delimiter",
-                "SingleColumn",
-                "BatchSize",
-                "NotifyAfter",
-                "TableLock",
-                "CheckConstraints",
-                "FireTriggers",
-                "KeepIdentity",
-                "KeepNulls",
-                "Column",
-                "ColumnMap",
-                "KeepOrdinalOrder",
-                "AutoCreateTable",
-                "NoProgress",
-                "NoHeaderRow",
-                "UseFileNameForSchema",
-                "Quote",
-                "Escape",
-                "Comment",
-                "TrimmingOption",
-                "BufferSize",
-                "ParseErrorAction",
-                "Encoding",
-                "NullValue",
-                "MaxQuotedFieldLength",
-                "SkipEmptyLine",
-                "SupportsMultiline",
-                "UseColumnDefault",
-                "NoTransaction",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "Path",
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "Table",
+            "Schema",
+            "Truncate",
+            "Delimiter",
+            "SingleColumn",
+            "BatchSize",
+            "NotifyAfter",
+            "TableLock",
+            "CheckConstraints",
+            "FireTriggers",
+            "KeepIdentity",
+            "KeepNulls",
+            "Column",
+            "ColumnMap",
+            "KeepOrdinalOrder",
+            "AutoCreateTable",
+            "NoProgress",
+            "NoHeaderRow",
+            "UseFileNameForSchema",
+            "Quote",
+            "Escape",
+            "Comment",
+            "TrimmingOption",
+            "BufferSize",
+            "ParseErrorAction",
+            "Encoding",
+            "NullValue",
+            "MaxQuotedFieldLength",
+            "SkipEmptyLine",
+            "SupportsMultiline",
+            "UseColumnDefault",
+            "NoTransaction",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

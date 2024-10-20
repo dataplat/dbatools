@@ -6,19 +6,32 @@ Describe "New-DbaDbMailProfile" {
             $CommandUnderTest = Get-Command New-DbaDbMailProfile
         }
         
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Profile",
-                "Description",
-                "MailAccountName",
-                "MailAccountPriority",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param -Mandatory:$false
-            }
+        It "has the required parameter: SqlInstance" {
+            $CommandUnderTest | Should -HaveParameter "SqlInstance"
+        }
+
+        It "has the required parameter: SqlCredential" {
+            $CommandUnderTest | Should -HaveParameter "SqlCredential"
+        }
+
+        It "has the required parameter: Profile" {
+            $CommandUnderTest | Should -HaveParameter "Profile"
+        }
+
+        It "has the required parameter: Description" {
+            $CommandUnderTest | Should -HaveParameter "Description"
+        }
+
+        It "has the required parameter: MailAccountName" {
+            $CommandUnderTest | Should -HaveParameter "MailAccountName"
+        }
+
+        It "has the required parameter: MailAccountPriority" {
+            $CommandUnderTest | Should -HaveParameter "MailAccountPriority"
+        }
+
+        It "has the required parameter: EnableException" {
+            $CommandUnderTest | Should -HaveParameter "EnableException"
         }
     }
 

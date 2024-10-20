@@ -12,7 +12,7 @@ Describe "Reset-DbatoolsConfig" {
             $CommandUnderTest = Get-Command Reset-DbatoolsConfig
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "ConfigurationItem",
                 "FullName",
                 "Module",
@@ -21,8 +21,8 @@ Describe "Reset-DbatoolsConfig" {
                 "WhatIf",
                 "Confirm"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

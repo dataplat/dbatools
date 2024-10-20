@@ -9,19 +9,17 @@ Describe "Get-DbaServerRole" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaServerRole
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "ServerRole",
-                "ExcludeServerRole",
-                "ExcludeFixedRole",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "ServerRole",
+            "ExcludeServerRole",
+            "ExcludeFixedRole",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

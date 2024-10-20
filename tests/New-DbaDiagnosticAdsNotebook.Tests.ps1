@@ -5,19 +5,17 @@ Describe "New-DbaDiagnosticAdsNotebook" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaDiagnosticAdsNotebook
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "TargetVersion",
-                "Path",
-                "IncludeDatabaseSpecific",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "TargetVersion",
+            "Path",
+            "IncludeDatabaseSpecific",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

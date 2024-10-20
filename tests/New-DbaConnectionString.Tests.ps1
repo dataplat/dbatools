@@ -5,9 +5,9 @@ Describe "New-DbaConnectionString" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaConnectionString
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "Credential",
                 "AccessToken",
@@ -35,8 +35,8 @@ Describe "New-DbaConnectionString" {
                 "Legacy",
                 "AppendConnectionString"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param -Mandatory:$false
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

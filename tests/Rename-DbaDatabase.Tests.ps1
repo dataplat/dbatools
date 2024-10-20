@@ -19,35 +19,33 @@ Describe "Rename-DbaDatabase" {
     }
 
     AfterAll {
-        $null = Remove-DbaDatabase -SqlInstance $global:instance2 -Database "test_dbatoolsci_rename2_$($date)", "Dbatoolsci_filemove", "dbatoolsci_logicname", "dbatoolsci_filegroupname" 
+        $null = Remove-DbaDatabase -SqlInstance $global:instance2 -Database "test_dbatoolsci_rename2_$($date)", "Dbatoolsci_filemove", "dbatoolsci_logicname", "dbatoolsci_filegroupname"
     }
 
     Context "Validate parameters" {
         BeforeAll {
             $CommandUnderTest = Get-Command Rename-DbaDatabase
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "ExcludeDatabase",
-                "AllDatabases",
-                "DatabaseName",
-                "FileGroupName",
-                "LogicalName",
-                "FileName",
-                "ReplaceBefore",
-                "Force",
-                "Move",
-                "SetOffline",
-                "Preview",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "ExcludeDatabase",
+            "AllDatabases",
+            "DatabaseName",
+            "FileGroupName",
+            "LogicalName",
+            "FileName",
+            "ReplaceBefore",
+            "Force",
+            "Move",
+            "SetOffline",
+            "Preview",
+            "InputObject",
+            "EnableException"
+        )
+        It "has the required parameter: $_" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

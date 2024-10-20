@@ -39,7 +39,7 @@ Describe "Invoke-DbaDiagnosticQuery" {
             $CommandUnderTest = Get-Command Invoke-DbaDiagnosticQuery
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "Database",
                 "ExcludeDatabase",
@@ -57,8 +57,8 @@ Describe "Invoke-DbaDiagnosticQuery" {
                 "ExportQueries",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

@@ -31,7 +31,7 @@ Describe "Set-DbaTempDbConfig" {
             $CommandUnderTest = Get-Command Set-DbaTempDbConfig
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "DataFileCount",
@@ -46,8 +46,8 @@ Describe "Set-DbaTempDbConfig" {
                 "DisableGrowth",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

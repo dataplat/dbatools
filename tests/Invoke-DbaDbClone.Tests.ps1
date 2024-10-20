@@ -11,9 +11,9 @@ Describe "Invoke-DbaDbClone" {
         BeforeAll {
             $CommandUnderTest = Get-Command Invoke-DbaDbClone
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Database",
@@ -24,8 +24,8 @@ Describe "Invoke-DbaDbClone" {
                 "UpdateStatistics",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

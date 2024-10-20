@@ -9,20 +9,18 @@ Describe "Invoke-DbaXEReplay" {
         BeforeAll {
             $CommandUnderTest = Get-Command Invoke-DbaXEReplay
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "Event",
-                "InputObject",
-                "Raw",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "Event",
+            "InputObject",
+            "Raw",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

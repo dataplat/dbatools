@@ -22,18 +22,16 @@ Describe "Get-DbaDbFileGroup" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaDbFileGroup
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "InputObject",
-                "FileGroup",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "InputObject",
+            "FileGroup",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

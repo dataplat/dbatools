@@ -12,7 +12,7 @@ Describe "Invoke-DbaDbLogShipRecovery" {
             $CommandUnderTest = Get-Command Invoke-DbaDbLogShipRecovery
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "Database",
                 "SqlCredential",
@@ -22,8 +22,8 @@ Describe "Invoke-DbaDbLogShipRecovery" {
                 "InputObject",
                 "Delay"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

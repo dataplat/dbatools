@@ -69,34 +69,32 @@ Describe "New-DbaLogin" {
             $CommandName = 'New-DbaLogin'
             $Command = Get-Command -Name $CommandName
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Login",
-                "InputObject",
-                "LoginRenameHashtable",
-                "SecurePassword",
-                "HashedPassword",
-                "MapToCertificate",
-                "MapToAsymmetricKey",
-                "MapToCredential",
-                "Sid",
-                "DefaultDatabase",
-                "Language",
-                "PasswordExpirationEnabled",
-                "PasswordPolicyEnforced",
-                "PasswordMustChange",
-                "Disabled",
-                "DenyWindowsLogin",
-                "NewSid",
-                "ExternalProvider",
-                "Force",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $Command | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Login",
+            "InputObject",
+            "LoginRenameHashtable",
+            "SecurePassword",
+            "HashedPassword",
+            "MapToCertificate",
+            "MapToAsymmetricKey",
+            "MapToCredential",
+            "Sid",
+            "DefaultDatabase",
+            "Language",
+            "PasswordExpirationEnabled",
+            "PasswordPolicyEnforced",
+            "PasswordMustChange",
+            "Disabled",
+            "DenyWindowsLogin",
+            "NewSid",
+            "ExternalProvider",
+            "Force",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $Command | Should -HaveParameter $PSItem
         }
     }
 

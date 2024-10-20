@@ -11,22 +11,20 @@ Describe "Stop-DbaService" {
         BeforeAll {
             $CommandUnderTest = Get-Command Stop-DbaService
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "ComputerName",
-                "InstanceName",
-                "SqlInstance",
-                "Type",
-                "InputObject",
-                "Timeout",
-                "Credential",
-                "Force",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "ComputerName",
+            "InstanceName",
+            "SqlInstance",
+            "Type",
+            "InputObject",
+            "Timeout",
+            "Credential",
+            "Force",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

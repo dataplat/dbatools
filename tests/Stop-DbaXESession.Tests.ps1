@@ -5,11 +5,13 @@ Describe "Stop-DbaXESession" {
         BeforeAll {
             $CommandUnderTest = Get-Command Stop-DbaXESession
         }
-        
+
+        It "has the required parameter: SqlInstance" -ForEach @("SqlInstance", "SqlCredential") {
+            $CommandUnderTest | Should -HaveParameter $PSItem
+        }
+
         It "has all the required parameters" {
             $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
                 "Session",
                 "AllSessions",
                 "InputObject",

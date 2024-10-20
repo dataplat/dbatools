@@ -26,16 +26,14 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "ComputerName",
-                "Credential",
-                "Version",
-                "InstanceName"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandName | Should -HaveParameter $param
-            }
+        $params = @(
+            "ComputerName",
+            "Credential",
+            "Version",
+            "InstanceName"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandName | Should -HaveParameter $PSItem
         }
     }
     # ... rest of the code ...

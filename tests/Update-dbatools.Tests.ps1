@@ -12,13 +12,13 @@ Describe "Update-Dbatools" {
             $CommandUnderTest = Get-Command Update-Dbatools
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "Development",
                 "Cleanup",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

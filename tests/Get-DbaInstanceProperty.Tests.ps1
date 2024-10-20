@@ -10,17 +10,15 @@ Describe "Get-DbaInstanceProperty" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaInstanceProperty
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "InstanceProperty",
-                "ExcludeInstanceProperty",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "InstanceProperty",
+            "ExcludeInstanceProperty",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

@@ -9,17 +9,15 @@ Describe "Get-DbaStartupParameter" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaStartupParameter
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "Credential",
-                "Simple",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "Credential",
+            "Simple",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

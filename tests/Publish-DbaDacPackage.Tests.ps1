@@ -5,9 +5,9 @@ Describe "Publish-DbaDacPackage" {
         BeforeAll {
             $CommandUnderTest = Get-Command Publish-DbaDacPackage
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Path",
@@ -23,8 +23,10 @@ Describe "Publish-DbaDacPackage" {
                 "EnableException",
                 "DacFxPath"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            $params | ForEach-Object {
+                It "has the required parameter: $_" {
+                    $CommandUnderTest | Should -HaveParameter $PSItem
+                }
             }
         }
     }

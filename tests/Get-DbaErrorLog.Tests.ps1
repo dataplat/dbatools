@@ -5,21 +5,19 @@ Describe "Get-DbaErrorLog" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaErrorLog
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "LogNumber",
-                "Source",
-                "Text",
-                "After",
-                "Before",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "LogNumber",
+            "Source",
+            "Text",
+            "After",
+            "Before",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

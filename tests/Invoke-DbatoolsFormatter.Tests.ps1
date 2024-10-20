@@ -43,14 +43,12 @@ function Get-DbaStub {
         BeforeAll {
             $CommandUnderTest = Get-Command Invoke-DbatoolsFormatter
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "Path",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "Path",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

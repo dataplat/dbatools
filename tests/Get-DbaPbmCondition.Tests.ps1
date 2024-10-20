@@ -6,14 +6,14 @@ Describe "Get-DbaPbmCondition" {
             $CommandUnderTest = Get-Command Get-DbaPbmCondition
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Condition",
                 "InputObject"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
             $CommandUnderTest | Should -HaveParameter IncludeSystemObject
             $CommandUnderTest | Should -HaveParameter EnableException

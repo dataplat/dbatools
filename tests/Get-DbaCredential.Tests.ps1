@@ -35,8 +35,8 @@ Describe "Get-DbaCredential" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaCredential
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
+        It "has the required parameter: <_>" -ForEach $params {
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Credential",
@@ -45,7 +45,7 @@ Describe "Get-DbaCredential" {
                 "ExcludeIdentity",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
+            foreach ($param in $params) {
                 $CommandUnderTest | Should -HaveParameter $param
             }
         }

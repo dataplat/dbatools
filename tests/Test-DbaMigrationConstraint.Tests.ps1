@@ -28,7 +28,7 @@ Describe "Test-DbaMigrationConstraint" {
             $CommandUnderTest = Get-Command Test-DbaMigrationConstraint
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "Source",
                 "SourceSqlCredential",
                 "Destination",
@@ -37,8 +37,8 @@ Describe "Test-DbaMigrationConstraint" {
                 "ExcludeDatabase",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

@@ -10,19 +10,17 @@ Describe "Save-DbaKbUpdate" {
         BeforeAll {
             $CommandUnderTest = Get-Command Save-DbaKbUpdate
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "Name",
-                "Path",
-                "FilePath",
-                "Architecture",
-                "Language",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $requiredParameters = @(
+            "Name",
+            "Path",
+            "FilePath",
+            "Architecture",
+            "Language",
+            "InputObject",
+            "EnableException"
+        )
+        It "has all the required parameters: <_>" -ForEach $requiredParameters {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

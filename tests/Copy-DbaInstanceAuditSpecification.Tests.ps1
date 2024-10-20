@@ -6,20 +6,18 @@ Describe "Copy-DbaInstanceAuditSpecification" {
             $CommandUnderTest = Get-Command Copy-DbaInstanceAuditSpecification
         }
 
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "Source",
-                "SourceSqlCredential",
-                "Destination",
-                "DestinationSqlCredential",
-                "AuditSpecification",
-                "ExcludeAuditSpecification",
-                "Force",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "Source",
+            "SourceSqlCredential",
+            "Destination",
+            "DestinationSqlCredential",
+            "AuditSpecification",
+            "ExcludeAuditSpecification",
+            "Force",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

@@ -5,9 +5,9 @@ Describe "Import-DbaPfDataCollectorSetTemplate" {
         BeforeAll {
             $CommandUnderTest = Get-Command Import-DbaPfDataCollectorSetTemplate
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "ComputerName",
                 "Credential",
                 "DisplayName",
@@ -29,8 +29,8 @@ Describe "Import-DbaPfDataCollectorSetTemplate" {
                 "Instance",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

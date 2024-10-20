@@ -11,9 +11,9 @@ Describe "Copy-DbaBackupDevice" {
         BeforeAll {
             $CommandUnderTest = Get-Command Copy-DbaBackupDevice
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "Source",
                 "SourceSqlCredential",
                 "Destination",
@@ -22,8 +22,8 @@ Describe "Copy-DbaBackupDevice" {
                 "Force",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

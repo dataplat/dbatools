@@ -9,21 +9,19 @@ Describe "Start-DbaService" {
         BeforeAll {
             $CommandUnderTest = Get-Command Start-DbaService
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "ComputerName",
-                "InstanceName",
-                "SqlInstance",
-                "Type",
-                "InputObject",
-                "Timeout",
-                "Credential",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "ComputerName",
+            "InstanceName",
+            "SqlInstance",
+            "Type",
+            "InputObject",
+            "Timeout",
+            "Credential",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

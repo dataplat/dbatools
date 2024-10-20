@@ -11,9 +11,9 @@ Describe "Set-DbaDbQueryStoreOption" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaDbQueryStoreOption
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Database",
@@ -34,8 +34,8 @@ Describe "Set-DbaDbQueryStoreOption" {
                 "CustomCapturePolicyStaleThresholdHours",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

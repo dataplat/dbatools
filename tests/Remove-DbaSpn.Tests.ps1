@@ -5,18 +5,16 @@ Describe "Remove-DbaSpn" {
         BeforeAll {
             $CommandUnderTest = Get-Command Remove-DbaSpn
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SPN",
-                "ServiceAccount",
-                "Credential",
-                "EnableException",
-                "WhatIf",
-                "Confirm"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $requiredParameters = @(
+            "SPN",
+            "ServiceAccount",
+            "Credential",
+            "EnableException",
+            "WhatIf",
+            "Confirm"
+        )
+        It "has the required parameter: <_>" -ForEach $requiredParameters {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

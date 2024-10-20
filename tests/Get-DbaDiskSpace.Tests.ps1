@@ -5,9 +5,9 @@ Describe "Get-DbaDiskSpace" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaDiskSpace
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
+
+        It "has the required parameters" {
+            $params = @(
                 "ComputerName",
                 "Credential",
                 "Unit",
@@ -17,8 +17,8 @@ Describe "Get-DbaDiskSpace" {
                 "Force",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

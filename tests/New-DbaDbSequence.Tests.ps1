@@ -25,7 +25,7 @@ Describe "New-DbaDbSequence" {
             $CommandUnderTest = Get-Command New-DbaDbSequence
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Database",
@@ -41,8 +41,8 @@ Describe "New-DbaDbSequence" {
                 "InputObject",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

@@ -5,19 +5,17 @@ Describe "Set-DbaAgentJobOwner" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaAgentJobOwner
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Job",
-                "ExcludeJob",
-                "InputObject",
-                "Login",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Job",
+            "ExcludeJob",
+            "InputObject",
+            "Login",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 }

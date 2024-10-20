@@ -5,17 +5,15 @@ Describe "Set-DbaExtendedProperty" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaExtendedProperty
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "InputObject",
-                "Value",
-                "EnableException",
-                "WhatIf",
-                "Confirm"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "InputObject",
+            "Value",
+            "EnableException",
+            "WhatIf",
+            "Confirm"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 }

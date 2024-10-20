@@ -11,17 +11,15 @@ Describe "Test-DbaDiskAlignment" {
         BeforeAll {
             $CommandUnderTest = Get-Command Test-DbaDiskAlignment
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "ComputerName",
-                "Credential",
-                "SqlCredential",
-                "NoSqlCheck",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "ComputerName",
+            "Credential",
+            "SqlCredential",
+            "NoSqlCheck",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

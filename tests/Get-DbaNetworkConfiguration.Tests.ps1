@@ -5,17 +5,15 @@ Describe "Get-DbaNetworkConfiguration" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaNetworkConfiguration
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "Credential",
-                "OutputType",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "Credential",
+            "OutputType",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

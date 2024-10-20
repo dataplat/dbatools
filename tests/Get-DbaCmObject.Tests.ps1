@@ -11,21 +11,19 @@ Describe "Get-DbaCmObject" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaCmObject
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "ClassName",
-                "Query",
-                "ComputerName",
-                "Credential",
-                "Namespace",
-                "DoNotUse",
-                "Force",
-                "SilentlyContinue",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "ClassName",
+            "Query",
+            "ComputerName",
+            "Credential",
+            "Namespace",
+            "DoNotUse",
+            "Force",
+            "SilentlyContinue",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

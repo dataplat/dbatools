@@ -10,16 +10,13 @@ Describe "Get-SqlDefaultSPConfigure" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-SqlDefaultSPConfigure
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "SqlVersion"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        It "has the required parameter: <_>" -ForEach @(
+            "SqlInstance",
+            "SqlCredential",
+            "SqlVersion"
+        ) {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

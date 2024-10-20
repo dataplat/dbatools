@@ -9,21 +9,19 @@ Describe "Backup-DbaServiceMasterKey" {
         BeforeAll {
             $CommandUnderTest = Get-Command Backup-DbaServiceMasterKey
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "KeyCredential",
-                "SecurePassword",
-                "Path",
-                "EnableException",
-                "WhatIf",
-                "Confirm"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "KeyCredential",
+            "SecurePassword",
+            "Path",
+            "EnableException",
+            "WhatIf",
+            "Confirm"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

@@ -9,31 +9,29 @@ Describe "New-DbaAgentSchedule Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaAgentSchedule
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Job",
-                "Schedule",
-                "Disabled",
-                "FrequencyType",
-                "FrequencyInterval",
-                "FrequencySubdayType",
-                "FrequencySubdayInterval",
-                "FrequencyRelativeInterval",
-                "FrequencyRecurrenceFactor",
-                "StartDate",
-                "EndDate",
-                "StartTime",
-                "EndTime",
-                "Owner",
-                "Force",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Job",
+            "Schedule",
+            "Disabled",
+            "FrequencyType",
+            "FrequencyInterval",
+            "FrequencySubdayType",
+            "FrequencySubdayInterval",
+            "FrequencyRelativeInterval",
+            "FrequencyRecurrenceFactor",
+            "StartDate",
+            "EndDate",
+            "StartTime",
+            "EndTime",
+            "Owner",
+            "Force",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 }

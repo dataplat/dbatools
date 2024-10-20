@@ -6,14 +6,14 @@ Describe "Remove-DbaXESmartTarget" {
             $CommandUnderTest = Get-Command Remove-DbaXESmartTarget
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "InputObject",
                 "EnableException",
                 "WhatIf",
                 "Confirm"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

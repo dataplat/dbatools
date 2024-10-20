@@ -11,9 +11,9 @@ Describe "Invoke-DbaAdvancedRestore" {
         BeforeAll {
             $CommandUnderTest = Get-Command Invoke-DbaAdvancedRestore
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "BackupHistory",
                 "SqlInstance",
                 "SqlCredential",
@@ -37,8 +37,8 @@ Describe "Invoke-DbaAdvancedRestore" {
                 "StopAfterDate",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

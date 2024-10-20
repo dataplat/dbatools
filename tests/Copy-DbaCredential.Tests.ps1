@@ -41,23 +41,21 @@ Describe "Copy-DbaCredential" {
         BeforeAll {
             $CommandUnderTest = Get-Command Copy-DbaCredential
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "Source",
-                "SourceSqlCredential",
-                "Credential",
-                "Destination",
-                "DestinationSqlCredential",
-                "Name",
-                "ExcludeName",
-                "Identity",
-                "ExcludeIdentity",
-                "Force",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "Source",
+            "SourceSqlCredential",
+            "Credential",
+            "Destination",
+            "DestinationSqlCredential",
+            "Name",
+            "ExcludeName",
+            "Identity",
+            "ExcludeIdentity",
+            "Force",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

@@ -5,9 +5,9 @@ Describe "Get-DbaDbCertificate" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaDbCertificate
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
+
+        It "has the required parameter: <_>" -ForEach $params {
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Database",
@@ -17,9 +17,7 @@ Describe "Get-DbaDbCertificate" {
                 "InputObject",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

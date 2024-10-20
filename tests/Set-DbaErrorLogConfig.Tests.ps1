@@ -11,17 +11,15 @@ Describe "Set-DbaErrorLogConfig" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaErrorLogConfig
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "LogCount",
-                "LogSize",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "LogCount",
+            "LogSize",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

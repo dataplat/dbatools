@@ -10,15 +10,14 @@ Describe "Get-XpDirTreeRestoreFile" {
             $CommandUnderTest = Get-Command Get-XpDirTreeRestoreFile
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
-                "Path",
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "EnableException",
                 "NoRecurse"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

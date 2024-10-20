@@ -9,23 +9,21 @@ Describe "Get-DbaDbLogShipError Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandName = Get-Command Get-DbaDbLogShipError
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "ExcludeDatabase",
-                "Action",
-                "DateTimeFrom",
-                "DateTimeTo",
-                "Primary",
-                "Secondary",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandName | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "ExcludeDatabase",
+            "Action",
+            "DateTimeFrom",
+            "DateTimeTo",
+            "Primary",
+            "Secondary",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandName | Should -HaveParameter $PSItem
         }
     }
 }

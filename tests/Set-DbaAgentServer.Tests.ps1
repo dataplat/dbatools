@@ -22,7 +22,7 @@ Describe "Set-DbaAgentServer" {
             $CommandUnderTest = Get-Command Set-DbaAgentServer
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "InputObject",
@@ -48,8 +48,8 @@ Describe "Set-DbaAgentServer" {
                 "WriteOemErrorLog",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

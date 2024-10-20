@@ -5,21 +5,19 @@ Describe "Install-DbaDarlingData" {
         BeforeAll {
             $CommandUnderTest = Get-Command Install-DbaDarlingData
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "Branch",
-                "Procedure",
-                "LocalFile",
-                "Force",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "Branch",
+            "Procedure",
+            "LocalFile",
+            "Force",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

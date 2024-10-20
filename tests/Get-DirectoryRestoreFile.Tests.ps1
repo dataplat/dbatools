@@ -10,15 +10,13 @@ Describe "Get-DirectoryRestoreFile" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DirectoryRestoreFile
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "Path",
-                "Recurse",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $requiredParameters = @(
+            "Path",
+            "Recurse",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $requiredParameters {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

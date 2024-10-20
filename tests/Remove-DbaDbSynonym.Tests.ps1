@@ -21,22 +21,20 @@ Describe "Remove-DbaDbSynonym" {
         BeforeAll {
             $CommandUnderTest = Get-Command Remove-DbaDbSynonym
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "ExcludeDatabase",
-                "Schema",
-                "ExcludeSchema",
-                "Synonym",
-                "ExcludeSynonym",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "ExcludeDatabase",
+            "Schema",
+            "ExcludeSchema",
+            "Synonym",
+            "ExcludeSynonym",
+            "InputObject",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

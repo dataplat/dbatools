@@ -20,15 +20,15 @@ Describe "Remove-DbaPfDataCollectorSet" {
             $CommandUnderTest = Get-Command Remove-DbaPfDataCollectorSet
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "ComputerName",
                 "Credential",
                 "CollectorSet",
                 "InputObject",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

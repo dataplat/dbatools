@@ -5,9 +5,9 @@ Describe "Get-DbaPfDataCollectorCounterSample" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaPfDataCollectorCounterSample
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "ComputerName",
                 "Credential",
                 "CollectorSet",
@@ -17,8 +17,8 @@ Describe "Get-DbaPfDataCollectorCounterSample" {
                 "SampleInterval",
                 "InputObject"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
             $CommandUnderTest | Should -HaveParameter Continuous
             $CommandUnderTest | Should -HaveParameter ListSet

@@ -5,19 +5,17 @@ Describe "Find-DbaDatabase" {
         BeforeAll {
             $CommandUnderTest = Get-Command Find-DbaDatabase
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Property",
-                "Pattern",
-                "Exact",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Property",
+            "Pattern",
+            "Exact",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

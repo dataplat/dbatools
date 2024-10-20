@@ -5,9 +5,9 @@ Describe "New-DbaAvailabilityGroup" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaAvailabilityGroup
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "Primary",
                 "PrimarySqlCredential",
                 "Secondary",
@@ -43,8 +43,8 @@ Describe "New-DbaAvailabilityGroup" {
                 "Dhcp",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

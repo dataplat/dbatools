@@ -25,8 +25,8 @@ Describe "Remove-DbaBackup" {
                 "RemoveEmptyBackupFolder",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            $requiredParameters | ForEach-Object {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

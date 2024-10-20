@@ -5,23 +5,21 @@ Describe "Find-DbaSimilarTable" {
         BeforeAll {
             $CommandUnderTest = Get-Command Find-DbaSimilarTable
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "ExcludeDatabase",
-                "SchemaName",
-                "TableName",
-                "ExcludeViews",
-                "IncludeSystemDatabases",
-                "MatchPercentThreshold",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "ExcludeDatabase",
+            "SchemaName",
+            "TableName",
+            "ExcludeViews",
+            "IncludeSystemDatabases",
+            "MatchPercentThreshold",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

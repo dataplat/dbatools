@@ -5,9 +5,9 @@ Describe "Start-DbaAgentJob" {
         BeforeAll {
             $CommandUnderTest = Get-Command Start-DbaAgentJob
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Job",
@@ -21,8 +21,8 @@ Describe "Start-DbaAgentJob" {
                 "SleepPeriod",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

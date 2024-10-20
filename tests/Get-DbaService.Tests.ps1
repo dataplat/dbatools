@@ -10,8 +10,8 @@ Describe "Get-DbaService" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaService
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
+        It "has the required parameters" {
+            $params = @(
                 "ComputerName",
                 "InstanceName",
                 "SqlInstance",
@@ -21,8 +21,8 @@ Describe "Get-DbaService" {
                 "AdvancedProperties",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

@@ -9,9 +9,9 @@ Describe "Get-DbatoolsLog" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbatoolsLog
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
+
+        It "has the required parameters" {
+            $params = @(
                 "FunctionName",
                 "ModuleName",
                 "Target",
@@ -24,8 +24,10 @@ Describe "Get-DbatoolsLog" {
                 "Raw",
                 "Errors"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            $params | ForEach-Object {
+                It "has the required parameter: $_" {
+                    $CommandUnderTest | Should -HaveParameter $PSItem
+                }
             }
         }
     }

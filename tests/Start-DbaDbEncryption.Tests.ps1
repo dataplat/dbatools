@@ -21,29 +21,27 @@ Describe "Start-DbaDbEncryption" {
         BeforeAll {
             $CommandUnderTest = Get-Command Start-DbaDbEncryption
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "EncryptorName",
-                "EncryptorType",
-                "Database",
-                "BackupPath",
-                "MasterKeySecurePassword",
-                "CertificateSubject",
-                "CertificateStartDate",
-                "CertificateExpirationDate",
-                "CertificateActiveForServiceBrokerDialog",
-                "BackupSecurePassword",
-                "InputObject",
-                "AllUserDatabases",
-                "Force",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "EncryptorName",
+            "EncryptorType",
+            "Database",
+            "BackupPath",
+            "MasterKeySecurePassword",
+            "CertificateSubject",
+            "CertificateStartDate",
+            "CertificateExpirationDate",
+            "CertificateActiveForServiceBrokerDialog",
+            "BackupSecurePassword",
+            "InputObject",
+            "AllUserDatabases",
+            "Force",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

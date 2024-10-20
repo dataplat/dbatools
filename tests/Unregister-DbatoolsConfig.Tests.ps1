@@ -5,18 +5,16 @@ Describe "Unregister-DbatoolsConfig" {
         BeforeAll {
             $CommandUnderTest = Get-Command Unregister-DbatoolsConfig
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "ConfigurationItem",
-                "FullName",
-                "Module",
-                "Name",
-                "Scope"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "ConfigurationItem",
+            "FullName",
+            "Module",
+            "Name",
+            "Scope"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

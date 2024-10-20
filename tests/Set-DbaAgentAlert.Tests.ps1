@@ -5,9 +5,9 @@ Describe "Set-DbaAgentAlert" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaAgentAlert
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
+
+        It "has the required parameter: <_>" -ForEach $params {
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Alert",
@@ -18,9 +18,7 @@ Describe "Set-DbaAgentAlert" {
                 "InputObject",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

@@ -11,19 +11,16 @@ Describe "Reset-DbaAdmin" {
         BeforeAll {
             $CommandUnderTest = Get-Command Reset-DbaAdmin
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Login",
-                "SecurePassword",
-                "Force",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        It "has the required parameter: <_>" -ForEach @(
+            "SqlInstance",
+            "SqlCredential",
+            "Login",
+            "SecurePassword",
+            "Force",
+            "EnableException"
+        ) {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

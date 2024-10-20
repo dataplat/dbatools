@@ -9,18 +9,16 @@ Describe "Test-DbaConnection" {
         BeforeAll {
             $CommandUnderTest = Get-Command Test-DbaConnection
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "Credential",
-                "SqlCredential",
-                "SkipPSRemoting",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "Credential",
+            "SqlCredential",
+            "SkipPSRemoting",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

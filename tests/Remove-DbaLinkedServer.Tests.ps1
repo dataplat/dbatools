@@ -5,9 +5,9 @@ Describe "Remove-DbaLinkedServer" {
         BeforeAll {
             $CommandUnderTest = Get-Command Remove-DbaLinkedServer
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "LinkedServer",
@@ -15,8 +15,8 @@ Describe "Remove-DbaLinkedServer" {
                 "Force",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

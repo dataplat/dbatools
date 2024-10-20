@@ -5,19 +5,17 @@ Describe "Get-DbaDbccSessionBuffer" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaDbccSessionBuffer
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Operation",
-                "SessionId",
-                "RequestId",
-                "All",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $requiredParameters = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Operation",
+            "SessionId",
+            "RequestId",
+            "All",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $requiredParameters {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

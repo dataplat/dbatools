@@ -10,20 +10,36 @@ Describe "Remove-DbaRgWorkloadGroup" {
             $CommandUnderTest = Get-Command Remove-DbaRgWorkloadGroup
         }
         
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "WorkloadGroup",
-                "ResourcePool",
-                "ResourcePoolType",
-                "SkipReconfigure",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        It "has the required parameter: SqlInstance" {
+            $CommandUnderTest | Should -HaveParameter "SqlInstance"
+        }
+        
+        It "has the required parameter: SqlCredential" {
+            $CommandUnderTest | Should -HaveParameter "SqlCredential"
+        }
+        
+        It "has the required parameter: WorkloadGroup" {
+            $CommandUnderTest | Should -HaveParameter "WorkloadGroup"
+        }
+        
+        It "has the required parameter: ResourcePool" {
+            $CommandUnderTest | Should -HaveParameter "ResourcePool"
+        }
+        
+        It "has the required parameter: ResourcePoolType" {
+            $CommandUnderTest | Should -HaveParameter "ResourcePoolType"
+        }
+        
+        It "has the required parameter: SkipReconfigure" {
+            $CommandUnderTest | Should -HaveParameter "SkipReconfigure"
+        }
+        
+        It "has the required parameter: InputObject" {
+            $CommandUnderTest | Should -HaveParameter "InputObject"
+        }
+        
+        It "has the required parameter: EnableException" {
+            $CommandUnderTest | Should -HaveParameter "EnableException"
         }
     }
 

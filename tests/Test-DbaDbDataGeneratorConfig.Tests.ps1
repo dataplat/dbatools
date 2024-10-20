@@ -10,14 +10,14 @@ Describe "Test-DbaDbDataGeneratorConfig" {
         BeforeAll {
             $CommandUnderTest = Get-Command Test-DbaDbDataGeneratorConfig
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "FilePath",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

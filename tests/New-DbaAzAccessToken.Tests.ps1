@@ -9,9 +9,9 @@ Describe "New-DbaAzAccessToken" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaAzAccessToken
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "Type",
                 "Subtype",
                 "Config",
@@ -21,8 +21,8 @@ Describe "New-DbaAzAccessToken" {
                 "Store",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

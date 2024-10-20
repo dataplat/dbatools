@@ -5,18 +5,16 @@ Describe "Set-DbaSpn" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaSpn
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SPN",
-                "ServiceAccount",
-                "Credential",
-                "NoDelegation",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SPN",
+            "ServiceAccount",
+            "Credential",
+            "NoDelegation",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

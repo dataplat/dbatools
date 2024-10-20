@@ -5,23 +5,21 @@ Describe "Stop-DbaProcess" {
         BeforeAll {
             $CommandUnderTest = Get-Command Stop-DbaProcess
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Spid",
-                "ExcludeSpid",
-                "Database",
-                "Login",
-                "Hostname",
-                "Program",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Spid",
+            "ExcludeSpid",
+            "Database",
+            "Login",
+            "Hostname",
+            "Program",
+            "InputObject",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

@@ -11,20 +11,18 @@ Describe "Copy-DbaAgentJob" {
         BeforeAll {
             $CommandUnderTest = Get-Command Copy-DbaAgentJob
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "Source",
-                "SourceSqlCredential",
-                "Destination",
-                "DestinationSqlCredential",
-                "Job",
-                "ExcludeJob",
-                "InputObject"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $requiredParameters = @(
+            "Source",
+            "SourceSqlCredential",
+            "Destination",
+            "DestinationSqlCredential",
+            "Job",
+            "ExcludeJob",
+            "InputObject"
+        )
+        It "has the required parameter: <_>" -ForEach $requiredParameters {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
 
         It "Should have DisableOnSource as a switch parameter" {

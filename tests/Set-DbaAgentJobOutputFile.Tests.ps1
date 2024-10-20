@@ -5,18 +5,16 @@ Describe "Set-DbaAgentJobOutputFile" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaAgentJobOutputFile
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Job",
-                "Step",
-                "OutputFile",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Job",
+            "Step",
+            "OutputFile",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 }

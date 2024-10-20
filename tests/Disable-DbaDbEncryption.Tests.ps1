@@ -5,9 +5,9 @@ Describe "Disable-DbaDbEncryption" {
         BeforeAll {
             $CommandUnderTest = Get-Command Disable-DbaDbEncryption
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Database",
@@ -15,8 +15,8 @@ Describe "Disable-DbaDbEncryption" {
                 "NoEncryptionKeyDrop",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

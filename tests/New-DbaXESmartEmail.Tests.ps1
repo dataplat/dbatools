@@ -11,26 +11,24 @@ Describe "New-DbaXESmartEmail" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaXESmartEmail
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SmtpServer",
-                "Sender",
-                "To",
-                "Cc",
-                "Bcc",
-                "Credential",
-                "Subject",
-                "Body",
-                "Attachment",
-                "AttachmentFileName",
-                "PlainText",
-                "Event",
-                "Filter",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "SmtpServer",
+            "Sender",
+            "To",
+            "Cc",
+            "Bcc",
+            "Credential",
+            "Subject",
+            "Body",
+            "Attachment",
+            "AttachmentFileName",
+            "PlainText",
+            "Event",
+            "Filter",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

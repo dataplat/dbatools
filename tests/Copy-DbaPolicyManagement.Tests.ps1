@@ -5,23 +5,21 @@ Describe "Copy-DbaPolicyManagement" {
         BeforeAll {
             $CommandUnderTest = Get-Command Copy-DbaPolicyManagement
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "Source",
-                "SourceSqlCredential",
-                "Destination",
-                "DestinationSqlCredential",
-                "Policy",
-                "ExcludePolicy",
-                "Condition",
-                "ExcludeCondition",
-                "Force",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "Source",
+            "SourceSqlCredential",
+            "Destination",
+            "DestinationSqlCredential",
+            "Policy",
+            "ExcludePolicy",
+            "Condition",
+            "ExcludeCondition",
+            "Force",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 }

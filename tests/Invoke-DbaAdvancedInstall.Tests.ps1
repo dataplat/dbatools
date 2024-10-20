@@ -33,7 +33,7 @@ Describe "Invoke-DbaAdvancedInstall" {
             $CommandUnderTest = Get-Command Invoke-DbaAdvancedInstall
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "ComputerName",
                 "InstanceName",
                 "Port",
@@ -51,8 +51,8 @@ Describe "Invoke-DbaAdvancedInstall" {
                 "NoPendingRenameCheck",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

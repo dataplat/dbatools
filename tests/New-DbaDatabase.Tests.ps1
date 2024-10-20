@@ -35,7 +35,7 @@ Describe "New-DbaDatabase" {
             $CommandUnderTest = Get-Command New-DbaDatabase
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Name",
@@ -60,8 +60,10 @@ Describe "New-DbaDatabase" {
                 "SecondaryDataFileSuffix",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            $params | ForEach-Object {
+                It "has the required parameter: $_" {
+                    $CommandUnderTest | Should -HaveParameter $PSItem
+                }
             }
         }
     }

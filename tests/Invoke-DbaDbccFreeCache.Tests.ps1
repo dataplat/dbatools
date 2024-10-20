@@ -10,20 +10,18 @@ Describe "Invoke-DbaDbccFreeCache" {
         BeforeAll {
             $CommandUnderTest = Get-Command Invoke-DbaDbccFreeCache
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Operation",
-                "InputValue",
-                "NoInformationalMessages",
-                "MarkInUseForRemoval",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Operation",
+            "InputValue",
+            "NoInformationalMessages",
+            "MarkInUseForRemoval",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

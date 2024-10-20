@@ -59,29 +59,27 @@ Describe "Copy-DbaLogin" {
         BeforeAll {
             $CommandUnderTest = Get-Command Copy-DbaLogin
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "Source",
-                "SourceSqlCredential",
-                "Destination",
-                "DestinationSqlCredential",
-                "Login",
-                "ExcludeLogin",
-                "ExcludeSystemLogins",
-                "SyncSaName",
-                "OutFile",
-                "InputObject",
-                "LoginRenameHashtable",
-                "KillActiveConnection",
-                "Force",
-                "ExcludePermissionSync",
-                "NewSid",
-                "EnableException",
-                "ObjectLevel"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "Source",
+            "SourceSqlCredential",
+            "Destination",
+            "DestinationSqlCredential",
+            "Login",
+            "ExcludeLogin",
+            "ExcludeSystemLogins",
+            "SyncSaName",
+            "OutFile",
+            "InputObject",
+            "LoginRenameHashtable",
+            "KillActiveConnection",
+            "Force",
+            "ExcludePermissionSync",
+            "NewSid",
+            "EnableException",
+            "ObjectLevel"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

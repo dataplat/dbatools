@@ -10,9 +10,9 @@ Describe "Get-DbaMemoryUsage" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaMemoryUsage
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
+
+        It "has the required parameters" {
+            $params = @(
                 "ComputerName",
                 "Credential",
                 "MemoryCounterRegex",
@@ -22,8 +22,8 @@ Describe "Get-DbaMemoryUsage" {
                 "SSISCounterRegex",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

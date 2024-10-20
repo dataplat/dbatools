@@ -11,9 +11,9 @@ Describe "Select-DbaBackupInformation" {
         BeforeAll {
             $CommandUnderTest = Get-Command Select-DbaBackupInformation
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "BackupHistory",
                 "RestoreTime",
                 "IgnoreLogs",
@@ -24,8 +24,8 @@ Describe "Select-DbaBackupInformation" {
                 "LastRestoreType",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            $params | ForEach-Object {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

@@ -9,21 +9,18 @@ Describe "Install-DbaFirstResponderKit" {
         BeforeAll {
             $CommandUnderTest = Get-Command Install-DbaFirstResponderKit
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Branch",
-                "Database",
-                "LocalFile",
-                "OnlyScript",
-                "Force",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        It "has the required parameter: <_>" -ForEach @(
+            "SqlInstance",
+            "SqlCredential",
+            "Branch",
+            "Database",
+            "LocalFile",
+            "OnlyScript",
+            "Force",
+            "EnableException"
+        ) {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

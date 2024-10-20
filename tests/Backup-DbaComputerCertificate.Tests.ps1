@@ -10,9 +10,9 @@ Describe "Backup-DbaComputerCertificate" {
         BeforeAll {
             $CommandUnderTest = Get-Command Backup-DbaComputerCertificate
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SecurePassword",
                 "InputObject",
                 "Path",
@@ -20,8 +20,8 @@ Describe "Backup-DbaComputerCertificate" {
                 "Type",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

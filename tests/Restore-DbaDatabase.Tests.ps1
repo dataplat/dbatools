@@ -11,9 +11,9 @@ Describe "Restore-DbaDatabase Unit Tests" -Tag 'UnitTests' {
             $command = Get-Command -Name Restore-DbaDatabase
             $commonParameters = [System.Management.Automation.PSCmdlet]::CommonParameters
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Path",
@@ -66,8 +66,8 @@ Describe "Restore-DbaDatabase Unit Tests" -Tag 'UnitTests' {
                 "StopAfterDate",
                 "StatementTimeout"
             )
-            foreach ($param in $requiredParameters) {
-                $command | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $command | Should -HaveParameter $PSItem
             }
         }
     }

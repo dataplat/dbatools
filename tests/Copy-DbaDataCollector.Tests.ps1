@@ -5,22 +5,20 @@ Describe "Copy-DbaDataCollector" {
         BeforeAll {
             $CommandUnderTest = Get-Command Copy-DbaDataCollector
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "Source",
-                "SourceSqlCredential",
-                "Destination",
-                "DestinationSqlCredential",
-                "CollectionSet",
-                "ExcludeCollectionSet",
-                "NoServerReconfig",
-                "Force",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "Source",
+            "SourceSqlCredential",
+            "Destination",
+            "DestinationSqlCredential",
+            "CollectionSet",
+            "ExcludeCollectionSet",
+            "NoServerReconfig",
+            "Force",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 }

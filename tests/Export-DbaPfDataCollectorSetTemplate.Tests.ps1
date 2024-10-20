@@ -9,20 +9,18 @@ Describe "Export-DbaPfDataCollectorSetTemplate" {
         BeforeAll {
             $CommandUnderTest = Get-Command Export-DbaPfDataCollectorSetTemplate
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "ComputerName",
-                "Credential",
-                "CollectorSet",
-                "Path",
-                "FilePath",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "ComputerName",
+            "Credential",
+            "CollectorSet",
+            "Path",
+            "FilePath",
+            "InputObject",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

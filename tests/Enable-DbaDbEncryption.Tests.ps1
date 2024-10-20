@@ -6,20 +6,23 @@ Describe "Enable-DbaDbEncryption" {
             $CommandUnderTest = Get-Command Enable-DbaDbEncryption
         }
         
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "EncryptorName",
-                "InputObject"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
-            $CommandUnderTest | Should -HaveParameter Force
-            $CommandUnderTest | Should -HaveParameter EnableException
+        It "has the required parameter: SqlInstance" {
+            $CommandUnderTest | Should -HaveParameter "SqlInstance"
         }
+        It "has the required parameter: SqlCredential" {
+            $CommandUnderTest | Should -HaveParameter "SqlCredential"
+        }
+        It "has the required parameter: Database" {
+            $CommandUnderTest | Should -HaveParameter "Database"
+        }
+        It "has the required parameter: EncryptorName" {
+            $CommandUnderTest | Should -HaveParameter "EncryptorName"
+        }
+        It "has the required parameter: InputObject" {
+            $CommandUnderTest | Should -HaveParameter "InputObject"
+        }
+        $CommandUnderTest | Should -HaveParameter Force
+        $CommandUnderTest | Should -HaveParameter EnableException
     }
 
     Context "Command actually works" {

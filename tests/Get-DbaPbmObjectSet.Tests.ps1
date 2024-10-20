@@ -5,8 +5,8 @@ Describe "Get-DbaPbmObjectSet" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaPbmObjectSet
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
+        It "has the required parameters" {
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "ObjectSet",
@@ -14,8 +14,8 @@ Describe "Get-DbaPbmObjectSet" {
                 "IncludeSystemObject",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

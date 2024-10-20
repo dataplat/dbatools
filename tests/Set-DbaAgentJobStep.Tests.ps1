@@ -30,6 +30,14 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             }
         }
 
+        $params = @(
+            "SqlInstance",
+            "SqlCredential"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandName | Should -HaveParameter $PSItem
+        }
+
         It "Should only contain our specific parameters" {
             @(Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params).Count | Should -Be 0
         }

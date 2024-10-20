@@ -10,30 +10,28 @@ Describe "Set-DbaDbState Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaDbState
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "ExcludeDatabase",
-                "AllDatabases",
-                "ReadOnly",
-                "ReadWrite",
-                "Online",
-                "Offline",
-                "Emergency",
-                "Detached",
-                "SingleUser",
-                "RestrictedUser",
-                "MultiUser",
-                "Force",
-                "EnableException",
-                "InputObject"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "ExcludeDatabase",
+            "AllDatabases",
+            "ReadOnly",
+            "ReadWrite",
+            "Online",
+            "Offline",
+            "Emergency",
+            "Detached",
+            "SingleUser",
+            "RestrictedUser",
+            "MultiUser",
+            "Force",
+            "EnableException",
+            "InputObject"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 }

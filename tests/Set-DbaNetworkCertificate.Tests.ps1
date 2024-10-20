@@ -9,19 +9,17 @@ Describe "Set-DbaNetworkCertificate" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaNetworkCertificate
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "Credential",
-                "Certificate",
-                "Thumbprint",
-                "RestartService",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "Credential",
+            "Certificate",
+            "Thumbprint",
+            "RestartService",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

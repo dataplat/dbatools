@@ -12,7 +12,7 @@ Describe "Test-DbaDbRecoveryModel Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Test-DbaDbRecoveryModel
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "Database",
                 "ExcludeDatabase",
@@ -20,8 +20,8 @@ Describe "Test-DbaDbRecoveryModel Unit Tests" -Tag 'UnitTests' {
                 "RecoveryModel",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

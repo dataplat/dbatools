@@ -9,21 +9,19 @@ Describe "New-DbaXESmartReplay" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaXESmartReplay
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "Event",
-                "Filter",
-                "DelaySeconds",
-                "StopOnError",
-                "ReplayIntervalSeconds",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "Event",
+            "Filter",
+            "DelaySeconds",
+            "StopOnError",
+            "ReplayIntervalSeconds",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 }

@@ -42,28 +42,26 @@ Describe "Invoke-DbaDbTransfer" {
         BeforeAll {
             $CommandUnderTest = Get-Command Invoke-DbaDbTransfer
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "DestinationSqlInstance",
-                "DestinationSqlCredential",
-                "Database",
-                "DestinationDatabase",
-                "BatchSize",
-                "BulkCopyTimeOut",
-                "ScriptingOption",
-                "InputObject",
-                "CopyAllObjects",
-                "CopyAll",
-                "SchemaOnly",
-                "DataOnly",
-                "ScriptOnly",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "DestinationSqlInstance",
+            "DestinationSqlCredential",
+            "Database",
+            "DestinationDatabase",
+            "BatchSize",
+            "BulkCopyTimeOut",
+            "ScriptingOption",
+            "InputObject",
+            "CopyAllObjects",
+            "CopyAll",
+            "SchemaOnly",
+            "DataOnly",
+            "ScriptOnly",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

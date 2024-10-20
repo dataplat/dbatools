@@ -9,23 +9,21 @@ Describe "Set-DbaNetworkConfiguration" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaNetworkConfiguration
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "Credential",
-                "EnableProtocol",
-                "DisableProtocol",
-                "DynamicPortForIPAll",
-                "StaticPortForIPAll",
-                "IpAddress",
-                "RestartService",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "Credential",
+            "EnableProtocol",
+            "DisableProtocol",
+            "DynamicPortForIPAll",
+            "StaticPortForIPAll",
+            "IpAddress",
+            "RestartService",
+            "InputObject",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

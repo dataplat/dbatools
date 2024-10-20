@@ -11,15 +11,15 @@ Describe "Set-DbatoolsInsecureConnection" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbatoolsInsecureConnection
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SessionOnly",
                 "Scope",
                 "Register"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

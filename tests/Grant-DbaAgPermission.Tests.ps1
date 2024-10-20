@@ -5,20 +5,18 @@ Describe "Grant-DbaAgPermission" {
         BeforeAll {
             $CommandUnderTest = Get-Command Grant-DbaAgPermission
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Login",
-                "AvailabilityGroup",
-                "Type",
-                "Permission",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Login",
+            "AvailabilityGroup",
+            "Type",
+            "Permission",
+            "InputObject",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 }

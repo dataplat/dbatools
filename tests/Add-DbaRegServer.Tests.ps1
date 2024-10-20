@@ -5,26 +5,24 @@ Describe "Add-DbaRegServer" {
         BeforeAll {
             $CommandUnderTest = Get-Command Add-DbaRegServer
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "ServerName",
-                "Name",
-                "Description",
-                "Group",
-                "ActiveDirectoryTenant",
-                "ActiveDirectoryUserId",
-                "ConnectionString",
-                "OtherParams",
-                "InputObject",
-                "ServerObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "ServerName",
+            "Name",
+            "Description",
+            "Group",
+            "ActiveDirectoryTenant",
+            "ActiveDirectoryUserId",
+            "ConnectionString",
+            "OtherParams",
+            "InputObject",
+            "ServerObject",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

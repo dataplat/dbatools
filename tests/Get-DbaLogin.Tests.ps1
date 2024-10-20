@@ -21,7 +21,7 @@ Describe "Get-DbaLogin" {
             $CommandUnderTest = Get-Command Get-DbaLogin
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Login",
@@ -37,8 +37,8 @@ Describe "Get-DbaLogin" {
                 "Detailed",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            $params | ForEach-Object {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

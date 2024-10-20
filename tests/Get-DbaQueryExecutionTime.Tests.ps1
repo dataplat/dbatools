@@ -5,22 +5,20 @@ Describe "Get-DbaQueryExecutionTime" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaQueryExecutionTime
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "ExcludeDatabase",
-                "MaxResultsPerDb",
-                "MinExecs",
-                "MinExecMs",
-                "ExcludeSystem",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "ExcludeDatabase",
+            "MaxResultsPerDb",
+            "MinExecs",
+            "MinExecMs",
+            "ExcludeSystem",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

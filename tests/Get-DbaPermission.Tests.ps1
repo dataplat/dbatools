@@ -11,8 +11,8 @@ Describe "Get-DbaPermission Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaPermission
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
+        It "has the required parameter: <_>" -ForEach $params {
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Database",
@@ -21,9 +21,7 @@ Describe "Get-DbaPermission Unit Tests" -Tag 'UnitTests' {
                 "ExcludeSystemObjects",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 }

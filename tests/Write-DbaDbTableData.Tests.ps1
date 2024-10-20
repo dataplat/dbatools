@@ -21,7 +21,7 @@ Describe "Write-DbaDbTableData" {
             $CommandUnderTest = Get-Command Write-DbaDbTableData
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Database",
@@ -42,8 +42,8 @@ Describe "Write-DbaDbTableData" {
                 "EnableException",
                 "UseDynamicStringLength"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            $params | ForEach-Object {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

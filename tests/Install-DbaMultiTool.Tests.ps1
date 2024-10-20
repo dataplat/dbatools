@@ -5,19 +5,17 @@ Describe "Install-DbaMultiTool" {
         BeforeAll {
             $CommandUnderTest = Get-Command Install-DbaMultiTool
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Branch",
-                "Database",
-                "LocalFile",
-                "Force",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Branch",
+            "Database",
+            "LocalFile",
+            "Force",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

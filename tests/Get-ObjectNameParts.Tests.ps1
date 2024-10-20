@@ -10,13 +10,10 @@ Describe "Get-ObjectNameParts" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-ObjectNameParts
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "ObjectName"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        It "has the required parameter: <_>" -ForEach @(
+            "ObjectName"
+        ) {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

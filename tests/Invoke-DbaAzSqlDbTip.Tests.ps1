@@ -11,25 +11,23 @@ Describe "Invoke-DbaAzSqlDbTip" {
         BeforeAll {
             $CommandUnderTest = Get-Command Invoke-DbaAzSqlDbTip
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "AzureDomain",
-                "Tenant",
-                "LocalFile",
-                "Database",
-                "ExcludeDatabase",
-                "AllUserDatabases",
-                "ReturnAllTips",
-                "Compat100",
-                "StatementTimeout",
-                "EnableException",
-                "Force"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "AzureDomain",
+            "Tenant",
+            "LocalFile",
+            "Database",
+            "ExcludeDatabase",
+            "AllUserDatabases",
+            "ReturnAllTips",
+            "Compat100",
+            "StatementTimeout",
+            "EnableException",
+            "Force"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

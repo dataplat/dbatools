@@ -5,20 +5,18 @@ Describe "Get-DbaXESessionTarget" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaXESessionTarget
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Session",
-                "Target",
-                "InputObject"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
-            $CommandUnderTest | Should -HaveParameter EnableException
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Session",
+            "Target",
+            "InputObject"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
+        $CommandUnderTest | Should -HaveParameter EnableException
     }
 
     Context "Verifying command output" {

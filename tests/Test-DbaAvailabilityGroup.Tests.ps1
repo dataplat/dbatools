@@ -5,23 +5,21 @@ Describe "Test-DbaAvailabilityGroup" {
         BeforeAll {
             $CommandUnderTest = Get-Command Test-DbaAvailabilityGroup
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "AvailabilityGroup",
-                "Secondary",
-                "SecondarySqlCredential",
-                "AddDatabase",
-                "SeedingMode",
-                "SharedPath",
-                "UseLastBackup",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "AvailabilityGroup",
+            "Secondary",
+            "SecondarySqlCredential",
+            "AddDatabase",
+            "SeedingMode",
+            "SharedPath",
+            "UseLastBackup",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

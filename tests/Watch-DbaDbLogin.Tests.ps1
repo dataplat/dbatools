@@ -5,9 +5,9 @@ Describe "Watch-DbaDbLogin" {
         BeforeAll {
             $CommandUnderTest = Get-Command Watch-DbaDbLogin
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
+
+        It "has the required parameter: <_>" -ForEach $params {
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Database",
@@ -17,9 +17,7 @@ Describe "Watch-DbaDbLogin" {
                 "InputObject",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

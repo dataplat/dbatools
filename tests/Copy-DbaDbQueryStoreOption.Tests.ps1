@@ -5,22 +5,20 @@ Describe "Copy-DbaDbQueryStoreOption" {
         BeforeAll {
             $CommandUnderTest = Get-Command Copy-DbaDbQueryStoreOption
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "Source",
-                "SourceSqlCredential",
-                "SourceDatabase",
-                "Destination",
-                "DestinationSqlCredential",
-                "DestinationDatabase",
-                "Exclude",
-                "AllDatabases",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $requiredParameters = @(
+            "Source",
+            "SourceSqlCredential",
+            "SourceDatabase",
+            "Destination",
+            "DestinationSqlCredential",
+            "DestinationDatabase",
+            "Exclude",
+            "AllDatabases",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $requiredParameters {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 }

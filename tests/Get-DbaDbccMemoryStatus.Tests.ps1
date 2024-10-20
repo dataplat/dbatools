@@ -5,15 +5,15 @@ Describe "Get-DbaDbccMemoryStatus" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaDbccMemoryStatus
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
+
+        It "has the required parameters" {
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

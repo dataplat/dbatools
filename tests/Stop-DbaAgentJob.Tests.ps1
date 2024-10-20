@@ -5,21 +5,19 @@ Describe "Stop-DbaAgentJob" {
         BeforeAll {
             $CommandUnderTest = Get-Command Stop-DbaAgentJob
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Job",
-                "ExcludeJob",
-                "InputObject"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
-            $CommandUnderTest | Should -HaveParameter Wait
-            $CommandUnderTest | Should -HaveParameter EnableException
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Job",
+            "ExcludeJob",
+            "InputObject"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
+        $CommandUnderTest | Should -HaveParameter Wait
+        $CommandUnderTest | Should -HaveParameter EnableException
     }
 
     Context "Command execution" {

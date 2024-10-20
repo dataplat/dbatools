@@ -11,9 +11,9 @@ Describe "Save-DbaCommunitySoftware" {
         BeforeAll {
             $CommandUnderTest = Get-Command Save-DbaCommunitySoftware
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "Software",
                 "Branch",
                 "LocalFile",
@@ -21,8 +21,8 @@ Describe "Save-DbaCommunitySoftware" {
                 "LocalDirectory",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

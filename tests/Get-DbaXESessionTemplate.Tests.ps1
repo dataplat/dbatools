@@ -11,16 +11,14 @@ Describe "Get-DbaXESessionTemplate" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaXESessionTemplate
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "Path",
-                "Pattern",
-                "Template",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "Path",
+            "Pattern",
+            "Template",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

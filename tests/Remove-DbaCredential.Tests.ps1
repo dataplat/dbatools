@@ -5,21 +5,18 @@ Describe "Remove-DbaCredential" {
         BeforeAll {
             $CommandUnderTest = Get-Command Remove-DbaCredential
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Credential",
-                "ExcludeCredential",
-                "Identity",
-                "ExcludeIdentity",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        It "has the required parameter: <_>" -ForEach @(
+            "SqlInstance",
+            "SqlCredential",
+            "Credential",
+            "ExcludeCredential",
+            "Identity",
+            "ExcludeIdentity",
+            "InputObject",
+            "EnableException"
+        ) {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

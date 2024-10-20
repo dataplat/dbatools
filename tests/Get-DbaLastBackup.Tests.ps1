@@ -11,17 +11,15 @@ Describe "Get-DbaLastBackup Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $Command = Get-Command Get-DbaLastBackup
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "ExcludeDatabase",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $Command | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "ExcludeDatabase",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $Command | Should -HaveParameter $PSItem
         }
     }
 }

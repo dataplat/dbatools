@@ -5,16 +5,14 @@ Describe "Get-DbatoolsError" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbatoolsError
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "First",
-                "Last",
-                "Skip",
-                "All"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "First",
+            "Last",
+            "Skip",
+            "All"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

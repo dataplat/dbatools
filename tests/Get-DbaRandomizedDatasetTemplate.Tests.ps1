@@ -11,16 +11,14 @@ Describe "Get-DbaRandomizedDatasetTemplate" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaRandomizedDatasetTemplate
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "Template",
-                "Path",
-                "ExcludeDefault",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "Template",
+            "Path",
+            "ExcludeDefault",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

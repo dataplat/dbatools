@@ -11,11 +11,13 @@ Describe "Get-DbaDbStoredProcedure Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaDbStoredProcedure
         }
-        
+
+        It "has the required parameter: SqlInstance" -ForEach @("SqlInstance", "SqlCredential") {
+            $CommandUnderTest | Should -HaveParameter $PSItem
+        }
+
         It "has all the required parameters" {
             $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
                 "Database",
                 "ExcludeDatabase",
                 "ExcludeSystemSp",

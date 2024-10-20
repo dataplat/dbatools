@@ -63,17 +63,17 @@ AS
             $CommandUnderTest = Get-Command Copy-DbaSystemDbUserObject
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
-                "Source",
-                "SourceSqlCredential",
-                "Destination",
-                "DestinationSqlCredential",
-                "Force",
-                "Classic",
-                "EnableException"
+            $params = @(
+ -                "Source",
+ -                "SourceSqlCredential",
+ -                "Destination",
+ -                "DestinationSqlCredential",
+ -                "Force",
+ -                "Classic",
+ -                "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <$_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

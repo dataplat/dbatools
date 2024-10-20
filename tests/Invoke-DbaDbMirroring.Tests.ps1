@@ -11,27 +11,25 @@ Describe "Invoke-DbaDbMirroring" {
         BeforeAll {
             $CommandUnderTest = Get-Command Invoke-DbaDbMirroring
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "Primary",
-                "PrimarySqlCredential",
-                "Mirror",
-                "MirrorSqlCredential",
-                "Witness",
-                "WitnessSqlCredential",
-                "Database",
-                "EndpointEncryption",
-                "EncryptionAlgorithm",
-                "SharedPath",
-                "InputObject",
-                "UseLastBackup",
-                "Force",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "Primary",
+            "PrimarySqlCredential",
+            "Mirror",
+            "MirrorSqlCredential",
+            "Witness",
+            "WitnessSqlCredential",
+            "Database",
+            "EndpointEncryption",
+            "EncryptionAlgorithm",
+            "SharedPath",
+            "InputObject",
+            "UseLastBackup",
+            "Force",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

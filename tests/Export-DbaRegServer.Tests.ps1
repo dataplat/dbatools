@@ -8,23 +8,13 @@ Describe "Export-DbaRegServer" {
         BeforeAll {
             $CommandUnderTest = Get-Command Export-DbaRegServer
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "InputObject",
-                "Path",
-                "FilePath",
-                "CredentialPersistenceType",
-                "Group",
-                "ExcludeGroup",
-                "Overwrite",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

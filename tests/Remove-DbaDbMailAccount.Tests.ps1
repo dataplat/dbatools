@@ -11,18 +11,15 @@ Describe "Remove-DbaDbMailAccount" {
         BeforeAll {
             $CommandUnderTest = Get-Command Remove-DbaDbMailAccount
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Account",
-                "ExcludeAccount",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        It "has the required parameter: <_>" -ForEach @(
+            "SqlInstance",
+            "SqlCredential",
+            "Account",
+            "ExcludeAccount",
+            "InputObject",
+            "EnableException"
+        ) {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

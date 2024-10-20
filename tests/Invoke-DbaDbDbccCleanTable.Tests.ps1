@@ -5,19 +5,16 @@ Describe "Invoke-DbaDbDbccCleanTable" {
         BeforeAll {
             $CommandUnderTest = Get-Command Invoke-DbaDbDbccCleanTable
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "Object",
-                "BatchSize",
-                "NoInformationalMessages",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        It "has the required parameter: <_>" -ForEach @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "Object",
+            "BatchSize",
+            "NoInformationalMessages",
+            "EnableException"
+        ) {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

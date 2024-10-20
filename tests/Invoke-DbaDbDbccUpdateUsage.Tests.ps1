@@ -25,20 +25,18 @@ Describe "Invoke-DbaDbDbccUpdateUsage" {
         BeforeAll {
             $CommandUnderTest = Get-Command Invoke-DbaDbDbccUpdateUsage
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "Table",
-                "Index",
-                "NoInformationalMessages",
-                "CountRows",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "Table",
+            "Index",
+            "NoInformationalMessages",
+            "CountRows",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

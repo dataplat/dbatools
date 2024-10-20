@@ -12,7 +12,7 @@ Describe "Get-DbaWindowsLog" {
             $CommandUnderTest = Get-Command Get-DbaWindowsLog
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "Start",
                 "End",
@@ -21,8 +21,8 @@ Describe "Get-DbaWindowsLog" {
                 "MaxRemoteThreads",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

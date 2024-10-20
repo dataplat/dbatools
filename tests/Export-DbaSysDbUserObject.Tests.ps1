@@ -5,9 +5,9 @@ Describe "Export-DbaSysDbUserObject" {
         BeforeAll {
             $CommandUnderTest = Get-Command Export-DbaSysDbUserObject
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
+
+        It "has the required parameter: <_>" -ForEach $params {
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "IncludeDependencies",
@@ -20,9 +20,7 @@ Describe "Export-DbaSysDbUserObject" {
                 "PassThru",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

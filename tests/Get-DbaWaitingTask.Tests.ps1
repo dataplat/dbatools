@@ -5,18 +5,16 @@ Describe "Get-DbaWaitingTask" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaWaitingTask
         }
-        
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Spid",
-                "IncludeSystemSpid",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Spid",
+            "IncludeSystemSpid",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

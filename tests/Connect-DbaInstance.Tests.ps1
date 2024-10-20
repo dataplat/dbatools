@@ -9,9 +9,9 @@ Describe "Connect-DbaInstance" {
         BeforeAll {
             $CommandUnderTest = Get-Command Connect-DbaInstance
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Database",
@@ -45,8 +45,8 @@ Describe "Connect-DbaInstance" {
                 "DedicatedAdminConnection",
                 "DisableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

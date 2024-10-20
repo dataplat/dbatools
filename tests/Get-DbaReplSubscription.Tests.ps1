@@ -10,9 +10,9 @@ Describe "Get-DbaReplSubscription" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaReplSubscription
         }
-        
+
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Database",
@@ -22,8 +22,8 @@ Describe "Get-DbaReplSubscription" {
                 "Type",
                 "EnableException"
             )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

@@ -29,31 +29,29 @@ Describe "Set-DbaLogin" {
             $systemRoles = @('bulkadmin', 'dbcreator', 'diskadmin', 'processadmin', 'public', 'securityadmin', 'serveradmin', 'setupadmin', 'sysadmin')
         }
 
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Login",
-                "SecurePassword",
-                "DefaultDatabase",
-                "Unlock",
-                "PasswordMustChange",
-                "NewName",
-                "Disable",
-                "Enable",
-                "DenyLogin",
-                "GrantLogin",
-                "PasswordPolicyEnforced",
-                "PasswordExpirationEnabled",
-                "AddRole",
-                "RemoveRole",
-                "InputObject",
-                "Force",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $command | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Login",
+            "SecurePassword",
+            "DefaultDatabase",
+            "Unlock",
+            "PasswordMustChange",
+            "NewName",
+            "Disable",
+            "Enable",
+            "DenyLogin",
+            "GrantLogin",
+            "PasswordPolicyEnforced",
+            "PasswordExpirationEnabled",
+            "AddRole",
+            "RemoveRole",
+            "InputObject",
+            "Force",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $command | Should -HaveParameter $PSItem
         }
 
         It "Validates -AddRole contains <_>" -ForEach $systemRoles {

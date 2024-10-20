@@ -5,20 +5,18 @@ Describe "Copy-DbaAgentProxy" {
         BeforeAll {
             $CommandUnderTest = Get-Command Copy-DbaAgentProxy
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "Source",
-                "SourceSqlCredential",
-                "Destination",
-                "DestinationSqlCredential",
-                "ProxyAccount",
-                "ExcludeProxyAccount",
-                "Force",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $requiredParameters = @(
+            "Source",
+            "SourceSqlCredential",
+            "Destination",
+            "DestinationSqlCredential",
+            "ProxyAccount",
+            "ExcludeProxyAccount",
+            "Force",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $requiredParameters {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 }

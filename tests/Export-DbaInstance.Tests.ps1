@@ -11,26 +11,24 @@ Describe "Export-DbaInstance Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Export-DbaInstance
         }
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Credential",
-                "Path",
-                "NoRecovery",
-                "AzureCredential",
-                "IncludeDbMasterKey",
-                "Exclude",
-                "BatchSeparator",
-                "ScriptingOption",
-                "NoPrefix",
-                "ExcludePassword",
-                "Force",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Credential",
+            "Path",
+            "NoRecovery",
+            "AzureCredential",
+            "IncludeDbMasterKey",
+            "Exclude",
+            "BatchSeparator",
+            "ScriptingOption",
+            "NoPrefix",
+            "ExcludePassword",
+            "Force",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 }
@@ -94,7 +92,7 @@ Describe "Export-DbaInstance Integration Tests" -Tag "IntegrationTests" {
                                                                                       </Attribute>
                                                                                       <Constant>
                                                                                         <TypeClass>Numeric</TypeClass>
-                                                                                        <ObjType>System.Double</ObjType>
+                                                                                        <ObjType>System.Double</TypeClass>
                                                                                         <Value>0</Value>
                                                                                       </Constant>
                                                                                     </Operator>', @is_name_condition=0, @obj_name=N'', @condition_id=@condition_id OUTPUT;
