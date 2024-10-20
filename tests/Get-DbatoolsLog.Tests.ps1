@@ -25,7 +25,7 @@ Describe "Get-DbatoolsLog" {
                 "Errors"
             )
             $params | ForEach-Object {
-                It "has the required parameter: $_" {
+                It "has the required parameter: <_>" {
                     $CommandUnderTest | Should -HaveParameter $PSItem
                 }
             }

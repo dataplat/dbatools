@@ -6,7 +6,7 @@ Describe "Remove-DbaCredential" {
             $CommandUnderTest = Get-Command Remove-DbaCredential
         }
 
-        It "has the required parameter: <_>" -ForEach @(
+        $params = @(
             "SqlInstance",
             "SqlCredential",
             "Credential",
@@ -14,8 +14,11 @@ Describe "Remove-DbaCredential" {
             "Identity",
             "ExcludeIdentity",
             "InputObject",
-            "EnableException"
-        ) {
+            "EnableException",
+            "WhatIf",
+            "Confirm"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

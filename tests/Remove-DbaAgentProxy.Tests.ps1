@@ -6,28 +6,19 @@ Describe "Remove-DbaAgentProxy" {
             $CommandUnderTest = Get-Command Remove-DbaAgentProxy
         }
         
-        It "has the required parameter: SqlInstance" {
-            $CommandUnderTest | Should -HaveParameter "SqlInstance"
-        }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Proxy",
+            "ExcludeProxy",
+            "InputObject",
+            "EnableException",
+            "WhatIf",
+            "Confirm"
+        )
         
-        It "has the required parameter: SqlCredential" {
-            $CommandUnderTest | Should -HaveParameter "SqlCredential"
-        }
-        
-        It "has the required parameter: Proxy" {
-            $CommandUnderTest | Should -HaveParameter "Proxy"
-        }
-        
-        It "has the required parameter: ExcludeProxy" {
-            $CommandUnderTest | Should -HaveParameter "ExcludeProxy"
-        }
-        
-        It "has the required parameter: InputObject" {
-            $CommandUnderTest | Should -HaveParameter "InputObject"
-        }
-        
-        It "has the required parameter: EnableException" {
-            $CommandUnderTest | Should -HaveParameter "EnableException"
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

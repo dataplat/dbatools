@@ -6,15 +6,17 @@ Describe "Remove-DbaAvailabilityGroup" {
             $CommandUnderTest = Get-Command Remove-DbaAvailabilityGroup
         }
 
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "AvailabilityGroup",
+            "AllAvailabilityGroups",
+            "InputObject",
+            "EnableException",
+            "WhatIf",
+            "Confirm"
+        )
         It "has the required parameter: <_>" -ForEach $params {
-            $params = @(
-                "SqlInstance",
-                "SqlCredential",
-                "AvailabilityGroup",
-                "AllAvailabilityGroups",
-                "InputObject",
-                "EnableException"
-            )
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

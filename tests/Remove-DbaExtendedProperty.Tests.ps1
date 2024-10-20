@@ -9,11 +9,6 @@ Describe "Remove-DbaExtendedProperty" {
         $params = @(
             "InputObject",
             "EnableException",
-            "WarningVariable",
-            "InformationVariable",
-            "OutVariable",
-            "OutBuffer",
-            "PipelineVariable",
             "WhatIf",
             "Confirm"
         )

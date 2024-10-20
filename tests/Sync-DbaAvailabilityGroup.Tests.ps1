@@ -27,10 +27,12 @@ Describe "Sync-DbaAvailabilityGroup" {
                 "DisableJobOnDestination",
                 "InputObject",
                 "Force",
-                "EnableException"
+                "EnableException",
+                "WhatIf",
+                "Confirm"
             )
             $params | ForEach-Object {
-                It "has the required parameter: $_" {
+                It "has the required parameter: <_>" {
                     $CommandUnderTest | Should -HaveParameter $PSItem
                 }
             }

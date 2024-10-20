@@ -6,18 +6,20 @@ Describe "Set-DbaAgentAlert" {
             $CommandUnderTest = Get-Command Set-DbaAgentAlert
         }
 
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Alert",
+            "NewName",
+            "Enabled",
+            "Disabled",
+            "Force",
+            "InputObject",
+            "EnableException",
+            "WhatIf",
+            "Confirm"
+        )
         It "has the required parameter: <_>" -ForEach $params {
-            $params = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Alert",
-                "NewName",
-                "Enabled",
-                "Disabled",
-                "Force",
-                "InputObject",
-                "EnableException"
-            )
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

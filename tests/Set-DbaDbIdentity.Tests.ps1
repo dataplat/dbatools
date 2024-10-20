@@ -6,14 +6,17 @@ Describe "Set-DbaDbIdentity" {
             $CommandUnderTest = Get-Command Set-DbaDbIdentity
         }
 
-        It "has the required parameter: <_>" -ForEach @(
+        $params = @(
             "SqlInstance",
             "SqlCredential",
             "Database",
             "Table",
             "ReSeedValue",
-            "EnableException"
-        ) {
+            "EnableException",
+            "WhatIf",
+            "Confirm"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

@@ -24,7 +24,7 @@ Describe "Set-DbaDbCompression" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaDbCompression
         }
-        It "has the required parameter: <_>" -ForEach @(
+        $params = @(
             "SqlInstance",
             "SqlCredential",
             "Database",
@@ -35,8 +35,11 @@ Describe "Set-DbaDbCompression" {
             "PercentCompression",
             "ForceOfflineRebuilds",
             "InputObject",
-            "EnableException"
-        ) {
+            "EnableException",
+            "WhatIf",
+            "Confirm"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

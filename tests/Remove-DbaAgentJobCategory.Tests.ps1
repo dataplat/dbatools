@@ -11,12 +11,14 @@ Describe "Remove-DbaAgentJobCategory" {
             "SqlCredential",
             "Category",
             "CategoryType",
-            "InputObject"
+            "InputObject",
+            "EnableException",
+            "WhatIf",
+            "Confirm"
         )
         It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
-        $CommandUnderTest | Should -HaveParameter EnableException
     }
 }
 

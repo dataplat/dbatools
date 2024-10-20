@@ -6,13 +6,14 @@ Describe "Get-DbaAgentOperator" {
             $CommandUnderTest = Get-Command Get-DbaAgentOperator
         }
 
-        It "has the required parameter: <_>" -ForEach @(
+        $params = @(
             "SqlInstance",
             "SqlCredential",
             "Operator",
             "ExcludeOperator",
             "EnableException"
-        ) {
+        )
+        It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

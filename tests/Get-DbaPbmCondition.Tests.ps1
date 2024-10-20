@@ -10,13 +10,13 @@ Describe "Get-DbaPbmCondition" {
                 "SqlInstance",
                 "SqlCredential",
                 "Condition",
-                "InputObject"
+                "InputObject",
+                "IncludeSystemObject",
+                "EnableException"
             )
             It "has the required parameter: <_>" -ForEach $params {
                 $CommandUnderTest | Should -HaveParameter $PSItem
             }
-            $CommandUnderTest | Should -HaveParameter IncludeSystemObject
-            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 }

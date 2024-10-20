@@ -17,9 +17,13 @@ Describe "Import-DbaSpConfigure" {
                 "Destination",
                 "SourceSqlCredential",
                 "DestinationSqlCredential",
+                "SqlInstance",
                 "Path",
+                "SqlCredential",
                 "Force",
-                "EnableException"
+                "EnableException",
+                "WhatIf",
+                "Confirm"
             )
             foreach ($param in $requiredParameters) {
                 $CommandUnderTest | Should -HaveParameter $param

@@ -32,3 +32,5 @@ Analyze the Pester test files for the dbatools PowerShell module and perform the
 9. Analyze and update: /workspace/tests/--CMDNAME--.Tests.ps1
 
 Make these changes directly in the code. If you encounter any SQL Server-specific testing scenarios that require special handling, implement the necessary adjustments while maintaining the integrity of the tests.
+
+DO NOT SHORTCUT ANY TESTS TO RESERVE TOKENS!!!!!! if you need to continue after running out of tokens, i'll say continue

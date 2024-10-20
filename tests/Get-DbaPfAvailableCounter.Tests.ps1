@@ -6,13 +6,13 @@ Describe "Get-DbaPfAvailableCounter" {
             $CommandUnderTest = Get-Command Get-DbaPfAvailableCounter
         }
 
+        $params = @(
+            "ComputerName",
+            "Credential",
+            "Pattern",
+            "EnableException"
+        )
         It "has the required parameter: <_>" -ForEach $params {
-            $params = @(
-                "ComputerName",
-                "Credential",
-                "Pattern",
-                "EnableException"
-            )
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

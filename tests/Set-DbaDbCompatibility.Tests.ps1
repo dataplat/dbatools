@@ -6,18 +6,17 @@ Describe "Set-DbaDbCompatibility" {
             $CommandUnderTest = Get-Command Set-DbaDbCompatibility
         }
 
-        It "has the required parameter: SqlInstance" {
-            $params = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "Compatibility",
-                "InputObject",
-                "EnableException"
-            )
-            $params | ForEach-Object {
-                $CommandUnderTest | Should -HaveParameter $PSItem
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "Compatibility",
+            "InputObject",
+            "EnableException"
+        )
+
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 
@@ -65,4 +64,5 @@ Describe "Set-DbaDbCompatibility" {
             $resultNotMatches | Should -BeOfType [PSObject]
         }
     }
+}
 }

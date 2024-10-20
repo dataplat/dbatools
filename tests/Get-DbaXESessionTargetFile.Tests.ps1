@@ -21,10 +21,8 @@ Describe "Get-DbaXESessionTargetFile" {
             "InputObject",
             "EnableException"
         )
-        foreach ($param in $params) {
-            It "has the required parameter: $param" {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 }

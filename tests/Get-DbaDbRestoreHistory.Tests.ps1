@@ -11,17 +11,18 @@ Describe "Get-DbaDbRestoreHistory Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaDbRestoreHistory
         }
-        It "has the required parameter: <_>" -ForEach @(
+        $params = @(
             "SqlInstance",
             "SqlCredential",
             "Database",
             "ExcludeDatabase",
             "Since",
-            "RestoreType",
             "Force",
             "Last",
+            "RestoreType",
             "EnableException"
-        ) {
+        )
+        It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

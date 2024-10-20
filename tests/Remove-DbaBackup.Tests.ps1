@@ -17,15 +17,17 @@ Describe "Remove-DbaBackup" {
             $CommandUnderTest = Get-Command Remove-DbaBackup
         }
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "Path",
                 "BackupFileExtension",
                 "RetentionPeriod",
                 "CheckArchiveBit",
                 "RemoveEmptyBackupFolder",
-                "EnableException"
+                "EnableException",
+                "WhatIf",
+                "Confirm"
             )
-            $requiredParameters | ForEach-Object {
+            $params | ForEach-Object {
                 $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }

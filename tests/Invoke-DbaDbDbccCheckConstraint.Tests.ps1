@@ -19,7 +19,9 @@ Describe "Invoke-DbaDbDbccCheckConstraint Unit Tests" -Tag 'UnitTests' {
             "AllConstraints",
             "AllErrorMessages",
             "NoInformationalMessages",
-            "EnableException"
+            "EnableException",
+            "WhatIf",
+            "Confirm"
         )
         It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem

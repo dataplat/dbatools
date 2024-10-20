@@ -14,12 +14,12 @@ Describe "Remove-DbaDbSequence" {
                 "Sequence",
                 "Schema",
                 "InputObject",
-                "EnableException"
+                "EnableException",
+                "WhatIf",
+                "Confirm"
             )
-            $params | ForEach-Object {
-                It "has the required parameter: $_" {
-                    $CommandUnderTest | Should -HaveParameter $PSItem
-                }
+            It "has the required parameter: <_>" -ForEach $params {
+                $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
     }

@@ -14,7 +14,9 @@ Describe "New-DbaComputerCertificateSigningRequest" {
             "FriendlyName",
             "KeyLength",
             "Dns",
-            "EnableException"
+            "EnableException",
+            "WhatIf",
+            "Confirm"
         )
         It "has the required parameter: <_>" -ForEach $requiredParameters {
             $CommandUnderTest | Should -HaveParameter $PSItem

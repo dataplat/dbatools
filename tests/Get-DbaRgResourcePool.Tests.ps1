@@ -12,6 +12,7 @@ Describe "Get-DbaRgResourcePool" {
         $params = @(
             "SqlInstance",
             "SqlCredential",
+            "Type",
             "InputObject",
             "EnableException"
         )

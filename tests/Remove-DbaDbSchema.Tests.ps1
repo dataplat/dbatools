@@ -6,28 +6,19 @@ Describe "Remove-DbaDbSchema" {
             $CommandUnderTest = Get-Command Remove-DbaDbSchema
         }
         
-        It "has the required parameter: SqlInstance" {
-            $CommandUnderTest | Should -HaveParameter "SqlInstance"
-        }
-
-        It "has the required parameter: SqlCredential" {
-            $CommandUnderTest | Should -HaveParameter "SqlCredential"
-        }
-
-        It "has the required parameter: Database" {
-            $CommandUnderTest | Should -HaveParameter "Database"
-        }
-
-        It "has the required parameter: Schema" {
-            $CommandUnderTest | Should -HaveParameter "Schema"
-        }
-
-        It "has the required parameter: InputObject" {
-            $CommandUnderTest | Should -HaveParameter "InputObject"
-        }
-
-        It "has the required parameter: EnableException" {
-            $CommandUnderTest | Should -HaveParameter "EnableException"
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "Schema",
+            "InputObject",
+            "EnableException",
+            "WhatIf",
+            "Confirm"
+        )
+        
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

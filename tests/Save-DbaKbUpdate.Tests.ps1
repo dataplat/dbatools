@@ -10,7 +10,7 @@ Describe "Save-DbaKbUpdate" {
         BeforeAll {
             $CommandUnderTest = Get-Command Save-DbaKbUpdate
         }
-        $requiredParameters = @(
+        $params = @(
             "Name",
             "Path",
             "FilePath",
@@ -19,7 +19,7 @@ Describe "Save-DbaKbUpdate" {
             "InputObject",
             "EnableException"
         )
-        It "has all the required parameters: <_>" -ForEach $requiredParameters {
+        It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

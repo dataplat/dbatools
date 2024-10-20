@@ -6,7 +6,17 @@ Describe "Remove-DbaDbBackupRestoreHistory" {
             $CommandUnderTest = Get-Command Remove-DbaDbBackupRestoreHistory
         }
 
-        It "has the required parameter: SqlInstance" -ForEach @("SqlInstance", "SqlCredential", "KeepDays", "Database", "InputObject", "EnableException") {
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "KeepDays",
+            "Database",
+            "InputObject",
+            "EnableException",
+            "WhatIf",
+            "Confirm"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

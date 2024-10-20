@@ -18,7 +18,9 @@ Describe "Remove-DbaDbCertificate Unit Tests" -Tag 'UnitTests' {
             "Database",
             "Certificate",
             "InputObject",
-            "EnableException"
+            "EnableException",
+            "WhatIf",
+            "Confirm"
         )
         It "has the required parameter: <_>" -ForEach $params {
             $command | Should -HaveParameter $PSItem

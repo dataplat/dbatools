@@ -27,7 +27,9 @@ Describe "Install-DbaAgentAdminAlert" {
             "ExcludeMessageId",
             "NotificationMessage",
             "NotifyMethod",
-            "EnableException"
+            "EnableException",
+            "WhatIf",
+            "Confirm"
         )
         It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem

@@ -11,18 +11,18 @@ Describe "Get-DbaDbView Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaDbView
         }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "ExcludeDatabase",
+            "ExcludeSystemView",
+            "View",
+            "Schema",
+            "InputObject",
+            "EnableException"
+        )
         It "has the required parameter: <_>" -ForEach $params {
-            $params = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "ExcludeDatabase",
-                "ExcludeSystemView",
-                "View",
-                "Schema",
-                "InputObject",
-                "EnableException"
-            )
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

@@ -22,7 +22,7 @@ Describe "Import-DbaBinaryFile" {
         BeforeAll {
             $CommandUnderTest = Get-Command Import-DbaBinaryFile
         }
-        It "has the required parameter: <_>" -ForEach @(
+        $params = @(
             "SqlInstance",
             "SqlCredential",
             "Database",
@@ -35,8 +35,11 @@ Describe "Import-DbaBinaryFile" {
             "InputObject",
             "FilePath",
             "Path",
-            "EnableException"
-        ) {
+            "EnableException",
+            "WhatIf",
+            "Confirm"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

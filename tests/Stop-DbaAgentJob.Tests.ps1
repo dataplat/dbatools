@@ -11,13 +11,15 @@ Describe "Stop-DbaAgentJob" {
             "SqlCredential",
             "Job",
             "ExcludeJob",
-            "InputObject"
+            "InputObject",
+            "Wait",
+            "EnableException",
+            "WhatIf",
+            "Confirm"
         )
         It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
-        $CommandUnderTest | Should -HaveParameter Wait
-        $CommandUnderTest | Should -HaveParameter EnableException
     }
 
     Context "Command execution" {

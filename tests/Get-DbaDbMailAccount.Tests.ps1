@@ -11,12 +11,12 @@ Describe "Get-DbaDbMailAccount" {
             "SqlCredential",
             "Account",
             "ExcludeAccount",
-            "InputObject"
+            "InputObject",
+            "EnableException"
         )
         It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
-        $CommandUnderTest | Should -HaveParameter EnableException -AsSwitch
     }
 
     Context "Command usage" {

@@ -12,25 +12,19 @@ Describe "Remove-DbaDbMasterKey Unit Tests" -Tag 'UnitTests' {
             $command = Get-Command -Name $CommandName
         }
 
-        It "has the required parameter: SqlInstance" -ForEach @("SqlInstance") {
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "ExcludeDatabase",
+            "All",
+            "InputObject",
+            "EnableException",
+            "WhatIf",
+            "Confirm"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
             $command | Should -HaveParameter $PSItem
-        }
-
-        It "has the required parameter: SqlCredential" -ForEach @("SqlCredential") {
-            $command | Should -HaveParameter $PSItem
-        }
-
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "Database",
-                "ExcludeDatabase",
-                "All",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $command | Should -HaveParameter $param
-            }
         }
     }
 }

@@ -6,7 +6,7 @@ Describe "New-DbaDbMailAccount" {
             $CommandUnderTest = Get-Command New-DbaDbMailAccount
         }
 
-        It "has the required parameter: <_>" -ForEach @(
+        $params = @(
             "SqlInstance",
             "SqlCredential",
             "Account",
@@ -16,8 +16,11 @@ Describe "New-DbaDbMailAccount" {
             "ReplyToAddress",
             "MailServer",
             "Force",
-            "EnableException"
-        ) {
+            "EnableException",
+            "WhatIf",
+            "Confirm"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

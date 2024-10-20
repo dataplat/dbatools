@@ -64,15 +64,17 @@ AS
         }
         It "has all the required parameters" {
             $params = @(
- -                "Source",
- -                "SourceSqlCredential",
- -                "Destination",
- -                "DestinationSqlCredential",
- -                "Force",
- -                "Classic",
- -                "EnableException"
+                "Source",
+                "SourceSqlCredential",
+                "Destination",
+                "DestinationSqlCredential",
+                "Force",
+                "Classic",
+                "EnableException",
+                "WhatIf",
+                "Confirm"
             )
-            It "has the required parameter: <$_>" -ForEach $params {
+            It "has the required parameter: <_>" -ForEach $params {
                 $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }

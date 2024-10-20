@@ -16,7 +16,9 @@ Describe "Invoke-DbaCycleErrorLog Unit Tests" -Tag "UnitTests" {
             "SqlInstance",
             "SqlCredential",
             "Type",
-            "EnableException"
+            "EnableException",
+            "WhatIf",
+            "Confirm"
         )
         It "has the required parameter: <_>" -ForEach $params {
             $command | Should -HaveParameter $PSItem

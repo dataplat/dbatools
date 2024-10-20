@@ -22,7 +22,9 @@ Describe "Add-DbaComputerCertificate" {
                 "Store",
                 "Folder",
                 "Flag",
-                "EnableException"
+                "EnableException",
+                "WhatIf",
+                "Confirm"
             )
             It "has the required parameter: <_>" -ForEach $params {
                 $CommandUnderTest | Should -HaveParameter $PSItem

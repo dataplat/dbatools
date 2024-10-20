@@ -11,26 +11,17 @@ Describe "Get-DbaDbSnapshot Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaDbSnapshot
         }
-        It "has the required parameter: SqlInstance" {
-            $CommandUnderTest | Should -HaveParameter "SqlInstance"
-        }
-        It "has the required parameter: SqlCredential" {
-            $CommandUnderTest | Should -HaveParameter "SqlCredential"
-        }
-        It "has the required parameter: Database" {
-            $CommandUnderTest | Should -HaveParameter "Database"
-        }
-        It "has the required parameter: ExcludeDatabase" {
-            $CommandUnderTest | Should -HaveParameter "ExcludeDatabase"
-        }
-        It "has the required parameter: Snapshot" {
-            $CommandUnderTest | Should -HaveParameter "Snapshot"
-        }
-        It "has the required parameter: ExcludeSnapshot" {
-            $CommandUnderTest | Should -HaveParameter "ExcludeSnapshot"
-        }
-        It "has the required parameter: EnableException" {
-            $CommandUnderTest | Should -HaveParameter "EnableException"
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "ExcludeDatabase",
+            "Snapshot",
+            "ExcludeSnapshot",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 }

@@ -11,7 +11,9 @@ Describe "Remove-DbaDbFileGroup Unit Tests" -Tag 'UnitTests' {
             "Database",
             "FileGroup",
             "InputObject",
-            "EnableException"
+            "EnableException",
+            "WhatIf",
+            "Confirm"
         )
         It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem

@@ -21,10 +21,12 @@ Describe "Publish-DbaDacPackage" {
                 "IncludeSqlCmdVars",
                 "DacOption",
                 "EnableException",
-                "DacFxPath"
+                "DacFxPath",
+                "WhatIf",
+                "Confirm"
             )
             $params | ForEach-Object {
-                It "has the required parameter: $_" {
+                It "has the required parameter: <_>" {
                     $CommandUnderTest | Should -HaveParameter $PSItem
                 }
             }

@@ -12,7 +12,18 @@ Describe "Get-DbaDbStoredProcedure Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Get-DbaDbStoredProcedure
         }
 
-        It "has the required parameter: SqlInstance" -ForEach @("SqlInstance", "SqlCredential") {
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "ExcludeDatabase",
+            "ExcludeSystemSp",
+            "Name",
+            "Schema",
+            "InputObject",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
 
@@ -119,7 +130,6 @@ Describe "Get-DbaDbStoredProcedure Integration Tests" -Tag "IntegrationTests" {
             $results.Name | Should -Be $procName2
             $results.Schema | Should -Be $schemaName
         }
-
         It "Search by schema name" {
             $results = $global:instance2 | Get-DbaDbStoredProcedure -Database $db1Name -Schema $schemaName
             $results.Name | Should -Be $procName2

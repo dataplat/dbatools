@@ -5,14 +5,15 @@ Describe "Get-DbaDbUserDefinedTableType" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaDbUserDefinedTableType
         }
-        It "has the required parameter: <_>" -ForEach @(
+        $params = @(
             "SqlInstance",
             "SqlCredential",
             "Database",
             "ExcludeDatabase",
             "Type",
             "EnableException"
-        ) {
+        )
+        It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

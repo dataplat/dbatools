@@ -7,8 +7,9 @@ Describe "Get-DbaRegistryRoot" {
         }
 
         $params = @(
-            "SqlInstance",
-            "SqlCredential"
+            "ComputerName",
+            "Credential",
+            "EnableException"
         )
         It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem

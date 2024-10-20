@@ -13,7 +13,9 @@ Describe "New-DbaSsisCatalog" {
                 "Credential",
                 "SecurePassword",
                 "SsisCatalog",
-                "EnableException"
+                "EnableException",
+                "WhatIf",
+                "Confirm"
             )
             It "has the required parameter: <_>" -ForEach $params {
                 $CommandUnderTest | Should -HaveParameter $PSItem

@@ -5,19 +5,19 @@ Describe "Remove-DbaDbTable" {
         BeforeAll {
             $CommandUnderTest = Get-Command Remove-DbaDbTable
         }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "Table",
+            "InputObject",
+            "EnableException",
+            "WhatIf",
+            "Confirm"
+        )
 
-        It "has the required parameter: SqlInstance" {
-            $params = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "Table",
-                "InputObject",
-                "EnableException"
-            )
-            $params | ForEach-Object {
-                $CommandUnderTest | Should -HaveParameter $PSItem
-            }
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

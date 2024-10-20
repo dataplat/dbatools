@@ -5,7 +5,11 @@ Describe "New-DbaDbEncryptionKey Unit Tests" -Tag "UnitTests" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaDbEncryptionKey
         }
-        It "has the required parameter: SqlInstance" -ForEach @("SqlInstance", "SqlCredential") {
+        $params = @(
+            "SqlInstance",
+            "SqlCredential"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
         It "has all the required parameters" {
@@ -16,7 +20,9 @@ Describe "New-DbaDbEncryptionKey Unit Tests" -Tag "UnitTests" {
                 "EncryptionAlgorithm",
                 "InputObject",
                 "Force",
-                "EnableException"
+                "EnableException",
+                "WhatIf",
+                "Confirm"
             )
             foreach ($param in $requiredParameters) {
                 $CommandUnderTest | Should -HaveParameter $param

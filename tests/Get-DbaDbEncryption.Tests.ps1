@@ -10,13 +10,13 @@ Describe "Get-DbaDbEncryption" {
             "SqlInstance",
             "SqlCredential",
             "Database",
-            "ExcludeDatabase"
+            "ExcludeDatabase",
+            "IncludeSystemDBs",
+            "EnableException"
         )
         It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
-        $CommandUnderTest | Should -HaveParameter IncludeSystemDBs
-        $CommandUnderTest | Should -HaveParameter EnableException
     }
 
     Context "Integration Tests" -Tag "IntegrationTests" {

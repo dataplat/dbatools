@@ -11,7 +11,7 @@ Describe "Get-DbaDbUdf Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaDbUdf
         }
-        It "has the required parameter: <_>" -ForEach @(
+        $params = @(
             "SqlInstance",
             "SqlCredential",
             "Database",
@@ -22,7 +22,8 @@ Describe "Get-DbaDbUdf Unit Tests" -Tag 'UnitTests' {
             "Name",
             "ExcludeName",
             "EnableException"
-        ) {
+        )
+        It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

@@ -19,13 +19,15 @@ Describe "Restore-DbaDbSnapshot Unit Tests" -Tag 'UnitTests' {
                 "Database",
                 "ExcludeDatabase",
                 "Snapshot",
-                "InputObject"
+                "InputObject",
+                "Force",
+                "EnableException",
+                "WhatIf",
+                "Confirm"
             )
             It "has the required parameter: <_>" -ForEach $params {
                 $CommandUnderTest | Should -HaveParameter $PSItem
             }
-            $CommandUnderTest | Should -HaveParameter Force
-            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 }

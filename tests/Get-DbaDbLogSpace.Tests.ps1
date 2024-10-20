@@ -10,13 +10,13 @@ Describe "Get-DbaDbLogSpace" {
             "SqlInstance",
             "SqlCredential",
             "Database",
-            "ExcludeDatabase"
+            "ExcludeDatabase",
+            "ExcludeSystemDatabase",
+            "EnableException"
         )
         It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
-        $CommandUnderTest | Should -HaveParameter ExcludeSystemDatabase -Mandatory:$false
-        $CommandUnderTest | Should -HaveParameter EnableException -Mandatory:$false
     }
 
     Context "Command actually works" {

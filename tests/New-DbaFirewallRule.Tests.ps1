@@ -12,7 +12,9 @@ Describe "New-DbaFirewallRule" {
             "Type",
             "Configuration",
             "Force",
-            "EnableException"
+            "EnableException",
+            "WhatIf",
+            "Confirm"
         )
         It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem

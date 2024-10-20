@@ -13,7 +13,9 @@ Describe "Install-DbaSqlWatch" {
             "LocalFile",
             "PreRelease",
             "Force",
-            "EnableException"
+            "EnableException",
+            "WhatIf",
+            "Confirm"
         )
         It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem

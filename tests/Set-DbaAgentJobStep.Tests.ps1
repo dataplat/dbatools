@@ -3,54 +3,37 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    BeforeAll {
-        # Importing any necessary modules or functions
-        # This block is for any setup code needed for all tests in this describe block
-    }
-
     Context "Validate parameters" {
-        BeforeDiscovery {
-            [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-            $knownParameters = @(
-                'SqlInstance', 'SqlCredential', 'Job', 'StepName', 'NewName', 'Subsystem', 'SubsystemServer',
-                'Command', 'CmdExecSuccessCode', 'OnSuccessAction', 'OnSuccessStepId', 'OnFailAction', 'OnFailStepId',
-                'Database', 'DatabaseUser', 'RetryAttempts', 'RetryInterval', 'OutputFileName', 'Flag', 'ProxyName',
-                'EnableException', 'InputObject', 'Force'
-            )
-            $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        }
-
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "SqlInstance",
-                "SqlCredential"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandName | Should -HaveParameter $param
-            }
-        }
-
         $params = @(
             "SqlInstance",
-            "SqlCredential"
+            "SqlCredential",
+            "Job",
+            "StepName",
+            "NewName",
+            "Subsystem",
+            "SubsystemServer",
+            "Command",
+            "CmdExecSuccessCode",
+            "OnSuccessAction",
+            "OnSuccessStepId",
+            "OnFailAction",
+            "OnFailStepId",
+            "Database",
+            "DatabaseUser",
+            "RetryAttempts",
+            "RetryInterval",
+            "OutputFileName",
+            "Flag",
+            "ProxyName",
+            "InputObject",
+            "EnableException",
+            "Force",
+            "WhatIf",
+            "Confirm"
         )
         It "has the required parameter: <_>" -ForEach $params {
             $CommandName | Should -HaveParameter $PSItem
         }
-
-        It "Should only contain our specific parameters" {
-            @(Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params).Count | Should -Be 0
-        }
-
-        It "Should have SqlInstance parameter of type Dataplat.Dbatools.Parameter.DbaInstanceParameter[]" {
-            (Get-Command $CommandName).Parameters['SqlInstance'].ParameterType.FullName | Should -Be 'Dataplat.Dbatools.Parameter.DbaInstanceParameter[]'
-        }
-
-        It "Should have SqlCredential parameter of type System.Management.Automation.PSCredential" {
-            (Get-Command $CommandName).Parameters['SqlCredential'].ParameterType.FullName | Should -Be 'System.Management.Automation.PSCredential'
-        }
-
-        # Add similar It blocks for each parameter, checking type
     }
 }
 

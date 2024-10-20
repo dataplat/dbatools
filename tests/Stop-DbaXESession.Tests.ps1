@@ -6,7 +6,17 @@ Describe "Stop-DbaXESession" {
             $CommandUnderTest = Get-Command Stop-DbaXESession
         }
 
-        It "has the required parameter: SqlInstance" -ForEach @("SqlInstance", "SqlCredential") {
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Session",
+            "AllSessions",
+            "InputObject",
+            "EnableException",
+            "WhatIf",
+            "Confirm"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
 
@@ -15,7 +25,9 @@ Describe "Stop-DbaXESession" {
                 "Session",
                 "AllSessions",
                 "InputObject",
-                "EnableException"
+                "EnableException",
+                "WhatIf",
+                "Confirm"
             )
             foreach ($param in $requiredParameters) {
                 $CommandUnderTest | Should -HaveParameter $param

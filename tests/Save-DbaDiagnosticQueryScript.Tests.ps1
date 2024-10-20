@@ -13,7 +13,9 @@ Describe "Save-DbaDiagnosticQueryScript" {
         }
         $params = @(
             "SqlInstance",
-            "SqlCredential"
+            "SqlCredential",
+            "Path",
+            "EnableException"
         )
         It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem

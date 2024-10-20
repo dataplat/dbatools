@@ -20,26 +20,24 @@ Describe "Get-DbaLogin" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaLogin
         }
-        It "has all the required parameters" {
-            $params = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Login",
-                "IncludeFilter",
-                "ExcludeLogin",
-                "ExcludeFilter",
-                "ExcludeSystemLogin",
-                "Type",
-                "HasAccess",
-                "Locked",
-                "Disabled",
-                "MustChangePassword",
-                "Detailed",
-                "EnableException"
-            )
-            $params | ForEach-Object {
-                $CommandUnderTest | Should -HaveParameter $PSItem
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Login",
+            "IncludeFilter",
+            "ExcludeLogin",
+            "ExcludeFilter",
+            "ExcludeSystemLogin",
+            "Type",
+            "HasAccess",
+            "Locked",
+            "Disabled",
+            "MustChangePassword",
+            "Detailed",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

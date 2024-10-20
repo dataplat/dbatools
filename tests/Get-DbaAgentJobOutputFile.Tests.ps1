@@ -11,14 +11,14 @@ Describe "Get-DbaAgentJobOutputFile" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaAgentJobOutputFile
         }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Job",
+            "ExcludeJob",
+            "EnableException"
+        )
         It "has the required parameter: <_>" -ForEach $params {
-            $params = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Job",
-                "ExcludeJob",
-                "EnableException"
-            )
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

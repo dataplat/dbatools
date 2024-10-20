@@ -5,7 +5,7 @@ Describe "Copy-DbaAgentProxy" {
         BeforeAll {
             $CommandUnderTest = Get-Command Copy-DbaAgentProxy
         }
-        $requiredParameters = @(
+        $params = @(
             "Source",
             "SourceSqlCredential",
             "Destination",
@@ -13,9 +13,11 @@ Describe "Copy-DbaAgentProxy" {
             "ProxyAccount",
             "ExcludeProxyAccount",
             "Force",
-            "EnableException"
+            "EnableException",
+            "WhatIf",
+            "Confirm"
         )
-        It "has the required parameter: <_>" -ForEach $requiredParameters {
+        It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

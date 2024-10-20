@@ -24,7 +24,9 @@ Describe 'New-DbaCredential' -Tag 'UnitTests', 'IntegrationTests' {
                 "MappedClassType",
                 "ProviderName",
                 "Force",
-                "EnableException"
+                "EnableException",
+                "WhatIf",
+                "Confirm"
             )
             It "has the required parameter: <_>" -ForEach $params {
                 $CommandUnderTest | Should -HaveParameter $PSItem

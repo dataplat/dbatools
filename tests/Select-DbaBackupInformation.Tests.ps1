@@ -12,7 +12,7 @@ Describe "Select-DbaBackupInformation" {
             $CommandUnderTest = Get-Command Select-DbaBackupInformation
         }
 
-        It "has all the required parameters" {
+        It "has the required parameters" {
             $params = @(
                 "BackupHistory",
                 "RestoreTime",

@@ -35,19 +35,17 @@ Describe "Get-DbaCredential" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaCredential
         }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Credential",
+            "ExcludeCredential",
+            "Identity",
+            "ExcludeIdentity",
+            "EnableException"
+        )
         It "has the required parameter: <_>" -ForEach $params {
-            $params = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Credential",
-                "ExcludeCredential",
-                "Identity",
-                "ExcludeIdentity",
-                "EnableException"
-            )
-            foreach ($param in $params) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

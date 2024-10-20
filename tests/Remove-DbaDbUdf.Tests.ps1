@@ -6,25 +6,23 @@ Describe "Remove-DbaDbUdf" {
             $CommandUnderTest = Get-Command Remove-DbaDbUdf
         }
 
-        It "has the required parameter: SqlInstance" -ForEach @("SqlInstance", "SqlCredential") {
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "ExcludeDatabase",
+            "ExcludeSystemUdf",
+            "Schema",
+            "ExcludeSchema",
+            "Name",
+            "ExcludeName",
+            "InputObject",
+            "EnableException",
+            "WhatIf",
+            "Confirm"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
-        }
-
-        It "has all the required parameters" {
-            $requiredParameters = @(
-                "Database",
-                "ExcludeDatabase",
-                "ExcludeSystemUdf",
-                "Schema",
-                "ExcludeSchema",
-                "Name",
-                "ExcludeName",
-                "InputObject",
-                "EnableException"
-            )
-            foreach ($param in $requiredParameters) {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
         }
     }
 

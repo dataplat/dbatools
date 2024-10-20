@@ -7,8 +7,18 @@ Describe "Export-DbaDbTableData" {
         }
 
         $params = @(
-            "SqlInstance",
-            "SqlCredential"
+            "InputObject",
+            "Path",
+            "FilePath",
+            "Encoding",
+            "BatchSeparator",
+            "NoPrefix",
+            "Passthru",
+            "NoClobber",
+            "Append",
+            "EnableException",
+            "WhatIf",
+            "Confirm"
         )
         It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem

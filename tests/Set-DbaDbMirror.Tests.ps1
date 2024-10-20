@@ -20,7 +20,9 @@ Describe "Set-DbaDbMirror" {
             "SafetyLevel",
             "State",
             "InputObject",
-            "EnableException"
+            "EnableException",
+            "WhatIf",
+            "Confirm"
         )
         foreach ($param in $params) {
             It "has the required parameter: $param" {

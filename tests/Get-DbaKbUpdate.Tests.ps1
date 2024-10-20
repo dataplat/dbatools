@@ -10,13 +10,13 @@ Describe "Get-DbaKbUpdate" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaKbUpdate
         }
-        $requiredParameters = @(
+        $params = @(
             "Name",
             "Simple",
             "Language",
             "EnableException"
         )
-        It "has the required parameter: <_>" -ForEach $requiredParameters {
+        It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

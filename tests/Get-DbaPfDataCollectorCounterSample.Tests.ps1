@@ -13,16 +13,16 @@ Describe "Get-DbaPfDataCollectorCounterSample" {
                 "CollectorSet",
                 "Collector",
                 "Counter",
+                "Continuous",
+                "ListSet",
                 "MaxSamples",
                 "SampleInterval",
-                "InputObject"
+                "InputObject",
+                "EnableException"
             )
             It "has the required parameter: <_>" -ForEach $params {
                 $CommandUnderTest | Should -HaveParameter $PSItem
             }
-            $CommandUnderTest | Should -HaveParameter Continuous
-            $CommandUnderTest | Should -HaveParameter ListSet
-            $CommandUnderTest | Should -HaveParameter EnableException
         }
     }
 

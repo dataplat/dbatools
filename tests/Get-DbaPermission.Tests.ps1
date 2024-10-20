@@ -11,16 +11,16 @@ Describe "Get-DbaPermission Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaPermission
         }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "ExcludeDatabase",
+            "IncludeServerLevel",
+            "ExcludeSystemObjects",
+            "EnableException"
+        )
         It "has the required parameter: <_>" -ForEach $params {
-            $params = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "ExcludeDatabase",
-                "IncludeServerLevel",
-                "ExcludeSystemObjects",
-                "EnableException"
-            )
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

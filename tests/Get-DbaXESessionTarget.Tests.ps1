@@ -11,12 +11,12 @@ Describe "Get-DbaXESessionTarget" {
             "SqlCredential",
             "Session",
             "Target",
-            "InputObject"
+            "InputObject",
+            "EnableException"
         )
         It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
-        $CommandUnderTest | Should -HaveParameter EnableException
     }
 
     Context "Verifying command output" {

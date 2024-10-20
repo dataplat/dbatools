@@ -33,7 +33,9 @@ Describe "Invoke-DbaDbDbccUpdateUsage" {
             "Index",
             "NoInformationalMessages",
             "CountRows",
-            "EnableException"
+            "EnableException",
+            "WhatIf",
+            "Confirm"
         )
         It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem

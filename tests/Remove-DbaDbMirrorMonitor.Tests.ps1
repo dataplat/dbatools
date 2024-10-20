@@ -9,7 +9,9 @@ Describe "Remove-DbaDbMirrorMonitor" {
         $params = @(
             "SqlInstance",
             "SqlCredential",
-            "EnableException"
+            "EnableException",
+            "WhatIf",
+            "Confirm"
         )
         It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem

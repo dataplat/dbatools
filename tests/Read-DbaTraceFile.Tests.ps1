@@ -22,27 +22,25 @@ Describe "Read-DbaTraceFile" {
         BeforeAll {
             $CommandUnderTest = Get-Command Read-DbaTraceFile
         }
-        It "has all the required parameters" {
-            $params = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Path",
-                "Database",
-                "Login",
-                "Spid",
-                "EventClass",
-                "ObjectType",
-                "ErrorId",
-                "EventSequence",
-                "TextData",
-                "ApplicationName",
-                "ObjectName",
-                "Where",
-                "EnableException"
-            )
-            $params | ForEach-Object {
-                $CommandUnderTest | Should -HaveParameter $PSItem
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Path",
+            "Database",
+            "Login",
+            "Spid",
+            "EventClass",
+            "ObjectType",
+            "ErrorId",
+            "EventSequence",
+            "TextData",
+            "ApplicationName",
+            "ObjectName",
+            "Where",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

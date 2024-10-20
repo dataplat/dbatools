@@ -5,13 +5,14 @@ Describe "Get-DbaDbMailConfig" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaDbMailConfig
         }
-        It "has the required parameter: <_>" -ForEach @(
+        $params = @(
             "SqlInstance",
             "SqlCredential",
             "Name",
             "InputObject",
             "EnableException"
-        ) {
+        )
+        It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

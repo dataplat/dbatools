@@ -5,7 +5,7 @@ Describe "Get-DbaDbccSessionBuffer" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaDbccSessionBuffer
         }
-        $requiredParameters = @(
+        $params = @(
             "SqlInstance",
             "SqlCredential",
             "Operation",
@@ -14,7 +14,7 @@ Describe "Get-DbaDbccSessionBuffer" {
             "All",
             "EnableException"
         )
-        It "has the required parameter: <_>" -ForEach $requiredParameters {
+        It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

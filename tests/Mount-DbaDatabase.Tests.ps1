@@ -14,7 +14,9 @@ Describe "Mount-DbaDatabase" {
                 "FileStructure",
                 "DatabaseOwner",
                 "AttachOption",
-                "EnableException"
+                "EnableException",
+                "WhatIf",
+                "Confirm"
             )
             It "has the required parameter: <_>" -ForEach $params {
                 $CommandUnderTest | Should -HaveParameter $PSItem

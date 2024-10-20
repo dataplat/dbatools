@@ -14,7 +14,9 @@ Describe "Dismount-DbaDatabase" {
                 "InputObject",
                 "UpdateStatistics",
                 "Force",
-                "EnableException"
+                "EnableException",
+                "WhatIf",
+                "Confirm"
             )
             It "has the required parameter: <_>" -ForEach $params {
                 $CommandUnderTest | Should -HaveParameter $PSItem

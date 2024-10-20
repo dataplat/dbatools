@@ -25,7 +25,9 @@ Describe "New-DbaXESmartEmail" {
             "PlainText",
             "Event",
             "Filter",
-            "EnableException"
+            "EnableException",
+            "WhatIf",
+            "Confirm"
         )
         It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem

@@ -6,14 +6,15 @@ Describe "Get-DbaDbServiceBrokerQueue" {
             $CommandUnderTest = Get-Command Get-DbaDbServiceBrokerQueue
         }
 
-        It "has the required parameter: <_>" -ForEach @(
+        $params = @(
             "SqlInstance",
             "SqlCredential",
             "Database",
             "ExcludeDatabase",
             "ExcludeSystemQueue",
             "EnableException"
-        ) {
+        )
+        It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

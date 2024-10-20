@@ -12,7 +12,7 @@ Describe "Find-DbaDbGrowthEvent" {
             $CommandUnderTest = Get-Command Find-DbaDbGrowthEvent
         }
 
-        It "has the required parameter: <_>" -ForEach @(
+        $params = @(
             "SqlInstance",
             "SqlCredential",
             "Database",
@@ -21,7 +21,8 @@ Describe "Find-DbaDbGrowthEvent" {
             "FileType",
             "UseLocalTime",
             "EnableException"
-        ) {
+        )
+        It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

@@ -9,11 +9,12 @@ Describe "Get-DbaInstanceUserOption" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaInstanceUserOption
         }
-        It "has the required parameter: <_>" -ForEach @(
+        $params = @(
             "SqlInstance",
             "SqlCredential",
             "EnableException"
-        ) {
+        )
+        It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

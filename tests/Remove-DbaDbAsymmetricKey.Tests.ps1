@@ -12,7 +12,9 @@ Describe "Remove-DbaDbAsymmetricKey" {
             "Name",
             "Database",
             "InputObject",
-            "EnableException"
+            "EnableException",
+            "WhatIf",
+            "Confirm"
         )
         It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem

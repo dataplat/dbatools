@@ -20,7 +20,7 @@ Describe "Write-DbaDbTableData" {
         BeforeAll {
             $CommandUnderTest = Get-Command Write-DbaDbTableData
         }
-        It "has all the required parameters" {
+        It "has the required parameters" -ForEach $params {
             $params = @(
                 "SqlInstance",
                 "SqlCredential",
@@ -40,11 +40,11 @@ Describe "Write-DbaDbTableData" {
                 "BulkCopyTimeOut",
                 "ColumnMap",
                 "EnableException",
-                "UseDynamicStringLength"
+                "UseDynamicStringLength",
+                "WhatIf",
+                "Confirm"
             )
-            $params | ForEach-Object {
-                $CommandUnderTest | Should -HaveParameter $PSItem
-            }
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

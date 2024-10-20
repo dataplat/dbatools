@@ -42,7 +42,9 @@ CREATE LOGIN [$DBUserName]
                 "DestinationSqlCredential",
                 "Login",
                 "ExcludeLogin",
-                "EnableException"
+                "EnableException",
+                "WhatIf",
+                "Confirm"
             )
             $CommandUnderTest | Should -HaveParameter $PSItem
         }

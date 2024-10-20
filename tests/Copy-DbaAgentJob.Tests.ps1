@@ -12,16 +12,22 @@ Describe "Copy-DbaAgentJob" {
             $CommandUnderTest = Get-Command Copy-DbaAgentJob
         }
 
-        $requiredParameters = @(
+        $params = @(
             "Source",
             "SourceSqlCredential",
             "Destination",
             "DestinationSqlCredential",
             "Job",
             "ExcludeJob",
-            "InputObject"
+            "DisableOnSource",
+            "DisableOnDestination",
+            "Force",
+            "InputObject",
+            "EnableException",
+            "WhatIf",
+            "Confirm"
         )
-        It "has the required parameter: <_>" -ForEach $requiredParameters {
+        It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
 

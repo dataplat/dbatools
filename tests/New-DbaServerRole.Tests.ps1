@@ -15,7 +15,9 @@ Describe "New-DbaServerRole" {
             "SqlCredential",
             "ServerRole",
             "Owner",
-            "EnableException"
+            "EnableException",
+            "WhatIf",
+            "Confirm"
         )
         It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem

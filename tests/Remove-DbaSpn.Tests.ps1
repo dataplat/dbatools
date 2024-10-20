@@ -5,7 +5,7 @@ Describe "Remove-DbaSpn" {
         BeforeAll {
             $CommandUnderTest = Get-Command Remove-DbaSpn
         }
-        $requiredParameters = @(
+        $params = @(
             "SPN",
             "ServiceAccount",
             "Credential",
@@ -13,7 +13,7 @@ Describe "Remove-DbaSpn" {
             "WhatIf",
             "Confirm"
         )
-        It "has the required parameter: <_>" -ForEach $requiredParameters {
+        It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

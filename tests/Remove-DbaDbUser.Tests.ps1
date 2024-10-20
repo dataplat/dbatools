@@ -20,7 +20,9 @@ Describe "Remove-DbaDbUser Unit Tests" -Tag 'UnitTests' {
             "User",
             "InputObject",
             "Force",
-            "EnableException"
+            "EnableException",
+            "WhatIf",
+            "Confirm"
         )
         It "has the required parameter: <_>" -ForEach $params {
             $command | Should -HaveParameter $PSItem

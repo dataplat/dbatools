@@ -6,17 +6,17 @@ Describe "Get-DbaDbCertificate" {
             $CommandUnderTest = Get-Command Get-DbaDbCertificate
         }
 
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "ExcludeDatabase",
+            "Certificate",
+            "Subject",
+            "InputObject",
+            "EnableException"
+        )
         It "has the required parameter: <_>" -ForEach $params {
-            $params = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "ExcludeDatabase",
-                "Certificate",
-                "Subject",
-                "InputObject",
-                "EnableException"
-            )
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

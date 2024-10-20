@@ -66,35 +66,33 @@ Describe "Copy-DbaDbViewData" {
         BeforeAll {
             $CommandUnderTest = Get-Command Copy-DbaDbViewData
         }
-        It "has all the required parameters" {
-            $params = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Destination",
-                "DestinationSqlCredential",
-                "Database",
-                "DestinationDatabase",
-                "View",
-                "Query",
-                "AutoCreateTable",
-                "BatchSize",
-                "NotifyAfter",
-                "DestinationTable",
-                "NoTableLock",
-                "CheckConstraints",
-                "FireTriggers",
-                "KeepIdentity",
-                "KeepNulls",
-                "Truncate",
-                "BulkCopyTimeOut",
-                "InputObject",
-                "EnableException"
-            )
-            $params | ForEach-Object {
-                It "has the required parameter: $_" {
-                    $CommandUnderTest | Should -HaveParameter $PSItem
-                }
-            }
+
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Destination",
+            "DestinationSqlCredential",
+            "Database",
+            "DestinationDatabase",
+            "View",
+            "Query",
+            "AutoCreateTable",
+            "BatchSize",
+            "NotifyAfter",
+            "DestinationTable",
+            "NoTableLock",
+            "CheckConstraints",
+            "FireTriggers",
+            "KeepIdentity",
+            "KeepNulls",
+            "Truncate",
+            "BulkCopyTimeOut",
+            "InputObject",
+            "EnableException"
+        )
+
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 
@@ -174,4 +172,5 @@ Describe "Copy-DbaDbViewData" {
             $result.RowsCopied | Should -Be 1
         }
     }
+}
 }

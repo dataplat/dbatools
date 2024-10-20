@@ -6,16 +6,18 @@ Describe "Copy-DbaSpConfigure" {
             $CommandUnderTest = Get-Command Copy-DbaSpConfigure
         }
 
-        $requiredParameters = @(
+        $params = @(
             "Source",
             "SourceSqlCredential",
             "Destination",
             "DestinationSqlCredential",
             "ConfigName",
             "ExcludeConfigName",
-            "EnableException"
+            "EnableException",
+            "WhatIf",
+            "Confirm"
         )
-        It "has the required parameter: <_>" -ForEach $requiredParameters {
+        It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

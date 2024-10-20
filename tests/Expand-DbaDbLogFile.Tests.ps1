@@ -26,7 +26,9 @@ Describe "Expand-DbaDbLogFile" {
             "ShrinkSize",
             "BackupDirectory",
             "ExcludeDiskSpaceValidation",
-            "EnableException"
+            "EnableException",
+            "WhatIf",
+            "Confirm"
         )
         It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem

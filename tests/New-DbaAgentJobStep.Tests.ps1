@@ -10,32 +10,35 @@ Describe "New-DbaAgentJobStep" {
             $CommandUnderTest = Get-Command New-DbaAgentJobStep
         }
 
-        It "has all the required parameters" -ForEach $requiredParameters {
-            $params = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Job",
-                "StepId",
-                "StepName",
-                "Subsystem",
-                "SubsystemServer",
-                "Command",
-                "CmdExecSuccessCode",
-                "OnSuccessAction",
-                "OnSuccessStepId",
-                "OnFailAction",
-                "OnFailStepId",
-                "Database",
-                "DatabaseUser",
-                "RetryAttempts",
-                "RetryInterval",
-                "OutputFileName",
-                "Insert",
-                "Flag",
-                "ProxyName",
-                "Force",
-                "EnableException"
-            )
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Job",
+            "StepId",
+            "StepName",
+            "Subsystem",
+            "SubsystemServer",
+            "Command",
+            "CmdExecSuccessCode",
+            "OnSuccessAction",
+            "OnSuccessStepId",
+            "OnFailAction",
+            "OnFailStepId",
+            "Database",
+            "DatabaseUser",
+            "RetryAttempts",
+            "RetryInterval",
+            "OutputFileName",
+            "Insert",
+            "Flag",
+            "ProxyName",
+            "Force",
+            "EnableException",
+            "WhatIf",
+            "Confirm"
+        )
+
+        It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

@@ -6,7 +6,7 @@ Describe "Copy-DbaDbQueryStoreOption" {
             $CommandUnderTest = Get-Command Copy-DbaDbQueryStoreOption
         }
 
-        $requiredParameters = @(
+        $params = @(
             "Source",
             "SourceSqlCredential",
             "SourceDatabase",
@@ -15,9 +15,11 @@ Describe "Copy-DbaDbQueryStoreOption" {
             "DestinationDatabase",
             "Exclude",
             "AllDatabases",
-            "EnableException"
+            "EnableException",
+            "WhatIf",
+            "Confirm"
         )
-        It "has the required parameter: <_>" -ForEach $requiredParameters {
+        It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

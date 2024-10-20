@@ -11,7 +11,7 @@ Describe "New-DbaDbSnapshot" {
             $CommandUnderTest = Get-Command New-DbaDbSnapshot
         }
 
-        It "has the required parameter: <_>" -ForEach @(
+        $params = @(
             "SqlInstance",
             "SqlCredential",
             "Database",
@@ -22,8 +22,11 @@ Describe "New-DbaDbSnapshot" {
             "Path",
             "Force",
             "InputObject",
-            "EnableException"
-        ) {
+            "EnableException",
+            "WhatIf",
+            "Confirm"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

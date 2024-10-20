@@ -6,13 +6,14 @@ Describe "Find-DbaDbDuplicateIndex" {
             $CommandUnderTest = Get-Command Find-DbaDbDuplicateIndex
         }
 
-        It "has the required parameter: <_>" -ForEach @(
+        $params = @(
             "SqlInstance",
             "SqlCredential",
             "Database",
             "IncludeOverlapping",
             "EnableException"
-        ) {
+        )
+        It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

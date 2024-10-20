@@ -10,13 +10,13 @@ Describe "Convert-DbaMaskingValue" {
         BeforeAll {
             $CommandUnderTest = Get-Command Convert-DbaMaskingValue
         }
-        $requiredParameters = @(
+        $params = @(
             "Value",
             "DataType",
             "Nullable",
             "EnableException"
         )
-        It "has the required parameter: <_>" -ForEach $requiredParameters {
+        It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

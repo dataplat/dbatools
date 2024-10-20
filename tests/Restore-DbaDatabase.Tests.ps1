@@ -64,7 +64,9 @@ Describe "Restore-DbaDatabase Unit Tests" -Tag 'UnitTests' {
                 "StopBefore",
                 "StopMark",
                 "StopAfterDate",
-                "StatementTimeout"
+                "StatementTimeout",
+                "WhatIf",
+                "Confirm"
             )
             It "has the required parameter: <_>" -ForEach $params {
                 $command | Should -HaveParameter $PSItem

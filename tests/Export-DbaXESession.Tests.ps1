@@ -18,7 +18,22 @@ Describe "Export-DbaXESession" {
         BeforeAll {
             $CommandUnderTest = Get-Command Export-DbaXESession
         }
-        It "has the required parameter: SqlInstance" -ForEach @("SqlInstance", "SqlCredential", "InputObject", "Session", "Path", "FilePath", "Encoding", "Passthru", "BatchSeparator", "NoPrefix", "NoClobber", "Append", "EnableException") {
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "InputObject",
+            "Session",
+            "Path",
+            "FilePath",
+            "Encoding",
+            "Passthru",
+            "BatchSeparator",
+            "NoPrefix",
+            "NoClobber",
+            "Append",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

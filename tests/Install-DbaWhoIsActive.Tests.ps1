@@ -189,7 +189,9 @@ ALTER PROC dbo.sp_WhoIsActive
             "LocalFile",
             "Database",
             "EnableException",
-            "Force"
+            "Force",
+            "WhatIf",
+            "Confirm"
         )
         It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem

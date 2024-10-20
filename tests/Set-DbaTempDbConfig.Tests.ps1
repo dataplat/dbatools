@@ -44,7 +44,9 @@ Describe "Set-DbaTempDbConfig" {
                 "OutFile",
                 "OutputScriptOnly",
                 "DisableGrowth",
-                "EnableException"
+                "EnableException",
+                "WhatIf",
+                "Confirm"
             )
             It "has the required parameter: <_>" -ForEach $params {
                 $CommandUnderTest | Should -HaveParameter $PSItem

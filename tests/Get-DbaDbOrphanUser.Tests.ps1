@@ -6,13 +6,14 @@ Describe "Get-DbaDbOrphanUser" {
             $CommandUnderTest = Get-Command Get-DbaDbOrphanUser
         }
 
-        It "has the required parameter: <_>" -ForEach @(
+        $params = @(
             "SqlInstance",
             "SqlCredential",
             "Database",
             "ExcludeDatabase",
             "EnableException"
-        ) {
+        )
+        It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

@@ -22,7 +22,9 @@ Describe "New-DbaComputerCertificate" {
             "SelfSigned",
             "EnableException",
             "HashAlgorithm",
-            "MonthsValid"
+            "MonthsValid",
+            "WhatIf",
+            "Confirm"
         )
         It "has the required parameter: <_>" -ForEach $requiredParameters {
             $CommandUnderTest | Should -HaveParameter $PSItem

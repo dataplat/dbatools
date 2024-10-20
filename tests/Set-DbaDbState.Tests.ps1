@@ -28,7 +28,9 @@ Describe "Set-DbaDbState Unit Tests" -Tag 'UnitTests' {
             "MultiUser",
             "Force",
             "EnableException",
-            "InputObject"
+            "InputObject",
+            "WhatIf",
+            "Confirm"
         )
         It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem

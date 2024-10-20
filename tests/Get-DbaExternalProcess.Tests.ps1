@@ -6,11 +6,12 @@ Describe "Get-DbaExternalProcess" {
             $CommandUnderTest = Get-Command Get-DbaExternalProcess
         }
 
-        It "has the required parameter: <_>" -ForEach @(
+        $params = @(
             "ComputerName",
             "Credential",
             "EnableException"
-        ) {
+        )
+        It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

@@ -20,7 +20,9 @@ Describe "Remove-DbaAgentSchedule Unit Tests" -Tag 'UnitTests' {
                 "Id",
                 "InputObject",
                 "EnableException",
-                "Force"
+                "Force",
+                "WhatIf",
+                "Confirm"
             )
             It "has the required parameter: <_>" -ForEach $params {
                 $CommandUnderTest | Should -HaveParameter $PSItem

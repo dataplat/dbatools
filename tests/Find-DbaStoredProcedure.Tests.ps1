@@ -11,19 +11,19 @@ Describe "Find-DbaStoredProcedure Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Find-DbaStoredProcedure
         }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "ExcludeDatabase",
+            "Pattern",
+            "IncludeSystemObjects",
+            "IncludeSystemDatabases",
+            "EnableException"
+        )
         It "has the required parameter: <_>" -ForEach $params {
-            $params = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "ExcludeDatabase",
-                "Pattern"
-            )
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
-        $CommandUnderTest | Should -HaveParameter IncludeSystemObjects
-        $CommandUnderTest | Should -HaveParameter IncludeSystemDatabases
-        $CommandUnderTest | Should -HaveParameter EnableException
     }
 }
 

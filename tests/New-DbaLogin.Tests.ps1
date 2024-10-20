@@ -91,7 +91,9 @@ Describe "New-DbaLogin" {
             "NewSid",
             "ExternalProvider",
             "Force",
-            "EnableException"
+            "EnableException",
+            "WhatIf",
+            "Confirm"
         )
         It "has the required parameter: <_>" -ForEach $params {
             $Command | Should -HaveParameter $PSItem

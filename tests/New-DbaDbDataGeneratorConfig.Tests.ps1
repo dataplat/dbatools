@@ -30,17 +30,17 @@ Describe "New-DbaDbDataGeneratorConfig" {
             "SqlCredential",
             "Database",
             "Table",
-            "Rows",
-            "Path",
             "ResetIdentity",
             "TruncateTable",
+            "Rows",
+            "Path",
             "Force",
-            "EnableException"
+            "EnableException",
+            "WhatIf",
+            "Confirm"
         )
-        foreach ($param in $params) {
-            It "has the required parameter: $param" {
-                $CommandUnderTest | Should -HaveParameter $param
-            }
+        It "has the required parameter: $PSItem" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

@@ -10,7 +10,7 @@ Describe "Get-DbaDbSpace" {
         BeforeAll {
             $CommandUnderTest = Get-Command Get-DbaDbSpace
         }
-        It "has the required parameter: <_>" -ForEach @(
+        $params = @(
             "SqlInstance",
             "SqlCredential",
             "Database",
@@ -18,7 +18,8 @@ Describe "Get-DbaDbSpace" {
             "IncludeSystemDBs",
             "InputObject",
             "EnableException"
-        ) {
+        )
+        It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

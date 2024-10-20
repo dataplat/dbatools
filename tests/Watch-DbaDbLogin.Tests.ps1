@@ -6,17 +6,17 @@ Describe "Watch-DbaDbLogin" {
             $CommandUnderTest = Get-Command Watch-DbaDbLogin
         }
 
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "Table",
+            "SqlCms",
+            "ServersFromFile",
+            "InputObject",
+            "EnableException"
+        )
         It "has the required parameter: <_>" -ForEach $params {
-            $params = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "Table",
-                "SqlCms",
-                "ServersFromFile",
-                "InputObject",
-                "EnableException"
-            )
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

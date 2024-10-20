@@ -14,7 +14,9 @@ Describe "Install-DbaDarlingData" {
             "Procedure",
             "LocalFile",
             "Force",
-            "EnableException"
+            "EnableException",
+            "WhatIf",
+            "Confirm"
         )
         It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem

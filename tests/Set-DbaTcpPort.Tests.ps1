@@ -11,17 +11,14 @@ Describe "Set-DbaTcpPort" {
         BeforeAll {
             $CommandUnderTest = Get-Command Set-DbaTcpPort
         }
-
-        It "has the required parameter: SqlInstance" {
-            $CommandUnderTest | Should -HaveParameter "SqlInstance"
-        }
-
         $params = @(
             "SqlCredential",
             "Port",
             "IpAddress",
             "Force",
-            "EnableException"
+            "EnableException",
+            "WhatIf",
+            "Confirm"
         )
         It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem

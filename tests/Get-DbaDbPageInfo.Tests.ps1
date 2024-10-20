@@ -6,7 +6,7 @@ Describe "Get-DbaDbPageInfo" {
             $CommandUnderTest = Get-Command Get-DbaDbPageInfo
         }
 
-        It "has the required parameter: <_>" -ForEach @(
+        $params = @(
             "SqlInstance",
             "SqlCredential",
             "Database",
@@ -14,7 +14,8 @@ Describe "Get-DbaDbPageInfo" {
             "Table",
             "InputObject",
             "EnableException"
-        ) {
+        )
+        It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

@@ -6,20 +6,20 @@ Describe "Export-DbaSysDbUserObject" {
             $CommandUnderTest = Get-Command Export-DbaSysDbUserObject
         }
 
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "IncludeDependencies",
+            "BatchSeparator",
+            "Path",
+            "FilePath",
+            "NoPrefix",
+            "ScriptingOptionsObject",
+            "NoClobber",
+            "PassThru",
+            "EnableException"
+        )
         It "has the required parameter: <_>" -ForEach $params {
-            $params = @(
-                "SqlInstance",
-                "SqlCredential",
-                "IncludeDependencies",
-                "BatchSeparator",
-                "Path",
-                "FilePath",
-                "NoPrefix",
-                "ScriptingOptionsObject",
-                "NoClobber",
-                "PassThru",
-                "EnableException"
-            )
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

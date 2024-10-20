@@ -11,13 +11,13 @@ Describe "Get-DbaAgentJobStep" {
             "SqlCredential",
             "Job",
             "ExcludeJob",
-            "InputObject"
+            "InputObject",
+            "ExcludeDisabledJobs",
+            "EnableException"
         )
         It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
-        $CommandUnderTest | Should -HaveParameter ExcludeDisabledJobs
-        $CommandUnderTest | Should -HaveParameter EnableException
     }
 
     Context "Gets a job step" {

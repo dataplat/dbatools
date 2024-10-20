@@ -63,7 +63,9 @@ Describe "Install-DbaInstance" {
             "PerformVolumeMaintenanceTasks",
             "Restart",
             "NoPendingRenameCheck",
-            "EnableException"
+            "EnableException",
+            "WhatIf",
+            "Confirm"
         )
         It "has the required parameter: <_>" -ForEach $params {
             $command | Should -HaveParameter $PSItem

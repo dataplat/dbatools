@@ -16,7 +16,9 @@ Describe "Restore-DbaDbCertificate" {
                 "Database",
                 "Name",
                 "DecryptionPassword",
-                "EnableException"
+                "EnableException",
+                "WhatIf",
+                "Confirm"
             )
             It "has the required parameter: <_>" -ForEach $params {
                 $CommandUnderTest | Should -HaveParameter $PSItem

@@ -22,6 +22,7 @@ Describe "New-DbaReplSubscription" {
             "SubscriptionSqlCredential",
             "Type",
             "EnableException",
+            "WhatIf",
             "Confirm"
         )
 

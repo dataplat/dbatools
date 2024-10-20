@@ -10,7 +10,14 @@ Describe "Get-DbaDbFileGrowth" {
             $CommandUnderTest = Get-Command Get-DbaDbFileGrowth
         }
 
-        It "has the required parameter: SqlInstance" -ForEach @("SqlInstance", "SqlCredential") {
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "InputObject",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
 

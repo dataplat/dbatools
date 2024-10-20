@@ -15,6 +15,7 @@ Describe "Get-DbaReplPublication" {
             "SqlCredential",
             "Database",
             "Name",
+            "Type",
             "EnableException"
         )
         It "has the required parameter: <_>" -ForEach $params {

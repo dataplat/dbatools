@@ -15,7 +15,9 @@ Describe "Copy-DbaInstanceTrigger" {
                 "ServerTrigger",
                 "ExcludeServerTrigger",
                 "Force",
-                "EnableException"
+                "EnableException",
+                "WhatIf",
+                "Confirm"
             )
             It "has the required parameter: <_>" -ForEach $params {
                 $CommandUnderTest | Should -HaveParameter $PSItem

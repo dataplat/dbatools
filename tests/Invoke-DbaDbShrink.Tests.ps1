@@ -12,22 +12,24 @@ Describe "Invoke-DbaDbShrink Unit Tests" -Tag 'UnitTests' {
             $CommandUnderTest = Get-Command Invoke-DbaDbShrink
         }
 
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "ExcludeDatabase",
+            "AllUserDatabases",
+            "PercentFreeSpace",
+            "ShrinkMethod",
+            "FileType",
+            "StepSize",
+            "StatementTimeout",
+            "ExcludeIndexStats",
+            "ExcludeUpdateUsage",
+            "EnableException",
+            "WhatIf",
+            "Confirm"
+        )
         It "has the required parameter: <_>" -ForEach $params {
-            $params = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "ExcludeDatabase",
-                "AllUserDatabases",
-                "PercentFreeSpace",
-                "ShrinkMethod",
-                "FileType",
-                "StepSize",
-                "StatementTimeout",
-                "ExcludeIndexStats",
-                "ExcludeUpdateUsage",
-                "EnableException"
-            )
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

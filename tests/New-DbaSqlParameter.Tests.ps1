@@ -5,7 +5,7 @@ Describe "New-DbaSqlParameter" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaSqlParameter
         }
-        $requiredParameters = @(
+        $params = @(
             "CompareInfo",
             "DbType",
             "Direction",
@@ -27,7 +27,7 @@ Describe "New-DbaSqlParameter" {
             "Value",
             "EnableException"
         )
-        It "has the required parameter: <_>" -ForEach $requiredParameters {
+        It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

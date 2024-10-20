@@ -25,7 +25,9 @@ Describe "Invoke-DbaDbDataGenerator" {
             "MaxValue",
             "ExactLength",
             "ModulusFactor",
-            "EnableException"
+            "EnableException",
+            "WhatIf",
+            "Confirm"
         )
         It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem

@@ -30,7 +30,7 @@ Describe "Select-DbaObject" {
         BeforeAll {
             $CommandUnderTest = Get-Command Select-DbaObject
         }
-        $requiredParameters = @(
+        $params = @(
             "InputObject",
             "Property",
             "ExcludeProperty",
@@ -50,7 +50,7 @@ Describe "Select-DbaObject" {
             "TypeName",
             "KeepInputObject"
         )
-        It "has the required parameter: <_>" -ForEach $requiredParameters {
+        It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

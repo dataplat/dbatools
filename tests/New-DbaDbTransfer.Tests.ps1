@@ -73,27 +73,25 @@ Describe "New-DbaDbTransfer" {
         BeforeAll {
             $CommandUnderTest = Get-Command New-DbaDbTransfer
         }
-        It "has all the required parameters" {
-            $params = @(
-                "SqlInstance",
-                "SqlCredential",
-                "DestinationSqlInstance",
-                "DestinationSqlCredential",
-                "Database",
-                "DestinationDatabase",
-                "BatchSize",
-                "BulkCopyTimeOut",
-                "ScriptingOption",
-                "InputObject",
-                "CopyAllObjects",
-                "CopyAll",
-                "SchemaOnly",
-                "DataOnly",
-                "EnableException"
-            )
-            $params | ForEach-Object {
-                $CommandUnderTest | Should -HaveParameter $PSItem
-            }
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "DestinationSqlInstance",
+            "DestinationSqlCredential",
+            "Database",
+            "DestinationDatabase",
+            "BatchSize",
+            "BulkCopyTimeOut",
+            "ScriptingOption",
+            "InputObject",
+            "CopyAllObjects",
+            "CopyAll",
+            "SchemaOnly",
+            "DataOnly",
+            "EnableException"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

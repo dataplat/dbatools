@@ -22,7 +22,9 @@ Describe "Invoke-DbaDbClone" {
                 "ExcludeStatistics",
                 "ExcludeQueryStore",
                 "UpdateStatistics",
-                "EnableException"
+                "EnableException",
+                "WhatIf",
+                "Confirm"
             )
             It "has the required parameter: <_>" -ForEach $params {
                 $CommandUnderTest | Should -HaveParameter $PSItem

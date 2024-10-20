@@ -11,7 +11,15 @@ Describe "Export-DbaRegServer" {
 
         $params = @(
             "SqlInstance",
-            "SqlCredential"
+            "SqlCredential",
+            "InputObject",
+            "Path",
+            "FilePath",
+            "CredentialPersistenceType",
+            "Group",
+            "ExcludeGroup",
+            "Overwrite",
+            "EnableException"
         )
         It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem

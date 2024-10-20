@@ -20,7 +20,9 @@ Describe "Invoke-DbaDbLogShipRecovery" {
                 "EnableException",
                 "Force",
                 "InputObject",
-                "Delay"
+                "Delay",
+                "WhatIf",
+                "Confirm"
             )
             It "has the required parameter: <_>" -ForEach $params {
                 $CommandUnderTest | Should -HaveParameter $PSItem

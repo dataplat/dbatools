@@ -39,7 +39,9 @@ Describe "Test-DbaLastBackup Unit Tests" -Tag 'UnitTests' {
                 "IgnoreDiffBackup",
                 "MaxDop",
                 "ReuseSourceFolderStructure",
-                "EnableException"
+                "EnableException",
+                "WhatIf",
+                "Confirm"
             )
             It "has the required parameter: <_>" -ForEach $params {
                 $CommandUnderTest | Should -HaveParameter $PSItem

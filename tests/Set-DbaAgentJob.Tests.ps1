@@ -28,7 +28,9 @@ Describe "Set-DbaAgentJob" {
             "DeleteLevel",
             "Force",
             "InputObject",
-            "EnableException"
+            "EnableException",
+            "WhatIf",
+            "Confirm"
         )
         It "has the required parameter: <_>" -ForEach $requiredParameters {
             $CommandUnderTest | Should -HaveParameter $PSItem

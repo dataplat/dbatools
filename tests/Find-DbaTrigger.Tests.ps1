@@ -18,7 +18,10 @@ Describe "Find-DbaTrigger Unit Tests" -Tag 'UnitTests' {
                 "Database",
                 "ExcludeDatabase",
                 "Pattern",
-                "TriggerLevel"
+                "TriggerLevel",
+                "IncludeSystemObjects",
+                "IncludeSystemDatabases",
+                "EnableException"
             )
             It "has the required parameter: <_>" -ForEach $params {
                 $CommandUnderTest | Should -HaveParameter $PSItem

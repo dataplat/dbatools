@@ -11,10 +11,19 @@ Describe "Test-DbaBackupInformation Unit Tests" -Tag 'UnitTests' {
         BeforeAll {
             $CommandUnderTest = Get-Command Test-DbaBackupInformation
         }
-        It "has the required parameter: <_>" -ForEach @(
+        $params = @(
             "SqlInstance",
-            "SqlCredential"
-        ) {
+            "SqlCredential",
+            "BackupHistory",
+            "WithReplace",
+            "Continue",
+            "VerifyOnly",
+            "OutputScriptOnly",
+            "EnableException",
+            "WhatIf",
+            "Confirm"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

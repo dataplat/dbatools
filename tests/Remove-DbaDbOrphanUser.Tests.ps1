@@ -13,7 +13,9 @@ Describe "Remove-DbaDbOrphanUser Unit Tests" -Tag 'UnitTests' {
             "ExcludeDatabase",
             "User",
             "Force",
-            "EnableException"
+            "EnableException",
+            "WhatIf",
+            "Confirm"
         )
         It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem

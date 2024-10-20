@@ -25,7 +25,7 @@ Describe "New-DbaAgentAlert" {
             $CommandUnderTest = Get-Command New-DbaAgentAlert
         }
 
-        It "has the required parameter: SqlInstance" {
+        It "has the required parameter: <_>" -ForEach $params {
             $params = @(
                 "SqlInstance",
                 "SqlCredential",
@@ -45,11 +45,11 @@ Describe "New-DbaAgentAlert" {
                 "WmiEventNamespace",
                 "WmiEventQuery",
                 "NotifyMethod",
-                "EnableException"
+                "EnableException",
+                "WhatIf",
+                "Confirm"
             )
-            $params | ForEach-Object {
-                $CommandUnderTest | Should -HaveParameter $PSItem
-            }
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }
 

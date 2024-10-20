@@ -10,7 +10,7 @@ Describe "Install-DbaFirstResponderKit" {
             $CommandUnderTest = Get-Command Install-DbaFirstResponderKit
         }
 
-        It "has the required parameter: <_>" -ForEach @(
+        $params = @(
             "SqlInstance",
             "SqlCredential",
             "Branch",
@@ -18,8 +18,11 @@ Describe "Install-DbaFirstResponderKit" {
             "LocalFile",
             "OnlyScript",
             "Force",
-            "EnableException"
-        ) {
+            "EnableException",
+            "WhatIf",
+            "Confirm"
+        )
+        It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

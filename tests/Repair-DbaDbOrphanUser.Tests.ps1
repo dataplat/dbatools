@@ -6,17 +6,19 @@ Describe "Repair-DbaDbOrphanUser" {
             $CommandUnderTest = Get-Command Repair-DbaDbOrphanUser
         }
 
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "ExcludeDatabase",
+            "Users",
+            "RemoveNotExisting",
+            "Force",
+            "EnableException",
+            "WhatIf",
+            "Confirm"
+        )
         It "has the required parameter: <_>" -ForEach $params {
-            $params = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "ExcludeDatabase",
-                "Users",
-                "RemoveNotExisting",
-                "Force",
-                "EnableException"
-            )
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

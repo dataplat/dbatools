@@ -7,7 +7,8 @@ Describe "Get-DbaXESmartTarget" {
         }
         $params = @(
             "SqlInstance",
-            "SqlCredential"
+            "SqlCredential",
+            "EnableException"
         )
         It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem

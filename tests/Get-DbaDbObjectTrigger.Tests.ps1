@@ -17,6 +17,7 @@ Describe "Get-DbaDbObjectTrigger Unit Tests" -Tag 'UnitTests' {
                 "SqlCredential",
                 "Database",
                 "ExcludeDatabase",
+                "Type",
                 "InputObject",
                 "EnableException"
             )

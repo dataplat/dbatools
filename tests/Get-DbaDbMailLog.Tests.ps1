@@ -6,13 +6,14 @@ Describe "Get-DbaDbMailLog" {
             $CommandUnderTest = Get-Command Get-DbaDbMailLog
         }
 
+        $params = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Since",
+            "Type",
+            "EnableException"
+        )
         It "has the required parameter: <_>" -ForEach $params {
-            $params = @(
-                "SqlInstance",
-                "SqlCredential",
-                "Since",
-                "EnableException"
-            )
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

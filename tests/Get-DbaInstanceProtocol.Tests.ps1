@@ -10,11 +10,12 @@ Describe "Get-DbaInstanceProtocol" {
             $CommandUnderTest = Get-Command Get-DbaInstanceProtocol
         }
 
-        It "has the required parameter: <_>" -ForEach @(
+        $params = @(
             "ComputerName",
             "Credential",
             "EnableException"
-        ) {
+        )
+        It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
     }

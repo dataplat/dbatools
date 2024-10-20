@@ -11,12 +11,12 @@ Describe "Get-DbaSchemaChangeHistory" {
             "Database",
             "ExcludeDatabase",
             "Since",
-            "Object"
+            "Object",
+            "EnableException"
         )
         It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem
         }
-        $CommandUnderTest | Should -HaveParameter EnableException -Switch
     }
 }
 

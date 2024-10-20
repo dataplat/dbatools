@@ -11,6 +11,7 @@ Describe "Get-XpDirTreeRestoreFile" {
         }
         It "has all the required parameters" {
             $params = @(
+                "Path",
                 "SqlInstance",
                 "SqlCredential",
                 "EnableException",

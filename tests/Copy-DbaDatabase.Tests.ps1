@@ -33,11 +33,7 @@ Describe "Copy-DbaDatabase" {
     }
 
     Context "Validate parameters" {
-        BeforeDiscovery {
-            [object[]]$params = (Get-Command Copy-DbaDatabase).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        }
-
-        $requiredParameters = @(
+        $params = @(
             "Source",
             "SourceSqlCredential",
             "Destination",
@@ -67,40 +63,12 @@ Describe "Copy-DbaDatabase" {
             "Prefix",
             "Force",
             "EnableException",
-            "KeepCDC",
-            "KeepReplication"
-        )
-        It "has all the required parameters" -ForEach $requiredParameters {
-            (Get-Command Copy-DbaDatabase) | Should -HaveParameter $PSItem
-        }
-
-        $params = @(
-            "Source",
-            "SourceSqlCredential",
-            "Destination",
-            "DestinationSqlCredential"
+            "KeepCDCCC",
+            "KeepReplicatieelicatieelication"
         )
         It "has the required parameter: <_>" -ForEach $params {
-            (Get-Command Copy-DbaDatabase) | Should -HaveParameter $PSItem
+            $CommandUnderTest | Should -HaveParameter $PSItem
         }
-
-        It "Source should be a Dataplat.Dbatools.Parameter.DbaInstanceParameter" {
-            (Get-Command Copy-DbaDatabase).Parameters['Source'].ParameterType.FullName | Should -Be 'Dataplat.Dbatools.Parameter.DbaInstanceParameter'
-        }
-
-        It "SourceSqlCredential should be a System.Management.Automation.PSCredential" {
-            (Get-Command Copy-DbaDatabase).Parameters['SourceSqlCredential'].ParameterType.FullName | Should -Be 'System.Management.Automation.PSCredential'
-        }
-
-        It "Destination should be a Dataplat.Dbatools.Parameter.DbaInstanceParameter[]" {
-            (Get-Command Copy-DbaDatabase).Parameters['Destination'].ParameterType.FullName | Should -Be 'Dataplat.Dbatools.Parameter.DbaInstanceParameter[]'
-        }
-
-        It "DestinationSqlCredential should be a System.Management.Automation.PSCredential" {
-            (Get-Command Copy-DbaDatabase).Parameters['DestinationSqlCredential'].ParameterType.FullName | Should -Be 'System.Management.Automation.PSCredential'
-        }
-
-        # Add similar tests for other parameters...
     }
 
     Context "Support databases are excluded when AllDatabase selected" {

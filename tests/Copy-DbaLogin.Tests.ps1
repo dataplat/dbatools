@@ -73,10 +73,11 @@ Describe "Copy-DbaLogin" {
             "LoginRenameHashtable",
             "KillActiveConnection",
             "Force",
+            "ObjectLevel",
             "ExcludePermissionSync",
-            "NewSid",
             "EnableException",
-            "ObjectLevel"
+            "WhatIf",
+            "Confirm"
         )
         It "has the required parameter: <_>" -ForEach $params {
             $CommandUnderTest | Should -HaveParameter $PSItem

@@ -7,7 +7,7 @@ Describe "Set-DbaDbSequence" {
         }
 
         It "has all the required parameters" {
-            $requiredParameters = @(
+            $params = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Database",
@@ -20,9 +20,11 @@ Describe "Set-DbaDbSequence" {
                 "Cycle",
                 "CacheSize",
                 "InputObject",
-                "EnableException"
+                "EnableException",
+                "WhatIf",
+                "Confirm"
             )
-            $requiredParameters | ForEach-Object {
+            $params | ForEach-Object {
                 $CommandUnderTest | Should -HaveParameter $PSItem
             }
         }
