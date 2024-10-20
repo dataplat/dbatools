@@ -1,3 +1,4 @@
+return
 # constants
 if (Test-Path "$TestConfig.PSModuleRoot/tests/constants.local.ps1") {
     Write-Host "Tests will use local constants file: tests\constants.local.ps1." -ForegroundColor Cyan

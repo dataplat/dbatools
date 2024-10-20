@@ -1,5 +1,5 @@
 function Get-TestConfig {
-    params(
+    param(
         [string]$LocalConfigPath = "$script:PSModuleRoot/tests/constants.local.ps1"
     )
     $config = [ordered]@{}
