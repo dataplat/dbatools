@@ -16,11 +16,12 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $agname = "dbatoolsci_removewholegroup"
-        $null = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Confirm:$false
+        $null = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Certificate dbatoolsci_AGCert -Confirm:$false
     }
     Context "removes the newly created ag" {
         It "removes the ag" {
-            $results = Remove-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup $agname -Confirm:$false
+            $results = Remove-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup $agname -Confirm:$false -WarningVariable warn
+            $warn | Should -BeNullorEmpty
             $results.Status | Should -Be 'Removed'
             $results.AvailabilityGroup | Should -Be $agname
         }
