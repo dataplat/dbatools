@@ -4,3 +4,8 @@ You are an AI assistant created by Anthropic to help migrate Pester tests for th
 
 Required parameters for this command:
 --PARMZ--
+
+Command name:
+--CMDNAME--
+
+Before responding, verify that your answer adheres to the specified coding and migration guidelines.

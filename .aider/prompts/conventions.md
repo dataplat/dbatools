@@ -32,19 +32,7 @@
    - Update any mock definitions to Pester v5 syntax.
 
 9. **Remove Parameter Testing Using `knownparameters`:**
-   - Identify any existing "Validate parameters" contexts that use `knownparameters` sections, like in the example below:
-
-     ```powershell
-     Context "Validate parameters" {
-         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $PSItem -notin ('whatif', 'confirm') }
-         [object[]]$knownParameters = 'ComputerName', 'Credential', 'EnableException'
-         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-         It "Should only contain our specific parameters" {
-            # code here...
-         }
-     }
-     ```
-
+   - Identify any existing "Validate parameters" contexts that use `knownparameters` sections
    - Remove the entire "Validate parameters" context and replace it with the Pester v5 approach using `Should -HaveParameter`, as shown in the example Pester v5 test script.
 
 10. **Use TestCases Whenever Possible:**
@@ -64,6 +52,8 @@
 
 - **Comments and Debugging Notes:**
   - Leave comments like `#$script:instance2 for appveyor` intact for debugging purposes.
+  - But change `$script:instance2` to `$global:instance2` for proper scoping.
+  - So it should look like this: `#$global:instance2 for appveyor`.
 
 - **Consistency with Example:**
   - Follow the structure and conventions used in the example Pester v5 test script provided below.
@@ -86,9 +76,9 @@ Describe "Connect-DbaInstance" {
             $command = Get-Command Connect-DbaInstance
         }
         $parms = @(
-            'SqlInstance',
-            'SqlCredential',
-            'Database'
+            "SqlInstance",
+            "SqlCredential",
+            "Database"
         )
         It "Has required parameter: <_>" -ForEach $parms {
             $command | Should -HaveParameter $PSItem
@@ -135,3 +125,48 @@ Describe "Add-Numbers" {
 ## Additional Guidelines
 * Start with `param($ModuleName = 'dbatools')` like in the example above.
 * -Skip:(whatever) should return true or false, not a string
+
+
+## Style and instructions
+
+Remember to REMOVE the knownparameters and validate parameters this way:
+
+Context "Validate parameters" {
+    BeforeAll {
+        $command = Get-Command Connect-DbaInstance
+    }
+    $parms = @(
+        "SqlInstance",
+        "SqlCredential",
+        "Database"
+    )
+    It "Has required parameter: <_>" -ForEach $parms {
+        $command | Should -HaveParameter $PSItem
+    }
+}
+
+## DO NOT list parameters like this
+
+```powershell
+$parms = @('SqlInstance','SqlCredential','Database')
+```
+
+## DO list parameters like this
+
+```powershell
+$parms = @(
+    'SqlInstance',
+    'SqlCredential',
+    'Database'
+)
+```
+
+## DO use the $parms variable when referencing parameters
+
+## more instructions
+
+DO NOT USE:
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+
+DO USE:
+The static command name provided in the prompt
