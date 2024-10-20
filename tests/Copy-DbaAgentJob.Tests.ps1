@@ -1,49 +1,57 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Copy-DbaAgentJob" {
+    BeforeDiscovery {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'Job', 'ExcludeJob', 'DisableOnSource', 'DisableOnDestination', 'Force', 'EnableException', 'InputObject'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $command = Get-Command Copy-DbaAgentJob
+        }
+        $paramList = @(
+            'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential',
+            'Job', 'ExcludeJob', 'DisableOnSource', 'DisableOnDestination',
+            'Force', 'InputObject', 'EnableException'
+        )
+        It "Should have parameter: <_>" -ForEach $paramList {
+            $command | Should -HaveParameter $_ -Because "this parameter is required"
+        }
+        It "Should have WhatIf and Confirm switch parameters" {
+            $command | Should -HaveParameter WhatIf -Mandatory:$false -Type switch
+            $command | Should -HaveParameter Confirm -Mandatory:$false -Type switch
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
-    BeforeAll {
-        $null = New-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_copyjob
-        $null = New-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_copyjob_disabled
-        $sourcejobs = Get-DbaAgentJob -SqlInstance $script:instance2
-        $destjobs = Get-DbaAgentJob -SqlInstance $script:instance3
-    }
-    AfterAll {
-        $null = Remove-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_copyjob, dbatoolsci_copyjob_disabled -Confirm:$false
-        $null = Remove-DbaAgentJob -SqlInstance $script:instance3 -Job dbatoolsci_copyjob, dbatoolsci_copyjob_disabled -Confirm:$false
-    }
-
-    Context "Command copies jobs properly" {
-        $results = Copy-DbaAgentJob -Source $script:instance2 -Destination $script:instance3 -Job dbatoolsci_copyjob
+    Context "Command copies jobs properly" -Tag "IntegrationTests" {
+        BeforeAll {
+            $null = New-DbaAgentJob -SqlInstance $global:instance2 -Job dbatoolsci_copyjob
+            $null = New-DbaAgentJob -SqlInstance $global:instance2 -Job dbatoolsci_copyjob_disabled
+            $sourcejobs = Get-DbaAgentJob -SqlInstance $global:instance2
+            $destjobs = Get-DbaAgentJob -SqlInstance $global:instance3
+        }
+        AfterAll {
+            $null = Remove-DbaAgentJob -SqlInstance $global:instance2 -Job dbatoolsci_copyjob, dbatoolsci_copyjob_disabled -Confirm:$false
+            $null = Remove-DbaAgentJob -SqlInstance $global:instance3 -Job dbatoolsci_copyjob, dbatoolsci_copyjob_disabled -Confirm:$false
+        }
 
         It "returns one success" {
+            $results = Copy-DbaAgentJob -Source $global:instance2 -Destination $global:instance3 -Job dbatoolsci_copyjob
             $results.Name | Should -Be "dbatoolsci_copyjob"
             $results.Status | Should -Be "Successful"
         }
 
         It "did not copy dbatoolsci_copyjob_disabled" {
-            Get-DbaAgentJob -SqlInstance $script:instance3 -Job dbatoolsci_copyjob_disabled | Should -Be $null
+            Get-DbaAgentJob -SqlInstance $global:instance3 -Job dbatoolsci_copyjob_disabled | Should -BeNullOrEmpty
         }
 
         It "disables jobs when requested" {
-            (Get-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_copyjob_disabled).Enabled
-            $results = Copy-DbaAgentJob -Source $script:instance2 -Destination $script:instance3 -Job dbatoolsci_copyjob_disabled -DisableOnSource -DisableOnDestination -Force
+            (Get-DbaAgentJob -SqlInstance $global:instance2 -Job dbatoolsci_copyjob_disabled).Enabled | Should -BeTrue
+            $results = Copy-DbaAgentJob -Source $global:instance2 -Destination $global:instance3 -Job dbatoolsci_copyjob_disabled -DisableOnSource -DisableOnDestination -Force
             $results.Name | Should -Be "dbatoolsci_copyjob_disabled"
             $results.Status | Should -Be "Successful"
-            (Get-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_copyjob_disabled).Enabled | Should -Be $false
-            (Get-DbaAgentJob -SqlInstance $script:instance3 -Job dbatoolsci_copyjob_disabled).Enabled | Should -Be $false
+            (Get-DbaAgentJob -SqlInstance $global:instance2 -Job dbatoolsci_copyjob_disabled).Enabled | Should -BeFalse
+            (Get-DbaAgentJob -SqlInstance $global:instance3 -Job dbatoolsci_copyjob_disabled).Enabled | Should -BeFalse
         }
     }
 }

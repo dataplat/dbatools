@@ -1,46 +1,47 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Convert-DbaLSN" {
+    BeforeDiscovery {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        $paramCount = 2
-        $defaultParamCount = 11
-        [object[]]$params = (Get-ChildItem function:\Convert-DbaLSN).Parameters.Keys
-        $knownParameters = 'LSN', 'EnableException'
-        It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
+        BeforeAll {
+            $command = Get-Command Convert-DbaLSN
         }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        $parms = @(
+            'LSN',
+            'EnableException'
+        )
+        It "Has required parameter: <_>" -ForEach $parms {
+            $command | Should -HaveParameter $PSItem -Mandatory
         }
     }
 
     Context "Converts Numeric LSN to Hex" {
-        $LSN = '00000000020000000024300001'
-        It "Should convert to 00000014:000000f3:0001" {
-            (Convert-DbaLSN -Lsn $Lsn).Hexadecimal | Should -Be '00000014:000000f3:0001'
+        It "Should convert '00000000020000000024300001' to '00000014:000000f3:0001'" {
+            $result = Convert-DbaLSN -Lsn '00000000020000000024300001'
+            $result.Hexadecimal | Should -Be '00000014:000000f3:0001'
         }
     }
 
     Context "Converts Numeric LSN to Hex without leading 0s" {
-        $LSN = '20000000024300001'
-        It "Should convert to 00000014:000000f3:0001" {
-            (Convert-DbaLSN -Lsn $Lsn).Hexadecimal | Should -Be '00000014:000000f3:0001'
+        It "Should convert '20000000024300001' to '00000014:000000f3:0001'" {
+            $result = Convert-DbaLSN -Lsn '20000000024300001'
+            $result.Hexadecimal | Should -Be '00000014:000000f3:0001'
         }
     }
 
     Context "Converts Hex LSN to Numeric" {
-        $LSN = '00000014:000000f3:0001'
-        It "Should convert to 20000000024300001" {
-            (Convert-DbaLSN -Lsn $Lsn).Numeric | Should -Be 20000000024300001
+        It "Should convert '00000014:000000f3:0001' to 20000000024300001" {
+            $result = Convert-DbaLSN -Lsn '00000014:000000f3:0001'
+            $result.Numeric | Should -Be 20000000024300001
         }
     }
-
-
 }
+
 <#
     Integration test should appear below and are custom to the command you are writing.
     Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
+    for more guidance.
 #>

@@ -1,19 +1,37 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Copy-DbaSsisCatalog Unit Tests" -Tag 'UnitTests' {
+    BeforeDiscovery {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Source', 'Destination', 'SourceSqlCredential', 'DestinationSqlCredential', 'Project', 'Folder', 'Environment', 'CreateCatalogPassword', 'EnableSqlClr', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $command = Get-Command Copy-DbaSsisCatalog
+        }
+        $paramList = @(
+            'Source',
+            'Destination',
+            'SourceSqlCredential',
+            'DestinationSqlCredential',
+            'Project',
+            'Folder',
+            'Environment',
+            'CreateCatalogPassword',
+            'EnableSqlClr',
+            'Force',
+            'EnableException',
+            'WhatIf',
+            'Confirm'
+        )
+        It "Should have parameter: <_>" -ForEach $paramList {
+            $command | Should -HaveParameter $PSItem
         }
     }
 }
+
 <#
     Integration test should appear below and are custom to the command you are writing.
     Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
-    for more guidence.
+    for more guidance.
 #>

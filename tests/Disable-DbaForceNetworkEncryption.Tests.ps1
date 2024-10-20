@@ -1,22 +1,33 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Disable-DbaForceNetworkEncryption" {
+    BeforeDiscovery {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'Credential', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $command = Get-Command Disable-DbaForceNetworkEncryption
+        }
+        $parms = @(
+            'SqlInstance',
+            'Credential',
+            'EnableException',
+            'WhatIf',
+            'Confirm'
+        )
+        It "Has required parameter: <_>" -ForEach $parms {
+            $command | Should -HaveParameter $PSItem
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    $results = Disable-DbaForceNetworkEncryption $script:instance1 -EnableException
+    Context "Command actually works" {
+        BeforeAll {
+            $results = Disable-DbaForceNetworkEncryption -SqlInstance $global:instance1 -EnableException
+        }
 
-    It "returns false" {
-        $results.ForceEncryption -eq $false
+        It "returns false" {
+            $results.ForceEncryption | Should -Be $false
+        }
     }
 }

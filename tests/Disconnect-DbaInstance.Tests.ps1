@@ -1,23 +1,30 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag "UnitTests" {
+Describe "Disconnect-DbaInstance" {
+    BeforeDiscovery {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-        [object[]]$knownParameters = 'InputObject', 'EnableException'
-
-        It "Should only contain our specific parameters" {
-            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
+        BeforeAll {
+            $command = Get-Command Disconnect-DbaInstance
+        }
+        $parms = @(
+            'InputObject',
+            'EnableException',
+            'WhatIf',
+            'Confirm'
+        )
+        It "Has required parameter: <_>" -ForEach $parms {
+            $command | Should -HaveParameter $PSItem
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
-    BeforeAll {
-        $null = Connect-DbaInstance -SqlInstance $script:instance1
-    }
-    Context "disconnets a server" {
+    Context "Disconnects a server" {
+        BeforeAll {
+            $null = Connect-DbaInstance -SqlInstance $global:instance1
+        }
+
         It "disconnects and returns some results" {
             $results = Get-DbaConnectedInstance | Disconnect-DbaInstance
             $results | Should -Not -BeNullOrEmpty

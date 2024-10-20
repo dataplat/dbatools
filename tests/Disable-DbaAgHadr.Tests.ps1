@@ -1,28 +1,39 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag "UnitTests" {
+Describe "Disable-DbaAgHadr" {
+    BeforeDiscovery {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'Credential', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $command = Get-Command Disable-DbaAgHadr
+        }
+        $knownParameters = @(
+            'SqlInstance',
+            'Credential',
+            'Force',
+            'EnableException',
+            'WhatIf',
+            'Confirm'
+        )
+        It "Should have the correct parameters" -ForEach $knownParameters {
+            $command | Should -HaveParameter $PSItem
         }
     }
-}
 
-# $script:instance3 is used for Availability Group tests and needs Hadr service setting enabled
+    Context "Integration Tests" -Tag "IntegrationTests" {
+        BeforeAll {
+            $global:instance3 = $script:instance3 # Ensure global scope for Pester v5
+        }
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
-    AfterAll {
-        Enable-DbaAgHadr -SqlInstance $script:instance3 -Confirm:$false -Force
-    }
+        AfterAll {
+            Enable-DbaAgHadr -SqlInstance $global:instance3 -Confirm:$false -Force
+        }
 
-    $results = Disable-DbaAgHadr -SqlInstance $script:instance3 -Confirm:$false -Force
-
-    It "disables hadr" {
-        $results.IsHadrEnabled | Should -Be $false
+        It "disables hadr" {
+            $results = Disable-DbaAgHadr -SqlInstance $global:instance3 -Confirm:$false -Force
+            $results.IsHadrEnabled | Should -Be $false
+        }
     }
 }

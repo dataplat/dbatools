@@ -1,51 +1,59 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Copy-DbaAgentOperator" {
+    BeforeDiscovery {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'Operator', 'ExcludeOperator', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $command = Get-Command Copy-DbaAgentOperator
         }
-    }
-}
-
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
-    BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $sql = "EXEC msdb.dbo.sp_add_operator @name=N'dbatoolsci_operator', @enabled=1, @pager_days=0"
-        $server.Query($sql)
-        $sql = "EXEC msdb.dbo.sp_add_operator @name=N'dbatoolsci_operator2', @enabled=1, @pager_days=0"
-        $server.Query($sql)
-    }
-    AfterAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $sql = "EXEC msdb.dbo.sp_delete_operator @name=N'dbatoolsci_operator'"
-        $server.Query($sql)
-        $sql = "EXEC msdb.dbo.sp_delete_operator @name=N'dbatoolsci_operator2'"
-        $server.Query($sql)
-
-        $server = Connect-DbaInstance -SqlInstance $script:instance3
-        $sql = "EXEC msdb.dbo.sp_delete_operator @name=N'dbatoolsci_operator'"
-        $server.Query($sql)
-        $sql = "EXEC msdb.dbo.sp_delete_operator @name=N'dbatoolsci_operator2'"
-        $server.Query($sql)
+        $paramCount = 10
+        $knownParameters = [object[]]@(
+            'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential',
+            'Operator', 'ExcludeOperator', 'Force', 'EnableException', 'WhatIf', 'Confirm'
+        )
+        It "Should contain <paramCount> parameters" {
+            $command.Parameters.Count - $command.Parameters.Values.Where({$_.Attributes.DontShow}).Count | Should -Be $paramCount
+        }
+        It "Should contain parameter: <_>" -ForEach $knownParameters {
+            $command | Should -HaveParameter $_
+        }
     }
 
     Context "Copies operators" {
-        $results = Copy-DbaAgentOperator -Source $script:instance2 -Destination $script:instance3 -Operator dbatoolsci_operator, dbatoolsci_operator2
-
-        It "returns two results" {
-            $results.Count -eq 2
-            $results.Status -eq "Successful", "Successful"
+        BeforeAll {
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
+            $sql = "EXEC msdb.dbo.sp_add_operator @name=N'dbatoolsci_operator', @enabled=1, @pager_days=0"
+            $server.Query($sql)
+            $sql = "EXEC msdb.dbo.sp_add_operator @name=N'dbatoolsci_operator2', @enabled=1, @pager_days=0"
+            $server.Query($sql)
         }
 
-        It "return one result that's skipped" {
-            $results = Copy-DbaAgentOperator -Source $script:instance2 -Destination $script:instance3 -Operator dbatoolsci_operator
-            $results.Status -eq "Skipped"
+        AfterAll {
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
+            $sql = "EXEC msdb.dbo.sp_delete_operator @name=N'dbatoolsci_operator'"
+            $server.Query($sql)
+            $sql = "EXEC msdb.dbo.sp_delete_operator @name=N'dbatoolsci_operator2'"
+            $server.Query($sql)
+
+            $server = Connect-DbaInstance -SqlInstance $global:instance3
+            $sql = "EXEC msdb.dbo.sp_delete_operator @name=N'dbatoolsci_operator'"
+            $server.Query($sql)
+            $sql = "EXEC msdb.dbo.sp_delete_operator @name=N'dbatoolsci_operator2'"
+            $server.Query($sql)
+        }
+
+        It "returns two successful results" {
+            $results = Copy-DbaAgentOperator -Source $global:instance2 -Destination $global:instance3 -Operator dbatoolsci_operator, dbatoolsci_operator2
+            $results.Count | Should -Be 2
+            $results.Status | Should -Be @("Successful", "Successful")
+        }
+
+        It "returns one skipped result" {
+            $results = Copy-DbaAgentOperator -Source $global:instance2 -Destination $global:instance3 -Operator dbatoolsci_operator
+            $results.Status | Should -Be "Skipped"
         }
     }
 }

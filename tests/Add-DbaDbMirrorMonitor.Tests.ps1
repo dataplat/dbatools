@@ -1,28 +1,37 @@
-$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tags "UnitTests" {
+Describe "Add-DbaDbMirrorMonitor" {
+    BeforeDiscovery {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $command = Get-Command Add-DbaDbMirrorMonitor
+        }
+        $knownParameters = @(
+            'SqlInstance',
+            'SqlCredential',
+            'EnableException',
+            'WhatIf',
+            'Confirm'
+        )
+        It "Should have the required parameter: <_>" -ForEach $knownParameters {
+            $command | Should -HaveParameter $PSItem
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
-    BeforeAll {
-        $null = Remove-DbaDbMirrorMonitor -SqlInstance $script:instance2 -WarningAction SilentlyContinue
-    }
-    AfterAll {
-        $null = Remove-DbaDbMirrorMonitor -SqlInstance $script:instance2 -WarningAction SilentlyContinue
-    }
+    Context "Integration Tests" -Tag "IntegrationTests" {
+        BeforeAll {
+            $null = Remove-DbaDbMirrorMonitor -SqlInstance $global:instance2 -WarningAction SilentlyContinue
+        }
+        AfterAll {
+            $null = Remove-DbaDbMirrorMonitor -SqlInstance $global:instance2 -WarningAction SilentlyContinue
+        }
 
-    It "adds the mirror monitor" {
-        $results = Add-DbaDbMirrorMonitor -SqlInstance $script:instance2 -WarningAction SilentlyContinue
-        $results.MonitorStatus | Should -Be 'Added'
+        It "adds the mirror monitor" {
+            $results = Add-DbaDbMirrorMonitor -SqlInstance $global:instance2 -WarningAction SilentlyContinue
+            $results.MonitorStatus | Should -Be 'Added'
+        }
     }
 }

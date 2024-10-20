@@ -1,25 +1,39 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Backup-DbaComputerCertificate" {
+    BeforeDiscovery {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SecurePassword', 'InputObject', 'Path', 'FilePath', 'Type', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $command = Get-Command Backup-DbaComputerCertificate
+        }
+        $parms = @(
+            'SecurePassword',
+            'InputObject',
+            'Path',
+            'FilePath',
+            'Type',
+            'EnableException'
+        )
+        It "Has required parameter: <_>" -ForEach $parms {
+            $command | Should -HaveParameter $PSItem
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Certificate is added properly" {
-        $null = Add-DbaComputerCertificate -Path $script:appveyorlabrepo\certificates\localhost.crt -Confirm:$false
+        BeforeAll {
+            $null = Add-DbaComputerCertificate -Path $global:appveyorlabrepo\certificates\localhost.crt -Confirm:$false
+        }
+
+        AfterAll {
+            $null = Remove-DbaComputerCertificate -Thumbprint 29C469578D6C6211076A09CEE5C5797EEA0C2713 -Confirm:$false
+        }
+
         It "returns the proper results" {
             $result = Get-DbaComputerCertificate -Thumbprint 29C469578D6C6211076A09CEE5C5797EEA0C2713 | Backup-DbaComputerCertificate -Path C:\temp
-            $result.Name -match '29C469578D6C6211076A09CEE5C5797EEA0C2713.cer'
+            $result.Name | Should -Match '29C469578D6C6211076A09CEE5C5797EEA0C2713.cer'
         }
-        $null = Remove-DbaComputerCertificate -Thumbprint 29C469578D6C6211076A09CEE5C5797EEA0C2713 -Confirm:$false
     }
 }

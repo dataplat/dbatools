@@ -1,24 +1,36 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Copy-DbaDbQueryStoreOption" {
+    BeforeDiscovery {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'SourceDatabase', 'Destination', 'DestinationSqlCredential', 'DestinationDatabase', 'Exclude', 'AllDatabases', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $command = Get-Command Copy-DbaDbQueryStoreOption
+        }
+        $knownParameters = @(
+            'Source',
+            'SourceSqlCredential',
+            'SourceDatabase',
+            'Destination',
+            'DestinationSqlCredential',
+            'DestinationDatabase',
+            'Exclude',
+            'AllDatabases',
+            'EnableException',
+            'WhatIf',
+            'Confirm'
+        )
+        It "Should have the correct parameters" -ForEach $knownParameters {
+            $command | Should -HaveParameter $PSItem
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Verifying query store options are copied" {
         BeforeAll {
-            $server2 = Connect-DbaInstance -SqlInstance $script:instance2
-        }
-        BeforeEach {
+            $server2 = Connect-DbaInstance -SqlInstance $global:instance2
+
             $db1Name = "dbatoolsci_querystoretest1"
             $db1 = New-DbaDatabase -SqlInstance $server2 -Name $db1Name
 
@@ -36,7 +48,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $db4Name = "dbatoolsci_querystoretest4"
             $db4 = New-DbaDatabase -SqlInstance $server2 -Name $db4Name
         }
-        AfterEach {
+
+        AfterAll {
             $db1, $db2, $db3, $db4 | Remove-DbaDatabase -Confirm:$false
         }
 
@@ -46,7 +59,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
             $result = Copy-DbaDbQueryStoreOption -Source $server2 -SourceDatabase $db1Name -Destination $server2 -DestinationDatabase $db2Name
 
-            $result.Status | Should -Be Successful
+            $result.Status | Should -Be "Successful"
             $result.SourceDatabase | Should -Be $db1Name
             $result.SourceDatabaseID | Should -Be $db1.ID
             $result.Name | Should -Be $db2Name

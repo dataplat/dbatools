@@ -1,33 +1,44 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Add-DbaExtendedProperty" {
+    BeforeDiscovery {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Name', 'InputObject', 'EnableException', 'Value'
-        It "Should only contain our specific parameters" {
-            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
+        BeforeAll {
+            $command = Get-Command Add-DbaExtendedProperty
+        }
+        $parms = @(
+            'SqlInstance',
+            'SqlCredential',
+            'Database',
+            'Name',
+            'Value',
+            'InputObject',
+            'EnableException',
+            'WhatIf',
+            'Confirm'
+        )
+        It "Has required parameter: <_>" -ForEach $parms {
+            $command | Should -HaveParameter $PSItem
         }
     }
-}
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+    Context "Integration Tests" -Tag "IntegrationTests" {
+        BeforeAll {
+            $random = Get-Random
+            $server2 = Connect-DbaInstance -SqlInstance $global:instance2
+            $null = Get-DbaProcess -SqlInstance $server2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false
+            $newDbName = "dbatoolsci_newdb_$random"
+            $db = New-DbaDatabase -SqlInstance $server2 -Name $newDbName
+        }
 
-    BeforeAll {
-        $random = Get-Random
-        $server2 = Connect-DbaInstance -SqlInstance $script:instance2
-        $null = Get-DbaProcess -SqlInstance $server2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false
-        $newDbName = "dbatoolsci_newdb_$random"
-        $db = New-DbaDatabase -SqlInstance $server2 -Name $newDbName
-    }
+        AfterAll {
+            $null = $db | Remove-DbaDatabase -Confirm:$false
+        }
 
-    AfterAll {
-        $null = $db | Remove-DbaDatabase -Confirm:$false
-    }
-
-    Context "commands work as expected" {
-        It "works" {
+        It "adds an extended property to the database" {
             $ep = $db | Add-DbaExtendedProperty -Name "Test_Database_Name" -Value "Sup"
             $ep.Name | Should -Be "Test_Database_Name"
             $ep.ParentName | Should -Be $db.Name

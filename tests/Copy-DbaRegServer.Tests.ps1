@@ -1,22 +1,34 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Copy-DbaRegServer" {
+    BeforeDiscovery {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'Group', 'SwitchServerName', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $command = Get-Command Copy-DbaRegServer
+        }
+        $parms = @(
+            'Source',
+            'SourceSqlCredential',
+            'Destination',
+            'DestinationSqlCredential',
+            'Group',
+            'SwitchServerName',
+            'Force',
+            'EnableException',
+            'WhatIf',
+            'Confirm'
+        )
+        It "Has required parameter: <_>" -ForEach $parms {
+            $command | Should -HaveParameter $PSItem
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    Context "Setup" {
+    Context "Integration Tests" -Tag "IntegrationTests" {
         BeforeAll {
-            $server = Connect-DbaInstance $script:instance2
+            $server = Connect-DbaInstance $global:instance2
             $regstore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($server.ConnectionContext.SqlConnectionObject)
             $dbstore = $regstore.DatabaseEngineServerGroup
 
@@ -35,19 +47,19 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $newserver.Description = $regserverdescription
             $newserver.Create()
         }
+
         AfterAll {
             $newgroup.Drop()
-            $server = Connect-DbaInstance $script:instance1
+            $server = Connect-DbaInstance $global:instance1
             $regstore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($server.ConnectionContext.SqlConnectionObject)
             $dbstore = $regstore.DatabaseEngineServerGroup
             $groupstore = $dbstore.ServerGroups[$group]
             $groupstore.Drop()
         }
 
-        $results = Copy-DbaRegServer -Source $script:instance2 -Destination $script:instance1 -WarningAction SilentlyContinue -CMSGroup $group
-
         It "should report success" {
-            $results.Status | Should Be "Successful", "Successful"
+            $results = Copy-DbaRegServer -Source $global:instance2 -Destination $global:instance1 -WarningAction SilentlyContinue -CMSGroup $group
+            $results.Status | Should -Be @("Successful", "Successful")
         }
 
         # Property Comparisons will come later when we have the commands

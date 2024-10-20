@@ -1,22 +1,35 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Copy-DbaSystemDbUserObject" {
+    BeforeDiscovery {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'Force', 'Classic', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $command = Get-Command Copy-DbaSystemDbUserObject
+        }
+        $parms = @(
+            'Source',
+            'SourceSqlCredential',
+            'Destination',
+            'DestinationSqlCredential',
+            'Force',
+            'Classic',
+            'EnableException',
+            'WhatIf',
+            'Confirm'
+        )
+        It "Has required parameter: <_>" -ForEach $parms {
+            $command | Should -HaveParameter $PSItem
         }
     }
-}
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    BeforeAll {
-        #Function Scripts roughly From https://docs.microsoft.com/en-us/sql/t-sql/statements/create-function-transact-sql
-        #Rule Scripts roughly from https://docs.microsoft.com/en-us/sql/t-sql/statements/create-rule-transact-sql
-        $Function = @"
+
+    Context "Integration Tests" -Tag "IntegrationTests" {
+        BeforeAll {
+            #Function Scripts roughly From https://docs.microsoft.com/en-us/sql/t-sql/statements/create-function-transact-sql
+            #Rule Scripts roughly from https://docs.microsoft.com/en-us/sql/t-sql/statements/create-rule-transact-sql
+            $Function = @"
 CREATE FUNCTION dbo.dbatoolscs_ISOweek (@DATE datetime)
 RETURNS int
 WITH EXECUTE AS CALLER
@@ -39,7 +52,7 @@ GO
 SET DATEFIRST 1;
 SELECT dbo.ISOweek(CONVERT(DATETIME,'12/26/2004',101)) AS 'ISO Week';
 "@
-        $TableFunction = @"
+            $TableFunction = @"
 CREATE FUNCTION dbo.dbatoolsci_TableFunction (@pid int)
 RETURNS TABLE
 AS
@@ -50,35 +63,37 @@ RETURN
 );
 GO
 "@
-        $Rule = @"
+            $Rule = @"
 CREATE RULE dbo.dbatoolsci_range_rule
 AS
 @range>= $1000 AND @range <$20000;
 "@
-        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query $Function
-        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query $TableFunction
-        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query $Rule
-    }
-    AfterAll {
-        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "DROP FUNCTION dbo.dbatoolscs_ISOweek;"
-        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "DROP FUNCTION dbo.dbatoolsci_TableFunction;"
-        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "DROP RULE dbo.dbatoolsci_range_rule;"
-    }
-
-    Context "Should Copy Objects to the same instance" {
-        $results = Copy-DbaSystemDbUserObject -Source $script:instance2 -Destination $script:instance2
-        It "Should execute with default parameters" {
-            $results | Should Not Be Null
+            $null = Invoke-DbaQuery -SqlInstance $global:instance2 -Query $Function
+            $null = Invoke-DbaQuery -SqlInstance $global:instance2 -Query $TableFunction
+            $null = Invoke-DbaQuery -SqlInstance $global:instance2 -Query $Rule
         }
 
-        $results = Copy-DbaSystemDbUserObject -Source $script:instance2 -Destination $script:instance2 -Classic
-        It "Should execute with -Classic parameter" {
-            $results | Should Not Be Null
+        AfterAll {
+            $null = Invoke-DbaQuery -SqlInstance $global:instance2 -Query "DROP FUNCTION dbo.dbatoolscs_ISOweek;"
+            $null = Invoke-DbaQuery -SqlInstance $global:instance2 -Query "DROP FUNCTION dbo.dbatoolsci_TableFunction;"
+            $null = Invoke-DbaQuery -SqlInstance $global:instance2 -Query "DROP RULE dbo.dbatoolsci_range_rule;"
         }
 
-        $results = Copy-DbaSystemDbUserObject -Source $script:instance2 -Destination $script:instance2 -Force
-        It "Should execute with -Classic parameter" {
-            $results | Should Not Be Null
+        Context "Should Copy Objects to the same instance" {
+            It "Should execute with default parameters" {
+                $results = Copy-DbaSystemDbUserObject -Source $global:instance2 -Destination $global:instance2
+                $results | Should -Not -BeNullOrEmpty
+            }
+
+            It "Should execute with -Classic parameter" {
+                $results = Copy-DbaSystemDbUserObject -Source $global:instance2 -Destination $global:instance2 -Classic
+                $results | Should -Not -BeNullOrEmpty
+            }
+
+            It "Should execute with -Force parameter" {
+                $results = Copy-DbaSystemDbUserObject -Source $global:instance2 -Destination $global:instance2 -Force
+                $results | Should -Not -BeNullOrEmpty
+            }
         }
     }
 }

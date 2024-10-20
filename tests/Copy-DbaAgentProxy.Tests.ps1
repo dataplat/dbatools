@@ -1,55 +1,67 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Copy-DbaAgentProxy" {
+    BeforeDiscovery {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'ProxyAccount', 'ExcludeProxyAccount', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $command = Get-Command Copy-DbaAgentProxy
         }
-    }
-}
-
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
-    BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $sql = "CREATE CREDENTIAL dbatoolsci_credential WITH IDENTITY = 'sa', SECRET = 'dbatools'"
-        $server.Query($sql)
-        $sql = "EXEC msdb.dbo.sp_add_proxy  @proxy_name = 'dbatoolsci_agentproxy', @enabled = 1, @credential_name = 'dbatoolsci_credential'"
-        $server.Query($sql)
-
-        $server = Connect-DbaInstance -SqlInstance $script:instance3
-        $sql = "CREATE CREDENTIAL dbatoolsci_credential WITH IDENTITY = 'sa', SECRET = 'dbatools'"
-        $server.Query($sql)
-    }
-    AfterAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $sql = "EXEC msdb.dbo.sp_delete_proxy @proxy_name = 'dbatoolsci_agentproxy'"
-        $server.Query($sql)
-        $sql = "DROP CREDENTIAL dbatoolsci_credential"
-        $server.Query($sql)
-
-        $server = Connect-DbaInstance -SqlInstance $script:instance3
-        $sql = "EXEC msdb.dbo.sp_delete_proxy @proxy_name = 'dbatoolsci_agentproxy'"
-        $server.Query($sql)
-        $sql = "DROP CREDENTIAL dbatoolsci_credential"
-        $server.Query($sql)
+        $paramList = @(
+            'Source',
+            'SourceSqlCredential',
+            'Destination',
+            'DestinationSqlCredential',
+            'ProxyAccount',
+            'ExcludeProxyAccount',
+            'Force',
+            'EnableException',
+            'WhatIf',
+            'Confirm'
+        )
+        It "Should have parameter: <_>" -ForEach $paramList {
+            $command | Should -HaveParameter $PSItem
+        }
     }
 
     Context "Copies Agent Proxy" {
-        $results = Copy-DbaAgentProxy -Source $script:instance2 -Destination $script:instance3 -ProxyAccount dbatoolsci_agentproxy
+        BeforeAll {
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
+            $sql = "CREATE CREDENTIAL dbatoolsci_credential WITH IDENTITY = 'sa', SECRET = 'dbatools'"
+            $server.Query($sql)
+            $sql = "EXEC msdb.dbo.sp_add_proxy  @proxy_name = 'dbatoolsci_agentproxy', @enabled = 1, @credential_name = 'dbatoolsci_credential'"
+            $server.Query($sql)
 
-        It "returns one results" {
-            $results.Count -eq 1
-            $results.Status -eq "Successful"
+            $server = Connect-DbaInstance -SqlInstance $global:instance3
+            $sql = "CREATE CREDENTIAL dbatoolsci_credential WITH IDENTITY = 'sa', SECRET = 'dbatools'"
+            $server.Query($sql)
         }
 
-        It "return one result that's skipped" {
-            $results = Get-DbaAgentProxy -SqlInstance $script:instance3 -Proxy dbatoolsci_agentproxy
-            $results.Count -eq 1
+        AfterAll {
+            $server = Connect-DbaInstance -SqlInstance $global:instance2
+            $sql = "EXEC msdb.dbo.sp_delete_proxy @proxy_name = 'dbatoolsci_agentproxy'"
+            $server.Query($sql)
+            $sql = "DROP CREDENTIAL dbatoolsci_credential"
+            $server.Query($sql)
+
+            $server = Connect-DbaInstance -SqlInstance $global:instance3
+            $sql = "EXEC msdb.dbo.sp_delete_proxy @proxy_name = 'dbatoolsci_agentproxy'"
+            $server.Query($sql)
+            $sql = "DROP CREDENTIAL dbatoolsci_credential"
+            $server.Query($sql)
+        }
+
+        It "returns one successful result" {
+            $results = Copy-DbaAgentProxy -Source $global:instance2 -Destination $global:instance3 -ProxyAccount dbatoolsci_agentproxy
+            $results.Count | Should -Be 1
+            $results.Status | Should -Be "Successful"
+        }
+
+        It "creates one proxy on the destination" {
+            $results = Get-DbaAgentProxy -SqlInstance $global:instance3 -Proxy dbatoolsci_agentproxy
+            $results.Count | Should -Be 1
         }
     }
 }

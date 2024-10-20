@@ -1,37 +1,51 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Copy-DbaAgentJobCategory" {
+    BeforeDiscovery {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'CategoryType', 'JobCategory', 'AgentCategory', 'OperatorCategory', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $command = Get-Command Copy-DbaAgentJobCategory
+        }
+        $paramList = @(
+            'Source',
+            'SourceSqlCredential',
+            'Destination',
+            'DestinationSqlCredential',
+            'CategoryType',
+            'JobCategory',
+            'AgentCategory',
+            'OperatorCategory',
+            'Force',
+            'EnableException',
+            'WhatIf',
+            'Confirm'
+        )
+        It "Should have parameter: <_>" -ForEach $paramList {
+            $command | Should -HaveParameter $PSItem
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
-    BeforeAll {
-        $null = New-DbaAgentJobCategory -SqlInstance $script:instance2 -Category 'dbatoolsci test category'
-    }
-    AfterAll {
-        $null = Remove-DbaAgentJobCategory -SqlInstance $script:instance2 -Category 'dbatoolsci test category' -Confirm:$false
-    }
+    Context "Command copies jobs properly" -Tag "IntegrationTests" {
+        BeforeAll {
+            $null = New-DbaAgentJobCategory -SqlInstance $global:instance2 -Category 'dbatoolsci test category'
+        }
+        AfterAll {
+            $null = Remove-DbaAgentJobCategory -SqlInstance $global:instance2 -Category 'dbatoolsci test category' -Confirm:$false
+        }
 
-    Context "Command copies jobs properly" {
         It "returns one success" {
-            $results = Copy-DbaAgentJobCategory -Source $script:instance2 -Destination $script:instance3 -JobCategory 'dbatoolsci test category'
-            $results.Name -eq "dbatoolsci test category"
-            $results.Status -eq "Successful"
+            $results = Copy-DbaAgentJobCategory -Source $global:instance2 -Destination $global:instance3 -JobCategory 'dbatoolsci test category'
+            $results.Name | Should -Be "dbatoolsci test category"
+            $results.Status | Should -Be "Successful"
         }
 
         It "does not overwrite" {
-            $results = Copy-DbaAgentJobCategory -Source $script:instance2 -Destination $script:instance3 -JobCategory 'dbatoolsci test category'
-            $results.Name -eq "dbatoolsci test category"
-            $results.Status -eq "Skipped"
+            $results = Copy-DbaAgentJobCategory -Source $global:instance2 -Destination $global:instance3 -JobCategory 'dbatoolsci test category'
+            $results.Name | Should -Be "dbatoolsci test category"
+            $results.Status | Should -Be "Skipped"
         }
     }
 }

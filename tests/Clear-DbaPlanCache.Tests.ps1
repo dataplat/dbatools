@@ -1,31 +1,45 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Clear-DbaPlanCache" {
+    BeforeDiscovery {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Threshold', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $command = Get-Command Clear-DbaPlanCache
+        }
+        $paramList = @(
+            'SqlInstance',
+            'SqlCredential',
+            'Threshold',
+            'InputObject',
+            'EnableException',
+            'WhatIf',
+            'Confirm'
+        )
+        It "Should have parameter: <_>" -ForEach $paramList {
+            $command | Should -HaveParameter $PSItem
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     Context "doesn't clear plan cache" {
+        BeforeAll {
+            $instance1 = $global:instances[0]
+        }
+
         It "returns correct datatypes" {
             # Make plan cache way higher than likely for a test rig
-            $results = Clear-DbaPlanCache -SqlInstance $script:instance1 -Threshold 10240
-            $results.Size -is [dbasize] | Should -Be $true
-            $results.Status -match 'below' | Should -Be $true
+            $results = Clear-DbaPlanCache -SqlInstance $instance1 -Threshold 10240
+            $results.Size | Should -BeOfType [dbasize]
+            $results.Status | Should -Match 'below'
         }
+
         It "supports piping" {
             # Make plan cache way higher than likely for a test rig
-            $results = Get-DbaPlanCache -SqlInstance $script:instance1 | Clear-DbaPlanCache -Threshold 10240
-            $results.Size -is [dbasize] | Should -Be $true
-            $results.Status -match 'below' | Should -Be $true
+            $results = Get-DbaPlanCache -SqlInstance $instance1 | Clear-DbaPlanCache -Threshold 10240
+            $results.Size | Should -BeOfType [dbasize]
+            $results.Status | Should -Match 'below'
         }
     }
 }

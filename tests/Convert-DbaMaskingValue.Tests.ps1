@@ -1,20 +1,24 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Convert-DbaMaskingValue" {
+    BeforeDiscovery {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'Value', 'DataType', 'Nullable', 'EnableException'
-
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $command = Get-Command Convert-DbaMaskingValue
+        }
+        $parms = @(
+            'Value',
+            'DataType',
+            'Nullable',
+            'EnableException'
+        )
+        It "Has required parameter: <_>" -ForEach $parms {
+            $command | Should -HaveParameter $PSItem
         }
     }
-}
-
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Context "Null values" {
         It "Should return a single 'NULL' value" {
@@ -32,65 +36,32 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Text data types" {
-        It "Should return a text value" {
-            $value = "this is just text"
-            $convertedValue = Convert-DbaMaskingValue -Value $value -DataType char
-            $convertedValue.NewValue | Should -Be "'this is just text'"
-        }
-
-        It "Should return a text value" {
-            $value = "this is just text"
-            $convertedValue = Convert-DbaMaskingValue -Value $value -DataType nchar
-            $convertedValue.NewValue | Should -Be "'this is just text'"
-        }
-
-        It "Should return a text value" {
-            $value = "this is just text"
-            $convertedValue = Convert-DbaMaskingValue -Value $value -DataType nvarchar
-            $convertedValue.NewValue | Should -Be "'this is just text'"
-        }
-
-        It "Should return a text value" {
-            $value = "this is just text"
-            $convertedValue = Convert-DbaMaskingValue -Value $value -DataType varchar
-            $convertedValue.NewValue | Should -Be "'this is just text'"
-        }
-
-        It "Should return a text value" {
-            $value = "2.13"
-            $convertedValue = Convert-DbaMaskingValue -Value $value -DataType varchar
-            $convertedValue.NewValue | Should -Be "'2.13'"
-        }
-
-        It "Should return a text value with multiple single quotes" {
-            $value = "'this is just text'"
-            $convertedValue = Convert-DbaMaskingValue -Value $value -DataType nchar
-            $convertedValue.NewValue | Should -Be "'''this is just text'''"
+        It "Should return a text value for <DataType>" -ForEach @(
+            @{ DataType = 'char'; Value = "this is just text"; Expected = "'this is just text'" }
+            @{ DataType = 'nchar'; Value = "this is just text"; Expected = "'this is just text'" }
+            @{ DataType = 'nvarchar'; Value = "this is just text"; Expected = "'this is just text'" }
+            @{ DataType = 'varchar'; Value = "this is just text"; Expected = "'this is just text'" }
+            @{ DataType = 'varchar'; Value = "2.13"; Expected = "'2.13'" }
+            @{ DataType = 'nchar'; Value = "'this is just text'"; Expected = "'''this is just text'''" }
+        ) {
+            $convertedValue = Convert-DbaMaskingValue -Value $Value -DataType $DataType
+            $convertedValue.NewValue | Should -Be $Expected
         }
     }
 
     Context "Date and time data types" {
-        It "Should return a text value" {
-            $value = "2020-10-05 10:10:10.1234567"
-            $convertedValue = Convert-DbaMaskingValue -Value $value -DataType date
-            $convertedValue.NewValue | Should -Be "'2020-10-05'"
+        It "Should return a text value for <DataType>" -ForEach @(
+            @{ DataType = 'date'; Value = "2020-10-05 10:10:10.1234567"; Expected = "'2020-10-05'" }
+            @{ DataType = 'time'; Value = "2020-10-05 10:10:10.1234567"; Expected = "'10:10:10.1234567'" }
+            @{ DataType = 'datetime'; Value = "2020-10-05 10:10:10.1234567"; Expected = "'2020-10-05 10:10:10.123'" }
+        ) {
+            $convertedValue = Convert-DbaMaskingValue -Value $Value -DataType $DataType
+            $convertedValue.NewValue | Should -Be $Expected
         }
-
-        It "Should return a text value" {
-            $value = "2020-10-05 10:10:10.1234567"
-            $convertedValue = Convert-DbaMaskingValue -Value $value -DataType time
-            $convertedValue.NewValue | Should -Be "'10:10:10.1234567'"
-        }
-
-        It "Should return a text value" {
-            $value = "2020-10-05 10:10:10.1234567"
-            $convertedValue = Convert-DbaMaskingValue -Value $value -DataType datetime
-            $convertedValue.NewValue | Should -Be "'2020-10-05 10:10:10.123'"
-        } #>
     }
 
     Context "Handling multiple values" {
-        It "It should return a NULL value and text value" {
+        It "Should return a NULL value and text value" {
             $value = @($null, "this is just text")
             [array]$convertedValues = Convert-DbaMaskingValue -Value $value -Nullable:$true
             $convertedValues[0].NewValue | Should -Be 'NULL'
@@ -99,12 +70,11 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Error handling" {
-        It "It should return the value missing error" {
+        It "Should throw an error when value is missing" {
             { Convert-DbaMaskingValue -Value $null -DataType datetime -EnableException } | Should -Throw "Please enter a value"
         }
-        It "It should return the data type missing error" {
+        It "Should throw an error when data type is missing" {
             { Convert-DbaMaskingValue -Value "whatever" -EnableException } | Should -Throw "Please enter a data type"
         }
     }
-
 }

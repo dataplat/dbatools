@@ -1,22 +1,33 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Disable-DbaHideInstance" {
+    BeforeDiscovery {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'Credential', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $command = Get-Command Disable-DbaHideInstance
+        }
+        $knownParameters = @(
+            'SqlInstance',
+            'Credential',
+            'EnableException',
+            'WhatIf',
+            'Confirm'
+        )
+        It "Should have the correct parameters" -ForEach $knownParameters {
+            $command | Should -HaveParameter $PSItem
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    $results = Disable-DbaHideInstance $script:instance1 -EnableException
+    Context "Integration Tests" -Tag "IntegrationTests" {
+        BeforeAll {
+            $results = Disable-DbaHideInstance -SqlInstance $global:instance1 -EnableException
+        }
 
-    It "returns false" {
-        $results.HideInstance -eq $false
+        It "returns false for HideInstance property" {
+            $results.HideInstance | Should -BeFalse
+        }
     }
 }

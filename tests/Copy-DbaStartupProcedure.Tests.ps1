@@ -1,47 +1,54 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Copy-DbaStartupProcedure" {
+    BeforeDiscovery {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'Procedure', 'ExcludeProcedure', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $command = Get-Command Copy-DbaStartupProcedure
+        }
+        $knownParameters = @(
+            'Source',
+            'SourceSqlCredential',
+            'Destination',
+            'DestinationSqlCredential',
+            'Procedure',
+            'ExcludeProcedure',
+            'Force',
+            'EnableException',
+            'WhatIf',
+            'Confirm'
+        )
+        It "Should have the correct parameters" {
+            $command.Parameters.Keys | Where-Object { $_ -notin [System.Management.Automation.PSCmdlet]::CommonParameters } | Should -Be $knownParameters
         }
     }
-}
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $procName = "dbatoolsci_test_startup"
-        $server.Query("CREATE OR ALTER PROCEDURE $procName
-                        AS
-                        SELECT @@SERVERNAME
-                        GO")
-        $server.Query("EXEC sp_procoption @ProcName = N'$procName'
-                            , @OptionName = 'startup'
-                            , @OptionValue = 'on'")
-    }
-
-    AfterAll {
-        Invoke-DbaQuery -SqlInstance $script:instance2, $script:instance3 -Database "master" -Query "DROP PROCEDURE dbatoolsci_test_startup"
-    }
-
-    Context "Command actually works" {
-        $results = Copy-DbaStartupProcedure -Source $script:instance2 -Destination $script:instance3
-        It "Should include test procedure: $procName" {
-            ($results | Where-Object Name -eq $procName).Name | Should -Be $procName
+    Context "Command actually works" -ForEach @{ instance2 = $global:instance2; instance3 = $global:instance3 } {
+        BeforeAll {
+            $server = Connect-DbaInstance -SqlInstance $instance2
+            $procName = "dbatoolsci_test_startup"
+            $server.Query("CREATE OR ALTER PROCEDURE $procName
+                            AS
+                            SELECT @@SERVERNAME
+                            GO")
+            $server.Query("EXEC sp_procoption @ProcName = N'$procName'
+                                , @OptionName = 'startup'
+                                , @OptionValue = 'on'")
         }
-        It "Should be successful" {
-            ($results | Where-Object Name -eq $procName).Status | Should -Be 'Successful'
+
+        AfterAll {
+            Invoke-DbaQuery -SqlInstance $instance2, $instance3 -Database "master" -Query "DROP PROCEDURE IF EXISTS dbatoolsci_test_startup"
+        }
+
+        It "Should copy the startup procedure successfully" {
+            $results = Copy-DbaStartupProcedure -Source $instance2 -Destination $instance3
+            $copiedProcedure = $results | Where-Object Name -eq $procName
+
+            $copiedProcedure.Name | Should -Be $procName
+            $copiedProcedure.Status | Should -Be 'Successful'
         }
     }
 }

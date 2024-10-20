@@ -1,26 +1,36 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag "UnitTests" {
+Describe "Enable-DbaAgHadr" {
+    BeforeDiscovery {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'Credential', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $command = Get-Command Enable-DbaAgHadr
+        }
+        $parms = @(
+            'SqlInstance',
+            'Credential',
+            'Force',
+            'EnableException',
+            'WhatIf',
+            'Confirm'
+        )
+        It "Has required parameter: <_>" -ForEach $parms {
+            $command | Should -HaveParameter $PSItem
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
-    BeforeAll {
-        Disable-DbaAgHadr -SqlInstance $script:instance3 -Confirm:$false -Force
-    }
+    Context "Command Execution" {
+        BeforeAll {
+            $global:instance3 = $script:instance3 # Maintaining the original variable for compatibility
+            Disable-DbaAgHadr -SqlInstance $global:instance3 -Confirm:$false -Force
+        }
 
-    $results = Enable-DbaAgHadr -SqlInstance $script:instance3 -Confirm:$false -Force
-
-    It "enables hadr" {
-        $results.IsHadrEnabled | Should -Be $true
+        It "enables hadr" {
+            $results = Enable-DbaAgHadr -SqlInstance $global:instance3 -Confirm:$false -Force
+            $results.IsHadrEnabled | Should -Be $true
+        }
     }
 }

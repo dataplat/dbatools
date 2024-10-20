@@ -1,39 +1,57 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Backup-DbaDbMasterKey" {
+    BeforeDiscovery {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Credential', 'Database', 'ExcludeDatabase', 'SecurePassword', 'Path', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $command = Get-Command Backup-DbaDbMasterKey
+        }
+        $paramList = @(
+            'SqlInstance',
+            'SqlCredential',
+            'Credential',
+            'Database',
+            'ExcludeDatabase',
+            'SecurePassword',
+            'Path',
+            'InputObject',
+            'EnableException',
+            'WhatIf',
+            'Confirm'
+        )
+        It "Should have parameter: <_>" -ForEach $paramList {
+            $command | Should -HaveParameter $PSItem
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Can create a database certificate" {
         BeforeAll {
-            if (-not (Get-DbaDbMasterKey -SqlInstance $script:instance1 -Database tempdb)) {
-                $masterkey = New-DbaDbMasterKey -SqlInstance $script:instance1 -Database tempdb -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
+            $masterKeyPassword = ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force
+            if (-not (Get-DbaDbMasterKey -SqlInstance $global:instance1 -Database tempdb)) {
+                $masterkey = New-DbaDbMasterKey -SqlInstance $global:instance1 -Database tempdb -Password $masterKeyPassword -Confirm:$false
             }
         }
         AfterAll {
-            (Get-DbaDbMasterKey -SqlInstance $script:instance1 -Database tempdb) | Remove-DbaDbMasterKey -Confirm:$false
+            Get-DbaDbMasterKey -SqlInstance $global:instance1 -Database tempdb | Remove-DbaDbMasterKey -Confirm:$false
         }
 
-        $results = Backup-DbaDbMasterKey -SqlInstance $script:instance1 -Confirm:$false -Database tempdb -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force)
-        $null = Remove-Item -Path $results.Path -ErrorAction SilentlyContinue -Confirm:$false
-
         It "backs up the db cert" {
-            $results.Database -eq 'tempdb'
-            $results.Status -eq "Success"
+            $results = Backup-DbaDbMasterKey -SqlInstance $global:instance1 -Confirm:$false -Database tempdb -Password $masterKeyPassword
+            $null = Remove-Item -Path $results.Path -ErrorAction SilentlyContinue -Confirm:$false
+
+            $results.Database | Should -Be 'tempdb'
+            $results.Status | Should -Be "Success"
         }
 
         It "Database ID should be returned" {
-            $results.DatabaseID | Should -Be (Get-DbaDatabase -SqlInstance $script:instance1 -Database tempdb).ID
+            $results = Backup-DbaDbMasterKey -SqlInstance $global:instance1 -Confirm:$false -Database tempdb -Password $masterKeyPassword
+            $null = Remove-Item -Path $results.Path -ErrorAction SilentlyContinue -Confirm:$false
+
+            $expectedDatabaseId = (Get-DbaDatabase -SqlInstance $global:instance1 -Database tempdb).ID
+            $results.DatabaseID | Should -Be $expectedDatabaseId
         }
     }
 }

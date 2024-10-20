@@ -1,55 +1,64 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Copy-DbaBackupDevice" {
+    BeforeDiscovery {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'BackupDevice', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $command = Get-Command Copy-DbaBackupDevice
+        }
+        $parms = @(
+            'Source',
+            'SourceSqlCredential',
+            'Destination',
+            'DestinationSqlCredential',
+            'BackupDevice',
+            'Force',
+            'EnableException',
+            'WhatIf',
+            'Confirm'
+        )
+        It "Has required parameter: <_>" -ForEach $parms {
+            $command | Should -HaveParameter $PSItem
         }
     }
-}
 
-if (-not $env:appveyor) {
-    Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-        Context "Setup" {
-            BeforeAll {
-                $devicename = "dbatoolsci-backupdevice"
-                $backupdir = (Get-DbaDefaultPath -SqlInstance $script:instance1).Backup
-                $backupfilename = "$backupdir\$devicename.bak"
-                $server = Connect-DbaInstance -SqlInstance $script:instance1
-                $server.Query("EXEC master.dbo.sp_addumpdevice  @devtype = N'disk', @logicalname = N'$devicename',@physicalname = N'$backupfilename'")
-                $server.Query("BACKUP DATABASE master TO DISK = '$backupfilename'")
-            }
-            AfterAll {
-                $server.Query("EXEC master.dbo.sp_dropdevice @logicalname = N'$devicename'")
-                $server1 = Connect-DbaInstance -SqlInstance $script:instance2
-                try {
-                    $server1.Query("EXEC master.dbo.sp_dropdevice @logicalname = N'$devicename'")
-                } catch {
-                    # don't care
-                }
-                Get-ChildItem -Path $backupfilename | Remove-Item
-            }
+    Context "Integration Tests" -Tag "IntegrationTests" {
+        BeforeAll {
+            $devicename = "dbatoolsci-backupdevice"
+            $backupdir = (Get-DbaDefaultPath -SqlInstance $global:instance1).Backup
+            $backupfilename = "$backupdir\$devicename.bak"
+            $server = Connect-DbaInstance -SqlInstance $global:instance1
+            $server.Query("EXEC master.dbo.sp_addumpdevice  @devtype = N'disk', @logicalname = N'$devicename',@physicalname = N'$backupfilename'")
+            $server.Query("BACKUP DATABASE master TO DISK = '$backupfilename'")
+        }
 
-            $results = Copy-DbaBackupDevice -Source $script:instance1 -Destination $script:instance2 -WarningVariable warn -WarningAction SilentlyContinue 3> $null
+        AfterAll {
+            $server.Query("EXEC master.dbo.sp_dropdevice @logicalname = N'$devicename'")
+            $server1 = Connect-DbaInstance -SqlInstance $global:instance2
+            try {
+                $server1.Query("EXEC master.dbo.sp_dropdevice @logicalname = N'$devicename'")
+            } catch {
+                # don't care
+            }
+            Get-ChildItem -Path $backupfilename | Remove-Item
+        }
+
+        It "Should warn if it has a problem moving (issue for local to local)" {
+            $warn = $null
+            $results = Copy-DbaBackupDevice -Source $global:instance1 -Destination $global:instance2 -WarningVariable warn -WarningAction SilentlyContinue 3> $null
             if ($warn) {
-                It "warns if it has a problem moving (issue for local to local)" {
-                    $warn | Should -Match "backup device to destination"
-                }
+                $warn | Should -Match "backup device to destination"
             } else {
-                It "should report success" {
-                    $results.Status | Should Be "Successful"
-                }
+                $results.Status | Should -Be "Successful"
             }
+        }
 
-            $results = Copy-DbaBackupDevice -Source $script:instance1 -Destination $script:instance2
-            It "Should say skipped" {
-                $results.Status -ne "Successful" | Should be $true
-            }
+        It "Should say skipped when copying again" {
+            $results = Copy-DbaBackupDevice -Source $global:instance1 -Destination $global:instance2
+            $results.Status | Should -Not -Be "Successful"
         }
     }
 }

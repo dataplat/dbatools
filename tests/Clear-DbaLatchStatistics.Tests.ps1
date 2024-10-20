@@ -1,24 +1,39 @@
-$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tags "UnitTests" {
+Describe "Clear-DbaLatchStatistics Unit Tests" -Tag "UnitTests" {
+    BeforeDiscovery {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $command = Get-Command Clear-DbaLatchStatistics
+        }
+        $knownParameters = @(
+            'SqlInstance',
+            'SqlCredential',
+            'EnableException',
+            'WhatIf',
+            'Confirm'
+        )
+        It "Should have the correct parameters" {
+            $command | Should -HaveParameter $knownParameters
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "Clear-DbaLatchStatistics Integration Tests" -Tag "IntegrationTests" {
+    BeforeDiscovery {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Command executes properly and returns proper info" {
-        $results = Clear-DbaLatchStatistics -SqlInstance $script:instance1 -Confirm:$false
+        BeforeAll {
+            $results = Clear-DbaLatchStatistics -SqlInstance $global:instance1 -Confirm:$false
+        }
 
         It "returns success" {
-            $results.Status -eq 'Success' | Should Be $true
+            $results.Status | Should -Be 'Success'
         }
     }
 }

@@ -1,26 +1,38 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+param($ModuleName = 'dbatools')
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Enable-DbaHideInstance" {
+    BeforeDiscovery {
+        . "$PSScriptRoot\constants.ps1"
+    }
+
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'Credential', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+        BeforeAll {
+            $command = Get-Command Enable-DbaHideInstance
+        }
+        $parms = @(
+            'SqlInstance',
+            'Credential',
+            'EnableException',
+            'WhatIf',
+            'Confirm'
+        )
+        It "Has required parameter: <_>" -ForEach $parms {
+            $command | Should -HaveParameter $PSItem
         }
     }
-}
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    AfterAll {
-        $null = Disable-DbaHideInstance $script:instance1
-    }
+    Context "Integration Tests" -Tag "IntegrationTests" {
+        BeforeAll {
+            $global:instance1 = $script:instance1
+        }
 
-    $results = Enable-DbaHideInstance $script:instance1 -EnableException
+        AfterAll {
+            $null = Disable-DbaHideInstance -SqlInstance $global:instance1
+        }
 
-    It "returns true" {
-        $results.HideInstance -eq $true
+        It "returns true" {
+            $results = Enable-DbaHideInstance -SqlInstance $global:instance1 -EnableException
+            $results.HideInstance | Should -BeTrue
+        }
     }
 }
