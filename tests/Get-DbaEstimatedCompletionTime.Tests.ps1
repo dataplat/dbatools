@@ -20,15 +20,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         if ($script:bigDatabaseBackup) {
             try {
                 if (-not (Test-Path -Path $script:bigDatabaseBackup) -and $script:bigDatabaseBackupSourceUrl) {
-                    Write-Host 'Starting Download'
-                    Invoke-WebRequest -Uri $script:bigDatabaseBackupSourceUrl -OutFile $script:bigDatabaseBackup
+                    Invoke-WebRequest -Uri $script:bigDatabaseBackupSourceUrl -OutFile $script:bigDatabaseBackup -ErrorAction Stop
                 }
                 $null = Restore-DbaDatabase -SqlInstance $script:instance2 -Path $script:bigDatabaseBackup -DatabaseName checkdbTestDatabase -WithReplace -ReplaceDbNameInFile -EnableException
                 $null = New-DbaAgentJob -SqlInstance $script:instance2 -Job checkdbTestJob -EnableException
                 $null = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job checkdbTestJob -StepName checkdb -Subsystem TransactSql -Command "DBCC CHECKDB('checkdbTestDatabase')" -EnableException
                 $skip = $false
             } catch {
-                Write-Warning -Message "Test for $commandname failed in BeforeAll because: $_"
+                Write-Information "Test for $commandname failed in BeforeAll because: $_"
             }
         }
     }
