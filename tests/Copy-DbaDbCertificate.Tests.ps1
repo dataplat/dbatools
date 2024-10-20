@@ -39,7 +39,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 EncryptionPassword = $passwd
                 MasterKeyPassword  = $passwd
                 Database           = "dbatoolscopycred"
-                SharedPath         = $TestConfig.appveyorlabrepo
+                SharedPath         = $($TestConfig.appveyorlabrepo)
             }
             $results = Copy-DbaDbCertificate @paramscopydb -Confirm:$false | Where-Object SourceDatabase -eq dbatoolscopycred | Select-Object -First 1
             $results.Notes | Should -Be $null

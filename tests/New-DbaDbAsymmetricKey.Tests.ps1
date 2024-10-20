@@ -103,7 +103,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $keyname = 'filekey'
         $dbuser = 'keyowner'
         $database = 'enctest'
-        $path = "$($TestConfig.appveyorlabrepo)\keytests\keypair.snk"
+        $path = "$($($TestConfig.appveyorlabrepo))\keytests\keypair.snk"
         if (Test-Path -Path $path) {
             $key = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Database $database -Name $keyname -Owner keyowner -WarningVariable warnvar -KeySourceType File -KeySource $path
             $results = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname -Database $database
@@ -124,7 +124,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $keyname = 'filekeybad'
         $dbuser = 'keyowner'
         $database = 'enctest'
-        $path = "$($TestConfig.appveyorlabrepo)\keytests\keypair.bad"
+        $path = "$($($TestConfig.appveyorlabrepo))\keytests\keypair.bad"
         $key = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Database $database -Name $keyname -Owner keyowner -WarningVariable warnvar -KeySourceType File -KeySource $path 3> $null
         $results = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyname -Database $database
         It "Should not Create new key in $database called $keyname" {

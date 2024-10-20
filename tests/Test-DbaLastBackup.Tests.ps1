@@ -90,9 +90,9 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Test dbsize skip and cleanup (Issue 3968)" {
-        $results1 = Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -Database bigtestrest -Path $TestConfig.appveyorlabrepo\sql2008-backups\db1\FULL -ReplaceDbNameInFile
+        $results1 = Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -Database bigtestrest -Path $($TestConfig.appveyorlabrepo)\sql2008-backups\db1\FULL -ReplaceDbNameInFile
         Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database bigtestrest
-        $results1 = Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -Database smalltestrest -Path $TestConfig.appveyorlabrepo\sql2008-backups\db2\FULL\SQL2008_db2_FULL_20170518_041738.bak -ReplaceDbNameInFile
+        $results1 = Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -Database smalltestrest -Path $($TestConfig.appveyorlabrepo)\sql2008-backups\db2\FULL\SQL2008_db2_FULL_20170518_041738.bak -ReplaceDbNameInFile
         Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database smalltestrest
 
         $results = Test-DbaLastBackup -SqlInstance $TestConfig.instance1 -Database bigtestrest, smalltestrest -CopyFile -CopyPath c:\temp -MaxSize 3 -Prefix testlast

@@ -25,7 +25,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $random = Get-Random
         $dbname = "dbatoolsci_Backuphistory_$random"
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname | Remove-DbaDatabase -Confirm:$false
-        $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -Path $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $dbname -DestinationFilePrefix $dbname
+        $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -Path $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak -DatabaseName $dbname -DestinationFilePrefix $dbname
         $db = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname
         $db | Backup-DbaDatabase -Type Full -BackupDirectory $DestBackupDir
         $db | Backup-DbaDatabase -Type Differential -BackupDirectory $DestBackupDir
@@ -33,7 +33,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
         $dbname2 = "dbatoolsci_Backuphistory2_$random"
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname2 | Remove-DbaDatabase -Confirm:$false
-        $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -Path $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $dbname2 -DestinationFilePrefix $dbname2
+        $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -Path $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak -DatabaseName $dbname2 -DestinationFilePrefix $dbname2
         $db2 = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname2
         $db2 | Backup-DbaDatabase -Type Full -BackupDirectory $DestBackupDir
         $db2 | Backup-DbaDatabase -Type Differential -BackupDirectory $DestBackupDir
@@ -53,7 +53,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
         $dbname3 = "dbatoolsci_BackuphistoryOla_$random"
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname3 | Remove-DbaDatabase -Confirm:$false
-        $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -Path $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $dbname3 -DestinationFilePrefix $dbname3
+        $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -Path $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak -DatabaseName $dbname3 -DestinationFilePrefix $dbname3
         $db3 = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname3
         $db3 | Backup-DbaDatabase -Type Full -BackupDirectory "$DestBackupDirOla\FULL"
         $db3 | Backup-DbaDatabase -Type Differential -BackupDirectory "$DestBackupDirOla\Diff"

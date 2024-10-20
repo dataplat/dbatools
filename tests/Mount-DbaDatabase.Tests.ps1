@@ -16,7 +16,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Setup removes, restores and backups on the local drive for Mount-DbaDatabase" {
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database detachattach | Remove-DbaDatabase -Confirm:$false
-        $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -Path $TestConfig.appveyorlabrepo\detachattach\detachattach.bak -WithReplace
+        $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -Path $($TestConfig.appveyorlabrepo)\detachattach\detachattach.bak -WithReplace
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database detachattach | Backup-DbaDatabase -Type Full
         $null = Detach-DbaDatabase -SqlInstance $TestConfig.instance1 -Database detachattach -Force
     }

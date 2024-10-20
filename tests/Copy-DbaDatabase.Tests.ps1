@@ -218,7 +218,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database "$prefix$backuprestoredb"
         }
 
-        $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -path $TestConfig.appveyorlabrepo\RestoreTimeClean2016 -useDestinationDefaultDirectories
+        $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -path $($TestConfig.appveyorlabrepo)\RestoreTimeClean2016 -useDestinationDefaultDirectories
         It "Should warn and exit if newname and >1 db specified" {
             $null = Copy-DbaDatabase -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -Database $backuprestoredb, RestoreTimeClean -DetachAttach -Reattach -NewName warn -WarningVariable warnvar 3> $null
             $warnvar | Should -BeLike "*Cannot use NewName when copying multiple databases"

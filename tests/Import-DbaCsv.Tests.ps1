@@ -18,11 +18,11 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         Invoke-DbaQuery -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -Database tempdb -Query "drop table SuperSmall; drop table CommaSeparatedWithHeader"
     }
 
-    $path = "$TestConfig.appveyorlabrepo\csv\SuperSmall.csv"
-    $CommaSeparatedWithHeader = "$TestConfig.appveyorlabrepo\csv\CommaSeparatedWithHeader.csv"
-    $col1 = "$TestConfig.appveyorlabrepo\csv\cols.csv"
-    $col2 = "$TestConfig.appveyorlabrepo\csv\col2.csv"
-    $pipe3 = "$TestConfig.appveyorlabrepo\csv\pipe3.psv"
+    $path = "$($TestConfig.appveyorlabrepo)\csv\SuperSmall.csv"
+    $CommaSeparatedWithHeader = "$($TestConfig.appveyorlabrepo)\csv\CommaSeparatedWithHeader.csv"
+    $col1 = "$($TestConfig.appveyorlabrepo)\csv\cols.csv"
+    $col2 = "$($TestConfig.appveyorlabrepo)\csv\col2.csv"
+    $pipe3 = "$($TestConfig.appveyorlabrepo)\csv\pipe3.psv"
 
 
     Context "Works as expected" {

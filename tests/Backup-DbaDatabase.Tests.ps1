@@ -237,7 +237,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Backup can pipe to restore" {
-        $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -Path $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName "dbatoolsci_singlerestore"
+        $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -Path $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak -DatabaseName "dbatoolsci_singlerestore"
         $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -BackupDirectory $DestBackupDir -Database "dbatoolsci_singlerestore" | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -DatabaseName $DestDbRandom -TrustDbBackupHistory -ReplaceDbNameInFile
         It "Should return successful restore" {
             $results.RestoreComplete | Should -Be $true

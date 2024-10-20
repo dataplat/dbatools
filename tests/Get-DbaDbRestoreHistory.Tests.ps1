@@ -20,9 +20,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $dbname1 = "dbatoolsci_restorehistory1_$random"
         $dbname2 = "dbatoolsci_restorehistory2_$random"
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1, $dbname2 | Remove-DbaDatabase -Confirm:$false
-        $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $dbname1 -DestinationFilePrefix $dbname1
-        $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $dbname2 -DestinationFilePrefix $dbname2
-        $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $dbname2 -DestinationFilePrefix "rsh_pre_$dbname2" -WithReplace
+        $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak -DatabaseName $dbname1 -DestinationFilePrefix $dbname1
+        $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak -DatabaseName $dbname2 -DestinationFilePrefix $dbname2
+        $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak -DatabaseName $dbname2 -DestinationFilePrefix "rsh_pre_$dbname2" -WithReplace
         $fullBackup = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1 -Type Full
         $diffBackup = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1 -Type Diff
         $logBackup = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1 -Type Log
@@ -47,7 +47,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
         It "Should return the full restore with the correct properties" {
             $results[0].RestoreType | Should -Be "Database"
-            $results[0].From | Should -Be $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak
+            $results[0].From | Should -Be $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak
             $results[0].To | Should -Match "\\rsh_pre_$dbname2"
         }
     }
@@ -59,7 +59,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Should return the full restore with the correct properties" {
             $results[0].RestoreType | Should -Be "Database"
             $results[1].RestoreType | Should -Be "Log"
-            $results[0].From | Should -Be $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak
+            $results[0].From | Should -Be $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak
             $results[1].From | Should -Be $logBackup.BackupPath
             ($results | Where-Object Database -eq $dbname1).To | Should -Match "\\$dbname1"
             ($results | Where-Object Database -eq $dbname2).To | Should -Match "\\rsh_pre_$dbname2"

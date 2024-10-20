@@ -23,9 +23,9 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Context "Properly restores a database on the local drive using Path" {
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
-        $results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak
+        $results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak
         It "Should Return the proper backup file location" {
-            $results.BackupFile | Should Be "$TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak"
+            $results.BackupFile | Should Be $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak
         }
         It "Should return successful restore" {
             $results.RestoreComplete | Should Be $true
@@ -33,7 +33,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Ensuring warning is thrown if database already exists" {
-        $results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak -WarningVariable warning -WarningAction SilentlyContinue
+        $results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak -WarningVariable warning -WarningAction SilentlyContinue
         It "Should warn" {
             $warning | Where-Object { $_ -like '*Test-DbaBackupInformation*Database*' } | Should Match "exists, so WithReplace must be specified"
         }
@@ -54,9 +54,9 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Get-DbaProcess $TestConfig.instance2 -ExcludeSystemSpids | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
     Context "Properly restores a database on the local drive using piped Get-ChildItem results" {
-        $results = Get-ChildItem $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $TestConfig.instance2
+        $results = Get-ChildItem $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $TestConfig.instance2
         It "Should Return the proper backup file location" {
-            $results.BackupFile | Should Be "$TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak"
+            $results.BackupFile | Should Be $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak
         }
         It "Should return successful restore" {
             $results.RestoreComplete | Should Be $true
@@ -64,7 +64,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Test VerifyOnly works with db in existence" {
-        $results = Get-ChildItem $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -VerifyOnly
+        $results = Get-ChildItem $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -VerifyOnly
         It "Should have verified Successfully" {
             $results[0] | Should Be "Verify successful"
         }
@@ -79,15 +79,15 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Allows continues with Differential Backups" {
-        $results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $TestConfig.appveyorlabrepo\DoubleDiffing\difftest-full.bak -NoRecovery
+        $results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $($TestConfig.appveyorlabrepo)\DoubleDiffing\difftest-full.bak -NoRecovery
         It "Should restore the root full cleanly" {
             $results.RestoreComplete | Should -Be $True
         }
-        $results1 = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $TestConfig.appveyorlabrepo\DoubleDiffing\difftest-diff1.bak -NoRecovery -Continue
+        $results1 = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $($TestConfig.appveyorlabrepo)\DoubleDiffing\difftest-diff1.bak -NoRecovery -Continue
         It "Should restore the first diff cleanly" {
             $results1.RestoreComplete | Should -Be $True
         }
-        $results2 = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $TestConfig.appveyorlabrepo\DoubleDiffing\difftest-diff2.bak -Continue
+        $results2 = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $($TestConfig.appveyorlabrepo)\DoubleDiffing\difftest-diff2.bak -Continue
         It "Should restore the second diff cleanly" {
             $results2.RestoreComplete | Should -Be $True
         }
@@ -99,21 +99,21 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Start-Sleep -Seconds 2
 
     Context "Database is restored with correct renamings" {
-        $results = Get-ChildItem $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -DestinationFilePrefix prefix
+        $results = Get-ChildItem $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -DestinationFilePrefix prefix
         It "Should return successful restore with prefix" {
             $results.RestoreComplete | Should Be $true
         }
         It "Should return the 2 prefixed files" {
             (($results.RestoredFile -split ',').substring(0, 6) -eq 'prefix').count | Should be 2
         }
-        $results = Get-ChildItem $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -DestinationFileSuffix suffix -WithReplace
+        $results = Get-ChildItem $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -DestinationFileSuffix suffix -WithReplace
         It "Should return successful restore with suffix" {
             ($results.RestoreComplete -eq $true) | Should Be $true
         }
         It "Should return the 2 suffixed files" {
             (($Results.RestoredFile -split ',') -match "suffix\.").count | Should be 2
         }
-        $results = Get-ChildItem $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -DestinationFileSuffix suffix -DestinationFilePrefix prefix -WithReplace
+        $results = Get-ChildItem $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -DestinationFileSuffix suffix -DestinationFilePrefix prefix -WithReplace
         It "Should return successful restore with suffix and prefix" {
             ($results.RestoreComplete -eq $true) | Should Be $true
         }
@@ -132,7 +132,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Replace databasename in Restored File" {
-        $results = Get-ChildItem $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -DatabaseName Pestering -replaceDbNameInFile -WithReplace
+        $results = Get-ChildItem $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -DatabaseName Pestering -replaceDbNameInFile -WithReplace
         It "Should return the 2 files swapping singlerestore for pestering (output)" {
             (($Results.RestoredFile -split ',') -like "*pestering*").count | Should be 2
         }
@@ -144,7 +144,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Replace databasename in Restored File, but don't change backup history #5036" {
-        $bh = Get-DbaBackupInformation -Path $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak -SqlInstance $TestConfig.instance2
+        $bh = Get-DbaBackupInformation -Path $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak -SqlInstance $TestConfig.instance2
         $firstPhysicalName = $bh.FileList.PhysicalName[0]
 
         $null = $bh | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -DatabaseName Pestering -replaceDbNameInFile -WithReplace -OutputScriptOnly
@@ -163,7 +163,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Context "Test restoring as other login #6992" {
         #Check first that the db isn't owned by SA
-        $results = Get-ChildItem $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -DatabaseName Pestering -replaceDbNameInFile -WithReplace
+        $results = Get-ChildItem $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -DatabaseName Pestering -replaceDbNameInFile -WithReplace
         $db = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database Pestering
         It "Should Not be owned by SA this time" {
             $db.owner | Should Not Be "sa"
@@ -171,13 +171,13 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
         Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database Pestering -Confirm:$false
 
-        $results = Get-ChildItem $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -DatabaseName Pestering -replaceDbNameInFile -WithReplace -ExecuteAs badlogin -WarningVariable warnvar
+        $results = Get-ChildItem $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -DatabaseName Pestering -replaceDbNameInFile -WithReplace -ExecuteAs badlogin -WarningVariable warnvar
         $db = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database Pestering
         It "Should throw a warning if login doesn't exist" {
             $warnvar | Should BeLike "*You specified a Login to execute the restore, but the login 'badlogin' does not exist"
         }
 
-        $results = Get-ChildItem $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -DatabaseName Pestering -replaceDbNameInFile -WithReplace -ExecuteAs sa
+        $results = Get-ChildItem $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -DatabaseName Pestering -replaceDbNameInFile -WithReplace -ExecuteAs sa
         $db = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database Pestering
         It "Should be owned by SA this time" {
             $db.owner | Should Be "sa"
@@ -188,13 +188,13 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $RestoreAsUser = 'RestoreAs'
         New-DbaLogin -SqlInstance $TestConfig.instance2 -Login $RestoreAsUser -SecurePassword (ConvertTo-SecureString 'P@ssw0rdl!ng' -AsPlainText -Force) -force
         Add-DbaServerRoleMember -SqlInstance $TestConfig.instance2 -ServerRole sysadmin -Login $RestoreAsUser -confirm:$false
-        $results = Get-ChildItem $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -DatabaseName Pestering -replaceDbNameInFile -WithReplace -ExecuteAs $RestoreAsUser
+        $results = Get-ChildItem $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -DatabaseName Pestering -replaceDbNameInFile -WithReplace -ExecuteAs $RestoreAsUser
         $db2 = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database Pestering
         It "Should be owned by $RestoreAsUser this time" {
             $db2.owner | Should Be "$RestoreAsUser"
         }
 
-        $results6 = Get-ChildItem $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -DatabaseName Pestering -replaceDbNameInFile -WithReplace -ExecuteAs $RestoreAsUser -OutputScriptOnly
+        $results6 = Get-ChildItem $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -DatabaseName Pestering -replaceDbNameInFile -WithReplace -ExecuteAs $RestoreAsUser -OutputScriptOnly
         It "Should prefix the script with the Execute As statement" {
             $results6 | Should BeLike "EXECUTE AS LOGIN='$RestoreAsUser'*"
         }
@@ -205,7 +205,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Start-Sleep -Seconds 2
 
     Context "Folder restore options" {
-        $results = Get-ChildItem $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -DestinationDataDirectory $DataFolder
+        $results = Get-ChildItem $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -DestinationDataDirectory $DataFolder
         It "Should return successful restore with DestinationDataDirectory" {
             $results.RestoreComplete | Should Be $true
         }
@@ -218,7 +218,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             }
         }
 
-        $results = Get-ChildItem $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -DestinationDataDirectory $DataFolder -DestinationLogDirectory $LogFolder -WithReplace
+        $results = Get-ChildItem $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -DestinationDataDirectory $DataFolder -DestinationLogDirectory $LogFolder -WithReplace
         It "Should have moved data file to $DataFolder" {
             (($results.RestoredFileFull -split ',') -like "$DataFolder*").count | Should be 1
         }
@@ -242,7 +242,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Clear-DbaConnectionPool
     Start-Sleep -Seconds 2
     Context "Putting all restore file modification options together" {
-        $results = Get-ChildItem $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -DestinationDataDirectory $DataFolder -DestinationLogDirectory $LogFolder -DestinationFileSuffix Suffix -DestinationFilePrefix prefix
+        $results = Get-ChildItem $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -DestinationDataDirectory $DataFolder -DestinationLogDirectory $LogFolder -DestinationFileSuffix Suffix -DestinationFilePrefix prefix
         It "Should return successful restore with all file mod options" {
             $results.RestoreComplete | Should Be $true
         }
@@ -278,7 +278,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Clear-DbaConnectionPool
 
     Context "Properly restores an instance using ola-style backups via pipe" {
-        $results = Get-ChildItem $TestConfig.appveyorlabrepo\sql2008-backups | Restore-DbaDatabase -SqlInstance $TestConfig.instance2
+        $results = Get-ChildItem $($TestConfig.appveyorlabrepo)\sql2008-backups | Restore-DbaDatabase -SqlInstance $TestConfig.instance2
         It "Restored files count should be the right number" {
             $results.DatabaseName.Count | Should Be 33
         }
@@ -289,7 +289,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Should proceed if backups from multiple dbs passed in and databasename specified" {
-        $results = Get-ChildItem $TestConfig.appveyorlabrepo\sql2008-backups | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -DatabaseName test -WarningVariable warnvar
+        $results = Get-ChildItem $($TestConfig.appveyorlabrepo)\sql2008-backups | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -DatabaseName test -WarningVariable warnvar
         It "Should return nothing" {
             $null -eq $results | Should be $True
         }
@@ -313,7 +313,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Properly restores an instance using ola-style backups via string" {
-        $results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $TestConfig.appveyorlabrepo\sql2008-backups
+        $results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $($TestConfig.appveyorlabrepo)\sql2008-backups
         It "Restored files count should be the right number" {
             $results.DatabaseName.Count | Should Be 33
         }
@@ -337,7 +337,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Start-Sleep -Seconds 2
 
     Context "RestoreTime setup checks" {
-        $results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -path $TestConfig.appveyorlabrepo\RestoreTimeClean2016
+        $results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -path $($TestConfig.appveyorlabrepo)\RestoreTimeClean2016
         $sqlResults = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
         It "Should restore cleanly" {
             ($results.RestoreComplete -contains $false) | Should Be $false
@@ -368,7 +368,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Start-Sleep -Seconds 1
 
     Context "RestoreTime point in time" {
-        $results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -path $TestConfig.appveyorlabrepo\RestoreTimeClean2016 -RestoreTime (Get-Date "2019-05-02 21:12:27") -WarningVariable warnvar -ErrorVariable errvar
+        $results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -path $($TestConfig.appveyorlabrepo)\RestoreTimeClean2016 -RestoreTime (Get-Date "2019-05-02 21:12:27") -WarningVariable warnvar -ErrorVariable errvar
         $sqlResults = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
         It "Should have restored 4 files" {
             $results.count | Should be 4
@@ -392,7 +392,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Start-Sleep -Seconds 1
 
     Context "RestoreTime point in time with Simple Model" {
-        $results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -path $TestConfig.appveyorlabrepo\sql2008-backups\SimpleRecovery\ -RestoreTime (Get-Date "2018-04-06 10:37:44")
+        $results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -path $($TestConfig.appveyorlabrepo)\sql2008-backups\SimpleRecovery\ -RestoreTime (Get-Date "2018-04-06 10:37:44")
         $sqlResults = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from SimpleBackTest.dbo.steps"
 
         It "Should have restored 2 files" {
@@ -427,7 +427,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             }
             return
         }
-        $results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -path $TestConfig.appveyorlabrepo\RestoreTimeClean2016 -RestoreTime (Get-Date "2019-05-02 21:12:27") -StandbyDirectory c:\temp -WarningVariable warnvar -ErrorVariable errvar -ErrorAction SilentlyContinue
+        $results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -path $($TestConfig.appveyorlabrepo)\RestoreTimeClean2016 -RestoreTime (Get-Date "2019-05-02 21:12:27") -StandbyDirectory c:\temp -WarningVariable warnvar -ErrorVariable errvar -ErrorAction SilentlyContinue
         $sqlResults = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
         $warnvar
         It "Should not warn" {
@@ -443,7 +443,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Should have restored to 05/02/2019 21:12:26" {
             $sqlResults.maxdt | Should be (Get-Date "02 May 2019 21:12:26")
         }
-        $results2 = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -path $TestConfig.appveyorlabrepo\RestoreTimeClean2016 -Continue
+        $results2 = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -path $($TestConfig.appveyorlabrepo)\RestoreTimeClean2016 -Continue
         $sqlResults2 = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
         It "Should have restored 4 files" {
             $results2.count | Should be 4
@@ -468,7 +468,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             }
             return
         }
-        $results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Databasename contest -path $TestConfig.appveyorlabrepo\RestoreTimeClean2016 -RestoreTime (Get-Date "2019-05-02 21:23:58") -StandbyDirectory c:\temp
+        $results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Databasename contest -path $($TestConfig.appveyorlabrepo)\RestoreTimeClean2016 -RestoreTime (Get-Date "2019-05-02 21:23:58") -StandbyDirectory c:\temp
         $sqlResults = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from contest.dbo.steps"
         It "Should have restored 4 files" {
             $results.count | Should be 4
@@ -479,7 +479,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Should have restored to 05/02/2019 21:23:56" {
             $sqlResults.maxdt | Should be (Get-Date "02 May 2019 21:23:56")
         }
-        $results2 = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Databasename contest -path $TestConfig.appveyorlabrepo\RestoreTimeClean2016 -Continue
+        $results2 = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Databasename contest -path $($TestConfig.appveyorlabrepo)\RestoreTimeClean2016 -Continue
         $sqlResults2 = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from contest.dbo.steps"
         It "Should have restored 2 files" {
             $results2.count | Should be 2
@@ -496,7 +496,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         AfterAll {
             $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
         }
-        $Results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $TestConfig.appveyorlabrepo\sql2008-backups\ft1\FULL\ -NoRecovery
+        $Results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $($TestConfig.appveyorlabrepo)\sql2008-backups\ft1\FULL\ -NoRecovery
         It "Should Have restored the database cleanly" {
             ($results.RestoreComplete -contains $false) | Should be $False
             (($results | Measure-Object).count -gt 0) | Should be $True
@@ -504,7 +504,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Should have left the db in a norecovery state" {
             (Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database ft1).Status | Should Be "Restoring"
         }
-        $Results2 = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $TestConfig.appveyorlabrepo\sql2008-backups\ft1\ -Continue
+        $Results2 = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $($TestConfig.appveyorlabrepo)\sql2008-backups\ft1\ -Continue
         It "Should Have restored the database cleanly" {
             ($results.RestoreComplete -contains $false) | Should be $False
             (($results | Measure-Object).count -gt 0) | Should be $True
@@ -518,7 +518,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         AfterAll {
             $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
         }
-        $Results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -DatabaseName contest -Path $TestConfig.appveyorlabrepo\sql2008-backups\ft1\FULL\ -NoRecovery
+        $Results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -DatabaseName contest -Path $($TestConfig.appveyorlabrepo)\sql2008-backups\ft1\FULL\ -NoRecovery
         It "Should Have restored the database cleanly" {
             ($results.RestoreComplete -contains $false) | Should be $False
             (($results | Measure-Object).count -gt 0) | Should be $True
@@ -526,7 +526,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Should have left the db in a norecovery state" {
             (Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database contest).Status | Should Be "Restoring"
         }
-        $Results2 = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -DatabaseName contest -Path $TestConfig.appveyorlabrepo\sql2008-backups\ft1\ -Continue
+        $Results2 = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -DatabaseName contest -Path $($TestConfig.appveyorlabrepo)\sql2008-backups\ft1\ -Continue
         It "Should Have restored the database cleanly" {
             ($results2.RestoreComplete -contains $false) | Should be $False
             (($results2 | Measure-Object).count -gt 0) | Should be $True
@@ -541,8 +541,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
         }
         $files = @()
-        $files += Get-ChildItem $TestConfig.appveyorlabrepo\sql2008-backups\db1\FULL\
-        $files += Get-ChildItem $TestConfig.appveyorlabrepo\sql2008-backups\dbareports\FULL
+        $files += Get-ChildItem $($TestConfig.appveyorlabrepo)\sql2008-backups\db1\FULL\
+        $files += Get-ChildItem $($TestConfig.appveyorlabrepo)\sql2008-backups\dbareports\FULL
         $Results = $files | Restore-DbaDatabase -SqlInstance $TestConfig.instance2  -NoRecovery
         It "Should Have restored the database cleanly" {
             ($results.RestoreComplete -contains $false) | Should be $False
@@ -552,8 +552,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             (Get-DbaDatabase -SqlInstance $TestConfig.instance2 | Where-Object { $_.Status -eq 'Recovering' }).count | Should Be 0
         }
         $files = @()
-        $files += Get-ChildItem $TestConfig.appveyorlabrepo\sql2008-backups\db1\ -Recurse
-        $files += Get-ChildItem $TestConfig.appveyorlabrepo\sql2008-backups\dbareports\ -Recurse
+        $files += Get-ChildItem $($TestConfig.appveyorlabrepo)\sql2008-backups\db1\ -Recurse
+        $files += Get-ChildItem $($TestConfig.appveyorlabrepo)\sql2008-backups\dbareports\ -Recurse
         $Results2 = $files | Where-Object { $_.PsIsContainer -eq $false } | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Continue
         It "Should Have restored the database cleanly" {
             ($results2.RestoreComplete -contains $false) | Should be $False
@@ -565,7 +565,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Backup DB For next test" {
-        $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -path $TestConfig.appveyorlabrepo\RestoreTimeClean2016\restoretimeclean.bak
+        $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -path $($TestConfig.appveyorlabrepo)\RestoreTimeClean2016\restoretimeclean.bak
         $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database RestoreTimeClean -BackupDirectory C:\temp
         It "Should return successful backup" {
             $results.BackupComplete | Should Be $true
@@ -603,7 +603,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Restores a db with log and file files missing extensions" {
-        $results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -path $TestConfig.appveyorlabrepo\sql2008-backups\Noextension.bak -ErrorVariable Errvar -WarningVariable WarnVar
+        $results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -path $($TestConfig.appveyorlabrepo)\sql2008-backups\Noextension.bak -ErrorVariable Errvar -WarningVariable WarnVar
         It "Should Restore successfully" {
             ($results.RestoreComplete -contains $false) | Should Be $false
             (($results | Measure-Object).count -gt 0) | Should be $True
@@ -621,7 +621,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Context "Setup for Recovery Tests" {
         $DatabaseName = 'rectest'
-        $results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak -NoRecovery -DatabaseName $DatabaseName -DestinationFilePrefix $DatabaseName -WithReplace
+        $results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak -NoRecovery -DatabaseName $DatabaseName -DestinationFilePrefix $DatabaseName -WithReplace
         It "Should have restored everything successfully" {
             ($results.RestoreComplete -contains $false) | Should be $False
             (($results | Measure-Object).count -gt 0) | Should be $True
@@ -653,7 +653,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Context "Setup for Recovery Tests" {
         $DatabaseName = 'rectest'
-        $results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak -NoRecovery -DatabaseName $DatabaseName -DestinationFilePrefix $DatabaseName -WithReplace
+        $results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak -NoRecovery -DatabaseName $DatabaseName -DestinationFilePrefix $DatabaseName -WithReplace
         It "Should have restored everything successfully" {
             ($results.RestoreComplete -contains $false) | Should be $False
             (($results | Measure-Object).count -gt 0) | Should be $True
@@ -685,7 +685,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Context "Checking we cope with a port number (#244)" {
         $DatabaseName = 'rectest'
-        $results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2_detailed -Path $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $DatabaseName -DestinationFilePrefix $DatabaseName -WithReplace
+        $results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2_detailed -Path $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak -DatabaseName $DatabaseName -DestinationFilePrefix $DatabaseName -WithReplace
         It "Should have restored everything successfully" {
             ($results.RestoreComplete -contains $false) | Should be $False
             (($results | Measure-Object).count -gt 0) | Should be $True
@@ -701,7 +701,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Context "Checking OutputScriptOnly only outputs script" {
         $DatabaseName = 'rectestSO'
-        $results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $DatabaseName -OutputScriptOnly
+        $results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak -DatabaseName $DatabaseName -OutputScriptOnly
         $db = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $DatabaseName
         It "Should only output a script" {
             $results -match 'RESTORE DATABASE' | Should be $True
@@ -713,7 +713,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $DatabaseName | Remove-DbaDatabase -Confirm:$false
         $server = Connect-DbaInstance $TestConfig.instance2
         $server.Query("CREATE DATABASE $DatabaseName")
-        $results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $DatabaseName -OutputScriptOnly -WithReplace
+        $results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak -DatabaseName $DatabaseName -OutputScriptOnly -WithReplace
         $db = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $DatabaseName
         It "Should only output a script" {
             $results -match 'RESTORE DATABASE' | Should be $True
@@ -731,7 +731,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
     Context "Checking Output vs input" {
         $DatabaseName = 'rectestSO'
-        $results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $DatabaseName -BufferCount 24 -MaxTransferSize 128kb -BlockSize 64kb
+        $results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak -DatabaseName $DatabaseName -BufferCount 24 -MaxTransferSize 128kb -BlockSize 64kb
 
         It "Should return the destination instance" {
             $results.SqlInstance = $TestConfig.instance2
@@ -758,16 +758,16 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Checking CDC parameter " {
-        $output = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $DatabaseName -OutputScriptOnly -KeepCDC -WithReplace
+        $output = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak -DatabaseName $DatabaseName -OutputScriptOnly -KeepCDC -WithReplace
         It "Should have KEEP_CDC in the SQL" {
             ($output -like '*KEEP_CDC*') | Should be $True
         }
-        $output = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $DatabaseName -OutputScriptOnly -KeepCDC -WithReplace -WarningVariable warnvar -NoRecovery -WarningAction SilentlyContinue
+        $output = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak -DatabaseName $DatabaseName -OutputScriptOnly -KeepCDC -WithReplace -WarningVariable warnvar -NoRecovery -WarningAction SilentlyContinue
         It "Should not output, and warn if Norecovery and KeepCDC specified" {
             ($warnvar -like '*KeepCDC cannot be specified with Norecovery or Standby as it needs recovery to work') | Should be $True
             $output | Should be $null
         }
-        $output = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $DatabaseName -OutputScriptOnly -KeepCDC -WithReplace -WarningVariable warnvar -StandbyDirectory c:\temp\ -WarningAction SilentlyContinue
+        $output = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak -DatabaseName $DatabaseName -OutputScriptOnly -KeepCDC -WithReplace -WarningVariable warnvar -StandbyDirectory c:\temp\ -WarningAction SilentlyContinue
         It "Should not output, and warn if StandbyDirectory and KeepCDC specified" {
             ($warnvar -like '*KeepCDC cannot be specified with Norecovery or Standby as it needs recovery to work') | Should be $True
             $output | Should be $null
@@ -776,7 +776,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Context "Page level restores" {
         Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase -confirm:$false
-        $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName PageRestore -DestinationFilePrefix PageRestore
+        $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak -DatabaseName PageRestore -DestinationFilePrefix PageRestore
         $sql = "alter database PageRestore set Recovery Full
         Create table testpage(
             Filler char(8000)
@@ -846,7 +846,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Context "Testing Backup to Restore piping" {
         Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
-        $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName PipeTest -DestinationFilePrefix PipeTest
+        $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak -DatabaseName PipeTest -DestinationFilePrefix PipeTest
         $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database Pipetest -BackupDirectory c:\temp -CopyOnly -WarningAction SilentlyContinue -WarningVariable bwarnvar -ErrorAction SilentlyContinue -ErrorVariable berrvar | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -DatabaseName restored -ReplaceDbNameInFile -WarningAction SilentlyContinue -WarningVariable rwarnvar -ErrorAction SilentlyContinue -ErrorVariable rerrvar
         It "Should backup and restore cleanly" {
             $results.RestoreComplete | Should Be $True
@@ -855,7 +855,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Context "Check we restore striped database" {
         Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Remove-DbaDatabase -Confirm:$false
-        $results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $TestConfig.appveyorlabrepo\sql2008-backups\RestoreTimeStripe -DatabaseName StripeTest -DestinationFilePrefix StripeTest
+        $results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $($TestConfig.appveyorlabrepo)\sql2008-backups\RestoreTimeStripe -DatabaseName StripeTest -DestinationFilePrefix StripeTest
         It "Should backup and restore cleanly" {
             ($results | Where-Object { $_.RestoreComplete -eq $True }).count | Should Be $Results.count
         }
@@ -863,14 +863,14 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Don't try to create/test folders with OutputScriptOnly (Issue 4046)" {
-        $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $TestConfig.appveyorlabrepo\RestoreTimeClean2016\RestoreTimeClean.bak -DestinationDataDirectory g:\DoesNtExist -OutputScriptOnly -WarningVariable warnvar
+        $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $($TestConfig.appveyorlabrepo)\RestoreTimeClean2016\RestoreTimeClean.bak -DestinationDataDirectory g:\DoesNtExist -OutputScriptOnly -WarningVariable warnvar
         It "Should not raise a warning" {
             ('' -eq $warnvar) | Should -Be $True
         }
     }
     Context "Checking that WITH KEEP_REPLICATION gets properly added" {
         $DatabaseName = 'reptestSO'
-        $results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $TestConfig.appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $DatabaseName -OutputScriptOnly -KeepReplication
+        $results = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Path $($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak -DatabaseName $DatabaseName -OutputScriptOnly -KeepReplication
         It "Should output a script with keep replication clause" {
             $results -match 'RESTORE DATABASE.*WITH.*KEEP_REPLICATION' | Should be $True
         }
@@ -896,7 +896,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Test restoring with StopAt" {
-        $restoreOutput = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Name StopAt2 -Path $TestConfig.appveyorlabrepo\sql2008-backups\StopAt -StopMark dbatoolstest -WithReplace
+        $restoreOutput = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Name StopAt2 -Path $($TestConfig.appveyorlabrepo)\sql2008-backups\StopAt -StopMark dbatoolstest -WithReplace
         $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Name StopAt2 -Recover
         $sqlOut = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database StopAt2 -Query "select max(step) as ms from steps"
         It "Should have stoped at mark" {
@@ -906,7 +906,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Test restoring with StopAtBefore" {
-        $restoreOutput = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Name StopAt2 -Path $TestConfig.appveyorlabrepo\sql2008-backups\StopAt -StopMark dbatoolstest -WithReplace -StopBefore
+        $restoreOutput = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Name StopAt2 -Path $($TestConfig.appveyorlabrepo)\sql2008-backups\StopAt -StopMark dbatoolstest -WithReplace -StopBefore
         $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Name StopAt2 -Recover
         $sqlOut = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database StopAt2 -Query "select max(step) as ms from steps"
         It "Should have stoped at mark" {
@@ -916,7 +916,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Test restoring with StopAt and StopAfterDate" {
-        $restoreOutput = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Name StopAt2 -Path $TestConfig.appveyorlabrepo\sql2008-backups\StopAt -StopMark dbatoolstest -StopAfterDate (Get-Date '2020-05-12 13:33:35') -WithReplace
+        $restoreOutput = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Name StopAt2 -Path $($TestConfig.appveyorlabrepo)\sql2008-backups\StopAt -StopMark dbatoolstest -StopAfterDate (Get-Date '2020-05-12 13:33:35') -WithReplace
         $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Name StopAt2 -Recover
         $sqlOut = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database StopAt2 -Query "select max(step) as ms from steps"
         It "Should have stoped at mark" {
@@ -926,7 +926,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Warn if OutputScriptOnly and VerifyOnly specified together #6987" {
-        $restoreOutput = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Name StopAt2 -Path $TestConfig.appveyorlabrepo\sql2008-backups\StopAt -OutputScriptOnly -VerifyOnly -WarningVariable warnvar
+        $restoreOutput = Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -Name StopAt2 -Path $($TestConfig.appveyorlabrepo)\sql2008-backups\StopAt -OutputScriptOnly -VerifyOnly -WarningVariable warnvar
         It "Should return a warning" {
             $warnvar | Should -BeLike '*The switches OutputScriptOnly and VerifyOnly cannot both be specified at the same time, stopping'
         }

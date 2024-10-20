@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance3 -InputFile $TestConfig.appveyorlabrepo\sql2008-scripts\logins.sql -ErrorAction SilentlyContinue
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance3 -InputFile $($TestConfig.appveyorlabrepo)\sql2008-scripts\logins.sql -ErrorAction SilentlyContinue
         $agname = "dbatoolsci_ag_revoke"
         $null = New-DbaAvailabilityGroup -Primary $TestConfig.instance3 -Name $agname -ClusterType None -FailoverMode Manual -Confirm:$false -Certificate dbatoolsci_AGCert
     }

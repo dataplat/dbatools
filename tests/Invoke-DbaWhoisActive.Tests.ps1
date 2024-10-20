@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $testzippath = "$TestConfig.appveyorlabrepo\CommunitySoftware\sp_whoisactive-12.00.zip"
+        $testzippath = "$($TestConfig.appveyorlabrepo)\CommunitySoftware\sp_whoisactive-12.00.zip"
         $resultInstallMaster = Install-DbaWhoIsActive -SqlInstance $TestConfig.instance1 -LocalFile $testzippath -Database master -WarningVariable warnInstallMaster
         $resultInstallTempdb = Install-DbaWhoIsActive -SqlInstance $TestConfig.instance1 -LocalFile $testzippath -Database tempdb -WarningVariable warnInstallTempdb
     }
