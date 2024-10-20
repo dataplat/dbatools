@@ -161,7 +161,7 @@ function Get-CodecovReport($Results, $ModuleBase) {
 
 function Get-PesterTestVersion($testFilePath) {
     $testFileContent = Get-Content -Path $testFilePath -Raw
-    if ($testFileContent -Like '*#pester5*')
+    if ($testFileContent -match 'HaveParameter')
     {
         return '5'
     }
@@ -205,7 +205,7 @@ if (-not $Finalize) {
             # we're in the "region" of pester 4, so skip
             continue
         }
-        
+
         #opt-in
         if ($IncludeCoverage) {
             $CoverFiles = Get-CoverageIndications -Path $f -ModuleBase $ModuleBase
@@ -234,7 +234,7 @@ if (-not $Finalize) {
             }
         }
     }
-    
+
     #start the round for pester 5 tests
     # Remove any previously loaded pester module
     Remove-Module -Name pester -ErrorAction SilentlyContinue
@@ -244,7 +244,7 @@ if (-not $Finalize) {
     $Counter = 0
     foreach ($f in $AllTestsWithinScenario) {
         $Counter += 1
-        
+
         #get if this test should run on pester 4 or pester 5
         $pesterVersionToUse = Get-PesterTestVersion -testFilePath $f.FullName
         if ($pesterVersionToUse -eq '4') {
@@ -262,7 +262,7 @@ if (-not $Finalize) {
             $pester5Config.CodeCoverage.OutputFormat = 'JaCoCo'
             $pester5Config.CodeCoverage.OutputPath = "$ModuleBase\Pester5Coverage$PSVersion$Counter.xml"
         }
-        
+
         $trialNo = 1
         while ($trialNo -le 3) {
             if ($trialNo -eq 1) {
@@ -283,7 +283,7 @@ if (-not $Finalize) {
             }
         }
     }
-    
+
     # Gather support package as an artifact
     # New-DbatoolsSupportPackage -Path $ModuleBase - turns out to be too heavy
     try {
