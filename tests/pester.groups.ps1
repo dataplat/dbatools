@@ -22,47 +22,32 @@ $TestsRunGroups = @{
     )
     # do not run on appveyor
     "appveyor_disabled" = @(
+        # tests that work locally against SQL Server 2022 instances without problems but fail on AppVeyor
+        'ConvertTo-DbaXESession',
+        'Export-DbaUser',
+        'Get-DbaPermission',
+        'Get-DbaUserPermission',
+        'Install-DbaDarlingData',
+        'Invoke-DbaWhoisActive',
+        'Remove-DbaAvailabilityGroup',
+        'Remove-DbaDatabaseSafely',
+        'Sync-DbaLoginPermission',
+        # tests that fail locally against SQL Server 2022 instances and fail on AppVeyor
+        'Set-DbaAgentJobStep',
+        'New-DbaLogin',
+        'Watch-DbaDbLogin',
+        # tests that fail because the command does not work
+        'Copy-DbaDbCertificate',
+        'Export-DbaDacPackage',
+        'Read-DbaAuditFile',
+        'Read-DbaXEFile',
         # takes too long
         'Install-DbaSqlWatch',
         'Uninstall-DbaSqlWatch',
         'Get-DbaExecutionPlan',
         # Non-useful info from newly started sql servers
         'Get-DbaCpuRingBuffer',
-        'Get-DbaLatchStatistic',
-        # fails on newer version of SMO
-        'Get-DbaUserPermission',
-        'Invoke-DbaBalanceDataFiles',
-        'Invoke-DbaWhoisActive',  # Works locally aganint a SQL Server 2022 instance without problems.
-        'Install-DbaDarlingData',
-        # previous tests that were failing on older versions too
-        'Remove-DbaAvailabilityGroup',
-        'Read-DbaAuditFile',
-        'Sync-DbaLoginPermission',
-        'Read-DbaXEFile',
-        'Stop-DbaXESession',
-        'Test-DbaTempDbConfig',
-        #'New-DbaDbUser',
-        'Stop-DbaXESession',
-        'New-DbaLogin',
-        'Watch-DbaDbLogin',
-        'ConvertTo-DbaXESession',
-        'Test-DbaInstanceName',
-        'Test-DbaDeprecatedFeature',
-        'Remove-DbaDatabaseSafely',
-        'Get-DbaDbMasterKey',
-        'Get-DbaPermission',
-        'Test-DbaManagementObject',
-        'Export-DbaDacPackage',
-        'New-DbaDbTransfer',
-        'Get-DbaDbSynonym',
-        'Get-DbaDbVirtualLogFile',
-        'Get-DbaFile',
-        'Get-DbaHelpIndex',
-        'Get-DbaExternalProcess',
-        # just fails too often
-        'Test-DbaMaxDop',
-        'Test-DbaOptimizeForAdHoc',
-        'New-DbaDbSnapshot'
+        'Get-DbaLatchStatistic'
     )
     # do not run everywhere
     "disabled"          = @()
