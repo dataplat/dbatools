@@ -16,8 +16,8 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $random = Get-Random
-        $instance2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $instance3 = Connect-DbaInstance -SqlInstance $TestConfig.instance3
+        $instance2 = Connect-DbaInstance -SqlInstance $global:TestConfig.instance2
+        $instance3 = Connect-DbaInstance -SqlInstance $global:TestConfig.instance3
 
         $linkedServerName1 = "dbatoolscli_LS1_$random"
         $linkedServerName2 = "dbatoolscli_LS2_$random"
@@ -61,18 +61,18 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Removes a linked server" {
             $results = Get-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServerName1
             $results.Length | Should -Be 1
-            Remove-DbaLinkedServer -SqlInstance $TestConfig.instance2 -LinkedServer $linkedServerName1 -Confirm:$false
+            Remove-DbaLinkedServer -SqlInstance $global:TestConfig.instance2 -LinkedServer $linkedServerName1 -Confirm:$false
             $results = Get-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServerName1
             $results | Should -BeNullOrEmpty
         }
 
         It "Tries to remove a non-existent linked server" {
-            Remove-DbaLinkedServer -SqlInstance $TestConfig.instance2 -LinkedServer $linkedServerName1 -Confirm:$false -WarningVariable warnings
+            Remove-DbaLinkedServer -SqlInstance $global:TestConfig.instance2 -LinkedServer $linkedServerName1 -Confirm:$false -WarningVariable warnings
             $warnings | Should -BeLike "*Linked server $linkedServerName1 does not exist on $($instance2.Name)"
         }
 
         It "Removes a linked server passed in via pipeline" {
-            $results = Get-DbaLinkedServer -SqlInstance $TestConfig.instance2 -LinkedServer $linkedServerName2
+            $results = Get-DbaLinkedServer -SqlInstance $global:TestConfig.instance2 -LinkedServer $linkedServerName2
             $results.Length | Should -Be 1
             Get-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServerName2 | Remove-DbaLinkedServer -Confirm:$false
             $results = Get-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServerName2
@@ -80,7 +80,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Removes a linked server using a server passed in via pipeline" {
-            $results = Get-DbaLinkedServer -SqlInstance $TestConfig.instance2 -LinkedServer $linkedServerName3
+            $results = Get-DbaLinkedServer -SqlInstance $global:TestConfig.instance2 -LinkedServer $linkedServerName3
             $results.Length | Should -Be 1
             $instance2 | Remove-DbaLinkedServer -LinkedServer $linkedServerName3 -Confirm:$false
             $results = Get-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServerName3

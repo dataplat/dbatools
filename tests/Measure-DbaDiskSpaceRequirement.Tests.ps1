@@ -15,11 +15,11 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Should Measure Disk Space Required " {
-        $server1 = Connect-DbaInstance -SqlInstance $TestConfig.instance1
-        $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server1 = Connect-DbaInstance -SqlInstance $global:TestConfig.instance1
+        $server2 = Connect-DbaInstance -SqlInstance $global:TestConfig.instance2
         $Options = @{
-            Source              = $TestConfig.instance1
-            Destination         = $TestConfig.instance2
+            Source              = $global:TestConfig.instance1
+            Destination         = $global:TestConfig.instance2
             Database            = "master"
             DestinationDatabase = "Dbatoolsci_DestinationDB"
         }
