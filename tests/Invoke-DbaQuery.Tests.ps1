@@ -116,7 +116,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance3 -Database tempdb -SqlObject $smoobj
         $check = "SELECT name FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[CommandLog]') AND type in (N'U')"
         $results = Invoke-DbaQuery -SqlInstance $TestConfig.instance3 -Database tempdb -Query $check
-        $results.Name | Should Be 'CommandLog'
+        $results.Name | Should -Be 'CommandLog'
         $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database tempdb -Query $cleanup
     }
     <#
@@ -195,7 +195,7 @@ SELECT @@servername as dbname
     }
     It "Executes stored procedures with parameters" {
         $results = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database tempdb -Query "dbatoolsci_procedure_example" -SqlParameters @{p1 = 1 } -CommandType StoredProcedure
-        $results.TestColumn | Should Be 1
+        $results.TestColumn | Should -Be 1
     }
     It "Executes script file with a relative path (see #6184)" {
         Set-Content -Path ".\hellorelative.sql" -Value "Select 'hello' as TestColumn, DB_NAME() as dbname"
@@ -332,7 +332,7 @@ SELECT 2
         $result = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database tempdb -Query $q -NoExec
         $result | Should -BeNullOrEmpty
 
-        { Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database tempdb -Query "SELEC p FROM c" -NoExec -EnableException } | Should -Throw "Incorrect syntax near 'selec'"
+        { Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database tempdb -Query "SELEC p FROM c" -NoExec -EnableException } | Should -Throw "Incorrect syntax near 'SELEC'"
     }
 
     It "supports dropping temp objects (#8472)" {

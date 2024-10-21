@@ -359,6 +359,7 @@ if (-not $Finalize) {
         Write-Warning "Failed tests summary (pester 5):"
         $faileditems | ForEach-Object {
             $name = $_.Name
+            $failedCount += 1
             [pscustomobject]@{
                 Path = $_.Path -Join '/'
                 Name     = "It $name"
