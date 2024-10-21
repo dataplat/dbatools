@@ -331,7 +331,8 @@ if (-not $Finalize) {
         Get-ChildItem $ModuleBase\dbatools_messages_and_errors.xml.zip | ForEach-Object { Push-AppveyorArtifact $_.FullName -FileName $_.Name }
     }
     #$totalcount = $results | Select-Object -ExpandProperty TotalCount | Measure-Object -Sum | Select-Object -ExpandProperty Sum
-    $failedcount = $results | Select-Object -ExpandProperty FailedCount | Measure-Object -Sum | Select-Object -ExpandProperty Sum
+    $failedcount = 0
+    $failedcount += $results | Select-Object -ExpandProperty FailedCount | Measure-Object -Sum | Select-Object -ExpandProperty Sum
     if ($failedcount -gt 0) {
         # pester 4 output
         $faileditems = $results | Select-Object -ExpandProperty TestResult | Where-Object { $_.Passed -notlike $True }
@@ -353,13 +354,13 @@ if (-not $Finalize) {
 
 
     $results5 = @(Get-ChildItem -Path "$ModuleBase\Pester5Results*.xml" | Import-Clixml)
+    $failedcount += $results | Select-Object -ExpandProperty FailedCount | Measure-Object -Sum | Select-Object -ExpandProperty Sum
     # pester 5 output
     $faileditems = $results5 | Select-Object -ExpandProperty Tests | Where-Object { $_.Passed -notlike $True }
     if ($faileditems) {
         Write-Warning "Failed tests summary (pester 5):"
         $faileditems | ForEach-Object {
             $name = $_.Name
-            $failedCount += 1
             [pscustomobject]@{
                 Path = $_.Path -Join '/'
                 Name     = "It $name"
