@@ -5,11 +5,12 @@ Push-AppveyorArtifact PesterResultsCoverage.json -FileName "PesterResultsCoverag
 codecov -f PesterResultsCoverage.json --flag "ps,$($env:SCENARIO.ToLowerInvariant())" | Out-Null
 
 Write-Host -Object "appveyor.post: Sending coverage data (pester 5)" -ForeGroundColor DarkGreen
-$ProjectRoot = $env:APPVEYOR_BUILD_FOLDER,
-$ModuleBase = $ProjectRoot,
+$ProjectRoot = $env:APPVEYOR_BUILD_FOLDER
+$ModuleBase = $ProjectRoot
 $pester5CoverageFiles = Get-ChildItem -Path "$ModuleBase\Pester5Coverage*.xml"
 foreach($coverageFile in $pester5CoverageFiles)
 {
+    Write-Host -Object "appveyor.post: Sending $($coverageFile.FullName)" -ForeGroundColor DarkGreen
     Push-AppveyorArtifact $coverageFile.FullName -FileName $coverageFile.Name
     codecov -f $coverageFile.FullName --flag "ps,$($env:SCENARIO.ToLowerInvariant())" | Out-Null
 }
