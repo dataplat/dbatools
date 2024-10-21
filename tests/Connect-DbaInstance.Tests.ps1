@@ -151,7 +151,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "connection is properly made using a connection object" {
         BeforeAll {
             Set-DbatoolsConfig -FullName commands.connect-dbainstance.smo.computername.source -Value 'instance.ComputerName'
-            [Microsoft.Data.SqlClient.SqlConnection]$sqlconnection = "Data Source=$TestConfig.instance1;Initial Catalog=tempdb;Integrated Security=True;Encrypt=False;Trust Server Certificate=True"
+            [Microsoft.Data.SqlClient.SqlConnection]$sqlconnection = "Data Source=$($TestConfig.instance1);Initial Catalog=tempdb;Integrated Security=True;Encrypt=False;Trust Server Certificate=True"
             $server = Connect-DbaInstance -SqlInstance $sqlconnection
             Set-DbatoolsConfig -FullName commands.connect-dbainstance.smo.computername.source -Value $null
         }
