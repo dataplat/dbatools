@@ -9,11 +9,14 @@ BeforeAll {
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Query', 'QueryTimeout', 'File', 'SqlObject', 'As', 'SqlParameter', 'AppendServerInstance', 'MessagesToOutput', 'InputObject', 'ReadOnly', 'EnableException', 'CommandType', 'NoExec'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        BeforeAll {
+            $command = Get-Command Invoke-DbaQuery
+        }
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+            [object[]]$params = $command.Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
+            [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Query', 'QueryTimeout', 'File', 'SqlObject', 'As', 'SqlParameter', 'AppendServerInstance', 'MessagesToOutput', 'InputObject', 'ReadOnly', 'EnableException', 'CommandType', 'NoExec'
+            $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
         }
     }
     Context "Validate alias" {
