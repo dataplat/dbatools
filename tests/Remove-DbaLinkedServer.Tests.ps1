@@ -29,6 +29,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $linkedServer3 = New-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServerName3
         $linkedServer4 = New-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServerName4
 
+        # Add error checking
+        if (-not ($linkedServer1 -and $linkedServer2 -and $linkedServer3 -and $linkedServer4)) {
+            Write-Error "Failed to create one or more linked servers"
+        }
+
         $securePassword = ConvertTo-SecureString -String 's3cur3P4ssw0rd?' -AsPlainText -Force
         $loginName = "dbatoolscli_test_$random"
         New-DbaLogin -SqlInstance $instance2, $instance3 -Login $loginName -SecurePassword $securePassword
@@ -41,20 +46,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $newLinkedServerLogin.Create()
     }
     AfterAll {
-        if ($instance2.LinkedServers.Name -contains $linkedServerName1) {
-            $instance2.LinkedServers[$linkedServerName1].Drop()
-        }
-
-        if ($instance2.LinkedServers.Name -contains $linkedServerName2) {
-            $instance2.LinkedServers[$linkedServerName2].Drop()
-        }
-
-        if ($instance2.LinkedServers.Name -contains $linkedServerName3) {
-            $instance2.LinkedServers[$linkedServerName3].Drop()
-        }
-
-        if ($instance2.LinkedServers.Name -contains $linkedServerName4) {
-            $instance2.LinkedServers[$linkedServerName4].Drop($true)
+        $linkedServers = @($linkedServerName1, $linkedServerName2, $linkedServerName3, $linkedServerName4)
+        foreach ($ls in $linkedServers) {
+            if ($instance2.LinkedServers.Name -contains $ls) {
+                $instance2.LinkedServers[$ls].Drop($true)
+            }
         }
 
         Remove-DbaLogin -SqlInstance $instance2, $instance3 -Login $loginName -Confirm:$false
@@ -92,12 +88,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Tries to remove a linked server that still has logins" {
-            Get-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServerName4 | Remove-DbaLinkedServer -Confirm:$false -WarningVariable warnings
-            $warnings | Should -BeLike "*There are still remote logins or linked logins for the server*"
+            { Get-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServerName4 |
+                    Remove-DbaLinkedServer -Confirm:$false -ErrorAction Stop } |
+                    Should -Throw -ExpectedMessage "*There are still remote logins or linked logins for the server*"
         }
 
         It "Removes a linked server that requires the -Force param" {
-            Get-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServerName4 | Remove-DbaLinkedServer -Confirm:$false -Force
+            Get-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServerName4 |
+                Remove-DbaLinkedServer -Confirm:$false -Force
             $results = Get-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServerName4
             $results | Should -BeNullOrEmpty
         }
