@@ -2,7 +2,7 @@ Add-AppveyorTest -Name "appveyor.post" -Framework NUnit -FileName "appveyor.post
 $sw = [system.diagnostics.stopwatch]::startNew()
 Write-Host -Object "appveyor.post: Sending coverage data (pester 4)" -ForeGroundColor DarkGreen
 Push-AppveyorArtifact PesterResultsCoverage.json -FileName "PesterResultsCoverage"
-codecov -f PesterResultsCoverage.json --flag "ps,$($env:SCENARIO.ToLowerInvariant())" | Out-Null
+codecov -f PesterResultsCoverage.json --flag "pester4_$($env:SCENARIO.ToLowerInvariant())" | Out-Null
 
 Write-Host -Object "appveyor.post: Sending coverage data (pester 5)" -ForeGroundColor DarkGreen
 $ProjectRoot = $env:APPVEYOR_BUILD_FOLDER
@@ -12,7 +12,7 @@ foreach($coverageFile in $pester5CoverageFiles)
 {
     Write-Host -Object "appveyor.post: Sending $($coverageFile.FullName)" -ForeGroundColor DarkGreen
     Push-AppveyorArtifact $coverageFile.FullName -FileName $coverageFile.Name
-    codecov -f $coverageFile.FullName --flag "ps,pester5,$($env:SCENARIO.ToLowerInvariant())" | Out-Null
+    codecov -f $coverageFile.FullName --flag "pester5_$($env:SCENARIO.ToLowerInvariant())" | Out-Null
 }
 
 $sw.Stop()
