@@ -15,16 +15,16 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $TestConfig.set = Get-DbaPfDataCollectorSet | Select-Object -First 1
-        $TestConfig.set | Stop-DbaPfDataCollectorSet -WarningAction SilentlyContinue
+        $script:set = Get-DbaPfDataCollectorSet | Select-Object -First 1
+        $script:set | Stop-DbaPfDataCollectorSet -WarningAction SilentlyContinue
         Start-Sleep 2
     }
     AfterAll {
-        $TestConfig.set | Stop-DbaPfDataCollectorSet -WarningAction SilentlyContinue
+        $script:set | Stop-DbaPfDataCollectorSet -WarningAction SilentlyContinue
     }
     Context "Verifying command works" {
         It "returns a result with the right computername and name is not null" {
-            $results = $TestConfig.set | Select-Object -First 1 | Start-DbaPfDataCollectorSet -WarningAction SilentlyContinue -WarningVariable warn
+            $results = $script:set | Select-Object -First 1 | Start-DbaPfDataCollectorSet -WarningAction SilentlyContinue -WarningVariable warn
             if (-not $warn) {
                 $results.ComputerName | Should Be $env:COMPUTERNAME
                 $results.Name | Should Not Be $null

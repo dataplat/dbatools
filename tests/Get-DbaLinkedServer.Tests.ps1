@@ -17,11 +17,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $null = $server.Query("EXEC master.dbo.sp_addlinkedserver
-            @server = N'$TestConfig.instance3',
+            @server = N'$($TestConfig.instance3)',
             @srvproduct=N'SQL Server' ;")
     }
     AfterAll {
-        $null = $server.Query("EXEC master.dbo.sp_dropserver '$TestConfig.instance3', 'droplogins';  ")
+        $null = $server.Query("EXEC master.dbo.sp_dropserver '$($TestConfig.instance3)', 'droplogins';  ")
     }
 
     Context "Gets Linked Servers" {
@@ -30,7 +30,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results | Should Not Be $null
         }
         It "Should have Remote Server of $($TestConfig.instance3)" {
-            $results.RemoteServer | Should Be "$($TestConfig.instance3)"
+            $results.RemoteServer | Should Be $TestConfig.instance3
         }
         It "Should have a product name of SQL Server" {
             $results.productname | Should Be 'SQL Server'
@@ -40,12 +40,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Gets Linked Servers using -LinkedServer" {
-        $results = Get-DbaLinkedServer -SqlInstance $TestConfig.instance2 -LinkedServer "$($TestConfig.instance3)"
+        $results = Get-DbaLinkedServer -SqlInstance $TestConfig.instance2 -LinkedServer $TestConfig.instance3
         It "Gets results" {
             $results | Should Not Be $null
         }
         It "Should have Remote Server of $($TestConfig.instance3)" {
-            $results.RemoteServer | Should Be "$($TestConfig.instance3)"
+            $results.RemoteServer | Should Be $TestConfig.instance3
         }
         It "Should have a product name of SQL Server" {
             $results.productname | Should Be 'SQL Server'
@@ -55,7 +55,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Gets Linked Servers using -ExcludeLinkedServer" {
-        $results = Get-DbaLinkedServer -SqlInstance $TestConfig.instance2 -ExcludeLinkedServer "$($TestConfig.instance3)"
+        $results = Get-DbaLinkedServer -SqlInstance $TestConfig.instance2 -ExcludeLinkedServer $TestConfig.instance3
         It "Gets results" {
             $results | Should Be $null
         }

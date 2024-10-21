@@ -76,10 +76,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         foreach ($r in $results) {
             if ($r.type -in @('Mail Configuration', 'Mail Account', 'Mail Profile')) {
                 It "Should have copied $($r.type) from $($TestConfig.instance2)" {
-                    $r.SourceServer | Should Be "$($TestConfig.instance2)"
+                    $r.SourceServer | Should Be $TestConfig.instance2
                 }
                 It "Should have copied $($r.type) to $($TestConfig.instance3)" {
-                    $r.DestinationServer | Should Be "$($TestConfig.instance3)"
+                    $r.DestinationServer | Should Be $TestConfig.instance3
                 }
             }
         }
@@ -94,11 +94,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
         foreach ($r in $results) {
             It "Should have $($r.status) $($r.type) from $($TestConfig.instance2)" {
-                $r.SourceServer | Should Be "$($TestConfig.instance2)"
+                $r.SourceServer | Should Be $TestConfig.instance2
                 $r.status | Should Be 'Skipped'
             }
             It "Should have $($r.status) $($r.type) to $($TestConfig.instance3)" {
-                $r.DestinationServer | Should Be "$($TestConfig.instance3)"
+                $r.DestinationServer | Should Be $TestConfig.instance3
                 $r.status | Should Be 'Skipped'
             }
         }
