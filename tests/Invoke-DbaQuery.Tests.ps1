@@ -353,6 +353,4 @@ SELECT 2
         $results = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query "select cast(null as hierarchyid)"
         $results.Column1 | Should -Be "NULL"
     }
-
 }
-
