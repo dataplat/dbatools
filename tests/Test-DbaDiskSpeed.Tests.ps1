@@ -34,7 +34,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results = @($TestConfig.instance1, $TestConfig.instance2) | Test-DbaDiskSpeed -Database master
             $results.Count | Should -Be 4
 
-            # for some reason this doesn't work on AppVeyor, perhaps due to the way the instances are started up the instance names do not match the values in constants.ps1
+            # for some reason this doesn't work on AppVeyor, perhaps due to the way the instances are started up the instance names do not match the values in Get-TestConfig
             #(($results.SqlInstance -contains $TestConfig.instance1) -and ($results.SqlInstance -contains $TestConfig.instance2)) | Should -Be $true
         }
 
@@ -181,7 +181,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         # Separate test to run against a Linux-hosted SQL instance.
-        # To run this test ensure you have specified the instance2 values for a Linux-hosted SQL instance in the constants.ps1
+        # To run this test ensure you have specified the instance2 values for a Linux-hosted SQL instance in the Get-TestConfig
         It -Skip "test commands on a Linux instance" {
             # use instance with credential info and run through the 3 variations
             # -Skip to be added when checking in the code
@@ -207,7 +207,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         # Separate test to run against a Linux-hosted SQL instance.
-        # To run this test ensure you have specified the instance2 values for a Linux-hosted SQL instance in the constants.ps1
+        # To run this test ensure you have specified the instance2 values for a Linux-hosted SQL instance in the Get-TestConfig
         It -Skip "aggregate by file and check column names returned on a Linux instance" {
             # check returned columns
             [object[]]$expectedColumnArray = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'SizeGB', 'FileName', 'FileID', 'FileType', 'DiskLocation', 'Reads', 'AverageReadStall', 'ReadPerformance', 'Writes', 'AverageWriteStall', 'WritePerformance', 'Avg Overall Latency', 'Avg Bytes/Read', 'Avg Bytes/Write', 'Avg Bytes/Transfer'
@@ -247,7 +247,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         # Separate test to run against a Linux-hosted SQL instance.
-        # To run this test ensure you have specified the instance2 values for a Linux-hosted SQL instance in the constants.ps1
+        # To run this test ensure you have specified the instance2 values for a Linux-hosted SQL instance in the Get-TestConfig
         It -Skip "aggregate by database and check column names returned on a Linux instance" {
             # check returned columns
             [object[]]$expectedColumnArray = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'DiskLocation', 'Reads', 'AverageReadStall', 'ReadPerformance', 'Writes', 'AverageWriteStall', 'WritePerformance', 'Avg Overall Latency', 'Avg Bytes/Read', 'Avg Bytes/Write', 'Avg Bytes/Transfer'
@@ -287,7 +287,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         # Separate test to run against a Linux-hosted SQL instance.
-        # To run this test ensure you have specified the instance2 values for a Linux-hosted SQL instance in the constants.ps1
+        # To run this test ensure you have specified the instance2 values for a Linux-hosted SQL instance in the Get-TestConfig
         It -Skip "aggregate by disk and check column names returned on a Linux instance" {
             # check returned columns
             [object[]]$expectedColumnArray = 'ComputerName', 'InstanceName', 'SqlInstance', 'DiskLocation', 'Reads', 'AverageReadStall', 'ReadPerformance', 'Writes', 'AverageWriteStall', 'WritePerformance', 'Avg Overall Latency', 'Avg Bytes/Read', 'Avg Bytes/Write', 'Avg Bytes/Transfer'
