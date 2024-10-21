@@ -351,6 +351,5 @@ SELECT 2
         $results.Column1 | Should -Be "NULL"
     }
 
-
 }
 
