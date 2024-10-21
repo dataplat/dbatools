@@ -65,24 +65,24 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             (Get-ChildItem $outputFile1).Length | Should BeGreaterThan 0
         }
 
-        $TestConfig.results = $role | Export-DbaDbRole -Passthru
+        $script:results = $role | Export-DbaDbRole -Passthru
         It "should include the defined BatchSeparator" {
-            $TestConfig.results -match "GO"
+            $script:results -match "GO"
         }
         It "should include the role" {
-            $TestConfig.results -match "CREATE ROLE [$dbRole]"
+            $script:results -match "CREATE ROLE [$dbRole]"
         }
         It "should include GRANT EXECUTE ON SCHEMA" {
-            $TestConfig.results -match "GRANT EXECUTE ON SCHEMA::[dbo] TO [$dbRole];"
+            $script:results -match "GRANT EXECUTE ON SCHEMA::[dbo] TO [$dbRole];"
         }
         It "should include GRANT SELECT ON SCHEMA" {
-            $TestConfig.results -match "GRANT SELECT ON SCHEMA::[dbo] TO [$dbRole];"
+            $script:results -match "GRANT SELECT ON SCHEMA::[dbo] TO [$dbRole];"
         }
         It "should include GRANT VIEW DEFINITION ON SCHEMA" {
-            $TestConfig.results -match "GRANT VIEW DEFINITION ON SCHEMA::[dbo] TO [$dbRole];"
+            $script:results -match "GRANT VIEW DEFINITION ON SCHEMA::[dbo] TO [$dbRole];"
         }
         It "should include ALTER ROLE ADD MEMBER" {
-            $TestConfig.results -match "ALTER ROLE [$dbRole] ADD MEMBER [$user1];"
+            $script:results -match "ALTER ROLE [$dbRole] ADD MEMBER [$user1];"
         }
     }
 }

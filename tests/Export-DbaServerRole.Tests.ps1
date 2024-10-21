@@ -62,27 +62,27 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             (Get-ChildItem $outputFile).Length | Should BeGreaterThan 0
         }
 
-        $TestConfig.results = $role | Export-DbaServerRole -Passthru
+        $script:results = $role | Export-DbaServerRole -Passthru
         It "should include the defined BatchSeparator" {
-            $TestConfig.results -match "GO"
+            $script:results -match "GO"
         }
         It "should include the role" {
-            $TestConfig.results -match "CREATE SERVER ROLE [$svRole]"
+            $script:results -match "CREATE SERVER ROLE [$svRole]"
         }
         It "should include ADD MEMBER" {
-            $TestConfig.results -match "ALTER SERVER ROLE [dbcreator] ADD MEMBER [$svRole]"
+            $script:results -match "ALTER SERVER ROLE [dbcreator] ADD MEMBER [$svRole]"
         }
         It "should include GRANT CREATE TRACE EVENT" {
-            $TestConfig.results -match "GRANT CREATE TRACE EVENT NOTIFICATION TO [$svRole]"
+            $script:results -match "GRANT CREATE TRACE EVENT NOTIFICATION TO [$svRole]"
         }
         It "should include DENY SELECT ALL USER SECURABLES" {
-            $TestConfig.results -match "DENY SELECT ALL USER SECURABLES TO [$svRole]"
+            $script:results -match "DENY SELECT ALL USER SECURABLES TO [$svRole]"
         }
         It "should include VIEW ANY DEFINITION" {
-            $TestConfig.results -match "GRANT VIEW ANY DEFINITION TO [$svRole];"
+            $script:results -match "GRANT VIEW ANY DEFINITION TO [$svRole];"
         }
         It "should include GRANT VIEW ANY DATABASE" {
-            $TestConfig.results -match "GRANT VIEW ANY DATABASE TO [$svRole];"
+            $script:results -match "GRANT VIEW ANY DATABASE TO [$svRole];"
         }
     }
 }

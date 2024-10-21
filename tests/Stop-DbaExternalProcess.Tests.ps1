@@ -33,7 +33,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $query = @"
             xp_cmdshell 'powershell -command ""sleep 20""'
 "@
-            Start-Process -FilePath sqlcmd -ArgumentList "-S $TestConfig.instance1 -Q `"$query`"" -NoNewWindow -RedirectStandardOutput null
+            Start-Process -FilePath sqlcmd -ArgumentList "-S $($TestConfig.instance1) -Q `"$query`"" -NoNewWindow -RedirectStandardOutput null
         }
 
         It "returns results" {
