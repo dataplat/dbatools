@@ -17,31 +17,31 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Should Measure Disk Space Required " {
         $server1 = Connect-DbaInstance -SqlInstance $global:TestConfig.instance1
         $server2 = Connect-DbaInstance -SqlInstance $global:TestConfig.instance2
-        $Options = @{
+        $script:Options = @{
             Source              = $global:TestConfig.instance1
             Destination         = $global:TestConfig.instance2
             Database            = "master"
             DestinationDatabase = "Dbatoolsci_DestinationDB"
         }
-        $results = Measure-DbaDiskSpaceRequirement @Options
+        $script:results = Measure-DbaDiskSpaceRequirement @Options
         It "Should have information" {
-            $results | Should -Not -BeNullOrEmpty
+            $script:results | Should -Not -BeNullOrEmpty
         }
-        foreach ($r in $results) {
+        foreach ($result in $script:results) {
             It "Should be sourced from Master" {
-                $r.SourceDatabase | Should -Be $Options.Database
+                $result.SourceDatabase | Should -Be $script:Options.Database
             }
-            It "Should be sourced from the correct instance" {
-                $r.SourceSqlInstance.InstanceName | Should -Be $server1.InstanceName
+            It "Should be sourced from the instance $($global:TestConfig.instance1)" {
+                $result.SourceSqlInstance | Should -Be $server1.SqlInstance
             }
             It "Should be destined for Dbatoolsci_DestinationDB" {
-                $r.DestinationDatabase | Should -Be $Options.DestinationDatabase
+                $result.DestinationDatabase | Should -Be $script:Options.DestinationDatabase
             }
-            It "Should be destined for the correct instance" {
-                $r.DestinationSqlInstance.InstanceName | Should -Be $server2.InstanceName
+            It "Should be destined for the instance $($global:TestConfig.instance2)" {
+                $result.DestinationSqlInstance | Should -Be $server2.SqlInstance
             }
-            It "Should have files on source" {
-                $r.FileLocation | Should Be "Only on Source"
+            It "Should be have files on source" {
+                $result.FileLocation | Should Be "Only on Source"
             }
         }
     }
