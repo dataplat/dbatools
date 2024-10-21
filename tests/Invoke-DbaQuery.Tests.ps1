@@ -1,4 +1,4 @@
-#pester5
+#HaveParameter - yeah, I know.
 
 BeforeAll {
     $CommandName = (Get-Item $PSCommandPath).Name.Replace(".Tests.ps1", "")
