@@ -14,8 +14,8 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    $results = Get-DbaTopResourceUsage -SqlInstance $instances -Type Duration -Database master
-    $resultsExcluded = Get-DbaTopResourceUsage -SqlInstance $instances -Type Duration -ExcludeDatabase master
+    $results = Get-DbaTopResourceUsage -SqlInstance $TestConfig.instances -Type Duration -Database master
+    $resultsExcluded = Get-DbaTopResourceUsage -SqlInstance $TestConfig.instances -Type Duration -ExcludeDatabase master
     Context "Command returns proper info" {
         It "returns results" {
             $results.Count -gt 0 | Should Be $true
