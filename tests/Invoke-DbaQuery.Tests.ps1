@@ -1,6 +1,11 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#pester5
+
+BeforeAll {
+    $CommandName = (Get-Item $PSCommandPath).Name.Replace(".Tests.ps1", "")
+    Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+    $global:TestConfig = Get-TestConfig
+}
+
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -65,7 +70,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
     It "stops when piped databases and -Database" {
         $dbs = Get-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3
-        { $dbs | Invoke-DbaQuery -Query "Select 'hello' as TestColumn, DB_NAME() as dbname" -Database tempdb -EnableException } | Should Throw "You can't"
+        { $dbs | Invoke-DbaQuery -Query "Select 'hello' as TestColumn, DB_NAME() as dbname" -Database tempdb -EnableException } | Should -Throw "You can't*"
     }
     It "supports reading files" {
         $testPath = "TestDrive:\dbasqlquerytest.txt"
