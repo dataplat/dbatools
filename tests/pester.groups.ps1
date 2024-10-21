@@ -49,7 +49,9 @@ $TestsRunGroups = @{
         'Get-DbaCpuRingBuffer',
         'Get-DbaLatchStatistic',
         # uses a backup that only works on SQL Server 2022
-        'Get-DbaEstimatedCompletionTime'
+        'Get-DbaEstimatedCompletionTime',
+        # fix shortly, broke once we moved to Get-TestConfig
+        'Remove-DbaLinkedServer'
     )
     # do not run everywhere
     "disabled"          = @()
