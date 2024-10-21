@@ -41,22 +41,20 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $newLinkedServerLogin.Create()
     }
     AfterAll {
-        $null = $script:connectedInstance2.Refresh()
-        $null = $script:connectedInstance3.Refresh()
-        if ($script:connectedInstance2.LinkedServers.Name -contains $linkedServerName1) {
+        if ($script:connectedInstance2.LinkedServers[$linkedServerName1]) {
             $script:connectedInstance2.LinkedServers[$linkedServerName1].Drop()
         }
 
-        if ($script:connectedInstance2.LinkedServers.Name -contains $linkedServerName2) {
+        if ($script:connectedInstance2.LinkedServers[$linkedServerName2]) {
             $script:connectedInstance2.LinkedServers[$linkedServerName2].Drop()
         }
 
-        if ($script:connectedInstance2.LinkedServers.Name -contains $linkedServerName3) {
+        if ($script:connectedInstance2.LinkedServers[$linkedServerName3]) {
             $script:connectedInstance2.LinkedServers[$linkedServerName3].Drop()
         }
 
-        if ($script:connectedInstance2.LinkedServers.Name -contains $linkedServerName4) {
-            $script:connectedInstance2.LinkedServers[$linkedServerName4].Drop($true)
+        if ($script:connectedInstance2.LinkedServers[$linkedServerName4]) {
+            $script:connectedInstance2.LinkedServers[$linkedServerName4].Drop()
         }
 
         Remove-DbaLogin -SqlInstance $script:connectedInstance2, $script:connectedInstance3 -Login $loginName -Confirm:$false
