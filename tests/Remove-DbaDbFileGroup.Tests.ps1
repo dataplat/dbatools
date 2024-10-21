@@ -57,12 +57,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
         It "Tries to remove a non-existent filegroup" {
             Remove-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name -FileGroup invalidFileGroupName -Confirm:$false -WarningVariable warnings
-            $warnings | Should -BeLike "*Filegroup invalidFileGroupName does not exist in the database $db1name on $TestConfig.instance2"
+            $warnings | Should -BeLike "*Filegroup invalidFileGroupName does not exist in the database $db1name on $($TestConfig.instance2)"
         }
 
         It "Tries to remove a filegroup that still has files" {
             Remove-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name -FileGroup $fileGroup2Name -Confirm:$false -WarningVariable warnings
-            $warnings | Should -BeLike "*Filegroup $fileGroup2Name is not empty. Before the filegroup can be dropped the files must be removed in $fileGroup2Name on $db1name on $TestConfig.instance2"
+            $warnings | Should -BeLike "*Filegroup $fileGroup2Name is not empty. Before the filegroup can be dropped the files must be removed in $fileGroup2Name on $db1name on $($TestConfig.instance2)"
         }
 
         It "Removes a filegroup using a database from a pipeline and a filegroup from a pipeline" {

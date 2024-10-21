@@ -227,8 +227,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         # This might fail if a parallel test uses DAC - how can we ensure that this is the only test that is run?
         It "opens and closes the connections" {
             $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -DedicatedAdminConnection
-            $server[0].Name | Should -Be "ADMIN:$TestConfig.instance1"
-            $server[1].Name | Should -Be "ADMIN:$TestConfig.instance2"
+            $server[0].Name | Should -Be "ADMIN:$($TestConfig.instance1)"
+            $server[1].Name | Should -Be "ADMIN:$($TestConfig.instance2)"
             $null = $server | Disconnect-DbaInstance
             # DAC is not reopened in the background
             Start-Sleep -Seconds 10

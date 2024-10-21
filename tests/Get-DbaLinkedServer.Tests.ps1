@@ -25,12 +25,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Gets Linked Servers" {
-        $results = Get-DbaLinkedServer -SqlInstance $TestConfig.instance2 | Where-Object {$_.name -eq "$TestConfig.instance3"}
+        $results = Get-DbaLinkedServer -SqlInstance $TestConfig.instance2 | Where-Object {$_.name -eq "$($TestConfig.instance3)"}
         It "Gets results" {
             $results | Should Not Be $null
         }
-        It "Should have Remote Server of $TestConfig.instance3" {
-            $results.RemoteServer | Should Be "$TestConfig.instance3"
+        It "Should have Remote Server of $($TestConfig.instance3)" {
+            $results.RemoteServer | Should Be "$($TestConfig.instance3)"
         }
         It "Should have a product name of SQL Server" {
             $results.productname | Should Be 'SQL Server'
@@ -40,12 +40,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Gets Linked Servers using -LinkedServer" {
-        $results = Get-DbaLinkedServer -SqlInstance $TestConfig.instance2 -LinkedServer "$TestConfig.instance3"
+        $results = Get-DbaLinkedServer -SqlInstance $TestConfig.instance2 -LinkedServer "$($TestConfig.instance3)"
         It "Gets results" {
             $results | Should Not Be $null
         }
-        It "Should have Remote Server of $TestConfig.instance3" {
-            $results.RemoteServer | Should Be "$TestConfig.instance3"
+        It "Should have Remote Server of $($TestConfig.instance3)" {
+            $results.RemoteServer | Should Be "$($TestConfig.instance3)"
         }
         It "Should have a product name of SQL Server" {
             $results.productname | Should Be 'SQL Server'
@@ -55,7 +55,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Gets Linked Servers using -ExcludeLinkedServer" {
-        $results = Get-DbaLinkedServer -SqlInstance $TestConfig.instance2 -ExcludeLinkedServer "$TestConfig.instance3"
+        $results = Get-DbaLinkedServer -SqlInstance $TestConfig.instance2 -ExcludeLinkedServer "$($TestConfig.instance3)"
         It "Gets results" {
             $results | Should Be $null
         }

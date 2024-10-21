@@ -23,7 +23,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Verify basics of the Find-DbaDbUnusedIndex command" {
         BeforeAll {
-            Write-Message -Level Warning -Message "Find-DbaDbUnusedIndex testing connection to $TestConfig.instance2"
+            Write-Message -Level Warning -Message "Find-DbaDbUnusedIndex testing connection to $($TestConfig.instance2)"
             Test-DbaConnection -SqlInstance $TestConfig.instance2
 
             $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2

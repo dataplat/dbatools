@@ -37,7 +37,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         $results = Find-DbaDatabase -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -Pattern Master
-        It "Should return true if Executed Against 2 instances: $TestConfig.instance1 and $TestConfig.instance2" {
+        It "Should return true if Executed Against 2 instances: $TestConfig.instance1 and $($TestConfig.instance2)" {
             ($results.InstanceName | Select-Object -Unique).count -eq 2 | Should Be $true
         }
         $results = Find-DbaDatabase -SqlInstance $TestConfig.instance2 -Property ServiceBrokerGuid -Pattern -0000-0000-000000000000
