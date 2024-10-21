@@ -107,7 +107,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "connection is properly made using a connection string" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance "Data Source=$TestConfig.instance1;Initial Catalog=tempdb;Integrated Security=True"
+            $server = Connect-DbaInstance -SqlInstance "Data Source=$($TestConfig.instance1);Initial Catalog=tempdb;Integrated Security=True"
         }
 
         It "returns the proper name" {
