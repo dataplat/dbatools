@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -15,9 +15,9 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Creates a smart object" {
         It "returns the object with all of the correct properties" {
-            $results = New-DbaXESmartQueryExec -SqlInstance $script:instance2 -Database dbadb -Query "update table set whatever = 1"
+            $results = New-DbaXESmartQueryExec -SqlInstance $TestConfig.instance2 -Database dbadb -Query "update table set whatever = 1"
             $results.TSQL | Should -Be 'update table set whatever = 1'
-            $results.ServerName | Should -Be $script:instance2
+            $results.ServerName | Should -Be $TestConfig.instance2
             $results.DatabaseName | Should -be 'dbadb'
             $results.Password | Should -Be $null
         }

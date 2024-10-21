@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -15,10 +15,10 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $null = New-DbaDatabase -SqlInstance $script:instance2 -Name 'dbatoolsci_MoveDbFile'
-        $null = New-DbaDatabase -SqlInstance $script:instance2 -Name 'dbatoolsci_MoveDbFile_2DataFiles'
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name 'dbatoolsci_MoveDbFile'
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name 'dbatoolsci_MoveDbFile_2DataFiles'
 
-        $dbFiles = Get-DbaDbFile -SqlInstance $script:instance2 -Database dbatoolsci_MoveDbFile_2DataFiles | Where-Object TypeDescription -eq 'ROWS'
+        $dbFiles = Get-DbaDbFile -SqlInstance $TestConfig.instance2 -Database dbatoolsci_MoveDbFile_2DataFiles | Where-Object TypeDescription -eq 'ROWS'
         $physicalPathFolder = Split-Path -Path $dbFiles[0].PhysicalName -Parent
         $physicalPathNewFolder = "$physicalPathFolder\moveFile"
         $null = New-Item -Path $physicalPathNewFolder -Type Directory
@@ -30,10 +30,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         TO FILEGROUP [PRIMARY]
         GO
 "@
-        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query $addNewDataFile
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $addNewDataFile
     }
     AfterAll {
-        $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database "dbatoolsci_MoveDbFile", "dbatoolsci_MoveDbFile_2DataFiles" -Confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database "dbatoolsci_MoveDbFile", "dbatoolsci_MoveDbFile_2DataFiles" -Confirm:$false
         Get-Item -Path "$physicalPathFolder\moveFile" | Remove-Item -Recurse
         Get-Item -Path "$physicalPathFolder\New" | Remove-Item -Recurse
         Get-Item -Path "$physicalPathFolder\dbatoolsci_MoveDbFile.mdf" | Remove-Item
@@ -41,7 +41,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Should output current database structure" {
         $variables = @{
-            SqlInstance       = $script:instance2
+            SqlInstance       = $TestConfig.instance2
             Database          = 'dbatoolsci_MoveDbFile'
             FileStructureOnly = $true
         }
@@ -60,10 +60,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Should move all database data files" {
-        $dbDataFiles = Get-DbaDbFile -SqlInstance $script:instance2 -Database dbatoolsci_MoveDbFile | Where-Object TypeDescription -eq 'ROWS'
+        $dbDataFiles = Get-DbaDbFile -SqlInstance $TestConfig.instance2 -Database dbatoolsci_MoveDbFile | Where-Object TypeDescription -eq 'ROWS'
 
         $variables = @{
-            SqlInstance     = $script:instance2
+            SqlInstance     = $TestConfig.instance2
             Database        = 'dbatoolsci_MoveDbFile'
             FileType        = 'Data'
             FileDestination = $physicalPathNewFolder
@@ -86,15 +86,15 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             Test-Path -Path $dbDataFiles.PhysicalName | Should Be $true
         }
         It "Should have database Online" {
-            (Get-DbaDbState -SqlInstance $script:instance2 -Database 'dbatoolsci_MoveDbFile').Status | Should Be 'ONLINE'
+            (Get-DbaDbState -SqlInstance $TestConfig.instance2 -Database 'dbatoolsci_MoveDbFile').Status | Should Be 'ONLINE'
         }
     }
 
     Context "Should move all database log files and delete source" {
-        $dbLogFiles = Get-DbaDbFile -SqlInstance $script:instance2 -Database dbatoolsci_MoveDbFile | Where-Object TypeDescription -eq 'LOG'
+        $dbLogFiles = Get-DbaDbFile -SqlInstance $TestConfig.instance2 -Database dbatoolsci_MoveDbFile | Where-Object TypeDescription -eq 'LOG'
 
         $variables = @{
-            SqlInstance     = $script:instance2
+            SqlInstance     = $TestConfig.instance2
             Database        = 'dbatoolsci_MoveDbFile'
             FileType        = 'Log'
             FileDestination = $physicalPathNewFolder
@@ -118,15 +118,15 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             Test-Path -Path $dbLogFiles.PhysicalName | Should Be $false
         }
         It "Should have database Online" {
-            (Get-DbaDbState -SqlInstance $script:instance2 -Database 'dbatoolsci_MoveDbFile').Status | Should Be 'ONLINE'
+            (Get-DbaDbState -SqlInstance $TestConfig.instance2 -Database 'dbatoolsci_MoveDbFile').Status | Should Be 'ONLINE'
         }
     }
 
     Context "Should move only one database file and delete source" {
-        $dbNDFFile = Get-DbaDbFile -SqlInstance $script:instance2 -Database dbatoolsci_MoveDbFile_2DataFiles | Where-Object LogicalName -eq 'dbatoolsci_MoveDbFile_2DataFiles_2'
+        $dbNDFFile = Get-DbaDbFile -SqlInstance $TestConfig.instance2 -Database dbatoolsci_MoveDbFile_2DataFiles | Where-Object LogicalName -eq 'dbatoolsci_MoveDbFile_2DataFiles_2'
 
         $variables = @{
-            SqlInstance     = $script:instance2
+            SqlInstance     = $TestConfig.instance2
             Database        = 'dbatoolsci_MoveDbFile_2DataFiles'
             FileToMove      = @{
                 'dbatoolsci_MoveDbFile_2DataFiles_2' = $physicalPathNewFolder
@@ -151,18 +151,18 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             Test-Path -Path $dbNDFFile.PhysicalName | Should Be $false
         }
         It "Should have database Online" {
-            (Get-DbaDbState -SqlInstance $script:instance2 -Database 'dbatoolsci_MoveDbFile_2DataFiles').Status | Should Be 'ONLINE'
+            (Get-DbaDbState -SqlInstance $TestConfig.instance2 -Database 'dbatoolsci_MoveDbFile_2DataFiles').Status | Should Be 'ONLINE'
         }
     }
 
     Context "Should move all files and delete source" {
-        $dbAllFiles = Get-DbaDbFile -SqlInstance $script:instance2 -Database dbatoolsci_MoveDbFile_2DataFiles
+        $dbAllFiles = Get-DbaDbFile -SqlInstance $TestConfig.instance2 -Database dbatoolsci_MoveDbFile_2DataFiles
 
         $destinationFolder = "$physicalPathFolder\New"
         $null = New-Item -Path $destinationFolder -Type Directory
 
         $variables = @{
-            SqlInstance     = $script:instance2
+            SqlInstance     = $TestConfig.instance2
             Database        = 'dbatoolsci_MoveDbFile_2DataFiles'
             FileType        = 'Both'
             FileDestination = $destinationFolder
@@ -192,7 +192,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             }
         }
         It "Should have database Online" {
-            (Get-DbaDbState -SqlInstance $script:instance2 -Database 'dbatoolsci_MoveDbFile_2DataFiles').Status | Should Be 'ONLINE'
+            (Get-DbaDbState -SqlInstance $TestConfig.instance2 -Database 'dbatoolsci_MoveDbFile_2DataFiles').Status | Should Be 'ONLINE'
         }
     }
 }

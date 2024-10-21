@@ -1,6 +1,6 @@
 $commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tags "UnitTests" {
     Context "Validate parameters" {
@@ -15,19 +15,19 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $null = Remove-DbaFirewallRule -SqlInstance $script:instance2 -Confirm:$false
+        $null = Remove-DbaFirewallRule -SqlInstance $TestConfig.instance2 -Confirm:$false
     }
 
     AfterAll {
-        $null = Remove-DbaFirewallRule -SqlInstance $script:instance2 -Confirm:$false
+        $null = Remove-DbaFirewallRule -SqlInstance $TestConfig.instance2 -Confirm:$false
     }
 
-    $resultsNew = New-DbaFirewallRule -SqlInstance $script:instance2  -Confirm:$false
-    $resultsGet = Get-DbaFirewallRule -SqlInstance $script:instance2
+    $resultsNew = New-DbaFirewallRule -SqlInstance $TestConfig.instance2  -Confirm:$false
+    $resultsGet = Get-DbaFirewallRule -SqlInstance $TestConfig.instance2
     $resultsRemoveBrowser = $resultsGet | Where-Object { $_.Type -eq "Browser" } | Remove-DbaFirewallRule -Confirm:$false
-    $resultsRemove = Remove-DbaFirewallRule -SqlInstance $script:instance2 -Type AllInstance -Confirm:$false
+    $resultsRemove = Remove-DbaFirewallRule -SqlInstance $TestConfig.instance2 -Type AllInstance -Confirm:$false
 
-    $instanceName = ([DbaInstanceParameter]$script:instance2).InstanceName
+    $instanceName = ([DbaInstanceParameter]$TestConfig.instance2).InstanceName
 
     It "creates two firewall rules" {
         $resultsNew.Count | Should -Be 2

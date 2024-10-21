@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -20,7 +20,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 #>
 Describe "Get-DbaMemoryCondition Integration Test" -Tag "IntegrationTests" {
     Context "Command actually works" {
-        $results = Get-DbaMemoryCondition -SqlInstance $script:instance1
+        $results = Get-DbaMemoryCondition -SqlInstance $TestConfig.instance1
 
         It "returns results" {
             $($results | Measure-Object).Count -gt 0 | Should Be $true

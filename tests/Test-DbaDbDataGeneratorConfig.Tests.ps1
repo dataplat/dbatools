@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -18,7 +18,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $dbname = "dbatools_datagentest"
         $query = "CREATE DATABASE [$dbname]"
 
-        Invoke-DbaQuery -SqlInstance $script:instance1 -Database master -Query $query
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database master -Query $query
 
         $query = "
         CREATE TABLE [dbo].[Customer](
@@ -34,13 +34,13 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         ) ON [PRIMARY]
         "
 
-        Invoke-DbaQuery -SqlInstance $script:instance1 -Database $dbname -Query $query
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database $dbname -Query $query
 
-        $file = New-DbaDbDataGeneratorConfig -SqlInstance $script:instance1 -Database $dbname -Table Customer -Path "C:\temp\datageneration"
+        $file = New-DbaDbDataGeneratorConfig -SqlInstance $TestConfig.instance1 -Database $dbname -Table Customer -Path "C:\temp\datageneration"
 
     }
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname -Confirm:$false
     }
 
     It "gives no errors with a correct json file" {

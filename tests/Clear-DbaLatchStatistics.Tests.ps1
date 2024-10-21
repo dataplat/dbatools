@@ -1,6 +1,6 @@
 $commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tags "UnitTests" {
     Context "Validate parameters" {
@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Command executes properly and returns proper info" {
-        $results = Clear-DbaLatchStatistics -SqlInstance $script:instance1 -Confirm:$false
+        $results = Clear-DbaLatchStatistics -SqlInstance $TestConfig.instance1 -Confirm:$false
 
         It "returns success" {
             $results.Status -eq 'Success' | Should Be $true

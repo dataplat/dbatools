@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag "UnitTests" {
     Context "Validate parameters" {
@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "Get NumberErrorLog for multiple instances" {
-        $results = Get-DbaErrorLogConfig -SqlInstance $script:instance3, $script:instance2
+        $results = Get-DbaErrorLogConfig -SqlInstance $TestConfig.instance3, $TestConfig.instance2
         foreach ($result in $results) {
             It 'returns 3 values' {
                 $result.LogCount | Should -Not -Be $null

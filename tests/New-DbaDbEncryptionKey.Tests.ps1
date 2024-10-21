@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tags "UnitTests" {
     Context "Validate parameters" {
@@ -20,18 +20,18 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
         $cred = New-Object System.Management.Automation.PSCredential "sqladmin", $passwd
 
-        $masterkey = Get-DbaDbMasterKey -SqlInstance $script:instance2 -Database master
+        $masterkey = Get-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database master
         if (-not $masterkey) {
             $delmasterkey = $true
-            $masterkey = New-DbaServiceMasterKey -SqlInstance $script:instance2 -SecurePassword $passwd
+            $masterkey = New-DbaServiceMasterKey -SqlInstance $TestConfig.instance2 -SecurePassword $passwd
         }
-        $mastercert = Get-DbaDbCertificate -SqlInstance $script:instance2 -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
+        $mastercert = Get-DbaDbCertificate -SqlInstance $TestConfig.instance2 -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
         if (-not $mastercert) {
             $delmastercert = $true
-            $mastercert = New-DbaDbCertificate -SqlInstance $script:instance2
+            $mastercert = New-DbaDbCertificate -SqlInstance $TestConfig.instance2
         }
 
-        $db = New-DbaDatabase -SqlInstance $script:instance2
+        $db = New-DbaDatabase -SqlInstance $TestConfig.instance2
     }
 
     AfterAll {
@@ -52,8 +52,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results.EncryptionAlgorithm | Should -Be "Aes256"
         }
         It "should create a new encryption key" {
-            $null = Get-DbaDbEncryptionKey -SqlInstance $script:instance2 -Database $db.Name | Remove-DbaDbEncryptionKey
-            $results = New-DbaDbEncryptionKey -SqlInstance $script:instance2 -Database $db.Name -Force -EncryptorName $mastercert.Name
+            $null = Get-DbaDbEncryptionKey -SqlInstance $TestConfig.instance2 -Database $db.Name | Remove-DbaDbEncryptionKey
+            $results = New-DbaDbEncryptionKey -SqlInstance $TestConfig.instance2 -Database $db.Name -Force -EncryptorName $mastercert.Name
             $results.EncryptionAlgorithm | Should -Be "Aes256"
         }
     }
@@ -65,20 +65,20 @@ Describe "$CommandName Integration Tests for Async" -Tags "IntegrationTests" {
     BeforeAll {
         $PSDefaultParameterValues["*:Confirm"] = $false
         $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
-        $masterkey = Get-DbaDbMasterKey -SqlInstance $script:instance2 -Database master
+        $masterkey = Get-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database master
         if (-not $masterkey) {
             $delmasterkey = $true
-            $masterkey = New-DbaServiceMasterKey -SqlInstance $script:instance2 -SecurePassword $passwd
+            $masterkey = New-DbaServiceMasterKey -SqlInstance $TestConfig.instance2 -SecurePassword $passwd
         }
 
-        $masterasym = Get-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Database master
+        $masterasym = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Database master
 
         if (-not $masterasym) {
             $delmasterasym = $true
-            $masterasym = New-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Database master
+            $masterasym = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Database master
         }
 
-        $db = New-DbaDatabase -SqlInstance $script:instance2
+        $db = New-DbaDatabase -SqlInstance $TestConfig.instance2
         $db | New-DbaDbMasterKey -SecurePassword $passwd
         $db | New-DbaDbAsymmetricKey
     }

@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 #Loading this function is needed since it is currently not in the manifest
 . "$PSScriptRoot\..\public\Get-DbaXESessionTargetFile.ps1"
 

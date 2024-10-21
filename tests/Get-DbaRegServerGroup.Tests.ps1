@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tags "UnitTests" {
     Context "Validate parameters" {
@@ -16,7 +16,7 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Setup" {
         BeforeAll {
-            $server = Connect-DbaInstance $script:instance1
+            $server = Connect-DbaInstance $TestConfig.instance1
             $regStore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($server.ConnectionContext.SqlConnectionObject)
             $dbStore = $regStore.DatabaseEngineServerGroup
 
@@ -85,30 +85,30 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $subGroupServer.Create()
         }
         AfterAll {
-            Get-DbaRegServer -SqlInstance $script:instance1 | Where-Object Name -Match dbatoolsci | Remove-DbaRegServer -Confirm:$false
-            Get-DbaRegServerGroup -SqlInstance $script:instance1 | Where-Object Name -Match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
+            Get-DbaRegServer -SqlInstance $TestConfig.instance1 | Where-Object Name -Match dbatoolsci | Remove-DbaRegServer -Confirm:$false
+            Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1 | Where-Object Name -Match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
         }
 
         It "Should return one group" {
-            $results = Get-DbaRegServerGroup -SqlInstance $script:instance1 -Group $group
+            $results = Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Group $group
             $results.Count | Should -Be 1
         }
         It "Should allow searching subgroups" {
-            $results = Get-DbaRegServerGroup -SqlInstance $script:instance1 -Group "$group\$subGroup"
+            $results = Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Group "$group\$subGroup"
             $results.Count | Should -Be 1
         }
 
         It "Should return two groups" {
-            $results = Get-DbaRegServerGroup -SqlInstance $script:instance1 -Group @($group, "$group\$subGroup")
+            $results = Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Group @($group, "$group\$subGroup")
             $results.Count | Should -Be 2
         }
 
         It "Verify the ExcludeGroup param is working" {
-            $results = Get-DbaRegServerGroup -SqlInstance $script:instance1 -Group @($group, $group2) -ExcludeGroup $group
+            $results = Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Group @($group, $group2) -ExcludeGroup $group
             $results.Count | Should -Be 1
             $results.Name | Should -Be $group2
 
-            $results = Get-DbaRegServerGroup -SqlInstance $script:instance1 -ExcludeGroup $group
+            $results = Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -ExcludeGroup $group
             $results.Count | Should -Be 2
             (($results.Name -contains $group2) -and ($results.Name -contains $group3)) | Should -Be $true
         }

@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tags "UnitTests" {
     Context "Validate parameters" {
@@ -17,15 +17,15 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "Setup" {
         BeforeAll {
             $group = "dbatoolsci-group1"
-            $newGroup = Add-DbaRegServerGroup -SqlInstance $script:instance1 -Name $group
+            $newGroup = Add-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Name $group
 
             $group2 = "dbatoolsci-group1a"
-            $newGroup2 = Add-DbaRegServerGroup -SqlInstance $script:instance1 -Name $group2
+            $newGroup2 = Add-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Name $group2
 
-            $hellagroup = Get-DbaRegServerGroup -SqlInstance $script:instance1 -Id 1 | Add-DbaRegServerGroup -Name dbatoolsci-first | Add-DbaRegServerGroup -Name dbatoolsci-second | Add-DbaRegServerGroup -Name dbatoolsci-third | Add-DbaRegServer -ServerName dbatoolsci-test -Description ridiculous
+            $hellagroup = Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Id 1 | Add-DbaRegServerGroup -Name dbatoolsci-first | Add-DbaRegServerGroup -Name dbatoolsci-second | Add-DbaRegServerGroup -Name dbatoolsci-third | Add-DbaRegServer -ServerName dbatoolsci-test -Description ridiculous
         }
         AfterAll {
-            Get-DbaRegServerGroup -SqlInstance $script:instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
+            Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
         }
 
         It "supports dropping via the pipeline" {
@@ -35,13 +35,13 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "supports dropping manually" {
-            $results = Remove-DbaRegServerGroup -Confirm:$false -SqlInstance $script:instance1 -Name $group2
+            $results = Remove-DbaRegServerGroup -Confirm:$false -SqlInstance $TestConfig.instance1 -Name $group2
             $results.Name | Should -Be $group2
             $results.Status | Should -Be 'Dropped'
         }
 
         It "supports hella long group name" {
-            $results = Get-DbaRegServerGroup -SqlInstance $script:instance1 -Group $hellagroup.Group
+            $results = Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Group $hellagroup.Group
             $results.Name | Should -Be 'dbatoolsci-third'
         }
     }

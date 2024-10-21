@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -24,12 +24,12 @@ exec sp_addrolemember 'userrole','alice';
 exec sp_addrolemember 'userrole','bob';
 '@
 
-        $db = New-DbaDatabase -SqlInstance $script:instance1 -Name $dbName
+        $db = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbName
         $db.ExecuteNonQuery($sql)
 
-        $results = Get-DbaUserPermission -SqlInstance $script:instance1 -Database $dbName
+        $results = Get-DbaUserPermission -SqlInstance $TestConfig.instance1 -Database $dbName
 
-        $null = Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbName -Confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbName -Confirm:$false
 
         It "returns results" {
             $results.Count -gt 0 | Should Be $true
@@ -51,9 +51,9 @@ exec sp_addrolemember 'userrole','bob';
         $dbName = "dbatoolsci_UserPermissionDiffCollation"
         $dbCollation = "Latin1_General_CI_AI"
 
-        $null = New-DbaDatabase -SqlInstance $script:instance1 -Name $dbName -Collation $dbCollation
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbName -Collation $dbCollation
 
-        $results = Get-DbaUserPermission -SqlInstance $script:instance1 -Database $dbName -WarningVariable warnvar 3> $null
+        $results = Get-DbaUserPermission -SqlInstance $TestConfig.instance1 -Database $dbName -WarningVariable warnvar 3> $null
         It "Should not warn about collation conflict" {
             $warnvar | Should -Be $null
         }
@@ -61,6 +61,6 @@ exec sp_addrolemember 'userrole','bob';
             $results.Count -gt 0 | Should Be $true
         }
 
-        $null = Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbName -Confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbName -Confirm:$false
     }
 }

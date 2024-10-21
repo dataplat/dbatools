@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -16,7 +16,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Command actually works" {
         It "Default set and returns '0 - Off'" {
-            $results = Set-DbaExtendedProtection -SqlInstance $script:instance1 -EnableException *>$null
+            $results = Set-DbaExtendedProtection -SqlInstance $TestConfig.instance1 -EnableException *>$null
             $results.ExtendedProtection -eq "0 - Off"
         }
     }
@@ -30,7 +30,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 $ScriptBlock,
                 $EnableException
             )
-               $server = [DbaInstanceParameter[]]$script:instance1
+               $server = [DbaInstanceParameter[]]$TestConfig.instance1
                @{
                     DisplayName = "SQL Server ($($instance.InstanceName))"
                     AdvancedProperties = @(
@@ -43,30 +43,31 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             } -ModuleName dbatools
         }
         It "Set explicitly to '0 - Off' using text" {
-            $results = Set-DbaExtendedProtection -SqlInstance $script:instance1 -Value Off -EnableException -Verbose 4>&1
+            $results = Set-DbaExtendedProtection -SqlInstance $TestConfig.instance1 -Value Off -EnableException -Verbose 4>&1
             $results[-1] = 'Value: 0'
         }
         It "Set explicitly to '0 - Off' using number" {
-            $results = Set-DbaExtendedProtection -SqlInstance $script:instance1 -Value 0 -EnableException -Verbose 4>&1
+            $results = Set-DbaExtendedProtection -SqlInstance $TestConfig.instance1 -Value 0 -EnableException -Verbose 4>&1
             $results[-1] = 'Value: 0'
         }
 
         It "Set explicitly to '1 - Allowed' using text" {
-            $results = Set-DbaExtendedProtection -SqlInstance $script:instance1 -Value Allowed -EnableException -Verbose 4>&1
+            $results = Set-DbaExtendedProtection -SqlInstance $TestConfig.instance1 -Value Allowed -EnableException -Verbose 4>&1
             $results[-1] = 'Value: 1'
         }
         It "Set explicitly to '1 - Allowed' using number" {
-            $results = Set-DbaExtendedProtection -SqlInstance $script:instance1 -Value 1 -EnableException -Verbose 4>&1
+            $results = Set-DbaExtendedProtection -SqlInstance $TestConfig.instance1 -Value 1 -EnableException -Verbose 4>&1
             $results[-1] = 'Value: 1'
         }
 
         It "Set explicitly to '2 - Required' using text" {
-            $results = Set-DbaExtendedProtection -SqlInstance $script:instance1 -Value Required -EnableException -Verbose 4>&1
+            $results = Set-DbaExtendedProtection -SqlInstance $TestConfig.instance1 -Value Required -EnableException -Verbose 4>&1
             $results[-1] = 'Value: 2'
         }
         It "Set explicitly to '2 - Required' using number" {
-            $results = Set-DbaExtendedProtection -SqlInstance $script:instance1 -Value 2 -EnableException -Verbose 4>&1
+            $results = Set-DbaExtendedProtection -SqlInstance $TestConfig.instance1 -Value 2 -EnableException -Verbose 4>&1
             $results[-1] = 'Value: 2'
         }
     }
 }
+

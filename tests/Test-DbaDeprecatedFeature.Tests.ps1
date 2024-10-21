@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 . "$PSScriptRoot\..\public\Test-DbaDeprecatedFeature.ps1"
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
@@ -16,12 +16,12 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command actually works" {
         It "Should return a result" {
-            $results = Test-DbaDeprecatedFeature -SqlInstance $script:instance2
+            $results = Test-DbaDeprecatedFeature -SqlInstance $TestConfig.instance2
             $results | Should -Not -Be $null
         }
 
         It "Should return a result for a database" {
-            $results = Test-DbaDeprecatedFeature -SqlInstance $script:instance2 -Database Master
+            $results = Test-DbaDeprecatedFeature -SqlInstance $TestConfig.instance2 -Database Master
             $results | Should -Not -Be $null
         }
     }

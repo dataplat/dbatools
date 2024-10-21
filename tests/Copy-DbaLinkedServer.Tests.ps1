@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -20,8 +20,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         EXEC master.dbo.sp_addlinkedserver @server = N'dbatoolsci_localhost2', @srvproduct=N'', @provider=N'SQLNCLI10';
         EXEC master.dbo.sp_addlinkedsrvlogin @rmtsrvname=N'dbatoolsci_localhost2',@useself=N'False',@locallogin=NULL,@rmtuser=N'testuser1',@rmtpassword='supfool';"
 
-        $server1 = Connect-DbaInstance -SqlInstance $script:instance2
-        $server2 = Connect-DbaInstance -SqlInstance $script:instance3
+        $server1 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance3
         $server1.Query($createsql)
     }
     AfterAll {
@@ -36,7 +36,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Copy linked server with the same properties" {
         It "copies successfully" {
-            $result = Copy-DbaLinkedServer -Source $script:instance2 -Destination $script:instance3 -LinkedServer dbatoolsci_localhost -WarningAction SilentlyContinue
+            $result = Copy-DbaLinkedServer -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -LinkedServer dbatoolsci_localhost -WarningAction SilentlyContinue
             $result | Select-Object -ExpandProperty Name -Unique | Should Be "dbatoolsci_localhost"
             $result | Select-Object -ExpandProperty Status -Unique | Should Be "Successful"
         }
@@ -51,15 +51,15 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "skips existing linked servers" {
-            $results = Copy-DbaLinkedServer -Source $script:instance2 -Destination $script:instance3 -LinkedServer dbatoolsci_localhost -WarningAction SilentlyContinue
+            $results = Copy-DbaLinkedServer -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -LinkedServer dbatoolsci_localhost -WarningAction SilentlyContinue
             $results.Status | Should Be "Skipped"
         }
 
         # SQLNCLI10 and SQLNCLI11 are not used on newer versions, not sure which versions, but skipping if later than 2017
         It -Skip:$($server1.VersionMajor -gt 14 -or $server2.VersionMajor -gt 14) "upgrades SQLNCLI provider based on what is registered" {
-            $result = Copy-DbaLinkedServer -Source $script:instance2 -Destination $script:instance3 -LinkedServer dbatoolsci_localhost2 -UpgradeSqlClient
-            $server1 = Connect-DbaInstance -SqlInstance $script:instance2
-            $server2 = Connect-DbaInstance -SqlInstance $script:instance3
+            $result = Copy-DbaLinkedServer -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -LinkedServer dbatoolsci_localhost2 -UpgradeSqlClient
+            $server1 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+            $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance3
             $server1.LinkedServers.Script() -match 'SQLNCLI10' | Should -Be $true
             $server2.LinkedServers.Script() -match 'SQLNCLI11' | Should -Be $true
         }

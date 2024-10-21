@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -16,7 +16,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Setup" {
         BeforeAll {
-            $server = Connect-DbaInstance $script:instance2
+            $server = Connect-DbaInstance $TestConfig.instance2
             $regstore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($server.ConnectionContext.SqlConnectionObject)
             $dbstore = $regstore.DatabaseEngineServerGroup
 
@@ -37,14 +37,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
         AfterAll {
             $newgroup.Drop()
-            $server = Connect-DbaInstance $script:instance1
+            $server = Connect-DbaInstance $TestConfig.instance1
             $regstore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($server.ConnectionContext.SqlConnectionObject)
             $dbstore = $regstore.DatabaseEngineServerGroup
             $groupstore = $dbstore.ServerGroups[$group]
             $groupstore.Drop()
         }
 
-        $results = Copy-DbaRegServer -Source $script:instance2 -Destination $script:instance1 -WarningAction SilentlyContinue -CMSGroup $group
+        $results = Copy-DbaRegServer -Source $TestConfig.instance2 -Destination $TestConfig.instance1 -WarningAction SilentlyContinue -CMSGroup $group
 
         It "should report success" {
             $results.Status | Should Be "Successful", "Successful"

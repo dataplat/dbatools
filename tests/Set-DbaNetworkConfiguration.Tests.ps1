@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -14,7 +14,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command works with piped input" {
-        $netConf = Get-DbaNetworkConfiguration -SqlInstance $script:instance2
+        $netConf = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2
         $netConf.TcpIpProperties.KeepAlive = 60000
         $results = $netConf | Set-DbaNetworkConfiguration -Confirm:$false -WarningAction SilentlyContinue
 
@@ -26,17 +26,17 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results.Changes | Should -Match "Changed TcpIpProperties.KeepAlive to 60000"
         }
 
-        $netConf = Get-DbaNetworkConfiguration -SqlInstance $script:instance2
+        $netConf = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2
         $netConf.TcpIpProperties.KeepAlive = 30000
         $null = $netConf | Set-DbaNetworkConfiguration -Confirm:$false -WarningAction SilentlyContinue
     }
 
     Context "Command works with commandline input" {
-        $netConf = Get-DbaNetworkConfiguration -SqlInstance $script:instance2
+        $netConf = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2
         if ($netConf.NamedPipesEnabled) {
-            $results = Set-DbaNetworkConfiguration -SqlInstance $script:instance2 -DisableProtocol NamedPipes -Confirm:$false -WarningAction SilentlyContinue
+            $results = Set-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2 -DisableProtocol NamedPipes -Confirm:$false -WarningAction SilentlyContinue
         } else {
-            $results = Set-DbaNetworkConfiguration -SqlInstance $script:instance2 -EnableProtocol NamedPipes -Confirm:$false -WarningAction SilentlyContinue
+            $results = Set-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2 -EnableProtocol NamedPipes -Confirm:$false -WarningAction SilentlyContinue
         }
 
         It "Should Return a Result" {
@@ -48,9 +48,9 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         if ($netConf.NamedPipesEnabled) {
-            $null = Set-DbaNetworkConfiguration -SqlInstance $script:instance2 -EnableProtocol NamedPipes -Confirm:$false -WarningAction SilentlyContinue
+            $null = Set-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2 -EnableProtocol NamedPipes -Confirm:$false -WarningAction SilentlyContinue
         } else {
-            $null = Set-DbaNetworkConfiguration -SqlInstance $script:instance2 -DisableProtocol NamedPipes -Confirm:$false -WarningAction SilentlyContinue
+            $null = Set-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2 -DisableProtocol NamedPipes -Confirm:$false -WarningAction SilentlyContinue
         }
     }
 }

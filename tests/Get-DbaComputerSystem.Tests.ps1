@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "Get-DbaComputerSystem Unit Tests" -Tag "UnitTests" {
     Context "Validate parameters" {
@@ -19,7 +19,7 @@ Describe "Get-DbaComputerSystem Unit Tests" -Tag "UnitTests" {
     }
 }
 Describe "Get-DbaComputerSystem Integration Test" -Tag "IntegrationTests" {
-    $result = Get-DbaComputerSystem -ComputerName $script:instance1
+    $result = Get-DbaComputerSystem -ComputerName $TestConfig.instance1
 
     $props = 'ComputerName', 'Domain', 'IsDaylightSavingsTime', 'Manufacturer', 'Model', 'NumberLogicalProcessors'
     , 'NumberProcessors', 'IsHyperThreading', 'SystemFamily', 'SystemSkuNumber', 'SystemType', 'IsSystemManagedPageFile', 'TotalPhysicalMemory'

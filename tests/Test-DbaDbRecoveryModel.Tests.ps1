@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -18,29 +18,29 @@ Describe "$CommandName Intigration Tests" -Tag  "IntegrationTests" {
         $bulkLoggedRecovery = "dbatoolsci_RecoveryModelBulk"
         $simpleRecovery = "dbatoolsci_RecoveryModelSimple"
         $psudoSimpleRecovery = "dbatoolsci_RecoveryModelPsudoSimple"
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
 
-        Stop-DbaProcess -SqlInstance $script:instance2 -Database model
+        Stop-DbaProcess -SqlInstance $TestConfig.instance2 -Database model
         $server.Query("CREATE DATABASE $fullRecovery")
-        Stop-DbaProcess -SqlInstance $script:instance2 -Database model
+        Stop-DbaProcess -SqlInstance $TestConfig.instance2 -Database model
         $server.Query("CREATE DATABASE $bulkLoggedRecovery")
-        Stop-DbaProcess -SqlInstance $script:instance2 -Database model
+        Stop-DbaProcess -SqlInstance $TestConfig.instance2 -Database model
         $server.Query("CREATE DATABASE $simpleRecovery")
-        Stop-DbaProcess -SqlInstance $script:instance2 -Database model
+        Stop-DbaProcess -SqlInstance $TestConfig.instance2 -Database model
         $server.Query("CREATE DATABASE $psudoSimpleRecovery")
 
-        Set-DbaDbRecoveryModel -sqlInstance $script:instance2 -RecoveryModel BulkLogged -Database $bulkLoggedRecovery -Confirm:$false
-        Set-DbaDbRecoveryModel -SqlInstance $script:instance2 -RecoveryModel Simple -Database $simpleRecovery -Confirm:$false
-        Set-DbaDbRecoveryModel -SqlInstance $script:instance2 -RecoveryModel Simple -Database $psudoSimpleRecovery -Confirm:$false
-        Set-DbaDbRecoveryModel -SqlInstance $script:instance2 -RecoveryModel Full -Database $psudoSimpleRecovery -Confirm:$false
+        Set-DbaDbRecoveryModel -sqlInstance $TestConfig.instance2 -RecoveryModel BulkLogged -Database $bulkLoggedRecovery -Confirm:$false
+        Set-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -RecoveryModel Simple -Database $simpleRecovery -Confirm:$false
+        Set-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -RecoveryModel Simple -Database $psudoSimpleRecovery -Confirm:$false
+        Set-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -RecoveryModel Full -Database $psudoSimpleRecovery -Confirm:$false
 
     }
     AfterAll {
-        Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $fullRecovery, $bulkLoggedRecovery, $simpleRecovery, $psudoSimpleRecovery
+        Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance2 -Database $fullRecovery, $bulkLoggedRecovery, $simpleRecovery, $psudoSimpleRecovery
     }
 
     Context "Default Execution" {
-        $results = Test-DbaDbRecoveryModel -SqlInstance $script:instance2 -Database $fullRecovery, $psudoSimpleRecovery, 'Model'
+        $results = Test-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -Database $fullRecovery, $psudoSimpleRecovery, 'Model'
 
         It "Should return $fullRecovery, $psudoSimpleRecovery, and Model" {
             $results.Database | should -BeIn ($fullRecovery, $psudoSimpleRecovery, 'Model')
@@ -49,7 +49,7 @@ Describe "$CommandName Intigration Tests" -Tag  "IntegrationTests" {
     }
 
     Context "Full Recovery" {
-        $results = Test-DbaDbRecoveryModel -SqlInstance $script:instance2 -RecoveryModel Full -Database $fullRecovery, $psudoSimpleRecovery -ExcludeDatabase 'Model'
+        $results = Test-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -RecoveryModel Full -Database $fullRecovery, $psudoSimpleRecovery -ExcludeDatabase 'Model'
 
         It "Should return $fullRecovery and $psudoSimpleRecovery" {
             $results.Database | should -BeIn ($fullRecovery, $psudoSimpleRecovery)
@@ -57,7 +57,7 @@ Describe "$CommandName Intigration Tests" -Tag  "IntegrationTests" {
     }
 
     Context "Bulk Logged Recovery" {
-        $results = Test-DbaDbRecoveryModel -SqlInstance $script:instance2 -RecoveryModel Bulk_Logged -Database $bulkLoggedRecovery
+        $results = Test-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -RecoveryModel Bulk_Logged -Database $bulkLoggedRecovery
 
         It "Should return $bulkLoggedRecovery" {
             $results.Database | should -Be "$bulkLoggedRecovery"
@@ -66,7 +66,7 @@ Describe "$CommandName Intigration Tests" -Tag  "IntegrationTests" {
     }
 
     Context "Simple Recovery" {
-        $results = Test-DbaDbRecoveryModel -SqlInstance $script:instance2 -RecoveryModel Simple -Database $simpleRecovery
+        $results = Test-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -RecoveryModel Simple -Database $simpleRecovery
 
         It "Should return $simpleRecovery" {
             $results.Database | should -Be "$simpleRecovery"
@@ -75,7 +75,7 @@ Describe "$CommandName Intigration Tests" -Tag  "IntegrationTests" {
     }
 
     Context "Psudo Simple Recovery" {
-        $results = Test-DbaDbRecoveryModel -SqlInstance $script:instance2 -RecoveryModel Full | Where-Object {$_.database -eq "$psudoSimpleRecovery"}
+        $results = Test-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -RecoveryModel Full | Where-Object {$_.database -eq "$psudoSimpleRecovery"}
 
         It "Should return $psudoSimpleRecovery" {
             $results.Database | should -Be "$psudoSimpleRecovery"
@@ -86,17 +86,17 @@ Describe "$CommandName Intigration Tests" -Tag  "IntegrationTests" {
     Context "Error Check" {
 
         It "Should Throw Error for Incorrect Recovery Model" {
-            {Test-DbaDbRecoveryModel -SqlInstance $script:instance2 -RecoveryModel Awesome -EnableException -Database 'dontexist' } | should -Throw
+            {Test-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -RecoveryModel Awesome -EnableException -Database 'dontexist' } | should -Throw
         }
 
         Mock Connect-DbaInstance { Throw } -ModuleName dbatools
         It "Should Thow Error for a DB Connection Error" {
-            {Test-DbaDbRecoveryModel -SqlInstance $script:instance2 -EnableException | Should -Throw }
+            {Test-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -EnableException | Should -Throw }
         }
 
         Mock Select-DefaultView { Throw } -ModuleName dbatools
         It "Should Thow Error for Output Error " {
-            {Test-DbaDbRecoveryModel -SqlInstance $script:instance2 -EnableException | Should -Throw }
+            {Test-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -EnableException | Should -Throw }
         }
 
     }

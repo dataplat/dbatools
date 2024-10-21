@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 $exeDir = "C:\Temp\dbatools_$CommandName"
 
@@ -841,9 +841,9 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
     }
     Context "WhatIf upgrade target instance to latest SPCU" {
         It "Should whatif-upgrade to latest SPCU" {
-            $server = Connect-DbaInstance -SqlInstance $script:instance1
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
             $instance = $server.ServiceName
-            $null = Update-DbaInstance -ComputerName $script:instance1 -Path $exeDir -Restart -EnableException -WhatIf -InstanceName $instance 3>$null
+            $null = Update-DbaInstance -ComputerName $TestConfig.instance1 -Path $exeDir -Restart -EnableException -WhatIf -InstanceName $instance 3>$null
             $testBuild = Test-DbaBuild -SqlInstance $server -MaxBehind 0CU
             Assert-MockCalled -CommandName Test-PendingReboot -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Test-ElevationRequirement -Scope It -ModuleName dbatools

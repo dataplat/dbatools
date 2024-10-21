@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "ensuring accuracy of results" {
-        $results = Get-DbaReplDistributor -SqlInstance $script:instance1
+        $results = Get-DbaReplDistributor -SqlInstance $TestConfig.instance1
         It "accurately reports that the distributor is not installed" {
             $results.DistributorInstalled | Should Be $false
         }

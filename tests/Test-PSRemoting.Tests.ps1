@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 . "$PSScriptRoot\..\private\functions\Test-PSRemoting.ps1"
 
 
@@ -27,7 +27,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "handles an instance, using just the computername" {
-        $result = Test-PSRemoting -ComputerName $script:instance1
+        $result = Test-PSRemoting -ComputerName $TestConfig.instance1
         It "returns $true when succeeding" {
             $result | Should Be $true
         }

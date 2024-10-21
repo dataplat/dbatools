@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -14,8 +14,8 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command actually works" {
-        $resultsFull = Get-DbaNetworkConfiguration -SqlInstance $script:instance2
-        $resultsTcpIpProperties = Get-DbaNetworkConfiguration -SqlInstance $script:instance2 -OutputType TcpIpProperties
+        $resultsFull = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2
+        $resultsTcpIpProperties = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2 -OutputType TcpIpProperties
 
         It "Should Return a Result" {
             $resultsFull | Should -Not -Be $null

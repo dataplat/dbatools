@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -15,23 +15,23 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $svr = Connect-DbaInstance -SqlInstance $script:instance1
+        $svr = Connect-DbaInstance -SqlInstance $TestConfig.instance1
         $owner = "dbatoolssci_owner_$(Get-Random)"
         $ownertwo = "dbatoolssci_owner2_$(Get-Random)"
-        $null = New-DbaLogin -SqlInstance $script:instance1 -Login $owner -Password ('Password1234!' | ConvertTo-SecureString -asPlainText -Force)
-        $null = New-DbaLogin -SqlInstance $script:instance1 -Login $ownertwo -Password ('Password1234!' | ConvertTo-SecureString -asPlainText -Force)
+        $null = New-DbaLogin -SqlInstance $TestConfig.instance1 -Login $owner -Password ('Password1234!' | ConvertTo-SecureString -asPlainText -Force)
+        $null = New-DbaLogin -SqlInstance $TestConfig.instance1 -Login $ownertwo -Password ('Password1234!' | ConvertTo-SecureString -asPlainText -Force)
         $dbname = "dbatoolsci_$(Get-Random)"
         $dbnametwo = "dbatoolsci_$(Get-Random)"
-        $null = New-DbaDatabase -SqlInstance $script:instance1 -Name $dbname -Owner sa
-        $null = New-DbaDatabase -SqlInstance $script:instance1 -Name $dbnametwo -Owner sa
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbname -Owner sa
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbnametwo -Owner sa
     }
     AfterAll {
-        $null = Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname, $dbnametwo -confirm:$false
-        $null = Remove-DbaLogin -SqlInstance $script:instance1 -Login $owner, $ownertwo -confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname, $dbnametwo -confirm:$false
+        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance1 -Login $owner, $ownertwo -confirm:$false
     }
     Context "Should set the database owner" {
         It "Sets the database owner on a specific database" {
-            $results = Set-DbaDbOwner -SqlInstance $script:instance1 -Database $dbName -TargetLogin $owner
+            $results = Set-DbaDbOwner -SqlInstance $TestConfig.instance1 -Database $dbName -TargetLogin $owner
             $results.Owner | Should Be $owner
         }
         It "Check it actually set the owner" {
@@ -41,7 +41,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Sets multiple database owners" {
-        $results = Set-DbaDbOwner -SqlInstance $script:instance1 -Database $dbName, $dbnametwo -TargetLogin $ownertwo
+        $results = Set-DbaDbOwner -SqlInstance $TestConfig.instance1 -Database $dbName, $dbnametwo -TargetLogin $ownertwo
         It "Sets the database owner on multiple databases" {
             foreach ($r in $results) {
                 $r.owner | Should Be $ownertwo
@@ -54,7 +54,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Context "Excludes databases" {
         $svr.Databases[$dbName].refresh()
-        $results = Set-DbaDbOwner -SqlInstance $script:instance1 -ExcludeDatabase $dbnametwo -TargetLogin $owner
+        $results = Set-DbaDbOwner -SqlInstance $TestConfig.instance1 -ExcludeDatabase $dbnametwo -TargetLogin $owner
         It "Excludes specified database" {
             $results.Database | Should Not Contain $dbnametwo
         }
@@ -65,7 +65,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Context "Enables input from Get-DbaDatabase" {
         $svr.Databases[$dbnametwo].refresh()
-        $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbnametwo
+        $db = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbnametwo
         $results = Set-DbaDbOwner -InputObject $db -TargetLogin $owner
 
         It "Includes specified database" {
@@ -77,7 +77,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Sets database owner to sa" {
-        $results = Set-DbaDbOwner -SqlInstance $script:instance1
+        $results = Set-DbaDbOwner -SqlInstance $TestConfig.instance1
         It "Sets the database owner on multiple databases" {
             foreach ($r in $results) {
                 $r.owner | Should Be 'sa'

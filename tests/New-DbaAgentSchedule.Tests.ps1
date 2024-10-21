@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -15,14 +15,14 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $null = New-DbaAgentJob -SqlInstance $script:instance2 -Job 'dbatoolsci_newschedule' -OwnerLogin 'sa'
-        $null = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job 'dbatoolsci_newschedule' -StepId 1 -StepName 'dbatoolsci Test Select' -Subsystem TransactSql -SubsystemServer $script:instance2 -Command "SELECT * FROM master.sys.all_columns;" -CmdExecSuccessCode 0 -OnSuccessAction QuitWithSuccess -OnFailAction QuitWithFailure -Database master -DatabaseUser sa
+        $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job 'dbatoolsci_newschedule' -OwnerLogin 'sa'
+        $null = New-DbaAgentJobStep -SqlInstance $TestConfig.instance2 -Job 'dbatoolsci_newschedule' -StepId 1 -StepName 'dbatoolsci Test Select' -Subsystem TransactSql -SubsystemServer $TestConfig.instance2 -Command "SELECT * FROM master.sys.all_columns;" -CmdExecSuccessCode 0 -OnSuccessAction QuitWithSuccess -OnFailAction QuitWithFailure -Database master -DatabaseUser sa
 
         $start = (Get-Date).AddDays(2).ToString('yyyyMMdd')
         $end = (Get-Date).AddDays(4).ToString('yyyyMMdd')
     }
     AfterAll {
-        $null = Remove-DbaAgentJob -SqlInstance $script:instance2 -Job 'dbatoolsci_newschedule' -Confirm:$false
+        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job 'dbatoolsci_newschedule' -Confirm:$false
     }
 
     Context "Should create schedules based on frequency type" {
@@ -32,7 +32,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $scheduleOptions = @('Once', 'OneTime', 'Daily', 'Weekly', 'Monthly', 'MonthlyRelative', 'AgentStart', 'AutoStart', 'IdleComputer', 'OnIdle')
 
             foreach ($frequency in $scheduleOptions) {
-                $variables = @{SqlInstance    = $script:instance2
+                $variables = @{SqlInstance    = $TestConfig.instance2
                     Schedule                  = "dbatoolsci_$frequency"
                     Job                       = 'dbatoolsci_newschedule'
                     FrequencyType             = $frequency
@@ -49,7 +49,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             }
         }
         AfterAll {
-            $null = Get-DbaAgentSchedule -SqlInstance $script:instance2 |
+            $null = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 |
                 Where-Object { $_.name -like 'dbatools*' } |
                 Remove-DbaAgentSchedule -Confirm:$false -Force
             Remove-Variable -Name results
@@ -60,7 +60,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Should be a schedule on an existing job and have the correct frequency type" {
-            $jobId = (Get-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_newschedule).JobID
+            $jobId = (Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_newschedule).JobID
             foreach ($key in $results.keys) {
                 $results[$key].EnumJobReferences() | Should -Contain $jobId
                 $results[$key].FrequencyTypes | Should -BeIn $scheduleOptions
@@ -92,7 +92,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                     $frequencyType = "Weekly"
                 }
 
-                $variables = @{SqlInstance    = $script:instance2
+                $variables = @{SqlInstance    = $TestConfig.instance2
                     Schedule                  = "dbatoolsci_$frequencyinterval"
                     Job                       = 'dbatoolsci_newschedule'
                     FrequencyType             = $frequencyType
@@ -108,7 +108,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             }
         }
         AfterAll {
-            $null = Get-DbaAgentSchedule -SqlInstance $script:instance2 |
+            $null = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 |
                 Where-Object { $_.name -like 'dbatools*' } |
                 Remove-DbaAgentSchedule -Confirm:$false -Force
             Remove-Variable -Name results
@@ -119,7 +119,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Should be a schedule on an existing job and have the correct interval for the frequency type" {
-            $jobId = (Get-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_newschedule).JobID
+            $jobId = (Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_newschedule).JobID
             foreach ($key in $results.keys) {
                 $results[$key].EnumJobReferences() | Should -Contain $jobId
 
@@ -150,7 +150,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $scheduleOptions = @('Time', 'Once', 'Second', 'Seconds', 'Minute', 'Minutes', 'Hour', 'Hours')
 
             foreach ($frequencySubdayType in $scheduleOptions) {
-                $variables = @{SqlInstance    = $script:instance2
+                $variables = @{SqlInstance    = $TestConfig.instance2
                     Schedule                  = "dbatoolsci_$frequencySubdayType"
                     Job                       = 'dbatoolsci_newschedule'
                     FrequencyType             = 'Daily'
@@ -168,7 +168,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             }
         }
         AfterAll {
-            $null = Get-DbaAgentSchedule -SqlInstance $script:instance2 |
+            $null = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 |
                 Where-Object { $_.name -like 'dbatools*' } |
                 Remove-DbaAgentSchedule -Confirm:$false -Force
             Remove-Variable -Name results
@@ -179,7 +179,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Should be a schedule on an existing job and have a valid frequency subday type" {
-            $jobId = (Get-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_newschedule).JobID
+            $jobId = (Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_newschedule).JobID
             foreach ($key in $results.keys) {
                 $results[$key].EnumJobReferences() | Should -Contain $jobId
                 $results[$key].FrequencySubdayTypes | Should -BeIn $scheduleOptions
@@ -207,7 +207,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $scheduleOptions = @('First', 'Second', 'Third', 'Fourth', 'Last')
 
             foreach ($frequencyRelativeInterval in $scheduleOptions) {
-                $variables = @{SqlInstance    = $script:instance2
+                $variables = @{SqlInstance    = $TestConfig.instance2
                     Schedule                  = "dbatoolsci_$frequencyRelativeInterval"
                     Job                       = 'dbatoolsci_newschedule'
                     FrequencyType             = 'MonthlyRelative'           # required to set the FrequencyRelativeInterval
@@ -226,7 +226,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             }
         }
         AfterAll {
-            $null = Get-DbaAgentSchedule -SqlInstance $script:instance2 |
+            $null = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 |
                 Where-Object { $_.name -like 'dbatools*' } |
                 Remove-DbaAgentSchedule -Confirm:$false -Force
             Remove-Variable -Name results
@@ -237,7 +237,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Should be a schedule on an existing job and have a valid frequency relative interval" {
-            $jobId = (Get-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_newschedule).JobID
+            $jobId = (Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_newschedule).JobID
             foreach ($key in $results.keys) {
                 $results[$key].EnumJobReferences() | Should -Contain $jobId
                 $results[$key].FrequencyRelativeIntervals   | Should -BeIn $scheduleOptions

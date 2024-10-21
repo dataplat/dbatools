@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -16,16 +16,16 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Command gets alert categories" {
         BeforeAll {
-            $null = New-DbaAgentAlertCategory -SqlInstance $script:instance2 -Category dbatoolsci_testcategory, dbatoolsci_testcategory2
+            $null = New-DbaAgentAlertCategory -SqlInstance $TestConfig.instance2 -Category dbatoolsci_testcategory, dbatoolsci_testcategory2
         }
         AfterAll {
-            $null = Remove-DbaAgentAlertCategory -SqlInstance $script:instance2 -Category dbatoolsci_testcategory, dbatoolsci_testcategory2 -Confirm:$false
+            $null = Remove-DbaAgentAlertCategory -SqlInstance $TestConfig.instance2 -Category dbatoolsci_testcategory, dbatoolsci_testcategory2 -Confirm:$false
         }
-        $results = Get-DbaAgentAlertCategory -SqlInstance $script:instance2 | Where-Object {$_.Name -match "dbatoolsci"}
+        $results = Get-DbaAgentAlertCategory -SqlInstance $TestConfig.instance2 | Where-Object {$_.Name -match "dbatoolsci"}
         It "Should get at least 2 categories" {
             $results.count | Should BeGreaterThan 1
         }
-        $results = Get-DbaAgentAlertCategory -SqlInstance $script:instance2 -Category dbatoolsci_testcategory | Where-Object {$_.Name -match "dbatoolsci"}
+        $results = Get-DbaAgentAlertCategory -SqlInstance $TestConfig.instance2 -Category dbatoolsci_testcategory | Where-Object {$_.Name -match "dbatoolsci"}
         It "Should get the dbatoolsci_testcategory category" {
             $results.count | Should Be 1
         }

@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $mailSettings = @{
             AccountRetryAttempts           = '1'
             AccountRetryDelay              = '60'
@@ -31,7 +31,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Gets DbMail Settings" {
-        $results = Get-DbaDbMailConfig -SqlInstance $script:instance2
+        $results = Get-DbaDbMailConfig -SqlInstance $TestConfig.instance2
         It "Gets results" {
             $results | Should Not Be $null
         }
@@ -45,7 +45,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Gets DbMail Settings when using -Name" {
-        $results = Get-DbaDbMailConfig -SqlInstance $script:instance2 -Name "ProhibitedExtensions"
+        $results = Get-DbaDbMailConfig -SqlInstance $TestConfig.instance2 -Name "ProhibitedExtensions"
         It "Gets results" {
             $results | Should Not Be $null
         }

@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -14,7 +14,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 Describe "$commandname Integration Test" -Tag "IntegrationTests" {
     BeforeAll {
-        $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database tempdb
+        $db = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database tempdb
         $queryResult = $db.Query('SELECT top 10 object_id, @@Spid as MySpid FROM sys.objects')
     }
     AfterAll {
@@ -22,7 +22,7 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
 
     Context "Validate standard output for all databases " {
         $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'SessionId', 'EventType', 'Parameters', 'EventInfo'
-        $result = Get-DbaDbccSessionBuffer -SqlInstance $script:instance1 -Operation InputBuffer -All
+        $result = Get-DbaDbccSessionBuffer -SqlInstance $TestConfig.instance1 -Operation InputBuffer -All
 
         It "returns results" {
             $result.Count -gt 0 | Should Be $true
@@ -36,7 +36,7 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
         }
 
         $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'SessionId', 'Buffer', 'HexBuffer'
-        $result = Get-DbaDbccSessionBuffer -SqlInstance $script:instance1 -Operation OutputBuffer -All
+        $result = Get-DbaDbccSessionBuffer -SqlInstance $TestConfig.instance1 -Operation OutputBuffer -All
 
         It "returns results" {
             $result.Count -gt 0 | Should Be $true
@@ -53,13 +53,13 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
 
     Context "Validate returns results for SessionId " {
         $spid = $queryResult[0].MySpid
-        $result = Get-DbaDbccSessionBuffer -SqlInstance $script:instance1 -Operation InputBuffer -SessionId $spid
+        $result = Get-DbaDbccSessionBuffer -SqlInstance $TestConfig.instance1 -Operation InputBuffer -SessionId $spid
 
         It "returns results for InputBuffer" {
             $result.SessionId -eq $spid | Should Be $true
         }
 
-        $result = Get-DbaDbccSessionBuffer -SqlInstance $script:instance1 -Operation OutputBuffer -SessionId $spid
+        $result = Get-DbaDbccSessionBuffer -SqlInstance $TestConfig.instance1 -Operation OutputBuffer -SessionId $spid
 
         It "returns results for OutputBuffer" {
             $result.SessionId -eq $spid | Should Be $true

@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -18,19 +18,19 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         BeforeAll {
             $table = "TestTable_$(Get-random)"
             $tableDDL = "CREATE TABLE $table (testId TINYINT IDENTITY(1,1),testData DATETIME2 DEFAULT getdate() )"
-            Invoke-DbaQuery -SqlInstance $script:instance1 -Query $tableDDL -database TempDb
+            Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query $tableDDL -database TempDb
 
         }
         AfterAll {
             $cleanup = "Drop table $table"
-            Invoke-DbaQuery -SqlInstance $script:instance1 -Query $cleanup -database TempDb
+            Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query $cleanup -database TempDb
         }
 
         $insertSql = "INSERT INTO $table (testData) DEFAULT VALUES"
         for ($i = 1; $i -le 128; $i++) {
-            Invoke-DbaQuery -SqlInstance $script:instance1 -Query $insertSql -database TempDb
+            Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query $insertSql -database TempDb
         }
-        $results = Test-DbaIdentityUsage -SqlInstance $script:instance1 -Database TempDb | Where-Object {$_.Table -eq $table}
+        $results = Test-DbaIdentityUsage -SqlInstance $TestConfig.instance1 -Database TempDb | Where-Object {$_.Table -eq $table}
 
         It "Identity column should have 128 uses" {
             $results.NumberOfUses | Should Be 128
@@ -41,9 +41,9 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
         $insertSql = "INSERT INTO $table (testData) DEFAULT VALUES"
         for ($i = 1; $i -le 127; $i++) {
-            Invoke-DbaQuery -SqlInstance $script:instance1 -Query $insertSql -database TempDb
+            Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query $insertSql -database TempDb
         }
-        $results = Test-DbaIdentityUsage -SqlInstance $script:instance1 -Database TempDb | Where-Object {$_.Table -eq $table}
+        $results = Test-DbaIdentityUsage -SqlInstance $TestConfig.instance1 -Database TempDb | Where-Object {$_.Table -eq $table}
 
         It "Identity column should have 255 uses" {
             $results.NumberOfUses | Should Be 255
@@ -58,19 +58,19 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         BeforeAll {
             $table = "TestTable_$(Get-random)"
             $tableDDL = "CREATE TABLE $table (testId tinyint IDENTITY(0,5),testData DATETIME2 DEFAULT getdate() )"
-            Invoke-DbaQuery -SqlInstance $script:instance1 -Query $tableDDL -database TempDb
+            Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query $tableDDL -database TempDb
 
         }
         AfterAll {
             $cleanup = "Drop table $table"
-            Invoke-DbaQuery -SqlInstance $script:instance1 -Query $cleanup -database TempDb
+            Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query $cleanup -database TempDb
         }
 
         $insertSql = "INSERT INTO $table (testData) DEFAULT VALUES"
         for ($i = 1; $i -le 25; $i++) {
-            Invoke-DbaQuery -SqlInstance $script:instance1 -Query $insertSql -database TempDb
+            Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query $insertSql -database TempDb
         }
-        $results = Test-DbaIdentityUsage -SqlInstance $script:instance1 -Database TempDb | Where-Object {$_.Table -eq $table}
+        $results = Test-DbaIdentityUsage -SqlInstance $TestConfig.instance1 -Database TempDb | Where-Object {$_.Table -eq $table}
 
         It "Identity column should have 24 uses" {
             $results.NumberOfUses | Should Be 24

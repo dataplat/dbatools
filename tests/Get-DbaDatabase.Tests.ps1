@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -16,21 +16,21 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Context "Count system databases on localhost" {
-        $results = Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeUser
+        $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -ExcludeUser
         It "reports the right number of databases" {
             $results.Count | Should Be 4
         }
     }
 
     Context "Check that tempdb database is in Simple recovery mode" {
-        $results = Get-DbaDatabase -SqlInstance $script:instance1 -Database tempdb
+        $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database tempdb
         It "tempdb's recovery mode is Simple" {
             $results.RecoveryModel | Should Be "Simple"
         }
     }
 
     Context "Check that master database is accessible" {
-        $results = Get-DbaDatabase -SqlInstance $script:instance1 -Database master
+        $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master
         It "master is accessible" {
             $results.IsAccessible | Should Be $true
         }
@@ -44,19 +44,19 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $random = Get-Random
         $dbname1 = "dbatoolsci_Backup_$random"
         $dbname2 = "dbatoolsci_NoBackup_$random"
-        $null = New-DbaDatabase -SqlInstance $script:instance1 -Name $dbname1 , $dbname2
-        $null = Backup-DbaDatabase -SqlInstance $script:instance1 -Type Full -FilePath nul -Database $dbname1
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbname1 , $dbname2
+        $null = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Type Full -FilePath nul -Database $dbname1
     }
     AfterAll {
-        $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname1, $dbname2 | Remove-DbaDatabase -Confirm:$false
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname1, $dbname2 | Remove-DbaDatabase -Confirm:$false
     }
 
     Context "Results return if no backup" {
-        $results = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname1 -NoFullBackup
+        $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname1 -NoFullBackup
         It "Should not report as database has full backup" {
             ($results).Count | Should Be 0
         }
-        $results = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname2 -NoFullBackup
+        $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname2 -NoFullBackup
         It "Should report 1 database with no full backup" {
             ($results).Count | Should Be 1
         }

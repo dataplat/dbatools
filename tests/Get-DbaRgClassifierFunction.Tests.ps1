@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -23,17 +23,17 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                      RETURN N'gOffHoursProcessing'
                 END"
 
-        Invoke-DbaQuery -SqlInstance $script:instance2 -Query $sql
-        Invoke-DbaQuery -SqlInstance $script:instance2 -Query "ALTER RESOURCE GOVERNOR with (CLASSIFIER_FUNCTION = dbo.dbatoolsci_fnRG); ALTER RESOURCE GOVERNOR RECONFIGURE"
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $sql
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query "ALTER RESOURCE GOVERNOR with (CLASSIFIER_FUNCTION = dbo.dbatoolsci_fnRG); ALTER RESOURCE GOVERNOR RECONFIGURE"
     }
     AfterAll {
-        Invoke-DbaQuery -SqlInstance $script:instance2 -Query "ALTER RESOURCE GOVERNOR WITH (CLASSIFIER_FUNCTION = NULL); ALTER RESOURCE GOVERNOR RECONFIGURE"
-        Invoke-DbaQuery -SqlInstance $script:instance2 -Query "DROP FUNCTION [dbo].[dbatoolsci_fnRG]"
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query "ALTER RESOURCE GOVERNOR WITH (CLASSIFIER_FUNCTION = NULL); ALTER RESOURCE GOVERNOR RECONFIGURE"
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query "DROP FUNCTION [dbo].[dbatoolsci_fnRG]"
     }
 
     Context "Command works" {
         It "returns the proper classifier function" {
-            $results = Get-DbaRgClassifierFunction -SqlInstance $script:instance2
+            $results = Get-DbaRgClassifierFunction -SqlInstance $TestConfig.instance2
             $results.Name | Should -Be 'dbatoolsci_fnRG'
         }
     }

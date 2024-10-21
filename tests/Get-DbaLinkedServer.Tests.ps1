@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -15,22 +15,22 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $null = $server.Query("EXEC master.dbo.sp_addlinkedserver
-            @server = N'$script:instance3',
+            @server = N'$($TestConfig.instance3)',
             @srvproduct=N'SQL Server' ;")
     }
     AfterAll {
-        $null = $server.Query("EXEC master.dbo.sp_dropserver '$script:instance3', 'droplogins';  ")
+        $null = $server.Query("EXEC master.dbo.sp_dropserver '$($TestConfig.instance3)', 'droplogins';  ")
     }
 
     Context "Gets Linked Servers" {
-        $results = Get-DbaLinkedServer -SqlInstance $script:instance2 | Where-Object {$_.name -eq "$script:instance3"}
+        $results = Get-DbaLinkedServer -SqlInstance $TestConfig.instance2 | Where-Object {$_.name -eq "$($TestConfig.instance3)"}
         It "Gets results" {
             $results | Should Not Be $null
         }
-        It "Should have Remote Server of $script:instance3" {
-            $results.RemoteServer | Should Be "$script:instance3"
+        It "Should have Remote Server of $($TestConfig.instance3)" {
+            $results.RemoteServer | Should Be $TestConfig.instance3
         }
         It "Should have a product name of SQL Server" {
             $results.productname | Should Be 'SQL Server'
@@ -40,12 +40,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Gets Linked Servers using -LinkedServer" {
-        $results = Get-DbaLinkedServer -SqlInstance $script:instance2 -LinkedServer "$script:instance3"
+        $results = Get-DbaLinkedServer -SqlInstance $TestConfig.instance2 -LinkedServer $TestConfig.instance3
         It "Gets results" {
             $results | Should Not Be $null
         }
-        It "Should have Remote Server of $script:instance3" {
-            $results.RemoteServer | Should Be "$script:instance3"
+        It "Should have Remote Server of $($TestConfig.instance3)" {
+            $results.RemoteServer | Should Be $TestConfig.instance3
         }
         It "Should have a product name of SQL Server" {
             $results.productname | Should Be 'SQL Server'
@@ -55,7 +55,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Gets Linked Servers using -ExcludeLinkedServer" {
-        $results = Get-DbaLinkedServer -SqlInstance $script:instance2 -ExcludeLinkedServer "$script:instance3"
+        $results = Get-DbaLinkedServer -SqlInstance $TestConfig.instance2 -ExcludeLinkedServer $TestConfig.instance3
         It "Gets results" {
             $results | Should Be $null
         }

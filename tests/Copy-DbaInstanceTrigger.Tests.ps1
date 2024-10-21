@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -21,21 +21,21 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                     ON ALL SERVER FOR LOGON -- Tells you it's a logon trigger
                     AS
                     PRINT 'hello'"
-            $server = Connect-DbaInstance -SqlInstance $script:instance1
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
             $server.Query($sql)
         }
         AfterAll {
             $server.Query("DROP TRIGGER [$triggername] ON ALL SERVER")
 
             try {
-                $server1 = Connect-DbaInstance -SqlInstance $script:instance2
+                $server1 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
                 $server1.Query("DROP TRIGGER [$triggername] ON ALL SERVER")
             } catch {
                 # don't care
             }
         }
 
-        $results = Copy-DbaInstanceTrigger -Source $script:instance1 -Destination $script:instance2 -WarningAction SilentlyContinue
+        $results = Copy-DbaInstanceTrigger -Source $TestConfig.instance1 -Destination $TestConfig.instance2 -WarningAction SilentlyContinue
 
         It "should report success" {
             $results.Status | Should Be "Successful"

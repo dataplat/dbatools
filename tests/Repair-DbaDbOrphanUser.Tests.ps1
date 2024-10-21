@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -22,7 +22,7 @@ CREATE LOGIN [dbatoolsci_orphan2] WITH PASSWORD = N'password2', CHECK_EXPIRATION
 CREATE LOGIN [dbatoolsci_orphan3] WITH PASSWORD = N'password3', CHECK_EXPIRATION = OFF, CHECK_POLICY = OFF;
 CREATE DATABASE dbatoolsci_orphan;
 '@
-        $server = Connect-DbaInstance -SqlInstance $script:instance1
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
         $null = Remove-DbaLogin -SqlInstance $server -Login dbatoolsci_orphan1, dbatoolsci_orphan2, dbatoolsci_orphan3 -Force -Confirm:$false
         $null = Remove-DbaDatabase -SqlInstance $server -Database dbatoolsci_orphan -Confirm:$false
         $null = Invoke-DbaQuery -SqlInstance $server -Query $loginsq
@@ -41,14 +41,14 @@ CREATE LOGIN [dbatoolsci_orphan2] WITH PASSWORD = N'password2', CHECK_EXPIRATION
         Invoke-DbaQuery -SqlInstance $server -Query $loginsq
     }
     AfterAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance1
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
         $null = Remove-DbaLogin -SqlInstance $server -Login dbatoolsci_orphan1, dbatoolsci_orphan2, dbatoolsci_orphan3 -Force -Confirm:$false
         $null = Remove-DbaDatabase -SqlInstance $server -Database dbatoolsci_orphan -Confirm:$false
     }
     It "shows time taken for preparation" {
         1 | Should -Be 1
     }
-    $results = Repair-DbaDbOrphanUser -SqlInstance $script:instance1 -Database dbatoolsci_orphan
+    $results = Repair-DbaDbOrphanUser -SqlInstance $TestConfig.instance1 -Database dbatoolsci_orphan
     It "Finds two orphans" {
         $results.Count | Should -Be 2
         foreach ($user in $Users) {
@@ -62,7 +62,7 @@ CREATE LOGIN [dbatoolsci_orphan2] WITH PASSWORD = N'password2', CHECK_EXPIRATION
         $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,DatabaseName,User,Status'.Split(',')
         ($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
     }
-    $results = Repair-DbaDbOrphanUser -SqlInstance $script:instance1 -Database dbatoolsci_orphan
+    $results = Repair-DbaDbOrphanUser -SqlInstance $TestConfig.instance1 -Database dbatoolsci_orphan
     It "does not find any other orphan" {
         $results | Should -BeNullOrEmpty
     }

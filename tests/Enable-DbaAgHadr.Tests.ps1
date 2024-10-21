@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag "UnitTests" {
     Context "Validate parameters" {
@@ -15,10 +15,10 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        Disable-DbaAgHadr -SqlInstance $script:instance3 -Confirm:$false -Force
+        Disable-DbaAgHadr -SqlInstance $TestConfig.instance3 -Confirm:$false -Force
     }
 
-    $results = Enable-DbaAgHadr -SqlInstance $script:instance3 -Confirm:$false -Force
+    $results = Enable-DbaAgHadr -SqlInstance $TestConfig.instance3 -Confirm:$false -Force
 
     It "enables hadr" {
         $results.IsHadrEnabled | Should -Be $true

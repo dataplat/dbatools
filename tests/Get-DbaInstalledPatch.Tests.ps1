@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "Get-DbaComputerSystem Unit Tests" -Tag "UnitTests" {
     Context "Validate parameters" {
@@ -14,7 +14,7 @@ Describe "Get-DbaComputerSystem Unit Tests" -Tag "UnitTests" {
 }
 Describe "$CommandName Integration Test" -Tag "IntegrationTests" {
     Context "Validate output" {
-        $result = Get-DbaInstalledPatch -ComputerName $script:instance1
+        $result = Get-DbaInstalledPatch -ComputerName $TestConfig.instance1
         It "has some output" {
             $result | Should -Not -BeNullOrEmpty
         }

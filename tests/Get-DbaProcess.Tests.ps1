@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -15,14 +15,14 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Testing Get-DbaProcess results" {
-        $results = Get-DbaProcess -SqlInstance $script:instance1
+        $results = Get-DbaProcess -SqlInstance $TestConfig.instance1
 
         It "matches self as a login at least once" {
             $matching = $results | Where-Object Login -match $env:username
             $matching.Length | Should BeGreaterThan 0
         }
 
-        $results = Get-DbaProcess -SqlInstance $script:instance1 -Program 'dbatools PowerShell module - dbatools.io'
+        $results = Get-DbaProcess -SqlInstance $TestConfig.instance1 -Program 'dbatools PowerShell module - dbatools.io'
 
         foreach ($result in $results) {
             It "returns only dbatools processes" {
@@ -30,7 +30,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             }
         }
 
-        $results = Get-DbaProcess -SqlInstance $script:instance1 -Database master
+        $results = Get-DbaProcess -SqlInstance $TestConfig.instance1 -Database master
 
         foreach ($result in $results) {
             It "returns only processes from master database" {

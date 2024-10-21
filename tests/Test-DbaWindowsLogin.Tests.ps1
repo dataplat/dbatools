@@ -3,7 +3,7 @@
 #>
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 <#
     Unit test is required for any command added
@@ -22,7 +22,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Did not include these tests yet as I was unsure if AppVeyor was capable of testing domain logins. Included these for future use.
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command actually works" {
-        $results = Test-DbaWindowsLogin -SqlInstance $script:instance2
+        $results = Test-DbaWindowsLogin -SqlInstance $TestConfig.instance2
         It "Should return correct properties" {
             $ExpectedProps = 'AccountNotDelegated,AllowReversiblePasswordEncryption,CannotChangePassword,DisabledInSQLServer,Domain,Enabled,Found,LockedOut,Login,PasswordExpired,PasswordNeverExpires,PasswordNotRequired,Server,SmartcardLogonRequired,TrustedForDelegation,Type,UserAccountControl'.Split(',')
             ($results[0].PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)

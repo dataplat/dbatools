@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -16,16 +16,16 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Returns output for single database" {
         BeforeAll {
-            $null = Get-DbaProcess -SqlInstance $script:instance2 | Where-Object Program -Match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
+            $null = Get-DbaProcess -SqlInstance $TestConfig.instance2 | Where-Object Program -Match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
             $random = Get-Random
             $db = "dbatoolsci_measurethruput$random"
-            $null = New-DbaDatabase -SqlInstance $script:instance2 -Database $db | Backup-DbaDatabase
+            $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $db | Backup-DbaDatabase
         }
         AfterAll {
-            $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database $db
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $db
         }
 
-        $results = Measure-DbaBackupThroughput -SqlInstance $script:instance2 -Database $db
+        $results = Measure-DbaBackupThroughput -SqlInstance $TestConfig.instance2 -Database $db
         It "Should return results" {
             $results.Database | Should -Be $db
             $results.BackupCount | Should -Be 1

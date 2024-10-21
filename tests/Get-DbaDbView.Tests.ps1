@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -14,7 +14,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $viewName = ("dbatoolsci_{0}" -f $(Get-Random))
         $viewNameWithSchema = ("dbatoolsci_{0}" -f $(Get-Random))
         $server.Query("CREATE VIEW $viewName AS (SELECT 1 as col1)", 'tempdb')
@@ -29,7 +29,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Context "Command actually works" {
         BeforeAll {
-            $results = Get-DbaDbView -SqlInstance $script:instance2 -Database tempdb
+            $results = Get-DbaDbView -SqlInstance $TestConfig.instance2 -Database tempdb
         }
         It "Should have standard properties" {
             $ExpectedProps = 'ComputerName,InstanceName,SqlInstance'.Split(',')
@@ -45,29 +45,29 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Context "Exclusions work correctly" {
         It "Should contain no views from master database" {
-            $results = Get-DbaDbView -SqlInstance $script:instance2 -ExcludeDatabase master
+            $results = Get-DbaDbView -SqlInstance $TestConfig.instance2 -ExcludeDatabase master
             'master' | Should -Not -BeIn $results.Database
         }
         It "Should exclude system views" {
-            $results = Get-DbaDbView -SqlInstance $script:instance2 -Database master -ExcludeSystemView
+            $results = Get-DbaDbView -SqlInstance $TestConfig.instance2 -Database master -ExcludeSystemView
             ($results | Where-Object IsSystemObject -eq $true).Count | Should -Be 0
         }
     }
 
     Context "Piping workings" {
         It "Should allow piping from string" {
-            $results = $script:instance2 | Get-DbaDbView -Database tempdb
+            $results = $TestConfig.instance2 | Get-DbaDbView -Database tempdb
             ($results | Where-Object Name -eq $viewName).Name | Should -Be $viewName
         }
         It "Should allow piping from Get-DbaDatabase" {
-            $results = Get-DbaDatabase -SqlInstance $script:instance2 -Database tempdb | Get-DbaDbView
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database tempdb | Get-DbaDbView
             ($results | Where-Object Name -eq $viewName).Name | Should -Be $viewName
         }
     }
-    
+
     Context "Schema parameter (see #9445)" {
         It "Should return just one view with schema 'someschema'" {
-            $results = $script:instance2 | Get-DbaDbView -Database tempdb -Schema 'someschema'
+            $results = $TestConfig.instance2 | Get-DbaDbView -Database tempdb -Schema 'someschema'
             ($results | Where-Object Name -eq $viewNameWithSchema).Name | Should -Be $viewNameWithSchema
             ($results | Where-Object Schema -ne 'someschema').Count | Should -Be 0
         }

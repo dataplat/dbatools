@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Command gets agent log" {
-        $results = Get-DbaAgentLog -SqlInstance $script:instance2
+        $results = Get-DbaAgentLog -SqlInstance $TestConfig.instance2
         It "Results are not empty" {
             $results | Should Not Be $Null
         }
@@ -27,7 +27,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Command gets current agent log using LogNumber parameter" {
-        $results = Get-DbaAgentLog -SqlInstance $script:instance2 -LogNumber 0
+        $results = Get-DbaAgentLog -SqlInstance $TestConfig.instance2 -LogNumber 0
         It "Results are not empty" {
             $results | Should Not Be $Null
         }

@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -39,7 +39,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             </Operator>', @is_name_condition=1, @obj_name=N'test', @condition_id=@condition_id OUTPUT
             Select @condition_id as conditionId"
 
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $conditionId = $server.Query($conditionQuery) | Select-Object -expand conditionId
     }
     AfterAll {
@@ -48,7 +48,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Command returns results" {
-        $results = Get-DbaPbmCondition -SqlInstance $script:instance2
+        $results = Get-DbaPbmCondition -SqlInstance $TestConfig.instance2
         It "Should get results" {
             $results | Should Not Be $null
         }
@@ -59,7 +59,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Command actually works by condition name" {
-        $results = Get-DbaPbmCondition -SqlInstance $script:instance2 -Condition $conditionName
+        $results = Get-DbaPbmCondition -SqlInstance $TestConfig.instance2 -Condition $conditionName
         It "Should get results" {
             $results | Should Not Be $null
         }

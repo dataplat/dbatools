@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -22,18 +22,18 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $PSDefaultParameterValues["*:Confirm"] = $false
         $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
-        $masterkey = Get-DbaDbMasterKey -SqlInstance $script:instance1 -Database master
+        $masterkey = Get-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database master
         if (-not $masterkey) {
             $delmasterkey = $true
-            $masterkey = New-DbaServiceMasterKey -SqlInstance $script:instance1 -SecurePassword $passwd
+            $masterkey = New-DbaServiceMasterKey -SqlInstance $TestConfig.instance1 -SecurePassword $passwd
         }
-        $mastercert = Get-DbaDbCertificate -SqlInstance $script:instance1 -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
+        $mastercert = Get-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
         if (-not $mastercert) {
             $delmastercert = $true
-            $mastercert = New-DbaDbCertificate -SqlInstance $script:instance1
+            $mastercert = New-DbaDbCertificate -SqlInstance $TestConfig.instance1
         }
-        $db = New-DbaDatabase -SqlInstance $script:instance1
-        $db1 = New-DbaDatabase -SqlInstance $script:instance1
+        $db = New-DbaDatabase -SqlInstance $TestConfig.instance1
+        $db1 = New-DbaDatabase -SqlInstance $TestConfig.instance1
     }
 
     AfterAll {
@@ -59,7 +59,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results.IsEncryptedByServer | Should -Be $true
         }
         It "should create master key on a database" {
-            $results = New-DbaDbMasterKey -SqlInstance $script:instance1 -Database $db1.Name -SecurePassword $passwd
+            $results = New-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database $db1.Name -SecurePassword $passwd
             $results.IsEncryptedByServer | Should -Be $true
         }
     }

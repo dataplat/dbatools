@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -40,7 +40,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         # registered server and group
-        $testServer = $script:instance2
+        $testServer = $TestConfig.instance2
         $server = Connect-DbaInstance -SqlInstance $testServer
         $srvName = "dbatoolsci-server1"
         $group = "dbatoolsci-group1"

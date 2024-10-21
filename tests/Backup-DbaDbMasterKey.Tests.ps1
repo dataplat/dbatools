@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -16,15 +16,15 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Can create a database certificate" {
         BeforeAll {
-            if (-not (Get-DbaDbMasterKey -SqlInstance $script:instance1 -Database tempdb)) {
-                $masterkey = New-DbaDbMasterKey -SqlInstance $script:instance1 -Database tempdb -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
+            if (-not (Get-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database tempdb)) {
+                $masterkey = New-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database tempdb -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
             }
         }
         AfterAll {
-            (Get-DbaDbMasterKey -SqlInstance $script:instance1 -Database tempdb) | Remove-DbaDbMasterKey -Confirm:$false
+            (Get-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database tempdb) | Remove-DbaDbMasterKey -Confirm:$false
         }
 
-        $results = Backup-DbaDbMasterKey -SqlInstance $script:instance1 -Confirm:$false -Database tempdb -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force)
+        $results = Backup-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Confirm:$false -Database tempdb -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force)
         $null = Remove-Item -Path $results.Path -ErrorAction SilentlyContinue -Confirm:$false
 
         It "backs up the db cert" {
@@ -33,7 +33,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Database ID should be returned" {
-            $results.DatabaseID | Should -Be (Get-DbaDatabase -SqlInstance $script:instance1 -Database tempdb).ID
+            $results.DatabaseID | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database tempdb).ID
         }
     }
 }

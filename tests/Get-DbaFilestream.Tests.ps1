@@ -3,7 +3,7 @@
 #>
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 <#
     Unit test is required for any command added
@@ -21,7 +21,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     Context "Getting FileStream Level" {
-        $results = Get-DbaFilestream -SqlInstance $script:instance2
+        $results = Get-DbaFilestream -SqlInstance $TestConfig.instance2
         It "Should have changed the FileStream Level" {
             $results.InstanceAccess | Should -BeIn 'Disabled', 'T-SQL access enabled', 'Full access enabled'
         }

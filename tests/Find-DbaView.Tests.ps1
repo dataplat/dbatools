@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -23,46 +23,46 @@ AS
     SELECT [sid],[loginname],[sysadmin]
     FROM [master].[sys].[syslogins];
 "@
-            $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Database 'Master' -Query $ServerView
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database 'Master' -Query $ServerView
         }
         AfterAll {
             $DropView = "DROP VIEW dbo.v_dbatoolsci_sysadmin;"
-            $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Database 'Master' -Query $DropView
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database 'Master' -Query $DropView
         }
 
-        $results = Find-DbaView -SqlInstance $script:instance2 -Pattern dbatools* -IncludeSystemDatabases
+        $results = Find-DbaView -SqlInstance $TestConfig.instance2 -Pattern dbatools* -IncludeSystemDatabases
         It "Should find a specific View named v_dbatoolsci_sysadmin" {
             $results.Name | Should Be "v_dbatoolsci_sysadmin"
         }
         It "Should find v_dbatoolsci_sysadmin in Master" {
             $results.Database | Should Be "Master"
-            $results.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $script:instance2 -Database Master).ID
+            $results.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database Master).ID
         }
     }
     Context "Command finds View in a User Database" {
         BeforeAll {
-            $null = New-DbaDatabase -SqlInstance $script:instance2 -Name 'dbatoolsci_viewdb'
+            $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name 'dbatoolsci_viewdb'
             $DatabaseView = @"
 CREATE VIEW dbo.v_dbatoolsci_sysadmin
 AS
     SELECT [sid],[loginname],[sysadmin]
     FROM [master].[sys].[syslogins];
 "@
-            $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Database 'dbatoolsci_viewdb' -Query $DatabaseView
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database 'dbatoolsci_viewdb' -Query $DatabaseView
         }
         AfterAll {
-            $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database 'dbatoolsci_viewdb' -Confirm:$false
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database 'dbatoolsci_viewdb' -Confirm:$false
         }
 
-        $results = Find-DbaView -SqlInstance $script:instance2 -Pattern dbatools* -Database 'dbatoolsci_viewdb'
+        $results = Find-DbaView -SqlInstance $TestConfig.instance2 -Pattern dbatools* -Database 'dbatoolsci_viewdb'
         It "Should find a specific view named v_dbatoolsci_sysadmin" {
             $results.Name | Should Be "v_dbatoolsci_sysadmin"
         }
         It "Should find v_dbatoolsci_sysadmin in dbatoolsci_viewdb Database" {
             $results.Database | Should Be "dbatoolsci_viewdb"
-            $results.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $script:instance2 -Database dbatoolsci_viewdb).ID
+            $results.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database dbatoolsci_viewdb).ID
         }
-        $results = Find-DbaView -SqlInstance $script:instance2 -Pattern dbatools* -ExcludeDatabase 'dbatoolsci_viewdb'
+        $results = Find-DbaView -SqlInstance $TestConfig.instance2 -Pattern dbatools* -ExcludeDatabase 'dbatoolsci_viewdb'
         It "Should find no results when Excluding dbatoolsci_viewdb" {
             $results | Should Be $null
         }

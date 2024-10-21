@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -16,8 +16,8 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $random = Get-Random
-        $server2 = Connect-DbaInstance -SqlInstance $script:instance2
-        $server3 = Connect-DbaInstance -SqlInstance $script:instance3
+        $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server3 = Connect-DbaInstance -SqlInstance $TestConfig.instance3
 
         $securePassword = ConvertTo-SecureString -String 's3cur3P4ssw0rd?' -AsPlainText -Force
         $localLogin1Name = "dbatoolscli_localLogin1_$random"

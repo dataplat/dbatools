@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -15,14 +15,14 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        Get-DbaDatabase -SqlInstance $script:instance1, $script:instance2 | Where-Object Name -Match 'dbatoolsci' | Remove-DbaDatabase -Confirm:$false
-        New-DbaDatabase -SqlInstance $script:instance1, $script:instance2 -Name dbatoolsciqs
+        Get-DbaDatabase -SqlInstance $TestConfig.instance1, $TestConfig.instance2 | Where-Object Name -Match 'dbatoolsci' | Remove-DbaDatabase -Confirm:$false
+        New-DbaDatabase -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -Name dbatoolsciqs
     }
     AfterAll {
-        Get-DbaDatabase -SqlInstance $script:instance1, $script:instance2 | Where-Object Name -Match 'dbatoolsci' | Remove-DbaDatabase -Confirm:$false
+        Get-DbaDatabase -SqlInstance $TestConfig.instance1, $TestConfig.instance2 | Where-Object Name -Match 'dbatoolsci' | Remove-DbaDatabase -Confirm:$false
     }
     Context "Get some client protocols" {
-        foreach ($instance in ($script:instance1, $script:instance2)) {
+        foreach ($instance in ($TestConfig.instance1, $TestConfig.instance2)) {
             $server = Connect-DbaInstance -SqlInstance $instance
             $results = Get-DbaDbQueryStoreOption -SqlInstance $server -WarningVariable warning 3>&1
 

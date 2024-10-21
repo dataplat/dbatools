@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -14,7 +14,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 Describe "$commandname Integration Test" -Tag "IntegrationTests" {
     $props = 'Operation', 'Cmd', 'Output'
-    $result = Get-DbaDbccHelp -SqlInstance $script:instance2 -Statement FREESYSTEMCACHE
+    $result = Get-DbaDbccHelp -SqlInstance $TestConfig.instance2 -Statement FREESYSTEMCACHE
 
     Context "Validate standard output" {
         foreach ($prop in $props) {
@@ -33,7 +33,7 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
         }
 
         It "returns the right results for PAGE" {
-            $result = Get-DbaDbccHelp -SqlInstance $script:instance2 -Statement PAGE -IncludeUndocumented
+            $result = Get-DbaDbccHelp -SqlInstance $TestConfig.instance2 -Statement PAGE -IncludeUndocumented
             $result.Operation | Should Be 'PAGE'
             $result.Cmd | Should Be 'DBCC HELP(PAGE)'
             $result.Output | Should Not Be $null

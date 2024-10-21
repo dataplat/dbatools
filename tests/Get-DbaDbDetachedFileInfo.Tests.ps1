@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -15,24 +15,24 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $versionName = $server.GetSqlServerVersionName()
         $random = Get-Random
         $dbname = "dbatoolsci_detatch_$random"
         $server.Query("CREATE DATABASE $dbname")
-        $path = (Get-DbaDbFile -SqlInstance $script:instance2 -Database $dbname | Where-object {$_.PhysicalName -like '*.mdf'}).physicalname
-        Detach-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Force
+        $path = (Get-DbaDbFile -SqlInstance $TestConfig.instance2 -Database $dbname | Where-object {$_.PhysicalName -like '*.mdf'}).physicalname
+        Detach-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname -Force
     }
 
     AfterAll {
         $server.Query("CREATE DATABASE $dbname
             ON (FILENAME = '$path')
             FOR ATTACH")
-        Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname -Confirm:$false
     }
 
     Context "Command actually works" {
-        $results = Get-DbaDbDetachedFileInfo -SqlInstance $script:instance2 -Path $path
+        $results = Get-DbaDbDetachedFileInfo -SqlInstance $TestConfig.instance2 -Path $path
         it "Gets Results" {
             $results | Should Not Be $null
         }

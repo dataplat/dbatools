@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Gets the CPU Usage" {
-        $results = Get-DbaCPUUsage -SqlInstance $script:instance2
+        $results = Get-DbaCPUUsage -SqlInstance $TestConfig.instance2
         It "Results are not empty" {
             $results | Should Not Be $Null
         }

@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -15,21 +15,21 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $null = New-DbaAgentJobCategory -SqlInstance $script:instance2 -Category 'dbatoolsci test category'
+        $null = New-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category 'dbatoolsci test category'
     }
     AfterAll {
-        $null = Remove-DbaAgentJobCategory -SqlInstance $script:instance2 -Category 'dbatoolsci test category' -Confirm:$false
+        $null = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category 'dbatoolsci test category' -Confirm:$false
     }
 
     Context "Command copies jobs properly" {
         It "returns one success" {
-            $results = Copy-DbaAgentJobCategory -Source $script:instance2 -Destination $script:instance3 -JobCategory 'dbatoolsci test category'
+            $results = Copy-DbaAgentJobCategory -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -JobCategory 'dbatoolsci test category'
             $results.Name -eq "dbatoolsci test category"
             $results.Status -eq "Successful"
         }
 
         It "does not overwrite" {
-            $results = Copy-DbaAgentJobCategory -Source $script:instance2 -Destination $script:instance3 -JobCategory 'dbatoolsci test category'
+            $results = Copy-DbaAgentJobCategory -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -JobCategory 'dbatoolsci test category'
             $results.Name -eq "dbatoolsci test category"
             $results.Status -eq "Skipped"
         }

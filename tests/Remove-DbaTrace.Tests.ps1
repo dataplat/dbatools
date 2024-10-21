@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -92,20 +92,20 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
                 -- display trace id for future references
                 select TraceID=@TraceID"
-        $server = Connect-DbaInstance -SqlInstance $script:instance1
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
         $traceid = ($server.Query($sql)).TraceID
     }
     AfterAll {
         Remove-Item C:\windows\temp\temptrace.trc
     }
     Context "Test Removing Trace" {
-        $results = Get-DbaTrace -SqlInstance $script:instance1 -Id $traceid | Remove-DbaTrace
+        $results = Get-DbaTrace -SqlInstance $TestConfig.instance1 -Id $traceid | Remove-DbaTrace
         It "returns the right values" {
             $results.Id | Should Be $traceid
             $results.Status | Should Be "Stopped, closed and deleted"
         }
         It "doesn't return any result for trace file id $traceid" {
-            Get-DbaTrace -SqlInstance $script:instance1 -Id $traceid | Should Be $null
+            Get-DbaTrace -SqlInstance $TestConfig.instance1 -Id $traceid | Should Be $null
         }
     }
 }

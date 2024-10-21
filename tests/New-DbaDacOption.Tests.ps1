@@ -1,6 +1,6 @@
 $commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$commandname Unit Tests" -Tag "UnitTests" {
     Context "Validate parameters" {
@@ -14,7 +14,7 @@ Describe "$commandname Unit Tests" -Tag "UnitTests" {
 }
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $publishprofile = New-DbaDacProfile -SqlInstance $script:instance1 -Database whatever -Path C:\temp
+        $publishprofile = New-DbaDacProfile -SqlInstance $TestConfig.instance1 -Database whatever -Path C:\temp
     }
     AfterAll {
         Remove-Item -Confirm:$false -Path $publishprofile.FileName -ErrorAction SilentlyContinue

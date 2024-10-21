@@ -3,7 +3,7 @@
 #>
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 <#
     Unit test is required for any command added
@@ -21,7 +21,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $instance = Connect-DbaInstance -SqlInstance $script:instance2
+        $instance = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $roleExecutor = "serverExecuter"
         $null = New-DbaServerRole -SqlInstance $instance -ServerRole $roleExecutor
     }
