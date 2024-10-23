@@ -18,7 +18,7 @@ function Invoke-ManualPester {
 
     .PARAMETER TestIntegration
         dbatools's suite has unittests and integrationtests. This switch enables IntegrationTests, which need live instances
-        see constants.ps1 for customizations
+        see Get-TestConfig for customizations
 
     .PARAMETER Coverage
         Enables measuring code coverage on the tested function
