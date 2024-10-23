@@ -1,32 +1,120 @@
-# Aider Folder
+# Aider PowerShell Module
 
-This folder contains configuration and script files for the Aider tool, which is used for automating various tasks within the project.
+This module provides automation tools for PowerShell development in devcontainers, focusing on test maintenance and error handling for PowerShell modules.
 
-## Folder Structure
+## Key Functions
 
-- `.aider/`
-  - `.env`: Environment variables for Aider.
-  - `aider.psm1`: PowerShell module containing functions for Aider.
-  - `prompts/`: Directory containing prompt files used by Aider.
+### Invoke-Aider
+Core wrapper for the aider CLI tool. Used by other functions to interact with AI models for code improvements.
 
-## Configuration Files
+```powershell
+# Basic usage
+Invoke-Aider -Message "Fix the bug in parameter validation" -File "tests/Get-Something.Tests.ps1"
 
-- `.aider.conf.yml`: Main configuration file for Aider. It includes settings for linting, testing, and other behaviors.
+# Advanced usage with caching and custom model
+$params = @{
+    Message = "Update parameter tests"
+    File = "tests/Update-Database.Tests.ps1"
+    Model = "gpt-4o"
+    CachePrompts = $true
+    AutoTest = $true
+}
+Invoke-Aider @params
+```
 
-## PowerShell Module
+### Update-PesterTest
+Modernizes Pester tests to v5 format, particularly useful when maintaining legacy test suites.
 
-- `aider.psm1`: This module contains functions such as `Repair-ParameterTest` and `Repair-Error` which are used to automate error fixing and parameter testing.
+```powershell
+# Update first 10 test files
+Update-PesterTest -First 10
 
-## Prompts
+# Skip already processed files and update next batch
+Update-PesterTest -Skip 10 -First 5 -MaxFileSize 12kb
+```
 
-- `prompts/`: This directory contains markdown files used as prompts for Aider. Examples include `fix-errors.md` and `conventions.md`.
+### Repair-Error
+Automatically fixes common test errors using AI assistance.
 
-## Environment Files
+```powershell
+# Process all errors from default error file
+Repair-Error
 
-- `.env`: Contains environment variables specific to Aider.
-- `.env.example`: Example environment variables file to be used as a template.
+# Use custom error file
+Repair-Error -ErrorFilePath "custom-errors.json" -First 5
+```
 
-## Usage
+### Repair-ParameterTest
+Focuses on fixing parameter validation tests.
 
-To use Aider, ensure that the necessary environment variables are set up in the `.env` file. You can use the `.env.example` file as a template. The PowerShell module `aider.psm1` provides various functions to automate tasks such as error fixing and parameter testing.
+```powershell
+# Fix parameter tests using default settings
+Repair-ParameterTest
 
+# Use specific model and limit to first 5 commands
+Repair-ParameterTest -First 5 -Model "azure/gpt-4o-mini"
+```
+
+## Directory Structure
+
+```
+.aider/
+├── aider.psm1         # PowerShell module with automation functions
+├── prompts/           # AI prompt templates
+│   ├── template.md    # Base templates for AI interactions
+│   ├── fix-errors.md  # Error fixing prompts
+│   └── conventions.md # Coding conventions cache
+└── .env              # Environment configuration
+```
+
+## Configuration
+
+### .aider.conf.yml
+Main configuration file controlling AI behavior, linting, and testing settings. Example:
+
+```yaml
+model: azure/gpt-4o-mini
+edit_format: whole
+auto_lint: true
+cache_prompts: true
+encoding: utf-8
+```
+
+### Environment Variables
+Create a `.env` file based on `.env.example` to configure:
+- API keys for AI services
+- Custom model endpoints
+- Project-specific settings
+
+## Best Practices
+
+1. Always use `-CachePrompts` when making multiple similar changes to reduce API costs
+2. Set appropriate `-MaxFileSize` limits to prevent processing overly complex files
+3. Use `-YesAlways` for batch operations, but review changes in version control
+4. Keep prompt templates in `/prompts` directory for consistency
+5. Leverage `-ReadFile` for including coding conventions in AI context
+
+## Common Workflows
+
+### Modernizing Test Suite
+```powershell
+# Step 1: Update to Pester v5
+Update-PesterTest -First 1000
+
+# Step 2: Fix any parameter validation issues
+Repair-ParameterTest -Model "azure/gpt-4o-mini"
+
+# Step 3: Address remaining errors
+Repair-Error
+```
+
+### Maintaining Conventions
+```powershell
+# Update tests with new conventions
+$params = @{
+    Message = "Update parameter validation style"
+    File = "tests/*.Tests.ps1"
+    ReadFile = ".aider/prompts/conventions.md"
+    CachePrompts = $true
+}
+Invoke-Aider @params
