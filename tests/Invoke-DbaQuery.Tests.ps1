@@ -1,4 +1,4 @@
-#HaveParameter - yeah, I know.
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
 
 BeforeAll {
     $CommandName = (Get-Item $PSCommandPath).Name.Replace(".Tests.ps1", "")

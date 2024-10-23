@@ -162,7 +162,7 @@ function Get-CodecovReport($Results, $ModuleBase) {
 
 function Get-PesterTestVersion($testFilePath) {
     $testFileContent = Get-Content -Path $testFilePath -Raw
-    if ($testFileContent -match 'HaveParameter')
+    if ($testFileContent -match '#Requires\s+-Module\s+@\{\s+ModuleName="Pester";\s+ModuleVersion="5\.')
     {
         return '5'
     }
