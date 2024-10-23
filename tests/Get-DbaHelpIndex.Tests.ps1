@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Write-host -Object "${script:instance2}" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $random = Get-Random
         $dbname = "dbatoolsci_$random"
         $server.Query("CREATE DATABASE $dbname")
@@ -29,10 +29,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $server.Query("create nonclustered index idx_1 on t2(c1,c2) include(c3,c4)", $dbname)
     }
     AfterAll {
-        $null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
     }
     Context "Command works for indexes" {
-        $results = Get-DbaHelpIndex -SqlInstance $script:instance2 -Database $dbname -ObjectName Test
+        $results = Get-DbaHelpIndex -SqlInstance $TestConfig.instance2 -Database $dbname -ObjectName Test
         It 'Results should be returned' {
             $results | Should Not BeNullOrEmpty
         }
@@ -47,7 +47,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Command works when including statistics" {
-        $results = Get-DbaHelpIndex -SqlInstance $script:instance2 -Database $dbname -ObjectName Test -IncludeStats | Where-Object { $_.Statistics }
+        $results = Get-DbaHelpIndex -SqlInstance $TestConfig.instance2 -Database $dbname -ObjectName Test -IncludeStats | Where-Object { $_.Statistics }
         It 'Results should be returned' {
             $results | Should Not BeNullOrEmpty
         }
@@ -56,7 +56,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Command output includes data types" {
-        $results = Get-DbaHelpIndex -SqlInstance $script:instance2 -Database $dbname -ObjectName Test -IncludeDataTypes
+        $results = Get-DbaHelpIndex -SqlInstance $TestConfig.instance2 -Database $dbname -ObjectName Test -IncludeDataTypes
         It 'Results should be returned' {
             $results | Should Not BeNullOrEmpty
         }
@@ -65,7 +65,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Formatting is correct" {
-        $results = Get-DbaHelpIndex -SqlInstance $script:instance2 -Database $dbname -ObjectName Test -IncludeFragmentation
+        $results = Get-DbaHelpIndex -SqlInstance $TestConfig.instance2 -Database $dbname -ObjectName Test -IncludeFragmentation
         It 'Formatted as strings' {
             $results.IndexReads | Should BeOfType 'String'
             $results.IndexUpdates | Should BeOfType 'String'
@@ -77,7 +77,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Formatting is correct for raw" {
-        $results = Get-DbaHelpIndex -SqlInstance $script:instance2 -Database $dbname -ObjectName Test -raw -IncludeFragmentation
+        $results = Get-DbaHelpIndex -SqlInstance $TestConfig.instance2 -Database $dbname -ObjectName Test -raw -IncludeFragmentation
         It 'Formatted as Long' {
             $results.IndexReads | Should BeOfType 'Long'
             $results.IndexUpdates | Should BeOfType 'Long'
@@ -90,7 +90,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Result is correct for tables having the indexes with the same names" {
-        $results = Get-DbaHelpIndex -SqlInstance $script:instance2 -Database $dbname
+        $results = Get-DbaHelpIndex -SqlInstance $TestConfig.instance2 -Database $dbname
         It 'Table t1 has correct index key columns and included columns' {
             $results.where({ $_.object -eq '[dbo].[t1]' }).KeyColumns | Should -be 'c1'
             $results.where({ $_.object -eq '[dbo].[t1]' }).IncludeColumns | Should -be 'c3'

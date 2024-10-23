@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -145,7 +145,7 @@ Describe "$CommandName Unit Test" -Tags Unittest {
             $result.Warning | Should -Be 'This version has been officially retired by Microsoft'
         }
     }
-    
+
     Context "Recognizes version 'aliases', see #8915" {
         It 'works with versions with the minor being either not 0 or 50' {
             $result2016 = Get-DbaBuild -Build '13.3.6300'
@@ -205,8 +205,8 @@ Describe "$CommandName Unit Test" -Tags Unittest {
 Describe "$commandname Integration Tests" -Tags 'IntegrationTests' {
     Context "piping and params" {
         BeforeAll {
-            $server1 = Connect-DbaInstance -SqlInstance $script:instance1
-            $server2 = Connect-DbaInstance -SqlInstance $script:instance2
+            $server1 = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+            $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         }
         It "works when instances are piped" {
             $res = @($server1, $server2) | Get-DbaBuild
@@ -217,7 +217,7 @@ Describe "$commandname Integration Tests" -Tags 'IntegrationTests' {
         }
     }
     Context "Test retrieving version from instances" {
-        $results = Get-DbaBuild -SqlInstance $script:instance1, $script:instance2
+        $results = Get-DbaBuild -SqlInstance $TestConfig.instance1, $TestConfig.instance2
         It "Should return an exact match" {
             $results | Should -Not -BeNullOrEmpty
             foreach ($r in $results) {

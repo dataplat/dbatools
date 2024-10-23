@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -14,7 +14,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 Describe "$commandname Integration Test" -Tag "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $random = Get-Random
         $tableName = "dbatools_CheckConstraintTbl1"
         $check1 = "chkTab1"
@@ -26,12 +26,12 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
         $null = $server.Query("ALTER TABLE $tableName WITH NOCHECK ADD CONSTRAINT $check1 CHECK (Col1 > 100); ", $dbname)
     }
     AfterAll {
-        $null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
     }
 
     Context "Validate standard output" {
         $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Cmd', 'Output', 'Table', 'Constraint', 'Where'
-        $result = Invoke-DbaDbDbccCheckConstraint -SqlInstance $script:instance2 -Database $dbname -Object $tableName -Confirm:$false
+        $result = Invoke-DbaDbDbccCheckConstraint -SqlInstance $TestConfig.instance2 -Database $dbname -Object $tableName -Confirm:$false
 
         foreach ($prop in $props) {
             $p = $result[0].PSObject.Properties[$prop]

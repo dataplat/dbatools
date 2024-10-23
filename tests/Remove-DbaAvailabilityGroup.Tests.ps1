@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$commandname Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -16,17 +16,18 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $agname = "dbatoolsci_removewholegroup"
-        $null = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Confirm:$false
+        $null = New-DbaAvailabilityGroup -Primary $TestConfig.instance3 -Name $agname -ClusterType None -FailoverMode Manual -Certificate dbatoolsci_AGCert -Confirm:$false
     }
     Context "removes the newly created ag" {
         It "removes the ag" {
-            $results = Remove-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup $agname -Confirm:$false
+            $results = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname -Confirm:$false -WarningVariable warn
+            $warn | Should -BeNullorEmpty
             $results.Status | Should -Be 'Removed'
             $results.AvailabilityGroup | Should -Be $agname
         }
         It "really removed the ag" {
-            $results = Get-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup $agname
+            $results = Get-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname
             $results | Should -BeNullorEmpty
         }
     }
-} #$script:instance2 for appveyor
+} #$TestConfig.instance2 for appveyor

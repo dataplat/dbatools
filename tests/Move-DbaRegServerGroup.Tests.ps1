@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tags "UnitTests" {
     Context "Validate parameters" {
@@ -21,18 +21,18 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $regSrvName = "dbatoolsci-server12"
             $regSrvDesc = "dbatoolsci-server123"
 
-            $newGroup = Add-DbaRegServerGroup -SqlInstance $script:instance1 -Name $group
-            $newServer = Add-DbaRegServer -SqlInstance $script:instance1 -ServerName $srvName -Name $regSrvName -Description $regSrvDesc -Group $newGroup.Name
+            $newGroup = Add-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Name $group
+            $newServer = Add-DbaRegServer -SqlInstance $TestConfig.instance1 -ServerName $srvName -Name $regSrvName -Description $regSrvDesc -Group $newGroup.Name
 
             $group2 = "dbatoolsci-group1a"
-            $newGroup2 = Add-DbaRegServerGroup -SqlInstance $script:instance1 -Name $group2
+            $newGroup2 = Add-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Name $group2
 
             $group3 = "dbatoolsci-group1b"
-            $newGroup3 = Add-DbaRegServerGroup -SqlInstance $script:instance1 -Name $group3
+            $newGroup3 = Add-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Name $group3
         }
         AfterAll {
-            Get-DbaRegServer -SqlInstance $script:instance1 -Name $regSrvName  | Remove-DbaRegServer -Confirm:$false
-            Get-DbaRegServerGroup -SqlInstance $script:instance1 -Group $group, $group2, $group3 | Remove-DbaRegServerGroup -Confirm:$false
+            Get-DbaRegServer -SqlInstance $TestConfig.instance1 -Name $regSrvName  | Remove-DbaRegServer -Confirm:$false
+            Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Group $group, $group2, $group3 | Remove-DbaRegServerGroup -Confirm:$false
         }
 
         It "moves a piped group" {
@@ -41,7 +41,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "moves a manually specified group" {
-            $results = Move-DbaRegServerGroup -SqlInstance $script:instance1 -Group "$group\$group3" -NewGroup Default
+            $results = Move-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Group "$group\$group3" -NewGroup Default
             $results.Parent.Name | Should -Be 'DatabaseEngineServerGroup'
         }
     }

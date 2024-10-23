@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -16,7 +16,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $accountName = "dbatoolsci_test_$(get-random)"
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $description = 'Mail account for email alerts'
         $email_address = 'dbatoolssci@dbatools.net'
         $display_name = 'dbatoolsci mail alerts'
@@ -28,7 +28,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
     }
     AfterAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $mailAccountSettings = "EXEC msdb.dbo.sysmail_delete_account_sp @account_name = '$accountName';"
         $server.query($mailAccountSettings)
     }
@@ -36,7 +36,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Gets DbMail Account" {
 
         $splat = @{
-            SqlInstance    = $script:instance2
+            SqlInstance    = $TestConfig.instance2
             Account        = $accountName
             Description    = $description
             EmailAddress   = $email_address

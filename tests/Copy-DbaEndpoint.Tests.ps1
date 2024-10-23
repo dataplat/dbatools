@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -20,22 +20,21 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $endpoint = Get-DbaEndpoint -SqlInstance $script:instance2 | Where-Object EndpointType -eq DatabaseMirroring
-        $create = $endpoint | Export-DbaScript -Passthru
-        $null = $endpoint | Remove-DbaEndpoint -Confirm:$false
-        $results = New-DbaEndpoint -SqlInstance $script:instance2 -Type DatabaseMirroring -Role Partner -Name Mirroring -Confirm:$false
+        Get-DbaEndpoint -SqlInstance $TestConfig.instance2 -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
+        New-DbaEndpoint -SqlInstance $TestConfig.instance2 -Name dbatoolsci_MirroringEndpoint -Type DatabaseMirroring -Port 5022 -Owner sa
+        Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
     }
     AfterAll {
-        if ($create) {
-            $null = Get-DbaEndpoint -SqlInstance $script:instance2, $script:instance3 | Where-Object EndpointType -eq DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
-            Invoke-DbaQuery -SqlInstance $script:instance2 -Query "$create"
-        }
+        Get-DbaEndpoint -SqlInstance $TestConfig.instance2 -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
+        New-DbaEndpoint -SqlInstance $TestConfig.instance2 -Name dbatoolsci_MirroringEndpoint -Type DatabaseMirroring -Port 5022 -Owner sa
+        Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
+        New-DbaEndpoint -SqlInstance $TestConfig.instance3 -Name dbatoolsci_MirroringEndpoint -Type DatabaseMirroring -Port 5023 -Owner sa
     }
 
     It "copies an endpoint" {
-        $results = Copy-DbaEndpoint -Source $script:instance2 -Destination $script:instance3 -Endpoint Mirroring
-        $results.DestinationServer | Should -Be  $script:instance3
+        $results = Copy-DbaEndpoint -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -Endpoint dbatoolsci_MirroringEndpoint
+        $results.DestinationServer | Should -Be  $TestConfig.instance3
         $results.Status | Should -Be 'Successful'
-        $results.Name | Should -Be 'Mirroring'
+        $results.Name | Should -Be 'dbatoolsci_MirroringEndpoint'
     }
 }

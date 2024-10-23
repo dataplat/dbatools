@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 $base = (Get-Module -Name dbatools | Where-Object ModuleBase -notmatch net).ModuleBase
 
 
@@ -17,7 +17,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $path = $server.ErrorLogPath
         $sql = "CREATE SERVER AUDIT LoginAudit
                 TO FILE (FILEPATH = N'$path',MAXSIZE = 10 MB,MAX_ROLLOVER_FILES = 1,RESERVE_DISK_SPACE = OFF)
@@ -29,8 +29,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 ALTER SERVER AUDIT LoginAudit WITH (STATE = ON)"
         $server.Query($sql)
         # generate a login
-        $null = Get-DbaDatabase -SqlInstance $script:instance2
-        $null = Get-DbaDbFile -SqlInstance $script:instance2
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2
+        $null = Get-DbaDbFile -SqlInstance $TestConfig.instance2
         # Give it a chance to write
         Start-Sleep 2
     }
@@ -43,11 +43,11 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
     Context "Verifying command output" {
         It "returns some results" {
-            $results = Get-DbaInstanceAudit -SqlInstance $script:instance2 -Audit LoginAudit | Read-DbaAuditFile -Raw -WarningAction SilentlyContinue
+            $results = Get-DbaInstanceAudit -SqlInstance $TestConfig.instance2 -Audit LoginAudit | Read-DbaAuditFile -Raw -WarningAction SilentlyContinue
             [System.Linq.Enumerable]::Count($results) -gt 1 | Should Be $true
         }
         It "returns some results" {
-            $results = Get-DbaInstanceAudit -SqlInstance $script:instance2 -Audit LoginAudit | Read-DbaAuditFile | Select-Object -First 1
+            $results = Get-DbaInstanceAudit -SqlInstance $TestConfig.instance2 -Audit LoginAudit | Read-DbaAuditFile | Select-Object -First 1
             $results.server_principal_name | Should -Not -Be $null
         }
     }

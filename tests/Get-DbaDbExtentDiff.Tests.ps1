@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -16,15 +16,15 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $dbname = "dbatoolsci_test_$(get-random)"
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $server.Query("Create Database [$dbname]")
     }
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname -Confirm:$false
     }
 
     Context "Gets Changed Extents for Multiple Databases" {
-        $results = Get-DbaDbExtentDiff -SqlInstance $script:instance2
+        $results = Get-DbaDbExtentDiff -SqlInstance $TestConfig.instance2
         It "Gets results" {
             $results | Should Not Be $null
         }
@@ -38,7 +38,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Gets Changed Extents for Single Database" {
-        $results = Get-DbaDbExtentDiff -SqlInstance $script:instance2 -Database $dbname
+        $results = Get-DbaDbExtentDiff -SqlInstance $TestConfig.instance2 -Database $dbname
         It "Gets results" {
             $results | Should Not Be $null
         }

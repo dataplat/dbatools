@@ -166,6 +166,11 @@ if (-not (Test-Path -Path "$script:PSModuleRoot\dbatools.dat") -or $script:seria
         . $file.FullName
     }
 
+    # All internal functions privately available within the toolset
+    foreach ($file in (Get-ChildItem -Path "$script:PSModuleRoot/private/testing/" -Recurse -Filter *.ps1)) {
+        . $file.FullName
+    }
+
     Write-ImportTime -Text "Loading internal commands via dotsource"
 
     # All exported functions

@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -20,7 +20,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
     Context "Verifying output" {
         It "exports results to one file and creates directory if required" {
-            $null = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -QueryName 'Memory Clerk Usage' | Export-DbaDiagnosticQuery -Path "C:\temp\dbatoolsci"
+            $null = Invoke-DbaDiagnosticQuery -SqlInstance $TestConfig.instance2 -QueryName 'Memory Clerk Usage' | Export-DbaDiagnosticQuery -Path "C:\temp\dbatoolsci"
             (Get-ChildItem "C:\temp\dbatoolsci").Count | Should Be 1
         }
     }

@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -16,7 +16,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Gets UserOptions for the Instance" {
-        $results = Get-DbaInstanceUserOption -SqlInstance $script:instance2 | Where-Object {$_.name -eq 'AnsiNullDefaultOff'}
+        $results = Get-DbaInstanceUserOption -SqlInstance $TestConfig.instance2 | Where-Object {$_.name -eq 'AnsiNullDefaultOff'}
         It "Gets results" {
             $results | Should Not Be $null
         }

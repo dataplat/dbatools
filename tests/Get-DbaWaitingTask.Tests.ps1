@@ -3,7 +3,7 @@
 #>
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 <#
     Unit test is required for any command added
@@ -32,7 +32,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     $flag = "dbatools_$(Get-Random)"
     $time = '00:15:00'
     $sql = "SELECT '$flag'; WAITFOR DELAY '$time'"
-    $instance = $script:instance2
+    $instance = $TestConfig.instance2
 
     $modulePath = 'C:\Github\dbatools\dbatools.psm1'
     $job = 'YouHaveBeenFoundWaiting'

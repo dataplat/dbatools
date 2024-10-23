@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tags "UnitTests" {
     Context "Validate parameters" {
@@ -15,15 +15,15 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $inst1CurrentMaxValue = (Get-DbaMaxMemory -SqlInstance $script:instance1).MaxValue
-        $inst2CurrentMaxValue = (Get-DbaMaxMemory -SqlInstance $script:instance2).MaxValue
+        $inst1CurrentMaxValue = (Get-DbaMaxMemory -SqlInstance $TestConfig.instance1).MaxValue
+        $inst2CurrentMaxValue = (Get-DbaMaxMemory -SqlInstance $TestConfig.instance2).MaxValue
     }
     AfterAll {
-        $null = Set-DbaMaxMemory -SqlInstance $script:instance1 -Max $inst1CurrentMaxValue
-        $null = Set-DbaMaxMemory -SqlInstance $script:instance2 -Max $inst2CurrentMaxValue
+        $null = Set-DbaMaxMemory -SqlInstance $TestConfig.instance1 -Max $inst1CurrentMaxValue
+        $null = Set-DbaMaxMemory -SqlInstance $TestConfig.instance2 -Max $inst2CurrentMaxValue
     }
     Context "Connects to multiple instances" {
-        $results = Set-DbaMaxMemory -SqlInstance $script:instance1, $script:instance2 -Max 1024
+        $results = Set-DbaMaxMemory -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -Max 1024
         foreach ($result in $results) {
             It 'Returns 1024  for each instance' {
                 $result.MaxValue | Should Be 1024

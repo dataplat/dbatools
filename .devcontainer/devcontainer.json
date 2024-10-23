@@ -18,7 +18,10 @@
         "usernamehw.errorlens",
         "oderwat.indent-rainbow",
         "wengerk.highlight-bad-chars",
-        "streetsidesoftware.code-spell-checker"
+        "dbatools.search",
+        "streetsidesoftware.code-spell-checker",
+        "bedirt.gpt-token-counter-live",
+        "saoudrizwan.claude-dev"
       ],
       "settings": {
         "powershell.powerShellAdditionalExePaths": {

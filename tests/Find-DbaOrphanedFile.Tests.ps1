@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -17,7 +17,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Orphaned files are correctly identified" {
         BeforeAll {
             $dbname = "dbatoolsci_orphanedfile_$(Get-Random)"
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
             $db1 = New-DbaDatabase -SqlInstance $server -Name $dbname
 
             $dbname2 = "dbatoolsci_orphanedfile_$(Get-Random)"
@@ -41,7 +41,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $tmpBackupPath2 = Join-Path $tmpdirInner2 "backup"
             $null = New-Item -Path $tmpBackupPath2 -type Container
 
-            $result = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname
+            $result = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname
             if ($result.count -eq 0) {
                 It "has failed setup" {
                     Set-TestInconclusive -message "Setup failed"
@@ -49,23 +49,23 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 throw "has failed setup"
             }
 
-            $backupFile = Backup-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Path $tmpBackupPath -Type Full
-            $backupFile2 = Backup-DbaDatabase -SqlInstance $script:instance2 -Database $dbname2 -Path $tmpBackupPath2 -Type Full
+            $backupFile = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname -Path $tmpBackupPath -Type Full
+            $backupFile2 = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname2 -Path $tmpBackupPath2 -Type Full
             Copy-Item -Path $backupFile.BackupPath -Destination "C:\" -Confirm:$false
 
             $tmpBackupPath3 = Join-Path (Get-SqlDefaultPaths $server data) "dbatoolsci_$(Get-Random)"
             $null = New-Item -Path $tmpBackupPath3 -type Container
         }
         AfterAll {
-            Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname, $dbname2 | Remove-DbaDatabase -Confirm:$false
+            Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname, $dbname2 | Remove-DbaDatabase -Confirm:$false
             Remove-Item $tmpdir -Recurse -Force -ErrorAction SilentlyContinue
             Remove-Item $tmpdir2 -Recurse -Force -ErrorAction SilentlyContinue
             Remove-Item "C:\$($backupFile.BackupFile)" -Force -ErrorAction SilentlyContinue
             Remove-Item $tmpBackupPath3 -Recurse -Force -ErrorAction SilentlyContinue
         }
         It "Has the correct properties" {
-            $null = Detach-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Force
-            $results = Find-DbaOrphanedFile -SqlInstance $script:instance2
+            $null = Detach-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname -Force
+            $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.instance2
             $ExpectedStdProps = 'ComputerName,InstanceName,SqlInstance,Filename,RemoteFilename'.Split(',')
             ($results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should -Be ($ExpectedStdProps | Sort-Object)
             $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Filename,RemoteFilename,Server'.Split(',')
@@ -74,40 +74,40 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
 
         It "Finds two files" {
-            $results = Find-DbaOrphanedFile -SqlInstance $script:instance2
+            $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.instance2
             $results.Filename.Count | Should -Be 2
         }
 
         It "Finds zero files after cleaning up" {
-            $results = Find-DbaOrphanedFile -SqlInstance $script:instance2
+            $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.instance2
             $results.FileName | Remove-Item
-            $results = Find-DbaOrphanedFile -SqlInstance $script:instance2
+            $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.instance2
             $results.Filename.Count | Should -Be 0
         }
         It "works with -Recurse" {
             "a" | Out-File (Join-Path $tmpdir "out.mdf")
-            $results = Find-DbaOrphanedFile -SqlInstance $script:instance2 -Path $tmpdir
+            $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.instance2 -Path $tmpdir
             $results.Filename.Count | Should -Be 1
             Move-Item "$tmpdir\out.mdf" -destination $tmpdirInner
-            $results = Find-DbaOrphanedFile -SqlInstance $script:instance2 -Path $tmpdir
+            $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.instance2 -Path $tmpdir
             $results.Filename.Count | Should -Be 0
-            $results = Find-DbaOrphanedFile -SqlInstance $script:instance2 -Path $tmpdir -Recurse
+            $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.instance2 -Path $tmpdir -Recurse
             $results.Filename.Count | Should -Be 1
 
             Copy-Item -Path "$tmpdirInner\out.mdf" -Destination $tmpBackupPath3 -Confirm:$false
 
-            $results = Find-DbaOrphanedFile -SqlInstance $script:instance2 -Path $tmpdir, $tmpdir2 -Recurse -FileType bak
+            $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.instance2 -Path $tmpdir, $tmpdir2 -Recurse -FileType bak
             $results.Filename | Should -Contain $backupFile.BackupPath
             $results.Filename | Should -Contain $backupFile2.BackupPath
             $results.Filename | Should -Contain "$tmpdirInner\out.mdf"
             $results.Filename | Should -Contain "$tmpBackupPath3\out.mdf"
             $results.Count | Should -Be 4
 
-            $results = Find-DbaOrphanedFile -SqlInstance $script:instance2 -Recurse
+            $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.instance2 -Recurse
             $results.Filename | Should -Be "$tmpBackupPath3\out.mdf"
         }
         It "works with -Path" {
-            $results = Find-DbaOrphanedFile -SqlInstance $script:instance2 -Path "C:" -FileType bak
+            $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.instance2 -Path "C:" -FileType bak
             $results.Filename | Should -Contain "C:\$($backupFile.BackupFile)"
         }
     }

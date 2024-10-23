@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -16,15 +16,15 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $db1Name = "dbatoolsci_expand"
-        $db1 = New-DbaDatabase -SqlInstance $script:instance1 -Name $db1Name
+        $db1 = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $db1Name
     }
     AfterAll {
-        Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database $db1Name
+        Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance1 -Database $db1Name
     }
 
     Context "Ensure command functionality" {
 
-        $results = Expand-DbaDbLogFile -SqlInstance $script:instance1 -Database $db1 -TargetLogSize 128
+        $results = Expand-DbaDbLogFile -SqlInstance $TestConfig.instance1 -Database $db1 -TargetLogSize 128
 
         It -Skip "Should have correct properties" {
             $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Database,ID,Name,LogFileCount,InitialSize,CurrentSize,InitialVLFCount,CurrentVLFCount'.Split(',')

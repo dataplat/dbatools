@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -16,13 +16,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Testing DarlingData installer with download" {
         BeforeAll {
             $database = "dbatoolsci_darling_$(Get-Random)"
-            $server = Connect-DbaInstance -SqlInstance $script:instance3
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance3
             $server.Query("CREATE DATABASE $database")
 
-            $resultsDownload = Install-DbaDarlingData -SqlInstance $script:instance3 -Database $database -Branch main -Force -Verbose:$false
+            $resultsDownload = Install-DbaDarlingData -SqlInstance $TestConfig.instance3 -Database $database -Branch main -Force -Verbose:$false
         }
         AfterAll {
-            Remove-DbaDatabase -SqlInstance $script:instance3 -Database $database -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $database -Confirm:$false
         }
 
         It "Installs to specified database: $database" {
@@ -40,7 +40,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Testing DarlingData installer with LocalFile" {
         BeforeAll {
             $database = "dbatoolsci_darling_$(Get-Random)"
-            $server = Connect-DbaInstance -SqlInstance $script:instance3
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance3
             $server.Query("CREATE DATABASE $database")
 
             $outfile = "DarlingData-main.zip"
@@ -48,10 +48,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             if (Test-Path $outfile) {
                 $fullOutfile = (Get-ChildItem $outfile).FullName
             }
-            $resultsLocalFile = Install-DbaDarlingData -SqlInstance $script:instance3 -Database $database -Branch main -LocalFile $fullOutfile  -Force
+            $resultsLocalFile = Install-DbaDarlingData -SqlInstance $TestConfig.instance3 -Database $database -Branch main -LocalFile $fullOutfile  -Force
         }
         AfterAll {
-            Remove-DbaDatabase -SqlInstance $script:instance3 -Database $database -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $database -Confirm:$false
         }
 
         It "Installs to specified database: $database" {

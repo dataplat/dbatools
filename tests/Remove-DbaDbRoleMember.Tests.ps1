@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tags "UnitTests" {
     Context "Validate parameters" {
@@ -16,18 +16,18 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $user1 = "dbatoolssci_user1_$(Get-Random)"
         $user2 = "dbatoolssci_user2_$(Get-Random)"
         $role = "dbatoolssci_role_$(Get-Random)"
-        $null = New-DbaLogin -SqlInstance $script:instance2 -Login $user1 -Password ('Password1234!' | ConvertTo-SecureString -asPlainText -Force)
-        $null = New-DbaLogin -SqlInstance $script:instance2 -Login $user2 -Password ('Password1234!' | ConvertTo-SecureString -asPlainText -Force)
+        $null = New-DbaLogin -SqlInstance $TestConfig.instance2 -Login $user1 -Password ('Password1234!' | ConvertTo-SecureString -asPlainText -Force)
+        $null = New-DbaLogin -SqlInstance $TestConfig.instance2 -Login $user2 -Password ('Password1234!' | ConvertTo-SecureString -asPlainText -Force)
         $dbname = "dbatoolsci_$(Get-Random)"
-        $null = New-DbaDatabase -SqlInstance $script:instance2 -Name $dbname -Owner sa
-        $null = New-DbaDbUser -SqlInstance $script:instance2 -Database $dbname -Login $user1 -Username 'User1'
-        $null = New-DbaDbUser -SqlInstance $script:instance2 -Database $dbname -Login $user2 -Username 'User2'
-        $null = New-DbaDbUser -SqlInstance $script:instance2 -Database msdb -Login $user1 -Username 'User1' -IncludeSystem
-        $null = New-DbaDbUser -SqlInstance $script:instance2 -Database msdb -Login $user2 -Username 'User2' -IncludeSystem
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $dbname -Owner sa
+        $null = New-DbaDbUser -SqlInstance $TestConfig.instance2 -Database $dbname -Login $user1 -Username 'User1'
+        $null = New-DbaDbUser -SqlInstance $TestConfig.instance2 -Database $dbname -Login $user2 -Username 'User2'
+        $null = New-DbaDbUser -SqlInstance $TestConfig.instance2 -Database msdb -Login $user1 -Username 'User1' -IncludeSystem
+        $null = New-DbaDbUser -SqlInstance $TestConfig.instance2 -Database msdb -Login $user2 -Username 'User2' -IncludeSystem
 
         $null = $server.Query("CREATE ROLE $role", $dbname)
         $null = $server.Query("ALTER ROLE $role ADD MEMBER User1", $dbname)
@@ -37,19 +37,19 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $null = $server.Query("ALTER ROLE SQLAgentReaderRole ADD MEMBER User2", 'msdb')
     }
     AfterAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $null = $server.Query("DROP USER User1", 'msdb')
         $null = $server.Query("DROP USER User2", 'msdb')
-        $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -confirm:$false
-        $null = Remove-DbaLogin -SqlInstance $script:instance2 -Login $user1, $user2 -confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname -confirm:$false
+        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $user1, $user2 -confirm:$false
     }
 
 
     Context "Functionality" {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         It 'Removes Role for User' {
-            $roleDB = Get-DbaDbRoleMember -SqlInstance $script:instance2 -Database $dbname -Role $role
-            Remove-DbaDbRoleMember -SqlInstance $script:instance2 -Role $role -User 'User1' -Database $dbname -confirm:$false
+            $roleDB = Get-DbaDbRoleMember -SqlInstance $TestConfig.instance2 -Database $dbname -Role $role
+            Remove-DbaDbRoleMember -SqlInstance $TestConfig.instance2 -Role $role -User 'User1' -Database $dbname -confirm:$false
             $roleDBAfter = Get-DbaDbRoleMember -SqlInstance $server -Database $dbname -Role $role
 
             $roleDB.UserName | Should Be 'User1'

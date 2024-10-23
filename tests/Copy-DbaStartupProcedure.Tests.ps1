@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -20,7 +20,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $procName = "dbatoolsci_test_startup"
         $server.Query("CREATE OR ALTER PROCEDURE $procName
                         AS
@@ -32,11 +32,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     AfterAll {
-        Invoke-DbaQuery -SqlInstance $script:instance2, $script:instance3 -Database "master" -Query "DROP PROCEDURE dbatoolsci_test_startup"
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database "master" -Query "DROP PROCEDURE dbatoolsci_test_startup"
     }
 
     Context "Command actually works" {
-        $results = Copy-DbaStartupProcedure -Source $script:instance2 -Destination $script:instance3
+        $results = Copy-DbaStartupProcedure -Source $TestConfig.instance2 -Destination $TestConfig.instance3
         It "Should include test procedure: $procName" {
             ($results | Where-Object Name -eq $procName).Name | Should -Be $procName
         }

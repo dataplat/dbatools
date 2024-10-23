@@ -1,6 +1,6 @@
 $commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -17,7 +17,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "Return values" {
         It "Get the log shipping errors" {
             $Results = @()
-            $Results += Get-DbaDbLogShipError -SqlInstance $script:instance2
+            $Results += Get-DbaDbLogShipError -SqlInstance $TestConfig.instance2
             $Results.Count | Should Be 0
         }
     }

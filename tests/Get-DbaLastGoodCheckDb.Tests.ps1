@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -15,28 +15,28 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance1 -Database master
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1 -Database master
         $server.Query("DBCC CHECKDB")
         $dbname = "dbatoolsci_]_$(Get-Random)"
-        $db = New-DbaDatabase -SqlInstance $script:instance1 -Name $dbname -Owner sa
+        $db = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbname -Owner sa
         $db.Query("DBCC CHECKDB")
     }
     AfterAll {
-        $null = Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname -confirm:$false
     }
     Context "Command actually works" {
-        $results = Get-DbaLastGoodCheckDb -SqlInstance $script:instance1 -Database master
+        $results = Get-DbaLastGoodCheckDb -SqlInstance $TestConfig.instance1 -Database master
         It "LastGoodCheckDb is a valid date" {
             $results.LastGoodCheckDb -ne $null | Should Be $true
             $results.LastGoodCheckDb -is [datetime] | Should Be $true
         }
 
-        $results = Get-DbaLastGoodCheckDb -SqlInstance $script:instance1 -WarningAction SilentlyContinue
+        $results = Get-DbaLastGoodCheckDb -SqlInstance $TestConfig.instance1 -WarningAction SilentlyContinue
         It "returns more than 3 results" {
             ($results).Count -gt 3 | Should Be $true
         }
 
-        $results = Get-DbaLastGoodCheckDb -SqlInstance $script:instance1 -Database $dbname
+        $results = Get-DbaLastGoodCheckDb -SqlInstance $TestConfig.instance1 -Database $dbname
         It "LastGoodCheckDb is a valid date for database with embedded ] characters" {
             $results.LastGoodCheckDb -ne $null | Should Be $true
             $results.LastGoodCheckDb -is [datetime] | Should Be $true
@@ -44,13 +44,13 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Piping works" {
-        $server = Connect-DbaInstance -SqlInstance $script:instance1
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
         $results = $server | Get-DbaLastGoodCheckDb -Database $dbname, master
         It "LastGoodCheckDb accepts piped input from Connect-DbaInstance" {
             ($results).Count -eq 2 | Should Be $true
         }
 
-        $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname, master
+        $db = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname, master
         $results = $db | Get-DbaLastGoodCheckDb
         It "LastGoodCheckDb accepts piped input from Get-DbaDatabase" {
             ($results).Count -eq 2 | Should Be $true
@@ -58,7 +58,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Doesn't return duplicate results" {
-        $results = Get-DbaLastGoodCheckDb -SqlInstance $script:instance1, $script:instance2 -Database $dbname
+        $results = Get-DbaLastGoodCheckDb -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -Database $dbname
         It "LastGoodCheckDb doesn't return duplicates when multiple servers are passed in" {
             ($results | Group-Object SqlInstance, Database | Where-Object Count -gt 1) | Should BeNullOrEmpty
         }

@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -15,23 +15,23 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $null = New-DbaDatabase -SqlInstance $script:instance2 -Name 'dbatoolsci_rename1'
-        $null = New-DbaDatabase -SqlInstance $script:instance2 -Name 'dbatoolsci_filemove'
-        $null = New-DbaDatabase -SqlInstance $script:instance2 -Name 'dbatoolsci_logicname'
-        $null = New-DbaDatabase -SqlInstance $script:instance2 -Name 'dbatoolsci_filegroupname'
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name 'dbatoolsci_rename1'
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name 'dbatoolsci_filemove'
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name 'dbatoolsci_logicname'
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name 'dbatoolsci_filegroupname'
         $FileGroupName = @"
         ALTER DATABASE dbatoolsci_filegroupname
         ADD FILEGROUP Dbatoolsci_filegroupname
 "@
-        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query $FileGroupName
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $FileGroupName
         $date = (Get-Date).ToString('yyyyMMdd')
     }
     AfterAll {
-        $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database "test_dbatoolsci_rename2_$($date)", "Dbatoolsci_filemove", "dbatoolsci_logicname", "dbatoolsci_filegroupname" -Confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database "test_dbatoolsci_rename2_$($date)", "Dbatoolsci_filemove", "dbatoolsci_logicname", "dbatoolsci_filegroupname" -Confirm:$false
     }
 
     Context "Should preview a rename of a database" {
-        $variables = @{SqlInstance = $script:instance2
+        $variables = @{SqlInstance = $TestConfig.instance2
             Database               = 'dbatoolsci_rename1'
             DatabaseName           = 'dbatoolsci_rename2'
             Preview                = $true
@@ -48,7 +48,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Should rename a database" {
-        $variables = @{SqlInstance = $script:instance2
+        $variables = @{SqlInstance = $TestConfig.instance2
             Database               = 'dbatoolsci_rename1'
             DatabaseName           = 'dbatoolsci_rename2'
         }
@@ -70,7 +70,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Should rename a database with a prefix" {
-        $variables = @{SqlInstance = $script:instance2
+        $variables = @{SqlInstance = $TestConfig.instance2
             Database               = 'dbatoolsci_rename2'
             DatabaseName           = 'test_<DBN>'
         }
@@ -92,7 +92,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Should rename a database with a date" {
-        $variables = @{SqlInstance = $script:instance2
+        $variables = @{SqlInstance = $TestConfig.instance2
             Database               = 'test_dbatoolsci_rename2'
             DatabaseName           = '<DBN>_<DATE>'
         }
@@ -114,7 +114,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Should preview renaming database files" {
-        $variables = @{SqlInstance = $script:instance2
+        $variables = @{SqlInstance = $TestConfig.instance2
             Database               = "dbatoolsci_filemove"
             FileName               = "<DBN>_<FGN>_<FNN>"
             Preview                = $true
@@ -137,7 +137,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Should rename database files and move them" {
-        $variables = @{SqlInstance = $script:instance2
+        $variables = @{SqlInstance = $TestConfig.instance2
             Database               = "dbatoolsci_filemove"
             FileName               = "<DBN>_<FGN>_<FNN>"
             Move                   = $true
@@ -160,7 +160,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Should rename database files and forces the move" {
-        $variables = @{SqlInstance = $script:instance2
+        $variables = @{SqlInstance = $TestConfig.instance2
             Database               = "dbatoolsci_filemove"
             FileName               = "<FNN>_<FT>"
             ReplaceBefore          = $true
@@ -184,7 +184,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Should rename database files and set the database offline" {
-        $variables = @{SqlInstance = $script:instance2
+        $variables = @{SqlInstance = $TestConfig.instance2
             Database               = "dbatoolsci_filemove"
             FileName               = "<FNN>_<LGN>_<DATE>"
             SetOffline             = $true
@@ -210,7 +210,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Should rename the logical name" {
-        $variables = @{SqlInstance = $script:instance2
+        $variables = @{SqlInstance = $TestConfig.instance2
             Database               = "dbatoolsci_logicname"
             LogicalName            = "<LGN>_<DATE>_<DBN>"
         }
@@ -232,7 +232,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Should rename the filegroupname name" {
-        $variables = @{SqlInstance = $script:instance2
+        $variables = @{SqlInstance = $TestConfig.instance2
             Database               = "dbatoolsci_filegroupname"
             FileGroupName          = "<FGN>_<DATE>_<DBN>"
         }

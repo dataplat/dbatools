@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag "UnitTests" {
     Context "Validate parameters" {
@@ -13,13 +13,13 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
     }
 }
 
-# $script:instance3 is used for Availability Group tests and needs Hadr service setting enabled
+# $TestConfig.instance3 is used for Availability Group tests and needs Hadr service setting enabled
 
 Describe "$CommandName Integration Test" -Tag "IntegrationTests" {
-    $results = Get-DbaAgHadr -SqlInstance $script:instance3
+    $results = Get-DbaAgHadr -SqlInstance $TestConfig.instance3
     Context "Validate output" {
         It "returns the correct properties" {
             $results.IsHadrEnabled | Should -Be $true
         }
     }
-} #$script:instance2 for appveyor
+} #$TestConfig.instance2 for appveyor

@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -17,16 +17,16 @@ Describe "$commandName Integration Tests" -Tags "IntegrationTests" {
     if ($env:azuredbpasswd -eq "failstoooften") {
         Context "Run the tips against Azure database" {
             $securePassword = ConvertTo-SecureString $env:azuredbpasswd -AsPlainText -Force
-            $cred = New-Object System.Management.Automation.PSCredential ($script:azuresqldblogin, $securePassword)
+            $cred = New-Object System.Management.Automation.PSCredential ($TestConfig.azuresqldblogin, $securePassword)
 
-            $results = Invoke-DbaAzSqlDbTip -SqlInstance $script:azureserver -Database test -SqlCredential $cred -ReturnAllTips
+            $results = Invoke-DbaAzSqlDbTip -SqlInstance $TestConfig.azureserver -Database test -SqlCredential $cred -ReturnAllTips
 
             It "Should get some results" {
                 $results | Should -not -BeNullOrEmpty
             }
 
             It "Should have the right ComputerName" {
-                $results.ComputerName | Should -Be $script:azureserver
+                $results.ComputerName | Should -Be $TestConfig.azureserver
             }
 
             It "Database name should be 'test'" {

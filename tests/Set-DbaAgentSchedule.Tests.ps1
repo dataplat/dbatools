@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -15,19 +15,19 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $null = New-DbaAgentJob -SqlInstance $script:instance2 -Job 'dbatoolsci_setschedule1' -OwnerLogin 'sa'
-        $null = New-DbaAgentJob -SqlInstance $script:instance2 -Job 'dbatoolsci_setschedule2' -OwnerLogin 'sa'
+        $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job 'dbatoolsci_setschedule1' -OwnerLogin 'sa'
+        $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job 'dbatoolsci_setschedule2' -OwnerLogin 'sa'
         $start = (Get-Date).AddDays(2).ToString('yyyyMMdd')
         $end = (Get-Date).AddDays(4).ToString('yyyyMMdd')
         $altstart = (Get-Date).AddDays(3).ToString('yyyyMMdd')
         $altend = (Get-Date).AddDays(5).ToString('yyyyMMdd')
     }
     AfterAll {
-        $null = Remove-DbaAgentJob -SqlInstance $script:instance2 -Job 'dbatoolsci_setschedule1', 'dbatoolsci_setschedule2' -Confirm:$false
+        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job 'dbatoolsci_setschedule1', 'dbatoolsci_setschedule2' -Confirm:$false
     }
     Context "Should rename schedule" {
         BeforeAll {
-            $variables = @{SqlInstance    = $script:instance2
+            $variables = @{SqlInstance    = $TestConfig.instance2
                 Schedule                  = 'dbatoolsci_oldname'
                 Job                       = 'dbatoolsci_setschedule1'
                 FrequencyRecurrenceFactor = '1'
@@ -42,12 +42,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $null = New-DbaAgentSchedule @variables
         }
         AfterAll {
-            $null = Get-DbaAgentSchedule -SqlInstance $script:instance2 |
+            $null = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 |
                 Where-Object {$_.name -like 'dbatools*'} |
                 Remove-DbaAgentSchedule -Confirm:$false -Force
         }
-        $schedules = Get-DbaAgentSchedule -SqlInstance $script:instance2 | Where-Object {$_.name -like 'dbatools*'}
-        $variables = @{SqlInstance    = $script:instance2
+        $schedules = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object {$_.name -like 'dbatools*'}
+        $variables = @{SqlInstance    = $TestConfig.instance2
             Schedule                  = "dbatoolsci_oldname"
             NewName                   = "dbatoolsci_newname"
             Job                       = 'dbatoolsci_setschedule1'
@@ -60,7 +60,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         $null = Set-DbaAgentSchedule @variables
-        $results = Get-DbaAgentSchedule -SqlInstance $script:instance2 | Where-Object {$_.name -like 'dbatools*'}
+        $results = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object {$_.name -like 'dbatools*'}
 
         It "Should have Results" {
             $results | Should Not BeNullOrEmpty
@@ -75,7 +75,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Should set schedules based on static frequency" {
         BeforeAll {
             foreach ($frequency in ('Once', 'AgentStart', 'IdleComputer')) {
-                $variables = @{SqlInstance    = $script:instance2
+                $variables = @{SqlInstance    = $TestConfig.instance2
                     Schedule                  = "dbatoolsci_$frequency"
                     Job                       = 'dbatoolsci_setschedule1'
                     FrequencyType             = $frequency
@@ -90,15 +90,15 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             }
         }
         AfterAll {
-            $null = Get-DbaAgentSchedule -SqlInstance $script:instance2 |
+            $null = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 |
                 Where-Object {$_.name -like 'dbatools*'} |
                 Remove-DbaAgentSchedule -Confirm:$false -Force
         }
 
-        $schedules = Get-DbaAgentSchedule -SqlInstance $script:instance2 | Where-Object {$_.name -like 'dbatools*'}
+        $schedules = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object {$_.name -like 'dbatools*'}
         foreach ($schedule in $schedules) {
             foreach ($frequency in ('Once', '1' , 'AgentStart', '64', 'IdleComputer', '128')) {
-                $variables = @{SqlInstance    = $script:instance2
+                $variables = @{SqlInstance    = $TestConfig.instance2
                     Schedule                  = "$($schedule.name)"
                     Job                       = 'dbatoolsci_setschedule1'
                     FrequencyType             = $frequency
@@ -112,7 +112,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 }
             }
         }
-        $results = Get-DbaAgentSchedule -SqlInstance $script:instance2 | Where-Object {$_.name -like 'dbatools*'}
+        $results = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object {$_.name -like 'dbatools*'}
 
         It "Should have Results" {
             $results | Should Not BeNullOrEmpty
@@ -130,7 +130,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Should set schedules based on calendar frequency" {
         BeforeAll {
             foreach ($frequency in ('Daily', 'Weekly', 'Monthly', 'MonthlyRelative')) {
-                $variables = @{SqlInstance    = $script:instance2
+                $variables = @{SqlInstance    = $TestConfig.instance2
                     Schedule                  = "dbatoolsci_$frequency"
                     Job                       = 'dbatoolsci_setschedule2'
                     FrequencyType             = $frequency
@@ -147,15 +147,15 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             }
         }
         AfterAll {
-            $null = Get-DbaAgentSchedule -SqlInstance $script:instance2 |
+            $null = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 |
                 Where-Object {$_.name -like 'dbatools*'} |
                 Remove-DbaAgentSchedule -Confirm:$false -Force
         }
 
-        $schedules = Get-DbaAgentSchedule -SqlInstance $script:instance2 | Where-Object {$_.name -like 'dbatools*'}
+        $schedules = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object {$_.name -like 'dbatools*'}
         foreach ($schedule in $schedules) {
             foreach ($frequency in ('Daily', '4', 'Weekly', '8', 'Monthly', '16', 'MonthlyRelative', '32')) {
-                $variables = @{SqlInstance    = $script:instance2
+                $variables = @{SqlInstance    = $TestConfig.instance2
                     Schedule                  = "$($schedule.name)"
                     Job                       = 'dbatoolsci_setschedule2'
                     FrequencyType             = $frequency
@@ -171,7 +171,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 $null = Set-DbaAgentSchedule @variables
             }
         }
-        $results = Get-DbaAgentSchedule -SqlInstance $script:instance2 | Where-Object {$_.name -like 'dbatools*'}
+        $results = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object {$_.name -like 'dbatools*'}
 
         It "Should have Results" {
             $results | Should Not BeNullOrEmpty
@@ -189,7 +189,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Should set schedules with various frequency subday type" {
         BeforeAll {
             foreach ($FrequencySubdayType in ('Once', 'Time', 'Seconds', 'Second', 'Minutes', 'Minute', 'Hours', 'Hour')) {
-                $variables = @{SqlInstance    = $script:instance2
+                $variables = @{SqlInstance    = $TestConfig.instance2
                     Schedule                  = "dbatoolsci_$FrequencySubdayType"
                     Job                       = 'dbatoolsci_setschedule1'
                     FrequencyRecurrenceFactor = '1'
@@ -205,14 +205,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             }
         }
         AfterAll {
-            $null = Get-DbaAgentSchedule -SqlInstance $script:instance2 |
+            $null = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 |
                 Where-Object {$_.name -like 'dbatools*'} |
                 Remove-DbaAgentSchedule -Confirm:$false -Force
         }
-        $schedules = Get-DbaAgentSchedule -SqlInstance $script:instance2 | Where-Object {$_.name -like 'dbatools*'}
+        $schedules = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object {$_.name -like 'dbatools*'}
         foreach ($schedule in $schedules) {
             foreach ($FrequencySubdayType in ('Once', 'Time', 'Seconds', 'Second', 'Minutes', 'Minute', 'Hours', 'Hour')) {
-                $variables = @{SqlInstance    = $script:instance2
+                $variables = @{SqlInstance    = $TestConfig.instance2
                     Schedule                  = "$schedule"
                     Job                       = 'dbatoolsci_setschedule1'
                     FrequencyRecurrenceFactor = '6'
@@ -227,7 +227,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 $null = Set-DbaAgentSchedule @variables
             }
         }
-        $results = Get-DbaAgentSchedule -SqlInstance $script:instance2 | Where-Object {$_.name -like 'dbatools*'}
+        $results = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object {$_.name -like 'dbatools*'}
 
         It "Should have Results" {
             $results | Should Not BeNullOrEmpty
@@ -242,7 +242,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Should set schedules with various frequency relative interval" {
         BeforeAll {
             foreach ($FrequencyRelativeInterval in ('Unused', 'First', 'Second', 'Third', 'Fourth', 'Last')) {
-                $variables = @{SqlInstance    = $script:instance2
+                $variables = @{SqlInstance    = $TestConfig.instance2
                     Schedule                  = "dbatoolsci_$FrequencyRelativeInterval"
                     Job                       = 'dbatoolsci_setschedule2'
                     FrequencyRecurrenceFactor = '1'
@@ -257,14 +257,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             }
         }
         AfterAll {
-            $null = Get-DbaAgentSchedule -SqlInstance $script:instance2 |
+            $null = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 |
                 Where-Object {$_.name -like 'dbatools*'} |
                 Remove-DbaAgentSchedule -Confirm:$false -Force
         }
-        $schedules = Get-DbaAgentSchedule -SqlInstance $script:instance2 | Where-Object {$_.name -like 'dbatools*'}
+        $schedules = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object {$_.name -like 'dbatools*'}
         foreach ($schedule in $schedules) {
             foreach ($FrequencyRelativeInterval in ('Unused', 'First', 'Second', 'Third', 'Fourth', 'Last')) {
-                $variables = @{SqlInstance    = $script:instance2
+                $variables = @{SqlInstance    = $TestConfig.instance2
                     Schedule                  = "$schedule"
                     Job                       = 'dbatoolsci_setschedule2'
                     FrequencyRecurrenceFactor = '4'
@@ -278,7 +278,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 $null = Set-DbaAgentSchedule @variables
             }
         }
-        $results = Get-DbaAgentSchedule -SqlInstance $script:instance2 | Where-Object {$_.name -like 'dbatools*'}
+        $results = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object {$_.name -like 'dbatools*'}
 
         It "Should have Results" {
             $results | Should Not BeNullOrEmpty

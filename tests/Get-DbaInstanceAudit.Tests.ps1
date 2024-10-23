@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $sql = "CREATE SERVER AUDIT LoginAudit
                 TO FILE (FILEPATH = N'C:\temp',MAXSIZE = 10 MB,MAX_ROLLOVER_FILES = 1,RESERVE_DISK_SPACE = OFF)
                 WITH (QUEUE_DELAY = 1000, ON_FAILURE = CONTINUE)
@@ -35,11 +35,11 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
     Context "Verifying command output" {
         It "returns some results" {
-            $results = Get-DbaInstanceAudit -SqlInstance $script:instance2
+            $results = Get-DbaInstanceAudit -SqlInstance $TestConfig.instance2
             $results | Should -Not -Be $null
         }
         It "returns some results" {
-            $results = Get-DbaInstanceAudit -SqlInstance $script:instance2 -Audit LoginAudit
+            $results = Get-DbaInstanceAudit -SqlInstance $TestConfig.instance2 -Audit LoginAudit
             $results.Name | Should -Be 'LoginAudit'
             $results.Enabled | Should -Be $true
         }

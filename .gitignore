@@ -38,3 +38,14 @@ en-us/dbatools-help.xml
 dbatools.ps1
 dbatools.dat
 allcommands.ps1
+
+# Environment files
+**/.env
+
+# Aider files
+/.aider.tags.cache.v3
+.aider/.aider.chat.history.md
+.aider/.aider.input.history
+.aider/aider.chat.history.md
+.aider/aider.input.history
+.aider/aider.llm.history

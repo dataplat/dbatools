@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $servers = Connect-DbaInstance -SqlInstance $script:instance2, $script:instance3
+        $servers = Connect-DbaInstance -SqlInstance $TestConfig.instance2, $TestConfig.instance3
         foreach ($s in $servers) {
             if ( (Get-DbaSpConfigure -SqlInstance $s -Name 'Database Mail XPs').RunningValue -ne 1 ) {
                 Set-DbaSpConfigure -SqlInstance $s -Name 'Database Mail XPs' -Value 1
@@ -35,7 +35,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
 
         $splat1 = @{
-            SqlInstance    = $script:instance2
+            SqlInstance    = $TestConfig.instance2
             Name           = $accountName
             Description    = $account_description
             EmailAddress   = $email_address
@@ -46,7 +46,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $null = New-DbaDbMailAccount @splat1 -Force
 
         $splat2 = @{
-            SqlInstance         = $script:instance2
+            SqlInstance         = $TestConfig.instance2
             Name                = $profilename
             Description         = $profile_description
             MailAccountName     = $email_address
@@ -56,7 +56,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     }
     AfterAll {
-        $servers = Connect-DbaInstance -SqlInstance $script:instance2, $script:instance3
+        $servers = Connect-DbaInstance -SqlInstance $TestConfig.instance2, $TestConfig.instance3
 
         foreach ($s in $servers) {
             $mailAccountSettings = "EXEC msdb.dbo.sysmail_delete_account_sp @account_name = '$accountname';"
@@ -67,38 +67,38 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
     }
 
-    Context "Copy DbMail to $script:instance3" {
-        $results = Copy-DbaDbMail -Source $script:instance2 -Destination $script:instance3
+    Context "Copy DbMail to $($TestConfig.instance3)" {
+        $results = Copy-DbaDbMail -Source $TestConfig.instance2 -Destination $TestConfig.instance3
 
         It "Should have copied database mailitems" {
             $results | Should Not Be $null
         }
         foreach ($r in $results) {
             if ($r.type -in @('Mail Configuration', 'Mail Account', 'Mail Profile')) {
-                It "Should have copied $($r.type) from $script:instance2" {
-                    $r.SourceServer | Should Be "$script:instance2"
+                It "Should have copied $($r.type) from $($TestConfig.instance2)" {
+                    $r.SourceServer | Should Be $TestConfig.instance2
                 }
-                It "Should have copied $($r.type) to $script:instance3" {
-                    $r.DestinationServer | Should Be "$script:instance3"
+                It "Should have copied $($r.type) to $($TestConfig.instance3)" {
+                    $r.DestinationServer | Should Be $TestConfig.instance3
                 }
             }
         }
     }
 
     Context "Copy MailServers specifically" {
-        $results = Copy-DbaDbMail -Source $script:instance2 -Destination $script:instance3 -Type MailServers
+        $results = Copy-DbaDbMail -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -Type MailServers
 
         It "Should have copied database mailitems" {
             $results | Should Not Be $null
         }
 
         foreach ($r in $results) {
-            It "Should have $($r.status) $($r.type) from $script:instance2" {
-                $r.SourceServer | Should Be "$script:instance2"
+            It "Should have $($r.status) $($r.type) from $($TestConfig.instance2)" {
+                $r.SourceServer | Should Be $TestConfig.instance2
                 $r.status | Should Be 'Skipped'
             }
-            It "Should have $($r.status) $($r.type) to $script:instance3" {
-                $r.DestinationServer | Should Be "$script:instance3"
+            It "Should have $($r.status) $($r.type) to $($TestConfig.instance3)" {
+                $r.DestinationServer | Should Be $TestConfig.instance3
                 $r.status | Should Be 'Skipped'
             }
         }

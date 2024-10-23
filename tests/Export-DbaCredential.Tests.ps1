@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -18,19 +18,19 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $plaintext = "ReallyT3rrible!"
         $password = ConvertTo-SecureString $plaintext -AsPlainText -Force
-        $null = New-DbaCredential -SqlInstance $script:instance2 -Name dbatoolsci_CaptainAcred -Identity dbatoolsci_CaptainAcredId -Password $password
-        $null = New-DbaCredential -SqlInstance $script:instance2 -Identity dbatoolsci_Hulk -Password $password
+        $null = New-DbaCredential -SqlInstance $TestConfig.instance2 -Name dbatoolsci_CaptainAcred -Identity dbatoolsci_CaptainAcredId -Password $password
+        $null = New-DbaCredential -SqlInstance $TestConfig.instance2 -Identity dbatoolsci_Hulk -Password $password
         $allfiles = @()
     }
     AfterAll {
         try {
-            (Get-DbaCredential -SqlInstance $script:instance2 -Identity dbatoolsci_CaptainAcred, dbatoolsci_Hulk -ErrorAction Stop -WarningAction SilentlyContinue).Drop()
+            (Get-DbaCredential -SqlInstance $TestConfig.instance2 -Identity dbatoolsci_CaptainAcred, dbatoolsci_Hulk -ErrorAction Stop -WarningAction SilentlyContinue).Drop()
         } catch { }
         $null = $allfiles | Remove-Item -ErrorAction Ignore
     }
 
     Context "Should export all credentails" {
-        $file = Export-DbaCredential -SqlInstance $script:instance2
+        $file = Export-DbaCredential -SqlInstance $TestConfig.instance2
         $results = Get-Content -Path $file -Raw
         $allfiles += $file
         It "Should have information" {
@@ -46,7 +46,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Should export a specific credential" {
         $filepath = "$env:USERPROFILE\Documents\dbatoolsci_credential.sql"
-        $null = Export-DbaCredential -SqlInstance $script:instance2 -Identity 'dbatoolsci_CaptainAcredId' -FilePath $filepath
+        $null = Export-DbaCredential -SqlInstance $TestConfig.instance2 -Identity 'dbatoolsci_CaptainAcredId' -FilePath $filepath
         $results = Get-Content -Path $filepath
         $allfiles += $filepath
 
@@ -65,7 +65,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Should export a specific credential and append it to exisiting export" {
         $filepath = "$env:USERPROFILE\Documents\dbatoolsci_credential.sql"
-        $null = Export-DbaCredential -SqlInstance $script:instance2 -Identity 'dbatoolsci_Hulk' -FilePath $filepath -Append
+        $null = Export-DbaCredential -SqlInstance $TestConfig.instance2 -Identity 'dbatoolsci_Hulk' -FilePath $filepath -Append
         $results = Get-Content -Path $filepath
 
         It "Should have information" {
@@ -83,7 +83,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Should export a specific credential excluding the password" {
         $filepath = "$env:USERPROFILE\Documents\temp-credential.sql"
-        $null = Export-DbaCredential -SqlInstance $script:instance2 -Identity 'dbatoolsci_CaptainAcredId' -FilePath $filepath -ExcludePassword
+        $null = Export-DbaCredential -SqlInstance $TestConfig.instance2 -Identity 'dbatoolsci_CaptainAcredId' -FilePath $filepath -ExcludePassword
         $results = Get-Content -Path $filepath
         $allfiles += $filepath
 

@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $random = Get-Random
         $tableName = "dbatools_getdbtbl1"
         $tableName2 = "dbatools_getdbtbl2"
@@ -28,30 +28,30 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     AfterAll {
-        $null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
     }
 
     Context "Command actually works" {
         It "returns no foreign keys from excluded DB with -ExcludeDatabase" {
-            $results = Get-DbaDbForeignKey -SqlInstance $script:instance2 -ExcludeDatabase master
+            $results = Get-DbaDbForeignKey -SqlInstance $TestConfig.instance2 -ExcludeDatabase master
             $results.where( { $_.Database -eq 'master' }).count | Should Be 0
         }
         It "returns only foreign keys from selected DB with -Database" {
-            $results = Get-DbaDbForeignKey -SqlInstance $script:instance2 -Database $dbname
+            $results = Get-DbaDbForeignKey -SqlInstance $TestConfig.instance2 -Database $dbname
             $results.where( { $_.Database -ne 'master' }).count | Should Be 1
         }
         It "Should include test foreign keys: $ckName" {
-            $results = Get-DbaDbForeignKey -SqlInstance $script:instance2 -Database $dbname -ExcludeSystemTable
+            $results = Get-DbaDbForeignKey -SqlInstance $TestConfig.instance2 -Database $dbname -ExcludeSystemTable
             ($results | Where-Object Name -eq $ckName).Name | Should Be $ckName
         }
         It "Should exclude system tables" {
-            $results = Get-DbaDbForeignKey -SqlInstance $script:instance2 -Database master -ExcludeSystemTable
+            $results = Get-DbaDbForeignKey -SqlInstance $TestConfig.instance2 -Database master -ExcludeSystemTable
             ($results | Where-Object Name -eq 'spt_fallback_db') | Should Be $null
         }
     }
 
     Context "Parameters are returned correctly" {
-        $results = Get-DbaDbForeignKey -SqlInstance $script:instance2 -ExcludeDatabase master
+        $results = Get-DbaDbForeignKey -SqlInstance $TestConfig.instance2 -ExcludeDatabase master
         It "Has the correct default properties" {
             $expectedStdProps = 'ComputerName,CreateDate,Database,DateLastModified,ID,InstanceName,IsChecked,IsEnabled,Name,NotForReplication,ReferencedKey,ReferencedTable,ReferencedTableSchema,SqlInstance,Table'.split(',')
             ($results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should Be ($ExpectedStdProps | Sort-Object)

@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -14,7 +14,11 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    $results = Enable-DbaHideInstance $script:instance1 -EnableException
+    AfterAll {
+        $null = Disable-DbaHideInstance $TestConfig.instance1
+    }
+
+    $results = Enable-DbaHideInstance $TestConfig.instance1 -EnableException
 
     It "returns true" {
         $results.HideInstance -eq $true

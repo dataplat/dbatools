@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -19,7 +19,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $end = (Get-Date).AddDays(4).ToString('yyyyMMdd')
 
         foreach ($FrequencySubdayType in ('Time', 'Seconds', 'Minutes', 'Hours')) {
-            $variables = @{SqlInstance    = $script:instance2
+            $variables = @{SqlInstance    = $TestConfig.instance2
                 Schedule                  = "dbatoolsci_$FrequencySubdayType"
                 FrequencyRecurrenceFactor = '1'
                 FrequencySubdayInterval   = '1'
@@ -34,19 +34,19 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Should remove schedules" {
-        $results = Get-DbaAgentSchedule -SqlInstance $script:instance2 | Where-Object { $_.name -like 'dbatools*' }
+        $results = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object { $_.name -like 'dbatools*' }
         It "Should find all created schedule" {
             $results | Should Not BeNullOrEmpty
         }
 
-        $null = Remove-DbaAgentSchedule -SqlInstance $script:instance2 -Schedule dbatoolsci_Minutes -Confirm:$false
-        $results = Get-DbaAgentSchedule -SqlInstance $script:instance2 -Schedule dbatoolsci_Minutes
+        $null = Remove-DbaAgentSchedule -SqlInstance $TestConfig.instance2 -Schedule dbatoolsci_Minutes -Confirm:$false
+        $results = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 -Schedule dbatoolsci_Minutes
         It "Should not find dbatoolsci_Minutes" {
             $results | Should BeNullOrEmpty
         }
 
-        $null = Get-DbaAgentSchedule -SqlInstance $script:instance2 | Where-Object { $_.name -like 'dbatools*' } | Remove-DbaAgentSchedule -Confirm:$false -Force
-        $results = Get-DbaAgentSchedule -SqlInstance $script:instance2 | Where-Object { $_.name -like 'dbatools*' }
+        $null = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object { $_.name -like 'dbatools*' } | Remove-DbaAgentSchedule -Confirm:$false -Force
+        $results = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object { $_.name -like 'dbatools*' }
         It "Should not find any created schedule" {
             $results | Should BeNullOrEmpty
         }

@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -16,13 +16,13 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Command finds User Objects for SA" {
         BeforeAll {
-            $null = New-DbaDatabase -SqlInstance $script:instance2 -Name 'dbatoolsci_userObject' -Owner 'sa'
+            $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name 'dbatoolsci_userObject' -Owner 'sa'
         }
         AfterAll {
-            $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database 'dbatoolsci_userObject' -Confirm:$false
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database 'dbatoolsci_userObject' -Confirm:$false
         }
 
-        $results = Find-DbaUserObject -SqlInstance $script:instance2 -Pattern sa
+        $results = Find-DbaUserObject -SqlInstance $TestConfig.instance2 -Pattern sa
         It "Should find a specific Database Owned by sa" {
             $results.Where( {$_.name -eq 'dbatoolsci_userobject'}).Type | Should Be "Database"
         }
@@ -31,7 +31,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Command finds User Objects" {
-        $results = Find-DbaUserObject -SqlInstance $script:instance2
+        $results = Find-DbaUserObject -SqlInstance $TestConfig.instance2
         It "Should find resutls" {
             $results | Should Not Be Null
         }

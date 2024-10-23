@@ -1,6 +1,6 @@
 $commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -15,11 +15,11 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance1
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
         $compatibilityLevel = $server.Databases['master'].CompatibilityLevel
     }
     Context "Gets compatibility for multiple databases" {
-        $results = Get-DbaDbCompatibility -SqlInstance $script:instance1
+        $results = Get-DbaDbCompatibility -SqlInstance $TestConfig.instance1
         It "Gets results" {
             $results | Should Not Be $null
         }
@@ -29,19 +29,19 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 if ($row.DatabaseId -le 4) {
                     $row.Compatibility | Should Be $compatibilityLevel
                 }
-                $row.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $script:instance1 -Database $row.Database).Id
+                $row.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $row.Database).Id
             }
         }
     }
     Context "Gets compatibility for one database" {
-        $results = Get-DbaDbCompatibility -SqlInstance $script:instance1 -database master
+        $results = Get-DbaDbCompatibility -SqlInstance $TestConfig.instance1 -database master
 
         It "Gets results" {
             $results | Should Not Be $null
         }
         It "Should return correct compatibility level for $($results.database)" {
             $results.Compatibility | Should Be $compatibilityLevel
-            $results.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $script:instance1 -Database master).Id
+            $results.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master).Id
         }
     }
 }

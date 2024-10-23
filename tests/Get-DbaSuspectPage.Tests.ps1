@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -17,7 +17,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Testing if suspect pages are present" {
         BeforeAll {
             $dbname = "dbatoolsci_GetSuspectPage"
-            $Server = Connect-DbaInstance -SqlInstance $script:instance2
+            $Server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
             $null = $Server.Query("Create Database [$dbname]")
             $db = Get-DbaDatabase -SqlInstance $Server -Database $dbname
         }
@@ -33,14 +33,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
         # make darn sure suspect pages show up, run twice
         try {
-            $null = Invoke-DbaDbCorruption -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
+            $null = Invoke-DbaDbCorruption -SqlInstance $TestConfig.instance2 -Database $dbname -Confirm:$false
             $null = $db.Query("select top 100 from example")
             $null = $server.Query("ALTER DATABASE $dbname SET PAGE_VERIFY CHECKSUM  WITH NO_WAIT")
             $null = Start-DbccCheck -Server $Server -dbname $dbname -WarningAction SilentlyContinue
         } catch {} # should fail
 
         try {
-            $null = Invoke-DbaDbCorruption -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
+            $null = Invoke-DbaDbCorruption -SqlInstance $TestConfig.instance2 -Database $dbname -Confirm:$false
             $null = $db.Query("select top 100 from example")
             $null = $server.Query("ALTER DATABASE $dbname SET PAGE_VERIFY CHECKSUM  WITH NO_WAIT")
             $null = Start-DbccCheck -Server $Server -dbname $dbname -WarningAction SilentlyContinue

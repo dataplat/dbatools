@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -16,7 +16,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Context "Command actually works" {
-        $results = Get-DbaInstanceProtocol -ComputerName $script:instance1, $script:instance2
+        $results = Get-DbaInstanceProtocol -ComputerName $TestConfig.instance1, $TestConfig.instance2
 
         It "shows some services" {
             $results.DisplayName | Should Not Be $null

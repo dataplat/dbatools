@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -15,14 +15,14 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "Should return file information" {
-        $result = Get-DbaDbFileGrowth -SqlInstance $script:instance2
+        $result = Get-DbaDbFileGrowth -SqlInstance $TestConfig.instance2
         It "returns information about msdb files" {
             $result.Database -contains "msdb" | Should -Be $true
         }
     }
 
     Context "Should return file information for only msdb" {
-        $result = Get-DbaDbFileGrowth -SqlInstance $script:instance2 -Database msdb | Select-Object -First 1
+        $result = Get-DbaDbFileGrowth -SqlInstance $TestConfig.instance2 -Database msdb | Select-Object -First 1
         It "returns only msdb files" {
             $result.Database | Should -Be "msdb"
         }

@@ -1,6 +1,6 @@
 $commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -23,15 +23,15 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Command actually works" {
-        $instanceName = (Connect-DbaInstance -SqlInstance $script:instance2).ServiceName
+        $instanceName = (Connect-DbaInstance -SqlInstance $TestConfig.instance2).ServiceName
 
-        $results = Get-DbaService -ComputerName $script:instance2
+        $results = Get-DbaService -ComputerName $TestConfig.instance2
 
         It "shows some services" {
             $results.DisplayName | Should Not Be $null
         }
 
-        $results = Get-DbaService -ComputerName $script:instance2 -Type Agent
+        $results = Get-DbaService -ComputerName $TestConfig.instance2 -Type Agent
 
         It "shows only one service type" {
             foreach ($result in $results) {
@@ -39,7 +39,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             }
         }
 
-        $results = Get-DbaService -ComputerName $script:instance2 -InstanceName $instanceName -Type Agent -AdvancedProperties
+        $results = Get-DbaService -ComputerName $TestConfig.instance2 -InstanceName $instanceName -Type Agent -AdvancedProperties
 
         It "shows a service from a specific instance" {
             $results.ServiceType| Should Be "Agent"
@@ -49,25 +49,25 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results.Clustered | Should Not Be $null
         }
 
-        $service = Get-DbaService -ComputerName $script:instance2 -Type Agent -InstanceName $instanceName
+        $service = Get-DbaService -ComputerName $TestConfig.instance2 -Type Agent -InstanceName $instanceName
 
         It "sets startup mode of the service to 'Manual'" {
             { $service.ChangeStartMode('Manual') } | Should Not Throw
         }
 
-        $results = Get-DbaService -ComputerName $script:instance2 -Type Agent -InstanceName $instanceName
+        $results = Get-DbaService -ComputerName $TestConfig.instance2 -Type Agent -InstanceName $instanceName
 
         It "verifies that startup mode of the service is 'Manual'" {
             $results.StartMode | Should Be 'Manual'
         }
 
-        $service = Get-DbaService -ComputerName $script:instance2 -Type Agent -InstanceName $instanceName
+        $service = Get-DbaService -ComputerName $TestConfig.instance2 -Type Agent -InstanceName $instanceName
 
         It "sets startup mode of the service to 'Automatic'" {
             { $service.ChangeStartMode('Automatic') } | Should Not Throw
         }
 
-        $results = Get-DbaService -ComputerName $script:instance2 -Type Agent -InstanceName $instanceName
+        $results = Get-DbaService -ComputerName $TestConfig.instance2 -Type Agent -InstanceName $instanceName
 
         It "verifies that startup mode of the service is 'Automatic'" {
             $results.StartMode | Should Be 'Automatic'
@@ -75,7 +75,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
     Context "Command actually works with SqlInstance" {
         $results = @( )
-        $results += Get-DbaService -SqlInstance $script:instance2 -Type Engine
+        $results += Get-DbaService -SqlInstance $TestConfig.instance2 -Type Engine
 
         It "shows exactly one service" {
             $results.Count | Should Be 1

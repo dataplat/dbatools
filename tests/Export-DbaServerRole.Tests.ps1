@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -22,7 +22,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $login1 = "dbatoolsci_exportdbaserverrole_login1$random"
             $svRole = "dbatoolsci_ScriptPermissions$random"
 
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
             $null = $server.Query("CREATE LOGIN [$login1] WITH PASSWORD = 'GoodPass1234!'")
             $null = $server.Query("CREATE SERVER ROLE [$svRole] AUTHORIZATION [$login1]")
             $null = $server.Query("ALTER SERVER ROLE [dbcreator] ADD MEMBER [$svRole]")
@@ -34,8 +34,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
     AfterAll {
         try {
-            Remove-DbaServerRole -SqlInstance $script:instance2 -ServerRole $svRole -Confirm:$false
-            Remove-DbaLogin -SqlInstance $script:instance2 -Login $login1 -Confirm:$false
+            Remove-DbaServerRole -SqlInstance $TestConfig.instance2 -ServerRole $svRole -Confirm:$false
+            Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login1 -Confirm:$false
 
         } catch { }
         (Get-ChildItem $outputFile -ErrorAction SilentlyContinue) | Remove-Item -ErrorAction SilentlyContinue
@@ -43,7 +43,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Check if output file was created" {
 
-        $null = Export-DbaServerRole -SqlInstance $script:instance2 -FilePath $outputFile
+        $null = Export-DbaServerRole -SqlInstance $TestConfig.instance2 -FilePath $outputFile
         It "Exports results to one sql file" {
             (Get-ChildItem $outputFile).Count | Should Be 1
         }
@@ -53,7 +53,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Check using piped input created" {
-        $role = Get-DbaServerRole -SqlInstance $script:instance2 -ServerRole $svRole
+        $role = Get-DbaServerRole -SqlInstance $TestConfig.instance2 -ServerRole $svRole
         $null = $role | Export-DbaServerRole -FilePath $outputFile
         It "Exports results to one sql file" {
             (Get-ChildItem $outputFile).Count | Should Be 1

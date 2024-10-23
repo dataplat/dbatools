@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -16,7 +16,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Test" -Tag "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $random = Get-Random
         $startupProcName = "StartUpProc$random"
         $startupProc = "dbo.$startupProcName"
@@ -30,7 +30,7 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
     }
 
     Context "Validate returns correct output for disable" {
-        $result = Disable-DbaStartupProcedure -SqlInstance $script:instance2 -StartupProcedure $startupProc -Confirm:$false
+        $result = Disable-DbaStartupProcedure -SqlInstance $TestConfig.instance2 -StartupProcedure $startupProc -Confirm:$false
 
         It "returns correct results" {
             $result.Schema -eq "dbo" | Should Be $true
@@ -42,7 +42,7 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
     }
 
     Context "Validate returns correct output for already existing state" {
-        $result = Disable-DbaStartupProcedure -SqlInstance $script:instance2 -StartupProcedure $startupProc -Confirm:$false
+        $result = Disable-DbaStartupProcedure -SqlInstance $TestConfig.instance2 -StartupProcedure $startupProc -Confirm:$false
 
         It "returns correct results" {
             $result.Schema -eq "dbo" | Should Be $true
@@ -54,8 +54,8 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
     }
 
     Context "Validate returns correct results for piped input" {
-        $null = Enable-DbaStartupProcedure -SqlInstance $script:instance2 -StartupProcedure $startupProc -Confirm:$false
-        $result = Get-DbaStartupProcedure -SqlInstance $script:instance2 | Disable-DbaStartupProcedure -Confirm:$false
+        $null = Enable-DbaStartupProcedure -SqlInstance $TestConfig.instance2 -StartupProcedure $startupProc -Confirm:$false
+        $result = Get-DbaStartupProcedure -SqlInstance $TestConfig.instance2 | Disable-DbaStartupProcedure -Confirm:$false
 
         It "returns correct results" {
             $result.Schema -eq "dbo" | Should Be $true

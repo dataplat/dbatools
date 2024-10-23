@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -15,13 +15,13 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command returns proper info" {
-        $results = $instances | Test-DbaNetworkLatency
+        $results = $TestConfig.instances | Test-DbaNetworkLatency
 
         It "returns two objects" {
             $results.Count | Should Be 2
         }
 
-        $results = Test-DbaNetworkLatency -SqlInstance $instances
+        $results = Test-DbaNetworkLatency -SqlInstance $TestConfig.instances
 
         It "executes 3 times by default" {
             $results.ExecutionCount | Should Be 3, 3

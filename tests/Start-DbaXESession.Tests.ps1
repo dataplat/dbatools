@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $conn = $server.ConnectionContext
         # Get the systemhealth session
         $systemhealth = Get-DbaXESession -SqlInstance $server -Session system_health
@@ -52,6 +52,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         # Drop created objects
         $conn.ExecuteNonQuery("IF EXISTS(SELECT * FROM sys.server_event_sessions WHERE name = 'dbatoolsci_session_invalid') DROP EVENT SESSION [dbatoolsci_session_invalid] ON SERVER;")
         $conn.ExecuteNonQuery("IF EXISTS(SELECT * FROM sys.server_event_sessions WHERE name = 'dbatoolsci_session_valid') DROP EVENT SESSION [dbatoolsci_session_valid] ON SERVER;")
+        Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 -Schedule "XE Session START - dbatoolsci_session_valid", "XE Session STOP - dbatoolsci_session_valid" | Remove-DbaAgentSchedule -Force -Confirm:$false
     }
 
     Context "Verifying command works" {
@@ -90,22 +91,34 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "works when -StopAt is passed" {
             $StopAt = (Get-Date).AddSeconds(10)
             Start-DbaXESession $server -Session $dbatoolsciValid.Name -StopAt $StopAt -WarningAction SilentlyContinue
+            $dbatoolsciValid.Refresh()
             $dbatoolsciValid.IsRunning | Should Be $true
             (Get-DbaAgentJob -SqlInstance $server -Job "XE Session STOP - dbatoolsci_session_valid").Count | Should -Be 1
             $stopSchedule = Get-DbaAgentSchedule -SqlInstance $server -Schedule "XE Session STOP - dbatoolsci_session_valid"
             $stopSchedule.ActiveStartTimeOfDay.ToString('hhmmss') | Should -Be $StopAt.TimeOfDay.ToString('hhmmss')
             $stopSchedule.ActiveStartDate | Should -Be $StopAt.Date
+            Start-Sleep -Seconds 11
+            $dbatoolsciValid.Refresh()
+            $dbatoolsciValid.IsRunning | Should Be $false
+            # Using $TestConfig.instance2 because the SMO $server is not updated after the job is removed
+            (Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job "XE Session STOP - dbatoolsci_session_valid").Count | Should -Be 0
         }
 
         It "works when -StartAt is passed" {
             $null = Stop-DbaXESession -SqlInstance $server -Session $dbatoolsciValid.Name -WarningAction SilentlyContinue
             $StartAt = (Get-Date).AddSeconds(10)
-            $session = Start-DbaXESession $server -Session $dbatoolsciValid.Name -StartAt $StartAt
-            $session.IsRunning | Should Be $false
+            $null = Start-DbaXESession $server -Session $dbatoolsciValid.Name -StartAt $StartAt
+            $dbatoolsciValid.Refresh()
+            $dbatoolsciValid.IsRunning | Should Be $false
             (Get-DbaAgentJob -SqlInstance $server -Job "XE Session START - dbatoolsci_session_valid").Count | Should -Be 1
             $startSchedule = Get-DbaAgentSchedule -SqlInstance $server -Schedule "XE Session START - dbatoolsci_session_valid"
             $startSchedule.ActiveStartTimeOfDay.ToString('hhmmss') | Should -Be $StartAt.TimeOfDay.ToString('hhmmss')
             $startSchedule.ActiveStartDate | Should -Be $StartAt.Date
+            Start-Sleep -Seconds 11
+            $dbatoolsciValid.Refresh()
+            $dbatoolsciValid.IsRunning | Should Be $true
+            # Using $TestConfig.instance2 because the SMO $server is not updated after the job is removed
+            (Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job "XE Session STOP - dbatoolsci_session_valid").Count | Should -Be 0
         }
 
     }

@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -21,18 +21,18 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                     [LastName] [varchar](50) NULL,
                     [City] [datetime] NULL
                 ) ON [PRIMARY]"
-        $db = New-DbaDatabase -SqlInstance $script:instance1 -Name $dbname
+        $db = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbname
         $db.Query($sql)
     }
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname -Confirm:$false
         $results | Remove-Item -Confirm:$false -ErrorAction Ignore
     }
 
     Context "Command works" {
 
         It "Should output a file with specific content" {
-            $results = New-DbaDbDataGeneratorConfig -SqlInstance $script:instance1 -Database $dbname -Path C:\temp
+            $results = New-DbaDbDataGeneratorConfig -SqlInstance $TestConfig.instance1 -Database $dbname -Path C:\temp
             $results.Directory.Name | Should -Be temp
 
             $results.FullName | Should -FileContentMatch $dbname

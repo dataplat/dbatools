@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -14,8 +14,8 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance1
-        $server2 = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+        $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
 
         $results = New-DbaCustomError -SqlInstance $server -MessageID 70000 -Severity 1 -MessageText "test_70000"
         $results = New-DbaCustomError -SqlInstance $server, $server2 -MessageID 70001 -Severity 1 -MessageText "test_70001"
@@ -82,10 +82,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Multiple servers via -SqlInstance" {
-            $results = Remove-DbaCustomError -SqlInstance $script:instance1, $script:instance2 -MessageID 70002
+            $results = Remove-DbaCustomError -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -MessageID 70002
             # even the SMO server.Refresh() doesn't pick up the changes to the user defined messages
-            $server1Reconnected = Connect-DbaInstance -SqlInstance $script:instance1
-            $server2Reconnected = Connect-DbaInstance -SqlInstance $script:instance2
+            $server1Reconnected = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+            $server2Reconnected = Connect-DbaInstance -SqlInstance $TestConfig.instance2
             ($server1Reconnected.UserDefinedMessages | Where-Object ID -eq 70002).Count | Should -Be 0
             ($server2Reconnected.UserDefinedMessages | Where-Object ID -eq 70002).Count | Should -Be 0
         }

@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -15,20 +15,20 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $sql = "EXEC msdb.dbo.sp_add_operator @name=N'dbatoolsci_operator', @enabled=1, @pager_days=0"
         $server.Query($sql)
         $sql = "EXEC msdb.dbo.sp_add_operator @name=N'dbatoolsci_operator2', @enabled=1, @pager_days=0"
         $server.Query($sql)
     }
     AfterAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $sql = "EXEC msdb.dbo.sp_delete_operator @name=N'dbatoolsci_operator'"
         $server.Query($sql)
         $sql = "EXEC msdb.dbo.sp_delete_operator @name=N'dbatoolsci_operator2'"
         $server.Query($sql)
 
-        $server = Connect-DbaInstance -SqlInstance $script:instance3
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance3
         $sql = "EXEC msdb.dbo.sp_delete_operator @name=N'dbatoolsci_operator'"
         $server.Query($sql)
         $sql = "EXEC msdb.dbo.sp_delete_operator @name=N'dbatoolsci_operator2'"
@@ -36,7 +36,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Copies operators" {
-        $results = Copy-DbaAgentOperator -Source $script:instance2 -Destination $script:instance3 -Operator dbatoolsci_operator, dbatoolsci_operator2
+        $results = Copy-DbaAgentOperator -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -Operator dbatoolsci_operator, dbatoolsci_operator2
 
         It "returns two results" {
             $results.Count -eq 2
@@ -44,7 +44,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "return one result that's skipped" {
-            $results = Copy-DbaAgentOperator -Source $script:instance2 -Destination $script:instance3 -Operator dbatoolsci_operator
+            $results = Copy-DbaAgentOperator -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -Operator dbatoolsci_operator
             $results.Status -eq "Skipped"
         }
     }

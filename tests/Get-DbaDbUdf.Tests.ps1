@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -37,16 +37,16 @@ BEGIN
      RETURN(@ISOweek);
 END;
 "@
-        Invoke-DbaQuery -SqlInstance $script:instance2 -Query $CreateTestUDFunction -Database master
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $CreateTestUDFunction -Database master
     }
     AfterAll {
         $DropTestUDFunction = "DROP FUNCTION dbo.dbatoolssci_ISOweek;"
-        Invoke-DbaQuery -SqlInstance $script:instance2 -Query $DropTestUDFunction -Database master
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $DropTestUDFunction -Database master
     }
 
     Context "User Functions are correctly located" {
-        $results1 = Get-DbaDbUdf -SqlInstance $script:instance2 -Database master -Name dbatoolssci_ISOweek | Select-Object *
-        $results2 = Get-DbaDbUdf -SqlInstance $script:instance2
+        $results1 = Get-DbaDbUdf -SqlInstance $TestConfig.instance2 -Database master -Name dbatoolssci_ISOweek | Select-Object *
+        $results2 = Get-DbaDbUdf -SqlInstance $TestConfig.instance2
 
         It "Should execute and return results" {
             $results2 | Should -Not -Be $null
@@ -70,7 +70,7 @@ END;
         }
 
         It "Should not Throw an Error" {
-            { Get-DbaDbUdf -SqlInstance $script:instance2 -ExcludeDatabase master -ExcludeSystemUdf } | Should -not -Throw
+            { Get-DbaDbUdf -SqlInstance $TestConfig.instance2 -ExcludeDatabase master -ExcludeSystemUdf } | Should -not -Throw
         }
     }
 }

@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -19,7 +19,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $testlastbackup = "dbatoolsci_testlastbackup$random"
         $dbs = $testlastbackup, "dbatoolsci_lildb", "dbatoolsci_testrestore", "dbatoolsci_singlerestore"
 
-        $server = Connect-DbaInstance -SqlInstance $script:instance1
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
         foreach ($db in $dbs) {
             $server.Query("CREATE DATABASE $db")
             $server.Query("ALTER DATABASE $db SET RECOVERY FULL WITH NO_WAIT")
@@ -31,27 +31,27 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     AfterAll {
         # these for sure
         $dbs += "bigtestrest", "smalltestrest"
-        Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbs | Remove-DbaDatabase -Confirm:$false
+        Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbs | Remove-DbaDatabase -Confirm:$false
         # those just in case test-dbalastbackup didn't cooperate
-        Get-DbaDatabase -SqlInstance $script:instance1 | Where-Object Name -like 'dbatools-testrestore-dbatoolsci_*' | Remove-DbaDatabase -Confirm:$false
+        Get-DbaDatabase -SqlInstance $TestConfig.instance1 | Where-Object Name -like 'dbatools-testrestore-dbatoolsci_*' | Remove-DbaDatabase -Confirm:$false
         # see "Restores using a specific path"
         Get-ChildItem -Path C:\Temp\dbatools-testrestore-dbatoolsci_singlerestore* | Remove-Item
     }
     Context "Setup restores and backups on the local drive for Test-DbaLastBackup" {
-        Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbs | Backup-DbaDatabase -Type Database
-        Invoke-DbaQuery -SqlInstance $script:instance1 -Query "INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample')"
-        Get-DbaDatabase -SqlInstance $script:instance1 -Database $testlastbackup | Backup-DbaDatabase -Type Differential
-        Invoke-DbaQuery -SqlInstance $script:instance1 -Query "INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample1')"
-        Get-DbaDatabase -SqlInstance $script:instance1 -Database $testlastbackup | Backup-DbaDatabase -Type Differential
-        Invoke-DbaQuery -SqlInstance $script:instance1 -Query "INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample2')"
-        Get-DbaDatabase -SqlInstance $script:instance1 -Database $testlastbackup | Backup-DbaDatabase -Type Log
-        Invoke-DbaQuery -SqlInstance $script:instance1 -Query "INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample3')"
-        Get-DbaDatabase -SqlInstance $script:instance1 -Database $testlastbackup | Backup-DbaDatabase -Type Log
-        Invoke-DbaQuery -SqlInstance $script:instance1 -Query "INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample4')"
+        Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbs | Backup-DbaDatabase -Type Database
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query "INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample')"
+        Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $testlastbackup | Backup-DbaDatabase -Type Differential
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query "INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample1')"
+        Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $testlastbackup | Backup-DbaDatabase -Type Differential
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query "INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample2')"
+        Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $testlastbackup | Backup-DbaDatabase -Type Log
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query "INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample3')"
+        Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $testlastbackup | Backup-DbaDatabase -Type Log
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query "INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample4')"
     }
 
     Context "Test a single database" {
-        $results = Test-DbaLastBackup -SqlInstance $script:instance1 -Database $testlastbackup
+        $results = Test-DbaLastBackup -SqlInstance $TestConfig.instance1 -Database $testlastbackup
 
         It "Should return success" {
             $results.RestoreResult | Should Be "Success"
@@ -61,16 +61,16 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Testing the whole instance" {
-        $results = Test-DbaLastBackup -SqlInstance $script:instance1 -ExcludeDatabase tempdb
+        $results = Test-DbaLastBackup -SqlInstance $TestConfig.instance1 -ExcludeDatabase tempdb
         It "Should be more than 3 databases" {
             $results.count | Should BeGreaterThan 3
         }
     }
 
     Context "Restores using a specific path" {
-        $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database "dbatoolsci_singlerestore" | Backup-DbaDatabase
-        $null = Test-DbaLastBackup -SqlInstance $script:instance1 -Database "dbatoolsci_singlerestore" -DataDirectory C:\Temp -LogDirectory C:\Temp -NoDrop
-        $results = Get-DbaDbFile -SqlInstance $script:instance1 -Database "dbatools-testrestore-dbatoolsci_singlerestore"
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database "dbatoolsci_singlerestore" | Backup-DbaDatabase
+        $null = Test-DbaLastBackup -SqlInstance $TestConfig.instance1 -Database "dbatoolsci_singlerestore" -DataDirectory C:\Temp -LogDirectory C:\Temp -NoDrop
+        $results = Get-DbaDbFile -SqlInstance $TestConfig.instance1 -Database "dbatools-testrestore-dbatoolsci_singlerestore"
         It "Should match C:\Temp" {
             ('C:\Temp\dbatools-testrestore-dbatoolsci_singlerestore.mdf' -in $results.PhysicalName) | Should Be $true
             ('C:\Temp\dbatools-testrestore-dbatoolsci_singlerestore_log.ldf' -in $results.PhysicalName) | Should Be $true
@@ -78,7 +78,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Test Ignoring Diff Backups" {
-        $results = Test-DbaLastBackup -SqlInstance $script:instance1 -Database $testlastbackup -IgnoreDiffBackup
+        $results = Test-DbaLastBackup -SqlInstance $TestConfig.instance1 -Database $testlastbackup -IgnoreDiffBackup
 
         It "Should return success" {
             $results.RestoreResult | Should Be "Success"
@@ -90,12 +90,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Test dbsize skip and cleanup (Issue 3968)" {
-        $results1 = Restore-DbaDatabase -SqlInstance $script:instance1 -Database bigtestrest -Path $script:appveyorlabrepo\sql2008-backups\db1\FULL -ReplaceDbNameInFile
-        Backup-DbaDatabase -SqlInstance $script:instance1 -Database bigtestrest
-        $results1 = Restore-DbaDatabase -SqlInstance $script:instance1 -Database smalltestrest -Path $script:appveyorlabrepo\sql2008-backups\db2\FULL\SQL2008_db2_FULL_20170518_041738.bak -ReplaceDbNameInFile
-        Backup-DbaDatabase -SqlInstance $script:instance1 -Database smalltestrest
+        $results1 = Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -Database bigtestrest -Path "$($TestConfig.appveyorlabrepo)\sql2008-backups\db1\FULL" -ReplaceDbNameInFile
+        Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database bigtestrest
+        $results1 = Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -Database smalltestrest -Path "$($TestConfig.appveyorlabrepo)\sql2008-backups\db2\FULL\SQL2008_db2_FULL_20170518_041738.bak" -ReplaceDbNameInFile
+        Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database smalltestrest
 
-        $results = Test-DbaLastBackup -SqlInstance $script:instance1 -Database bigtestrest, smalltestrest -CopyFile -CopyPath c:\temp -MaxSize 3 -Prefix testlast
+        $results = Test-DbaLastBackup -SqlInstance $TestConfig.instance1 -Database bigtestrest, smalltestrest -CopyFile -CopyPath c:\temp -MaxSize 3 -Prefix testlast
         $fileresult = Get-ChildItem c:\temp | Where-Object { $_.name -like '*bigtestrest' }
         It "Should have skipped bigtestrest and tested smalltestrest" {
             $results[0].RestoreResult | Should -BeLike '*exceeds the specified maximum*'
@@ -108,6 +108,6 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             ($null -eq $fileresult) | Should -Be $true
         }
 
-        Get-DbaDatabase -SqlInstance $script:instance1 -Database  bigtestrest, smalltestrest | Remove-DbaDatabase -confirm:$false
+        Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database  bigtestrest, smalltestrest | Remove-DbaDatabase -confirm:$false
     }
 }

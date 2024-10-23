@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -16,7 +16,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $accountname = "dbatoolsci_test_$(get-random)"
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $mailAccountSettings = "EXEC msdb.dbo.sysmail_add_account_sp
             @account_name='$accountname',
             @description='Mail account for email alerts',
@@ -27,14 +27,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $server.query($mailAccountSettings)
     }
     AfterAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $mailAccountSettings = "EXEC msdb.dbo.sysmail_delete_account_sp
             @account_name = '$accountname';"
         $server.query($mailAccountSettings)
     }
 
     Context "Gets DbMail Account" {
-        $results = Get-DbaDbMailAccount -SqlInstance $script:instance2 | Where-Object {$_.Name -eq "$accountname"}
+        $results = Get-DbaDbMailAccount -SqlInstance $TestConfig.instance2 | Where-Object {$_.Name -eq "$accountname"}
         It "Gets results" {
             $results | Should Not Be $null
         }
@@ -55,7 +55,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Gets DbMail when using -Account" {
-        $results = Get-DbaDbMailAccount -SqlInstance $script:instance2 -Account $accountname
+        $results = Get-DbaDbMailAccount -SqlInstance $TestConfig.instance2 -Account $accountname
         It "Gets results" {
             $results | Should Not Be $null
         }
@@ -76,7 +76,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Gets no DbMail when using -ExcludeAccount" {
-        $results = Get-DbaDbMailAccount -SqlInstance $script:instance2 -ExcludeAccount $accountname
+        $results = Get-DbaDbMailAccount -SqlInstance $TestConfig.instance2 -ExcludeAccount $accountname
         It "Gets no results" {
             $results | Should Be $null
         }

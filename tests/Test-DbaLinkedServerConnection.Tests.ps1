@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -15,17 +15,17 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        Get-DbaProcess -SqlInstance $script:instance1 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
-        $server = Connect-DbaInstance -SqlInstance $script:instance1 -Database master
+        Get-DbaProcess -SqlInstance $TestConfig.instance1 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1 -Database master
         $server.Query("EXEC master.dbo.sp_addlinkedserver @server = N'localhost', @srvproduct=N'SQL Server'")
     }
     AfterAll {
-        Get-DbaProcess -SqlInstance $script:instance1 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
-        $server = Connect-DbaInstance -SqlInstance $script:instance1 -Database master
+        Get-DbaProcess -SqlInstance $TestConfig.instance1 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1 -Database master
         $server.Query("EXEC master.dbo.sp_dropserver @server=N'localhost', @droplogins='droplogins'")
     }
     Context "Function works" {
-        $results = Test-DbaLinkedServerConnection -SqlInstance $script:instance1 | Where-Object LinkedServerName -eq 'localhost'
+        $results = Test-DbaLinkedServerConnection -SqlInstance $TestConfig.instance1 | Where-Object LinkedServerName -eq 'localhost'
         It "function returns results" {
             $results | Should Not BeNullOrEmpty
         }
@@ -38,7 +38,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Piping to function works" {
-        $pipeResults =  Get-DbaLinkedServer -SqlInstance $script:instance1 | Test-DbaLinkedServerConnection
+        $pipeResults =  Get-DbaLinkedServer -SqlInstance $TestConfig.instance1 | Test-DbaLinkedServerConnection
         It "piping from Get-DbaLinkedServerConnection returns results" {
             $pipeResults | Should Not BeNullOrEmpty
         }

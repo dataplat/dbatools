@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -16,7 +16,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command actually works" {
 
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $instanceName = $server.ServiceName
         $computerName = $server.NetName
 
@@ -30,7 +30,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         Get-Service -ComputerName $computerName -Name $serviceName | Stop-Service -WarningAction SilentlyContinue | Out-Null
 
         It "starts the services back" {
-            $services = Start-DbaService -ComputerName $script:instance2 -Type Agent -InstanceName $instanceName
+            $services = Start-DbaService -ComputerName $TestConfig.instance2 -Type Agent -InstanceName $instanceName
             $services | Should Not Be $null
             foreach ($service in $services) {
                 $service.State | Should Be 'Running'
@@ -47,7 +47,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         foreach ($sn in $servicename) { Get-Service -ComputerName $computerName -Name $sn | Stop-Service -WarningAction SilentlyContinue | Out-Null }
 
         It "starts the services back through pipeline" {
-            $services = Get-DbaService -ComputerName $script:instance2 -InstanceName $instanceName -Type Agent, Engine | Start-DbaService
+            $services = Get-DbaService -ComputerName $TestConfig.instance2 -InstanceName $instanceName -Type Agent, Engine | Start-DbaService
             $services | Should Not Be $null
             foreach ($service in $services) {
                 $service.State | Should Be 'Running'
@@ -56,7 +56,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "errors when passing an invalid InstanceName" {
-            { Start-DbaService -ComputerName $script:instance2 -Type 'Agent' -InstanceName 'ThisIsInvalid' -EnableException } | Should Throw 'No SQL Server services found with current parameters.'
+            { Start-DbaService -ComputerName $TestConfig.instance2 -Type 'Agent' -InstanceName 'ThisIsInvalid' -EnableException } | Should Throw 'No SQL Server services found with current parameters.'
         }
     }
 }

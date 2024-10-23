@@ -3,7 +3,7 @@
 #>
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 <#
     Unit test is required for any command added
@@ -20,8 +20,8 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
-    Context "Command actually works on $script:instance2" {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+    Context "Command actually works on $($TestConfig.instance2)" {
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $results = Test-DbaTempdbConfig -SqlInstance $server
         It "Should have correct properties" {
             $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Rule,Recommended,CurrentSetting,IsBestPractice,Notes'.Split(',')

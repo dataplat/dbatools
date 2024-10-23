@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tags "UnitTests" {
     Context "Validate parameters" {
@@ -18,18 +18,18 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $PSDefaultParameterValues["*:Confirm"] = $false
         $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
-        $masterkey = Get-DbaDbMasterKey -SqlInstance $script:instance2 -Database master
+        $masterkey = Get-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database master
         if (-not $masterkey) {
             $delmasterkey = $true
-            $masterkey = New-DbaServiceMasterKey -SqlInstance $script:instance2 -SecurePassword $passwd
+            $masterkey = New-DbaServiceMasterKey -SqlInstance $TestConfig.instance2 -SecurePassword $passwd
         }
-        $mastercert = Get-DbaDbCertificate -SqlInstance $script:instance2 -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
+        $mastercert = Get-DbaDbCertificate -SqlInstance $TestConfig.instance2 -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
         if (-not $mastercert) {
             $delmastercert = $true
-            $mastercert = New-DbaDbCertificate -SqlInstance $script:instance2
+            $mastercert = New-DbaDbCertificate -SqlInstance $TestConfig.instance2
         }
 
-        $db = New-DbaDatabase -SqlInstance $script:instance2
+        $db = New-DbaDatabase -SqlInstance $TestConfig.instance2
         $db | New-DbaDbMasterKey -SecurePassword $passwd
         $db | New-DbaDbCertificate
         $db | New-DbaDbEncryptionKey -Force
@@ -53,8 +53,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results.EncryptionEnabled | Should -Be $true
         }
         It "should enable encryption on a database" {
-            $null = Disable-DbaDbEncryption -SqlInstance $script:instance2 -Database $db.Name
-            $results = Enable-DbaDbEncryption -SqlInstance $script:instance2 -EncryptorName $mastercert.Name -Database $db.Name -Force
+            $null = Disable-DbaDbEncryption -SqlInstance $TestConfig.instance2 -Database $db.Name
+            $results = Enable-DbaDbEncryption -SqlInstance $TestConfig.instance2 -EncryptorName $mastercert.Name -Database $db.Name -Force
             $results.EncryptionEnabled | Should -Be $true
         }
     }

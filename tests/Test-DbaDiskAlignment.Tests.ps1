@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -15,12 +15,12 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command actually works" {
         It "Should return a result" {
-            $results = Test-DbaDiskAlignment -ComputerName $script:dbatoolsci_computer
+            $results = Test-DbaDiskAlignment -ComputerName $TestConfig.dbatoolsci_computer
             $results | Should -Not -Be $null
         }
 
         It "Should return a result not using sql" {
-            $results = Test-DbaDiskAlignment -NoSqlCheck -ComputerName $script:dbatoolsci_computer
+            $results = Test-DbaDiskAlignment -NoSqlCheck -ComputerName $TestConfig.dbatoolsci_computer
             $results | Should -Not -Be $null
         }
     }

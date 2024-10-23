@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -17,17 +17,17 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $random = Get-Random
         $multifgdb = "dbatoolsci_multifgdb$random"
-        Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $multifgdb
+        Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance2 -Database $multifgdb
 
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $server.Query("CREATE DATABASE $multifgdb; ALTER DATABASE $multifgdb ADD FILEGROUP [Test1]; ALTER DATABASE $multifgdb ADD FILEGROUP [Test2];")
     }
     AfterAll {
-        Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $multifgdb
+        Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance2 -Database $multifgdb
     }
 
     Context "Returns values for Instance" {
-        $results = Get-DbaDbFileGroup -SqlInstance $script:instance2
+        $results = Get-DbaDbFileGroup -SqlInstance $TestConfig.instance2
         It "Results are not empty" {
             $results | Should Not Be $Null
         }
@@ -37,13 +37,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Accepts database and filegroup input" {
-        $results = Get-DbaDbFileGroup -SqlInstance $script:instance2 -Database $multifgdb
+        $results = Get-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $multifgdb
 
         It "Reports the right number of filegroups" {
             $results.Count | Should Be 3
         }
 
-        $results = Get-DbaDbFileGroup -SqlInstance $script:instance2 -Database $multifgdb -FileGroup Test1
+        $results = Get-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $multifgdb -FileGroup Test1
 
         It "Reports the right number of filegroups" {
             $results.Count | Should Be 1
@@ -51,7 +51,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Accepts piped input" {
-        $results = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeUser | Get-DbaDbFileGroup
+        $results = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeUser | Get-DbaDbFileGroup
 
         It "Reports the right number of filegroups" {
             $results.Count | Should Be 4

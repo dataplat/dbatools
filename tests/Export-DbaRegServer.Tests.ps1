@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tags "UnitTests" {
     Context "Validate parameters" {
@@ -20,29 +20,29 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $regSrvName = "dbatoolsci-server12"
         $regSrvDesc = "dbatoolsci-server123"
 
-        $newGroup = Add-DbaRegServerGroup -SqlInstance $script:instance2 -Name $group
-        $newServer = Add-DbaRegServer -SqlInstance $script:instance2 -ServerName $srvName -Name $regSrvName -Description $regSrvDesc
+        $newGroup = Add-DbaRegServerGroup -SqlInstance $TestConfig.instance2 -Name $group
+        $newServer = Add-DbaRegServer -SqlInstance $TestConfig.instance2 -ServerName $srvName -Name $regSrvName -Description $regSrvDesc
 
         $srvName2 = "dbatoolsci-server2"
         $group2 = "dbatoolsci-group2"
         $regSrvName2 = "dbatoolsci-server21"
         $regSrvDesc2 = "dbatoolsci-server321"
 
-        $newGroup2 = Add-DbaRegServerGroup -SqlInstance $script:instance2 -Name $group2
-        $newServer2 = Add-DbaRegServer -SqlInstance $script:instance2 -ServerName $srvName2 -Name $regSrvName2 -Description $regSrvDesc2
+        $newGroup2 = Add-DbaRegServerGroup -SqlInstance $TestConfig.instance2 -Name $group2
+        $newServer2 = Add-DbaRegServer -SqlInstance $TestConfig.instance2 -ServerName $srvName2 -Name $regSrvName2 -Description $regSrvDesc2
 
         $regSrvName3 = "dbatoolsci-server3"
         $srvName3 = "dbatoolsci-server3"
         $regSrvDesc3 = "dbatoolsci-server3desc"
 
-        $newServer3 = Add-DbaRegServer -SqlInstance $script:instance2 -ServerName $srvName3 -Name $regSrvName3 -Description $regSrvDesc3
+        $newServer3 = Add-DbaRegServer -SqlInstance $TestConfig.instance2 -ServerName $srvName3 -Name $regSrvName3 -Description $regSrvDesc3
 
         $random = Get-Random
         $newDirectory = "C:\temp-$random"
     }
     AfterEach {
-        Get-DbaRegServer -SqlInstance $script:instance2 | Where-Object Name -Match dbatoolsci | Remove-DbaRegServer -Confirm:$false
-        Get-DbaRegServerGroup -SqlInstance $script:instance2 | Where-Object Name -Match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
+        Get-DbaRegServer -SqlInstance $TestConfig.instance2 | Where-Object Name -Match dbatoolsci | Remove-DbaRegServer -Confirm:$false
+        Get-DbaRegServerGroup -SqlInstance $TestConfig.instance2 | Where-Object Name -Match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
         $results, $results2, $results3 | Remove-Item -ErrorAction Ignore
 
         Remove-Item $newDirectory -ErrorAction Ignore -Recurse -Force
@@ -63,59 +63,59 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     It "creates an importable xml file" {
         $results3 = $newServer3 | Export-DbaRegServer -Path C:\temp
-        Get-DbaRegServer -SqlInstance $script:instance2 | Where-Object Name -Match dbatoolsci | Remove-DbaRegServer -Confirm:$false
-        Get-DbaRegServerGroup -SqlInstance $script:instance2 | Where-Object Name -Match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
-        $results4 = Import-DbaRegServer -SqlInstance $script:instance2 -Path $results3
+        Get-DbaRegServer -SqlInstance $TestConfig.instance2 | Where-Object Name -Match dbatoolsci | Remove-DbaRegServer -Confirm:$false
+        Get-DbaRegServerGroup -SqlInstance $TestConfig.instance2 | Where-Object Name -Match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
+        $results4 = Import-DbaRegServer -SqlInstance $TestConfig.instance2 -Path $results3
         $newServer3.ServerName | Should -BeIn $results4.ServerName
         $newServer3.Description | Should -BeIn $results4.Description
     }
 
     It "Create an xml file using FilePath" {
         $outputFileName = "C:\temp\dbatoolsci-regsrvr-export-$random.xml"
-        $results = Export-DbaRegServer -SqlInstance $script:instance2 -FilePath $outputFileName
+        $results = Export-DbaRegServer -SqlInstance $TestConfig.instance2 -FilePath $outputFileName
         $results -is [System.IO.FileInfo] | Should -Be $true
         $results.FullName | Should -Be $outputFileName
     }
 
     It "Create a regsrvr file using the FilePath alias OutFile" {
         $outputFileName = "C:\temp\dbatoolsci-regsrvr-export-$random.regsrvr"
-        $results = Export-DbaRegServer -SqlInstance $script:instance2 -OutFile $outputFileName
+        $results = Export-DbaRegServer -SqlInstance $TestConfig.instance2 -OutFile $outputFileName
         $results -is [System.IO.FileInfo] | Should -Be $true
         $results.FullName | Should -Be $outputFileName
     }
 
     It "Try to create an invalid file using FilePath" {
         $outputFileName = "C:\temp\dbatoolsci-regsrvr-export-$random.txt"
-        $results = Export-DbaRegServer -SqlInstance $script:instance2 -FilePath $outputFileName
+        $results = Export-DbaRegServer -SqlInstance $TestConfig.instance2 -FilePath $outputFileName
         $results.length | Should -Be 0
     }
 
     It "Create an xml file using the FilePath alias FileName in a directory that does not yet exist" {
         $outputFileName = "$newDirectory\dbatoolsci-regsrvr-export-$random.xml"
-        $results = Export-DbaRegServer -SqlInstance $script:instance2 -FileName $outputFileName
+        $results = Export-DbaRegServer -SqlInstance $TestConfig.instance2 -FileName $outputFileName
         $results -is [System.IO.FileInfo] | Should -Be $true
         $results.FullName | Should -Be $outputFileName
     }
 
     It "Ensure the Overwrite param is working" {
         $outputFileName = "C:\temp\dbatoolsci-regsrvr-export-$random.xml"
-        $results = Export-DbaRegServer -SqlInstance $script:instance2 -FilePath $outputFileName
+        $results = Export-DbaRegServer -SqlInstance $TestConfig.instance2 -FilePath $outputFileName
         $results -is [System.IO.FileInfo] | Should -Be $true
         $results.FullName | Should -Be $outputFileName
 
         # test without -Overwrite
-        $invalidResults = Export-DbaRegServer -SqlInstance $script:instance2 -FilePath $outputFileName
+        $invalidResults = Export-DbaRegServer -SqlInstance $TestConfig.instance2 -FilePath $outputFileName
         $invalidResults.length | Should -Be 0
 
         # test with -Overwrite
-        $resultsOverwrite = Export-DbaRegServer -SqlInstance $script:instance2 -FilePath $outputFileName -Overwrite
+        $resultsOverwrite = Export-DbaRegServer -SqlInstance $TestConfig.instance2 -FilePath $outputFileName -Overwrite
         $resultsOverwrite -is [System.IO.FileInfo] | Should -Be $true
         $resultsOverwrite.FullName | Should -Be $outputFileName
     }
 
     It "Test with the Group param" {
         $outputFileName = "C:\temp\dbatoolsci-regsrvr-export-$random.xml"
-        $results = Export-DbaRegServer -SqlInstance $script:instance2 -FilePath $outputFileName -Group $group
+        $results = Export-DbaRegServer -SqlInstance $TestConfig.instance2 -FilePath $outputFileName -Group $group
         $results -is [System.IO.FileInfo] | Should -Be $true
         $results.FullName | Should -Be $outputFileName
 
@@ -127,7 +127,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     It "Test with the Group param and multiple group names" {
         $outputFileName = "C:\temp\dbatoolsci-regsrvr-export-$random.xml"
-        $results = Export-DbaRegServer -SqlInstance $script:instance2 -FilePath $outputFileName -Group @($group, $group2)
+        $results = Export-DbaRegServer -SqlInstance $TestConfig.instance2 -FilePath $outputFileName -Group @($group, $group2)
         $results.length | Should -Be 2
 
         $fileText = Get-Content -Path $results[0] -Raw
@@ -142,7 +142,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     It "Test with the ExcludeGroup param" {
-        $results = Export-DbaRegServer -SqlInstance $script:instance2 -ExcludeGroup $group2
+        $results = Export-DbaRegServer -SqlInstance $TestConfig.instance2 -ExcludeGroup $group2
         $results -is [System.IO.FileInfo] | Should -Be $true
 
         $fileText = Get-Content -Path $results -Raw

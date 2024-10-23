@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -17,23 +17,23 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "New Agent Job Category is changed properly" {
 
         It "Should have the right name and category type" {
-            $results = New-DbaAgentJobCategory -SqlInstance $script:instance2 -Category CategoryTest1
+            $results = New-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category CategoryTest1
             $results.Name | Should Be "CategoryTest1"
             $results.CategoryType | Should Be "LocalJob"
         }
 
         It "Should actually for sure exist" {
-            $newresults = Get-DbaAgentJobCategory -SqlInstance $script:instance2 -Category CategoryTest1
+            $newresults = Get-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category CategoryTest1
             $newresults.Name | Should Be "CategoryTest1"
             $newresults.CategoryType | Should Be "LocalJob"
         }
 
         It "Change the name of the job category" {
-            $results = Set-DbaAgentJobCategory -SqlInstance $script:instance2 -Category CategoryTest1 -NewName CategoryTest2
+            $results = Set-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category CategoryTest1 -NewName CategoryTest2
             $results.Name | Should Be "CategoryTest2"
         }
 
         # Cleanup and ignore all output
-        Remove-DbaAgentJobCategory -SqlInstance $script:instance2 -Category CategoryTest2 -Confirm:$false *> $null
+        Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category CategoryTest2 -Confirm:$false *> $null
     }
 }

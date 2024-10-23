@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -24,7 +24,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $user1 = "dbatoolsci_exportdbadbrole_user1$random"
             $dbRole = "dbatoolsci_SpExecute$random"
 
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
             $null = $server.Query("CREATE DATABASE [$dbname1]")
             $null = $server.Query("CREATE LOGIN [$login1] WITH PASSWORD = 'GoodPass1234!'")
             $server.Databases[$dbname1].ExecuteNonQuery("CREATE USER [$user1] FOR LOGIN [$login1]")
@@ -37,15 +37,15 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
     AfterAll {
         try {
-            Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname1 -Confirm:$false
-            Remove-DbaLogin -SqlInstance $script:instance2 -Login $login1 -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1 -Confirm:$false
+            Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login1 -Confirm:$false
         } catch { }
         (Get-ChildItem $outputFile1 -ErrorAction SilentlyContinue) | Remove-Item -ErrorAction SilentlyContinue
     }
 
     Context "Check if output file was created" {
 
-        $null = Export-DbaDbRole -SqlInstance $script:instance2 -Database msdb -FilePath $outputFile1
+        $null = Export-DbaDbRole -SqlInstance $TestConfig.instance2 -Database msdb -FilePath $outputFile1
         It "Exports results to one sql file" {
             (Get-ChildItem $outputFile1).Count | Should Be 1
         }
@@ -56,7 +56,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Check piping support" {
 
-        $role = Get-DbaDbRole -SqlInstance $script:instance2 -Database $dbname1 -Role $dbRole
+        $role = Get-DbaDbRole -SqlInstance $TestConfig.instance2 -Database $dbname1 -Role $dbRole
         $null = $role | Export-DbaDbRole -FilePath $outputFile1
         It "Exports results to one sql file" {
             (Get-ChildItem $outputFile1).Count | Should Be 1

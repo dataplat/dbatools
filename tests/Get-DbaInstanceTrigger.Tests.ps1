@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $instance = Connect-DbaInstance -SqlInstance $script:instance2
+        $instance = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $trigger1 = "dbatoolsci_trigger1_$random"
         $trigger2 = "dbatoolsci_trigger2_$random"
         $sql1 = "CREATE TRIGGER [$trigger1] ON ALL SERVER FOR CREATE_DATABASE AS PRINT 'Database Created.'"
@@ -28,7 +28,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $instance.query($sql)
     }
     Context "Command actually works" {
-        $results = Get-DbaInstanceTrigger -SqlInstance $script:instance2
+        $results = Get-DbaInstanceTrigger -SqlInstance $TestConfig.instance2
 
         It "Should return results" {
             $results.Count | Should Be 2

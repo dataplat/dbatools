@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tags "UnitTests" {
     Context "Validate parameters" {
@@ -17,20 +17,20 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $dbname = "dbatoolsscidb_$(Get-Random)"
         $dbname2 = "dbatoolsscidb_$(Get-Random)"
-        $null = New-DbaDatabase -SqlInstance $script:instance2 -Name $dbname
-        $null = New-DbaDatabase -SqlInstance $script:instance2 -Name $dbname2
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $dbname
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $dbname2
     }
     AfterEach {
-        $null = Remove-DbaDbSynonym -SqlInstance $script:instance2 -Confirm:$false
+        $null = Remove-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Confirm:$false
     }
     AfterAll {
-        $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname, $dbname2 -Confirm:$false
-        $null = Remove-DbaDbSynonym -SqlInstance $script:instance2 -Confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname, $dbname2 -Confirm:$false
+        $null = Remove-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Confirm:$false
     }
 
     Context "Functionality" {
         It 'Add new synonym and returns results' {
-            $result1 = New-DbaDbSynonym -SqlInstance $script:instance2 -Database $dbname -Synonym 'syn1' -BaseObject 'obj1'
+            $result1 = New-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname -Synonym 'syn1' -BaseObject 'obj1'
 
             $result1.Count | Should -Be 1
             $result1.Name | Should -Be syn1
@@ -39,7 +39,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It 'Add new synonym with default schema' {
-            $result2a = New-DbaDbSynonym -SqlInstance $script:instance2 -Database $dbname -Synonym 'syn2a' -BaseObject 'obj2a'
+            $result2a = New-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname -Synonym 'syn2a' -BaseObject 'obj2a'
 
             $result2a.Count | Should -Be 1
             $result2a.Name | Should -Be 'syn2a'
@@ -49,8 +49,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It 'Add new synonym with specified schema' {
-            $null = New-DbaDbSchema -SqlInstance $script:instance2 -Database $dbname -Schema 'sch2'
-            $result2 = New-DbaDbSynonym -SqlInstance $script:instance2 -Database $dbname -Synonym 'syn2' -BaseObject 'obj2' -Schema 'sch2'
+            $null = New-DbaDbSchema -SqlInstance $TestConfig.instance2 -Database $dbname -Schema 'sch2'
+            $result2 = New-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname -Synonym 'syn2' -BaseObject 'obj2' -Schema 'sch2'
 
             $result2.Count | Should -Be 1
             $result2.Name | Should -Be 'syn2'
@@ -60,7 +60,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It 'Add new synonym to list of databases' {
-            $result3 = New-DbaDbSynonym -SqlInstance $script:instance2 -Database $dbname, $dbname2 -Synonym 'syn3' -BaseObject 'obj3'
+            $result3 = New-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname, $dbname2 -Synonym 'syn3' -BaseObject 'obj3'
 
             $result3.Count | Should -Be 2
             $result3.Name | Select-Object -Unique | Should -Be 'syn3'
@@ -70,8 +70,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It 'Add new synonym to different schema' {
-            $null = New-DbaDbSchema -SqlInstance $script:instance2 -Database $dbname -Schema 'sch4'
-            $result4 = New-DbaDbSynonym -SqlInstance $script:instance2 -Database $dbname -Schema 'sch4' -Synonym 'syn4' -BaseObject 'obj4'
+            $null = New-DbaDbSchema -SqlInstance $TestConfig.instance2 -Database $dbname -Schema 'sch4'
+            $result4 = New-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname -Schema 'sch4' -Synonym 'syn4' -BaseObject 'obj4'
 
             $result4.Count | Should -Be 1
             $result4.Name | Select-Object -Unique | Should -Be 'syn4'
@@ -84,8 +84,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It 'Add new synonym to with a base schema' {
-            $null = New-DbaDbSchema -SqlInstance $script:instance2 -Database $dbname -Schema 'sch5'
-            $result5 = New-DbaDbSynonym -SqlInstance $script:instance2 -Database $dbname -Schema 'sch5' -Synonym 'syn5' -BaseObject 'obj5' -BaseSchema 'bsch5'
+            $null = New-DbaDbSchema -SqlInstance $TestConfig.instance2 -Database $dbname -Schema 'sch5'
+            $result5 = New-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname -Schema 'sch5' -Synonym 'syn5' -BaseObject 'obj5' -BaseSchema 'bsch5'
 
             $result5.Count | Should -Be 1
             $result5.Name | Select-Object -Unique | Should -Be 'syn5'
@@ -98,8 +98,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It 'Add new synonym to with a base database' {
-            $null = New-DbaDbSchema -SqlInstance $script:instance2 -Database $dbname -Schema 'sch6'
-            $result6 = New-DbaDbSynonym -SqlInstance $script:instance2 -Database $dbname -Schema 'sch6' -Synonym 'syn6' -BaseObject 'obj6' -BaseSchema 'bsch6' -BaseDatabase 'bdb6'
+            $null = New-DbaDbSchema -SqlInstance $TestConfig.instance2 -Database $dbname -Schema 'sch6'
+            $result6 = New-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname -Schema 'sch6' -Synonym 'syn6' -BaseObject 'obj6' -BaseSchema 'bsch6' -BaseDatabase 'bdb6'
 
             $result6.Count | Should -Be 1
             $result6.Name | Select-Object -Unique | Should -Be 'syn6'
@@ -112,8 +112,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It 'Add new synonym to with a base server' {
-            $null = New-DbaDbSchema -SqlInstance $script:instance2 -Database $dbname -Schema 'sch7'
-            $result7 = New-DbaDbSynonym -SqlInstance $script:instance2 -Database $dbname -Schema 'sch7' -Synonym 'syn7' -BaseObject 'obj7' -BaseSchema 'bsch7' -BaseDatabase 'bdb7' -BaseServer 'bsrv7'
+            $null = New-DbaDbSchema -SqlInstance $TestConfig.instance2 -Database $dbname -Schema 'sch7'
+            $result7 = New-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname -Schema 'sch7' -Synonym 'syn7' -BaseObject 'obj7' -BaseSchema 'bsch7' -BaseDatabase 'bdb7' -BaseServer 'bsrv7'
 
             $result7.Count | Should -Be 1
             $result7.Name | Select-Object -Unique | Should -Be 'syn7'

@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -17,22 +17,22 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $saJob = ("dbatoolsci_sa_{0}" -f $(Get-Random))
         $notSaJob = ("dbatoolsci_nonsa_{0}" -f $(Get-Random))
-        $null = New-DbaAgentJob -SqlInstance $script:instance2 -Job $saJob -OwnerLogin 'sa'
-        $null = New-DbaAgentJob -SqlInstance $script:instance2 -Job $notSaJob -OwnerLogin 'NT AUTHORITY\SYSTEM'
+        $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $saJob -OwnerLogin 'sa'
+        $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $notSaJob -OwnerLogin 'NT AUTHORITY\SYSTEM'
     }
     AfterAll {
-        $null = Remove-DbaAgentJob -SqlInstance $script:instance2 -Job $saJob, $notSaJob -Confirm:$false
+        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $saJob, $notSaJob -Confirm:$false
     }
 
     Context "Command actually works" {
-        $results = Test-DbaAgentJobOwner -SqlInstance $script:instance2
+        $results = Test-DbaAgentJobOwner -SqlInstance $TestConfig.instance2
         It "Should return $notSaJob" {
             $results | Where-Object {$_.Job -eq $notsajob} | Should Not Be Null
         }
     }
 
     Context "Command works for specific jobs" {
-        $results = Test-DbaAgentJobOwner -SqlInstance $script:instance2 -Job $saJob, $notSaJob
+        $results = Test-DbaAgentJobOwner -SqlInstance $TestConfig.instance2 -Job $saJob, $notSaJob
         It "Should find $sajob owner matches default sa" {
             $($results | Where-Object {$_.Job -eq $sajob}).OwnerMatch | Should Be $True
         }
@@ -42,7 +42,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Exclusions work" {
-        $results = Test-DbaAgentJobOwner -SqlInstance $script:instance2 -ExcludeJob $notSaJob
+        $results = Test-DbaAgentJobOwner -SqlInstance $TestConfig.instance2 -ExcludeJob $notSaJob
         It "Should exclude $notsajob job" {
             $results.job | Should Not Match $notSaJob
         }

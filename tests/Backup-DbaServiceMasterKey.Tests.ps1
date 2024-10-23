@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Can backup a service master key" {
-        $results = Backup-DbaServiceMasterKey -SqlInstance $script:instance1 -Confirm:$false -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force)
+        $results = Backup-DbaServiceMasterKey -SqlInstance $TestConfig.instance1 -Confirm:$false -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force)
         $null = Remove-Item -Path $results.Path -ErrorAction SilentlyContinue -Confirm:$false
 
         It "backs up the SMK" {

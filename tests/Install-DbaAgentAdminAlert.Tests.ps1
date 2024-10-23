@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -15,11 +15,11 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeEach {
-        Get-DbaAgentAlert -SqlInstance $script:instance2, $script:instance3 | Remove-DbaAgentAlert -Confirm:$false
+        Get-DbaAgentAlert -SqlInstance $TestConfig.instance2, $TestConfig.instance3 | Remove-DbaAgentAlert -Confirm:$false
     }
     Context 'Creating a new SQL Server Agent alert' {
         $parms = @{
-            SqlInstance           = $script:instance2
+            SqlInstance           = $TestConfig.instance2
             DelayBetweenResponses = 60
             Disabled              = $false
             NotifyMethod          = "NotifyEmail"
@@ -39,7 +39,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $alert.IsEnabled | Should -Be $true
         }
 
-        $parms.SqlInstance = $script:instance3
+        $parms.SqlInstance = $TestConfig.instance3
         $parms.ExcludeSeverity = 17
 
         It 'Should create a bunch of new alerts' {
@@ -48,7 +48,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             # Assert
             $alerts.Severity | Should -No -Contain 17
 
-            Get-DbaAgentAlert -SqlInstance $script:instance3 | Should -Not -BeNullOrEmpty
+            Get-DbaAgentAlert -SqlInstance $TestConfig.instance3 | Should -Not -BeNullOrEmpty
         }
     }
 }

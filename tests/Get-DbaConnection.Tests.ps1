@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "returns the proper transport" {
-        $results = Get-DbaConnection -SqlInstance $script:instance1
+        $results = Get-DbaConnection -SqlInstance $TestConfig.instance1
         foreach ($result in $results) {
             It "returns an scheme" {
                 $result.AuthScheme -eq 'ntlm' -or $result.AuthScheme -eq 'Kerberos' | Should -Be $true

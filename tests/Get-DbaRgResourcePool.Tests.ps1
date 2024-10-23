@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -15,13 +15,13 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command actually works" {
-        $results = Get-DbaRgResourcePool -SqlInstance $script:instance2
+        $results = Get-DbaRgResourcePool -SqlInstance $TestConfig.instance2
         it "Gets Results" {
             $results | Should Not Be $null
         }
     }
     Context "Command actually works using -Type" {
-        $results = Get-DbaRgResourcePool -SqlInstance $script:instance2 -Type Internal
+        $results = Get-DbaRgResourcePool -SqlInstance $TestConfig.instance2 -Type Internal
         it "Gets Results" {
             $results | Should Not Be $null
         }

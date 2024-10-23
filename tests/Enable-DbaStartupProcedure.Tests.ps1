@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 Describe "$commandname Integration Test" -Tag "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $random = Get-Random
         $startupProcName = "StartUpProc$random"
         $startupProc = "dbo.$startupProcName"
@@ -28,7 +28,7 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
     }
 
     Context "Validate returns correct output for enable" {
-        $result = Enable-DbaStartupProcedure -SqlInstance $script:instance2 -StartupProcedure $startupProc -Confirm:$false
+        $result = Enable-DbaStartupProcedure -SqlInstance $TestConfig.instance2 -StartupProcedure $startupProc -Confirm:$false
 
         It "returns correct results" {
             $result.Schema -eq "dbo" | Should Be $true
@@ -40,7 +40,7 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
     }
 
     Context "Validate returns correct output for already existing state" {
-        $result = Enable-DbaStartupProcedure -SqlInstance $script:instance2 -StartupProcedure $startupProc -Confirm:$false
+        $result = Enable-DbaStartupProcedure -SqlInstance $TestConfig.instance2 -StartupProcedure $startupProc -Confirm:$false
 
         It "returns correct results" {
             $result.Schema -eq "dbo" | Should Be $true
@@ -52,7 +52,7 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
     }
 
     Context "Validate returns correct output for missing procedures" {
-        $result = Enable-DbaStartupProcedure -SqlInstance $script:instance2 -StartupProcedure "Unknown.NotHere" -Confirm:$false
+        $result = Enable-DbaStartupProcedure -SqlInstance $TestConfig.instance2 -StartupProcedure "Unknown.NotHere" -Confirm:$false
 
         It "returns correct results" {
             $null -eq $result | Should Be $true
@@ -60,7 +60,7 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
     }
 
     Context "Validate returns correct output for incorrectly formed procedures" {
-        $result = Enable-DbaStartupProcedure -SqlInstance $script:instance2 -StartupProcedure "Four.Part.Schema.Name" -Confirm:$false
+        $result = Enable-DbaStartupProcedure -SqlInstance $TestConfig.instance2 -StartupProcedure "Four.Part.Schema.Name" -Confirm:$false
 
         It "returns correct results" {
             $null -eq $result | Should Be $true

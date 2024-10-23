@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Available Collations" {
-        $results = Get-DbaAvailableCollation -SqlInstance $script:instance2
+        $results = Get-DbaAvailableCollation -SqlInstance $TestConfig.instance2
         It "finds a collation that matches Slovenian" {
             ($results.Name -match 'Slovenian').Count -gt 10 | Should Be $true
         }

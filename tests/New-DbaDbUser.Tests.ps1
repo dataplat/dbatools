@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -22,44 +22,44 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
         $password = 'MyV3ry$ecur3P@ssw0rd'
         $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
-        $null = New-DbaLogin -SqlInstance $script:instance2 -Login $userName -Password $securePassword -Force
-        $null = New-DbaDatabase -SqlInstance $script:instance2 -Name $dbname
-        $dbContainmentSpValue = (Get-DbaSpConfigure -SqlInstance $script:instance2 -Name ContainmentEnabled).ConfiguredValue
-        $null = Set-DbaSpConfigure -SqlInstance $script:instance2 -Name ContainmentEnabled -Value 1
-        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "ALTER DATABASE [$dbname] SET CONTAINMENT = PARTIAL WITH NO_WAIT"
+        $null = New-DbaLogin -SqlInstance $TestConfig.instance2 -Login $userName -Password $securePassword -Force
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $dbname
+        $dbContainmentSpValue = (Get-DbaSpConfigure -SqlInstance $TestConfig.instance2 -Name ContainmentEnabled).ConfiguredValue
+        $null = Set-DbaSpConfigure -SqlInstance $TestConfig.instance2 -Name ContainmentEnabled -Value 1
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query "ALTER DATABASE [$dbname] SET CONTAINMENT = PARTIAL WITH NO_WAIT"
     }
     AfterAll {
-        $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
-        $null = Remove-DbaLogin -SqlInstance $script:instance2 -Login $userName -Confirm:$false
-        $null = Set-DbaSpConfigure -SqlInstance $script:instance2 -Name ContainmentEnabled -Value $dbContainmentSpValue
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname -Confirm:$false
+        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $userName -Confirm:$false
+        $null = Set-DbaSpConfigure -SqlInstance $TestConfig.instance2 -Name ContainmentEnabled -Value $dbContainmentSpValue
     }
     Context "Test error handling" {
         It "Tries to create the user with an invalid default schema" {
-            $results = New-DbaDbUser -SqlInstance $script:instance2 -Database $dbname -Login $userName -DefaultSchema invalidSchemaName -WarningVariable warningMessage
+            $results = New-DbaDbUser -SqlInstance $TestConfig.instance2 -Database $dbname -Login $userName -DefaultSchema invalidSchemaName -WarningVariable warningMessage
             $results | Should -BeNullOrEmpty
             $warningMessage | Should -BeLike "*Schema * does not exist in database*"
         }
     }
     Context "Should create the user with login" {
         It "Creates the user and get it" {
-            New-DbaDbUser -SqlInstance $script:instance2 -Database $dbname -Login $userName -DefaultSchema guest
-            $newDbUser = Get-DbaDbUser -SqlInstance $script:instance2 -Database $dbname | Where-Object Name -eq $userName
+            New-DbaDbUser -SqlInstance $TestConfig.instance2 -Database $dbname -Login $userName -DefaultSchema guest
+            $newDbUser = Get-DbaDbUser -SqlInstance $TestConfig.instance2 -Database $dbname | Where-Object Name -eq $userName
             $newDbUser.Name | Should -Be $userName
             $newDbUser.DefaultSchema | Should -Be 'guest'
         }
     }
     Context "Should create the user with password" {
         It "Creates the contained sql user and get it." {
-            New-DbaDbUser -SqlInstance $script:instance2 -Database $dbname -Username $userNameWithPassword -Password $securePassword -DefaultSchema guest
-            $newDbUser = Get-DbaDbUser -SqlInstance $script:instance2 -Database $dbname | Where-Object Name -eq $userNameWithPassword
+            New-DbaDbUser -SqlInstance $TestConfig.instance2 -Database $dbname -Username $userNameWithPassword -Password $securePassword -DefaultSchema guest
+            $newDbUser = Get-DbaDbUser -SqlInstance $TestConfig.instance2 -Database $dbname | Where-Object Name -eq $userNameWithPassword
             $newDbUser.Name | Should -Be $userNameWithPassword
             $newDbUser.DefaultSchema | Should -Be 'guest'
         }
     }
     Context "Should create the user without login" {
         It "Creates the user and get it. Login property is empty" {
-            New-DbaDbUser -SqlInstance $script:instance2 -Database $dbname -User $userNameWithoutLogin -DefaultSchema guest
-            $results = Get-DbaDbUser -SqlInstance $script:instance2 -Database $dbname | Where-Object Name -eq $userNameWithoutLogin
+            New-DbaDbUser -SqlInstance $TestConfig.instance2 -Database $dbname -User $userNameWithoutLogin -DefaultSchema guest
+            $results = Get-DbaDbUser -SqlInstance $TestConfig.instance2 -Database $dbname | Where-Object Name -eq $userNameWithoutLogin
             $results.Name | Should -Be $userNameWithoutLogin
             $results.DefaultSchema | Should -Be 'guest'
             $results.Login | Should -BeNullOrEmpty
@@ -72,23 +72,23 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
             $password = 'MyV3ry$ecur3P@ssw0rd'
             $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
-            $null = New-DbaLogin -SqlInstance $script:instance2 -Login $loginName -Password $securePassword -Force
-            $null = New-DbaDatabase -SqlInstance $script:instance2 -Name $dbs
-            $accessibleDbCount = (Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeSystem -OnlyAccessible).count
+            $null = New-DbaLogin -SqlInstance $TestConfig.instance2 -Login $loginName -Password $securePassword -Force
+            $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $dbs
+            $accessibleDbCount = (Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem -OnlyAccessible).count
         }
         AfterAll {
-            $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbs -Confirm:$false
-            $null = Remove-DbaLogin -SqlInstance $script:instance2 -Login $loginName -Confirm:$false
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbs -Confirm:$false
+            $null = Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $loginName -Confirm:$false
         }
         It "Should add login to all databases provided" {
-            $results = New-DbaDbUser -SqlInstance $script:instance2 -Login $loginName -Database $dbs -Force -EnableException
+            $results = New-DbaDbUser -SqlInstance $TestConfig.instance2 -Login $loginName -Database $dbs -Force -EnableException
             $results.Count | Should -Be 3
             $results.Name | Should -Be $loginName, $loginName, $loginName
             $results.DefaultSchema | Should -Be dbo, dbo, dbo
         }
 
         It "Should add user to all user databases" {
-            $results = New-DbaDbUser -SqlInstance $script:instance2 -Login $loginName -Force -EnableException
+            $results = New-DbaDbUser -SqlInstance $TestConfig.instance2 -Login $loginName -Force -EnableException
             $results.Count | Should -Be $accessibleDbCount
             $results.Name | Get-Unique | Should -Be $loginName
         }

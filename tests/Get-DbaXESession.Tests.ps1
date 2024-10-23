@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -16,12 +16,12 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Verifying command output" {
         It "returns some results" {
-            $results = Get-DbaXESession -SqlInstance $script:instance2
+            $results = Get-DbaXESession -SqlInstance $TestConfig.instance2
             $results.Count -gt 1 | Should Be $true
         }
 
         It "returns only the system_health session" {
-            $results = Get-DbaXESession -SqlInstance $script:instance2 -Session system_health
+            $results = Get-DbaXESession -SqlInstance $TestConfig.instance2 -Session system_health
             $results.Name -eq 'system_health' | Should Be $true
         }
     }

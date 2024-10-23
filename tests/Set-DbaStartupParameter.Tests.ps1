@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -15,8 +15,8 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     BeforeAll {
-        $defaultInstance = $script:instance1
-        $namedInstance = $script:instance2
+        $defaultInstance = $TestConfig.instance1
+        $namedInstance = $TestConfig.instance2
         $SkipLocalTest = $true # Change to $false to run the tests on a local instance.
     }
 

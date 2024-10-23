@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -27,23 +27,23 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $startmigrationrestoredb = "dbatoolsci_startmigrationrestore$random"
         $startmigrationrestoredb2 = "dbatoolsci_startmigrationrestoreother$random"
         $detachattachdb = "dbatoolsci_detachattach$random"
-        Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2, $script:instance3 -Database $startmigrationrestoredb, $detachattachdb
+        Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $startmigrationrestoredb, $detachattachdb
 
-        $server = Connect-DbaInstance -SqlInstance $script:instance3
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance3
         Invoke-DbaQuery -SqlInstance $server -Query "CREATE DATABASE $startmigrationrestoredb2; ALTER DATABASE $startmigrationrestoredb2 SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE"
 
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         Invoke-DbaQuery -SqlInstance $server -Query "CREATE DATABASE $startmigrationrestoredb; ALTER DATABASE $startmigrationrestoredb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE"
         Invoke-DbaQuery -SqlInstance $server -Query "CREATE DATABASE $detachattachdb; ALTER DATABASE $detachattachdb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE"
         Invoke-DbaQuery -SqlInstance $server -Query "CREATE DATABASE $startmigrationrestoredb2; ALTER DATABASE $startmigrationrestoredb2 SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE"
-        $null = Set-DbaDbOwner -SqlInstance $script:instance2 -Database $startmigrationrestoredb, $detachattachdb -TargetLogin sa
+        $null = Set-DbaDbOwner -SqlInstance $TestConfig.instance2 -Database $startmigrationrestoredb, $detachattachdb -TargetLogin sa
     }
     AfterAll {
-        Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2, $script:instance3 -Database $startmigrationrestoredb, $detachattachdb, $startmigrationrestoredb2
+        Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $startmigrationrestoredb, $detachattachdb, $startmigrationrestoredb2
     }
 
     Context "Backup restore" {
-        $results = Start-DbaMigration -Force -Source $script:instance2 -Destination $script:instance3 -BackupRestore -SharedPath "C:\temp" -Exclude Logins, SpConfigure, SysDbUserObjects, AgentServer, CentralManagementServer, ExtendedEvents, PolicyManagement, ResourceGovernor, Endpoints, ServerAuditSpecifications, Audits, LinkedServers, SystemTriggers, DataCollector, DatabaseMail, BackupDevices, Credentials
+        $results = Start-DbaMigration -Force -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -BackupRestore -SharedPath "C:\temp" -Exclude Logins, SpConfigure, SysDbUserObjects, AgentServer, CentralManagementServer, ExtendedEvents, PolicyManagement, ResourceGovernor, Endpoints, ServerAuditSpecifications, Audits, LinkedServers, SystemTriggers, DataCollector, DatabaseMail, BackupDevices, Credentials
 
         It "returns at least one result" {
             $results | Should -Not -Be $null
@@ -57,7 +57,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "retains its name, recovery model, and status." {
-            $dbs = Get-DbaDatabase -SqlInstance $script:instance2, $script:instance3 -Database $startmigrationrestoredb2
+            $dbs = Get-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $startmigrationrestoredb2
             $dbs[0].Name -ne $null
             # Compare its variables
             $dbs[0].Name -eq $dbs[1].Name
@@ -68,8 +68,8 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Backup restore" {
-        $quickbackup = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeSystem | Backup-DbaDatabase -BackupDirectory C:\temp
-        $results = Start-DbaMigration -Force -Source $script:instance2 -Destination $script:instance3 -UseLastBackup -Exclude Logins, SpConfigure, SysDbUserObjects, AgentServer, CentralManagementServer, ExtendedEvents, PolicyManagement, ResourceGovernor, Endpoints, ServerAuditSpecifications, Audits, LinkedServers, SystemTriggers, DataCollector, DatabaseMail, BackupDevices, Credentials, StartupProcedures
+        $quickbackup = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Backup-DbaDatabase -BackupDirectory C:\temp
+        $results = Start-DbaMigration -Force -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -UseLastBackup -Exclude Logins, SpConfigure, SysDbUserObjects, AgentServer, CentralManagementServer, ExtendedEvents, PolicyManagement, ResourceGovernor, Endpoints, ServerAuditSpecifications, Audits, LinkedServers, SystemTriggers, DataCollector, DatabaseMail, BackupDevices, Credentials, StartupProcedures
 
         It "returns at least one result" {
             $results | Should -Not -Be $null
@@ -83,7 +83,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "retains its name, recovery model, and status." {
-            $dbs = Get-DbaDatabase -SqlInstance $script:instance2, $script:instance3 -Database $startmigrationrestoredb2
+            $dbs = Get-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $startmigrationrestoredb2
             $dbs[0].Name -ne $null
             # Compare its variables
             $dbs[0].Name -eq $dbs[1].Name

@@ -1,6 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance1
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
         $random = Get-Random
         $db = "dbatoolsci_writedbadaatable$random"
         $server.Query("CREATE DATABASE $db")
@@ -27,7 +27,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     # calling random function to throw data into a table
     It "defaults to dbo if no schema is specified" {
         $results = Get-ChildItem | ConvertTo-DbaDataTable
-        $results | Write-DbaDbTableData -SqlInstance $script:instance1 -Database $db -Table 'childitem' -AutoCreateTable
+        $results | Write-DbaDbTableData -SqlInstance $TestConfig.instance1 -Database $db -Table 'childitem' -AutoCreateTable
 
         ($server.Databases[$db].Tables | Where-Object { $_.Schema -eq 'dbo' -and $_.Name -eq 'childitem' }).Count | Should Be 1
     }
