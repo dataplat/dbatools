@@ -18,6 +18,7 @@
         "usernamehw.errorlens",
         "oderwat.indent-rainbow",
         "wengerk.highlight-bad-chars",
+        "dbatools.search",
         "streetsidesoftware.code-spell-checker"
       ],
       "settings": {
