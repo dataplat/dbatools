@@ -19,7 +19,9 @@
         "oderwat.indent-rainbow",
         "wengerk.highlight-bad-chars",
         "dbatools.search",
-        "streetsidesoftware.code-spell-checker"
+        "streetsidesoftware.code-spell-checker",
+        "bedirt.gpt-token-counter-live",
+        "saoudrizwan.claude-dev"
       ],
       "settings": {
         "powershell.powerShellAdditionalExePaths": {

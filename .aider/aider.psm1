@@ -85,16 +85,16 @@ function Update-PesterTest {
         $cmdPrompt = $cmdPrompt -replace "--PARMZ--", ($parameters.Name -join "`n")
         $cmdprompt = $cmdPrompt -join "`n"
 
-        $params = @(
-            "--message", $cmdPrompt,
-            "--file", $filename,
-            "--yes-always",
-            "--no-stream",
-            "--cache-prompts",
-            "--read", $CacheFilePath
-        )
+        $aiderParams = @{
+            Message      = $cmdPrompt
+            File         = $filename
+            YesAlways    = $true
+            Stream       = $false
+            CachePrompts = $true
+            ReadFile     = $CacheFilePath
+        }
 
-        aider @params
+        Invoke-Aider @aiderParams
     }
 }
 
@@ -169,15 +169,15 @@ function Repair-Error {
             $cmdPrompt += "Line: $($err.LineNumber)`n"
         }
 
-        # Run Aider in non-interactive mode with auto-confirmation
-        $parms = @(
-            "--message", $cmdPrompt,
-            "--file", $filename,
-            "--no-stream",
-            "--cache-prompts",
-            "--read", $CacheFilePath
-        )
-        aider @parms
+        $aiderParams = @{
+            Message      = $cmdPrompt
+            File         = $filename
+            Stream       = $false
+            CachePrompts = $true
+            ReadFile     = $CacheFilePath
+        }
+
+        Invoke-Aider @aiderParams
     }
 }
 
@@ -249,15 +249,15 @@ function Repair-ParameterTest {
         $parameters = $parameters.Name -join ", "
         $cmdPrompt = $promptTemplate -replace "--PARMZ--", $parameters
 
-        # Run Aider in non-interactive mode with auto-confirmation
-        $params = @(
-            "--message", $cmdPrompt,
-            "--file", $filename,
-            "--yes-always",
-            "--no-stream",
-            "--model", $Model
-        )
-        aider @params
+        $aiderParams = @{
+            Message   = $cmdPrompt
+            File      = $filename
+            YesAlways = $true
+            Stream    = $false
+            Model     = $Model
+        }
+
+        Invoke-Aider @aiderParams
     }
 }
 
@@ -310,7 +310,7 @@ function Invoke-Aider {
     .PARAMETER ShowPrompts
         Show system prompts.
 
-    .PARAMETER Verbose
+    .PARAMETER VerboseOutput
         Enable verbose output.
 
     .PARAMETER EditFormat
@@ -334,7 +334,13 @@ function Invoke-Aider {
         Runs aider with the specified message and file.
 
     .EXAMPLE
-        PS C:\> Invoke-Aider -Message "Update tests" -File "tests.ps1" -Model "gpt-4o" -CachePrompts
+        PS C:\> $params = @{
+        >>     Message = "Update tests"
+        >>     File = "tests.ps1"
+        >>     Model = "gpt-4o"
+        >>     CachePrompts = $true
+        >> }
+        PS C:\> Invoke-Aider @params
         Runs aider using GPT-4 model with prompt caching enabled.
     #>
     [CmdletBinding()]
@@ -357,9 +363,11 @@ function Invoke-Aider {
         [bool]$AutoLint = $true,
         [bool]$AutoTest = $false,
         [switch]$ShowPrompts,
+        [switch]$VerboseOutput,
         [string]$EditFormat = 'whole',
         [string]$MessageFile,
         [string[]]$ReadFile,
+        [ValidateSet('utf-8', 'ascii', 'unicode', 'utf-16', 'utf-32', 'utf-7')]
         [string]$Encoding = 'utf-8'
     )
 
@@ -423,7 +431,7 @@ function Invoke-Aider {
         $params += "--show-prompts"
     }
 
-    if ($Verbose) {
+    if ($VerboseOutput) {
         $params += "--verbose"
     }
 
