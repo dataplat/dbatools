@@ -1,4 +1,43 @@
 function Update-PesterTest {
+    <#
+    .SYNOPSIS
+        Updates Pester tests to v5 format for dbatools commands.
+
+    .DESCRIPTION
+        Updates existing Pester tests to v5 format for dbatools commands. This function processes test files
+        and converts them to use the newer Pester v5 parameter validation syntax. It skips files that have
+        already been converted or exceed the specified size limit.
+
+    .PARAMETER First
+        Specifies the maximum number of commands to process. Defaults to 1000.
+
+    .PARAMETER Skip
+        Specifies the number of commands to skip before processing. Defaults to 0.
+
+    .PARAMETER PromptFilePath
+        The path to the template file containing the prompt structure.
+        Defaults to "/workspace/.aider/prompts/template.md".
+
+    .PARAMETER CacheFilePath
+        The path to the file containing cached conventions.
+        Defaults to "/workspace/.aider/prompts/conventions.md".
+
+    .PARAMETER MaxFileSize
+        The maximum size of test files to process, in bytes. Files larger than this will be skipped.
+        Defaults to 8KB.
+
+    .NOTES
+        Tags: Testing, Pester
+        Author: dbatools team
+
+    .EXAMPLE
+        PS C:\> Update-PesterTest
+        Updates all eligible Pester tests to v5 format using default parameters.
+
+    .EXAMPLE
+        PS C:\> Update-PesterTest -First 10 -Skip 5
+        Updates 10 test files starting from the 6th command, skipping the first 5.
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [int]$First = 1000,
@@ -60,6 +99,44 @@ function Update-PesterTest {
 }
 
 function Repair-Error {
+    <#
+    .SYNOPSIS
+        Repairs errors in dbatools Pester test files.
+
+    .DESCRIPTION
+        Processes and repairs errors found in dbatools Pester test files. This function reads error
+        information from a JSON file and attempts to fix the identified issues in the test files.
+
+    .PARAMETER First
+        Specifies the maximum number of commands to process. Defaults to 1000.
+
+    .PARAMETER Skip
+        Specifies the number of commands to skip before processing. Defaults to 0.
+
+    .PARAMETER PromptFilePath
+        The path to the template file containing the prompt structure.
+        Defaults to "/workspace/.aider/prompts/fix-errors.md".
+
+    .PARAMETER CacheFilePath
+        The path to the file containing cached conventions.
+        Defaults to "/workspace/.aider/prompts/conventions.md".
+
+    .PARAMETER ErrorFilePath
+        The path to the JSON file containing error information.
+        Defaults to "/workspace/.aider/prompts/errors.json".
+
+    .NOTES
+        Tags: Testing, Pester, ErrorHandling
+        Author: dbatools team
+
+    .EXAMPLE
+        PS C:\> Repair-Error
+        Processes and attempts to fix all errors found in the error file using default parameters.
+
+    .EXAMPLE
+        PS C:\> Repair-Error -ErrorFilePath "custom-errors.json"
+        Processes and repairs errors using a custom error file.
+    #>
     [CmdletBinding()]
     param (
         [int]$First = 1000,
@@ -105,6 +182,39 @@ function Repair-Error {
 }
 
 function Repair-ParameterTest {
+    <#
+    .SYNOPSIS
+        Repairs parameter tests in dbatools Pester test files.
+
+    .DESCRIPTION
+        Processes and repairs parameter-related tests in dbatools Pester test files. This function
+        specifically focuses on fixing parameter validation tests and ensures they follow the correct format.
+
+    .PARAMETER First
+        Specifies the maximum number of commands to process. Defaults to 1000.
+
+    .PARAMETER Skip
+        Specifies the number of commands to skip before processing. Defaults to 0.
+
+    .PARAMETER Model
+        The AI model to use for processing. Defaults to "azure/gpt-4o-mini".
+
+    .PARAMETER PromptFilePath
+        The path to the template file containing the prompt structure.
+        Defaults to "/workspace/.aider/prompts/fix-errors.md".
+
+    .NOTES
+        Tags: Testing, Pester, Parameters
+        Author: dbatools team
+
+    .EXAMPLE
+        PS C:\> Repair-ParameterTest
+        Repairs parameter tests for all eligible commands using default parameters.
+
+    .EXAMPLE
+        PS C:\> Repair-ParameterTest -First 5 -Model "different-model"
+        Repairs parameter tests for the first 5 commands using a specified AI model.
+    #>
     [cmdletbinding()]
     param (
         [int]$First = 1000,
@@ -149,25 +259,193 @@ function Repair-ParameterTest {
         )
         aider @params
     }
+}
+
+function Invoke-Aider {
     <#
-        # <_>
-        # It "has the required parameter: <$_>" -ForEach $params { # 2
-        # It "has the required parameter: $_" # 25
-        # It "has all the required parameters" -ForEach $requiredParameters {
-        # Copy-DbaDbViewData.Tests.ps1: $params | ForEach-Object {
-        # It "has the required parameter: SqlInstance" -ForEach $params { 7
-        # It "has the required parameter: $_" -ForEach $params {
-        # It "has the required parameter: $_" -ForEach $params {
-        # It "has the required parameter: SqlInstance" -ForEach $params {
-        # It "has the required parameter: $_" -ForEach $params {
-        # It "has the required parameter: $_" -ForEach $params {
-        # It "has the required parameter: $_" -ForEach $params {
+    .SYNOPSIS
+        PowerShell wrapper for the aider CLI tool.
 
-        <#
-            BeforeDiscovery {
-                [object[]]$params = (Get-Command Copy-DbaDatabase).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-            }
+    .DESCRIPTION
+        Provides a PowerShell interface to the aider command-line tool, allowing for easier integration
+        with PowerShell scripts and workflows. Supports core functionality including model selection,
+        caching, and various output options.
 
-        #>
+    .PARAMETER Message
+        The message or prompt to send to aider.
+
+    .PARAMETER File
+        The file(s) to process with aider.
+
+    .PARAMETER Model
+        Specify the AI model to use (e.g., gpt-4o, claude-3-5-sonnet).
+
+    .PARAMETER EditorModel
+        Specify the model to use for editing code.
+
+    .PARAMETER Pretty
+        Enable/disable pretty, colorized output. Defaults to $true.
+
+    .PARAMETER Stream
+        Enable/disable streaming responses. Defaults to $true.
+
+    .PARAMETER YesAlways
+        Automatically confirm all prompts.
+
+    .PARAMETER CachePrompts
+        Enable caching of prompts to reduce token costs.
+
+    .PARAMETER MapTokens
+        Number of tokens to use for repo map. Use 0 to disable.
+
+    .PARAMETER MapRefresh
+        Control how often the repo map is refreshed (auto/always/files/manual).
+
+    .PARAMETER AutoLint
+        Enable/disable automatic linting after changes.
+
+    .PARAMETER AutoTest
+        Enable/disable automatic testing after changes.
+
+    .PARAMETER ShowPrompts
+        Show system prompts.
+
+    .PARAMETER Verbose
+        Enable verbose output.
+
+    .PARAMETER EditFormat
+        Specify the edit format (e.g., 'whole' for whole file).
+
+    .PARAMETER MessageFile
+        File containing the message to send to aider.
+
+    .PARAMETER ReadFile
+        Specify read-only files.
+
+    .PARAMETER Encoding
+        Specify the encoding for input and output. Defaults to 'utf-8'.
+
+    .NOTES
+        Tags: AI, Automation
+        Author: dbatools team
+
+    .EXAMPLE
+        PS C:\> Invoke-Aider -Message "Fix the bug" -File "script.ps1"
+        Runs aider with the specified message and file.
+
+    .EXAMPLE
+        PS C:\> Invoke-Aider -Message "Update tests" -File "tests.ps1" -Model "gpt-4o" -CachePrompts
+        Runs aider using GPT-4 model with prompt caching enabled.
     #>
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory)]
+        [string]$Message,
+
+        [Parameter(Mandatory)]
+        [string[]]$File,
+
+        [string]$Model,
+        [string]$EditorModel,
+        [bool]$Pretty = $true,
+        [bool]$Stream = $true,
+        [switch]$YesAlways,
+        [switch]$CachePrompts,
+        [int]$MapTokens = 0,
+        [ValidateSet('auto', 'always', 'files', 'manual')]
+        [string]$MapRefresh = 'manual',
+        [bool]$AutoLint = $true,
+        [bool]$AutoTest = $false,
+        [switch]$ShowPrompts,
+        [string]$EditFormat = 'whole',
+        [string]$MessageFile,
+        [string[]]$ReadFile,
+        [string]$Encoding = 'utf-8'
+    )
+
+    $params = @(
+        "--message", $Message
+    )
+
+    foreach ($f in $File) {
+        $params += "--file"
+        $params += $f
+    }
+
+    if ($Model) {
+        $params += "--model"
+        $params += $Model
+    }
+
+    if ($EditorModel) {
+        $params += "--editor-model"
+        $params += $EditorModel
+    }
+
+    if (-not $Pretty) {
+        $params += "--no-pretty"
+    }
+
+    if (-not $Stream) {
+        $params += "--no-stream"
+    }
+
+    if ($YesAlways) {
+        $params += "--yes-always"
+    }
+
+    if ($CachePrompts) {
+        $params += "--cache-prompts"
+        # Always set keepalive pings to 5 when caching is enabled
+        $params += "--cache-keepalive-pings"
+        $params += "5"
+    }
+
+    if ($MapTokens -ge 0) {
+        $params += "--map-tokens"
+        $params += $MapTokens.ToString()
+    }
+
+    if ($MapRefresh) {
+        $params += "--map-refresh"
+        $params += $MapRefresh
+    }
+
+    if (-not $AutoLint) {
+        $params += "--no-auto-lint"
+    }
+
+    if ($AutoTest) {
+        $params += "--auto-test"
+    }
+
+    if ($ShowPrompts) {
+        $params += "--show-prompts"
+    }
+
+    if ($Verbose) {
+        $params += "--verbose"
+    }
+
+    if ($EditFormat) {
+        $params += "--edit-format"
+        $params += $EditFormat
+    }
+
+    if ($MessageFile) {
+        $params += "--message-file"
+        $params += $MessageFile
+    }
+
+    foreach ($rf in $ReadFile) {
+        $params += "--read"
+        $params += $rf
+    }
+
+    if ($Encoding) {
+        $params += "--encoding"
+        $params += $Encoding
+    }
+
+    aider @params
 }
