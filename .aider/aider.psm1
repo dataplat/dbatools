@@ -283,11 +283,11 @@ function Invoke-Aider {
     .PARAMETER EditorModel
         Specify the model to use for editing code.
 
-    .PARAMETER Pretty
-        Enable/disable pretty, colorized output. Defaults to $true.
+    .PARAMETER NoPretty
+        Disable pretty, colorized output.
 
-    .PARAMETER Stream
-        Enable/disable streaming responses. Defaults to $true.
+    .PARAMETER NoStream
+        Disable streaming responses.
 
     .PARAMETER YesAlways
         Automatically confirm all prompts.
@@ -301,11 +301,11 @@ function Invoke-Aider {
     .PARAMETER MapRefresh
         Control how often the repo map is refreshed (auto/always/files/manual).
 
-    .PARAMETER AutoLint
-        Enable/disable automatic linting after changes.
+    .PARAMETER NoAutoLint
+        Disable automatic linting after changes.
 
     .PARAMETER AutoTest
-        Enable/disable automatic testing after changes.
+        Enable automatic testing after changes.
 
     .PARAMETER ShowPrompts
         Show system prompts.
@@ -347,21 +347,19 @@ function Invoke-Aider {
     param (
         [Parameter(Mandatory)]
         [string]$Message,
-
         [Parameter(Mandatory)]
         [string[]]$File,
-
         [string]$Model,
         [string]$EditorModel,
-        [bool]$Pretty = $true,
-        [bool]$Stream = $true,
+        [switch]$NoPretty,
+        [switch]$NoStream,
         [switch]$YesAlways,
         [switch]$CachePrompts,
         [int]$MapTokens = 0,
         [ValidateSet('auto', 'always', 'files', 'manual')]
         [string]$MapRefresh = 'manual',
-        [bool]$AutoLint = $true,
-        [bool]$AutoTest = $false,
+        [switch]$NoAutoLint,
+        [switch]$AutoTest,
         [switch]$ShowPrompts,
         [switch]$VerboseOutput,
         [string]$EditFormat = 'whole',
@@ -390,11 +388,11 @@ function Invoke-Aider {
         $params += $EditorModel
     }
 
-    if (-not $Pretty) {
+    if ($NoPretty) {
         $params += "--no-pretty"
     }
 
-    if (-not $Stream) {
+    if ($NoStream) {
         $params += "--no-stream"
     }
 
@@ -419,7 +417,7 @@ function Invoke-Aider {
         $params += $MapRefresh
     }
 
-    if (-not $AutoLint) {
+    if ($NoAutoLint) {
         $params += "--no-auto-lint"
     }
 
