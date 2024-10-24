@@ -70,7 +70,7 @@ Be literal, even with `Describe "$($TestConfig.CommandName)"`
 param($ModuleName = 'dbatools')
 $global:TestConfig = Get-TestConfig
 
-Describe "$($TestConfig.CommandName)" {
+Describe "Get-CommandName" {
     Context "Validate parameters" {
         BeforeAll {
             $command = Get-Command $global:TestConfig.CommandName
