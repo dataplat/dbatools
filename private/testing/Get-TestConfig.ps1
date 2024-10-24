@@ -3,6 +3,8 @@ function Get-TestConfig {
         [string]$LocalConfigPath = "$script:PSModuleRoot/tests/constants.local.ps1"
     )
     $config = [ordered]@{}
+    # derive the command name from the CALLING script's filename
+    $config['CommandName'] = ($MyInvocation.MyCommand.Name | Split-Path -Leaf).Replace(".Tests.ps1", "")
 
     if (Test-Path $LocalConfigPath) {
         Write-Host "Tests will use local constants file: tests\constants.local.ps1." -ForegroundColor Cyan

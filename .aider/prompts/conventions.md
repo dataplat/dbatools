@@ -63,15 +63,17 @@
 
 ## Example Pester v5 Test Script
 
+Be literal, even with `Describe "$($TestConfig.CommandName)"`
+
 ```powershell
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
 param($ModuleName = 'dbatools')
 $global:TestConfig = Get-TestConfig
 
-Describe "Connect-DbaInstance" {
+Describe "$($TestConfig.CommandName)" {
     Context "Validate parameters" {
         BeforeAll {
-            $command = Get-Command Connect-DbaInstance
+            $command = Get-Command $global:TestConfig.CommandName
         }
         $parms = @(
             "SqlInstance",
