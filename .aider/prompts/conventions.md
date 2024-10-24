@@ -64,11 +64,12 @@
 ## Example Pester v5 Test Script
 
 ```powershell
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
 param($ModuleName = 'dbatools')
 
 Describe "Connect-DbaInstance" {
     BeforeDiscovery {
-        . (Join-Path $PSScriptRoot 'constants.ps1')
+        . (Join-Path -Path $PSScriptRoot -ChildPath constants.ps1)
     }
 
     Context "Validate parameters" {
@@ -108,6 +109,7 @@ Describe "Connect-DbaInstance" {
 ## Example Pester v5 Test Script with TestCases
 
 ```powershell
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
 param($ModuleName = 'dbatools')
 
 Describe "Add-Numbers" {
@@ -123,7 +125,8 @@ Describe "Add-Numbers" {
 ```
 
 ## Additional Guidelines
-* Start with `param($ModuleName = 'dbatools')` like in the example above.
+* start with `#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}` like in the example above.
+* Second line must be `param($ModuleName = 'dbatools')` like in the example above.
 * -Skip:(whatever) should return true or false, not a string
 
 
@@ -131,6 +134,7 @@ Describe "Add-Numbers" {
 
 Remember to REMOVE the knownparameters and validate parameters this way:
 
+```powershell
 Context "Validate parameters" {
     BeforeAll {
         $command = Get-Command Connect-DbaInstance
@@ -144,6 +148,7 @@ Context "Validate parameters" {
         $command | Should -HaveParameter $PSItem
     }
 }
+```
 
 ## DO NOT list parameters like this
 
@@ -155,9 +160,9 @@ $parms = @('SqlInstance','SqlCredential','Database')
 
 ```powershell
 $parms = @(
-    'SqlInstance',
-    'SqlCredential',
-    'Database'
+    "SqlInstance",
+    "SqlCredential",
+    "Database"
 )
 ```
 
@@ -170,3 +175,6 @@ $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 
 DO USE:
 The static command name provided in the prompt
+
+DO USE:
+Double quotes when possible. We are a SQL Server module and single quotes are reserved in T-SQL.
