@@ -61,5 +61,9 @@ function Get-TestConfig {
     # derive the command name from the CALLING script's filename
     $config['CommandName'] = ($MyInvocation.MyCommand.Name | Split-Path -Leaf).Replace(".Tests.ps1", "")
 
+    if (-not $config['CommandName']) {
+        $config['CommandName'] = "Unknown"
+    }
+
     [pscustomobject]$config
 }

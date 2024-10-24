@@ -70,10 +70,10 @@ Be literal, even with `Describe "$($TestConfig.CommandName)"`
 param($ModuleName = 'dbatools')
 $global:TestConfig = Get-TestConfig
 
-Describe "Get-CommandName" {
+Describe $TestConfig.CommandName {
     Context "Validate parameters" {
         BeforeAll {
-            $command = Get-Command $global:TestConfig.CommandName
+            $command = Get-Command $TestConfig.CommandName
         }
         $parms = @(
             "SqlInstance",
@@ -110,8 +110,9 @@ Describe "Get-CommandName" {
 ```powershell
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
 param($ModuleName = 'dbatools')
+$global:TestConfig = Get-TestConfig
 
-Describe "Add-Numbers" {
+Describe $TestConfig.CommandName {
     It "Should calculate the correct result" -ForEach @(
         @{ Input1 = 1; Input2 = 2; Expected = 3 }
         @{ Input1 = 2; Input2 = 3; Expected = 5 }
