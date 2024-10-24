@@ -24,7 +24,6 @@ function Update-PesterTest {
 
     .PARAMETER CacheFilePath
         The path to the file containing cached conventions.
-        Defaults to "/workspace/.aider/prompts/conventions.md".
 
     .PARAMETER MaxFileSize
         The maximum size of test files to process, in bytes. Files larger than this will be skipped.
@@ -61,7 +60,7 @@ function Update-PesterTest {
         [int]$First = 1000,
         [int]$Skip = 0,
         [string[]]$PromptFilePath = "/workspace/.aider/prompts/template.md",
-        [string[]]$CacheFilePath = "/workspace/.aider/prompts/conventions.md",
+        [string[]]$CacheFilePath = @("/workspace/.aider/prompts/conventions.md","/workspace/private/testing/Get-TestConfig.ps1"),
         [int]$MaxFileSize = 8kb
     )
     begin {

@@ -48,7 +48,7 @@
   - This ensures that all global variables are available during both the discovery and execution phases.
 
 - **Variable Scoping:**
-  - Replace all `$script:` variable scopes with `$global:` to align with Pester v5 scoping rules.
+  - Replace all `$script:` variable scopes with `$global:` where required for Pester v5 scoping.
 
 - **Comments and Debugging Notes:**
   - Leave comments like `#$script:instance2 for appveyor` intact for debugging purposes.
@@ -66,12 +66,9 @@
 ```powershell
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
 param($ModuleName = 'dbatools')
+$global:TestConfig = Get-TestConfig
 
 Describe "Connect-DbaInstance" {
-    BeforeDiscovery {
-        . (Join-Path -Path $PSScriptRoot -ChildPath constants.ps1)
-    }
-
     Context "Validate parameters" {
         BeforeAll {
             $command = Get-Command Connect-DbaInstance
@@ -86,7 +83,7 @@ Describe "Connect-DbaInstance" {
         }
     }
 
-    Context "Connects using newly created login" -ForEach $global:instances {
+    Context "Connects using newly created login" -ForEach $TestConfig.Instances {
         BeforeAll {
             $loginName = "dbatoolsci_login_$(Get-Random)"
             $securePassword = ConvertTo-SecureString -String "P@ssw0rd$(Get-Random)" -AsPlainText -Force
