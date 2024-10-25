@@ -64,10 +64,10 @@ Describe "Add-DbaAgReplica" -Tag "IntegrationTests" {
 
     Context "When adding AG replicas" {
         BeforeAll {
-            $agname = "dbatoolsci_add_replicagroup"
+            $repagname = "dbatoolsci_add_replicagroup"
             $splat = @{
                 Primary       = $TestConfig.instance3
-                Name          = $agname
+                Name          = $repagname
                 ClusterType   = "None"
                 FailoverMode  = "Manual"
                 Certificate   = "dbatoolsci_AGCert"
@@ -79,15 +79,15 @@ Describe "Add-DbaAgReplica" -Tag "IntegrationTests" {
 
         It "Returns results with proper data" {
             $results = Get-DbaAgReplica -SqlInstance $TestConfig.instance3
-            $results.AvailabilityGroup | Should -Contain $agname
+            $results.AvailabilityGroup | Should -Contain $repagname
             $results.Role | Should -Contain 'Primary'
             $results.AvailabilityMode | Should -Contain 'SynchronousCommit'
             $results.FailoverMode | Should -Contain 'Manual'
         }
 
         It "Returns just one result" {
-            $results = Get-DbaAgReplica -SqlInstance $TestConfig.instance3 -Replica $replicaName -AvailabilityGroup $agname
-            $results.AvailabilityGroup | Should -Be $agname
+            $results = Get-DbaAgReplica -SqlInstance $TestConfig.instance3 -Replica $replicaName -AvailabilityGroup $repagname
+            $results.AvailabilityGroup | Should -Be $repagname
             $results.Role | Should -Be 'Primary'
             $results.AvailabilityMode | Should -Be 'SynchronousCommit'
             $results.FailoverMode | Should -Be 'Manual'
