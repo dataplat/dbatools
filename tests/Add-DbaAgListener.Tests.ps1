@@ -6,8 +6,14 @@ Describe "Add-DbaAgListener" -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
             $command = Get-Command Add-DbaAgListener
-            $expected = $TestConfig.CommonParameters
+        }
 
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters" {
+            $expected = $TestConfig.CommonParameters
             $expected += @(
                 "SqlInstance",
                 "SqlCredential",
@@ -24,13 +30,6 @@ Describe "Add-DbaAgListener" -Tag "UnitTests" {
                 "Confirm",
                 "WhatIf"
             )
-        }
-
-        It "Has parameter: <_>" -ForEach $expected {
-            $command | Should -HaveParameter $PSItem
-        }
-
-        It "Should have exactly the number of expected parameters" {
             $hasparms = $command.Parameters.Values.Name
             Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }

@@ -6,13 +6,6 @@ Describe "ConvertTo-DbaTimeline" -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
             $command = Get-Command ConvertTo-DbaTimeline
-            $expected = $TestConfig.CommonParameters
-
-            $expected += @(
-                "InputObject",
-                "ExcludeRowLabel",
-                "EnableException"
-            )
         }
 
         It "Has parameter: <_>" -ForEach $expected {
@@ -20,6 +13,12 @@ Describe "ConvertTo-DbaTimeline" -Tag "UnitTests" {
         }
 
         It "Should have exactly the number of expected parameters" {
+            $expected = $TestConfig.CommonParameters
+            $expected += @(
+                "InputObject",
+                "ExcludeRowLabel",
+                "EnableException"
+            )
             $hasparms = $command.Parameters.Values.Name
             Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }

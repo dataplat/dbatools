@@ -6,15 +6,6 @@ Describe "Clear-DbaLatchStatistics" -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
             $command = Get-Command Clear-DbaLatchStatistics
-            $expected = $TestConfig.CommonParameters
-
-            $expected += @(
-                "SqlInstance",
-                "SqlCredential",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
-            )
         }
 
         It "Has parameter: <_>" -ForEach $expected {
@@ -22,6 +13,14 @@ Describe "Clear-DbaLatchStatistics" -Tag "UnitTests" {
         }
 
         It "Should have exactly the number of expected parameters" {
+            $expected = $TestConfig.CommonParameters
+            $expected += @(
+                "SqlInstance",
+                "SqlCredential",
+                "EnableException",
+                "Confirm",
+                "WhatIf"
+            )
             $hasparms = $command.Parameters.Values.Name
             Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }

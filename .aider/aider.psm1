@@ -284,7 +284,9 @@ function Repair-Error {
         $allObjects = @()
 
         $prompts = @{
-            ReorgParamTest = "Move the `$expected` parameter list into the 'Should have exactly the number of expected parameters' It block, keeping it between the It block declaration and the `$hasparms` assignment. Do not move the initial `$command` assignment."
+            ReorgParamTest = "Move the `$expected` parameter list AND the `$TestConfig.CommonParameters part into the 'Should have exactly the number of expected parameters' It block, keeping it between the It block declaration and the `$hasparms` assignment. Do not move the initial `$command` assignment.
+
+            If you can't find the `$expected` parameter list, do not make any changes."
         }
         Write-Verbose "Available prompt types: $($prompts.Keys -join ', ')"
 
@@ -320,6 +322,11 @@ function Repair-Error {
 
     end {
         Write-Verbose "Starting end block processing"
+
+        if ($InputObject.Count -eq 0) {
+            Write-Verbose "No input objects provided, getting commands from dbatools module"
+            $allObjects += Get-Command -Module dbatools -Type Function, Cmdlet | Select-Object -First $First -Skip $Skip
+        }
 
         if (-not $PromptFilePath -and -not $Type) {
             Write-Verbose "Neither PromptFilePath nor Type specified"
