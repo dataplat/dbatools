@@ -1,39 +1,70 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param($ModuleName = "dbatools")
 $global:TestConfig = Get-TestConfig
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Credential', 'Database', 'ExcludeDatabase', 'SecurePassword', 'Path', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Backup-DbaDbMasterKey" -Tag "UnitTests" {
+    Context "Parameter validation" {
+        BeforeAll {
+            $command = Get-Command Backup-DbaDbMasterKey
+            $expectedParameters = $TestConfig.CommonParameters
+
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Credential",
+                "Database",
+                "ExcludeDatabase",
+                "SecurePassword",
+                "Path",
+                "InputObject",
+                "EnableException",
+                "WhatIf",
+                "Confirm"
+            )
+        }
+
+        It "Has parameter: <_>" -ForEach $expectedParameters {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters" {
+            $actualParameters = $command.Parameters.Keys | Where-Object { $PSItem -notin "WhatIf", "Confirm" }
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $actualParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    Context "Can create a database certificate" {
+Describe "Backup-DbaDbMasterKey" -Tag "IntegrationTests" {
+    Context "Can backup a database master key" {
         BeforeAll {
-            if (-not (Get-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database tempdb)) {
-                $masterkey = New-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database tempdb -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
+            $instance = $TestConfig.instance1
+            $database = "tempdb"
+            $password = ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force
+
+            if (-not (Get-DbaDbMasterKey -SqlInstance $instance -Database $database)) {
+                $null = New-DbaDbMasterKey -SqlInstance $instance -Database $database -Password $password -Confirm:$false
+            }
+
+            $splatBackup = @{
+                SqlInstance = $instance
+                Database = $database
+                SecurePassword = $password
+                Confirm = $false
             }
         }
+
         AfterAll {
-            (Get-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database tempdb) | Remove-DbaDbMasterKey -Confirm:$false
+            Get-DbaDbMasterKey -SqlInstance $instance -Database $database | Remove-DbaDbMasterKey -Confirm:$false
         }
 
-        $results = Backup-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Confirm:$false -Database tempdb -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force)
-        $null = Remove-Item -Path $results.Path -ErrorAction SilentlyContinue -Confirm:$false
+        It "Backs up the database master key" {
+            $results = Backup-DbaDbMasterKey @splatBackup
+            $results | Should -Not -BeNullOrEmpty
+            $results.Database | Should -Be $database
+            $results.Status | Should -Be "Success"
+            $results.DatabaseID | Should -Be (Get-DbaDatabase -SqlInstance $instance -Database $database).ID
 
-        It "backs up the db cert" {
-            $results.Database -eq 'tempdb'
-            $results.Status -eq "Success"
-        }
-
-        It "Database ID should be returned" {
-            $results.DatabaseID | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database tempdb).ID
+            $null = Remove-Item -Path $results.Path -ErrorAction SilentlyContinue -Confirm:$false
         }
     }
 }

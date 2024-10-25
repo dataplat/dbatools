@@ -1,19 +1,38 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param($ModuleName = "dbatools")
 $global:TestConfig = Get-TestConfig
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'Alert', 'ExcludeAlert', 'IncludeDefaults', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Copy-DbaAgentAlert" -Tag "UnitTests" {
+    Context "Parameter validation" {
+        BeforeAll {
+            $command = Get-Command Copy-DbaAgentAlert
+            $expectedParameters = $TestConfig.CommonParameters
+
+            $expectedParameters += @(
+                "Source",
+                "SourceSqlCredential",
+                "Destination",
+                "DestinationSqlCredential",
+                "Alert",
+                "ExcludeAlert",
+                "IncludeDefaults",
+                "Force",
+                "EnableException"
+            )
+        }
+
+        It "Has parameter: <_>" -ForEach $expectedParameters {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters" {
+            $actualParameters = $command.Parameters.Keys | Where-Object { $PSItem -notin "WhatIf", "Confirm" }
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $actualParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+Describe "Copy-DbaAgentAlert" -Tag "IntegrationTests" {
     BeforeAll {
         $alert1 = 'dbatoolsci test alert'
         $alert2 = 'dbatoolsci test alert 2'
@@ -46,6 +65,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         @operator_name = N'$operatorName',
         @notification_method = 1 ;")
     }
+
     AfterAll {
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2 -Database master
         $server.Query("EXEC msdb.dbo.sp_delete_alert @name=N'$($alert1)'")
@@ -56,25 +76,27 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $server.Query("EXEC msdb.dbo.sp_delete_alert @name=N'$($alert1)'")
     }
 
-    It "Copies the sample alert" {
-        $results = Copy-DbaAgentAlert -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -Alert $alert1
-        $results.Name -eq 'dbatoolsci test alert', 'dbatoolsci test alert'
-        $results.Status -eq 'Successful', 'Successful'
-    }
+    Context "When copying alerts" {
+        It "Copies the sample alert" {
+            $results = Copy-DbaAgentAlert -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -Alert $alert1
+            $results.Name | Should -Be @('dbatoolsci test alert', 'dbatoolsci test alert')
+            $results.Status | Should -Be @('Successful', 'Successful')
+        }
 
-    It "Skips alerts where destination is missing the operator" {
-        $results = Copy-DbaAgentAlert -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -Alert $alert2 -WarningAction SilentlyContinue
-        $results.Status -eq 'Skipped', 'Skipped'
-    }
+        It "Skips alerts where destination is missing the operator" {
+            $results = Copy-DbaAgentAlert -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -Alert $alert2 -WarningAction SilentlyContinue
+            $results.Status | Should -Be @('Skipped', 'Skipped')
+        }
 
-    It "Doesn't overwrite existing alerts" {
-        $results = Copy-DbaAgentAlert -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -Alert $alert1
-        $results.Name -eq 'dbatoolsci test alert'
-        $results.Status -eq 'Skipped'
-    }
+        It "Doesn't overwrite existing alerts" {
+            $results = Copy-DbaAgentAlert -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -Alert $alert1
+            $results.Name | Should -Be 'dbatoolsci test alert'
+            $results.Status | Should -Be 'Skipped'
+        }
 
-    It "The newly copied alert exists" {
-        $results = Get-DbaAgentAlert -SqlInstance $TestConfig.instance2
-        $results.Name -contains 'dbatoolsci test alert'
+        It "The newly copied alert exists" {
+            $results = Get-DbaAgentAlert -SqlInstance $TestConfig.instance2
+            $results.Name | Should -Contain 'dbatoolsci test alert'
+        }
     }
 }

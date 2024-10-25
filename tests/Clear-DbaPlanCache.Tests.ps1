@@ -1,31 +1,50 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param($ModuleName = "dbatools")
 $global:TestConfig = Get-TestConfig
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Threshold', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Clear-DbaPlanCache" -Tag "UnitTests" {
+    Context "Parameter validation" {
+        BeforeAll {
+            $command = Get-Command Clear-DbaPlanCache
+            $expectedParameters = $TestConfig.CommonParameters
+
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Threshold",
+                "InputObject",
+                "EnableException"
+            )
+        }
+
+        It "Has parameter: <_>" -ForEach $expectedParameters {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters" {
+            $actualParameters = $command.Parameters.Keys | Where-Object { $PSItem -notin "WhatIf", "Confirm" }
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $actualParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
-    Context "doesn't clear plan cache" {
-        It "returns correct datatypes" {
+Describe "Clear-DbaPlanCache" -Tag "IntegrationTests" {
+    Context "When not clearing plan cache" {
+        BeforeAll {
             # Make plan cache way higher than likely for a test rig
-            $results = Clear-DbaPlanCache -SqlInstance $TestConfig.instance1 -Threshold 10240
-            $results.Size -is [dbasize] | Should -Be $true
-            $results.Status -match 'below' | Should -Be $true
+            $threshold = 10240
         }
-        It "supports piping" {
-            # Make plan cache way higher than likely for a test rig
-            $results = Get-DbaPlanCache -SqlInstance $TestConfig.instance1 | Clear-DbaPlanCache -Threshold 10240
-            $results.Size -is [dbasize] | Should -Be $true
-            $results.Status -match 'below' | Should -Be $true
+
+        It "Returns correct datatypes" {
+            $results = Clear-DbaPlanCache -SqlInstance $TestConfig.instance1 -Threshold $threshold
+            $results.Size | Should -BeOfType [dbasize]
+            $results.Status | Should -Match 'below'
+        }
+
+        It "Supports piping" {
+            $results = Get-DbaPlanCache -SqlInstance $TestConfig.instance1 | Clear-DbaPlanCache -Threshold $threshold
+            $results.Size | Should -BeOfType [dbasize]
+            $results.Status | Should -Match 'below'
         }
     }
 }

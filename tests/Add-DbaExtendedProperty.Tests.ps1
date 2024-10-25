@@ -1,19 +1,36 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param($ModuleName = "dbatools")
 $global:TestConfig = Get-TestConfig
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Name', 'InputObject', 'EnableException', 'Value'
-        It "Should only contain our specific parameters" {
-            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
+Describe "Add-DbaExtendedProperty" -Tag "UnitTests" {
+    Context "Parameter validation" {
+        BeforeAll {
+            $command = Get-Command Add-DbaExtendedProperty
+            $expectedParameters = $TestConfig.CommonParameters
+
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "Name",
+                "Value",
+                "InputObject",
+                "EnableException"
+            )
+        }
+
+        It "Has parameter: <_>" -ForEach $expectedParameters {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters" {
+            $actualParameters = $command.Parameters.Keys | Where-Object { $PSItem -notin "WhatIf", "Confirm" }
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $actualParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
-
+Describe "Add-DbaExtendedProperty" -Tag "IntegrationTests" {
     BeforeAll {
         $random = Get-Random
         $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
@@ -26,9 +43,13 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $null = $db | Remove-DbaDatabase -Confirm:$false
     }
 
-    Context "commands work as expected" {
-        It "works" {
-            $ep = $db | Add-DbaExtendedProperty -Name "Test_Database_Name" -Value "Sup"
+    Context "When adding extended properties" {
+        It "Adds an extended property to the database" {
+            $splatExtendedProperty = @{
+                Name  = "Test_Database_Name"
+                Value = "Sup"
+            }
+            $ep = $db | Add-DbaExtendedProperty @splatExtendedProperty
             $ep.Name | Should -Be "Test_Database_Name"
             $ep.ParentName | Should -Be $db.Name
             $ep.Value | Should -Be "Sup"

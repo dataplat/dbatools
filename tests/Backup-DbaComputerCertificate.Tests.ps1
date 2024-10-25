@@ -1,25 +1,49 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param($ModuleName = "dbatools")
 $global:TestConfig = Get-TestConfig
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SecurePassword', 'InputObject', 'Path', 'FilePath', 'Type', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Backup-DbaComputerCertificate" -Tag "UnitTests" {
+    Context "Parameter validation" {
+        BeforeAll {
+            $command = Get-Command Backup-DbaComputerCertificate
+            $expectedParameters = $TestConfig.CommonParameters
+
+            $expectedParameters += @(
+                "SecurePassword",
+                "InputObject",
+                "Path",
+                "FilePath",
+                "Type",
+                "EnableException"
+            )
+        }
+
+        It "Has parameter: <_>" -ForEach $expectedParameters {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters" {
+            $actualParameters = $command.Parameters.Keys | Where-Object { $PSItem -notin "WhatIf", "Confirm" }
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $actualParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    Context "Certificate is added properly" {
-        $null = Add-DbaComputerCertificate -Path "$($TestConfig.appveyorlabrepo)\certificates\localhost.crt" -Confirm:$false
-        It "returns the proper results" {
-            $result = Get-DbaComputerCertificate -Thumbprint 29C469578D6C6211076A09CEE5C5797EEA0C2713 | Backup-DbaComputerCertificate -Path C:\temp
-            $result.Name -match '29C469578D6C6211076A09CEE5C5797EEA0C2713.cer'
+Describe "Backup-DbaComputerCertificate" -Tag "IntegrationTests" {
+    Context "Certificate is added and backed up properly" {
+        BeforeAll {
+            $null = Add-DbaComputerCertificate -Path "$($TestConfig.appveyorlabrepo)\certificates\localhost.crt" -Confirm:$false
+            $certThumbprint = "29C469578D6C6211076A09CEE5C5797EEA0C2713"
+            $backupPath = "C:\temp"
         }
-        $null = Remove-DbaComputerCertificate -Thumbprint 29C469578D6C6211076A09CEE5C5797EEA0C2713 -Confirm:$false
+
+        It "Returns the proper results" {
+            $result = Get-DbaComputerCertificate -Thumbprint $certThumbprint | Backup-DbaComputerCertificate -Path $backupPath
+            $result.Name | Should -Match "$certThumbprint.cer"
+        }
+
+        AfterAll {
+            $null = Remove-DbaComputerCertificate -Thumbprint $certThumbprint -Confirm:$false
+        }
     }
 }

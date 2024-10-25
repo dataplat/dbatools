@@ -1,19 +1,37 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param($ModuleName = "dbatools")
 $global:TestConfig = Get-TestConfig
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'Operator', 'ExcludeOperator', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Copy-DbaAgentOperator" -Tag "UnitTests" {
+    Context "Parameter validation" {
+        BeforeAll {
+            $command = Get-Command Copy-DbaAgentOperator
+            $expectedParameters = $TestConfig.CommonParameters
+
+            $expectedParameters += @(
+                "Source",
+                "SourceSqlCredential",
+                "Destination",
+                "DestinationSqlCredential",
+                "Operator",
+                "ExcludeOperator",
+                "Force",
+                "EnableException"
+            )
+        }
+
+        It "Has parameter: <_>" -ForEach $expectedParameters {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters" {
+            $actualParameters = $command.Parameters.Keys | Where-Object { $PSItem -notin "WhatIf", "Confirm" }
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $actualParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+Describe "Copy-DbaAgentOperator" -Tag "IntegrationTests" {
     BeforeAll {
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $sql = "EXEC msdb.dbo.sp_add_operator @name=N'dbatoolsci_operator', @enabled=1, @pager_days=0"
@@ -21,6 +39,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $sql = "EXEC msdb.dbo.sp_add_operator @name=N'dbatoolsci_operator2', @enabled=1, @pager_days=0"
         $server.Query($sql)
     }
+
     AfterAll {
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $sql = "EXEC msdb.dbo.sp_delete_operator @name=N'dbatoolsci_operator'"
@@ -35,17 +54,19 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $server.Query($sql)
     }
 
-    Context "Copies operators" {
-        $results = Copy-DbaAgentOperator -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -Operator dbatoolsci_operator, dbatoolsci_operator2
-
-        It "returns two results" {
-            $results.Count -eq 2
-            $results.Status -eq "Successful", "Successful"
+    Context "When copying operators" {
+        BeforeAll {
+            $results = Copy-DbaAgentOperator -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -Operator dbatoolsci_operator, dbatoolsci_operator2
         }
 
-        It "return one result that's skipped" {
-            $results = Copy-DbaAgentOperator -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -Operator dbatoolsci_operator
-            $results.Status -eq "Skipped"
+        It "Returns two results" {
+            $results.Count | Should -Be 2
+            $results.Status | Should -Be @("Successful", "Successful")
+        }
+
+        It "Returns one result that's skipped when copying an existing operator" {
+            $skippedResults = Copy-DbaAgentOperator -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -Operator dbatoolsci_operator
+            $skippedResults.Status | Should -Be "Skipped"
         }
     }
 }
