@@ -64,16 +64,16 @@ Describe "Copy-DbaAgentOperator" -Tag "IntegrationTests" {
             }
             $results = Copy-DbaAgentOperator @splat
             $results.Count | Should -Be 2
-            $results.Status | Should -Be @("Successful", "Successful")
+            @($results.Status) | Should -Be @("Successful", "Successful")
         }
 
         It "Returns one result that's skipped when copying an existing operator" {
-            $splat = @{
+            $splet = @{
                 Source      = $TestConfig.instance2
                 Destination = $TestConfig.instance3
                 Operator    = "dbatoolsci_operator"
             }
-            $skippedResults = Copy-DbaAgentOperator @splat
+            $skippedResults = Copy-DbaAgentOperator @splet
             $skippedResults.Status | Should -Be "Skipped"
         }
     }

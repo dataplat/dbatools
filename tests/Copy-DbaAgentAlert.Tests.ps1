@@ -90,14 +90,14 @@ Describe "Copy-DbaAgentAlert" -Tag "IntegrationTests" {
         }
 
         It "Skips alerts where destination is missing the operator" {
-            $splat = @{
+            $splatDupe = @{
                 Source        = $TestConfig.instance2
                 Destination   = $TestConfig.instance3
                 Alert         = $alert2
                 WarningAction = 'SilentlyContinue'
             }
-            $results = Copy-DbaAgentAlert @splat
-            $results.Status | Should -BeExactly @('Skipped', 'Skipped')
+            $results = Copy-DbaAgentAlert @splatDupe
+            @($results.Status) | Should -Be @("Skipped", "Skipped")
         }
 
         It "Doesn't overwrite existing alerts" {
