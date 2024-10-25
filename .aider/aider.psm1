@@ -8,6 +8,10 @@ function Update-PesterTest {
         and converts them to use the newer Pester v5 parameter validation syntax. It skips files that have
         already been converted or exceed the specified size limit.
 
+    .PARAMETER InputObject
+        Array of objects that can be either file paths, FileInfo objects, or command objects (from Get-Command).
+        If not specified, will process commands from the dbatools module.
+
     .PARAMETER First
         Specifies the maximum number of commands to process. Defaults to 1000.
 
@@ -20,7 +24,6 @@ function Update-PesterTest {
 
     .PARAMETER CacheFilePath
         The path to the file containing cached conventions.
-        Defaults to "/workspace/.aider/prompts/conventions.md".
 
     .PARAMETER MaxFileSize
         The maximum size of test files to process, in bytes. Files larger than this will be skipped.
@@ -37,64 +40,134 @@ function Update-PesterTest {
     .EXAMPLE
         PS C:\> Update-PesterTest -First 10 -Skip 5
         Updates 10 test files starting from the 6th command, skipping the first 5.
+
+    .EXAMPLE
+        PS C:\> "C:\tests\Get-DbaDatabase.Tests.ps1", "C:\tests\Get-DbaBackup.Tests.ps1" | Update-PesterTest
+        Updates the specified test files to v5 format.
+
+    .EXAMPLE
+        PS C:\> Get-Command -Module dbatools -Name "*Database*" | Update-PesterTest
+        Updates test files for all commands in dbatools module that match "*Database*".
+
+    .EXAMPLE
+        PS C:\> Get-ChildItem ./tests/Add-DbaRegServer.Tests.ps1 | Update-PesterTest -Verbose
+        Updates the specific test file from a Get-ChildItem result.
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
+        [Parameter(ValueFromPipeline)]
+        [PSObject[]]$InputObject,
         [int]$First = 1000,
         [int]$Skip = 0,
         [string[]]$PromptFilePath = "/workspace/.aider/prompts/template.md",
-        [string[]]$CacheFilePath = "/workspace/.aider/prompts/conventions.md",
+        [string[]]$CacheFilePath = @("/workspace/.aider/prompts/conventions.md","/workspace/private/testing/Get-TestConfig.ps1"),
         [int]$MaxFileSize = 8kb
     )
-    # Full prompt path
-    if (-not (Get-Module dbatools.library -ListAvailable)) {
-        Write-Warning "dbatools.library not found, installing"
-        Install-Module dbatools.library -Scope CurrentUser -Force
+    begin {
+        # Full prompt path
+        if (-not (Get-Module dbatools.library -ListAvailable)) {
+            Write-Warning "dbatools.library not found, installing"
+            Install-Module dbatools.library -Scope CurrentUser -Force
+        }
+        Import-Module /workspace/dbatools.psm1 -Force
+
+        $promptTemplate = Get-Content $PromptFilePath
+        $commonParameters = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $commandsToProcess = @()
     }
-    Import-Module /workspace/dbatools.psm1 -Force
 
-    $promptTemplate = Get-Content $PromptFilePath
-    $commands = Get-Command -Module dbatools -Type Function, Cmdlet | Select-Object -First $First -Skip $Skip
+    process {
+        if ($InputObject) {
+            foreach ($item in $InputObject) {
+                Write-Verbose "Processing input object of type: $($item.GetType().FullName)"
 
-    $commonParameters = [System.Management.Automation.PSCmdlet]::CommonParameters
+                if ($item -is [System.Management.Automation.CommandInfo]) {
+                    $commandsToProcess += $item
+                } elseif ($item -is [System.IO.FileInfo]) {
+                    $path = $item.FullName
+                    Write-Verbose "Processing FileInfo path: $path"
+                    if (Test-Path $path) {
+                        $cmdName = [System.IO.Path]::GetFileNameWithoutExtension($path) -replace '\.Tests$', ''
+                        Write-Verbose "Extracted command name: $cmdName"
+                        $cmd = Get-Command -Name $cmdName -ErrorAction SilentlyContinue
+                        if ($cmd) {
+                            $commandsToProcess += $cmd
+                        } else {
+                            Write-Warning "Could not find command for test file: $path"
+                        }
+                    }
+                } elseif ($item -is [string]) {
+                    Write-Verbose "Processing string path: $item"
+                    if (Test-Path $item) {
+                        $cmdName = [System.IO.Path]::GetFileNameWithoutExtension($item) -replace '\.Tests$', ''
+                        Write-Verbose "Extracted command name: $cmdName"
+                        $cmd = Get-Command -Name $cmdName -ErrorAction SilentlyContinue
+                        if ($cmd) {
+                            $commandsToProcess += $cmd
+                        } else {
+                            Write-Warning "Could not find command for test file: $item"
+                        }
+                    } else {
+                        Write-Warning "File not found: $item"
+                    }
+                } else {
+                    Write-Warning "Unsupported input type: $($item.GetType().FullName)"
+                }
+            }
+        }
+    }
 
-    foreach ($command in $commands) {
-        $cmdName = $command.Name
-        $filename = "/workspace/tests/$cmdName.Tests.ps1"
-
-        if (-not (Test-Path $filename)) {
-            Write-Warning "No tests found for $cmdName"
-            Write-Warning "$filename not found"
-            continue
+    end {
+        if (-not $commandsToProcess) {
+            Write-Verbose "No input objects provided, getting commands from dbatools module"
+            $commandsToProcess = Get-Command -Module dbatools -Type Function, Cmdlet | Select-Object -First $First -Skip $Skip
         }
 
-        # if it matches Should -HaveParameter then skip becuase it's been done
-        if (Select-String -Path $filename -Pattern "Should -HaveParameter") {
-            Write-Warning "Skipping $cmdName because it's already been converted to Pester v5"
-            continue
+        foreach ($command in $commandsToProcess) {
+            $cmdName = $command.Name
+            $filename = "/workspace/tests/$cmdName.Tests.ps1"
+
+            Write-Verbose "Processing command: $cmdName"
+            Write-Verbose "Test file path: $filename"
+
+            if (-not (Test-Path $filename)) {
+                Write-Warning "No tests found for $cmdName"
+                Write-Warning "$filename not found"
+                continue
+            }
+
+            <# Check if it's already been converted
+            if (Select-String -Path $filename -Pattern "Should -HaveParameter") {
+                Write-Warning "Skipping $cmdName because it's already been converted to Pester v5"
+                continue
+            }
+            #>
+
+            # if file is larger than MaxFileSize, skip
+            if ((Get-Item $filename).Length -gt $MaxFileSize) {
+                Write-Warning "Skipping $cmdName because it's too large"
+                continue
+            }
+
+            $parameters = $command.Parameters.Values | Where-Object Name -notin $commonParameters
+            $cmdPrompt = $promptTemplate -replace "--CMDNAME--", $cmdName
+            $cmdPrompt = $cmdPrompt -replace "--PARMZ--", ($parameters.Name -join "`n")
+            $cmdprompt = $cmdPrompt -join "`n"
+
+            if ($PSCmdlet.ShouldProcess($filename, "Update Pester test to v5 format and/or style")) {
+                $aiderParams = @{
+                    Message      = $cmdPrompt
+                    File         = $filename
+                    YesAlways    = $true
+                    Stream       = $false
+                    CachePrompts = $true
+                    ReadFile     = $CacheFilePath
+                }
+
+                Write-Verbose "Invoking Aider to update test file"
+                Invoke-Aider @aiderParams
+            }
         }
-
-        # if file is larger than 8kb, skip
-        if ((Get-Item $filename).Length -gt $MaxFileSize) {
-            Write-Warning "Skipping $cmdName because it's too large"
-            continue
-        }
-
-        $parameters = $command.Parameters.Values | Where-Object Name -notin $commonParameters
-        $cmdPrompt = $promptTemplate -replace "--CMDNAME--", $cmdName
-        $cmdPrompt = $cmdPrompt -replace "--PARMZ--", ($parameters.Name -join "`n")
-        $cmdprompt = $cmdPrompt -join "`n"
-
-        $aiderParams = @{
-            Message      = $cmdPrompt
-            File         = $filename
-            YesAlways    = $true
-            Stream       = $false
-            CachePrompts = $true
-            ReadFile     = $CacheFilePath
-        }
-
-        Invoke-Aider @aiderParams
     }
 }
 
@@ -286,8 +359,11 @@ function Invoke-Aider {
     .PARAMETER NoPretty
         Disable pretty, colorized output.
 
+    .PARAMETER Stream
+        Enable streaming responses. Cannot be used with -NoStream.
+
     .PARAMETER NoStream
-        Disable streaming responses.
+        Disable streaming responses. Cannot be used with -Stream.
 
     .PARAMETER YesAlways
         Automatically confirm all prompts.
@@ -352,6 +428,9 @@ function Invoke-Aider {
         [string]$Model,
         [string]$EditorModel,
         [switch]$NoPretty,
+        [Parameter(ParameterSetName = 'Stream')]
+        [switch]$Stream,
+        [Parameter(ParameterSetName = 'NoStream')]
         [switch]$NoStream,
         [switch]$YesAlways,
         [switch]$CachePrompts,
@@ -392,7 +471,9 @@ function Invoke-Aider {
         $params += "--no-pretty"
     }
 
-    if ($NoStream) {
+    if ($Stream) {
+        # Stream is enabled, so don't add --no-stream
+    } elseif ($NoStream) {
         $params += "--no-stream"
     }
 
@@ -454,4 +535,87 @@ function Invoke-Aider {
     }
 
     aider @params
+}
+
+function Repair-Error {
+    <#
+    .SYNOPSIS
+        Repairs errors in dbatools Pester test files.
+
+    .DESCRIPTION
+        Processes and repairs errors found in dbatools Pester test files. This function reads error
+        information from a JSON file and attempts to fix the identified issues in the test files.
+
+    .PARAMETER First
+        Specifies the maximum number of commands to process. Defaults to 1000.
+
+    .PARAMETER Skip
+        Specifies the number of commands to skip before processing. Defaults to 0.
+
+    .PARAMETER PromptFilePath
+        The path to the template file containing the prompt structure.
+        Defaults to "/workspace/.aider/prompts/fix-errors.md".
+
+    .PARAMETER CacheFilePath
+        The path to the file containing cached conventions.
+        Defaults to "/workspace/.aider/prompts/conventions.md".
+
+    .PARAMETER ErrorFilePath
+        The path to the JSON file containing error information.
+        Defaults to "/workspace/.aider/prompts/errors.json".
+
+    .NOTES
+        Tags: Testing, Pester, ErrorHandling
+        Author: dbatools team
+
+    .EXAMPLE
+        PS C:\> Repair-Error
+        Processes and attempts to fix all errors found in the error file using default parameters.
+
+    .EXAMPLE
+        PS C:\> Repair-Error -ErrorFilePath "custom-errors.json"
+        Processes and repairs errors using a custom error file.
+    #>
+    [CmdletBinding()]
+    param (
+        [int]$First = 1000,
+        [int]$Skip = 0,
+        [string[]]$PromptFilePath = "/workspace/.aider/prompts/fix-errors.md",
+        [string[]]$CacheFilePath = "/workspace/.aider/prompts/conventions.md",
+        [string]$ErrorFilePath = "/workspace/.aider/prompts/errors.json"
+    )
+
+    $promptTemplate = Get-Content $PromptFilePath
+    $testerrors = Get-Content $ErrorFilePath | ConvertFrom-Json
+    $commands = $testerrors | Select-Object -ExpandProperty Command -Unique | Sort-Object
+
+    foreach ($command in $commands) {
+        $filename = "/workspace/tests/$command.Tests.ps1"
+        Write-Output "Processing $command"
+
+        if (-not (Test-Path $filename)) {
+            Write-Warning "No tests found for $command"
+            Write-Warning "$filename not found"
+            continue
+        }
+
+        $cmdPrompt = $promptTemplate -replace "--CMDNAME--", $command
+
+        $testerr = $testerrors | Where-Object Command -eq $command
+        foreach ($err in $testerr) {
+            $cmdPrompt += "`n`n"
+            $cmdPrompt += "Error: $($err.ErrorMessage)`n"
+            $cmdPrompt += "Line: $($err.LineNumber)`n"
+        }
+
+        $aiderParams = @{
+            Message      = $cmdPrompt
+            File         = $filename
+            Stream       = $false
+            CachePrompts = $true
+            ReadFile     = $CacheFilePath
+        }
+
+        Invoke-Aider @aiderParams
+    }
 }

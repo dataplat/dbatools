@@ -271,6 +271,7 @@ if (-not $Finalize) {
             } else {
                 $appvTestName = "$($f.Name), attempt #$trialNo"
             }
+            Write-Host -Object "Running $($f.FullName)" -ForegroundColor Cyan
             Add-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome Running
             $PesterRun = Invoke-Pester -Configuration $pester5config
             $PesterRun | Export-Clixml -Path "$ModuleBase\Pester5Results$PSVersion$Counter.xml"

@@ -1,172 +1,173 @@
-# Tasks
+# Pester v5 Test Standards
 
-1. **Restructure Test Code:**
-   - Move all test code into appropriate blocks: `It`, `BeforeAll`, `BeforeEach`, `AfterAll`, or `AfterEach`.
-   - Place any file setup code, including the import of `constants.ps1`, into the appropriate blocks at the beginning of each test file.
+## Core Requirements
+```powershell
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param($ModuleName = "dbatools")
+$global:TestConfig = Get-TestConfig
+```
+These three lines must start every test file.
 
-2. **Update `Describe` and `Context` Blocks:**
-   - Ensure that no test code is directly inside `Describe` or `Context` blocks.
-   - Properly nest `Context` blocks within `Describe` blocks.
+## Test Structure
 
-3. **Refactor Skip Conditions:**
-   - Move skip logic outside of `BeforeAll` blocks.
-   - Use global read-only variables for skip conditions where appropriate.
-   - Ensure that `-Skip` parameters evaluate to `$true` or `$false`, not a string.
-
-4. **Update `TestCases`:**
-   - Define `TestCases` in a way that is compatible with Pester v5's discovery phase.
-
-5. **Update Assertion Syntax:**
-   - Replace assertions like `Should Be` with `Should -Be`.
-   - Update other assertion operators as needed (e.g., `Should Throw` to `Should -Throw`).
-
-6. **Modify `InModuleScope` Usage:**
-   - Remove `InModuleScope` from around `Describe` and `It` blocks.
-   - Use the `-ModuleName` parameter on `Mock` commands where possible.
-
-7. **Update `Invoke-Pester` Calls:**
-   - Modify `Invoke-Pester` parameters to align with Pester v5's simple or advanced interface.
-   - **Do not use the Legacy parameter set**, as it is deprecated and may not work correctly.
-
-8. **Adjust Mocking Syntax:**
-   - Update any mock definitions to Pester v5 syntax.
-
-9. **Remove Parameter Testing Using `knownparameters`:**
-   - Identify any existing "Validate parameters" contexts that use `knownparameters` sections
-   - Remove the entire "Validate parameters" context and replace it with the Pester v5 approach using `Should -HaveParameter`, as shown in the example Pester v5 test script.
-
-10. **Use TestCases Whenever Possible:**
-    - Look for opportunities to use TestCases in the test code.
-    - Convert existing tests to use TestCases when applicable.
-    - Define TestCases using the `ForEach` parameter in the `It` block, as shown in the example below.
-
-## Instructions
-
-- **Importing Constants:**
-  - Include the contents of `constants.ps1` at the appropriate place in the test script.
-  - Since the variables defined in `constants.ps1` are needed during the discovery phase (e.g., for `-ForEach` loops), import `constants.ps1` within the `BeforeDiscovery` block.
-  - This ensures that all global variables are available during both the discovery and execution phases.
-
-- **Variable Scoping:**
-  - Replace all `$script:` variable scopes with `$global:` to align with Pester v5 scoping rules.
-
-- **Comments and Debugging Notes:**
-  - Leave comments like `#$script:instance2 for appveyor` intact for debugging purposes.
-  - But change `$script:instance2` to `$global:instance2` for proper scoping.
-  - So it should look like this: `#$global:instance2 for appveyor`.
-
-- **Consistency with Example:**
-  - Follow the structure and conventions used in the example Pester v5 test script provided below.
-
-- **SQL Server-Specific Scenarios:**
-  - If you encounter any SQL Server-specific testing scenarios that require special handling, implement the necessary adjustments while maintaining the integrity of the tests.
-
-## Example Pester v5 Test Script
+### Describe Blocks
+- Name your Describe blocks with static command names from the primary command being tested
+- Include appropriate tags (`-Tag "UnitTests"` or `-Tag "IntegrationTests"`)
 
 ```powershell
-param($ModuleName = 'dbatools')
+Describe "Get-DbaDatabase" -Tag "UnitTests" {
+    # tests here
+}
+```
 
-Describe "Connect-DbaInstance" {
-    BeforeDiscovery {
-        . (Join-Path $PSScriptRoot 'constants.ps1')
-    }
+### Context Blocks
+- Describe specific scenarios or states
+- Use clear, descriptive names that explain the test scenario
+- Example: "When getting all databases", "When database is offline"
 
-    Context "Validate parameters" {
+### Test Code Placement
+- All setup code goes in `BeforeAll` or `BeforeEach` blocks
+- All cleanup code goes in `AfterAll` or `AfterEach` blocks
+- All test assertions go in `It` blocks
+- No loose code in `Describe` or `Context` blocks
+
+```powershell
+Describe "Get-DbaDatabase" -Tag "IntegrationTests" {
+    Context "When getting all databases" {
         BeforeAll {
-            $command = Get-Command Connect-DbaInstance
-        }
-        $parms = @(
-            "SqlInstance",
-            "SqlCredential",
-            "Database"
-        )
-        It "Has required parameter: <_>" -ForEach $parms {
-            $command | Should -HaveParameter $PSItem
-        }
-    }
-
-    Context "Connects using newly created login" -ForEach $global:instances {
-        BeforeAll {
-            $loginName = "dbatoolsci_login_$(Get-Random)"
-            $securePassword = ConvertTo-SecureString -String "P@ssw0rd$(Get-Random)" -AsPlainText -Force
-            $credential = [PSCredential]::new($loginName, $securePassword)
-            New-DbaLogin -SqlInstance $PSItem -Login $loginName -Password $securePassword -Confirm:$false
+            $results = Get-DbaDatabase
         }
 
-        AfterAll {
-            Remove-DbaLogin -SqlInstance $PSItem -Login $loginName -Confirm:$false
-        }
-
-        It "Connects successfully" {
-            $instance = Connect-DbaInstance -SqlInstance $PSItem -SqlCredential $credential
-            $instance.Name | Should -Be $PSItem.Split('\')[0]
+        It "Returns results" {
+            $results | Should -Not -BeNullOrEmpty
         }
     }
 }
 ```
 
-## Example Pester v5 Test Script with TestCases
+## TestCases
+Use the `-ForEach` parameter in `It` blocks for multiple test cases:
 
 ```powershell
-param($ModuleName = 'dbatools')
-
-Describe "Add-Numbers" {
-    It "Should calculate the correct result" -ForEach @(
-        @{ Input1 = 1; Input2 = 2; Expected = 3 }
-        @{ Input1 = 2; Input2 = 3; Expected = 5 }
-        @{ Input1 = 3; Input2 = 4; Expected = 7 }
-    ) {
-        $result = Add-Numbers -Number1 $Input1 -Number2 $Input2
-        $result | Should -Be $Expected
-    }
+It "Should calculate correctly" -ForEach @(
+    @{ Input = 1; Expected = 2 }
+    @{ Input = 2; Expected = 4 }
+    @{ Input = 3; Expected = 6 }
+) {
+    $result = Get-Double -Number $Input
+    $result | Should -Be $Expected
 }
 ```
 
-## Additional Guidelines
-* Start with `param($ModuleName = 'dbatools')` like in the example above.
-* -Skip:(whatever) should return true or false, not a string
-
-
-## Style and instructions
-
-Remember to REMOVE the knownparameters and validate parameters this way:
-
-Context "Validate parameters" {
-    BeforeAll {
-        $command = Get-Command Connect-DbaInstance
-    }
-    $parms = @(
-        "SqlInstance",
-        "SqlCredential",
-        "Database"
-    )
-    It "Has required parameter: <_>" -ForEach $parms {
-        $command | Should -HaveParameter $PSItem
-    }
-}
-
-## DO NOT list parameters like this
-
+## Style Guidelines
+- Use double quotes for strings (we're a SQL Server module)
+- Array declarations should be on multiple lines:
 ```powershell
-$parms = @('SqlInstance','SqlCredential','Database')
-```
-
-## DO list parameters like this
-
-```powershell
-$parms = @(
-    'SqlInstance',
-    'SqlCredential',
-    'Database'
+$array = @(
+    "Item1",
+    "Item2",
+    "Item3"
 )
 ```
+- Skip conditions must evaluate to `$true` or `$false`, not strings
+- Use `$global:` instead of `$script:` for test configuration variables when required for Pester v5 scoping
+- Avoid script blocks in Where-Object when possible:
 
-## DO use the $parms variable when referencing parameters
+```powershell
+# Good - direct property comparison
+$master = $databases | Where-Object Name -eq "master"
+$systemDbs = $databases | Where-Object Name -in "master", "model", "msdb", "tempdb"
 
-## more instructions
+# Required - script block for Parameters.Keys
+$actualParameters = $command.Parameters.Keys | Where-Object { $PSItem -notin "WhatIf", "Confirm" }
+```
 
-DO NOT USE:
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+## DO NOT
+- DO NOT use `$MyInvocation.MyCommand.Name` to get command names
+- DO NOT use the old `knownParameters` validation approach
+- DO NOT include loose code outside of proper test blocks
+- DO NOT remove comments like "#TestConfig.instance3" or "#$TestConfig.instance2 for appveyor"
 
-DO USE:
-The static command name provided in the prompt
+## Examples
+
+### Good Parameter Test
+
+```powershell
+Describe "Get-DbaDatabase" -Tag "UnitTests" {
+   Context "Parameter validation" {
+       BeforeAll {
+           $command = Get-Command Get-DbaDatabase
+           $expectedParameters  = $TestConfig.CommonParameters
+
+           $expectedParameters += @(
+               "SqlInstance",
+               "SqlCredential",
+               "Database"
+           )
+       }
+
+       It "Should have exactly the expected parameters" {
+           $actualParameters = $command.Parameters.Keys | Where-Object { $PSItem -notin "WhatIf", "Confirm" }
+           Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $actualParameters | Should -BeNullOrEmpty
+       }
+
+       It "Has parameter: <_>" -ForEach $expectedParameters {
+           $command | Should -HaveParameter $PSItem
+       }
+   }
+}
+```
+
+### Good Integration Test
+```powershell
+Describe "Get-DbaDatabase" -Tag "IntegrationTests" {
+    Context "When connecting to SQL Server" -ForEach $TestConfig.Instances {
+        BeforeAll {
+            $databases = Get-DbaDatabase -SqlInstance $PSItem
+        }
+
+        It "Returns database objects with required properties" {
+            $databases | Should -BeOfType Microsoft.SqlServer.Management.Smo.Database
+            $databases[0].Name | Should -Not -BeNullOrEmpty
+        }
+
+        It "Always includes system databases" {
+            $systemDbs = $databases | Where-Object Name -in "master", "model", "msdb", "tempdb"
+            $systemDbs.Count | Should -Be 4
+        }
+    }
+}
+```
+
+### Parameter & Variable Naming Rules
+1. Use direct parameters for 1-3 parameters
+2. Use `$splat<Purpose>` for 4+ parameters (never plain `$splat`)
+3. Use unique, descriptive variable names across scopes
+
+```powershell
+# Direct parameters
+$ag = New-DbaLogin -SqlInstance $instance -Login $loginName -Password $password
+
+# Splat with purpose suffix
+$splatPrimary = @{
+    Primary = $TestConfig.instance3
+    Name = $primaryAgName    # Descriptive variable name
+    ClusterType = "None"
+    FailoverMode = "Manual"
+    Certificate = "dbatoolsci_AGCert"
+    Confirm = $false
+}
+$primaryAg = New-DbaAvailabilityGroup @splatPrimary
+
+# Unique names across scopes
+Describe "New-DbaAvailabilityGroup" {
+    BeforeAll {
+        $primaryAgName = "primaryAG"
+    }
+    Context "Adding replica" {
+        BeforeAll {
+            $replicaAgName = "replicaAG"
+        }
+    }
+}
+```
