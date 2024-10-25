@@ -1,46 +1,95 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param($ModuleName = "dbatools")
 $global:TestConfig = Get-TestConfig
 
-Describe "$commandname Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Name', 'ClusterType', 'AvailabilityMode', 'FailoverMode', 'BackupPriority', 'ConnectionModeInPrimaryRole', 'ConnectionModeInSecondaryRole', 'SeedingMode', 'Endpoint', 'EndpointUrl', 'Passthru', 'ReadOnlyRoutingList', 'ReadonlyRoutingConnectionUrl', 'Certificate', 'ConfigureXESession', 'SessionTimeout', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Add-DbaAgReplica" -Tag "UnitTests" {
+    Context "Parameter validation" {
+        BeforeAll {
+            $command = Get-Command Add-DbaAgReplica
+            $expectedParameters = $TestConfig.CommonParameters
+
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Name",
+                "ClusterType",
+                "AvailabilityMode",
+                "FailoverMode",
+                "BackupPriority",
+                "ConnectionModeInPrimaryRole",
+                "ConnectionModeInSecondaryRole",
+                "SeedingMode",
+                "Endpoint",
+                "EndpointUrl",
+                "Passthru",
+                "ReadOnlyRoutingList",
+                "ReadonlyRoutingConnectionUrl",
+                "Certificate",
+                "ConfigureXESession",
+                "SessionTimeout",
+                "InputObject",
+                "EnableException"
+            )
+        }
+
+        It "Has parameter: <_>" -ForEach $expectedParameters {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters" {
+            $actualParameters = $command.Parameters.Keys | Where-Object { $PSItem -notin "WhatIf", "Confirm" }
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $actualParameters | Should -BeNullOrEmpty
         }
     }
 }
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
-    BeforeAll {
-        $agname = "dbatoolsci_agroup"
-        $ag = New-DbaAvailabilityGroup -Primary $TestConfig.instance3 -Name $agname -ClusterType None -FailoverMode Manual -Certificate dbatoolsci_AGCert -Confirm:$false
-        $replicaName = $ag.PrimaryReplica
-    }
-    AfterAll {
-        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname -Confirm:$false
-    }
-    Context "gets ag replicas" {
-        # the only way to test, really, is to call New-DbaAvailabilityGroup which calls Add-DbaAgReplica
-        $agname = "dbatoolsci_add_replicagroup"
-        $ag = New-DbaAvailabilityGroup -Primary $TestConfig.instance3 -Name $agname -ClusterType None -FailoverMode Manual -Certificate dbatoolsci_AGCert -Confirm:$false
-        $replicaName = $ag.PrimaryReplica
 
-        It "returns results with proper data" {
+Describe "Add-DbaAgReplica" -Tag "IntegrationTests" {
+    BeforeAll {
+        $primaryAgName = "dbatoolsci_agroup"
+        $splatPrimary = @{
+            Primary      = $TestConfig.instance3
+            Name         = $primaryAgName
+            ClusterType  = "None"
+            FailoverMode = "Manual"
+            Certificate  = "dbatoolsci_AGCert"
+            Confirm      = $false
+        }
+        $primaryAg = New-DbaAvailabilityGroup @splatPrimary
+        $replicaName = $primaryAg.PrimaryReplica
+    }
+
+    AfterAll {
+        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $primaryAgName -Confirm:$false
+    }
+
+    Context "When adding AG replicas" {
+        BeforeAll {
+            $replicaAgName = "dbatoolsci_add_replicagroup"
+            $splatRepAg = @{
+                Primary      = $TestConfig.instance3
+                Name         = $replicaAgName
+                ClusterType  = "None"
+                FailoverMode = "Manual"
+                Certificate  = "dbatoolsci_AGCert"
+                Confirm      = $false
+            }
+            $replicaAg = New-DbaAvailabilityGroup @splatRepAg
+        }
+
+        It "Returns results with proper data" {
             $results = Get-DbaAgReplica -SqlInstance $TestConfig.instance3
-            $results.AvailabilityGroup | Should -Contain $agname
+            $results.AvailabilityGroup | Should -Contain $replicaAgName
             $results.Role | Should -Contain 'Primary'
             $results.AvailabilityMode | Should -Contain 'SynchronousCommit'
             $results.FailoverMode | Should -Contain 'Manual'
         }
-        It "returns just one result" {
-            $results = Get-DbaAgReplica -SqlInstance $TestConfig.instance3 -Replica $replicaName -AvailabilityGroup $agname
-            $results.AvailabilityGroup | Should -Be $agname
+
+        It "Returns just one result for a specific replica" {
+            $results = Get-DbaAgReplica -SqlInstance $TestConfig.instance3 -Replica $replicaName -AvailabilityGroup $replicaAgName
+            $results.AvailabilityGroup | Should -Be $replicaAgName
             $results.Role | Should -Be 'Primary'
             $results.AvailabilityMode | Should -Be 'SynchronousCommit'
             $results.FailoverMode | Should -Be 'Manual'
         }
     }
 } #$TestConfig.instance2 for appveyor
-
