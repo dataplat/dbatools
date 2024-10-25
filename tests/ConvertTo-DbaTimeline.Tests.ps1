@@ -11,9 +11,7 @@ Describe "ConvertTo-DbaTimeline" -Tag "UnitTests" {
             $expected += @(
                 "InputObject",
                 "ExcludeRowLabel",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
+                "EnableException"
             )
         }
 

@@ -6,8 +6,14 @@ Describe "Copy-DbaAgentOperator" -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
             $command = Get-Command Copy-DbaAgentOperator
-            $expected = $TestConfig.CommonParameters
+        }
 
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters" {
+            $expected = $TestConfig.CommonParameters
             $expected += @(
                 "Source",
                 "SourceSqlCredential",
@@ -20,13 +26,6 @@ Describe "Copy-DbaAgentOperator" -Tag "UnitTests" {
                 "Confirm",
                 "WhatIf"
             )
-        }
-
-        It "Has parameter: <_>" -ForEach $expected {
-            $command | Should -HaveParameter $PSItem
-        }
-
-        It "Should have exactly the number of expected parameters" {
             $hasparms = $command.Parameters.Values.Name
             Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
@@ -57,17 +56,24 @@ Describe "Copy-DbaAgentOperator" -Tag "IntegrationTests" {
     }
 
     Context "When copying operators" {
-        BeforeAll {
-            $results = Copy-DbaAgentOperator -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -Operator dbatoolsci_operator, dbatoolsci_operator2
-        }
-
         It "Returns two results" {
+            $splat = @{
+                Source      = $TestConfig.instance2
+                Destination = $TestConfig.instance3
+                Operator    = @("dbatoolsci_operator", "dbatoolsci_operator2")
+            }
+            $results = Copy-DbaAgentOperator @splat
             $results.Count | Should -Be 2
             $results.Status | Should -Be @("Successful", "Successful")
         }
 
         It "Returns one result that's skipped when copying an existing operator" {
-            $skippedResults = Copy-DbaAgentOperator -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -Operator dbatoolsci_operator
+            $splat = @{
+                Source      = $TestConfig.instance2
+                Destination = $TestConfig.instance3
+                Operator    = "dbatoolsci_operator"
+            }
+            $skippedResults = Copy-DbaAgentOperator @splat
             $skippedResults.Status | Should -Be "Skipped"
         }
     }

@@ -80,18 +80,34 @@ Describe "Copy-DbaAgentAlert" -Tag "IntegrationTests" {
 
     Context "When copying alerts" {
         It "Copies the sample alert" {
-            $results = Copy-DbaAgentAlert -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -Alert $alert1
+            $splat = @{
+                Source      = $TestConfig.instance2
+                Destination = $TestConfig.instance3
+                Alert       = $alert1
+            }
+            $results = Copy-DbaAgentAlert @splat
             $results.Name | Should -Be @('dbatoolsci test alert', 'dbatoolsci test alert')
             $results.Status | Should -Be @('Successful', 'Successful')
         }
 
         It "Skips alerts where destination is missing the operator" {
-            $results = Copy-DbaAgentAlert -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -Alert $alert2 -WarningAction SilentlyContinue
-            $results.Status | Should -Be @('Skipped', 'Skipped')
+            $splat = @{
+                Source        = $TestConfig.instance2
+                Destination   = $TestConfig.instance3
+                Alert         = $alert2
+                WarningAction = 'SilentlyContinue'
+            }
+            $results = Copy-DbaAgentAlert @splat
+            $results.Status | Should -BeExactly @('Skipped', 'Skipped')
         }
 
         It "Doesn't overwrite existing alerts" {
-            $results = Copy-DbaAgentAlert -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -Alert $alert1
+            $splat = @{
+                Source      = $TestConfig.instance2
+                Destination = $TestConfig.instance3
+                Alert       = $alert1
+            }
+            $results = Copy-DbaAgentAlert @splat
             $results.Name | Should -Be 'dbatoolsci test alert'
             $results.Status | Should -Be 'Skipped'
         }
