@@ -11,7 +11,9 @@ Describe "Clear-DbaLatchStatistics" -Tag "UnitTests" {
             $expected += @(
                 "SqlInstance",
                 "SqlCredential",
-                "EnableException"
+                "EnableException",
+                "Confirm",
+                "WhatIf"
             )
         }
 

@@ -25,7 +25,9 @@ Describe "Copy-DbaAgentJobCategory" -Tag "IntegrationTests" {
                 "AgentCategory",
                 "OperatorCategory",
                 "Force",
-                "EnableException"
+                "EnableException",
+                "Confirm",
+                "WhatIf"
             )
         }
 

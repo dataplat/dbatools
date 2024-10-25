@@ -20,7 +20,9 @@ Describe "Add-DbaAgListener" -Tag "UnitTests" {
                 "Dhcp",
                 "Passthru",
                 "InputObject",
-                "EnableException"
+                "EnableException",
+                "Confirm",
+                "WhatIf"
             )
         }
 

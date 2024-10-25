@@ -30,7 +30,9 @@ Describe "Copy-DbaAgentJob" -Tag "IntegrationTests" {
                 "DisableOnDestination",
                 "Force",
                 "InputObject",
-                "EnableException"
+                "EnableException",
+                "Confirm",
+                "WhatIf"
             )
         }
 

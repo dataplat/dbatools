@@ -17,7 +17,9 @@ Describe "Add-DbaComputerCertificate" -Tag "UnitTests" {
                 "Store",
                 "Folder",
                 "Flag",
-                "EnableException"
+                "EnableException",
+                "Confirm",
+                "WhatIf"
             )
         }
 

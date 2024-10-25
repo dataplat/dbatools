@@ -21,7 +21,9 @@ Describe "Add-DbaRegServer" -Tag "UnitTests" {
                 "OtherParams",
                 "InputObject",
                 "ServerObject",
-                "EnableException"
+                "EnableException",
+                "Confirm",
+                "WhatIf"
             )
         }
 

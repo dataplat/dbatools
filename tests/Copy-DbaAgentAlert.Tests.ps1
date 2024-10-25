@@ -17,7 +17,9 @@ Describe "Copy-DbaAgentAlert" -Tag "UnitTests" {
                 "ExcludeAlert",
                 "IncludeDefaults",
                 "Force",
-                "EnableException"
+                "EnableException",
+                "Confirm",
+                "WhatIf"
             )
         }
 

@@ -11,7 +11,9 @@ Describe "Add-DbaDbMirrorMonitor" -Tag "UnitTests" {
             $expected += @(
                 "SqlInstance",
                 "SqlCredential",
-                "EnableException"
+                "EnableException",
+                "Confirm",
+                "WhatIf"
             )
         }
 

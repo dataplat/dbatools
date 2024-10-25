@@ -20,7 +20,9 @@ Describe "Add-DbaAgDatabase" -Tag "UnitTests" {
                 "SharedPath",
                 "UseLastBackup",
                 "AdvancedBackupParams",
-                "EnableException"
+                "EnableException",
+                "Confirm",
+                "WhatIf"
             )
         }
 

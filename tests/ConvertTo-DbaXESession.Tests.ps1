@@ -12,7 +12,9 @@ Describe "ConvertTo-DbaXESession" -Tag "UnitTests" {
                 "InputObject",
                 "Name",
                 "OutputScriptOnly",
-                "EnableException"
+                "EnableException",
+                "Confirm",
+                "WhatIf"
             )
         }
 

@@ -16,7 +16,9 @@ Describe "Copy-DbaAgentOperator" -Tag "UnitTests" {
                 "Operator",
                 "ExcludeOperator",
                 "Force",
-                "EnableException"
+                "EnableException",
+                "Confirm",
+                "WhatIf"
             )
         }
 

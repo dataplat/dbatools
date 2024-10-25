@@ -11,7 +11,9 @@ Describe "Clear-DbaConnectionPool" -Tag "UnitTests" {
             $expected += @(
                 "ComputerName",
                 "Credential",
-                "EnableException"
+                "EnableException",
+                "Confirm",
+                "WhatIf"
             )
         }
 

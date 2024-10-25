@@ -15,7 +15,9 @@ Describe "Add-DbaExtendedProperty" -Tag "UnitTests" {
                 "Name",
                 "Value",
                 "InputObject",
-                "EnableException"
+                "EnableException",
+                "Confirm",
+                "WhatIf"
             )
         }
 

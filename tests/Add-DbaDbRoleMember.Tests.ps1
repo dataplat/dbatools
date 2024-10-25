@@ -15,7 +15,9 @@ Describe "Add-DbaDbRoleMember" -Tag "UnitTests" {
                 "Role",
                 "Member",
                 "InputObject",
-                "EnableException"
+                "EnableException",
+                "Confirm",
+                "WhatIf"
             )
         }
 

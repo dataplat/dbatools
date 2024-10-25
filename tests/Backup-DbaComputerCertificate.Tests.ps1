@@ -14,7 +14,9 @@ Describe "Backup-DbaComputerCertificate" -Tag "UnitTests" {
                 "Path",
                 "FilePath",
                 "Type",
-                "EnableException"
+                "EnableException",
+                "Confirm",
+                "WhatIf"
             )
         }
 

@@ -19,7 +19,9 @@ Describe "Backup-DbaDbCertificate" -Tag "UnitTests" {
                 "Path",
                 "Suffix",
                 "InputObject",
-                "EnableException"
+                "EnableException",
+                "Confirm",
+                "WhatIf"
             )
         }
 

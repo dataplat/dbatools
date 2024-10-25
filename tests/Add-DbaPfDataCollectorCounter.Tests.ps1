@@ -15,7 +15,9 @@ Describe "Add-DbaPfDataCollectorCounter" -Tag "UnitTests" {
                 "Collector",
                 "Counter",
                 "InputObject",
-                "EnableException"
+                "EnableException",
+                "Confirm",
+                "WhatIf"
             )
         }
 

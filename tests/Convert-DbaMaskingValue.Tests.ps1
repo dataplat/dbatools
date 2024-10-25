@@ -12,7 +12,9 @@ Describe "Convert-DbaMaskingValue" -Tag "UnitTests" {
                 "Value",
                 "DataType",
                 "Nullable",
-                "EnableException"
+                "EnableException",
+                "Confirm",
+                "WhatIf"
             )
         }
 

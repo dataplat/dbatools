@@ -14,7 +14,9 @@ Describe "Backup-DbaServiceMasterKey" -Tag "UnitTests" {
                 "KeyCredential",
                 "SecurePassword",
                 "Path",
-                "EnableException"
+                "EnableException",
+                "Confirm",
+                "WhatIf"
             )
         }
 

@@ -132,7 +132,9 @@ Describe "Get-DbaDatabase" -Tag "UnitTests" {
            $expected += @(
                "SqlInstance",
                "SqlCredential",
-               "Database"
+               "Database",
+               "Confirm",
+               "WhatIf"
            )
        }
 
@@ -169,9 +171,11 @@ Describe "Get-DbaDatabase" -Tag "IntegrationTests" {
 }
 ```
 
-## DO NOT
+## Additional instructions
+
 - DO NOT use `$MyInvocation.MyCommand.Name` to get command names
 - DO NOT use the old `knownParameters` validation approach
 - DO NOT include loose code outside of proper test blocks
 - DO NOT remove comments like "#TestConfig.instance3" or "#$TestConfig.instance2 for appveyor"
 - DO NOT use $_ DO use $PSItem instead
+- Parameter validation is ALWAYS tagged as a Unit Test

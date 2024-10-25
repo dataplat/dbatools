@@ -28,7 +28,9 @@ Describe "Add-DbaAgReplica" -Tag "UnitTests" {
                 "ConfigureXESession",
                 "SessionTimeout",
                 "InputObject",
-                "EnableException"
+                "EnableException",
+                "Confirm",
+                "WhatIf"
             )
         }
 

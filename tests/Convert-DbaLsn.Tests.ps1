@@ -10,7 +10,9 @@ Describe "Convert-DbaLSN" -Tag "UnitTests" {
 
             $expected += @(
                 "LSN",
-                "EnableException"
+                "EnableException",
+                "Confirm",
+                "WhatIf"
             )
         }
 

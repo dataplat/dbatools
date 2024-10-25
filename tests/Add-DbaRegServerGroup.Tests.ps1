@@ -15,7 +15,9 @@ Describe "Add-DbaRegServerGroup" -Tag "UnitTests" {
                 "Description",
                 "Group",
                 "InputObject",
-                "EnableException"
+                "EnableException",
+                "Confirm",
+                "WhatIf"
             )
         }
 

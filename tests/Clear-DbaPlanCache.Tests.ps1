@@ -13,7 +13,9 @@ Describe "Clear-DbaPlanCache" -Tag "UnitTests" {
                 "SqlCredential",
                 "Threshold",
                 "InputObject",
-                "EnableException"
+                "EnableException",
+                "Confirm",
+                "WhatIf"
             )
         }
 

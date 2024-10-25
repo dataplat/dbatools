@@ -11,7 +11,9 @@ Describe "Clear-DbaWaitStatistics" -Tag "UnitTests" {
             $expected += @(
                 "SqlInstance",
                 "SqlCredential",
-                "EnableException"
+                "EnableException",
+                "Confirm",
+                "WhatIf"
             )
         }
 

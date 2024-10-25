@@ -15,7 +15,9 @@ Describe "Add-DbaServerRoleMember" -Tag "UnitTests" {
                 "Login",
                 "Role",
                 "InputObject",
-                "EnableException"
+                "EnableException",
+                "Confirm",
+                "WhatIf"
             )
         }
 
