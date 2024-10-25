@@ -2,11 +2,42 @@
 
 1. **Restructure Test Code:**
    - Move all test code into appropriate blocks: `It`, `BeforeAll`, `BeforeEach`, `AfterAll`, or `AfterEach`.
-   - Place any file setup code, including the import of `constants.ps1`, into the appropriate blocks at the beginning of each test file.
+   - Place any file setup code into the appropriate blocks at the beginning of each test file.
 
-2. **Update `Describe` and `Context` Blocks:**
-   - Ensure that no test code is directly inside `Describe` or `Context` blocks.
-   - Properly nest `Context` blocks within `Describe` blocks.
+2. **Write Clear Test Hierarchies**
+- Each `Describe` block should represent a unit of functionality
+- Each `Context` block should represent a specific scenario or state
+- All test code should be inside `It` blocks
+- Avoid loose code in `Describe` or `Context` blocks
+
+Example:
+```powershell
+# ❌ Avoid this
+Describe "Get-DbaDatabase" {
+    $results = Get-DbaDatabase # Loose code!
+
+    Context "Basic tests" {
+        $databases = $results # More loose code!
+
+        It "Returns results" {
+            $databases | Should -Not -BeNullOrEmpty
+        }
+    }
+}
+
+# ✅ Do this instead
+Describe "Get-DbaDatabase" {
+    Context "When getting all databases" {
+        BeforeAll {
+            $results = Get-DbaDatabase
+        }
+
+        It "Returns results" {
+            $results | Should -Not -BeNullOrEmpty
+        }
+    }
+}
+```
 
 3. **Refactor Skip Conditions:**
    - Move skip logic outside of `BeforeAll` blocks.
@@ -42,48 +73,58 @@
 
 ## Instructions
 
-- **Importing Constants:**
-  - Include the contents of `constants.ps1` at the appropriate place in the test script.
-  - Since the variables defined in `constants.ps1` are needed during the discovery phase (e.g., for `-ForEach` loops), import `constants.ps1` within the `BeforeDiscovery` block.
-  - This ensures that all global variables are available during both the discovery and execution phases.
-
 - **Variable Scoping:**
   - Replace all `$script:` variable scopes with `$global:` where required for Pester v5 scoping.
 
 - **Comments and Debugging Notes:**
   - Leave comments like `#$TestConfig.instance2 for appveyor` intact for debugging purposes.
 
-- **Consistency with Example:**
-  - Follow the structure and conventions used in the example Pester v5 test script provided below.
-
 - **SQL Server-Specific Scenarios:**
   - If you encounter any SQL Server-specific testing scenarios that require special handling, implement the necessary adjustments while maintaining the integrity of the tests.
 
-## Example Pester v5 Test Script
+- **Consistency with Example:**
+  - Follow the structure and conventions used in the example Pester v5 test script provided below.
 
-Be literal, even with `Describe "$($TestConfig.CommandName)"`
+## Example Pester v5 Test Script
 
 ```powershell
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
 param($ModuleName = 'dbatools')
 $global:TestConfig = Get-TestConfig
 
-Describe $TestConfig.CommandName {
-    Context "Validate parameters" {
+Describe "Measure-DbaDiskSpaceRequirement" -Tag "UnitTests" {
+    Context "Parameter validation" {
         BeforeAll {
             $command = Get-Command $TestConfig.CommandName
+
+            $expectedParameters = @(
+                'Source'
+                'Database'
+                'SourceSqlCredential'
+                'Destination'
+                'DestinationDatabase'
+                'DestinationSqlCredential'
+                'Credential'
+                'EnableException'
+            )
+
+            $actualParameters = $command.Parameters | Where-Object Keys -notin 'WhatIf', 'Confirm'
         }
-        $parms = @(
-            "SqlInstance",
-            "SqlCredential",
-            "Database"
-        )
-        It "Has required parameter: <_>" -ForEach $parms {
+
+        It "Should have the expected number of parameters" {
+            $difference = Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $actualParameters.Keys
+            $difference | Should -BeNullOrEmpty
+        }
+
+        # You can still include your individual parameter checks too
+        It "Has parameter: <_>" -ForEach $expectedParameters {
             $command | Should -HaveParameter $PSItem
         }
     }
+}
 
-    Context "Connects using newly created login" -ForEach $TestConfig.Instances {
+Describe "Measure-DbaDiskSpaceRequirement" -Tag "IntegrationTests" {
+    Context "Successfully connects using newly created login" -ForEach $TestConfig.Instances {
         BeforeAll {
             $loginName = "dbatoolsci_login_$(Get-Random)"
             $securePassword = ConvertTo-SecureString -String "P@ssw0rd$(Get-Random)" -AsPlainText -Force
@@ -110,7 +151,7 @@ Describe $TestConfig.CommandName {
 param($ModuleName = 'dbatools')
 $global:TestConfig = Get-TestConfig
 
-Describe $TestConfig.CommandName {
+Describe "Measure-DbaSomething" {
     It "Should calculate the correct result" -ForEach @(
         @{ Input1 = 1; Input2 = 2; Expected = 3 }
         @{ Input1 = 2; Input2 = 3; Expected = 5 }
@@ -123,28 +164,18 @@ Describe $TestConfig.CommandName {
 ```
 
 ## Additional Guidelines
-* start with `#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}` like in the example above.
-* Second line must be `param($ModuleName = 'dbatools')` like in the example above.
+* Start with `#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}` like in the example above
+* Second line must be `param($ModuleName = 'dbatools')` like in the example above
 * -Skip:(whatever) should return true or false, not a string
-
+* Update our Contexts to be more descriptive of the tests
 
 ## Style and instructions
 
 Remember to REMOVE the knownparameters and validate parameters this way:
 
 ```powershell
-Context "Validate parameters" {
-    BeforeAll {
-        $command = Get-Command Connect-DbaInstance
-    }
-    $parms = @(
-        "SqlInstance",
-        "SqlCredential",
-        "Database"
-    )
-    It "Has required parameter: <_>" -ForEach $parms {
-        $command | Should -HaveParameter $PSItem
-    }
+It "Has parameter: <_>" -ForEach $expectedParameters {
+    $command | Should -HaveParameter $PSItem
 }
 ```
 
@@ -164,9 +195,7 @@ $parms = @(
 )
 ```
 
-## DO use the $parms variable when referencing parameters
-
-## more instructions
+## Important instructions
 
 DO NOT USE:
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
@@ -176,3 +205,6 @@ The static command name provided in the prompt
 
 DO USE:
 Double quotes when possible. We are a SQL Server module and single quotes are reserved in T-SQL.
+
+DO NOT:
+Add back constants.ps1 or the old style $knownParameters test: we removed those requirements

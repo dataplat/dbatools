@@ -136,11 +136,12 @@ function Update-PesterTest {
                 continue
             }
 
-            # if it matches Should -HaveParameter then skip because it's been done
+            <# Check if it's already been converted
             if (Select-String -Path $filename -Pattern "Should -HaveParameter") {
                 Write-Warning "Skipping $cmdName because it's already been converted to Pester v5"
                 continue
             }
+            #>
 
             # if file is larger than MaxFileSize, skip
             if ((Get-Item $filename).Length -gt $MaxFileSize) {
@@ -153,7 +154,7 @@ function Update-PesterTest {
             $cmdPrompt = $cmdPrompt -replace "--PARMZ--", ($parameters.Name -join "`n")
             $cmdprompt = $cmdPrompt -join "`n"
 
-            if ($PSCmdlet.ShouldProcess($filename, "Update Pester test to v5 format")) {
+            if ($PSCmdlet.ShouldProcess($filename, "Update Pester test to v5 format and/or style")) {
                 $aiderParams = @{
                     Message      = $cmdPrompt
                     File         = $filename
