@@ -16,9 +16,7 @@ Describe "Convert-DbaLSN" -Tag "UnitTests" {
             $expected = $TestConfig.CommonParameters
             $expected += @(
                 "LSN",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
+                "EnableException"
             )
             $hasparms = $command.Parameters.Values.Name
             Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty

@@ -20,9 +20,7 @@ Describe "Backup-DbaComputerCertificate" -Tag "UnitTests" {
                 "Path",
                 "FilePath",
                 "Type",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
+                "EnableException"
             )
             $hasparms = $command.Parameters.Values.Name
             Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty

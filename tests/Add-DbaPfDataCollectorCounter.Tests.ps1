@@ -33,8 +33,7 @@ Describe "Add-DbaPfDataCollectorCounter" -Tag "UnitTests" {
 
 Describe "Add-DbaPfDataCollectorCounter" -Tag "IntegrationTests" {
     BeforeAll {
-        $null = Get-DbaPfDataCollectorSetTemplate -Template 'Long Running Queries' | Import-DbaPfDataCollectorSetTemplate |
-            Get-DbaPfDataCollector | Get-DbaPfDataCollectorCounter -Counter '\LogicalDisk(*)\Avg. Disk Queue Length' | Remove-DbaPfDataCollectorCounter -Confirm:$false
+        $null = Get-DbaPfDataCollectorSetTemplate -Template 'Long Running Queries' | Import-DbaPfDataCollectorSetTemplate | Get-DbaPfDataCollector | Get-DbaPfDataCollectorCounter -Counter '\LogicalDisk(*)\Avg. Disk Queue Length' | Remove-DbaPfDataCollectorCounter -Confirm:$false
     }
 
     AfterAll {
@@ -47,9 +46,7 @@ Describe "Add-DbaPfDataCollectorCounter" -Tag "IntegrationTests" {
                 CollectorSet = 'Long Running Queries'
                 Counter = '\LogicalDisk(*)\Avg. Disk Queue Length'
             }
-            $results = Get-DbaPfDataCollectorSet @splatAddCounter |
-                Get-DbaPfDataCollector |
-                Add-DbaPfDataCollectorCounter @splatAddCounter
+            $results = Get-DbaPfDataCollectorSet @splatAddCounter | Get-DbaPfDataCollector | Add-DbaPfDataCollectorCounter @splatAddCounter
         }
 
         It "Returns the correct DataCollectorSet" {

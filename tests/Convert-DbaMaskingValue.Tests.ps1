@@ -18,9 +18,7 @@ Describe "Convert-DbaMaskingValue" -Tag "UnitTests" {
                 "Value",
                 "DataType",
                 "Nullable",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
+                "EnableException"
             )
             $hasparms = $command.Parameters.Values.Name
             Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty

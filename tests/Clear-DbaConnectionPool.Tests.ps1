@@ -17,9 +17,7 @@ Describe "Clear-DbaConnectionPool" -Tag "UnitTests" {
             $expected += @(
                 "ComputerName",
                 "Credential",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
+                "EnableException"
             )
 
             $hasparms = $command.Parameters.Values.Name
