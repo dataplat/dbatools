@@ -13,10 +13,10 @@ function Update-PesterTest {
         If not specified, will process commands from the dbatools module.
 
     .PARAMETER First
-        Specifies the maximum number of commands to process. Defaults to 1000.
+        Specifies the maximum number of commands to process.
 
     .PARAMETER Skip
-        Specifies the number of commands to skip before processing. Defaults to 0.
+        Specifies the number of commands to skip before processing.
 
     .PARAMETER PromptFilePath
         The path to the template file containing the prompt structure.
@@ -57,8 +57,8 @@ function Update-PesterTest {
     param (
         [Parameter(ValueFromPipeline)]
         [PSObject[]]$InputObject,
-        [int]$First = 1000,
-        [int]$Skip = 0,
+        [int]$First = 10000,
+        [int]$Skip,
         [string[]]$PromptFilePath = "/workspace/.aider/prompts/template.md",
         [string[]]$CacheFilePath = @("/workspace/.aider/prompts/conventions.md","/workspace/private/testing/Get-TestConfig.ps1"),
         [int]$MaxFileSize = 8kb
@@ -180,10 +180,10 @@ function Repair-Error {
         information from a JSON file and attempts to fix the identified issues in the test files.
 
     .PARAMETER First
-        Specifies the maximum number of commands to process. Defaults to 1000.
+        Specifies the maximum number of commands to process.
 
     .PARAMETER Skip
-        Specifies the number of commands to skip before processing. Defaults to 0.
+        Specifies the number of commands to skip before processing.
 
     .PARAMETER PromptFilePath
         The path to the template file containing the prompt structure.
@@ -211,8 +211,8 @@ function Repair-Error {
     #>
     [CmdletBinding()]
     param (
-        [int]$First = 1000,
-        [int]$Skip = 0,
+        [int]$First = 10000,
+        [int]$Skip,
         [string[]]$PromptFilePath = "/workspace/.aider/prompts/fix-errors.md",
         [string[]]$CacheFilePath = "/workspace/.aider/prompts/conventions.md",
         [string]$ErrorFilePath = "/workspace/.aider/prompts/errors.json"
@@ -251,130 +251,214 @@ function Repair-Error {
 
         Invoke-Aider @aiderParams
     }
-}
-
-function Repair-ParameterTest {
-    <#
-    .SYNOPSIS
-        Repairs parameter tests in dbatools Pester test files.
-
-    .DESCRIPTION
-        Processes and repairs parameter-related tests in dbatools Pester test files. This function
-        specifically focuses on fixing parameter validation tests and ensures they follow the correct format.
-
-    .PARAMETER First
-        Specifies the maximum number of commands to process. Defaults to 1000.
-
-    .PARAMETER Skip
-        Specifies the number of commands to skip before processing. Defaults to 0.
-
-    .PARAMETER Model
-        The AI model to use for processing. Defaults to "azure/gpt-4o-mini".
-
-    .PARAMETER PromptFilePath
-        The path to the template file containing the prompt structure.
-        Defaults to "/workspace/.aider/prompts/fix-errors.md".
-
-    .NOTES
-        Tags: Testing, Pester, Parameters
-        Author: dbatools team
-
-    .EXAMPLE
-        PS C:\> Repair-ParameterTest
-        Repairs parameter tests for all eligible commands using default parameters.
-
-    .EXAMPLE
-        PS C:\> Repair-ParameterTest -First 5 -Model "different-model"
-        Repairs parameter tests for the first 5 commands using a specified AI model.
-    #>
+}function Repair-SmallThing {
     [cmdletbinding()]
     param (
-        [int]$First = 1000,
-        [int]$Skip = 0,
+        [Parameter(Position = 0, ValueFromPipeline, ValueFromPipelineByPropertyName)]
+        [Alias("FullName", "FilePath", "File")]
+        [object[]]$InputObject,
+        [int]$First = 10000,
+        [int]$Skip,
         [string]$Model = "azure/gpt-4o-mini",
-        [string[]]$PromptFilePath = "/workspace/.aider/prompts/fix-errors.md"
+        [string[]]$PromptFilePath,
+        [ValidateSet("ReorgParamTest")]
+        [string]$Type,
+        [string]$EditorModel,
+        [switch]$NoPretty,
+        [switch]$NoStream,
+        [switch]$YesAlways,
+        [switch]$CachePrompts,
+        [int]$MapTokens,
+        [string]$MapRefresh,
+        [switch]$NoAutoLint,
+        [switch]$AutoTest,
+        [switch]$ShowPrompts,
+        [string]$EditFormat,
+        [string]$MessageFile,
+        [string[]]$ReadFile,
+        [string]$Encoding
     )
-    # Full prompt path
-    if (-not (Get-Module dbatools.library -ListAvailable)) {
-        Write-Warning "dbatools.library not found, installing"
-        Install-Module dbatools.library -Scope CurrentUser -Force
+
+    begin {
+        Write-Verbose "Starting Repair-SmallThing"
+        $allObjects = @()
+
+        $prompts = @{
+            ReorgParamTest = "Move the `$expected` parameter list into the 'Should have exactly the number of expected parameters' It block, keeping it between the It block declaration and the `$hasparms` assignment. Do not move the initial `$command` assignment."
+        }
+        Write-Verbose "Available prompt types: $($prompts.Keys -join ', ')"
+
+        Write-Verbose "Checking for dbatools.library module"
+        if (-not (Get-Module dbatools.library -ListAvailable)) {
+            Write-Verbose "dbatools.library not found, installing"
+            Install-Module dbatools.library -Scope CurrentUser -Force -Verbose:$false
+        }
+        if (-not (Get-Module dbatools)) {
+            Write-Verbose "Importing dbatools module from /workspace/dbatools.psm1"
+            Import-Module /workspace/dbatools.psm1 -Force -Verbose:$false
+        }
+
+        if ($PromptFilePath) {
+            Write-Verbose "Loading prompt template from $PromptFilePath"
+            $promptTemplate = Get-Content $PromptFilePath
+            Write-Verbose "Prompt template loaded: $promptTemplate"
+        }
+
+        $commonParameters = [System.Management.Automation.PSCmdlet]::CommonParameters
+
+        Write-Verbose "Getting base dbatools commands with First: $First, Skip: $Skip"
+        $baseCommands = Get-Command -Module dbatools -Type Function, Cmdlet | Select-Object -First $First -Skip $Skip
+        Write-Verbose "Found $($baseCommands.Count) base commands"
     }
-    Import-Module /workspace/dbatools.psm1 -Force
 
-    $promptTemplate = Get-Content $PromptFilePath
+    process {
+        if ($InputObject) {
+            Write-Verbose "Adding objects to collection: $($InputObject -join ', ')"
+            $allObjects += $InputObject
+        }
+    }
 
-    $commands = Get-Command -Module dbatools -Type Function, Cmdlet | Select-Object -First $First -Skip $Skip
-    $commonParameters = [System.Management.Automation.PSCmdlet]::CommonParameters
+    end {
+        Write-Verbose "Starting end block processing"
 
-    foreach ($command in $commands) {
-        $cmdName = $command.Name
-        $filename = "/workspace/tests/$cmdName.Tests.ps1"
-
-        if (-not (Test-Path $filename)) {
-            Write-Warning "No tests found for $cmdName"
-            Write-Warning "$filename not found"
-            continue
+        if (-not $PromptFilePath -and -not $Type) {
+            Write-Verbose "Neither PromptFilePath nor Type specified"
+            throw "You must specify either PromptFilePath or Type"
         }
 
-        $parameters = $command.Parameters.Values | Where-Object Name -notin $commonParameters
-
-        $parameters = $parameters.Name -join ", "
-        $cmdPrompt = $promptTemplate -replace "--PARMZ--", $parameters
-
-        $aiderParams = @{
-            Message   = $cmdPrompt
-            File      = $filename
-            YesAlways = $true
-            Stream    = $false
-            Model     = $Model
+        # Process different input types
+        $commands = @()
+        foreach ($object in $allObjects) {
+            switch ($object.GetType().FullName) {
+                'System.IO.FileInfo' {
+                    Write-Verbose "Processing FileInfo object: $($object.FullName)"
+                    $cmdName = [System.IO.Path]::GetFileNameWithoutExtension($object.Name) -replace '\.Tests$', ''
+                    $commands += $baseCommands | Where-Object Name -eq $cmdName
+                }
+                'System.Management.Automation.CommandInfo' {
+                    Write-Verbose "Processing CommandInfo object: $($object.Name)"
+                    $commands += $object
+                }
+                'System.String' {
+                    Write-Verbose "Processing string path: $object"
+                    if (Test-Path $object) {
+                        $cmdName = [System.IO.Path]::GetFileNameWithoutExtension($object) -replace '\.Tests$', ''
+                        $commands += $baseCommands | Where-Object Name -eq $cmdName
+                    } else {
+                        Write-Warning "Path not found: $object"
+                    }
+                }
+                'System.Management.Automation.FunctionInfo' {
+                    Write-Verbose "Processing FunctionInfo object: $($object.Name)"
+                    $commands += $object
+                }
+                default {
+                    Write-Warning "Unsupported input type: $($object.GetType().FullName)"
+                }
+            }
         }
 
-        Invoke-Aider @aiderParams
+        Write-Verbose "Processing $($commands.Count) unique commands"
+        $commands = $commands | Select-Object -Unique
+
+        foreach ($command in $commands) {
+            $cmdName = $command.Name
+            Write-Verbose "Processing command: $cmdName"
+
+            $filename = "/workspace/tests/$cmdName.Tests.ps1"
+            Write-Verbose "Using test path: $filename"
+
+            if (-not (Test-Path $filename)) {
+                Write-Warning "No tests found for $cmdName"
+                Write-Warning "$filename not found"
+                continue
+            }
+
+            if ($Type) {
+                Write-Verbose "Using predefined prompt for type: $Type"
+                $cmdPrompt = $prompts[$Type]
+            } else {
+                Write-Verbose "Getting parameters for $cmdName"
+                $parameters = $command.Parameters.Values | Where-Object Name -notin $commonParameters
+                $parameters = $parameters.Name -join ", "
+                Write-Verbose "Command parameters: $parameters"
+
+                Write-Verbose "Using template prompt with parameters substitution"
+                $cmdPrompt = $promptTemplate -replace "--PARMZ--", $parameters
+            }
+            Write-Verbose "Final prompt: $cmdPrompt"
+
+            $aiderParams = @{
+                Message = $cmdPrompt
+                File    = $filename
+            }
+
+            $excludedParams = @(
+                $commonParameters,
+                'InputObject',
+                'First',
+                'Skip',
+                'PromptFilePath',
+                'Type'
+            )
+
+            $PSBoundParameters.GetEnumerator() |
+                Where-Object Key -notin $excludedParams |
+                ForEach-Object {
+                    $aiderParams[$PSItem.Key] = $PSItem.Value
+                }
+
+            Write-Verbose "Invoking aider for $cmdName"
+            try {
+                Invoke-Aider @aiderParams
+                Write-Verbose "Aider completed successfully for $cmdName"
+            } catch {
+                Write-Error "Error executing aider for $cmdName`: $_"
+                Write-Verbose "Aider failed for $cmdName with error: $_"
+            }
+        }
+        Write-Verbose "Repair-SmallThing completed"
     }
 }
 
 function Invoke-Aider {
     <#
     .SYNOPSIS
-        PowerShell wrapper for the aider CLI tool.
+        Invokes the aider AI pair programming tool.
 
     .DESCRIPTION
-        Provides a PowerShell interface to the aider command-line tool, allowing for easier integration
-        with PowerShell scripts and workflows. Supports core functionality including model selection,
-        caching, and various output options.
+        The Invoke-Aider function provides a PowerShell interface to the aider AI pair programming tool.
+        It supports all aider CLI options and can accept files via pipeline from Get-ChildItem.
 
     .PARAMETER Message
-        The message or prompt to send to aider.
+        The message to send to the AI. This is the primary way to communicate your intent.
 
     .PARAMETER File
-        The file(s) to process with aider.
+        The files to edit. Can be piped in from Get-ChildItem.
 
     .PARAMETER Model
-        Specify the AI model to use (e.g., gpt-4o, claude-3-5-sonnet).
+        The AI model to use (e.g., gpt-4, claude-3-opus-20240229).
 
     .PARAMETER EditorModel
-        Specify the model to use for editing code.
+        The model to use for editor tasks.
 
     .PARAMETER NoPretty
         Disable pretty, colorized output.
 
-    .PARAMETER Stream
-        Enable streaming responses. Cannot be used with -NoStream.
-
     .PARAMETER NoStream
-        Disable streaming responses. Cannot be used with -Stream.
+        Disable streaming responses.
 
     .PARAMETER YesAlways
-        Automatically confirm all prompts.
+        Always say yes to every confirmation.
 
     .PARAMETER CachePrompts
-        Enable caching of prompts to reduce token costs.
+        Enable caching of prompts.
 
     .PARAMETER MapTokens
-        Number of tokens to use for repo map. Use 0 to disable.
+        Suggested number of tokens to use for repo map.
 
     .PARAMETER MapRefresh
-        Control how often the repo map is refreshed (auto/always/files/manual).
+        Control how often the repo map is refreshed.
 
     .PARAMETER NoAutoLint
         Disable automatic linting after changes.
@@ -383,157 +467,157 @@ function Invoke-Aider {
         Enable automatic testing after changes.
 
     .PARAMETER ShowPrompts
-        Show system prompts.
-
-    .PARAMETER VerboseOutput
-        Enable verbose output.
+        Print the system prompts and exit.
 
     .PARAMETER EditFormat
-        Specify the edit format (e.g., 'whole' for whole file).
+        Specify what edit format the LLM should use.
 
     .PARAMETER MessageFile
-        File containing the message to send to aider.
+        Specify a file containing the message to send.
 
     .PARAMETER ReadFile
         Specify read-only files.
 
     .PARAMETER Encoding
-        Specify the encoding for input and output. Defaults to 'utf-8'.
-
-    .NOTES
-        Tags: AI, Automation
-        Author: dbatools team
+        Specify the encoding for input and output.
 
     .EXAMPLE
-        PS C:\> Invoke-Aider -Message "Fix the bug" -File "script.ps1"
-        Runs aider with the specified message and file.
+        Invoke-Aider -Message "Fix the bug" -File script.ps1
+
+        Asks aider to fix a bug in script.ps1.
 
     .EXAMPLE
-        PS C:\> $params = @{
-        >>     Message = "Update tests"
-        >>     File = "tests.ps1"
-        >>     Model = "gpt-4o"
-        >>     CachePrompts = $true
-        >> }
-        PS C:\> Invoke-Aider @params
-        Runs aider using GPT-4 model with prompt caching enabled.
+        Get-ChildItem *.ps1 | Invoke-Aider -Message "Add error handling"
+
+        Adds error handling to all PowerShell files in the current directory.
+
+    .EXAMPLE
+        Invoke-Aider -Message "Update API" -Model gpt-4 -NoStream
+
+        Uses GPT-4 to update API code without streaming output.
     #>
     [CmdletBinding()]
-    param (
+    param(
         [Parameter(Mandatory)]
         [string]$Message,
-        [Parameter(Mandatory)]
+        [Parameter(Position = 0, ValueFromPipeline, ValueFromPipelineByPropertyName)]
+        [Alias('FullName')]
         [string[]]$File,
         [string]$Model,
         [string]$EditorModel,
         [switch]$NoPretty,
-        [Parameter(ParameterSetName = 'Stream')]
-        [switch]$Stream,
-        [Parameter(ParameterSetName = 'NoStream')]
         [switch]$NoStream,
         [switch]$YesAlways,
         [switch]$CachePrompts,
-        [int]$MapTokens = 0,
+        [int]$MapTokens,
         [ValidateSet('auto', 'always', 'files', 'manual')]
-        [string]$MapRefresh = 'manual',
+        [string]$MapRefresh,
         [switch]$NoAutoLint,
         [switch]$AutoTest,
         [switch]$ShowPrompts,
-        [switch]$VerboseOutput,
-        [string]$EditFormat = 'whole',
+        [string]$EditFormat,
         [string]$MessageFile,
         [string[]]$ReadFile,
         [ValidateSet('utf-8', 'ascii', 'unicode', 'utf-16', 'utf-32', 'utf-7')]
-        [string]$Encoding = 'utf-8'
+        [string]$Encoding
     )
 
-    $params = @(
-        "--message", $Message
-    )
+    begin {
+        $allFiles = @()
 
-    foreach ($f in $File) {
-        $params += "--file"
-        $params += $f
+        if (-not (Get-Command -Name aider -ErrorAction SilentlyContinue)) {
+            throw "Aider executable not found. Please ensure it is installed and in your PATH."
+        }
     }
 
-    if ($Model) {
-        $params += "--model"
-        $params += $Model
+    process {
+        if ($File) {
+            $allFiles += $File
+        }
     }
 
-    if ($EditorModel) {
-        $params += "--editor-model"
-        $params += $EditorModel
-    }
+    end {
+        $arguments = @()
 
-    if ($NoPretty) {
-        $params += "--no-pretty"
-    }
+        # Add files if any were specified or piped in
+        if ($allFiles) {
+            $arguments += $allFiles
+        }
 
-    if ($Stream) {
-        # Stream is enabled, so don't add --no-stream
-    } elseif ($NoStream) {
-        $params += "--no-stream"
-    }
+        # Add mandatory message parameter
+        if ($Message) {
+            $arguments += "--message", $Message
+        }
 
-    if ($YesAlways) {
-        $params += "--yes-always"
-    }
+        # Add optional parameters only if they are present
+        if ($Model) {
+            $arguments += "--model", $Model
+        }
 
-    if ($CachePrompts) {
-        $params += "--cache-prompts"
-        # Always set keepalive pings to 5 when caching is enabled
-        $params += "--cache-keepalive-pings"
-        $params += "5"
-    }
+        if ($EditorModel) {
+            $arguments += "--editor-model", $EditorModel
+        }
 
-    if ($MapTokens -ge 0) {
-        $params += "--map-tokens"
-        $params += $MapTokens.ToString()
-    }
+        if ($NoPretty) {
+            $arguments += "--no-pretty"
+        }
 
-    if ($MapRefresh) {
-        $params += "--map-refresh"
-        $params += $MapRefresh
-    }
+        if ($NoStream) {
+            $arguments += "--no-stream"
+        }
 
-    if ($NoAutoLint) {
-        $params += "--no-auto-lint"
-    }
+        if ($YesAlways) {
+            $arguments += "--yes-always"
+        }
 
-    if ($AutoTest) {
-        $params += "--auto-test"
-    }
+        if ($CachePrompts) {
+            $arguments += "--cache-prompts"
+        }
 
-    if ($ShowPrompts) {
-        $params += "--show-prompts"
-    }
+        if ($PSBoundParameters.ContainsKey('MapTokens')) {
+            $arguments += "--map-tokens", $MapTokens
+        }
 
-    if ($VerboseOutput) {
-        $params += "--verbose"
-    }
+        if ($MapRefresh) {
+            $arguments += "--map-refresh", $MapRefresh
+        }
 
-    if ($EditFormat) {
-        $params += "--edit-format"
-        $params += $EditFormat
-    }
+        if ($NoAutoLint) {
+            $arguments += "--no-auto-lint"
+        }
 
-    if ($MessageFile) {
-        $params += "--message-file"
-        $params += $MessageFile
-    }
+        if ($AutoTest) {
+            $arguments += "--auto-test"
+        }
 
-    foreach ($rf in $ReadFile) {
-        $params += "--read"
-        $params += $rf
-    }
+        if ($ShowPrompts) {
+            $arguments += "--show-prompts"
+        }
 
-    if ($Encoding) {
-        $params += "--encoding"
-        $params += $Encoding
-    }
+        if ($EditFormat) {
+            $arguments += "--edit-format", $EditFormat
+        }
 
-    aider @params
+        if ($MessageFile) {
+            $arguments += "--message-file", $MessageFile
+        }
+
+        if ($ReadFile) {
+            foreach ($file in $ReadFile) {
+                $arguments += "--read", $file
+            }
+        }
+
+        if ($Encoding) {
+            $arguments += "--encoding", $Encoding
+        }
+
+        if ($VerbosePreference -eq 'Continue') {
+            Write-Verbose "Executing: aider $($arguments -join ' ')"
+        }
+
+        aider @arguments
+    }
 }
 
 function Repair-Error {
@@ -546,10 +630,10 @@ function Repair-Error {
         information from a JSON file and attempts to fix the identified issues in the test files.
 
     .PARAMETER First
-        Specifies the maximum number of commands to process. Defaults to 1000.
+        Specifies the maximum number of commands to process.
 
     .PARAMETER Skip
-        Specifies the number of commands to skip before processing. Defaults to 0.
+        Specifies the number of commands to skip before processing.
 
     .PARAMETER PromptFilePath
         The path to the template file containing the prompt structure.
@@ -577,8 +661,8 @@ function Repair-Error {
     #>
     [CmdletBinding()]
     param (
-        [int]$First = 1000,
-        [int]$Skip = 0,
+        [int]$First = 10000,
+        [int]$Skip,
         [string[]]$PromptFilePath = "/workspace/.aider/prompts/fix-errors.md",
         [string[]]$CacheFilePath = "/workspace/.aider/prompts/conventions.md",
         [string]$ErrorFilePath = "/workspace/.aider/prompts/errors.json"
