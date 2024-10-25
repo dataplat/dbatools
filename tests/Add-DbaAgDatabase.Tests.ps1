@@ -55,4 +55,4 @@ Describe "Add-DbaAgDatabase" {
         }
     }
 }
-#$global:TestConfig.instance2 for appveyor
+#$script:instance2 for appveyor

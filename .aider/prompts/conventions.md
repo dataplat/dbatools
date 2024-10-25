@@ -52,8 +52,6 @@
 
 - **Comments and Debugging Notes:**
   - Leave comments like `#$script:instance2 for appveyor` intact for debugging purposes.
-  - But change `$script:instance2` to `$global:instance2` for proper scoping.
-  - So it should look like this: `#$global:instance2 for appveyor`.
 
 - **Consistency with Example:**
   - Follow the structure and conventions used in the example Pester v5 test script provided below.
