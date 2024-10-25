@@ -34,8 +34,7 @@ Describe "Copy-DbaAgentJobCategory" -Tag "IntegrationTests" {
         }
 
         It "Should have exactly the number of expected parameters" {
-            $actualParameters = $command.Parameters.Keys | Where-Object { $PSItem -notin "WhatIf", "Confirm" }
-            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $actualParameters | Should -BeNullOrEmpty
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $command.Parameters.Keys | Should -BeNullOrEmpty
         }
     }
 
