@@ -65,5 +65,7 @@ function Get-TestConfig {
         $config['CommandName'] = "Unknown"
     }
 
+    $config['CommonParameters'] = [System.Management.Automation.PSCmdlet]::CommonParameters
+
     [pscustomobject]$config
 }
