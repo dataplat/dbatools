@@ -64,7 +64,7 @@ $master = $databases | Where-Object Name -eq "master"
 $systemDbs = $databases | Where-Object Name -in "master", "model", "msdb", "tempdb"
 
 # Required - script block for Parameters.Keys
-$actualParameters = $command.Parameters.Keys | Where-Object { $PSItem -notin "WhatIf", "Confirm" }
+$newParameters = $command.Parameters.Values.Name | Where-Object { $PSItem -notin "WhatIf", "Confirm" }
 ```
 
 ### Parameter & Variable Naming Rules
@@ -127,21 +127,22 @@ Describe "Get-DbaDatabase" -Tag "UnitTests" {
    Context "Parameter validation" {
        BeforeAll {
            $command = Get-Command Get-DbaDatabase
-           $expectedParameters  = $TestConfig.CommonParameters
+           $expected  = $TestConfig.CommonParameters
 
-           $expectedParameters += @(
+           $expected += @(
                "SqlInstance",
                "SqlCredential",
                "Database"
            )
        }
 
-       It "Has parameter: <_>" -ForEach $expectedParameters {
+       It "Has parameter: <_>" -ForEach $expected {
            $command | Should -HaveParameter $PSItem
        }
 
        It "Should have exactly the number of expected parameters" {
-           Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $command.Parameters.Keys | Should -BeNullOrEmpty
+           $hasparms = $command.Parameters.Values.Name
+           Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
        }
    }
 }

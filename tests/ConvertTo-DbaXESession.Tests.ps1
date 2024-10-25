@@ -6,9 +6,9 @@ Describe "ConvertTo-DbaXESession" -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
             $command = Get-Command ConvertTo-DbaXESession
-            $expectedParameters = $TestConfig.CommonParameters
+            $expected = $TestConfig.CommonParameters
 
-            $expectedParameters += @(
+            $expected += @(
                 "InputObject",
                 "Name",
                 "OutputScriptOnly",
@@ -16,12 +16,13 @@ Describe "ConvertTo-DbaXESession" -Tag "UnitTests" {
             )
         }
 
-        It "Has parameter: <_>" -ForEach $expectedParameters {
+        It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }
 
         It "Should have exactly the number of expected parameters" {
-            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $command.Parameters.Keys | Should -BeNullOrEmpty
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
@@ -120,8 +121,8 @@ select TraceID=@TraceID
 
     Context "Test Trace Conversion" {
         BeforeAll {
-            $results = Get-DbaTrace -SqlInstance $TestConfig.instance2 -Id $traceid | 
-                       ConvertTo-DbaXESession -Name $TestConfig.name | 
+            $results = Get-DbaTrace -SqlInstance $TestConfig.instance2 -Id $traceid |
+                       ConvertTo-DbaXESession -Name $TestConfig.name |
                        Start-DbaXESession
         }
 

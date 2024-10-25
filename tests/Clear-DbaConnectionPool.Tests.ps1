@@ -6,21 +6,22 @@ Describe "Clear-DbaConnectionPool" -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
             $command = Get-Command Clear-DbaConnectionPool
-            $expectedParameters = $TestConfig.CommonParameters
+            $expected = $TestConfig.CommonParameters
 
-            $expectedParameters += @(
+            $expected += @(
                 "ComputerName",
                 "Credential",
                 "EnableException"
             )
         }
 
-        It "Has parameter: <_>" -ForEach $expectedParameters {
+        It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }
 
         It "Should have exactly the number of expected parameters" {
-            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $command.Parameters.Keys | Should -BeNullOrEmpty
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }

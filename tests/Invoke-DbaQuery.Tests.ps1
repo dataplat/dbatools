@@ -13,7 +13,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $command = Get-Command Invoke-DbaQuery
         }
         It "Should only contain our specific parameters" {
-            [object[]]$params = $command.Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
+            [object[]]$params = $command.Parameters.Values.Name | Where-Object { $_ -notin ('whatif', 'confirm') }
             [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Query', 'QueryTimeout', 'File', 'SqlObject', 'As', 'SqlParameter', 'AppendServerInstance', 'MessagesToOutput', 'InputObject', 'ReadOnly', 'EnableException', 'CommandType', 'NoExec'
             $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
