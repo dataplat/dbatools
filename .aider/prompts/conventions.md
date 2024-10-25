@@ -11,9 +11,8 @@ These three lines must start every test file.
 ## Test Structure
 
 ### Describe Blocks
-- Name your Describe blocks with static command names
+- Name your Describe blocks with static command names from the primary command being tested
 - Include appropriate tags (`-Tag "UnitTests"` or `-Tag "IntegrationTests"`)
-- One command per Describe block
 
 ```powershell
 Describe "Get-DbaDatabase" -Tag "UnitTests" {
@@ -71,6 +70,32 @@ $array = @(
 )
 ```
 - Skip conditions must evaluate to `$true` or `$false`, not strings
+- Use unique, descriptive variable names across test scopes:
+```powershell
+# Bad - same variable name in different scopes
+Describe "New-DbaAvailabilityGroup" {
+    BeforeAll {
+        $agname = "primaryAG"    # This persists
+    }
+
+    Context "Adding replica" {
+        $agname = "replicaAG"    # Conflicts with BeforeAll scope
+    }
+}
+
+# Good - unique names that describe purpose
+Describe "New-DbaAvailabilityGroup" {
+    BeforeAll {
+        $primaryAgName = "primaryAG"
+    }
+
+    Context "Adding replica" {
+        BeforeAll {
+            $replicaAgName = "replicaAG"
+        }
+    }
+}
+```
 - Use `$global:` instead of `$script:` for test configuration variables when required for Pester v5 scoping
 - Avoid script blocks in Where-Object when possible:
 
@@ -142,13 +167,13 @@ Describe "Get-DbaDatabase" -Tag "IntegrationTests" {
 
 ### Good parameter splat usage
 - Use splatting for commands with 4+ parameters
-- Use $splat/@splat variable names
+- Use $splat/@splat variable names, with descriptive suffixes when in different scopes:
 
 ```powershell
 # Good - direct parameters for 1-3 parameters
 $ag = New-DbaLogin -SqlInstance $instance -Login $loginName -Password $password
 
-# Good - splatting for 4+ parameters
+# Good - single splat
 $splat = @{
     Primary       = $TestConfig.instance3
     Name          = $agname
@@ -158,4 +183,32 @@ $splat = @{
     Confirm       = $false
 }
 $ag = New-DbaAvailabilityGroup @splat
-```
+
+# Good - multiple splats in different scopes
+Describe "New-DbaAvailabilityGroup" {
+    BeforeAll {
+        $splatPrimary = @{
+            Primary       = $TestConfig.instance3
+            Name         = $agnamePrimary
+            ClusterType  = "None"
+            FailoverMode = "Manual"
+            Certificate  = "dbatoolsci_AGCert"
+            Confirm      = $false
+        }
+        $primaryAg = New-DbaAvailabilityGroup @splatPrimary
+    }
+
+    Context "Adding replica" {
+        BeforeAll {
+            $splatReplica = @{
+                Primary       = $TestConfig.instance3
+                Name         = $agnameReplica
+                ClusterType  = "None"
+                FailoverMode = "Manual"
+                Certificate  = "dbatoolsci_AGCert"
+                Confirm      = $false
+            }
+            $replicaAg = New-DbaAvailabilityGroup @splatReplica
+        }
+    }
+}
