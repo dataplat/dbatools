@@ -51,7 +51,7 @@
   - Replace all `$script:` variable scopes with `$global:` where required for Pester v5 scoping.
 
 - **Comments and Debugging Notes:**
-  - Leave comments like `#$script:instance2 for appveyor` intact for debugging purposes.
+  - Leave comments like `#$TestConfig.instance2 for appveyor` intact for debugging purposes.
 
 - **Consistency with Example:**
   - Follow the structure and conventions used in the example Pester v5 test script provided below.

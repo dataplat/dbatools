@@ -30,14 +30,14 @@ Describe "Add-DbaAgDatabase" {
 
     Context "Integration Tests" -Tag "IntegrationTests" {
         BeforeAll {
-            $null = Get-DbaProcess -SqlInstance $global:TestConfig.instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
-            $server = Connect-DbaInstance -SqlInstance $global:TestConfig.instance3
+            $null = Get-DbaProcess -SqlInstance $TestConfig.instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance3
             $agname = "dbatoolsci_addagdb_agroup"
             $dbname = "dbatoolsci_addagdb_agroupdb"
             $newdbname = "dbatoolsci_addag_agroupdb_2"
             $server.Query("create database $dbname")
-            $backup = Get-DbaDatabase -SqlInstance $global:TestConfig.instance3 -Database $dbname | Backup-DbaDatabase
-            $ag = New-DbaAvailabilityGroup -Primary $global:TestConfig.instance3 -Name $agname -ClusterType None -FailoverMode Manual -Database $dbname -Confirm:$false -Certificate dbatoolsci_AGCert
+            $backup = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbname | Backup-DbaDatabase
+            $ag = New-DbaAvailabilityGroup -Primary $TestConfig.instance3 -Name $agname -ClusterType None -FailoverMode Manual -Database $dbname -Confirm:$false -Certificate dbatoolsci_AGCert
         }
 
         AfterAll {
@@ -47,12 +47,13 @@ Describe "Add-DbaAgDatabase" {
 
         It "adds ag db and returns proper results" {
             $server.Query("create database $newdbname")
-            $backup = Get-DbaDatabase -SqlInstance $global:TestConfig.instance3 -Database $newdbname | Backup-DbaDatabase
-            $results = Add-DbaAgDatabase -SqlInstance $global:TestConfig.instance3 -AvailabilityGroup $agname -Database $newdbname -Confirm:$false
+            $backup = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $newdbname | Backup-DbaDatabase
+            $results = Add-DbaAgDatabase -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname -Database $newdbname -Confirm:$false
             $results.AvailabilityGroup | Should -Be $agname
             $results.Name | Should -Be $newdbname
             $results.IsJoined | Should -Be $true
         }
     }
 }
-#$script:instance2 for appveyor
+
+#$TestConfig.instance2 for appveyor
