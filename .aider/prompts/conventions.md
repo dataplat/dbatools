@@ -136,8 +136,8 @@ Describe "Get-DbaDatabase" -Tag "UnitTests" {
        }
 
        It "Should have exactly the number of expected parameters" {
-           $expected  = $TestConfig.CommonParameters
-           $expected += @(
+           $script:expected = $TestConfig.CommonParameters
+           $script:expected += @(
                "SqlInstance",
                "SqlCredential",
                "Database",
