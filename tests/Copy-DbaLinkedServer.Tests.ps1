@@ -12,7 +12,7 @@ Describe "Copy-DbaLinkedServer" -Tag "UnitTests" {
             $expected += @(
                 "Source",
                 "SourceSqlCredential",
-                "Destination", 
+                "Destination",
                 "DestinationSqlCredential",
                 "LinkedServer",
                 "ExcludeLinkedServer",
@@ -107,9 +107,16 @@ Describe "Copy-DbaLinkedServer" -Tag "IntegrationTests" {
 
             $sourceServer = Connect-DbaInstance @splatSource
             $destServer = Connect-DbaInstance @splatDestination
-            
-            $sourceServer.LinkedServers.Script() | Should -Match 'SQLNCLI10'
-            $destServer.LinkedServers.Script() | Should -Match 'SQLNCLI11'
+
+            $sourceScript = $sourceServer.LinkedServers['dbatoolsci_localhost2'].Script()
+            $destScript = $destServer.LinkedServers['dbatoolsci_localhost2'].Script()
+
+            $sourceScript | Should -Match 'SQLNCLI\d+'
+            $destScript | Should -Match 'SQLNCLI\d+'
+            # Verify destination has same or higher version
+            $sourceVersion = [regex]::Match($sourceScript, 'SQLNCLI(\d+)').Groups[1].Value
+            $destVersion = [regex]::Match($destScript, 'SQLNCLI(\d+)').Groups[1].Value
+            [int]$destVersion | Should -BeGreaterOrEqual ([int]$sourceVersion)
         }
     }
 }

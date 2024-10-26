@@ -11,7 +11,7 @@ Describe "Copy-DbaDbMail" -Tag "UnitTests" {
             $expected = $TestConfig.CommonParameters
             $expected += @(
                 "Source",
-                "Destination", 
+                "Destination",
                 "Type",
                 "SourceSqlCredential",
                 "DestinationSqlCredential",
@@ -25,7 +25,7 @@ Describe "Copy-DbaDbMail" -Tag "UnitTests" {
         }
 
         It "Should have exactly the number of expected parameters ($($expected.Count))" {
-            $hasparms = $command.Parameters.Values.Name
+            $hasparms = $command.Parameters.Values.Name | Where-Object { $_ -notin ('whatif', 'confirm') }
             Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
