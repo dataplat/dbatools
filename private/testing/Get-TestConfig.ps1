@@ -8,7 +8,8 @@ function Get-TestConfig {
         Write-Host "Tests will use local constants file: tests\constants.local.ps1." -ForegroundColor Cyan
         . $LocalConfigPath
         # Note: Local constants are sourced but not explicitly added to $config
-    } elseif ($env:CODESPACES -and ($env:TERM_PROGRAM -eq 'vscode' -and $env:REMOTE_CONTAINERS)) {
+    } elseif ($env:CODESPACES -or ($env:TERM_PROGRAM -eq 'vscode' -and $env:REMOTE_CONTAINERS)) {
+        $null = Set-DbatoolsInsecureConnection
         $config['Instance1'] = "dbatools1"
         $config['Instance2'] = "dbatools2"
         $config['Instance3'] = "dbatools3"
@@ -18,6 +19,9 @@ function Get-TestConfig {
         $config['PSDefaultParameterValues'] = @{
             "*:SqlCredential" = $config['SqlCred']
         }
+        $global:PSDefaultParameterValues['*:SqlCredential'] = $config['SqlCred']
+        $global:PSDefaultParameterValues['*:SourceSqlCredential'] = $config['SqlCred']
+        $global:PSDefaultParameterValues['*:DestinationSqlCredential'] = $config['SqlCred']
     } elseif ($env:GITHUB_WORKSPACE) {
         $config['DbaToolsCi_Computer'] = "localhost"
         $config['Instance1'] = "localhost"
