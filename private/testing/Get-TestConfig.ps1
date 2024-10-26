@@ -16,12 +16,11 @@ function Get-TestConfig {
         $config['Instances'] = @($config['Instance1'], $config['Instance2'])
 
         $config['SqlCred'] = [PSCredential]::new('sa', (ConvertTo-SecureString $env:SA_PASSWORD -AsPlainText -Force))
-        $config['PSDefaultParameterValues'] = @{
+        $config['Defaults'] = [System.Management.Automation.DefaultParameterDictionary]@{
             "*:SqlCredential" = $config['SqlCred']
+            "*:SourceSqlCredential" = $config['SqlCred']
+            "*:DestinationSqlCredential" = $config['SqlCred']
         }
-        $global:PSDefaultParameterValues['*:SqlCredential'] = $config['SqlCred']
-        $global:PSDefaultParameterValues['*:SourceSqlCredential'] = $config['SqlCred']
-        $global:PSDefaultParameterValues['*:DestinationSqlCredential'] = $config['SqlCred']
     } elseif ($env:GITHUB_WORKSPACE) {
         $config['DbaToolsCi_Computer'] = "localhost"
         $config['Instance1'] = "localhost"
