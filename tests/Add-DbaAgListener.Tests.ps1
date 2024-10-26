@@ -1,14 +1,15 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
-param($ModuleName = "dbatools")
-$global:TestConfig = Get-TestConfig
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
 Describe "Add-DbaAgListener" -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
             $command = Get-Command Add-DbaAgListener
-            $expectedParameters = $TestConfig.CommonParameters
-
-            $expectedParameters += @(
+            $expected = $TestConfig.CommonParameters
+            $expected += @(
                 "SqlInstance",
                 "SqlCredential",
                 "AvailabilityGroup",
@@ -20,17 +21,19 @@ Describe "Add-DbaAgListener" -Tag "UnitTests" {
                 "Dhcp",
                 "Passthru",
                 "InputObject",
-                "EnableException"
+                "EnableException",
+                "Confirm",
+                "WhatIf"
             )
         }
 
-        It "Should have exactly the expected parameters" {
-            $actualParameters = $command.Parameters.Keys | Where-Object { $PSItem -notin "WhatIf", "Confirm" }
-            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $actualParameters | Should -BeNullOrEmpty
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
         }
 
-        It "Has parameter: <_>" -ForEach $expectedParameters {
-            $command | Should -HaveParameter $PSItem
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
@@ -39,19 +42,15 @@ Describe "Add-DbaAgListener" -Tag "IntegrationTests" {
     BeforeAll {
         $agname = "dbatoolsci_ag_newlistener"
         $listenerName = 'dbatoolsci_listener'
-        $splatPrimary = @{
+        $splatNewAg = @{
             Primary = $TestConfig.instance3
             Name = $agname
             ClusterType = "None"
             FailoverMode = "Manual"
-            Certificate = "dbatoolsci_AGCert"
             Confirm = $false
+            Certificate = "dbatoolsci_AGCert"
         }
-        $ag = New-DbaAvailabilityGroup @splatPrimary
-    }
-
-    AfterEach {
-        $null = Remove-DbaAgListener -SqlInstance $TestConfig.instance3 -Listener $listenerName -AvailabilityGroup $agname -Confirm:$false
+        $ag = New-DbaAvailabilityGroup @splatNewAg
     }
 
     AfterAll {
@@ -59,8 +58,21 @@ Describe "Add-DbaAgListener" -Tag "IntegrationTests" {
     }
 
     Context "When creating a listener" {
+        BeforeAll {
+            $splatAddListener = @{
+                Name = $listenerName
+                IPAddress = "127.0.20.1"
+                Port = 14330
+                Confirm = $false
+            }
+            $results = $ag | Add-DbaAgListener @splatAddListener
+        }
+
+        AfterAll {
+            $null = Remove-DbaAgListener -SqlInstance $TestConfig.instance3 -Listener $listenerName -AvailabilityGroup $agname -Confirm:$false
+        }
+
         It "Returns results with proper data" {
-            $results = $ag | Add-DbaAgListener -Name $listenerName -IPAddress 127.0.20.1 -Port 14330 -Confirm:$false
             $results.PortNumber | Should -Be 14330
         }
     }

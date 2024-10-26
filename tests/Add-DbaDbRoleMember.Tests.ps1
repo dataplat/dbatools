@@ -1,19 +1,39 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tags "UnitTests" {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Role', 'Member', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Add-DbaDbRoleMember" -Tag "UnitTests" {
+    Context "Parameter validation" {
+        BeforeAll {
+            $command = Get-Command Add-DbaDbRoleMember
+            $expected = $TestConfig.CommonParameters
+            $expected += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "Role",
+                "Member",
+                "InputObject",
+                "EnableException",
+                "Confirm",
+                "WhatIf"
+            )
+        }
+
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe "Add-DbaDbRoleMember" -Tag "IntegrationTests" {
     BeforeAll {
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $user1 = "dbatoolssci_user1_$(Get-Random)"
@@ -29,58 +49,75 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $null = New-DbaDbUser -SqlInstance $TestConfig.instance2 -Database msdb -Login $user2 -Username $user2 -IncludeSystem
         $null = $server.Query("CREATE ROLE $role", $dbname)
     }
+
     AfterAll {
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $null = $server.Query("DROP USER $user1", 'msdb')
         $null = $server.Query("DROP USER $user2", 'msdb')
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname -confirm:$false
-        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $user1, $user2 -confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname -Confirm:$false
+        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $user1, $user2 -Confirm:$false
     }
 
-    Context "Functionality" {
-        It 'Adds User to Role' {
-            Add-DbaDbRoleMember -SqlInstance $TestConfig.instance2 -Role $role -Member $user1 -Database $dbname -confirm:$false
+    Context "When adding a user to a role" {
+        BeforeAll {
+            $result = Add-DbaDbRoleMember -SqlInstance $TestConfig.instance2 -Role $role -Member $user1 -Database $dbname -Confirm:$false
             $roleDBAfter = Get-DbaDbRoleMember -SqlInstance $server -Database $dbname -Role $role
-
-            $roleDBAfter.Role | Should Be $role
-            $roleDBAfter.Login | Should Be $user1
-            $roleDBAfter.UserName | Should Be $user1
         }
 
-        It 'Adds User to Multiple Roles' {
+        It "Adds the user to the role" {
+            $roleDBAfter.Role | Should -Be $role
+            $roleDBAfter.Login | Should -Be $user1
+            $roleDBAfter.UserName | Should -Be $user1
+        }
+    }
+
+    Context "When adding a user to multiple roles" {
+        BeforeAll {
             $roleDB = Get-DbaDbRoleMember -SqlInstance $server -Database msdb -Role db_datareader, SQLAgentReaderRole
-            Add-DbaDbRoleMember -SqlInstance $TestConfig.instance2 -Role db_datareader, SQLAgentReaderRole -Member $user1 -Database msdb -confirm:$false
-
+            $result = Add-DbaDbRoleMember -SqlInstance $TestConfig.instance2 -Role db_datareader, SQLAgentReaderRole -Member $user1 -Database msdb -Confirm:$false
             $roleDBAfter = Get-DbaDbRoleMember -SqlInstance $server -Database msdb -Role db_datareader, SQLAgentReaderRole
-            $roleDBAfter.Count | Should BeGreaterThan $roleDB.Count
-            $roleDB.UserName -contains $user1 | Should Be $false
-            $roleDBAfter.UserName -contains $user1 | Should Be $true
-
         }
 
-        It 'Adds User to Roles via piped input from Get-DbaDbRole' {
+        It "Adds the user to multiple roles" {
+            $roleDBAfter.Count | Should -BeGreaterThan $roleDB.Count
+            $roleDB.UserName | Should -Not -Contain $user1
+            $roleDBAfter.UserName | Should -Contain $user1
+        }
+    }
+
+    Context "When adding a user to roles via piped input from Get-DbaDbRole" {
+        BeforeAll {
             $roleInput = Get-DbaDbRole -SqlInstance $server -Database msdb -Role db_datareader, SQLAgentReaderRole
             $roleDB = Get-DbaDbRoleMember -SqlInstance $server -Database msdb -Role db_datareader, SQLAgentReaderRole
-            $roleInput | Add-DbaDbRoleMember -User $user2 -confirm:$false
-
+            $result = $roleInput | Add-DbaDbRoleMember -User $user2 -Confirm:$false
             $roleDBAfter = Get-DbaDbRoleMember -SqlInstance $server -Database msdb -Role db_datareader, SQLAgentReaderRole
-            $roleDB.UserName -contains $user2 | Should Be $false
-            $roleDBAfter.UserName -contains $user2 | Should Be $true
         }
 
-        It 'Skip adding user to role if already a member' {
-            $messages = Add-DbaDbRoleMember -SqlInstance $TestConfig.instance2 -Role $role -Member $user1 -Database $dbname -confirm:$false -Verbose 4>&1
+        It "Adds the user to roles via piped input" {
+            $roleDB.UserName | Should -Not -Contain $user2
+            $roleDBAfter.UserName | Should -Contain $user2
+        }
+    }
+
+    Context "When adding a user to a role they are already a member of" {
+        BeforeAll {
+            $messages = Add-DbaDbRoleMember -SqlInstance $TestConfig.instance2 -Role $role -Member $user1 -Database $dbname -Confirm:$false -Verbose 4>&1
+        }
+
+        It "Skips adding the user and outputs appropriate message" {
             $messageCount = ($messages -match 'Adding user').Count
+            $messageCount | Should -Be 0
+        }
+    }
 
-            $messageCount | Should Be 0
+    Context "When adding a role to another role" {
+        BeforeAll {
+            $result = Add-DbaDbRoleMember -SqlInstance $TestConfig.instance2 -Role db_datawriter -Member $role -Database $dbname -Confirm:$false
+            $roleDBAfter = Get-DbaDbRoleMember -SqlInstance $server -Database $dbname -Role db_datawriter
         }
 
-        It 'Adds Role to Role' {
-            Add-DbaDbRoleMember -SqlInstance $TestConfig.instance2 -Role db_datawriter -Member $role -Database $dbname -confirm:$false
-            $roleDBAfter = Get-DbaDbRoleMember -SqlInstance $server -Database $dbname -Role db_datawriter
-
-            $roleDBAfter.MemberRole | Should Contain $role
+        It "Adds the role to another role" {
+            $roleDBAfter.MemberRole | Should -Contain $role
         }
     }
 }
-

@@ -1,25 +1,50 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'KeyCredential', 'SecurePassword', 'Path', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Backup-DbaServiceMasterKey" -Tag "UnitTests" {
+    Context "Parameter validation" {
+        BeforeAll {
+            $command = Get-Command Backup-DbaServiceMasterKey
+            $expected = $TestConfig.CommonParameters
+            $expected += @(
+                "SqlInstance",
+                "SqlCredential",
+                "KeyCredential",
+                "SecurePassword",
+                "Path",
+                "EnableException",
+                "Confirm",
+                "WhatIf"
+            )
+        }
+
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "Backup-DbaServiceMasterKey" -Tag "IntegrationTests" {
     Context "Can backup a service master key" {
-        $results = Backup-DbaServiceMasterKey -SqlInstance $TestConfig.instance1 -Confirm:$false -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force)
-        $null = Remove-Item -Path $results.Path -ErrorAction SilentlyContinue -Confirm:$false
+        BeforeAll {
+            $securePassword = ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force
+            $results = Backup-DbaServiceMasterKey -SqlInstance $TestConfig.instance1 -SecurePassword $securePassword -Confirm:$false
+        }
+
+        AfterAll {
+            $null = Remove-Item -Path $results.Path -ErrorAction SilentlyContinue -Confirm:$false
+        }
 
         It "backs up the SMK" {
-            $results.Status -eq "Success"
+            $results.Status | Should -Be "Success"
         }
     }
 }

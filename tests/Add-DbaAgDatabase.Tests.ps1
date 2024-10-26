@@ -1,14 +1,15 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
-param($ModuleName = "dbatools")
-$global:TestConfig = Get-TestConfig
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
 Describe "Add-DbaAgDatabase" -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
             $command = Get-Command Add-DbaAgDatabase
-            $expectedParameters = $TestConfig.CommonParameters
-
-            $expectedParameters += @(
+            $expected = $TestConfig.CommonParameters
+            $expected += @(
                 "SqlInstance",
                 "SqlCredential",
                 "AvailabilityGroup",
@@ -20,17 +21,19 @@ Describe "Add-DbaAgDatabase" -Tag "UnitTests" {
                 "SharedPath",
                 "UseLastBackup",
                 "AdvancedBackupParams",
-                "EnableException"
+                "EnableException",
+                "Confirm",
+                "WhatIf"
             )
         }
 
-        It "Should have exactly the expected parameters" {
-            $actualParameters = $command.Parameters.Keys | Where-Object { $PSItem -notin "WhatIf", "Confirm" }
-            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $actualParameters | Should -BeNullOrEmpty
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
         }
 
-        It "Has parameter: <_>" -ForEach $expectedParameters {
-            $command | Should -HaveParameter $PSItem
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
@@ -65,7 +68,13 @@ Describe "Add-DbaAgDatabase" -Tag "IntegrationTests" {
         BeforeAll {
             $server.Query("create database $newdbname")
             $backup = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $newdbname | Backup-DbaDatabase
-            $results = Add-DbaAgDatabase -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname -Database $newdbname -Confirm:$false
+            $splatAddAgDb = @{
+                SqlInstance = $TestConfig.instance3
+                AvailabilityGroup = $agname
+                Database = $newdbname
+                Confirm = $false
+            }
+            $results = Add-DbaAgDatabase @splatAddAgDb
         }
 
         It "Returns proper results" {

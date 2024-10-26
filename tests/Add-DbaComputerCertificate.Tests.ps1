@@ -1,14 +1,15 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
-param($ModuleName = "dbatools")
-$global:TestConfig = Get-TestConfig
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
 Describe "Add-DbaComputerCertificate" -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
             $command = Get-Command Add-DbaComputerCertificate
-            $expectedParameters = $TestConfig.CommonParameters
-
-            $expectedParameters += @(
+            $expected = $TestConfig.CommonParameters
+            $expected += @(
                 "ComputerName",
                 "Credential",
                 "SecurePassword",
@@ -17,17 +18,19 @@ Describe "Add-DbaComputerCertificate" -Tag "UnitTests" {
                 "Store",
                 "Folder",
                 "Flag",
-                "EnableException"
+                "EnableException",
+                "Confirm",
+                "WhatIf"
             )
         }
 
-        It "Should have exactly the expected parameters" {
-            $actualParameters = $command.Parameters.Keys | Where-Object { $PSItem -notin "WhatIf", "Confirm" }
-            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $actualParameters | Should -BeNullOrEmpty
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
         }
 
-        It "Has parameter: <_>" -ForEach $expectedParameters {
-            $command | Should -HaveParameter $PSItem
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
@@ -35,11 +38,8 @@ Describe "Add-DbaComputerCertificate" -Tag "UnitTests" {
 Describe "Add-DbaComputerCertificate" -Tag "IntegrationTests" {
     Context "Certificate is added properly" {
         BeforeAll {
-            $results = Add-DbaComputerCertificate -Path "$($TestConfig.appveyorlabrepo)\certificates\localhost.crt" -Confirm:$false
-        }
-
-        AfterAll {
-            Remove-DbaComputerCertificate -Thumbprint 29C469578D6C6211076A09CEE5C5797EEA0C2713 -Confirm:$false
+            $certPath = "$($TestConfig.appveyorlabrepo)\certificates\localhost.crt"
+            $results = Add-DbaComputerCertificate -Path $certPath -Confirm:$false
         }
 
         It "Should show the proper thumbprint has been added" {
@@ -48,6 +48,10 @@ Describe "Add-DbaComputerCertificate" -Tag "IntegrationTests" {
 
         It "Should be in LocalMachine\My Cert Store" {
             $results.PSParentPath | Should -Be "Microsoft.PowerShell.Security\Certificate::LocalMachine\My"
+        }
+
+        AfterAll {
+            Remove-DbaComputerCertificate -Thumbprint 29C469578D6C6211076A09CEE5C5797EEA0C2713 -Confirm:$false
         }
     }
 }

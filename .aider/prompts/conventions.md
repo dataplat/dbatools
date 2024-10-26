@@ -3,10 +3,12 @@
 ## Core Requirements
 ```powershell
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
-param($ModuleName = "dbatools")
-$global:TestConfig = Get-TestConfig
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 ```
-These three lines must start every test file.
+These lines must start every test file.
 
 ## Test Structure
 
@@ -45,20 +47,6 @@ Describe "Get-DbaDatabase" -Tag "IntegrationTests" {
 }
 ```
 
-## TestCases
-Use the `-ForEach` parameter in `It` blocks for multiple test cases:
-
-```powershell
-It "Should calculate correctly" -ForEach @(
-    @{ Input = 1; Expected = 2 }
-    @{ Input = 2; Expected = 4 }
-    @{ Input = 3; Expected = 6 }
-) {
-    $result = Get-Double -Number $Input
-    $result | Should -Be $Expected
-}
-```
-
 ## Style Guidelines
 - Use double quotes for strings (we're a SQL Server module)
 - Array declarations should be on multiple lines:
@@ -72,21 +60,65 @@ $array = @(
 - Skip conditions must evaluate to `$true` or `$false`, not strings
 - Use `$global:` instead of `$script:` for test configuration variables when required for Pester v5 scoping
 - Avoid script blocks in Where-Object when possible:
-
 ```powershell
 # Good - direct property comparison
 $master = $databases | Where-Object Name -eq "master"
 $systemDbs = $databases | Where-Object Name -in "master", "model", "msdb", "tempdb"
 
 # Required - script block for Parameters.Keys
-$actualParameters = $command.Parameters.Keys | Where-Object { $PSItem -notin "WhatIf", "Confirm" }
+$newParameters = $command.Parameters.Values.Name | Where-Object { $PSItem -notin "WhatIf", "Confirm" }
 ```
 
-## DO NOT
-- DO NOT use `$MyInvocation.MyCommand.Name` to get command names
-- DO NOT use the old `knownParameters` validation approach
-- DO NOT include loose code outside of proper test blocks
-- DO NOT remove comments like "#TestConfig.instance3" or "#$TestConfig.instance2 for appveyor"
+### Parameter & Variable Naming Rules
+- Use direct parameters for 1-2 parameters
+- Use `$splat<Purpose>` for 3+ parameters (never plain `$splat`)
+
+```powershell
+# Direct parameters
+$ag = Get-DbaLogin -SqlInstance $instance -Login $loginName
+
+# Splat with purpose suffix
+$splatPrimary = @{
+    Primary = $TestConfig.instance3
+    Name = $primaryAgName
+    ClusterType = "None"
+    FailoverMode = "Manual"
+    Certificate = "dbatoolsci_AGCert"
+    Confirm = $false
+}
+$primaryAg = New-DbaAvailabilityGroup @splatPrimary
+```
+
+### Unique names across scopes
+
+- Use unique, descriptive variable names across scopes to avoid collisions
+- Play particlar attention to variable names in the BeforeAll
+
+```powershell
+Describe "Add-DbaAgReplica" -Tag "IntegrationTests" {
+    BeforeAll {
+        $primaryAgName = "dbatoolsci_agroup"
+        $splatPrimary = @{
+            Primary = $TestConfig.instance3
+            Name = $primaryAgName
+            ...
+        }
+        $ag = New-DbaAvailabilityGroup @splatPrimary
+    }
+
+    Context "When adding AG replicas" {
+        BeforeAll {
+            $replicaAgName = "dbatoolsci_add_replicagroup"
+            $splatRepAg = @{
+                Primary = $TestConfig.instance3
+                Name = $replicaAgName
+                ...
+            }
+            $replicaAg = New-DbaAvailabilityGroup @splatRepAg
+        }
+    }
+}
+```
 
 ## Examples
 
@@ -97,22 +129,23 @@ Describe "Get-DbaDatabase" -Tag "UnitTests" {
    Context "Parameter validation" {
        BeforeAll {
            $command = Get-Command Get-DbaDatabase
-           $expectedParameters  = $TestConfig.CommonParameters
-
-           $expectedParameters += @(
+           $expected = $TestConfig.CommonParameters
+           $expected += @(
                "SqlInstance",
                "SqlCredential",
-               "Database"
+               "Database",
+               "Confirm",
+               "WhatIf"
            )
        }
 
-       It "Should have exactly the expected parameters" {
-           $actualParameters = $command.Parameters.Keys | Where-Object { $PSItem -notin "WhatIf", "Confirm" }
-           Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $actualParameters | Should -BeNullOrEmpty
+       It "Has parameter: <_>" -ForEach $expected {
+           $command | Should -HaveParameter $PSItem
        }
 
-       It "Has parameter: <_>" -ForEach $expectedParameters {
-           $command | Should -HaveParameter $PSItem
+       It "Should have exactly the number of expected parameters ($($expected.Count))" {
+           $hasparms = $command.Parameters.Values.Name
+           Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
        }
    }
 }
@@ -139,35 +172,11 @@ Describe "Get-DbaDatabase" -Tag "IntegrationTests" {
 }
 ```
 
-### Parameter & Variable Naming Rules
-1. Use direct parameters for 1-3 parameters
-2. Use `$splat<Purpose>` for 4+ parameters (never plain `$splat`)
-3. Use unique, descriptive variable names across scopes
+## Additional instructions
 
-```powershell
-# Direct parameters
-$ag = New-DbaLogin -SqlInstance $instance -Login $loginName -Password $password
-
-# Splat with purpose suffix
-$splatPrimary = @{
-    Primary = $TestConfig.instance3
-    Name = $primaryAgName    # Descriptive variable name
-    ClusterType = "None"
-    FailoverMode = "Manual"
-    Certificate = "dbatoolsci_AGCert"
-    Confirm = $false
-}
-$primaryAg = New-DbaAvailabilityGroup @splatPrimary
-
-# Unique names across scopes
-Describe "New-DbaAvailabilityGroup" {
-    BeforeAll {
-        $primaryAgName = "primaryAG"
-    }
-    Context "Adding replica" {
-        BeforeAll {
-            $replicaAgName = "replicaAG"
-        }
-    }
-}
-```
+- DO NOT use `$MyInvocation.MyCommand.Name` to get command names
+- DO NOT use the old `knownParameters` validation approach
+- DO NOT include loose code outside of proper test blocks
+- DO NOT remove comments like "#TestConfig.instance3" or "#$TestConfig.instance2 for appveyor"
+- DO NOT use $_ DO use $PSItem instead
+- Parameter validation is ALWAYS tagged as a Unit Test

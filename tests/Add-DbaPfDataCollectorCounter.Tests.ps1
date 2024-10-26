@@ -1,31 +1,66 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'Credential', 'CollectorSet', 'Collector', 'Counter', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Add-DbaPfDataCollectorCounter" -Tag "UnitTests" {
+    Context "Parameter validation" {
+        BeforeAll {
+            $command = Get-Command Add-DbaPfDataCollectorCounter
+            $expected = $TestConfig.CommonParameters
+            $expected += @(
+                "ComputerName",
+                "Credential",
+                "CollectorSet",
+                "Collector",
+                "Counter",
+                "InputObject",
+                "EnableException",
+                "Confirm",
+                "WhatIf"
+            )
+        }
+
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe "Add-DbaPfDataCollectorCounter" -Tag "IntegrationTests" {
+    BeforeAll {
+        $PSDefaultParameterValues['*:Confirm'] = $false
+    }
+
     BeforeEach {
-        $null = Get-DbaPfDataCollectorSetTemplate -Template 'Long Running Queries' | Import-DbaPfDataCollectorSetTemplate |
-            Get-DbaPfDataCollector | Get-DbaPfDataCollectorCounter -Counter '\LogicalDisk(*)\Avg. Disk Queue Length' | Remove-DbaPfDataCollectorCounter -Confirm:$false
+        $null = Get-DbaPfDataCollectorSetTemplate -Template 'Long Running Queries' |
+            Import-DbaPfDataCollectorSetTemplate |
+            Get-DbaPfDataCollector |
+            Get-DbaPfDataCollectorCounter -Counter '\LogicalDisk(*)\Avg. Disk Queue Length' |
+            Remove-DbaPfDataCollectorCounter
+
+        $results = Get-DbaPfDataCollectorSet -CollectorSet 'Long Running Queries' | Get-DbaPfDataCollector |
+            Add-DbaPfDataCollectorCounter -Counter '\LogicalDisk(*)\Avg. Disk Queue Length'
     }
+
     AfterAll {
-        $null = Get-DbaPfDataCollectorSet -CollectorSet 'Long Running Queries' | Remove-DbaPfDataCollectorSet -Confirm:$false
+        $null = Get-DbaPfDataCollectorSet -CollectorSet 'Long Running Queries' |
+            Remove-DbaPfDataCollectorSet
     }
-    Context "Verifying command returns all the required results" {
-        It "returns the correct values" {
-            $results = Get-DbaPfDataCollectorSet -CollectorSet 'Long Running Queries' | Get-DbaPfDataCollector | Add-DbaPfDataCollectorCounter -Counter '\LogicalDisk(*)\Avg. Disk Queue Length'
-            $results.DataCollectorSet | Should Be 'Long Running Queries'
-            $results.Name | Should Be '\LogicalDisk(*)\Avg. Disk Queue Length'
+
+    Context "When adding a counter to a data collector" {
+        It "Returns the correct DataCollectorSet" {
+            $results.DataCollectorSet | Should -Be 'Long Running Queries'
+        }
+
+        It "Returns the correct counter name" {
+            $results.Name | Should -Be '\LogicalDisk(*)\Avg. Disk Queue Length'
         }
     }
 }
