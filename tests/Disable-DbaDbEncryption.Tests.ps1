@@ -1,43 +1,67 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tags "UnitTests" {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'InputObject', 'EnableException', 'NoEncryptionKeyDrop'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Disable-DbaDbEncryption" -Tag "UnitTests" {
+    Context "Parameter validation" {
+        BeforeAll {
+            $command = Get-Command Disable-DbaDbEncryption
+            $expected = $TestConfig.CommonParameters
+            $expected += @(
+                "SqlInstance",
+                "SqlCredential", 
+                "Database",
+                "InputObject",
+                "NoEncryptionKeyDrop",
+                "EnableException"
+            )
+        }
+
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name | Where-Object { $PSItem -notin "WhatIf", "Confirm" }
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe "Disable-DbaDbEncryption" -Tag "IntegrationTests" {
     BeforeAll {
         $PSDefaultParameterValues["*:Confirm"] = $false
         $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
+        
+        # Setup master key if needed
         $masterkey = Get-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database master
         if (-not $masterkey) {
-            $delmasterkey = $true
+            $global:delmasterkey = $true
             $masterkey = New-DbaServiceMasterKey -SqlInstance $TestConfig.instance2 -SecurePassword $passwd
         }
-        $mastercert = Get-DbaDbCertificate -SqlInstance $TestConfig.instance2 -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
+
+        # Setup master certificate if needed
+        $mastercert = Get-DbaDbCertificate -SqlInstance $TestConfig.instance2 -Database master | 
+            Where-Object Name -notmatch "##" | 
+            Select-Object -First 1
         if (-not $mastercert) {
-            $delmastercert = $true
+            $global:delmastercert = $true
             $mastercert = New-DbaDbCertificate -SqlInstance $TestConfig.instance2
         }
 
-        $db = New-DbaDatabase -SqlInstance $TestConfig.instance2
-        $db | New-DbaDbMasterKey -SecurePassword $passwd
-        $db | New-DbaDbCertificate
-        $db | New-DbaDbEncryptionKey -Force
-        $db | Enable-DbaDbEncryption -EncryptorName $mastercert.Name -Force
+        # Create and configure test database
+        $global:testDb = New-DbaDatabase -SqlInstance $TestConfig.instance2
+        $testDb | New-DbaDbMasterKey -SecurePassword $passwd
+        $testDb | New-DbaDbCertificate
+        $testDb | New-DbaDbEncryptionKey -Force
+        $testDb | Enable-DbaDbEncryption -EncryptorName $mastercert.Name -Force
     }
 
     AfterAll {
-        if ($db) {
-            $db | Remove-DbaDatabase
+        if ($testDb) {
+            $testDb | Remove-DbaDatabase
         }
         if ($delmastercert) {
             $mastercert | Remove-DbaDbCertificate
@@ -47,20 +71,38 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
     }
 
-    Context "Command actually works" {
-        It "should disable encryption on a database with piping" {
-            # Give it time to finish encrypting or it'll error
-            Start-Sleep 10
-            $results = $db | Disable-DbaDbEncryption -NoEncryptionKeyDrop -WarningVariable warn 3> $null
-            $warn | Should -Be $null
+    Context "When disabling encryption via pipeline" {
+        BeforeAll {
+            Start-Sleep -Seconds 10 # Allow encryption to complete
+            $results = $testDb | Disable-DbaDbEncryption -NoEncryptionKeyDrop -WarningVariable warn 3> $null
+        }
+
+        It "Should complete without warnings" {
+            $warn | Should -BeNullOrEmpty
+        }
+
+        It "Should disable encryption" {
             $results.EncryptionEnabled | Should -Be $false
         }
-        It "should disable encryption on a database" {
-            $null = $db | Enable-DbaDbEncryption -EncryptorName $mastercert.Name -Force
-            # Give it time to finish encrypting or it'll error
-            Start-Sleep 10
-            $results = Disable-DbaDbEncryption -SqlInstance $TestConfig.instance2 -Database $db.Name -WarningVariable warn 3> $null
-            $warn | Should -Be $null
+    }
+
+    Context "When disabling encryption via parameters" {
+        BeforeAll {
+            $null = $testDb | Enable-DbaDbEncryption -EncryptorName $mastercert.Name -Force
+            Start-Sleep -Seconds 10 # Allow encryption to complete
+            
+            $splatDisable = @{
+                SqlInstance = $TestConfig.instance2
+                Database = $testDb.Name
+            }
+            $results = Disable-DbaDbEncryption @splatDisable -WarningVariable warn 3> $null
+        }
+
+        It "Should complete without warnings" {
+            $warn | Should -BeNullOrEmpty
+        }
+
+        It "Should disable encryption" {
             $results.EncryptionEnabled | Should -Be $false
         }
     }

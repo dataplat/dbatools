@@ -1,55 +1,77 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'Group', 'SwitchServerName', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Copy-DbaRegServer" -Tag "UnitTests" {
+    Context "Parameter validation" {
+        BeforeAll {
+            $command = Get-Command Copy-DbaRegServer
+            $expected = $TestConfig.CommonParameters
+            $expected += @(
+                "Source",
+                "SourceSqlCredential",
+                "Destination", 
+                "DestinationSqlCredential",
+                "Group",
+                "SwitchServerName",
+                "Force",
+                "EnableException",
+                "Confirm",
+                "WhatIf"
+            )
+        }
+
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    Context "Setup" {
+Describe "Copy-DbaRegServer" -Tag "IntegrationTests" {
+    BeforeAll {
+        $server = Connect-DbaInstance $TestConfig.instance2
+        $regstore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($server.ConnectionContext.SqlConnectionObject)
+        $dbstore = $regstore.DatabaseEngineServerGroup
+
+        $servername = "dbatoolsci-server1"
+        $group = "dbatoolsci-group1"
+        $regservername = "dbatoolsci-server12"
+        $regserverdescription = "dbatoolsci-server123"
+
+        $newgroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($dbstore, $group)
+        $newgroup.Create()
+        $dbstore.Refresh()
+
+        $groupstore = $dbstore.ServerGroups[$group]
+        $newserver = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer($groupstore, $regservername)
+        $newserver.ServerName = $servername
+        $newserver.Description = $regserverdescription
+        $newserver.Create()
+    }
+
+    AfterAll {
+        $newgroup.Drop()
+        $server = Connect-DbaInstance $TestConfig.instance1
+        $regstore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($server.ConnectionContext.SqlConnectionObject)
+        $dbstore = $regstore.DatabaseEngineServerGroup
+        $groupstore = $dbstore.ServerGroups[$group]
+        $groupstore.Drop()
+    }
+
+    Context "When copying registered servers" {
         BeforeAll {
-            $server = Connect-DbaInstance $TestConfig.instance2
-            $regstore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($server.ConnectionContext.SqlConnectionObject)
-            $dbstore = $regstore.DatabaseEngineServerGroup
-
-            $servername = "dbatoolsci-server1"
-            $group = "dbatoolsci-group1"
-            $regservername = "dbatoolsci-server12"
-            $regserverdescription = "dbatoolsci-server123"
-
-            $newgroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($dbstore, $group)
-            $newgroup.Create()
-            $dbstore.Refresh()
-
-            $groupstore = $dbstore.ServerGroups[$group]
-            $newserver = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer($groupstore, $regservername)
-            $newserver.ServerName = $servername
-            $newserver.Description = $regserverdescription
-            $newserver.Create()
-        }
-        AfterAll {
-            $newgroup.Drop()
-            $server = Connect-DbaInstance $TestConfig.instance1
-            $regstore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($server.ConnectionContext.SqlConnectionObject)
-            $dbstore = $regstore.DatabaseEngineServerGroup
-            $groupstore = $dbstore.ServerGroups[$group]
-            $groupstore.Drop()
+            $results = Copy-DbaRegServer -Source $TestConfig.instance2 -Destination $TestConfig.instance1 -CMSGroup $group
         }
 
-        $results = Copy-DbaRegServer -Source $TestConfig.instance2 -Destination $TestConfig.instance1 -WarningAction SilentlyContinue -CMSGroup $group
-
-        It "should report success" {
-            $results.Status | Should Be "Successful", "Successful"
+        It "Should complete successfully" {
+            $results.Status | Should -Be @("Successful", "Successful")
         }
-
-        # Property Comparisons will come later when we have the commands
     }
 }

@@ -1,24 +1,46 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Path', 'Destination', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Copy-DbaXESessionTemplate" -Tag "UnitTests" {
+    Context "Parameter validation" {
+        BeforeAll {
+            $command = Get-Command Copy-DbaXESessionTemplate
+            $expected = $TestConfig.CommonParameters
+            $expected += @(
+                "Path",
+                "Destination",
+                "EnableException"
+            )
+        }
+
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    Context "Get Template Index" {
-        $null = Copy-DbaXESessionTemplate *>1
-        $source = ((Get-DbaXESessionTemplate -Path $Path | Where-Object Source -ne Microsoft).Path | Select-Object -First 1).Name
-        It "copies the files properly" {
-            Get-ChildItem "$home\Documents\SQL Server Management Studio\Templates\XEventTemplates" | Where-Object Name -eq $source | Should Not Be Null
+Describe "Copy-DbaXESessionTemplate" -Tag "IntegrationTests" {
+    Context "When copying XE session templates" {
+        BeforeAll {
+            $null = Copy-DbaXESessionTemplate 2>$null
+            $source = (Get-DbaXESessionTemplate -Path $Path | Where-Object Source -ne "Microsoft").Path |
+                Select-Object -First 1 |
+                Select-Object -ExpandProperty Name
+            $templatePath = "$home\Documents\SQL Server Management Studio\Templates\XEventTemplates"
+        }
+
+        It "Successfully copies the template files" {
+            Get-ChildItem $templatePath |
+                Where-Object Name -eq $source |
+                Should -Not -BeNullOrEmpty
         }
     }
 }

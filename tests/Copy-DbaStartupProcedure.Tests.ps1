@@ -1,24 +1,40 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'Procedure', 'ExcludeProcedure', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Copy-DbaStartupProcedure" -Tag "UnitTests" {
+    Context "Parameter validation" {
+        BeforeAll {
+            $command = Get-Command Copy-DbaStartupProcedure
+            $expected = $TestConfig.CommonParameters
+            $expected += @(
+                'Source',
+                'SourceSqlCredential',
+                'Destination',
+                'DestinationSqlCredential',
+                'Procedure',
+                'ExcludeProcedure',
+                'Force',
+                'EnableException',
+                'Confirm',
+                'WhatIf'
+            )
+        }
+
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe "Copy-DbaStartupProcedure" -Tag "IntegrationTests" {
     BeforeAll {
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $procName = "dbatoolsci_test_startup"
@@ -35,11 +51,15 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         Invoke-DbaQuery -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database "master" -Query "DROP PROCEDURE dbatoolsci_test_startup"
     }
 
-    Context "Command actually works" {
-        $results = Copy-DbaStartupProcedure -Source $TestConfig.instance2 -Destination $TestConfig.instance3
+    Context "When copying startup procedures" {
+        BeforeAll {
+            $results = Copy-DbaStartupProcedure -Source $TestConfig.instance2 -Destination $TestConfig.instance3
+        }
+
         It "Should include test procedure: $procName" {
             ($results | Where-Object Name -eq $procName).Name | Should -Be $procName
         }
+
         It "Should be successful" {
             ($results | Where-Object Name -eq $procName).Status | Should -Be 'Successful'
         }

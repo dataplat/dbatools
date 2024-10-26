@@ -1,18 +1,39 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'Force', 'Classic', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Copy-DbaSystemDbUserObject" -Tag "UnitTests" {
+    Context "Parameter validation" {
+        BeforeAll {
+            $command = Get-Command Copy-DbaSystemDbUserObject
+            $expected = $TestConfig.CommonParameters
+            $expected += @(
+                "Source",
+                "SourceSqlCredential", 
+                "Destination",
+                "DestinationSqlCredential",
+                "Force",
+                "Classic",
+                "EnableException",
+                "Confirm",
+                "WhatIf"
+            )
+        }
+
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+
+Describe "Copy-DbaSystemDbUserObject" -Tag "IntegrationTests" {
     BeforeAll {
         #Function Scripts roughly From https://docs.microsoft.com/en-us/sql/t-sql/statements/create-function-transact-sql
         #Rule Scripts roughly from https://docs.microsoft.com/en-us/sql/t-sql/statements/create-rule-transact-sql
@@ -59,26 +80,27 @@ AS
         $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $TableFunction
         $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $Rule
     }
+
     AfterAll {
         $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query "DROP FUNCTION dbo.dbatoolscs_ISOweek;"
         $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query "DROP FUNCTION dbo.dbatoolsci_TableFunction;"
         $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query "DROP RULE dbo.dbatoolsci_range_rule;"
     }
 
-    Context "Should Copy Objects to the same instance" {
-        $results = Copy-DbaSystemDbUserObject -Source $TestConfig.instance2 -Destination $TestConfig.instance2
-        It "Should execute with default parameters" {
-            $results | Should Not Be Null
+    Context "When copying objects to the same instance" {
+        It "Should execute successfully with default parameters" {
+            $results = Copy-DbaSystemDbUserObject -Source $TestConfig.instance2 -Destination $TestConfig.instance2
+            $results | Should -Not -BeNullOrEmpty
         }
 
-        $results = Copy-DbaSystemDbUserObject -Source $TestConfig.instance2 -Destination $TestConfig.instance2 -Classic
-        It "Should execute with -Classic parameter" {
-            $results | Should Not Be Null
+        It "Should execute successfully with -Classic parameter" {
+            $results = Copy-DbaSystemDbUserObject -Source $TestConfig.instance2 -Destination $TestConfig.instance2 -Classic
+            $results | Should -Not -BeNullOrEmpty
         }
 
-        $results = Copy-DbaSystemDbUserObject -Source $TestConfig.instance2 -Destination $TestConfig.instance2 -Force
-        It "Should execute with -Classic parameter" {
-            $results | Should Not Be Null
+        It "Should execute successfully with -Force parameter" {
+            $results = Copy-DbaSystemDbUserObject -Source $TestConfig.instance2 -Destination $TestConfig.instance2 -Force
+            $results | Should -Not -BeNullOrEmpty
         }
     }
 }

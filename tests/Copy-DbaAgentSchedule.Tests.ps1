@@ -1,24 +1,47 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'Force', 'EnableException', 'Schedule', 'Id', 'InputObject'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Copy-DbaAgentSchedule" -Tag "UnitTests" {
+    Context "Parameter validation" {
+        BeforeAll {
+            $command = Get-Command Copy-DbaAgentSchedule
+            $expected = $TestConfig.CommonParameters
+            $expected += @(
+                "Source",
+                "SourceSqlCredential",
+                "Destination", 
+                "DestinationSqlCredential",
+                "Schedule",
+                "Id",
+                "InputObject",
+                "Force",
+                "EnableException",
+                "Confirm",
+                "WhatIf"
+            )
+        }
+
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+Describe "Copy-DbaAgentSchedule" -Tag "IntegrationTests" {
     BeforeAll {
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $sql = "EXEC msdb.dbo.sp_add_schedule @schedule_name = N'dbatoolsci_DailySchedule' , @freq_type = 4, @freq_interval = 1, @active_start_time = 010000"
         $server.Query($sql)
     }
+
     AfterAll {
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $sql = "EXEC msdb.dbo.sp_delete_schedule @schedule_name = 'dbatoolsci_DailySchedule'"
@@ -27,20 +50,24 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance3
         $sql = "EXEC msdb.dbo.sp_delete_schedule @schedule_name = 'dbatoolsci_DailySchedule'"
         $server.Query($sql)
-
     }
 
-    Context "Copies Agent Schedule" {
-        $results = Copy-DbaAgentSchedule -Source $TestConfig.instance2 -Destination $TestConfig.instance3
-
-        It "returns one results" {
-            $results.Count | Should -BeGreaterThan 1
-            ($results | Where Status -eq "Successful") | Should -Not -Be $null
+    Context "When copying agent schedule between instances" {
+        BeforeAll {
+            $results = Copy-DbaAgentSchedule -Source $TestConfig.instance2 -Destination $TestConfig.instance3
         }
 
-        It "return one result of Start Time 1:00 AM" {
-            $results = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance3 -Schedule dbatoolsci_DailySchedule
-            $results.ActiveStartTimeOfDay -eq '01:00:00'
+        It "Returns more than one result" {
+            $results.Count | Should -BeGreaterThan 1
+        }
+
+        It "Contains at least one successful copy" {
+            $results | Where-Object Status -eq "Successful" | Should -Not -BeNullOrEmpty
+        }
+
+        It "Creates schedule with correct start time" {
+            $schedule = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance3 -Schedule dbatoolsci_DailySchedule
+            $schedule.ActiveStartTimeOfDay | Should -Be '01:00:00'
         }
     }
 }

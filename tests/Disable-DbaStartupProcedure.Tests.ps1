@@ -1,20 +1,37 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('WhatIf', 'Confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'StartupProcedure', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Disable-DbaStartupProcedure" -Tag "UnitTests" {
+    Context "Parameter validation" {
+        BeforeAll {
+            $command = Get-Command Disable-DbaStartupProcedure
+            $expected = $TestConfig.CommonParameters
+            $expected += @(
+                "SqlInstance",
+                "SqlCredential",
+                "StartupProcedure",
+                "InputObject",
+                "EnableException",
+                "Confirm",
+                "WhatIf"
+            )
         }
 
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
+        }
     }
 }
 
-Describe "$commandname Integration Test" -Tag "IntegrationTests" {
+Describe "Disable-DbaStartupProcedure" -Tag "IntegrationTests" {
     BeforeAll {
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $random = Get-Random
@@ -25,44 +42,87 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
         $null = $server.Query("CREATE PROCEDURE $startupProc AS Select 1", $dbname)
         $null = $server.Query("EXEC sp_procoption '$startupProc', 'startup', 'on'", $dbname)
     }
+
     AfterAll {
         $null = $server.Query("DROP PROCEDURE $startupProc", $dbname)
     }
 
-    Context "Validate returns correct output for disable" {
-        $result = Disable-DbaStartupProcedure -SqlInstance $TestConfig.instance2 -StartupProcedure $startupProc -Confirm:$false
+    Context "When disabling a startup procedure" {
+        BeforeAll {
+            $result = Disable-DbaStartupProcedure -SqlInstance $TestConfig.instance2 -StartupProcedure $startupProc -Confirm:$false
+        }
 
-        It "returns correct results" {
-            $result.Schema -eq "dbo" | Should Be $true
-            $result.Name -eq "$startupProcName" | Should Be $true
-            $result.Action -eq "Disable" | Should Be $true
-            $result.Status | Should Be $true
-            $result.Note -eq "Disable succeded" | Should Be $true
+        It "Should return correct schema" {
+            $result.Schema | Should -Be "dbo"
+        }
+
+        It "Should return correct procedure name" {
+            $result.Name | Should -Be $startupProcName
+        }
+
+        It "Should show Disable action" {
+            $result.Action | Should -Be "Disable"
+        }
+
+        It "Should report success status" {
+            $result.Status | Should -Be $true
+        }
+
+        It "Should return success note" {
+            $result.Note | Should -Be "Disable succeded"
         }
     }
 
-    Context "Validate returns correct output for already existing state" {
-        $result = Disable-DbaStartupProcedure -SqlInstance $TestConfig.instance2 -StartupProcedure $startupProc -Confirm:$false
+    Context "When disabling an already disabled procedure" {
+        BeforeAll {
+            $result = Disable-DbaStartupProcedure -SqlInstance $TestConfig.instance2 -StartupProcedure $startupProc -Confirm:$false
+        }
 
-        It "returns correct results" {
-            $result.Schema -eq "dbo" | Should Be $true
-            $result.Name -eq "$startupProcName" | Should Be $true
-            $result.Action -eq "Disable" | Should Be $true
-            $result.Status | Should Be $false
-            $result.Note -eq "Action Disable already performed" | Should Be $true
+        It "Should return correct schema" {
+            $result.Schema | Should -Be "dbo"
+        }
+
+        It "Should return correct procedure name" {
+            $result.Name | Should -Be $startupProcName
+        }
+
+        It "Should show Disable action" {
+            $result.Action | Should -Be "Disable"
+        }
+
+        It "Should report unchanged status" {
+            $result.Status | Should -Be $false
+        }
+
+        It "Should return already performed note" {
+            $result.Note | Should -Be "Action Disable already performed"
         }
     }
 
-    Context "Validate returns correct results for piped input" {
-        $null = Enable-DbaStartupProcedure -SqlInstance $TestConfig.instance2 -StartupProcedure $startupProc -Confirm:$false
-        $result = Get-DbaStartupProcedure -SqlInstance $TestConfig.instance2 | Disable-DbaStartupProcedure -Confirm:$false
+    Context "When using pipeline input" {
+        BeforeAll {
+            $null = Enable-DbaStartupProcedure -SqlInstance $TestConfig.instance2 -StartupProcedure $startupProc -Confirm:$false
+            $result = Get-DbaStartupProcedure -SqlInstance $TestConfig.instance2 | Disable-DbaStartupProcedure -Confirm:$false
+        }
 
-        It "returns correct results" {
-            $result.Schema -eq "dbo" | Should Be $true
-            $result.Name -eq "$startupProcName" | Should Be $true
-            $result.Action -eq "Disable" | Should Be $true
-            $result.Status | Should Be $true
-            $result.Note -eq "Disable succeded" | Should Be $true
+        It "Should return correct schema" {
+            $result.Schema | Should -Be "dbo"
+        }
+
+        It "Should return correct procedure name" {
+            $result.Name | Should -Be $startupProcName
+        }
+
+        It "Should show Disable action" {
+            $result.Action | Should -Be "Disable"
+        }
+
+        It "Should report success status" {
+            $result.Status | Should -Be $true
+        }
+
+        It "Should return success note" {
+            $result.Note | Should -Be "Disable succeded"
         }
     }
 }

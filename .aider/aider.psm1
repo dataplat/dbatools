@@ -27,7 +27,7 @@ function Update-PesterTest {
 
     .PARAMETER MaxFileSize
         The maximum size of test files to process, in bytes. Files larger than this will be skipped.
-        Defaults to 8KB.
+        Defaults to 7.5kb.
 
     .PARAMETER Model
         The AI model to use (e.g., azure/gpt-4o, gpt-4o-mini, claude-3-5-sonnet).
@@ -64,7 +64,7 @@ function Update-PesterTest {
         [int]$Skip,
         [string[]]$PromptFilePath = "/workspace/.aider/prompts/template.md",
         [string[]]$CacheFilePath = @("/workspace/.aider/prompts/conventions.md","/workspace/private/testing/Get-TestConfig.ps1"),
-        [int]$MaxFileSize = 8kb,
+        [int]$MaxFileSize = 7.5kb,
         [string]$Model
     )
     begin {
@@ -391,7 +391,7 @@ function Repair-SmallThing {
             }
 
             # if file is larger than MaxFileSize, skip
-            if ((Get-Item $filename).Length -gt 8kb) {
+            if ((Get-Item $filename).Length -gt 7.5kb) {
                 Write-Warning "Skipping $cmdName because it's too large"
                 continue
             }

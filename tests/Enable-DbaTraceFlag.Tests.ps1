@@ -1,39 +1,57 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'TraceFlag', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Enable-DbaTraceFlag" -Tag "UnitTests" {
+    Context "Parameter validation" {
+        BeforeAll {
+            $command = Get-Command Enable-DbaTraceFlag
+            $expected = $TestConfig.CommonParameters
+            $expected += @(
+                "SqlInstance",
+                "SqlCredential", 
+                "TraceFlag",
+                "EnableException"
+            )
+        }
+
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasParams = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasParams | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    Context "Verifying TraceFlag output" {
+Describe "Enable-DbaTraceFlag" -Tag "IntegrationTests" {
+    BeforeAll {
+        $instance = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $safeTraceFlag = 3226
+        $startingTraceFlags = Get-DbaTraceFlag -SqlInstance $TestConfig.instance2
+
+        if ($startingTraceFlags.TraceFlag -contains $safeTraceFlag) {
+            $instance.Query("DBCC TRACEOFF($safeTraceFlag,-1)")
+        }
+    }
+
+    AfterAll {
+        if ($startingTraceFlags.TraceFlag -notcontains $safeTraceFlag) {
+            $instance.Query("DBCC TRACEOFF($safeTraceFlag,-1)")
+        }
+    }
+
+    Context "When enabling a trace flag" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-            $startingtfs = Get-DbaTraceFlag -SqlInstance $TestConfig.instance2
-            $safetraceflag = 3226
-
-            if ($startingtfs.TraceFlag -contains $safetraceflag) {
-                $server.Query("DBCC TRACEOFF($safetraceflag,-1)")
-            }
-        }
-        AfterAll {
-            if ($startingtfs.TraceFlag -notcontains $safetraceflag) {
-                $server.Query("DBCC TRACEOFF($safetraceflag,-1)")
-            }
+            $results = Enable-DbaTraceFlag -SqlInstance $instance -TraceFlag $safeTraceFlag
         }
 
-        $results = Enable-DbaTraceFlag -SqlInstance $server -TraceFlag $safetraceflag
-
-        It "Return $safetraceflag as enabled" {
-            $results.TraceFlag -contains $safetraceflag | Should Be $true
+        It "Should enable the specified trace flag" {
+            $results.TraceFlag -contains $safeTraceFlag | Should -BeTrue
         }
     }
 }
