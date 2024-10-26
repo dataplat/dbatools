@@ -129,13 +129,6 @@ Describe "Get-DbaDatabase" -Tag "UnitTests" {
    Context "Parameter validation" {
        BeforeAll {
            $command = Get-Command Get-DbaDatabase
-       }
-
-       It "Has parameter: <_>" -ForEach $expected {
-           $command | Should -HaveParameter $PSItem
-       }
-
-       It "Should have exactly the number of expected parameters" {
            $script:expected = $TestConfig.CommonParameters
            $script:expected += @(
                "SqlInstance",
@@ -144,6 +137,13 @@ Describe "Get-DbaDatabase" -Tag "UnitTests" {
                "Confirm",
                "WhatIf"
            )
+       }
+
+       It "Has parameter: <_>" -ForEach $expected {
+           $command | Should -HaveParameter $PSItem
+       }
+
+       It "Should have exactly the number of expected parameters" {
            $hasparms = $command.Parameters.Values.Name
            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
        }
