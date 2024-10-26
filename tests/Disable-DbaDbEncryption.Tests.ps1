@@ -11,7 +11,7 @@ Describe "Disable-DbaDbEncryption" -Tag "UnitTests" {
             $expected = $TestConfig.CommonParameters
             $expected += @(
                 "SqlInstance",
-                "SqlCredential", 
+                "SqlCredential",
                 "Database",
                 "InputObject",
                 "NoEncryptionKeyDrop",
@@ -34,7 +34,7 @@ Describe "Disable-DbaDbEncryption" -Tag "IntegrationTests" {
     BeforeAll {
         $PSDefaultParameterValues["*:Confirm"] = $false
         $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
-        
+
         # Setup master key if needed
         $masterkey = Get-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database master
         if (-not $masterkey) {
@@ -43,8 +43,8 @@ Describe "Disable-DbaDbEncryption" -Tag "IntegrationTests" {
         }
 
         # Setup master certificate if needed
-        $mastercert = Get-DbaDbCertificate -SqlInstance $TestConfig.instance2 -Database master | 
-            Where-Object Name -notmatch "##" | 
+        $mastercert = Get-DbaDbCertificate -SqlInstance $TestConfig.instance2 -Database master |
+            Where-Object Name -notmatch "##" |
             Select-Object -First 1
         if (-not $mastercert) {
             $global:delmastercert = $true
@@ -90,7 +90,7 @@ Describe "Disable-DbaDbEncryption" -Tag "IntegrationTests" {
         BeforeAll {
             $null = $testDb | Enable-DbaDbEncryption -EncryptorName $mastercert.Name -Force
             Start-Sleep -Seconds 10 # Allow encryption to complete
-            
+
             $splatDisable = @{
                 SqlInstance = $TestConfig.instance2
                 Database = $testDb.Name

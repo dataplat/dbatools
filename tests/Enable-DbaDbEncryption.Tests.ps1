@@ -11,7 +11,7 @@ Describe "Enable-DbaDbEncryption" -Tag "UnitTests" {
             $expected = $TestConfig.CommonParameters
             $expected += @(
                 "SqlInstance",
-                "SqlCredential", 
+                "SqlCredential",
                 "Database",
                 "EncryptorName",
                 "InputObject",
@@ -37,17 +37,17 @@ Describe "Enable-DbaDbEncryption" -Tag "IntegrationTests" {
     BeforeAll {
         $PSDefaultParameterValues["*:Confirm"] = $false
         $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
-        
+
         $masterkey = Get-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database master
         if (-not $masterkey) {
             $global:delmasterkey = $true
             $masterkey = New-DbaServiceMasterKey -SqlInstance $TestConfig.instance2 -SecurePassword $passwd
         }
-        
-        $mastercert = Get-DbaDbCertificate -SqlInstance $TestConfig.instance2 -Database master | 
-            Where-Object Name -notmatch "##" | 
+
+        $mastercert = Get-DbaDbCertificate -SqlInstance $TestConfig.instance2 -Database master |
+            Where-Object Name -notmatch "##" |
             Select-Object -First 1
-            
+
         if (-not $mastercert) {
             $global:delmastercert = $true
             $mastercert = New-DbaDbCertificate -SqlInstance $TestConfig.instance2

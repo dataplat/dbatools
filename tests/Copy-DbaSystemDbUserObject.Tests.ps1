@@ -11,7 +11,7 @@ Describe "Copy-DbaSystemDbUserObject" -Tag "UnitTests" {
             $expected = $TestConfig.CommonParameters
             $expected += @(
                 "Source",
-                "SourceSqlCredential", 
+                "SourceSqlCredential",
                 "Destination",
                 "DestinationSqlCredential",
                 "Force",

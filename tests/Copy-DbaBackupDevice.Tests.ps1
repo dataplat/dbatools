@@ -13,7 +13,7 @@ Describe "Copy-DbaBackupDevice" -Tag "UnitTests" {
             $expected = $TestConfig.CommonParameters
             $expected += @(
                 "Source",
-                "SourceSqlCredential", 
+                "SourceSqlCredential",
                 "Destination",
                 "DestinationSqlCredential",
                 "BackupDevice",
@@ -60,7 +60,7 @@ if (-not $env:appveyor) {
         Context "When copying backup device between instances" {
             It "Should copy the backup device successfully or warn about local copy" {
                 $results = Copy-DbaBackupDevice -Source $TestConfig.instance1 -Destination $TestConfig.instance2 -WarningVariable warning -WarningAction SilentlyContinue 3> $null
-                
+
                 if ($warning) {
                     $warning | Should -Match "backup device to destination"
                 } else {

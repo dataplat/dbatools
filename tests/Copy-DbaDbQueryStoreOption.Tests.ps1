@@ -13,7 +13,7 @@ Describe "Copy-DbaDbQueryStoreOption" -Tag "UnitTests" {
             $expected = $TestConfig.CommonParameters
             $expected += @(
                 "Source",
-                "SourceSqlCredential", 
+                "SourceSqlCredential",
                 "SourceDatabase",
                 "Destination",
                 "DestinationSqlCredential",

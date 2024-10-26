@@ -11,7 +11,7 @@ Describe "Dismount-DbaDatabase" -Tag "UnitTests" {
             $expected = $TestConfig.CommonParameters
             $expected += @(
                 "SqlInstance",
-                "SqlCredential", 
+                "SqlCredential",
                 "Database",
                 "InputObject",
                 "UpdateStatistics",
@@ -36,7 +36,7 @@ Describe "Dismount-DbaDatabase" -Tag "UnitTests" {
 Describe "Dismount-DbaDatabase" -Tag "IntegrationTests" {
     BeforeAll {
         Get-DbaProcess -SqlInstance $TestConfig.instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
-        
+
         $dbName = "dbatoolsci_detachattach"
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName | Remove-DbaDatabase -Confirm:$false
         $database = New-DbaDatabase -SqlInstance $TestConfig.instance3 -Name $dbName
@@ -75,21 +75,21 @@ Describe "Dismount-DbaDatabase" -Tag "IntegrationTests" {
     Context "When detaching databases with snapshots" {
         BeforeAll {
             Get-DbaProcess -SqlInstance $TestConfig.instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
-            
+
             $server = Connect-DbaInstance -SqlInstance $TestConfig.instance3
             $dbDetached = "dbatoolsci_dbsetstate_detached"
             $dbWithSnapshot = "dbatoolsci_dbsetstate_detached_withSnap"
-            
+
             $server.Query("CREATE DATABASE $dbDetached")
             $server.Query("CREATE DATABASE $dbWithSnapshot")
-            
+
             $null = New-DbaDbSnapshot -SqlInstance $TestConfig.instance3 -Database $dbWithSnapshot
-            
+
             $splatFileStructure = New-Object System.Collections.Specialized.StringCollection
             foreach ($file in (Get-DbaDbFile -SqlInstance $TestConfig.instance3 -Database $dbDetached).PhysicalName) {
                 $null = $splatFileStructure.Add($file)
             }
-            
+
             Stop-DbaProcess -SqlInstance $TestConfig.instance3 -Database $dbDetached
         }
 
@@ -103,7 +103,7 @@ Describe "Dismount-DbaDatabase" -Tag "IntegrationTests" {
             $result = Dismount-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbWithSnapshot -Force -WarningAction SilentlyContinue -WarningVariable warn 3> $null
             $result | Should -BeNullOrEmpty
             $warn | Should -Match "snapshot"
-            
+
             $database = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbWithSnapshot
             $database | Should -Not -BeNullOrEmpty
         }
@@ -111,7 +111,7 @@ Describe "Dismount-DbaDatabase" -Tag "IntegrationTests" {
         It "Should detach database without snapshots" {
             $null = Stop-DbaProcess -SqlInstance $TestConfig.instance3 -Database $dbDetached
             $null = Dismount-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbDetached
-            
+
             $database = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbDetached
             $database | Should -BeNullOrEmpty
         }

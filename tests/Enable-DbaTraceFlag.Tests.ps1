@@ -11,7 +11,7 @@ Describe "Enable-DbaTraceFlag" -Tag "UnitTests" {
             $expected = $TestConfig.CommonParameters
             $expected += @(
                 "SqlInstance",
-                "SqlCredential", 
+                "SqlCredential",
                 "TraceFlag",
                 "EnableException"
             )
