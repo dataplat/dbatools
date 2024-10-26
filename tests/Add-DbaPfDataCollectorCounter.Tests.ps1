@@ -35,22 +35,23 @@ Describe "Add-DbaPfDataCollectorCounter" -Tag "UnitTests" {
 
 Describe "Add-DbaPfDataCollectorCounter" -Tag "IntegrationTests" {
     BeforeAll {
-        $null = Get-DbaPfDataCollectorSetTemplate -Template 'Long Running Queries' | Import-DbaPfDataCollectorSetTemplate | Get-DbaPfDataCollector | Get-DbaPfDataCollectorCounter -Counter '\LogicalDisk(*)\Avg. Disk Queue Length' | Remove-DbaPfDataCollectorCounter -Confirm:$false
+        $PSDefaultParameterValues['*:Confirm'] = $false
+    }
+
+    BeforeEach {
+        $null = Get-DbaPfDataCollectorSetTemplate -Template 'Long Running Queries' |
+            Import-DbaPfDataCollectorSetTemplate |
+            Get-DbaPfDataCollector |
+            Get-DbaPfDataCollectorCounter -Counter '\LogicalDisk(*)\Avg. Disk Queue Length' |
+            Remove-DbaPfDataCollectorCounter
     }
 
     AfterAll {
-        $null = Get-DbaPfDataCollectorSet -CollectorSet 'Long Running Queries' | Remove-DbaPfDataCollectorSet -Confirm:$false
+        $null = Get-DbaPfDataCollectorSet -CollectorSet 'Long Running Queries' |
+            Remove-DbaPfDataCollectorSet
     }
 
     Context "When adding a counter to a data collector" {
-        BeforeAll {
-            $splatAddCounter = @{
-                CollectorSet = 'Long Running Queries'
-                Counter = '\LogicalDisk(*)\Avg. Disk Queue Length'
-            }
-            $results = Get-DbaPfDataCollectorSet @splatAddCounter | Get-DbaPfDataCollector | Add-DbaPfDataCollectorCounter @splatAddCounter
-        }
-
         It "Returns the correct DataCollectorSet" {
             $results.DataCollectorSet | Should -Be 'Long Running Queries'
         }
