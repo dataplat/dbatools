@@ -73,7 +73,7 @@ Describe "Copy-DbaAgentProxy" -Tag "IntegrationTests" {
 
         It "Should create the proxy on the destination" {
             $proxyResults = Get-DbaAgentProxy -SqlInstance $TestConfig.instance3 -Proxy dbatoolsci_agentproxy
-            $proxyResults.Status.Count | Should -Be 1
+            $proxyResults.Name.Count | Should -Be 1
         }
     }
 }
