@@ -8,8 +8,8 @@ Describe "Add-DbaAgReplica" -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
             $command = Get-Command Add-DbaAgReplica
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
+            $script:expected = $TestConfig.CommonParameters
+            $script:expected += @(
                 "SqlInstance",
                 "SqlCredential",
                 "Name",

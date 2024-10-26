@@ -8,8 +8,8 @@ Describe "Add-DbaRegServerGroup" -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
             $command = Get-Command Add-DbaRegServerGroup
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
+            $script:expected = $TestConfig.CommonParameters
+            $script:expected += @(
                 "SqlInstance",
                 "SqlCredential",
                 "Name",

@@ -8,8 +8,8 @@ Describe "Backup-DbaDbMasterKey" -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
             $command = Get-Command Backup-DbaDbMasterKey
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
+            $script:expected = $TestConfig.CommonParameters
+            $script:expected += @(
                 "SqlInstance",
                 "SqlCredential",
                 "Credential",

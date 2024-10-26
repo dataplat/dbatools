@@ -8,8 +8,8 @@ Describe "Clear-DbaPlanCache" -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
             $command = Get-Command Clear-DbaPlanCache
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
+            $script:expected = $TestConfig.CommonParameters
+            $script:expected += @(
                 "SqlInstance",
                 "SqlCredential",
                 "Threshold",

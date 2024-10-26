@@ -8,8 +8,8 @@ Describe "Convert-DbaMaskingValue" -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
             $command = Get-Command Convert-DbaMaskingValue
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
+            $script:expected = $TestConfig.CommonParameters
+            $script:expected += @(
                 "Value",
                 "DataType",
                 "Nullable",

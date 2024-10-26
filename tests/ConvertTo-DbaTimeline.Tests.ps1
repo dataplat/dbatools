@@ -8,8 +8,8 @@ Describe "ConvertTo-DbaTimeline" -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
             $command = Get-Command ConvertTo-DbaTimeline
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
+            $script:expected = $TestConfig.CommonParameters
+            $script:expected += @(
                 "InputObject",
                 "ExcludeRowLabel",
                 "EnableException"

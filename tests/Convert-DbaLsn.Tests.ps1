@@ -8,8 +8,8 @@ Describe "Convert-DbaLSN" -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
             $command = Get-Command Convert-DbaLSN
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
+            $script:expected = $TestConfig.CommonParameters
+            $script:expected += @(
                 "LSN",
                 "EnableException"
             )

@@ -15,9 +15,9 @@ Describe "Copy-DbaAgentJobCategory" -Tag "IntegrationTests" {
     Context "Parameter validation" {
         BeforeAll {
             $command = Get-Command Copy-DbaAgentJobCategory
-            
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
+
+            $script:expected = $TestConfig.CommonParameters
+            $script:expected += @(
                 "Source",
                 "SourceSqlCredential",
                 "Destination",

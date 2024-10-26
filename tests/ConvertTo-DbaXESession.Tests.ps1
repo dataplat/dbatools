@@ -8,8 +8,8 @@ Describe "ConvertTo-DbaXESession" -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
             $command = Get-Command ConvertTo-DbaXESession
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
+            $script:expected = $TestConfig.CommonParameters
+            $script:expected += @(
                 "InputObject",
                 "Name",
                 "OutputScriptOnly",

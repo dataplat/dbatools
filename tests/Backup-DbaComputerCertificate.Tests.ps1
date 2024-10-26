@@ -8,8 +8,8 @@ Describe "Backup-DbaComputerCertificate" -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
             $command = Get-Command Backup-DbaComputerCertificate
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
+            $script:expected = $TestConfig.CommonParameters
+            $script:expected += @(
                 "SecurePassword",
                 "InputObject",
                 "Path",

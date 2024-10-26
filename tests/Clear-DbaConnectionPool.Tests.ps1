@@ -8,8 +8,8 @@ Describe "Clear-DbaConnectionPool" -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
             $command = Get-Command Clear-DbaConnectionPool
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
+            $script:expected = $TestConfig.CommonParameters
+            $script:expected += @(
                 "ComputerName",
                 "Credential",
                 "EnableException"

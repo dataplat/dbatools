@@ -8,8 +8,8 @@ Describe "Copy-DbaAgentOperator" -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
             $command = Get-Command Copy-DbaAgentOperator
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
+            $script:expected = $TestConfig.CommonParameters
+            $script:expected += @(
                 "Source",
                 "SourceSqlCredential",
                 "Destination",
