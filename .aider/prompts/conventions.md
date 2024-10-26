@@ -3,10 +3,12 @@
 ## Core Requirements
 ```powershell
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
-param($ModuleName = "dbatools")
-$global:TestConfig = Get-TestConfig
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 ```
-These three lines must start every test file.
+These lines must start every test file.
 
 ## Test Structure
 

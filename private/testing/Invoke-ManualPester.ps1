@@ -130,7 +130,14 @@ function Invoke-ManualPester {
 
     # Remove-Module dbatools -ErrorAction Ignore
     # Import-Module "$ModuleBase\dbatools.psd1" -DisableNameChecking -Force
-    Import-Module "$ModuleBase\dbatools.psm1" -DisableNameChecking -Force
+    $splatImport = @{
+        Name                = "$ModuleBase\dbatools.psm1"
+        DisableNameChecking = $true
+        Force               = $true
+        WarningAction       = 'Ignore'
+        ErrorAction         = 'Ignore'
+    }
+    Import-Module @splatImport
 
     $ScriptAnalyzerRulesExclude = @('PSUseOutputTypeCorrectly', 'PSAvoidUsingPlainTextForPassword', 'PSUseBOMForUnicodeEncodedFile')
 

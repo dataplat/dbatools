@@ -251,7 +251,9 @@ function Repair-Error {
 
         Invoke-Aider @aiderParams
     }
-}function Repair-SmallThing {
+}
+
+function Repair-SmallThing {
     [cmdletbinding()]
     param (
         [Parameter(Position = 0, ValueFromPipeline, ValueFromPipelineByPropertyName)]
@@ -284,9 +286,11 @@ function Repair-Error {
         $allObjects = @()
 
         $prompts = @{
-            ReorgParamTest = "Move the `$expected` parameter list AND the `$TestConfig.CommonParameters part into the 'Should have exactly the number of expected parameters' It block, keeping it between the It block declaration and the `$hasparms` assignment. Do not move the initial `$command` assignment.
+            ReorgParamTest = "Move the `$expected` parameter list AND the `$TestConfig.CommonParameters` part into the BeforeAll block, placing them after the `$command` assignment. Keep them within the BeforeAll block. Do not move or modify the initial `$command` assignment.
 
-            If you can't find the `$expected` parameter list, do not make any changes."
+            If you can't find the `$expected` parameter list, do not make any changes.
+
+            If it's already where it should be, do not make any changes."
         }
         Write-Verbose "Available prompt types: $($prompts.Keys -join ', ')"
 
