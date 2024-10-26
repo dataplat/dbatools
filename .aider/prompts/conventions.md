@@ -180,3 +180,4 @@ Describe "Get-DbaDatabase" -Tag "IntegrationTests" {
 - DO NOT remove comments like "#TestConfig.instance3" or "#$TestConfig.instance2 for appveyor"
 - DO NOT use $_ DO use $PSItem instead
 - Parameter validation is ALWAYS tagged as a Unit Test
+- DO NOT change $results.Status.Count to $results.Count -- that secondary column is required for accurate counting
