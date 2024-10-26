@@ -31,7 +31,7 @@ Describe "Copy-DbaXESessionTemplate" -Tag "IntegrationTests" {
     Context "When copying XE session templates" {
         It "Successfully copies the template files" {
             $null = Copy-DbaXESessionTemplate *>1
-            $source = ((Get-DbaXESessionTemplate -Path $Path | Where-Object Source -ne Microsoft).Path | Select-Object -First 1).Name
+            $source = ((Get-DbaXESessionTemplate | Where-Object Source -ne Microsoft).Path | Select-Object -First 1).Name
             Get-ChildItem "$home\Documents\SQL Server Management Studio\Templates\XEventTemplates" | Where-Object Name -eq $source | Should -Not -BeNullOrEmpty
         }
     }
