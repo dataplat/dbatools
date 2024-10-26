@@ -29,6 +29,9 @@ function Update-PesterTest {
         The maximum size of test files to process, in bytes. Files larger than this will be skipped.
         Defaults to 8KB.
 
+    .PARAMETER Model
+        The AI model to use (e.g., azure/gpt-4o, gpt-4o-mini, claude-3-5-sonnet).
+
     .NOTES
         Tags: Testing, Pester
         Author: dbatools team
@@ -61,7 +64,8 @@ function Update-PesterTest {
         [int]$Skip,
         [string[]]$PromptFilePath = "/workspace/.aider/prompts/template.md",
         [string[]]$CacheFilePath = @("/workspace/.aider/prompts/conventions.md","/workspace/private/testing/Get-TestConfig.ps1"),
-        [int]$MaxFileSize = 8kb
+        [int]$MaxFileSize = 8kb,
+        [string]$Model
     )
     begin {
         # Full prompt path
@@ -158,9 +162,10 @@ function Update-PesterTest {
                     Message      = $cmdPrompt
                     File         = $filename
                     YesAlways    = $true
-                    Stream       = $false
+                    NoStream     = $true
                     CachePrompts = $true
                     ReadFile     = $CacheFilePath
+                    Model        = $Model
                 }
 
                 Write-Verbose "Invoking Aider to update test file"
@@ -244,7 +249,7 @@ function Repair-Error {
         $aiderParams = @{
             Message      = $cmdPrompt
             File         = $filename
-            Stream       = $false
+            NoStream     = $true
             CachePrompts = $true
             ReadFile     = $CacheFilePath
         }
@@ -715,7 +720,7 @@ function Repair-Error {
         $aiderParams = @{
             Message      = $cmdPrompt
             File         = $filename
-            Stream       = $false
+            NoStream     = $true
             CachePrompts = $true
             ReadFile     = $CacheFilePath
         }
