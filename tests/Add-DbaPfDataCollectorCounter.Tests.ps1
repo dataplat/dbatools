@@ -44,6 +44,9 @@ Describe "Add-DbaPfDataCollectorCounter" -Tag "IntegrationTests" {
             Get-DbaPfDataCollector |
             Get-DbaPfDataCollectorCounter -Counter '\LogicalDisk(*)\Avg. Disk Queue Length' |
             Remove-DbaPfDataCollectorCounter
+
+        $results = Get-DbaPfDataCollectorSet -CollectorSet 'Long Running Queries' | Get-DbaPfDataCollector |
+            Add-DbaPfDataCollectorCounter -Counter '\LogicalDisk(*)\Avg. Disk Queue Length'
     }
 
     AfterAll {
