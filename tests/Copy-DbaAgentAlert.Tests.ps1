@@ -87,8 +87,9 @@ Describe "Copy-DbaAgentAlert" -Tag "IntegrationTests" {
                 Alert       = $alert1
             }
             $results = Copy-DbaAgentAlert @splat
-            $results.Name | Should -Be @('dbatoolsci test alert', 'dbatoolsci test alert')
-            $results.Status | Should -Be @('Successful', 'Successful')
+            $results.Name | Should -Be 'dbatoolsci test alert', 'dbatoolsci test alert'
+            $results.Type | Should -Be 'Agent Alert', 'Agent Alert Notification'
+            $results.Status | Should -Be 'Successful', 'Successful'
         }
 
         It "Skips alerts where destination is missing the operator" {
@@ -99,7 +100,8 @@ Describe "Copy-DbaAgentAlert" -Tag "IntegrationTests" {
                 WarningAction = 'SilentlyContinue'
             }
             $results = Copy-DbaAgentAlert @splatDupe
-            @($results.Status) | Should -Be @("Skipped", "Skipped")
+            $results.Status | Should -Be Skipped
+            $results.Type | Should -Be 'Agent Alert'
         }
 
         It "Doesn't overwrite existing alerts" {
