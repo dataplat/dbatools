@@ -50,10 +50,3 @@ $config['bigDatabaseBackup'] = "C:\path\to\yourdatabase.bak"     # Replace with 
 
 # URL to download the large database backup file
 $config['bigDatabaseBackupSourceUrl'] = "https://yoururl.com/yourdatabase.bak"  # Replace with the actual URL
-
-# Handle appveyor environment if needed
-if ($env:appveyor) {
-    $config['PSDefaultParameterValues'] = @{
-        '*:WarningAction' = 'SilentlyContinue'
-    }
-}

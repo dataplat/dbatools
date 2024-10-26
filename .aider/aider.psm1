@@ -425,6 +425,10 @@ function Repair-SmallThing {
                     $aiderParams[$PSItem.Key] = $PSItem.Value
                 }
 
+            if (-not $PSBoundParameters.Model) {
+                $aiderParams.Model = $Model
+            }
+
             Write-Verbose "Invoking aider for $cmdName"
             try {
                 Invoke-Aider @aiderParams

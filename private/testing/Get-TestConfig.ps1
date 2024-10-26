@@ -56,7 +56,7 @@ function Get-TestConfig {
     }
 
     if ($env:appveyor) {
-        $config['PSDefaultParameterValues'] = @{
+        $config['Defaults'] = [System.Management.Automation.DefaultParameterDictionary]@{
             '*:WarningAction' = 'SilentlyContinue'
         }
     }
