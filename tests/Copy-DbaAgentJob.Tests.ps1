@@ -19,13 +19,6 @@ Describe "Copy-DbaAgentJob" -Tag "IntegrationTests" {
     Context "Parameter validation" {
         BeforeAll {
             $command = Get-Command Copy-DbaAgentJob
-        }
-
-        It "Has parameter: <_>" -ForEach $expected {
-            $command | Should -HaveParameter $PSItem
-        }
-
-        It "Should have exactly the number of expected parameters" {
             $expected = $TestConfig.CommonParameters
             $expected += @(
                 "Source",
@@ -42,6 +35,13 @@ Describe "Copy-DbaAgentJob" -Tag "IntegrationTests" {
                 "Confirm",
                 "WhatIf"
             )
+        }
+
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters" {
             $hasparms = $command.Parameters.Values.Name
             Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }

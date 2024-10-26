@@ -8,13 +8,6 @@ Describe "Convert-DbaMaskingValue" -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
             $command = Get-Command Convert-DbaMaskingValue
-        }
-
-        It "Has parameter: <_>" -ForEach $expected {
-            $command | Should -HaveParameter $PSItem
-        }
-
-        It "Should have exactly the number of expected parameters" {
             $expected = $TestConfig.CommonParameters
             $expected += @(
                 "Value",
@@ -22,6 +15,13 @@ Describe "Convert-DbaMaskingValue" -Tag "UnitTests" {
                 "Nullable",
                 "EnableException"
             )
+        }
+
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters" {
             $hasparms = $command.Parameters.Values.Name
             Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }

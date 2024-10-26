@@ -385,6 +385,12 @@ function Repair-SmallThing {
                 continue
             }
 
+            # if file is larger than MaxFileSize, skip
+            if ((Get-Item $filename).Length -gt 8kb) {
+                Write-Warning "Skipping $cmdName because it's too large"
+                continue
+            }
+
             if ($Type) {
                 Write-Verbose "Using predefined prompt for type: $Type"
                 $cmdPrompt = $prompts[$Type]
