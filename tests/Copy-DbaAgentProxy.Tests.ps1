@@ -12,7 +12,7 @@ Describe "Copy-DbaAgentProxy" -Tag "UnitTests" {
             $expected += @(
                 "Source",
                 "SourceSqlCredential",
-                "Destination", 
+                "Destination",
                 "DestinationSqlCredential",
                 "ProxyAccount",
                 "ExcludeProxyAccount",
@@ -67,13 +67,13 @@ Describe "Copy-DbaAgentProxy" -Tag "IntegrationTests" {
         }
 
         It "Should return one successful result" {
-            $results.Count | Should -Be 1
+            $results.Status.Count | Should -Be 1
             $results.Status | Should -Be "Successful"
         }
 
         It "Should create the proxy on the destination" {
             $proxyResults = Get-DbaAgentProxy -SqlInstance $TestConfig.instance3 -Proxy dbatoolsci_agentproxy
-            $proxyResults.Count | Should -Be 1
+            $proxyResults.Status.Count | Should -Be 1
         }
     }
 }

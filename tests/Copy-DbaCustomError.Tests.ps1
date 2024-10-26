@@ -12,7 +12,7 @@ Describe "Copy-DbaCustomError" -Tag "UnitTests" {
             $expected += @(
                 "Source",
                 "SourceSqlCredential",
-                "Destination", 
+                "Destination",
                 "DestinationSqlCredential",
                 "CustomError",
                 "ExcludeCustomError",
@@ -40,7 +40,6 @@ Describe "Copy-DbaCustomError" -Tag "IntegrationTests" {
         $server.Query("EXEC sp_addmessage @msgnum = 60000, @severity = 16,@msgtext = N'The item named %s already exists in %s.',@lang = 'us_english';")
         $server.Query("EXEC sp_addmessage @msgnum = 60000, @severity = 16, @msgtext = N'L''élément nommé %1! existe déjà dans %2!',@lang = 'French';")
     }
-
     AfterAll {
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2 -Database master
         $server.Query("EXEC sp_dropmessage @msgnum = 60000, @lang = 'all';")
@@ -51,17 +50,17 @@ Describe "Copy-DbaCustomError" -Tag "IntegrationTests" {
     Context "When copying custom errors" {
         It "Copies the sample custom error" {
             $results = Copy-DbaCustomError -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -CustomError 60000
-            $results.Name | Should -Be @("60000:'us_english'", "60000:'Français'")
-            $results.Status | Should -Be @('Successful', 'Successful')
+            $results.Name | Should -Be "60000:'us_english'", "60000:'Français'"
+            $results.Status | Should -Be 'Successful', 'Successful'
         }
 
         It "Doesn't overwrite existing custom errors" {
             $results = Copy-DbaCustomError -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -CustomError 60000
-            $results.Name | Should -Be @("60000:'us_english'", "60000:'Français'")
-            $results.Status | Should -Be @('Skipped', 'Skipped')
+            $results.Name | Should -Be "60000:'us_english'", "60000:'Français'"
+            $results.Status | Should -Be 'Skipped', 'Skipped'
         }
 
-        It "Verifies the newly copied custom error exists" {
+       It "Verifies the newly copied custom error exists" {
             $results = Get-DbaCustomError -SqlInstance $TestConfig.instance2
             $results.ID | Should -Contain 60000
         }

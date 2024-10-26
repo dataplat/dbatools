@@ -8,7 +8,7 @@ Describe "Enable-DbaStartupProcedure" -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
             $command = Get-Command Enable-DbaStartupProcedure
-            $expected = $TestConfig.CommonParameters
+            $expected = ($TestConfig = Get-TestConfig).CommonParameters
             $expected += @(
                 "SqlInstance",
                 "SqlCredential",
