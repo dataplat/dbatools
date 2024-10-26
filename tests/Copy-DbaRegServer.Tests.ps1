@@ -12,7 +12,7 @@ Describe "Copy-DbaRegServer" -Tag "UnitTests" {
             $expected += @(
                 "Source",
                 "SourceSqlCredential",
-                "Destination", 
+                "Destination",
                 "DestinationSqlCredential",
                 "Group",
                 "SwitchServerName",

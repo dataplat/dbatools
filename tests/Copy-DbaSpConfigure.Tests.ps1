@@ -12,7 +12,7 @@ Describe "Copy-DbaSpConfigure" -Tag "UnitTests" {
             $expected += @(
                 "Source",
                 "SourceSqlCredential",
-                "Destination", 
+                "Destination",
                 "DestinationSqlCredential",
                 "ConfigName",
                 "ExcludeConfigName",

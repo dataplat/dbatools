@@ -12,7 +12,7 @@ Describe "Copy-DbaAgentSchedule" -Tag "UnitTests" {
             $expected += @(
                 "Source",
                 "SourceSqlCredential",
-                "Destination", 
+                "Destination",
                 "DestinationSqlCredential",
                 "Schedule",
                 "Id",
