@@ -8,8 +8,8 @@ Describe "Add-DbaRegServerGroup" -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
             $command = Get-Command Add-DbaRegServerGroup
-            $script:expected = $TestConfig.CommonParameters
-            $script:expected += @(
+            $expected = $TestConfig.CommonParameters
+            $expected += @(
                 "SqlInstance",
                 "SqlCredential",
                 "Name",
@@ -26,7 +26,7 @@ Describe "Add-DbaRegServerGroup" -Tag "UnitTests" {
             $command | Should -HaveParameter $PSItem
         }
 
-        It "Should have exactly the number of expected parameters" {
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
             $hasparms = $command.Parameters.Values.Name
             Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }

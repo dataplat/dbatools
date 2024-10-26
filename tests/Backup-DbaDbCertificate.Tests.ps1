@@ -8,8 +8,8 @@ Describe "Backup-DbaDbCertificate" -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
             $command = Get-Command Backup-DbaDbCertificate
-            $script:expected = $TestConfig.CommonParameters
-            $script:expected += @(
+            $expected = $TestConfig.CommonParameters
+            $expected += @(
                 "SqlInstance",
                 "SqlCredential",
                 "Certificate",
@@ -30,7 +30,7 @@ Describe "Backup-DbaDbCertificate" -Tag "UnitTests" {
             $command | Should -HaveParameter $PSItem
         }
 
-        It "Should have exactly the number of expected parameters" {
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
             $hasparms = $command.Parameters.Values.Name
             Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
