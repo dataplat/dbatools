@@ -65,7 +65,7 @@ Describe "Copy-DbaAgentOperator" -Tag "IntegrationTests" {
                 Operator    = 'dbatoolsci_operator', 'dbatoolsci_operator2'
             }
             $results = Copy-DbaAgentOperator @splat
-            $results.Count | Should -Be 2
+            $results.Status.Count | Should -Be 2
             $results.Status | Should -Be "Successful", "Successful"
         }
 
