@@ -181,3 +181,4 @@ Describe "Get-DbaDatabase" -Tag "IntegrationTests" {
 - DO NOT use $_ DO use $PSItem instead
 - Parameter validation is ALWAYS tagged as a Unit Test
 - DO NOT change $results.Status.Count to $results.Count -- that secondary column is required for accurate counting
+- NO trailing spaces
