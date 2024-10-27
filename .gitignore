@@ -21,6 +21,9 @@ msbuild.binlog
 # Local constant file
 tests/constants.local.ps1
 
+# Local coverage file produced by pester5
+coverage.xml
+
 # For those that want to use Docker images for testing
 # Integration with Docker requires the docker compose file to exist within the project folder
 docker-compose.yml

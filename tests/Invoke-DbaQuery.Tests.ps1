@@ -2,7 +2,6 @@
 
 BeforeAll {
     $CommandName = (Get-Item $PSCommandPath).Name.Replace(".Tests.ps1", "")
-    Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
     $global:TestConfig = Get-TestConfig
 }
 
@@ -11,12 +10,33 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         BeforeAll {
             $command = Get-Command Invoke-DbaQuery
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                'SqlInstance', 
+                'SqlCredential',
+                'Database', 
+                'Query', 
+                'QueryTimeout', 
+                'File', 
+                'SqlObject',
+                'As', 
+                'SqlParameter', 
+                'AppendServerInstance', 
+                'MessagesToOutput', 
+                'InputObject', 
+                'ReadOnly', 
+                'EnableException', 
+                'CommandType', 
+                'NoExec'
+            )
         }
         It "Should only contain our specific parameters" {
-            [object[]]$params = $command.Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-            [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Query', 'QueryTimeout', 'File', 'SqlObject', 'As', 'SqlParameter', 'AppendServerInstance', 'MessagesToOutput', 'InputObject', 'ReadOnly', 'EnableException', 'CommandType', 'NoExec'
-            $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
+            $actualParameters = $command.Parameters.Keys | Where-Object { $PSItem -notin "WhatIf", "Confirm" }
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $actualParameters | Should -BeNullOrEmpty
+        }
+
+        It "Has parameter: <_>" -ForEach $expectedParameters {
+            $command | Should -HaveParameter $PSItem
         }
     }
     Context "Validate alias" {
