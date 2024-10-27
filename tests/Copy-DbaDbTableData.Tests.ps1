@@ -12,7 +12,7 @@ Describe "Copy-DbaDbTableData" -Tag "UnitTests" {
             $expected += @(
                 'SqlInstance',
                 'SqlCredential',
-                'Destination', 
+                'Destination',
                 'DestinationSqlCredential',
                 'Database',
                 'DestinationDatabase',

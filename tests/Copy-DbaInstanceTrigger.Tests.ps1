@@ -12,7 +12,7 @@ Describe "Copy-DbaInstanceTrigger" -Tag "UnitTests" {
             $expected += @(
                 'Source',
                 'SourceSqlCredential',
-                'Destination', 
+                'Destination',
                 'DestinationSqlCredential',
                 'ServerTrigger',
                 'ExcludeServerTrigger',
@@ -41,7 +41,7 @@ Describe "Copy-DbaInstanceTrigger" -Tag "IntegrationTests" {
                 ON ALL SERVER FOR LOGON -- Tells you it's a logon trigger
                 AS
                 PRINT 'hello'"
-        
+
         $sourceServer = Connect-DbaInstance -SqlInstance $TestConfig.instance1
         $sourceServer.Query($sql)
     }

@@ -13,7 +13,9 @@ Describe "Enable-DbaStartupProcedure" -Tag "UnitTests" {
                 "SqlInstance",
                 "SqlCredential",
                 "StartupProcedure",
-                "EnableException"
+                "EnableException",
+                "WhatIf",
+                "Confirm"
             )
         }
 

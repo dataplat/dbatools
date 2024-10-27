@@ -14,7 +14,7 @@ Describe "Disable-DbaReplDistributor" -Tag "UnitTests" {
         $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
-            "SqlCredential", 
+            "SqlCredential",
             "Force",
             "EnableException",
             "Confirm",
