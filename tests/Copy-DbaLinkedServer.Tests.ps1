@@ -96,21 +96,20 @@ Describe "Copy-DbaLinkedServer" -Tag "IntegrationTests" {
            $results.Status | Should -BeExactly "Skipped"
        }
 
-       # SQLNCLI10 and SQLNCLI11 are not used on newer versions, not sure which versions, but skipping if later than 2017
-       It "Upgrades SQLNCLI provider based on what is registered" -Skip:($server1.VersionMajor -gt 14 -or $server2.VersionMajor -gt 14) {
-           $upgradeSplat = @{
-               Source = $TestConfig.instance2
-               Destination = $TestConfig.instance3
-               LinkedServer = 'dbatoolsci_localhost2'
-               UpgradeSqlClient = $true
-           }
-           $result = Copy-DbaLinkedServer @upgradeSplat
+        # SQLNCLI10 and SQLNCLI11 are not used on newer versions, not sure which versions, but skipping if later than 2017
+        Context "When upgrading SQL Client provider" -Skip:($server1.VersionMajor -gt 14 -or $server2.VersionMajor -gt 14) {
+            BeforeAll {
+                $result = Copy-DbaLinkedServer -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -LinkedServer dbatoolsci_localhost2 -UpgradeSqlClient
+                $sourceLinked = Get-DbaLinkedServer -SqlInstance $TestConfig.instance2
+                $destLinked = Get-DbaLinkedServer -SqlInstance $TestConfig.instance3
+            }
 
-           $server1 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-           $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance3
+            It "Should retain SQLNCLI10 on source" {
+                $sourceLinked.Script() | Should -Match 'SQLNCLI10'
+            }
 
-           $server1.LinkedServers.Script() | Should -Match 'SQLNCLI10'
-           $server2.LinkedServers.Script() | Should -Match 'SQLNCLI11'
-       }
-   }
+            It "Should upgrade to SQLNCLI11 on destination" {
+                $destLinked.Script() | Should -Match 'SQLNCLI11'
+            }
+        }
 }

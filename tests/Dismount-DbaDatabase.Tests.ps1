@@ -106,9 +106,8 @@ Describe "Dismount-DbaDatabase" -Tag "IntegrationTests" {
         It "Should detach database without snapshots" {
             $null = Stop-DbaProcess -SqlInstance $TestConfig.instance3 -Database $dbDetached
             $null = Dismount-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbDetached
-
-            $database = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbDetached
-            $database | Should -BeNullOrEmpty
+            $result = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbDetached
+            $result | Should -BeNullOrEmpty
         }
     }
 }
