@@ -1,45 +1,80 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'CustomError', 'ExcludeCustomError', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Copy-DbaCustomError" -Tag "UnitTests" {
+    Context "Parameter validation" {
+        BeforeAll {
+            $command = Get-Command Copy-DbaCustomError
+            $expected = $TestConfig.CommonParameters
+            $expected += @(
+                "Source",
+                "SourceSqlCredential",
+                "Destination",
+                "DestinationSqlCredential",
+                "CustomError",
+                "ExcludeCustomError",
+                "Force",
+                "EnableException",
+                "Confirm",
+                "WhatIf"
+            )
+        }
+
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+Describe "Copy-DbaCustomError" -Tag "IntegrationTests" {
     BeforeAll {
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2 -Database master
-        $server.Query("EXEC sp_addmessage @msgnum = 60000, @severity = 16,@msgtext = N'The item named %s already exists in %s.',@lang = 'us_english';")
-        $server.Query("EXEC sp_addmessage @msgnum = 60000, @severity = 16, @msgtext = N'L''élément nommé %1! existe déjà dans %2!',@lang = 'French';")
+        $server.Query("IF EXISTS (SELECT 1 FROM sys.messages WHERE message_id = 60000) EXEC sp_dropmessage @msgnum = 60000, @lang = 'all'")
+        $server.Query("EXEC sp_addmessage @msgnum = 60000, @severity = 16, @msgtext = N'The item named %s already exists in %s.', @lang = 'us_english'")
+        $server.Query("EXEC sp_addmessage @msgnum = 60000, @severity = 16, @msgtext = N'L''élément nommé %1! existe déjà dans %2!', @lang = 'French'")
     }
+
     AfterAll {
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2 -Database master
-        $server.Query("EXEC sp_dropmessage @msgnum = 60000, @lang = 'all';")
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance3 -Database master
-        $server.Query("EXEC sp_dropmessage @msgnum = 60000, @lang = 'all';")
+        $serversToClean = @($TestConfig.instance2, $TestConfig.instance3)
+        foreach ($serverInstance in $serversToClean) {
+            $cleanupServer = Connect-DbaInstance -SqlInstance $serverInstance -Database master
+            $cleanupServer.Query("IF EXISTS (SELECT 1 FROM sys.messages WHERE message_id = 60000) EXEC sp_dropmessage @msgnum = 60000, @lang = 'all'")
+        }
     }
 
-    It "copies the sample custom errror" {
-        $results = Copy-DbaCustomError -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -CustomError 60000
-        $results.Name -eq "60000:'us_english'", "60000:'Français'"
-        $results.Status -eq 'Successful', 'Successful'
-    }
+    Context "When copying custom errors" {
+        BeforeEach {
+            # Clean destination before each test
+            $destServer = Connect-DbaInstance -SqlInstance $TestConfig.instance3 -Database master
+            $destServer.Query("IF EXISTS (SELECT 1 FROM sys.messages WHERE message_id = 60000) EXEC sp_dropmessage @msgnum = 60000, @lang = 'all'")
+        }
 
-    It "doesn't overwrite existing custom errors" {
-        $results = Copy-DbaCustomError -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -CustomError 60000
-        $results.Name -eq "60000:'us_english'", "60000:'Français'"
-        $results.Status -eq 'Skipped', 'Skipped'
-    }
+        It "Should successfully copy custom error messages" {
+            $results = Copy-DbaCustomError -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -CustomError 60000
+            $results.Name[0] | Should -Be "60000:'us_english'"
+            $results.Name[1] | Should -Match "60000\:'Fran"
+            $results.Status | Should -Be @("Successful", "Successful")
+        }
 
-    It "the newly copied custom error exists" {
-        $results = Get-DbaCustomError -SqlInstance $TestConfig.instance2
-        $results.ID -contains 60000
+        It "Should skip existing custom errors" {
+            Copy-DbaCustomError -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -CustomError 60000
+            $results = Copy-DbaCustomError -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -CustomError 60000
+            $results.Name[0] | Should -Be "60000:'us_english'"
+            $results.Name[1] | Should -Match "60000\:'Fran"
+            $results.Status | Should -Be @("Skipped", "Skipped")
+        }
+
+        It "Should verify custom error exists" {
+            $results = Get-DbaCustomError -SqlInstance $TestConfig.instance2
+            $results.ID | Should -Contain 60000
+        }
     }
 }

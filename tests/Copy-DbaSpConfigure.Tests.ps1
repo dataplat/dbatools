@@ -1,55 +1,79 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'ConfigName', 'ExcludeConfigName', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Copy-DbaSpConfigure" -Tag "UnitTests" {
+    Context "Parameter validation" {
+        BeforeAll {
+            $command = Get-Command Copy-DbaSpConfigure
+            $expected = $TestConfig.CommonParameters
+            $expected += @(
+                "Source",
+                "SourceSqlCredential",
+                "Destination",
+                "DestinationSqlCredential",
+                "ConfigName",
+                "ExcludeConfigName",
+                "EnableException",
+                "Confirm",
+                "WhatIf"
+            )
+        }
+
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasParams = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasParams | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    Context "Copy config with the same properties." {
+Describe "Copy-DbaSpConfigure" -Tag "IntegrationTests" {
+    Context "When copying configuration with the same properties" {
         BeforeAll {
-            $sourceconfig = (Get-DbaSpConfigure -SqlInstance $TestConfig.instance1 -ConfigName RemoteQueryTimeout).ConfiguredValue
-            $destconfig = (Get-DbaSpConfigure -SqlInstance $TestConfig.instance2 -ConfigName RemoteQueryTimeout).ConfiguredValue
-            # Set it so they don't match
-            if ($sourceconfig -and $destconfig) {
-                $newvalue = $sourceconfig + $destconfig
-                $null = Set-DbaSpConfigure -SqlInstance $TestConfig.instance2 -ConfigName RemoteQueryTimeout -Value $newvalue
+            $sourceConfig = Get-DbaSpConfigure -SqlInstance $TestConfig.instance1 -ConfigName RemoteQueryTimeout
+            $destConfig = Get-DbaSpConfigure -SqlInstance $TestConfig.instance2 -ConfigName RemoteQueryTimeout
+            $sourceConfigValue = $sourceConfig.ConfiguredValue
+            $destConfigValue = $destConfig.ConfiguredValue
+
+            # Set different values to ensure they don't match
+            if ($sourceConfigValue -and $destConfigValue) {
+                $newValue = $sourceConfigValue + $destConfigValue
+                $null = Set-DbaSpConfigure -SqlInstance $TestConfig.instance2 -ConfigName RemoteQueryTimeout -Value $newValue
             }
         }
+
         AfterAll {
-            if ($destconfig -and $destconfig -ne $sourceconfig) {
-                $null = Set-DbaSpConfigure -SqlInstance $TestConfig.instance2 -ConfigName RemoteQueryTimeout -Value $destconfig
+            if ($destConfigValue -and $destConfigValue -ne $sourceConfigValue) {
+                $null = Set-DbaSpConfigure -SqlInstance $TestConfig.instance2 -ConfigName RemoteQueryTimeout -Value $destConfigValue
             }
         }
 
-        It "starts with different values" {
+        It "Should start with different values" {
             $config1 = Get-DbaSpConfigure -SqlInstance $TestConfig.instance1 -ConfigName RemoteQueryTimeout
             $config2 = Get-DbaSpConfigure -SqlInstance $TestConfig.instance2 -ConfigName RemoteQueryTimeout
-            $config1.ConfiguredValue -ne $config2.ConfiguredValue | Should be $true
+            $config1.ConfiguredValue | Should -Not -Be $config2.ConfiguredValue
         }
 
-        It "copied successfully" {
+        It "Should copy successfully" {
             $results = Copy-DbaSpConfigure -Source $TestConfig.instance1 -Destination $TestConfig.instance2 -ConfigName RemoteQueryTimeout
-            $results.Status | Should Be "Successful"
+            $results.Status | Should -Be "Successful"
         }
 
-        It "retains the same properties" {
+        It "Should retain the same properties after copy" {
             $config1 = Get-DbaSpConfigure -SqlInstance $TestConfig.instance1 -ConfigName RemoteQueryTimeout
             $config2 = Get-DbaSpConfigure -SqlInstance $TestConfig.instance2 -ConfigName RemoteQueryTimeout
-            $config1.ConfiguredValue | Should be $config2.ConfiguredValue
+            $config1.ConfiguredValue | Should -Be $config2.ConfiguredValue
         }
 
-        It "didn't modify the source" {
-            $newconfig = (Get-DbaSpConfigure -SqlInstance $TestConfig.instance1 -ConfigName RemoteQueryTimeout).ConfiguredValue
-            $newconfig -eq $sourceconfig | Should Be $true
+        It "Should not modify the source configuration" {
+            $newConfig = Get-DbaSpConfigure -SqlInstance $TestConfig.instance1 -ConfigName RemoteQueryTimeout
+            $newConfig.ConfiguredValue | Should -Be $sourceConfigValue
         }
     }
 }

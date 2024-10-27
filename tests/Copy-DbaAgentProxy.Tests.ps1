@@ -1,19 +1,40 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'ProxyAccount', 'ExcludeProxyAccount', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Copy-DbaAgentProxy" -Tag "UnitTests" {
+    Context "Parameter validation" {
+        BeforeAll {
+            $command = Get-Command Copy-DbaAgentProxy
+            $expected = $TestConfig.CommonParameters
+            $expected += @(
+                "Source",
+                "SourceSqlCredential",
+                "Destination",
+                "DestinationSqlCredential",
+                "ProxyAccount",
+                "ExcludeProxyAccount",
+                "Force",
+                "EnableException",
+                "Confirm",
+                "WhatIf"
+            )
+        }
+
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+Describe "Copy-DbaAgentProxy" -Tag "IntegrationTests" {
     BeforeAll {
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $sql = "CREATE CREDENTIAL dbatoolsci_credential WITH IDENTITY = 'sa', SECRET = 'dbatools'"
@@ -25,6 +46,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $sql = "CREATE CREDENTIAL dbatoolsci_credential WITH IDENTITY = 'sa', SECRET = 'dbatools'"
         $server.Query($sql)
     }
+
     AfterAll {
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $sql = "EXEC msdb.dbo.sp_delete_proxy @proxy_name = 'dbatoolsci_agentproxy'"
@@ -39,17 +61,19 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $server.Query($sql)
     }
 
-    Context "Copies Agent Proxy" {
-        $results = Copy-DbaAgentProxy -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -ProxyAccount dbatoolsci_agentproxy
-
-        It "returns one results" {
-            $results.Count -eq 1
-            $results.Status -eq "Successful"
+    Context "When copying agent proxy between instances" {
+        BeforeAll {
+            $results = Copy-DbaAgentProxy -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -ProxyAccount dbatoolsci_agentproxy
         }
 
-        It "return one result that's skipped" {
-            $results = Get-DbaAgentProxy -SqlInstance $TestConfig.instance3 -Proxy dbatoolsci_agentproxy
-            $results.Count -eq 1
+        It "Should return one successful result" {
+            $results.Status.Count | Should -Be 1
+            $results.Status | Should -Be "Successful"
+        }
+
+        It "Should create the proxy on the destination" {
+            $proxyResults = Get-DbaAgentProxy -SqlInstance $TestConfig.instance3 -Proxy dbatoolsci_agentproxy
+            $proxyResults.Name | Should -Be "dbatoolsci_agentproxy"
         }
     }
 }

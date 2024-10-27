@@ -1,54 +1,76 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'BackupDevice', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+
+Describe "Copy-DbaBackupDevice" -Tag "UnitTests" {
+    Context "Parameter validation" {
+        BeforeAll {
+            $command = Get-Command Copy-DbaBackupDevice
+            $expected = $TestConfig.CommonParameters
+            $expected += @(
+                "Source",
+                "SourceSqlCredential",
+                "Destination",
+                "DestinationSqlCredential",
+                "BackupDevice",
+                "Force",
+                "EnableException",
+                "Confirm",
+                "WhatIf"
+            )
+        }
+
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
 if (-not $env:appveyor) {
-    Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-        Context "Setup" {
-            BeforeAll {
-                $devicename = "dbatoolsci-backupdevice"
-                $backupdir = (Get-DbaDefaultPath -SqlInstance $TestConfig.instance1).Backup
-                $backupfilename = "$backupdir\$devicename.bak"
-                $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
-                $server.Query("EXEC master.dbo.sp_addumpdevice  @devtype = N'disk', @logicalname = N'$devicename',@physicalname = N'$backupfilename'")
-                $server.Query("BACKUP DATABASE master TO DISK = '$backupfilename'")
+    Describe "Copy-DbaBackupDevice" -Tag "IntegrationTests" {
+        BeforeAll {
+            $deviceName = "dbatoolsci-backupdevice"
+            $backupDir = (Get-DbaDefaultPath -SqlInstance $TestConfig.instance1).Backup
+            $backupFileName = "$backupDir\$deviceName.bak"
+            $sourceServer = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+            $sourceServer.Query("EXEC master.dbo.sp_addumpdevice  @devtype = N'disk', @logicalname = N'$deviceName',@physicalname = N'$backupFileName'")
+            $sourceServer.Query("BACKUP DATABASE master TO DISK = '$backupFileName'")
+        }
+
+        AfterAll {
+            $sourceServer.Query("EXEC master.dbo.sp_dropdevice @logicalname = N'$deviceName'")
+            $destServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+            try {
+                $destServer.Query("EXEC master.dbo.sp_dropdevice @logicalname = N'$deviceName'")
+            } catch {
+                # Device may not exist, ignore error
             }
-            AfterAll {
-                $server.Query("EXEC master.dbo.sp_dropdevice @logicalname = N'$devicename'")
-                $server1 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-                try {
-                    $server1.Query("EXEC master.dbo.sp_dropdevice @logicalname = N'$devicename'")
-                } catch {
-                    # don't care
+            Get-ChildItem -Path $backupFileName | Remove-Item
+        }
+
+        Context "When copying backup device between instances" {
+            It "Should copy the backup device successfully or warn about local copy" {
+                $results = Copy-DbaBackupDevice -Source $TestConfig.instance1 -Destination $TestConfig.instance2 -WarningVariable warning -WarningAction SilentlyContinue 3> $null
+
+                if ($warning) {
+                    $warning | Should -Match "backup device to destination"
+                } else {
+                    $results.Status | Should -Be "Successful"
                 }
-                Get-ChildItem -Path $backupfilename | Remove-Item
             }
 
-            $results = Copy-DbaBackupDevice -Source $TestConfig.instance1 -Destination $TestConfig.instance2 -WarningVariable warn -WarningAction SilentlyContinue 3> $null
-            if ($warn) {
-                It "warns if it has a problem moving (issue for local to local)" {
-                    $warn | Should -Match "backup device to destination"
-                }
-            } else {
-                It "should report success" {
-                    $results.Status | Should Be "Successful"
-                }
-            }
-
-            $results = Copy-DbaBackupDevice -Source $TestConfig.instance1 -Destination $TestConfig.instance2
-            It "Should say skipped" {
-                $results.Status -ne "Successful" | Should be $true
+            It "Should skip copying when device already exists" {
+                $results = Copy-DbaBackupDevice -Source $TestConfig.instance1 -Destination $TestConfig.instance2
+                $results.Status | Should -Not -Be "Successful"
             }
         }
     }

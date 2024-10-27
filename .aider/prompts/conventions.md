@@ -126,28 +126,27 @@ Describe "Add-DbaAgReplica" -Tag "IntegrationTests" {
 
 ```powershell
 Describe "Get-DbaDatabase" -Tag "UnitTests" {
-   Context "Parameter validation" {
-       BeforeAll {
-           $command = Get-Command Get-DbaDatabase
-           $expected = $TestConfig.CommonParameters
-           $expected += @(
-               "SqlInstance",
-               "SqlCredential",
-               "Database",
-               "Confirm",
-               "WhatIf"
-           )
-       }
+    BeforeAll {
+        $command = Get-Command Get-DbaDatabase
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "Confirm",
+            "WhatIf"
+        )
+    }
+    Context "Parameter validation" {
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
 
-       It "Has parameter: <_>" -ForEach $expected {
-           $command | Should -HaveParameter $PSItem
-       }
-
-       It "Should have exactly the number of expected parameters ($($expected.Count))" {
-           $hasparms = $command.Parameters.Values.Name
-           Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
-       }
-   }
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
+        }
+    }
 }
 ```
 
@@ -172,11 +171,22 @@ Describe "Get-DbaDatabase" -Tag "IntegrationTests" {
 }
 ```
 
-## Additional instructions
+## Additional Instructions
 
-- DO NOT use `$MyInvocation.MyCommand.Name` to get command names
-- DO NOT use the old `knownParameters` validation approach
-- DO NOT include loose code outside of proper test blocks
-- DO NOT remove comments like "#TestConfig.instance3" or "#$TestConfig.instance2 for appveyor"
-- DO NOT use $_ DO use $PSItem instead
-- Parameter validation is ALWAYS tagged as a Unit Test
+### Test Structure
+- Parameter validation must be tagged as Unit Test
+- No loose code outside of proper test blocks
+- Must maintain all instance reference comments (#TestConfig.instance3, etc.)
+
+### Syntax Requirements
+- Use $PSItem instead of $_
+- No trailing spaces
+- Use $results.Status.Count for accurate counting
+
+### Must Not Use
+- $MyInvocation.MyCommand.Name for command names
+- Old knownParameters validation approach
+- Assumed parameter names - match original tests exactly
+
+# Important
+ALL comments must be preserved exactly as they appear in the original code, including seemingly unrelated or end-of-file comments. Even comments that appear to be development notes or temporary must be kept. This is especially important for comments related to CI/CD systems like AppVeyor.
