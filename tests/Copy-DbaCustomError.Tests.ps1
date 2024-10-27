@@ -36,33 +36,61 @@ Describe "Copy-DbaCustomError" -Tag "UnitTests" {
 
 Describe "Copy-DbaCustomError" -Tag "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2 -Database master
-        $server.Query("EXEC sp_addmessage @msgnum = 60000, @severity = 16,@msgtext = N'The item named %s already exists in %s.',@lang = 'us_english';")
-        $server.Query("EXEC sp_addmessage @msgnum = 60000, @severity = 16, @msgtext = N'L''élément nommé %1! existe déjà dans %2!',@lang = 'French';")
+        $primaryServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2 -Database master
+
+        # Add test messages in English and French
+        $messageParams = @{
+            msgnum = 60000
+            severity = 16
+            englishText = "The item named %s already exists in %s."
+            frenchText = "L'élément nommé %1! existe déjà dans %2!"
+        }
+
+        $primaryServer.Query("EXEC sp_addmessage @msgnum = $($messageParams.msgnum),
+            @severity = $($messageParams.severity),
+            @msgtext = N'$($messageParams.englishText)',
+            @lang = 'us_english'")
+
+        $primaryServer.Query("EXEC sp_addmessage @msgnum = $($messageParams.msgnum),
+            @severity = $($messageParams.severity),
+            @msgtext = N'$($messageParams.frenchText)',
+            @lang = 'French'")
     }
+
     AfterAll {
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2 -Database master
-        $server.Query("EXEC sp_dropmessage @msgnum = 60000, @lang = 'all';")
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance3 -Database master
-        $server.Query("EXEC sp_dropmessage @msgnum = 60000, @lang = 'all';")
+        $serversToClean = @($TestConfig.instance2, $TestConfig.instance3)
+        foreach ($serverInstance in $serversToClean) {
+            $cleanupServer = Connect-DbaInstance -SqlInstance $serverInstance -Database master
+            $cleanupServer.Query("EXEC sp_dropmessage @msgnum = 60000, @lang = 'all'")
+        }
     }
 
     Context "When copying custom errors" {
-        It "Copies the sample custom error" {
-            $results = Copy-DbaCustomError -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -CustomError 60000
-            $results.Name | Should -Be "60000:'us_english'", "60000:'Français'"
-            $results.Status | Should -Be 'Successful', 'Successful'
+        It "Should successfully copy custom error messages" {
+            $copyResults = Copy-DbaCustomError -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -CustomError 60000
+
+            $copyResults.Name.Count | Should -Be 2
+            $copyResults.Name[0] | Should -BeExactly "60000:'us_english'"
+            # the French message broke Pester v5 encoding so we're using -Match instead of -BeExactly
+            # Expected @('60000:'us_english'', '60000:'FranÃ§ais''), but got @(60000:'us_english', 60000:'Français').
+            $copyResults.Name[1] | Should -Match "60000:'Fran"
+            $copyResults.Status | Should -BeExactly @('Successful', 'Successful')
         }
 
-        It "Doesn't overwrite existing custom errors" {
-            $results = Copy-DbaCustomError -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -CustomError 60000
-            $results.Name | Should -Be "60000:'us_english'", "60000:'Français'"
-            $results.Status | Should -Be 'Skipped', 'Skipped'
+        It "Should skip existing custom errors" {
+            $duplicateResults = Copy-DbaCustomError -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -CustomError 60000
+
+            $duplicateResults.Name.Count | Should -Be 2
+            $duplicateResults.Name[0] | Should -BeExactly "60000:'us_english'"
+            # the French message broke Pester v5 so we're using -Match instead of -BeExactly
+            # Expected @('60000:'us_english'', '60000:'FranÃ§ais''), but got @(60000:'us_english', 60000:'Français').
+            $duplicateResults.Name[1] | Should -Match "60000:'Fran"
+            $duplicateResults.Status | Should -BeExactly @('Skipped', 'Skipped')
         }
 
-       It "Verifies the newly copied custom error exists" {
-            $results = Get-DbaCustomError -SqlInstance $TestConfig.instance2
-            $results.ID | Should -Contain 60000
+        It "Should verify custom error exists" {
+            $customErrors = Get-DbaCustomError -SqlInstance $TestConfig.instance2
+            $customErrors.ID | Should -Contain 60000
         }
     }
 }
