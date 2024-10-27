@@ -5,26 +5,23 @@ param(
 )
 
 Describe "Copy-DbaResourceGovernor" -Tag "UnitTests" {
+    BeforeAll {
+        $command = Get-Command Copy-DbaResourceGovernor
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "Source",
+            "SourceSqlCredential",
+            "Destination",
+            "DestinationSqlCredential",
+            "ResourcePool",
+            "ExcludeResourcePool",
+            "Force",
+            "EnableException",
+            "Confirm",
+            "WhatIf"
+        )
+    }
     Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Copy-DbaResourceGovernor
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                "Source",
-                "SourceSqlCredential",
-                "Destination",
-                "DestinationSqlCredential",
-                "ResourcePool",
-                "ExcludeResourcePool",
-                "WorkloadGroup",
-                "ExcludeWorkloadGroup",
-                "Force",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
-            )
-        }
-
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }
