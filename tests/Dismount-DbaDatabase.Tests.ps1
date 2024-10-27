@@ -5,23 +5,22 @@ param(
 )
 
 Describe "Dismount-DbaDatabase" -Tag "UnitTests" {
+    BeforeAll {
+        $command = Get-Command Dismount-DbaDatabase
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "InputObject",
+            "UpdateStatistics",
+            "Force",
+            "EnableException",
+            "Confirm",
+            "WhatIf"
+        )
+    }
     Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Dismount-DbaDatabase
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "InputObject",
-                "UpdateStatistics",
-                "Force",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
-            )
-        }
-
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }
@@ -103,7 +102,7 @@ Describe "Dismount-DbaDatabase" -Tag "IntegrationTests" {
             $database | Should -Not -BeNullOrEmpty
         }
 
-        It "Should detach database without snapshots" -Skip {
+        It "Should detach database without snapshots" {
             # skip for now in appveyor, but when we do troubleshoot, maybe it just needs a sleep
             Start-Sleep 3
             $null = Stop-DbaProcess -SqlInstance $TestConfig.instance3 -Database $dbDetached
