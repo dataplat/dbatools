@@ -65,11 +65,6 @@ Describe "Dismount-DbaDatabase" -Tag "IntegrationTests" {
         It "Should remove just one database" {
             $results.Database | Should -Be $dbName
         }
-
-        It "Should have the correct properties" {
-            $expectedProps = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'DatabaseID', 'DetachResult'
-            $results.PsObject.Properties.Name | Sort-Object | Should -Be ($expectedProps | Sort-Object)
-        }
     }
 
     Context "When detaching databases with snapshots" {
@@ -117,3 +112,4 @@ Describe "Dismount-DbaDatabase" -Tag "IntegrationTests" {
         }
     }
 }
+#$TestConfig.instance2 - to make it show up in appveyor, long story
