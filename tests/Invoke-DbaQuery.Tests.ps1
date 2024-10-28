@@ -2,7 +2,6 @@
 
 BeforeAll {
     $CommandName = (Get-Item $PSCommandPath).Name.Replace(".Tests.ps1", "")
-    Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
     $global:TestConfig = Get-TestConfig
 }
 
@@ -11,12 +10,33 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         BeforeAll {
             $command = Get-Command Invoke-DbaQuery
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                'SqlInstance',
+                'SqlCredential',
+                'Database',
+                'Query',
+                'QueryTimeout',
+                'File',
+                'SqlObject',
+                'As',
+                'SqlParameter',
+                'AppendServerInstance',
+                'MessagesToOutput',
+                'InputObject',
+                'ReadOnly',
+                'EnableException',
+                'CommandType',
+                'NoExec'
+            )
         }
         It "Should only contain our specific parameters" {
-            [object[]]$params = $command.Parameters.Values.Name | Where-Object { $_ -notin ('whatif', 'confirm') }
-            [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Query', 'QueryTimeout', 'File', 'SqlObject', 'As', 'SqlParameter', 'AppendServerInstance', 'MessagesToOutput', 'InputObject', 'ReadOnly', 'EnableException', 'CommandType', 'NoExec'
-            $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
+            $actualParameters = $command.Parameters.Keys | Where-Object { $PSItem -notin "WhatIf", "Confirm" }
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $actualParameters | Should -BeNullOrEmpty
+        }
+
+        It "Has parameter: <_>" -ForEach $expectedParameters {
+            $command | Should -HaveParameter $PSItem
         }
     }
     Context "Validate alias" {
@@ -248,7 +268,7 @@ SELECT @@servername as dbname
         END"
         $outparam = New-DbaSqlParameter -Direction Output -Size -1
         $sqlparams = @{
-            'newid' = $outparam
+            'newid'     = $outparam
             'somevalue' = 'asd'
         }
         $result = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database tempdb -Query "EXEC usp_Insertsomething @somevalue, @newid output" -SqlParameters $sqlparams
@@ -269,7 +289,7 @@ SELECT @@servername as dbname
         $inparam = New-DbaSqlParameter -ParameterName 'somevalue' -SqlDbType VarChar -Value 'example'
         $outparam = New-DbaSqlParameter -Direction Output -Size -1
         $sqlparams = @{
-            'newid' = $outparam
+            'newid'     = $outparam
             'somevalue' = $inparam
         }
         $result1 = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database tempdb -Query "EXEC usp_Insertsomething @somevalue, @newid output" -SqlParameters $sqlparams
@@ -303,14 +323,14 @@ END"
         $inparam = @()
         $inparam += [pscustomobject]@{
             somestring = 'string1'
-            somedate = '2021-07-15T01:02:00'
+            somedate   = '2021-07-15T01:02:00'
         }
         $inparam += [pscustomobject]@{
             somestring = 'string2'
-            somedate = '2021-07-15T02:03:00'
+            somedate   = '2021-07-15T02:03:00'
         }
         $sqlparams = @{
-            'newid' = $outparam
+            'newid'     = $outparam
             'sometable' = New-DbaSqlParameter -SqlDbType structured -Value (ConvertTo-DbaDataTable -InputObject $inparam) -TypeName 'dbatools_tabletype'
         }
         $result = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database tempdb -Query "EXEC usp_Insertsomething @sometable, @newid output" -SqlParameters $sqlparams
