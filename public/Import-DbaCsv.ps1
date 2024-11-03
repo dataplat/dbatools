@@ -410,6 +410,7 @@ function Import-DbaCsv {
                 'Time' { return [System.DateTime] }
                 'DateTime2' { return [System.DateTime] }
                 'Decimal' { return [System.Decimal] }
+                'Numeric' { return [System.Decimal] }
                 'Money' { return [System.Decimal] }
                 'SmallMoney' { return [System.Decimal] }
                 'Float' { return [System.Double] }
