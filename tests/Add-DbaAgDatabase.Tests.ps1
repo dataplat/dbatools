@@ -1,19 +1,44 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'AvailabilityGroup', 'Database', 'Secondary', 'SecondarySqlCredential', 'InputObject', 'SeedingMode', 'SharedPath', 'UseLastBackup', 'AdvancedBackupParams', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Add-DbaAgDatabase" -Tag "UnitTests" {
+    Context "Parameter validation" {
+        BeforeAll {
+            $command = Get-Command Add-DbaAgDatabase
+            $expected = $TestConfig.CommonParameters
+            $expected += @(
+                "SqlInstance",
+                "SqlCredential",
+                "AvailabilityGroup",
+                "Database",
+                "Secondary",
+                "SecondarySqlCredential",
+                "InputObject",
+                "SeedingMode",
+                "SharedPath",
+                "UseLastBackup",
+                "AdvancedBackupParams",
+                "EnableException",
+                "Confirm",
+                "WhatIf"
+            )
+        }
+
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+Describe "Add-DbaAgDatabase" -Tag "IntegrationTests" {
     BeforeAll {
         $null = Get-DbaProcess -SqlInstance $TestConfig.instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance3
@@ -22,17 +47,37 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $newdbname = "dbatoolsci_addag_agroupdb_2"
         $server.Query("create database $dbname")
         $backup = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbname | Backup-DbaDatabase
-        $ag = New-DbaAvailabilityGroup -Primary $TestConfig.instance3 -Name $agname -ClusterType None -FailoverMode Manual -Database $dbname -Confirm:$false -Certificate dbatoolsci_AGCert
+        $splatNewAg = @{
+            Primary = $TestConfig.instance3
+            Name = $agname
+            ClusterType = "None"
+            FailoverMode = "Manual"
+            Database = $dbname
+            Confirm = $false
+            Certificate = "dbatoolsci_AGCert"
+        }
+        $ag = New-DbaAvailabilityGroup @splatNewAg
     }
+
     AfterAll {
         $null = Remove-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $agname -Confirm:$false
         $null = Remove-DbaDatabase -SqlInstance $server -Database $dbname, $newdbname -Confirm:$false
     }
-    Context "adds ag db" {
-        It "returns proper results" {
+
+    Context "When adding AG database" {
+        BeforeAll {
             $server.Query("create database $newdbname")
             $backup = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $newdbname | Backup-DbaDatabase
-            $results = Add-DbaAgDatabase -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname -Database $newdbname -Confirm:$false
+            $splatAddAgDb = @{
+                SqlInstance = $TestConfig.instance3
+                AvailabilityGroup = $agname
+                Database = $newdbname
+                Confirm = $false
+            }
+            $results = Add-DbaAgDatabase @splatAddAgDb
+        }
+
+        It "Returns proper results" {
             $results.AvailabilityGroup | Should -Be $agname
             $results.Name | Should -Be $newdbname
             $results.IsJoined | Should -Be $true

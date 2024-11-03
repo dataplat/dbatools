@@ -1,19 +1,37 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Source', 'Destination', 'Type', 'SourceSqlCredential', 'DestinationSqlCredential', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Copy-DbaDbMail" -Tag "UnitTests" {
+    Context "Parameter validation" {
+        BeforeAll {
+            $command = Get-Command Copy-DbaDbMail
+            $expected = $TestConfig.CommonParameters
+            $expected += @(
+                "Source",
+                "Destination",
+                "Type",
+                "SourceSqlCredential",
+                "DestinationSqlCredential",
+                "Force",
+                "EnableException"
+            )
+        }
+
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name | Where-Object { $_ -notin ('whatif', 'confirm') }
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe "Copy-DbaDbMail" -Tags "IntegrationTests" {
     BeforeAll {
         $servers = Connect-DbaInstance -SqlInstance $TestConfig.instance2, $TestConfig.instance3
         foreach ($s in $servers) {
@@ -32,7 +50,6 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $mailserver_name = 'smtp.dbatools.io'
         $replyto_address = 'no-reply@dbatools.io'
         $mailaccountpriority = 1
-
 
         $splat1 = @{
             SqlInstance    = $TestConfig.instance2
@@ -53,8 +70,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             MailAccountPriority = $mailaccountpriority
         }
         $null = New-DbaDbMailProfile @splat2
-
     }
+
     AfterAll {
         $servers = Connect-DbaInstance -SqlInstance $TestConfig.instance2, $TestConfig.instance3
 
@@ -63,44 +80,37 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             Invoke-DbaQuery -SqlInstance $s -Query $mailAccountSettings -Database msdb
             $mailProfileSettings = "EXEC msdb.dbo.sysmail_delete_profile_sp @profile_name = '$profilename';"
             Invoke-DbaQuery -SqlInstance $s -Query $mailProfileSettings -Database msdb
-
         }
     }
 
-    Context "Copy DbMail to $($TestConfig.instance3)" {
-        $results = Copy-DbaDbMail -Source $TestConfig.instance2 -Destination $TestConfig.instance3
-
-        It "Should have copied database mailitems" {
-            $results | Should Not Be $null
+    Context "When copying DbMail to $($TestConfig.instance3)" {
+        BeforeAll {
+            $results = Copy-DbaDbMail -Source $TestConfig.instance2 -Destination $TestConfig.instance3
         }
-        foreach ($r in $results) {
-            if ($r.type -in @('Mail Configuration', 'Mail Account', 'Mail Profile')) {
-                It "Should have copied $($r.type) from $($TestConfig.instance2)" {
-                    $r.SourceServer | Should Be $TestConfig.instance2
-                }
-                It "Should have copied $($r.type) to $($TestConfig.instance3)" {
-                    $r.DestinationServer | Should Be $TestConfig.instance3
-                }
-            }
+
+        It "Should have copied database mail items" {
+            $results | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should have copied <_.type> from source to destination" -ForEach ($results | Where-Object type -in @('Mail Configuration', 'Mail Account', 'Mail Profile')) {
+            $PSItem.SourceServer | Should -Be $TestConfig.instance2
+            $PSItem.DestinationServer | Should -Be $TestConfig.instance3
         }
     }
 
-    Context "Copy MailServers specifically" {
-        $results = Copy-DbaDbMail -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -Type MailServers
-
-        It "Should have copied database mailitems" {
-            $results | Should Not Be $null
+    Context "When copying MailServers specifically" {
+        BeforeAll {
+            $results = Copy-DbaDbMail -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -Type MailServers
         }
 
-        foreach ($r in $results) {
-            It "Should have $($r.status) $($r.type) from $($TestConfig.instance2)" {
-                $r.SourceServer | Should Be $TestConfig.instance2
-                $r.status | Should Be 'Skipped'
-            }
-            It "Should have $($r.status) $($r.type) to $($TestConfig.instance3)" {
-                $r.DestinationServer | Should Be $TestConfig.instance3
-                $r.status | Should Be 'Skipped'
-            }
+        It "Should have returned results" {
+            $results | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should have skipped <_.type> copy operations" -ForEach $results {
+            $PSItem.SourceServer | Should -Be $TestConfig.instance2
+            $PSItem.DestinationServer | Should -Be $TestConfig.instance3
+            $PSItem.Status | Should -Be 'Skipped'
         }
     }
 }

@@ -14,19 +14,23 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 <#
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+Describe "Disable-DbaFilestream" -Tag "IntegrationTests" {
     BeforeAll {
         $OriginalFileStream = Get-DbaFilestream -SqlInstance $TestConfig.instance1
     }
+
     AfterAll {
-        Set-DbaFilestream -SqlInstance $TestConfig.instance1 -FileStreamLevel $OriginalFileStream.InstanceAccessLevel -force
+        Set-DbaFilestream -SqlInstance $TestConfig.instance1 -FileStreamLevel $OriginalFileStream.InstanceAccessLevel -Force
     }
 
-    Context "Changing FileStream Level" {
-        $NewLevel = ($OriginalFileStream.FileStreamStateId + 1) % 3 #Move it on one, but keep it less than 4 with modulo division
-        $results = Set-DbaFilestream -SqlInstance $TestConfig.instance1 -FileStreamLevel $NewLevel -Force -WarningAction silentlyContinue -ErrorVariable errvar -Erroraction silentlyContinue
-        It "Should have changed the FileStream Level" {
-            $results.InstanceAccessLevel | Should be $NewLevel
+    Context "When changing FileStream Level" {
+        BeforeAll {
+            $NewLevel = ($OriginalFileStream.FileStreamStateId + 1) % 3 #Move it on one, but keep it less than 4 with modulo division
+            $results = Set-DbaFilestream -SqlInstance $TestConfig.instance1 -FileStreamLevel $NewLevel -Force -WarningAction SilentlyContinue -ErrorVariable errvar -ErrorAction SilentlyContinue
+        }
+
+        It "Should change the FileStream Level" {
+            $results.InstanceAccessLevel | Should -Be $NewLevel
         }
     }
 }

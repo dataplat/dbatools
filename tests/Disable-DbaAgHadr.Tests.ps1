@@ -1,28 +1,47 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag "UnitTests" {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'Credential', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Disable-DbaAgHadr" -Tag "UnitTests" {
+    Context "Parameter validation" {
+        BeforeAll {
+            $command = Get-Command Disable-DbaAgHadr
+            $expected = $TestConfig.CommonParameters
+            $expected += @(
+                "SqlInstance",
+                "Credential",
+                "Force",
+                "EnableException",
+                "Confirm",
+                "WhatIf"
+            )
+        }
+
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
-# $TestConfig.instance3 is used for Availability Group tests and needs Hadr service setting enabled
-
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+Describe "Disable-DbaAgHadr" -Tag "IntegrationTests" {
     AfterAll {
         Enable-DbaAgHadr -SqlInstance $TestConfig.instance3 -Confirm:$false -Force
     }
 
-    $results = Disable-DbaAgHadr -SqlInstance $TestConfig.instance3 -Confirm:$false -Force
+    Context "When disabling HADR" {
+        BeforeAll {
+            $results = Disable-DbaAgHadr -SqlInstance $TestConfig.instance3 -Confirm:$false -Force
+        }
 
-    It "disables hadr" {
-        $results.IsHadrEnabled | Should -Be $false
+        It "Successfully disables HADR" {
+            $results.IsHadrEnabled | Should -BeFalse
+        }
     }
 }

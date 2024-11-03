@@ -1,19 +1,56 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        It "Should only contain our specific parameters" {
-            [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-            [object[]]$knownParameters = 'AutoCreateTable', 'BatchSize', 'BulkCopyTimeout', 'CheckConstraints', 'CommandTimeout', 'Database', 'Destination', 'DestinationDatabase', 'DestinationSqlCredential', 'DestinationTable', 'EnableException', 'FireTriggers', 'InputObject', 'KeepIdentity', 'KeepNulls', 'NoTableLock', 'NotifyAfter', 'Query', 'SqlCredential', 'SqlInstance', 'Table', 'Truncate', 'View', 'UseDefaultFileGroup'
-            $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+Describe "Copy-DbaDbTableData" -Tag "UnitTests" {
+    Context "Parameter validation" {
+        BeforeAll {
+            $command = Get-Command Copy-DbaDbTableData
+            $expected = $TestConfig.CommonParameters
+            $expected += @(
+                'SqlInstance',
+                'SqlCredential',
+                'Destination',
+                'DestinationSqlCredential',
+                'Database',
+                'DestinationDatabase',
+                'Table',
+                'View',
+                'Query',
+                'AutoCreateTable',
+                'BatchSize',
+                'NotifyAfter',
+                'DestinationTable',
+                'NoTableLock',
+                'CheckConstraints',
+                'FireTriggers',
+                'KeepIdentity',
+                'KeepNulls',
+                'Truncate',
+                'BulkCopyTimeout',
+                'CommandTimeout',
+                'UseDefaultFileGroup',
+                'InputObject',
+                'EnableException',
+                'Confirm',
+                'WhatIf'
+            )
+        }
 
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+
+Describe "Copy-DbaDbTableData" -Tag "IntegrationTests" {
     BeforeAll {
         $db = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database tempdb
         $db2 = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database tempdb
@@ -49,7 +86,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $null = 1
         }
     }
-    Context "Data movement" {
+
+    Context "When copying table data within same instance" {
         It "copies the table data" {
             $results = Copy-DbaDbTableData -SqlInstance $TestConfig.instance1 -Database tempdb -Table dbatoolsci_example -DestinationTable dbatoolsci_example2
             $table1count = $db.Query("select id from dbo.dbatoolsci_example")
@@ -58,7 +96,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results.SourceDatabaseID | Should -Be $db.ID
             $results.DestinationDatabaseID | Should -Be $db.ID
         }
+    }
 
+    Context "When copying table data between instances" {
         It "copies the table data to another instance" {
             $null = Copy-DbaDbTableData -SqlInstance $TestConfig.instance1 -Destination $TestConfig.instance2 -Database tempdb -Table tempdb.dbo.dbatoolsci_example -DestinationTable dbatoolsci_example3
             $table1count = $db.Query("select id from dbo.dbatoolsci_example")
@@ -76,7 +116,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $result.RowsCopied | Should -Be 1
         }
     }
-    Context "Functionality checks" {
+
+    Context "When testing pipeline functionality" {
         It "supports piping" {
             $null = Get-DbaDbTable -SqlInstance $TestConfig.instance1 -Database tempdb -Table dbatoolsci_example | Copy-DbaDbTableData -DestinationTable dbatoolsci_example2 -Truncate
             $table1count = $db.Query("select id from dbo.dbatoolsci_example")
@@ -91,7 +132,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "opens and closes connections properly" {
-            #regression test, see #3468
             $results = Get-DbaDbTable -SqlInstance $TestConfig.instance1 -Database tempdb -Table 'dbo.dbatoolsci_example', 'dbo.dbatoolsci_example4' | Copy-DbaDbTableData -Destination $TestConfig.instance2 -DestinationDatabase tempdb -KeepIdentity -KeepNulls -BatchSize 5000 -Truncate
             $results.Count | Should -Be 2
             $table1DbCount = $db.Query("select id from dbo.dbatoolsci_example")
@@ -105,7 +145,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $table4Db2Check = $db2.Query("select id from dbo.dbatoolsci_example4 where id = 1")
             $table4Db2Check.Count | Should -Be 13
         }
+    }
 
+    Context "When handling edge cases" {
         It "Should return nothing if Source and Destination are same" {
             $result = Copy-DbaDbTableData -SqlInstance $TestConfig.instance1 -Database tempdb -Table dbatoolsci_example -Truncate
             $result | Should -Be $null

@@ -1,45 +1,69 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'ServerTrigger', 'ExcludeServerTrigger', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Copy-DbaInstanceTrigger" -Tag "UnitTests" {
+    Context "Parameter validation" {
+        BeforeAll {
+            $command = Get-Command Copy-DbaInstanceTrigger
+            $expected = $TestConfig.CommonParameters
+            $expected += @(
+                'Source',
+                'SourceSqlCredential',
+                'Destination',
+                'DestinationSqlCredential',
+                'ServerTrigger',
+                'ExcludeServerTrigger',
+                'Force',
+                'EnableException',
+                'Confirm',
+                'WhatIf'
+            )
+        }
+
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasParams = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasParams | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    Context "Setup" {
+Describe "Copy-DbaInstanceTrigger" -Tag "IntegrationTests" {
+    BeforeAll {
+        $triggerName = "dbatoolsci-trigger"
+        $sql = "CREATE TRIGGER [$triggerName] -- Trigger name
+                ON ALL SERVER FOR LOGON -- Tells you it's a logon trigger
+                AS
+                PRINT 'hello'"
+
+        $sourceServer = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+        $sourceServer.Query($sql)
+    }
+
+    AfterAll {
+        $sourceServer.Query("DROP TRIGGER [$triggerName] ON ALL SERVER")
+
+        try {
+            $destServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+            $destServer.Query("DROP TRIGGER [$triggerName] ON ALL SERVER")
+        } catch {
+            # Ignore cleanup errors
+        }
+    }
+
+    Context "When copying server triggers between instances" {
         BeforeAll {
-            $triggername = "dbatoolsci-trigger"
-            $sql = "CREATE TRIGGER [$triggername] -- Trigger name
-                    ON ALL SERVER FOR LOGON -- Tells you it's a logon trigger
-                    AS
-                    PRINT 'hello'"
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
-            $server.Query($sql)
-        }
-        AfterAll {
-            $server.Query("DROP TRIGGER [$triggername] ON ALL SERVER")
-
-            try {
-                $server1 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-                $server1.Query("DROP TRIGGER [$triggername] ON ALL SERVER")
-            } catch {
-                # don't care
-            }
+            $results = Copy-DbaInstanceTrigger -Source $TestConfig.instance1 -Destination $TestConfig.instance2 -WarningAction SilentlyContinue
         }
 
-        $results = Copy-DbaInstanceTrigger -Source $TestConfig.instance1 -Destination $TestConfig.instance2 -WarningAction SilentlyContinue
-
-        It "should report success" {
-            $results.Status | Should Be "Successful"
+        It "Should report successful copy operation" {
+            $results.Status | Should -BeExactly "Successful"
         }
-        # same properties need to be added
     }
 }

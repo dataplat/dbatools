@@ -162,8 +162,7 @@ function Get-CodecovReport($Results, $ModuleBase) {
 
 function Get-PesterTestVersion($testFilePath) {
     $testFileContent = Get-Content -Path $testFilePath -Raw
-    if ($testFileContent -match 'HaveParameter')
-    {
+    if ($testFileContent -match '#Requires\s+-Module\s+@\{\s+ModuleName="Pester";\s+ModuleVersion="5\.') {
         return '5'
     }
     return '4'
@@ -225,7 +224,6 @@ if (-not $Finalize) {
             Add-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome Running
             $PesterRun = Invoke-Pester @PesterSplat
             $PesterRun | Export-Clixml -Path "$ModuleBase\PesterResults$PSVersion$Counter.xml"
-            $outcome = "Passed"
             if ($PesterRun.FailedCount -gt 0) {
                 $trialno += 1
                 Update-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome "Failed" -Duration $PesterRun.Time.TotalMilliseconds
@@ -239,7 +237,7 @@ if (-not $Finalize) {
     #start the round for pester 5 tests
     # Remove any previously loaded pester module
     Remove-Module -Name pester -ErrorAction SilentlyContinue
-    # Import pester 4
+    # Import pester 5
     Import-Module pester -RequiredVersion 5.6.1
     Write-Host -Object "appveyor.pester: Running with Pester Version $((Get-Command Invoke-Pester -ErrorAction SilentlyContinue).Version)" -ForegroundColor DarkGreen
     $Counter = 0
@@ -255,6 +253,7 @@ if (-not $Finalize) {
         $pester5Config = New-PesterConfiguration
         $pester5Config.Run.Path = $f.FullName
         $pester5config.Run.PassThru = $true
+        $pester5config.Output.Verbosity = "None"
         #opt-in
         if ($IncludeCoverage) {
             $CoverFiles = Get-CoverageIndications -Path $f -ModuleBase $ModuleBase
@@ -271,10 +270,11 @@ if (-not $Finalize) {
             } else {
                 $appvTestName = "$($f.Name), attempt #$trialNo"
             }
+            Write-Host -Object "Running $($f.FullName) ..." -ForegroundColor Cyan -NoNewLine
             Add-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome Running
             $PesterRun = Invoke-Pester -Configuration $pester5config
+            Write-Host -Object "`rCompleted $($f.FullName) in $([int]$PesterRun.Duration.TotalMilliseconds)ms" -ForegroundColor Cyan
             $PesterRun | Export-Clixml -Path "$ModuleBase\Pester5Results$PSVersion$Counter.xml"
-            $outcome = "Passed"
             if ($PesterRun.FailedCount -gt 0) {
                 $trialno += 1
                 Update-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome "Failed" -Duration $PesterRun.Duration.TotalMilliseconds
@@ -354,7 +354,7 @@ if (-not $Finalize) {
 
 
     $results5 = @(Get-ChildItem -Path "$ModuleBase\Pester5Results*.xml" | Import-Clixml)
-    $failedcount += $results | Select-Object -ExpandProperty FailedCount | Measure-Object -Sum | Select-Object -ExpandProperty Sum
+    $failedcount += $results5 | Select-Object -ExpandProperty FailedCount | Measure-Object -Sum | Select-Object -ExpandProperty Sum
     # pester 5 output
     $faileditems = $results5 | Select-Object -ExpandProperty Tests | Where-Object { $_.Passed -notlike $True }
     if ($faileditems) {
@@ -362,10 +362,10 @@ if (-not $Finalize) {
         $faileditems | ForEach-Object {
             $name = $_.Name
             [pscustomobject]@{
-                Path = $_.Path -Join '/'
-                Name     = "It $name"
-                Result   = $_.Result
-                Message  = $_.ErrorRecord -Join ""
+                Path    = $_.Path -Join '/'
+                Name    = "It $name"
+                Result  = $_.Result
+                Message = $_.ErrorRecord -Join ""
             }
         } | Sort-Object Path, Name, Result, Message | Format-List
         throw "$failedcount tests failed."

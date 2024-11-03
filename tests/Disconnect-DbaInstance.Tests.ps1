@@ -1,25 +1,44 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag "UnitTests" {
-    Context "Validate parameters" {
-        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-        [object[]]$knownParameters = 'InputObject', 'EnableException'
+Describe "Disconnect-DbaInstance" -Tag "UnitTests" {
+    Context "Parameter validation" {
+        BeforeAll {
+            $command = Get-Command Disconnect-DbaInstance
+            $expected = $TestConfig.CommonParameters
+            $expected += @(
+                "InputObject",
+                "EnableException",
+                "Confirm",
+                "WhatIf"
+            )
+        }
 
-        It "Should only contain our specific parameters" {
-            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+Describe "Disconnect-DbaInstance" -Tag "IntegrationTests" {
     BeforeAll {
-        $null = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+        $null = Connect-DbaInstance -SqlInstance $TestConfig.Instance1
     }
-    Context "disconnets a server" {
-        It "disconnects and returns some results" {
+
+    Context "When disconnecting a server" {
+        BeforeAll {
             $results = Get-DbaConnectedInstance | Disconnect-DbaInstance
+        }
+
+        It "Returns results" {
             $results | Should -Not -BeNullOrEmpty
         }
     }

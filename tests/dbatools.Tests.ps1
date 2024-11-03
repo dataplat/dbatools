@@ -157,7 +157,9 @@ Describe "$ModuleName Tests missing" -Tag 'Tests' {
             }
             If (Test-Path "tests\$($f.basename).tests.ps1") {
                 It "$($f.basename) has validate parameters unit test" {
-                    "tests\$($f.basename).tests.ps1" | should FileContentMatch 'Context "Validate parameters"'
+                    $testFile = Get-Content "tests\$($f.basename).Tests.ps1" -Raw
+                    $hasValidation = $testFile -match 'Context "Validate parameters"' -or $testFile -match 'Context "Parameter validation"'
+                    $hasValidation | Should -Be $true -Because "Test file must have parameter validation"
                 }
             }
         }
