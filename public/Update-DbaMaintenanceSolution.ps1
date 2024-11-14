@@ -89,7 +89,7 @@ function Update-DbaMaintenanceSolution {
 
         # Do we need a new local cached version of the software?
         $dbatoolsData = Get-DbatoolsConfigValue -FullName 'Path.DbatoolsData'
-        $localCachedCopy = Join-DbaPath -Path $dbatoolsData -Child 'sql-server-maintenance-solution-master'
+        $localCachedCopy = Join-DbaPath -Path $dbatoolsData -Child 'sql-server-maintenance-solution-main'
         if ($Force -or $LocalFile -or -not (Test-Path -Path $localCachedCopy)) {
             if ($PSCmdlet.ShouldProcess('MaintenanceSolution', 'Update local cached copy of the software')) {
                 try {

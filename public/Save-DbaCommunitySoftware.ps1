@@ -91,7 +91,7 @@ function Save-DbaCommunitySoftware {
         # Set Branch, Url and LocalDirectory for known Software
         if ($Software -eq 'MaintenanceSolution') {
             if (-not $Branch) {
-                $Branch = 'master'
+                $Branch = 'main'
             }
             if (-not $Url) {
                 $Url = "https://github.com/olahallengren/sql-server-maintenance-solution/archive/$Branch.zip"
