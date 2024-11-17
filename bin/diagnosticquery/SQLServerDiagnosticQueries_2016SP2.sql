@@ -1,7 +1,7 @@
 
 -- SQL Server 2016 SP2 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: November 1, 2024
+-- Last Modified: November 13, 2024
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -94,6 +94,8 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 13.0.6435.1		SP3 + GDR					10/10/2023		https://support.microsoft.com/en-us/topic/kb5029186-description-of-the-security-update-for-sql-server-2016-sp3-gdr-october-10-2023-618b034a-d575-48e0-804a-7b481ba2e600
 -- 13.0.6441.1		SP3 + GDR					7/9/2024		https://support.microsoft.com/en-us/topic/kb5040946-description-of-the-security-update-for-sql-server-2016-sp3-gdr-july-9-2024-e943f6a8-7a97-41b4-804c-c52ca775f5dd
 -- 13.0.6445.1		SP3 + GDR					9/10/2024		https://support.microsoft.com/en-us/topic/kb5042207-description-of-the-security-update-for-sql-server-2016-sp3-gdr-september-10-2024-e27a41df-009d-4a50-85e7-dc8f06b9a5a5	
+-- 13.0.6450.1		SP3 + GDR					10/8/2024		https://support.microsoft.com/en-us/topic/kb5046063-description-of-the-security-update-for-sql-server-2016-sp3-gdr-october-8-2024-87f6091b-a0c0-48e7-8de4-b10381559ba7
+-- 13.0.6455.2		SP3 + GDR					11/12/2024		https://support.microsoft.com/en-us/topic/kb5046855-description-of-the-security-update-for-sql-server-2016-sp3-gdr-november-12-2024-736b0a32-912d-4ea5-baf8-50d046cbfa1a
 
 -- Azure Connect Pack Builds
 -- 13.0.7000.253	Azure Connect Pack			5/19/2022		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2016/servicepack3-azureconnect	
@@ -102,6 +104,9 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 13.0.7029.3		Azure Connect Pack + GDR	10/10/2023		https://support.microsoft.com/en-us/topic/kb5029187-description-of-the-security-update-for-sql-server-2016-sp3-azure-connect-feature-pack-october-10-2023-e5541468-f243-4000-872c-ac782cfad99f
 -- 13.0.7037.1		Azure Connect Pack + GDR	7/9/2024		https://support.microsoft.com/en-us/topic/kb5040944-description-of-the-security-update-for-sql-server-2016-sp3-azure-connect-feature-pack-july-9-2024-72b636c9-0619-4c44-b263-f3d7478bcd75
 -- 13.0.7040.1		Azure Connect Pack + GDR	9/10/2024		https://support.microsoft.com/en-us/topic/kb5042207-description-of-the-security-update-for-sql-server-2016-sp3-gdr-september-10-2024-e27a41df-009d-4a50-85e7-dc8f06b9a5a5	
+-- 13.0.7045.2		Azure Connect Pack + GDR	10/8/2024		https://support.microsoft.com/en-us/topic/kb5046062-description-of-the-security-update-for-sql-server-2016-sp3-azure-connect-feature-pack-october-8-2024-fb7d9289-bbef-4d1f-bd71-fb3e036d81ae
+-- 13.0.7050.2		Azure Connect Pack + GDR	11/12/2024		https://support.microsoft.com/en-us/topic/kb5046856-description-of-the-security-update-for-sql-server-2016-sp3-azure-connect-feature-pack-november-12-2024-b180cac0-187e-48eb-b6c6-3d48d0a00902	
+
 
 -- How to determine the version, edition and update level of SQL Server and its components 
 -- https://bit.ly/2oAjKgW														

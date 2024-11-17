@@ -10,7 +10,7 @@ License: https://ola.hallengren.com/license.html
 
 GitHub: https://github.com/olahallengren/sql-server-maintenance-solution
 
-Version: 2024-11-14 14:03:14
+Version: 2022-12-03 17:23:44
 
 You can contact me by e-mail at ola@hallengren.com.
 
@@ -123,7 +123,7 @@ BEGIN
   --// Source:  https://ola.hallengren.com                                                        //--
   --// License: https://ola.hallengren.com/license.html                                           //--
   --// GitHub:  https://github.com/olahallengren/sql-server-maintenance-solution                  //--
-  --// Version: 2024-11-14 14:03:14                                                               //--
+  --// Version: 2022-12-03 17:23:44                                                               //--
   ----------------------------------------------------------------------------------------------------
 
   SET NOCOUNT ON
@@ -395,7 +395,6 @@ ALTER PROCEDURE [dbo].[DatabaseBackup]
 @CleanupTime int = NULL,
 @CleanupMode nvarchar(max) = 'AFTER_BACKUP',
 @Compress nvarchar(max) = NULL,
-@CompressionAlgorithm nvarchar(max) = NULL,
 @CopyOnly nvarchar(max) = 'N',
 @ChangeBackupType nvarchar(max) = 'N',
 @BackupSoftware nvarchar(max) = NULL,
@@ -446,7 +445,6 @@ ALTER PROCEDURE [dbo].[DatabaseBackup]
 @ObjectLevelRecoveryMap nvarchar(max) = 'N',
 @ExcludeLogShippedFromLogBackup nvarchar(max) = 'Y',
 @DirectoryCheck nvarchar(max) = 'Y',
-@BackupOptions nvarchar(max) = NULL,
 @StringDelimiter nvarchar(max) = ',',
 @DatabaseOrder nvarchar(max) = NULL,
 @DatabasesInParallel nvarchar(max) = 'N',
@@ -461,7 +459,7 @@ BEGIN
   --// Source:  https://ola.hallengren.com                                                        //--
   --// License: https://ola.hallengren.com/license.html                                           //--
   --// GitHub:  https://github.com/olahallengren/sql-server-maintenance-solution                  //--
-  --// Version: 2024-11-14 14:03:14                                                               //--
+  --// Version: 2022-12-03 17:23:44                                                               //--
   ----------------------------------------------------------------------------------------------------
 
   SET NOCOUNT ON
@@ -660,7 +658,6 @@ BEGIN
   SET @Parameters += ', @CleanupTime = ' + ISNULL(CAST(@CleanupTime AS nvarchar),'NULL')
   SET @Parameters += ', @CleanupMode = ' + ISNULL('''' + REPLACE(@CleanupMode,'''','''''') + '''','NULL')
   SET @Parameters += ', @Compress = ' + ISNULL('''' + REPLACE(@Compress,'''','''''') + '''','NULL')
-  SET @Parameters += ', @CompressionAlgorithm = ' + ISNULL('''' + REPLACE(@CompressionAlgorithm,'''','''''') + '''','NULL')
   SET @Parameters += ', @CopyOnly = ' + ISNULL('''' + REPLACE(@CopyOnly,'''','''''') + '''','NULL')
   SET @Parameters += ', @ChangeBackupType = ' + ISNULL('''' + REPLACE(@ChangeBackupType,'''','''''') + '''','NULL')
   SET @Parameters += ', @BackupSoftware = ' + ISNULL('''' + REPLACE(@BackupSoftware,'''','''''') + '''','NULL')
@@ -932,7 +929,7 @@ BEGIN
               GROUP BY tmpDatabases.DatabaseName) SelectedDatabases2
   ON tmpDatabases.DatabaseName = SelectedDatabases2.DatabaseName
 
-  IF @Databases IS NOT NULL AND (NOT EXISTS(SELECT * FROM @SelectedDatabases) OR EXISTS(SELECT * FROM @SelectedDatabases WHERE DatabaseName IS NULL OR DATALENGTH(DatabaseName) = 0))
+  IF @Databases IS NOT NULL AND (NOT EXISTS(SELECT * FROM @SelectedDatabases) OR EXISTS(SELECT * FROM @SelectedDatabases WHERE DatabaseName IS NULL OR DatabaseName = ''))
   BEGIN
     INSERT INTO @Errors ([Message], Severity, [State])
     SELECT 'The value for the parameter @Databases is not supported.', 16, 1
@@ -1053,7 +1050,7 @@ BEGIN
   SELECT @ErrorMessage = @ErrorMessage + QUOTENAME(DatabaseName) + ', '
   FROM @tmpDatabases
   WHERE Selected = 1
-  AND DATALENGTH(DatabaseNameFS) = 0
+  AND DatabaseNameFS = ''
   ORDER BY DatabaseName ASC
   IF @@ROWCOUNT > 0
   BEGIN
@@ -1066,7 +1063,7 @@ BEGIN
   FROM @tmpDatabases
   WHERE UPPER(DatabaseNameFS) IN(SELECT UPPER(DatabaseNameFS) FROM @tmpDatabases GROUP BY UPPER(DatabaseNameFS) HAVING COUNT(*) > 1)
   AND UPPER(DatabaseNameFS) IN(SELECT UPPER(DatabaseNameFS) FROM @tmpDatabases WHERE Selected = 1)
-  AND DATALENGTH(DatabaseNameFS) > 0
+  AND DatabaseNameFS <> ''
   ORDER BY DatabaseName ASC
   OPTION (RECOMPILE)
   IF @@ROWCOUNT > 0
@@ -1343,7 +1340,7 @@ BEGIN
   --// Check URLs                                                                          //--
   ----------------------------------------------------------------------------------------------------
 
-  IF EXISTS(SELECT * FROM @URLs WHERE Mirror = 0 AND NOT (DirectoryPath LIKE 'https://%/%' OR DirectoryPath LIKE 's3://%/%'))
+  IF EXISTS(SELECT * FROM @URLs WHERE Mirror = 0 AND DirectoryPath NOT LIKE 'https://%/%')
   BEGIN
     INSERT INTO @Errors ([Message], Severity, [State])
     SELECT 'The value for the parameter @URL is not supported.', 16, 1
@@ -1363,7 +1360,7 @@ BEGIN
 
   ----------------------------------------------------------------------------------------------------
 
-  IF EXISTS(SELECT * FROM @URLs WHERE Mirror = 1 AND NOT (DirectoryPath LIKE 'https://%/%' OR DirectoryPath LIKE 's3://%/%'))
+  IF EXISTS(SELECT * FROM @URLs WHERE Mirror = 1 AND DirectoryPath NOT LIKE 'https://%/%')
   BEGIN
     INSERT INTO @Errors ([Message], Severity, [State])
     SELECT 'The value for the parameter @MirrorURL is not supported.', 16, 1
@@ -1443,16 +1440,6 @@ BEGIN
                             WHEN @BackupSoftware IS NULL AND NOT EXISTS(SELECT * FROM sys.configurations WHERE name = 'backup compression default' AND value_in_use = 1) THEN 'N'
                             WHEN @BackupSoftware IS NOT NULL AND (@CompressionLevel IS NULL OR @CompressionLevel > 0)  THEN 'Y'
                             WHEN @BackupSoftware IS NOT NULL AND @CompressionLevel = 0  THEN 'N' END
-  END
-
-  ----------------------------------------------------------------------------------------------------
-  --// Get default compression algorithm                                                          //--
-  ----------------------------------------------------------------------------------------------------
-
-  IF @CompressionAlgorithm IS NULL AND @BackupSoftware IS NULL AND @Version >= 16
-  BEGIN
-    SELECT @CompressionAlgorithm = CASE WHEN @BackupSoftware IS NULL AND EXISTS(SELECT * FROM sys.configurations WHERE name = 'backup compression algorithm' AND value_in_use = 1) THEN 'MS_XPRESS'
-                                        WHEN @BackupSoftware IS NULL AND EXISTS(SELECT * FROM sys.configurations WHERE name = 'backup compression algorithm' AND value_in_use = 2) THEN 'QAT_DEFLATE' END
   END
 
   ----------------------------------------------------------------------------------------------------
@@ -1573,32 +1560,6 @@ BEGIN
 
   ----------------------------------------------------------------------------------------------------
 
-  IF @CompressionAlgorithm NOT IN ('MS_XPRESS','QAT_DEFLATE')
-  BEGIN
-    INSERT INTO @Errors ([Message], Severity, [State])
-    SELECT 'The value for the parameter @CompressionAlgorithm is not supported. The allowed values are MS_XPRESS and QAT_DEFLATE.', 16, 1
-  END
-
-  IF @CompressionAlgorithm IS NOT NULL AND NOT (@Version >= 16)
-  BEGIN
-    INSERT INTO @Errors ([Message], Severity, [State])
-    SELECT 'The value for the parameter @CompressionAlgorithm is not supported. Specifying the compression algorithm is only supported in SQL Server 2022 and later.', 16, 2
-  END
-
-  IF @CompressionAlgorithm = 'QAT_DEFLATE' AND NOT (SERVERPROPERTY('EngineEdition') IN(2, 3))
-  BEGIN
-    INSERT INTO @Errors ([Message], Severity, [State])
-    SELECT 'The value for the parameter @CompressionAlgorithm is not supported. Setting the compression algorithm to QAT_DEFLATE is only supported in Standard and Enterprise Edition.', 16, 3
-  END
-
-  IF @CompressionAlgorithm IS NOT NULL AND @BackupSoftware IS NOT NULL
-  BEGIN
-    INSERT INTO @Errors ([Message], Severity, [State])
-    SELECT 'The value for the parameter @CompressionAlgorithm is not supported. Setting the compression algorithm is only supported with SQL Server native backup', 16, 4
-  END
-
-  ----------------------------------------------------------------------------------------------------
-
   IF @CopyOnly NOT IN ('Y','N') OR @CopyOnly IS NULL
   BEGIN
     INSERT INTO @Errors ([Message], Severity, [State])
@@ -1713,7 +1674,7 @@ BEGIN
 
   ----------------------------------------------------------------------------------------------------
 
-  IF @MaxTransferSize < 65536 OR @MaxTransferSize > 20971520
+  IF @MaxTransferSize < 65536 OR @MaxTransferSize > 4194304
   BEGIN
     INSERT INTO @Errors ([Message], Severity, [State])
     SELECT 'The value for the parameter @MaxTransferSize is not supported.', 16, 1
@@ -1799,13 +1760,7 @@ BEGIN
     SELECT 'The value for the parameter @NumberOfFiles is not supported.', 16, 9
   END
 
-  IF @NumberOfFiles > 32 AND @URL LIKE 's3%' AND @MirrorURL LIKE 's3%'
-  BEGIN
-    INSERT INTO @Errors ([Message], Severity, [State])
-    SELECT 'The value for the parameter @NumberOfFiles is not supported. The maximum number of files when performing mirrored backups to S3 storage is 32.', 16, 10
-  END
-
-  ----------------------------------------------------------------------------------------------------
+    ----------------------------------------------------------------------------------------------------
 
   IF @MinBackupSizeForMultipleFiles <= 0
   BEGIN
@@ -1957,7 +1912,7 @@ BEGIN
     SELECT 'The value for the parameter @Encrypt is not supported.', 16, 1
   END
 
-  IF @Encrypt = 'Y' AND @BackupSoftware IS NULL AND NOT (@Version >= 12 AND (SERVERPROPERTY('EngineEdition') IN(3, 8) OR SERVERPROPERTY('EditionID') IN(-1534726760, 284895786)))
+  IF @Encrypt = 'Y' AND @BackupSoftware IS NULL AND NOT (@Version >= 12 AND (SERVERPROPERTY('EngineEdition') = 3) OR SERVERPROPERTY('EditionID') IN(-1534726760, 284895786))
   BEGIN
     INSERT INTO @Errors ([Message], Severity, [State])
     SELECT 'The value for the parameter @Encrypt is not supported.', 16, 2
@@ -2162,7 +2117,7 @@ BEGIN
     SELECT 'The value for the parameter @Credential is not supported.', 16, 2
   END
 
-  IF @URL IS NOT NULL AND @Credential IS NULL AND NOT EXISTS(SELECT * FROM sys.credentials WHERE UPPER(credential_identity) IN('SHARED ACCESS SIGNATURE','MANAGED IDENTITY','S3 ACCESS KEY'))
+  IF @URL IS NOT NULL AND @Credential IS NULL AND NOT EXISTS(SELECT * FROM sys.credentials WHERE UPPER(credential_identity) = 'SHARED ACCESS SIGNATURE')
   BEGIN
     INSERT INTO @Errors ([Message], Severity, [State])
     SELECT 'The value for the parameter @Credential is not supported.', 16, 3
@@ -3956,11 +3911,6 @@ BEGIN
             SET @CurrentCommand += CASE WHEN @Compress = 'Y' AND (@CurrentIsEncrypted = 0 OR (@CurrentIsEncrypted = 1 AND ((@Version >= 13 AND @CurrentMaxTransferSize >= 65537) OR @Version >= 15.0404316 OR SERVERPROPERTY('EngineEdition') = 8))) THEN ', COMPRESSION' ELSE ', NO_COMPRESSION' END
           END
 
-          IF @Compress = 'Y' AND @CompressionAlgorithm IS NOT NULL
-          BEGIN
-            SET @CurrentCommand += ' (ALGORITHM = ' + @CompressionAlgorithm + ')'
-          END
-
           IF @CurrentBackupType = 'DIFF' SET @CurrentCommand += ', DIFFERENTIAL'
 
           IF EXISTS(SELECT * FROM @CurrentFiles WHERE Mirror = 1)
@@ -3976,7 +3926,6 @@ BEGIN
           IF @BufferCount IS NOT NULL SET @CurrentCommand += ', BUFFERCOUNT = ' + CAST(@BufferCount AS nvarchar)
           IF @CurrentMaxTransferSize IS NOT NULL SET @CurrentCommand += ', MAXTRANSFERSIZE = ' + CAST(@CurrentMaxTransferSize AS nvarchar)
           IF @Description IS NOT NULL SET @CurrentCommand += ', DESCRIPTION = N''' + REPLACE(@Description,'''','''''') + ''''
-          IF @BackupOptions IS NOT NULL SET @CurrentCommand += ', BACKUP_OPTIONS = N''' + REPLACE(@BackupOptions,'''','''''') + ''''
           IF @Encrypt = 'Y' SET @CurrentCommand += ', ENCRYPTION (ALGORITHM = ' + UPPER(@EncryptionAlgorithm) + ', '
           IF @Encrypt = 'Y' AND @ServerCertificate IS NOT NULL SET @CurrentCommand += 'SERVER CERTIFICATE = ' + QUOTENAME(@ServerCertificate)
           IF @Encrypt = 'Y' AND @ServerAsymmetricKey IS NOT NULL SET @CurrentCommand += 'SERVER ASYMMETRIC KEY = ' + QUOTENAME(@ServerAsymmetricKey)
@@ -4216,7 +4165,6 @@ BEGIN
             SET @CurrentCommand += ' WITH '
             IF @CheckSum = 'Y' SET @CurrentCommand += 'CHECKSUM'
             IF @CheckSum = 'N' SET @CurrentCommand += 'NO_CHECKSUM'
-            IF @BackupOptions IS NOT NULL SET @CurrentCommand += ', RESTORE_OPTIONS = N''' + REPLACE(@BackupOptions,'''','''''') + ''''
             IF @URL IS NOT NULL AND @Credential IS NOT NULL SET @CurrentCommand += ', CREDENTIAL = N''' + REPLACE(@Credential,'''','''''') + ''''
           END
 
@@ -4554,7 +4502,7 @@ BEGIN
   --// Source:  https://ola.hallengren.com                                                        //--
   --// License: https://ola.hallengren.com/license.html                                           //--
   --// GitHub:  https://github.com/olahallengren/sql-server-maintenance-solution                  //--
-  --// Version: 2024-11-14 14:03:14                                                               //--
+  --// Version: 2022-12-03 17:23:44                                                               //--
   ----------------------------------------------------------------------------------------------------
 
   SET NOCOUNT ON
@@ -4944,7 +4892,7 @@ BEGIN
               GROUP BY tmpDatabases.DatabaseName) SelectedDatabases2
   ON tmpDatabases.DatabaseName = SelectedDatabases2.DatabaseName
 
-  IF @Databases IS NOT NULL AND (NOT EXISTS(SELECT * FROM @SelectedDatabases) OR EXISTS(SELECT * FROM @SelectedDatabases WHERE DatabaseName IS NULL OR DATALENGTH(DatabaseName) = 0))
+  IF @Databases IS NOT NULL AND (NOT EXISTS(SELECT * FROM @SelectedDatabases) OR EXISTS(SELECT * FROM @SelectedDatabases WHERE DatabaseName IS NULL OR DatabaseName = ''))
   BEGIN
     INSERT INTO @Errors ([Message], Severity, [State])
     SELECT 'The value for the parameter @Databases is not supported.', 16, 1
@@ -6456,7 +6404,7 @@ BEGIN
   --// Source:  https://ola.hallengren.com                                                        //--
   --// License: https://ola.hallengren.com/license.html                                           //--
   --// GitHub:  https://github.com/olahallengren/sql-server-maintenance-solution                  //--
-  --// Version: 2024-11-14 14:03:14                                                               //--
+  --// Version: 2022-12-03 17:23:44                                                               //--
   ----------------------------------------------------------------------------------------------------
 
   SET NOCOUNT ON
@@ -6924,7 +6872,7 @@ BEGIN
               GROUP BY tmpDatabases.DatabaseName) SelectedDatabases2
   ON tmpDatabases.DatabaseName = SelectedDatabases2.DatabaseName
 
-  IF @Databases IS NOT NULL AND (NOT EXISTS(SELECT * FROM @SelectedDatabases) OR EXISTS(SELECT * FROM @SelectedDatabases WHERE DatabaseName IS NULL OR DATALENGTH(DatabaseName) = 0))
+  IF @Databases IS NOT NULL AND (NOT EXISTS(SELECT * FROM @SelectedDatabases) OR EXISTS(SELECT * FROM @SelectedDatabases WHERE DatabaseName IS NULL OR DatabaseName = ''))
   BEGIN
     INSERT INTO @Errors ([Message], Severity, [State])
     SELECT 'The value for the parameter @Databases is not supported.', 16, 1
