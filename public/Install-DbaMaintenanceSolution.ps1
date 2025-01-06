@@ -90,7 +90,7 @@ function Install-DbaMaintenanceSolution {
         https://ola.hallengren.com
 
     .LINK
-         https://dbatools.io/Install-DbaMaintenanceSolution
+        https://dbatools.io/Install-DbaMaintenanceSolution
 
     .EXAMPLE
         PS C:\> Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -InstallJobs -CleanupTime 72
@@ -402,12 +402,6 @@ function Install-DbaMaintenanceSolution {
             $cleanupQuery = $null
             if ($ReplaceExisting) {
                 [string]$cleanupQuery = $("
-                            IF OBJECT_ID('[dbo].[CommandLog]', 'U') IS NOT NULL
-                                DROP TABLE [dbo].[CommandLog];
-                            IF OBJECT_ID('[dbo].[QueueDatabase]', 'U') IS NOT NULL
-                                DROP TABLE [dbo].[QueueDatabase];
-                            IF OBJECT_ID('[dbo].[Queue]', 'U') IS NOT NULL
-                                DROP TABLE [dbo].[Queue];
                             IF OBJECT_ID('[dbo].[CommandExecute]', 'P') IS NOT NULL
                                 DROP PROCEDURE [dbo].[CommandExecute];
                             IF OBJECT_ID('[dbo].[DatabaseBackup]', 'P') IS NOT NULL
@@ -417,6 +411,22 @@ function Install-DbaMaintenanceSolution {
                             IF OBJECT_ID('[dbo].[IndexOptimize]', 'P') IS NOT NULL
                                 DROP PROCEDURE [dbo].[IndexOptimize];
                             ")
+
+                if ($LogToTable) {
+                    $cleanupQuery += $("
+                            IF OBJECT_ID('[dbo].[CommandLog]', 'U') IS NOT NULL
+                                DROP TABLE [dbo].[CommandLog];
+                            ")
+                }
+
+                if ($InstallParallel) {
+                    $cleanupQuery += $("
+                            IF OBJECT_ID('[dbo].[QueueDatabase]', 'U') IS NOT NULL
+                                DROP TABLE [dbo].[QueueDatabase];
+                            IF OBJECT_ID('[dbo].[Queue]', 'U') IS NOT NULL
+                                DROP TABLE [dbo].[Queue];
+                            ")
+                }
 
                 if ($Pscmdlet.ShouldProcess($instance, "Dropping all objects created by Ola's Maintenance Solution")) {
                     Write-ProgressHelper -ExcludePercent -Message "Dropping objects created by Ola's Maintenance Solution"
