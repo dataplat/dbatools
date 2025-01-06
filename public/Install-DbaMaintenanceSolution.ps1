@@ -31,6 +31,8 @@ function Install-DbaMaintenanceSolution {
     .PARAMETER ReplaceExisting
         If this switch is enabled, objects already present in the target database will be dropped and recreated.
 
+        Note - The tables for `LogToTable` and `InstallParallel` will only be dropped if those options are also specified.
+
     .PARAMETER LogToTable
         If this switch is enabled, the Maintenance Solution will be configured to log commands to a table.
 
@@ -119,16 +121,32 @@ function Install-DbaMaintenanceSolution {
 
         Installs Maintenance Solution to myserver in database. Adds Agent Jobs, and if any currently exist, they'll be replaced.
 
+        Since the `LogToTable` switch is enabled, the CommandLog table will be dropped and recreated also.
+
+        If the tables relating to `InstallParallel` are present, they will not be dropped.
+
     .EXAMPLE
-        PS C:\> Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -InstallJobs -BackupLocation "Z:\SQLBackup" -CleanupTime 72 -ReplaceExisting
+        PS C:\> $params = @{
+        >> SqlInstance = 'RES14224'
+        >> Database = 'DBA'
+        >> InstallJobs = $true
+        >> BackupLocation = 'Z:\SQLBackup'
+        >> CleanupTime = 72
+        >> ReplaceExisting = $true
+        >> }
+        PS C:\> Install-DbaMaintenanceSolution @params
 
         This will drop and then recreate the Ola Hallengren's Solution objects
         The cleanup script will drop and recreate:
-        - TABLE [dbo].[CommandLog]
         - STORED PROCEDURE [dbo].[CommandExecute]
         - STORED PROCEDURE [dbo].[DatabaseBackup]
         - STORED PROCEDURE [dbo].[DatabaseIntegrityCheck]
         - STORED PROCEDURE [dbo].[IndexOptimize]
+
+        The tables will not be dropped as the `LogToTable` and `InstallParallel` switches are not enabled.
+        - [dbo].[CommandLog]
+        - [dbo].[Queue]
+        - [dbo].[QueueDatabase]
 
         The following SQL Agent jobs will be deleted:
         - 'Output File Cleanup'
