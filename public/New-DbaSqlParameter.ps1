@@ -119,88 +119,90 @@ function New-DbaSqlParameter {
         [string]$SourceVersion,
         [ValidateSet("BigInt", "Binary", "Bit", "Char", "DateTime", "Decimal", "Float", "Image", "Int", "Money", "NChar", "NText", "NVarChar", "Real", "UniqueIdentifier", "SmallDateTime", "SmallInt", "SmallMoney", "Text", "Timestamp", "TinyInt", "VarBinary", "VarChar", "Variant", "Xml", "Udt", "Structured", "Date", "Time", "DateTime2", "DateTimeOffset")]
         [string]$SqlDbType,
-        [string]$SqlValue,
+        [object]$SqlValue,
         [string]$TypeName,
         [string]$UdtTypeName,
         [object]$Value,
         [switch]$EnableException
     )
+
     $param = New-Object Microsoft.Data.SqlClient.SqlParameter
 
     try {
-        if ($PSBoundParameters.CompareInfo) {
+        
+        if (Test-Bound -ParameterName CompareInfo) {
             $param.CompareInfo = $CompareInfo
         }
 
-        if ($PSBoundParameters.DbType) {
+        if (Test-Bound -ParameterName DbType) {
             $param.DbType = $DbType
         }
 
-        if ($PSBoundParameters.Direction) {
+        if (Test-Bound -ParameterName Direction) {
             $param.Direction = $Direction
         }
 
-        if ($PSBoundParameters.ForceColumnEncryption) {
+        if (Test-Bound -ParameterName ForceColumnEncryption) {
             $param.ForceColumnEncryption = $ForceColumnEncryption
         }
 
-        if ($PSBoundParameters.IsNullable) {
+        if (Test-Bound -ParameterName IsNullable) {
             $param.IsNullable = $IsNullable
         }
 
-        if ($PSBoundParameters.LocaleId) {
+        if (Test-Bound -ParameterName LocaleId) {
             $param.LocaleId = $LocaleId
         }
 
-        if ($PSBoundParameters.Offset) {
+        if (Test-Bound -ParameterName Offset) {
             $param.Offset = $Offset
         }
 
-        if ($PSBoundParameters.ParameterName) {
+        if (Test-Bound -ParameterName ParameterName) {
             $param.ParameterName = $ParameterName
         }
 
-        if ($PSBoundParameters.Precision) {
+        if (Test-Bound -ParameterName Precision) {
             $param.Precision = $Precision
         }
 
-        if ($PSBoundParameters.Scale) {
+        if (Test-Bound -ParameterName Scale) {
             $param.Scale = $Scale
         }
 
-        if ($PSBoundParameters.Size) {
+        if (Test-Bound -ParameterName Size) {
             $param.Size = $Size
         }
 
-        if ($PSBoundParameters.SourceColumn) {
+        if (Test-Bound -ParameterName SourceColumn) {
             $param.SourceColumn = $SourceColumn
         }
 
-        if ($PSBoundParameters.SourceColumnNullMapping) {
+        if (Test-Bound -ParameterName SourceColumnNullMapping) {
             $param.SourceColumnNullMapping = $SourceColumnNullMapping
         }
 
-        if ($PSBoundParameters.SourceVersion) {
+        if (Test-Bound -ParameterName SourceVersion) {
             $param.SourceVersion = $SourceVersion
         }
 
-        if ($PSBoundParameters.SqlDbType) {
+        if (Test-Bound -ParameterName SqlDbType) {
             $param.SqlDbType = $SqlDbType
         }
 
-        if ($PSBoundParameters.SqlValue) {
+        if (Test-Bound -ParameterName SqlValue) {
             $param.SqlValue = $SqlValue
         }
 
-        if ($PSBoundParameters.TypeName) {
+        if (Test-Bound -ParameterName TypeName) {
             $param.TypeName = $TypeName
         }
 
-        if ($PSBoundParameters.UdtTypeName) {
+        if (Test-Bound -ParameterName UdtTypeName) {
             $param.UdtTypeName = $UdtTypeName
         }
 
-        if ($PSBoundParameters.Value) {
+        if (Test-Bound -ParameterName Value) {
             $param.Value = $Value
         }
         $param
