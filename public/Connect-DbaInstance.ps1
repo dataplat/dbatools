@@ -673,6 +673,18 @@ function Connect-DbaInstance {
                     $sqlConnectionInfo.Password = $csb.Password
                     $null = $csb.Remove('Password')
                 }
+                # look for 'Initial Catalog' and 'Database' in the connection string
+                $specifiedDatabase = $csb['Database']
+                if ($specifiedDatabase -eq '') {
+                    $specifiedDatabase = $csb['Initial Catalog']
+                }
+                if ($Database -and $Database -ne $specifiedDatabase) {
+                    Write-Message -Level Debug -Message "Database specified in connection string '$specifiedDatabase' does not match Database parameter '$Database'. Database parameter will be used."
+                    # clear both, in order to not be overridden later by setting all AddtionalParameters
+                    $csb.Remove('Database')
+                    $csb.Remove('Initial Catalog')
+                    $sqlConnectionInfo.DatabaseName = $Database
+                }
 
                 # Add all remaining parts of the connection string as additional parameters.
                 $sqlConnectionInfo.AdditionalParameters = $csb.ConnectionString
