@@ -69,9 +69,9 @@ function Get-JobList {
 
         $jobs = $server.JobServer.Jobs
         if ( (Test-Bound 'JobFilter') -or (Test-Bound 'StepFilter') ) {
-            
+
             foreach ($job in $jobs) {
-                foreach($jFilter in $JobFilter) {
+                foreach ($jFilter in $JobFilter) {
                     if ($jFilter -match '`*') {
                         if ($Not) {
                             $job | Where-Object Name -NotLike $jFilter
@@ -86,7 +86,7 @@ function Get-JobList {
                         }
                     }
                 }
-                foreach($sFilter in $StepFilter) {
+                foreach ($sFilter in $StepFilter) {
                     if ($sFilter -match '`*') {
                         if ($Not) {
                             $stepFound = $job.JobSteps | Where-Object Name -NotLike $sFilter
