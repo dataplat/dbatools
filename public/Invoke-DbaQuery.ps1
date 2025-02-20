@@ -152,6 +152,19 @@ function Invoke-DbaQuery {
         PS C:\> Invoke-DbaQuery -SqlInstance $server -Query 'SELECT * FROM bar WHERE SSN_col = @SSN' -SqlParameter @inputparamSSN
 
         Creates an input parameter using Always Encrypted
+
+    .EXAMPLE
+        PS C:\> $server = Connect-DbaInstance -SqlInstance AG1 -Database dbatools -MultiSubnetFailover -ConnectTimeout 60
+        PS C:\> Invoke-DbaQuery -SqlInstance $server -Query 'SELECT foo FROM bar'
+
+        Reuses Connect-DbaInstance, leveraging advanced paramenters, to adhere to official guidelines to target FCI or AG listeners.
+        See https://learn.microsoft.com/en-us/dotnet/framework/data/adonet/sql/sqlclient-support-for-high-availability-disaster-recovery#connecting-with-multisubnetfailover
+        
+    .EXAMPLE
+        PS C:\> Invoke-DbaQuery -SqlInstance AG1 -Query 'SELECT foo FROM bar' -AppendConnectionString 'MultiSubnetFailover=true;Connect Timeout=60'
+
+        Leverages your own parameters, giving you full power, mimicking Connect-DbaInstance's `-MultiSubnetFailover -ConnectTimeout 60`, to adhere to official guidelines to target FCI or AG listeners.
+        See https://learn.microsoft.com/en-us/dotnet/framework/data/adonet/sql/sqlclient-support-for-high-availability-disaster-recovery#connecting-with-multisubnetfailover
     #>
     [CmdletBinding(DefaultParameterSetName = "Query")]
     param (
@@ -181,6 +194,7 @@ function Invoke-DbaQuery {
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$ReadOnly,
         [switch]$NoExec,
+        [string]$AppendConnectionString,
         [switch]$EnableException
     )
 
@@ -394,15 +408,75 @@ function Invoke-DbaQuery {
                 (-not $ReadOnly) -and # no readonly intent is requested and
                 (-not $Database -or $instance.InputObject.ConnectionContext.DatabaseName -eq $Database)  # the database is not set or the currently connected
                 if ($startedWithAnOpenConnection) {
-                    Write-Message -Level Debug -Message "Current connection will be reused"
-                    $server = $instance.InputObject
+                    Write-Message -Level Debug -Message "Current connection can be reused"
+                    # We got another nightmare to solve, but fortunately @andreasjordan is "the king"
+                    # So. Here we are with a passed down "Server" instance. Problem is, we got two VERY different
+                    # libraries built with VERY different agendas. And we want to get the best of both worlds.
+                    # This is SUCH a nightmare because Invoke-DbaQuery is THE ONLY function that CAN use a Connection
+                    # (Microsoft.Data.SqlClient.SqlConnection) which can be used to run PARAMETRIZED queries.
+                    # So, recap of the recap:
+                    #  1. Microsoft.Data.SqlClient.SqlConnection:
+                    #     PRO: is the only connection that can use Microsoft.Data.SqlClient.SqlCommand
+                    #          that can use [Microsoft.Data.SqlClient.SqlParameter]s
+                    #     CON: when using integrated auth, as in Integrated Security=True, cannot specify a DIFFERENT user than the current logged in one
+                    #  2. Microsoft.SqlServer.Management.Smo.Server
+                    #     PRO: can specify a DIFFERENT user than the current logged in one via ConnectAsUser, ConnectAsUserName, ConnectAsUserPassword when Integrated Security=True
+                    #     CON: cannot use Microsoft.Data.SqlClient.SqlCommand nor [Microsoft.Data.SqlClient.SqlParameter]s
+                    # 
+                    # Till here, everything is clear: we want to reuse connection if we're sure the target is "95%" adherent to the supposed one
+                    # But, and that's a big but, the magic in Invoke-DbaQuery is making a Microsoft.SqlServer.Management.Smo.Server connection happen, let it "bleed" through here
+                    # land in Invoke-DbaAsync untouched, where it gets magically converted to a Microsoft.Data.SqlClient.SqlConnection, and we get the best of both worlds.
+                    # Thing is, the "magic" is rather ... not so magic. What it happens is that when the connection from Microsoft.SqlServer.Management.Smo.Server is "Open",
+                    # everything works fine, while if it's "Closed", Microsoft.Data.SqlClient.SqlConnection rehydrates a connection using the ConnectionString of Microsoft.SqlServer.Management.Smo.Server.
+                    # Microsoft.SqlServer.Management.Smo.Server is cheating though, because there's no connectionstring parameter that holds "log on as a different user", so, what happens is that
+                    # when Microsoft.Data.SqlClient.SqlConnection picks it up, rehydrates the connection that holds Integrated Security=True, and the information on "log on as a different user" is lost in
+                    # translation.
+                    # As anticipated, this happens ONLY when the connection is "Closed", because when it's "Open", no rehydration is needed, and everything works out of the box.
+                    # Now, another fancy thing: we want to use connection pooling by default, because pooling connection is more performant.
+                    # But, and that's the big but, when connection is pooled, it gets put in the "Closed" state which translates to "back to the pool, ready to be reused", as soon as no commands are actively used.
+                    # In dbatools world, that means pretty much that when we are here, it's always "Closed" UNLESS -NonPooledConnection is $true on Connect-DbaInstance, and that's why when we don't land here
+                    # we create a new instance with NonPooledConnection = $true ( see #8491 for details, also #7725 is still relevant)
+                    # If -NonPooled is passed, we instruct Microsoft.SqlServer.Management.Smo.Server we DON'T want pooling, so the connection stays "Open" (there's no pool to put it back), 
+                    # and when it's "Open" we can leverage the fact that we already established a connection, verified the certificate, did the login handshake, etc AND when casting 
+                    # to Microsoft.Data.SqlClient.SqlConnection it enables us to leverage [Microsoft.Data.SqlClient.SqlParameter]s !
+                    #
+                    # Again, here we are, but we cannot use the connection when an information is lost, which is that we are:
+                    #   - Integrated Security=True
+                    #   - using ConnectAsUser, ConnectAsUserName, ConnectAsUserPassword to "log on as a different user"
+                    
+                    if ($instance.InputObject.ConnectionContext.ConnectAsUserName -ne '')
+                    {
+                        Write-Message -Level Debug -Message "Current connection cannot be reused because logging in as a different user"
+                        # We rebuild correct credentials from SMO informations
+                        $secStringPassword = ConvertTo-SecureString $instance.InputObject.ConnectionContext.ConnectAsUserPassword -AsPlainText -Force
+                        [PSCredential]$serverCredentialFromSMO = New-Object System.Management.Automation.PSCredential($instance.InputObject.ConnectionContext.ConnectAsUserName, $secStringPassword)
+                        $connDbaInstanceParams = @{
+                            SqlInstance            = $instance
+                            SqlCredential          = $serverCredentialFromSMO
+                            Database               = $Database
+                            NonPooledConnection    = $true           # see #8491 for details, also #7725 is still relevant
+                            Verbose                = $false
+                            AppendConnectionString = $AppendConnectionString
+                        }
+                        if ($ReadOnly) {
+                            $connDbaInstanceParams.ApplicationIntent = "ReadOnly"
+                        }
+                        $server = Connect-DbaInstance @connDbaInstanceParams
+                        
+                    } else {
+                        Write-Message -Level Debug -Message "Current connection will be reused"
+                        $server = $instance.InputObject
+                    }
+                    
+                    
                 } else {
                     $connDbaInstanceParams = @{
-                        SqlInstance         = $instance
-                        SqlCredential       = $SqlCredential
-                        Database            = $Database
-                        NonPooledConnection = $true           # see #8491 for details, also #7725 is still relevant
-                        Verbose             = $false
+                        SqlInstance            = $instance
+                        SqlCredential          = $SqlCredential
+                        Database               = $Database
+                        NonPooledConnection    = $true           # see #8491 for details, also #7725 is still relevant
+                        Verbose                = $false
+                        AppendConnectionString = $AppendConnectionString
                     }
                     if ($ReadOnly) {
                         $connDbaInstanceParams.ApplicationIntent = "ReadOnly"

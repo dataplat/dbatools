@@ -27,7 +27,8 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                 'ReadOnly',
                 'EnableException',
                 'CommandType',
-                'NoExec'
+                'NoExec',
+                'AppendConnectionString'
             )
         }
         It "Should only contain our specific parameters" {
