@@ -152,6 +152,13 @@ function Invoke-DbaQuery {
         PS C:\> Invoke-DbaQuery -SqlInstance $server -Query 'SELECT * FROM bar WHERE SSN_col = @SSN' -SqlParameter @inputparamSSN
 
         Creates an input parameter using Always Encrypted
+
+    .EXAMPLE
+        PS C:\> $server = Connect-DbaInstance -SqlInstance AG1 -Database dbatools -MultiSubnetFailover -ConnectTimeout 60
+        PS C:\> Invoke-DbaQuery -SqlInstance $server -Query 'SELECT foo FROM bar'
+
+        Reuses Connect-DbaInstance, leveraging advanced paramenters, to adhere to official guidelines to target FCI or AG listeners.
+        See https://learn.microsoft.com/en-us/dotnet/framework/data/adonet/sql/sqlclient-support-for-high-availability-disaster-recovery#connecting-with-multisubnetfailover
     #>
     [CmdletBinding(DefaultParameterSetName = "Query")]
     param (
