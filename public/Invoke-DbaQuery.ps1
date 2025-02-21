@@ -169,7 +169,7 @@ function Invoke-DbaQuery {
         See https://learn.microsoft.com/en-us/dotnet/framework/data/adonet/sql/sqlclient-support-for-high-availability-disaster-recovery#connecting-with-multisubnetfailover
     #>
     [CmdletBinding(DefaultParameterSetName = "Query")]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingConvertToSecureStringWithPlainText", "Needed to re-auth as different user for ad")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingConvertToSecureStringWithPlainText", Justification="Needed to re-auth as different user for ad")]
     param (
         [Parameter(ValueFromPipeline)]
         [Parameter(ParameterSetName = 'Query', Position = 0)]
