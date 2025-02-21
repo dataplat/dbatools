@@ -64,6 +64,8 @@ function Invoke-DbaQuery {
     .PARAMETER NoExec
         Use this switch to prepend SET NOEXEC ON and append SET NOEXEC OFF to each statement, useful for checking query formal errors
 
+    .PARAMETER AppendConnectionString
+        Appends to the current connection string. Note that you cannot pass authentication information using this method. Use -SqlInstance and optionally -SqlCredential to set authentication information.
 
     .NOTES
         Tags: Database, Query, Utility
@@ -159,13 +161,14 @@ function Invoke-DbaQuery {
 
         Reuses Connect-DbaInstance, leveraging advanced paramenters, to adhere to official guidelines to target FCI or AG listeners.
         See https://learn.microsoft.com/en-us/dotnet/framework/data/adonet/sql/sqlclient-support-for-high-availability-disaster-recovery#connecting-with-multisubnetfailover
-        
+
     .EXAMPLE
         PS C:\> Invoke-DbaQuery -SqlInstance AG1 -Query 'SELECT foo FROM bar' -AppendConnectionString 'MultiSubnetFailover=true;Connect Timeout=60'
 
         Leverages your own parameters, giving you full power, mimicking Connect-DbaInstance's `-MultiSubnetFailover -ConnectTimeout 60`, to adhere to official guidelines to target FCI or AG listeners.
         See https://learn.microsoft.com/en-us/dotnet/framework/data/adonet/sql/sqlclient-support-for-high-availability-disaster-recovery#connecting-with-multisubnetfailover
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingConvertToSecureStringWithPlainText", "Needed to re-auth as different user for ad")]
     [CmdletBinding(DefaultParameterSetName = "Query")]
     param (
         [Parameter(ValueFromPipeline)]
@@ -422,7 +425,7 @@ function Invoke-DbaQuery {
                     #  2. Microsoft.SqlServer.Management.Smo.Server
                     #     PRO: can specify a DIFFERENT user than the current logged in one via ConnectAsUser, ConnectAsUserName, ConnectAsUserPassword when Integrated Security=True
                     #     CON: cannot use Microsoft.Data.SqlClient.SqlCommand nor [Microsoft.Data.SqlClient.SqlParameter]s
-                    # 
+                    #
                     # Till here, everything is clear: we want to reuse connection if we're sure the target is "95%" adherent to the supposed one
                     # But, and that's a big but, the magic in Invoke-DbaQuery is making a Microsoft.SqlServer.Management.Smo.Server connection happen, let it "bleed" through here
                     # land in Invoke-DbaAsync untouched, where it gets magically converted to a Microsoft.Data.SqlClient.SqlConnection, and we get the best of both worlds.
@@ -436,16 +439,15 @@ function Invoke-DbaQuery {
                     # But, and that's the big but, when connection is pooled, it gets put in the "Closed" state which translates to "back to the pool, ready to be reused", as soon as no commands are actively used.
                     # In dbatools world, that means pretty much that when we are here, it's always "Closed" UNLESS -NonPooledConnection is $true on Connect-DbaInstance, and that's why when we don't land here
                     # we create a new instance with NonPooledConnection = $true ( see #8491 for details, also #7725 is still relevant)
-                    # If -NonPooled is passed, we instruct Microsoft.SqlServer.Management.Smo.Server we DON'T want pooling, so the connection stays "Open" (there's no pool to put it back), 
-                    # and when it's "Open" we can leverage the fact that we already established a connection, verified the certificate, did the login handshake, etc AND when casting 
+                    # If -NonPooled is passed, we instruct Microsoft.SqlServer.Management.Smo.Server we DON'T want pooling, so the connection stays "Open" (there's no pool to put it back),
+                    # and when it's "Open" we can leverage the fact that we already established a connection, verified the certificate, did the login handshake, etc AND when casting
                     # to Microsoft.Data.SqlClient.SqlConnection it enables us to leverage [Microsoft.Data.SqlClient.SqlParameter]s !
                     #
                     # Again, here we are, but we cannot use the connection when an information is lost, which is that we are:
                     #   - Integrated Security=True
                     #   - using ConnectAsUser, ConnectAsUserName, ConnectAsUserPassword to "log on as a different user"
-                    
-                    if ($instance.InputObject.ConnectionContext.ConnectAsUserName -ne '')
-                    {
+
+                    if ($instance.InputObject.ConnectionContext.ConnectAsUserName -ne '') {
                         Write-Message -Level Debug -Message "Current connection cannot be reused because logging in as a different user"
                         # We rebuild correct credentials from SMO informations
                         $secStringPassword = ConvertTo-SecureString $instance.InputObject.ConnectionContext.ConnectAsUserPassword -AsPlainText -Force
@@ -462,13 +464,13 @@ function Invoke-DbaQuery {
                             $connDbaInstanceParams.ApplicationIntent = "ReadOnly"
                         }
                         $server = Connect-DbaInstance @connDbaInstanceParams
-                        
+
                     } else {
                         Write-Message -Level Debug -Message "Current connection will be reused"
                         $server = $instance.InputObject
                     }
-                    
-                    
+
+
                 } else {
                     $connDbaInstanceParams = @{
                         SqlInstance            = $instance
