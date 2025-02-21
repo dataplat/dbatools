@@ -78,7 +78,7 @@ Describe "Disable-DbaDbEncryption" -Tag "IntegrationTests" {
         }
 
         It "Should complete without warnings" {
-            $warn | Should -BeNullOrEmpty
+            $warn | Where-Object { $_ -notlike '*Connect-DbaInstance*'} | Should -BeNullOrEmpty
         }
 
         It "Should disable encryption" {

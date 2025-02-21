@@ -168,8 +168,8 @@ function Invoke-DbaQuery {
         Leverages your own parameters, giving you full power, mimicking Connect-DbaInstance's `-MultiSubnetFailover -ConnectTimeout 60`, to adhere to official guidelines to target FCI or AG listeners.
         See https://learn.microsoft.com/en-us/dotnet/framework/data/adonet/sql/sqlclient-support-for-high-availability-disaster-recovery#connecting-with-multisubnetfailover
     #>
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingConvertToSecureStringWithPlainText", "Needed to re-auth as different user for ad")]
     [CmdletBinding(DefaultParameterSetName = "Query")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingConvertToSecureStringWithPlainText", "Needed to re-auth as different user for ad")]
     param (
         [Parameter(ValueFromPipeline)]
         [Parameter(ParameterSetName = 'Query', Position = 0)]
