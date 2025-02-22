@@ -463,6 +463,7 @@ function Invoke-DbaQuery {
                         if ($ReadOnly) {
                             $connDbaInstanceParams.ApplicationIntent = "ReadOnly"
                         }
+
                         $server = Connect-DbaInstance @connDbaInstanceParams
 
                     } else {
