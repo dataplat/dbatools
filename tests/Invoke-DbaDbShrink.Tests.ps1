@@ -112,7 +112,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Accepts pipelined databases (see #9495)" {
-            $result = $db | Invoke-DbaDbShrink
+            $result = $db | Invoke-DbaDbShrink -FileType Data
             $result.Database | Should -Be $db.Name
             $result.File | Should -Be $db.Name
             $result.Success | Should -Be $true

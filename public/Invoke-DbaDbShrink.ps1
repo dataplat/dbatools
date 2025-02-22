@@ -133,9 +133,10 @@ function Invoke-DbaDbShrink {
         Shrinks all databases coming from a pre-filtered list via Get-DbaDatabase
 
     #>
-    [CmdletBinding(DefaultParameterSetName = 'Default', SupportsShouldProcess, ConfirmImpact = 'Low')]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
-        [parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'Instance')]
+        [Parameter(ValueFromPipeline)]
+        [Parameter(ParameterSetName = 'SqlInstance', Position = 0)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Database,
@@ -152,7 +153,7 @@ function Invoke-DbaDbShrink {
         [switch]$ExcludeIndexStats,
         [switch]$ExcludeUpdateUsage,
         [switch]$EnableException,
-        [parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'Pipeline')]
+        [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject
     )
 
@@ -229,6 +230,7 @@ function Invoke-DbaDbShrink {
                 $files += $db.FileGroups.Files
             }
 
+
             foreach ($file in $files) {
                 # $file.Size and $file.UsedSpace are in KB and translated here to bytes as the dbasize type requires
                 [dbasize]$startingSizeKB = $file.Size * 1024
@@ -292,7 +294,7 @@ function Invoke-DbaDbShrink {
                             $success = $true
                         } catch {
                             $success = $false
-                            Stop-Function -message 'Failure' -EnableException $EnableException -ErrorRecord $_ -Continue
+                            Stop-Function -Message 'Failure' -EnableException $EnableException -ErrorRecord $_ -Continue
                             continue
                         }
                         finally {
@@ -315,7 +317,7 @@ function Invoke-DbaDbShrink {
 
                         $timSpan = New-TimeSpan -Start $start -End $end
                         $ts = [TimeSpan]::FromSeconds($timSpan.TotalSeconds)
-                        $elapsed = '{0:HH:mm:ss}' -f ([DateTime]$ts.Ticks)
+                        $elapsed = "{0:HH:mm:ss}" -f ([datetime]$ts.Ticks)
 
                         $object = [PSCustomObject]@{
                             ComputerName                = $server.ComputerName
