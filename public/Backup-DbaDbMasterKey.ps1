@@ -16,20 +16,24 @@ function Backup-DbaDbMasterKey {
 
         For MFA support, please use Connect-DbaInstance.
 
+    .PARAMETER Credential
+        Pass a credential object for the password
+
     .PARAMETER Database
         Backup master key from specific database(s).
 
     .PARAMETER ExcludeDatabase
         The database(s) to exclude - this list is auto-populated from the server.
 
+    .PARAMETER SecurePassword
+        The password to encrypt the exported key. This must be a SecureString.
+
     .PARAMETER Path
         The directory to export the key. If no path is specified, the default backup directory for the instance will be used.
 
-    .PARAMETER Credential
-        Pass a credential object for the password
-
-    .PARAMETER SecurePassword
-        The password to encrypt the exported key. This must be a SecureString.
+    .PARAMETER FileBaseName
+        Override the default naming convention with a fixed name for the database master key, useful when exporting a single one.
+        ".key" will be appended to the filename.
 
     .PARAMETER InputObject
         Database object piped in from Get-DbaDatabase
@@ -82,6 +86,7 @@ function Backup-DbaDbMasterKey {
         [Alias("Password")]
         [Security.SecureString]$SecurePassword,
         [string]$Path,
+        [string]$FileBaseName,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
@@ -90,7 +95,6 @@ function Backup-DbaDbMasterKey {
         if ($Credential) {
             $SecurePassword = $Credential.Password
         }
-        $time = Get-Date -Format yyyMMddHHmmss
     }
     process {
         foreach ($instance in $SqlInstance) {
@@ -144,31 +148,36 @@ function Backup-DbaDbMasterKey {
             }
 
             $fileinstance = $instance.ToString().Replace('\', '$')
-            $filename = Join-DbaPath -SqlInstance $server -Path $actualPath -ChildPath "$fileinstance-$dbname-masterkey.key"
-
-            # if the base file name exists, then default to old style of appending a timestamp
-            if (Test-DbaPath -SqlInstance $server -Path $filename) {
-                $filename = Join-DbaPath -SqlInstance $server -Path $actualPath -ChildPath "$fileinstance-$dbname-masterkey-$time.key"
+            $targetBaseName = "$fileinstance-$dbname-masterkey"
+            if ($FileBaseName) {
+                $targetBaseName = $FileBaseName
             }
 
-            if ($Pscmdlet.ShouldProcess($instance, "Backing up master key to $filename")) {
+            $exportFileName = Join-DbaPath -SqlInstance $server -Path $actualPath -ChildPath "$targetBaseName.key"
+
+            # if the base file name exists, then default to old style of appending a timestamp
+            if (Test-DbaPath -SqlInstance $server -Path $exportFileName) {
+                $time = Get-Date -Format yyyMMddHHmmss
+                $exportFileName = Join-DbaPath -SqlInstance $server -Path $actualPath -ChildPath "$targetBaseName-$time.key"
+                # Sleep for a second to avoid another export in the same second
+                Start-Sleep -Seconds 1
+            }
+
+            if ($Pscmdlet.ShouldProcess($instance, "Backing up master key to $exportFileName")) {
                 try {
-                    $masterkey.Export($filename, ($SecurePassword | ConvertFrom-SecurePass))
+                    $masterkey.Export($exportFileName, ($SecurePassword | ConvertFrom-SecurePass))
                     $status = "Success"
                 } catch {
                     $status = "Failure"
                     Write-Message -Level Warning -Message "Backup failure: $($_.Exception.InnerException)"
                 }
 
-                # Sleep for a second to avoid another export in the same second
-                Start-Sleep -Seconds 1
-
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Database -value $dbName
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name DatabaseID -value $db.ID
-                Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Filename -value $filename
+                Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Filename -value $exportFileName
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Status -value $status
 
                 Select-DefaultView -InputObject $masterkey -Property ComputerName, InstanceName, SqlInstance, Database, 'Filename as Path', Status
