@@ -296,8 +296,7 @@ function Invoke-DbaDbShrink {
                             $success = $false
                             Stop-Function -Message 'Failure' -EnableException $EnableException -ErrorRecord $_ -Continue
                             continue
-                        }
-                        finally {
+                        } finally {
                             $instance.ConnectionContext.StatementTimeout = $previousStatementTimeout
                         }
                         $end = Get-Date
