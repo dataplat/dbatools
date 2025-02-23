@@ -471,7 +471,6 @@ function Invoke-DbaQuery {
                         $server = $instance.InputObject
                     }
 
-
                 } else {
                     $connDbaInstanceParams = @{
                         SqlInstance            = $instance
