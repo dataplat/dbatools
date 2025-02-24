@@ -5,7 +5,7 @@ $global:TestConfig = Get-TestConfig
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'AllUserDatabases', 'PercentFreeSpace', 'ShrinkMethod', 'FileType', 'StepSize', 'StatementTimeout', 'ExcludeIndexStats', 'ExcludeUpdateUsage', 'EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'AllUserDatabases', 'PercentFreeSpace', 'ShrinkMethod', 'FileType', 'StepSize', 'StatementTimeout', 'ExcludeIndexStats', 'ExcludeUpdateUsage', 'EnableException', 'InputObject'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
@@ -100,6 +100,19 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
         It "Shrinks just the data file(s) when FileType is Data and uses the StepSize" {
             $result = Invoke-DbaDbShrink $server -Database $db.Name -FileType Data -StepSize 2MB
+            $result.Database | Should -Be $db.Name
+            $result.File | Should -Be $db.Name
+            $result.Success | Should -Be $true
+            $db.Refresh()
+            $db.RecalculateSpaceUsage()
+            $db.FileGroups[0].Files[0].Refresh()
+            $db.LogFiles[0].Refresh()
+            $db.FileGroups[0].Files[0].Size | Should BeLessThan $oldDataSize
+            $db.LogFiles[0].Size | Should Be $oldLogSize
+        }
+
+        It "Accepts pipelined databases (see #9495)" {
+            $result = $db | Invoke-DbaDbShrink -FileType Data
             $result.Database | Should -Be $db.Name
             $result.File | Should -Be $db.Name
             $result.Success | Should -Be $true
