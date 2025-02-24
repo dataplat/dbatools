@@ -37,6 +37,10 @@ function Backup-DbaDbCertificate {
     .PARAMETER Suffix
         The suffix of the filename of the exported certificate.
 
+    .PARAMETER FileBaseName
+        Override the default naming convention with a fixed name for the certificate and private key file name, useful when exporting a single certificate.
+        ".cer" will be appended to the certificate file name and ".pvk" will be appended to the private key file name.
+
     .PARAMETER InputObject
         Enables piping from Get-DbaDbCertificate
 
@@ -131,6 +135,7 @@ function Backup-DbaDbCertificate {
         [Security.SecureString]$DecryptionPassword,
         [System.IO.FileInfo]$Path,
         [string]$Suffix,
+        [string]$FileBaseName,
         [parameter(ValueFromPipeline, ParameterSetName = "collection")]
         [Microsoft.SqlServer.Management.Smo.Certificate[]]$InputObject,
         [switch]$EnableException
@@ -140,7 +145,6 @@ function Backup-DbaDbCertificate {
         if (-not $EncryptionPassword -and $DecryptionPassword) {
             Stop-Function -Message "If you specify a decryption password, you must also specify an encryption password" -Target $DecryptionPassword
         }
-        $time = Get-Date -Format yyyMMddHHmmss
 
         function export-cert ($cert) {
             $certName = $cert.Name
@@ -164,14 +168,21 @@ function Backup-DbaDbCertificate {
             }
 
             $fileinstance = $instance.ToString().Replace('\', '$')
-            $fullCertName = Join-DbaPath -SqlInstance $server -Path $actualPath -ChildPath "$fileinstance-$dbname-$certName$Suffix"
+            $targetBaseName = "$fileinstance-$dbname-$certName$Suffix"
+            if ($FileBaseName) {
+                $targetBaseName = $FileBaseName
+            }
+            $fullCertName = Join-DbaPath -SqlInstance $server -Path $actualPath -ChildPath $targetBaseName
 
             # if the base file name exists, then default to old style of appending a timestamp
             if (Test-DbaPath -SqlInstance $server -Path "$fullCertName.cer") {
                 if ($Suffix) {
                     Stop-Function -Message "$fullCertName.cer already exists on $($server.Name)" -Target $actualPath -Continue
                 } else {
+                    $time = Get-Date -Format yyyyMMddHHmmss
                     $fullCertName = "$fullCertName-$time"
+                    # Sleep for a second to avoid another export in the same second
+                    Start-Sleep -Seconds 1
                 }
             }
 
@@ -180,7 +191,6 @@ function Backup-DbaDbCertificate {
             if ($Pscmdlet.ShouldProcess($instance, "Exporting certificate $certName from $db on $instance to $actualPath")) {
                 Write-Message -Level Verbose -Message "Exporting Certificate: $certName to $fullCertName"
                 try {
-
                     $exportPathCert = "$fullCertName.cer"
 
                     # because the password shouldn't go to memory...
@@ -207,9 +217,6 @@ function Backup-DbaDbCertificate {
                         $exportPathKey = "Password required to export key"
                         $cert.export($exportPathCert)
                     }
-
-                    # Sleep for a second to avoid another export in the same second
-                    Start-Sleep -Seconds 1
 
                     [PSCustomObject]@{
                         ComputerName   = $server.ComputerName
