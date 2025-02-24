@@ -251,7 +251,7 @@ function Set-DbaLogin {
 
         # Loop through all the logins
         foreach ($l in $InputObject) {
-            if ($Pscmdlet.ShouldProcess($l, "Setting Changes to Login on $($server.name)")) {
+            if ($Pscmdlet.ShouldProcess($l, "Setting Changes to Login on $($l.Parent.Name)")) {
                 $server = $l.Parent
 
                 # Create the notes
