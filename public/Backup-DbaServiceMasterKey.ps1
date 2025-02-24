@@ -16,11 +16,15 @@ function Backup-DbaServiceMasterKey {
 
         For MFA support, please use Connect-DbaInstance.
 
+    .PARAMETER KeyCredential
+        Pass a credential object for the password
+
     .PARAMETER Path
         The directory to export the key. If no path is specified, the default backup directory for the instance will be used.
 
-    .PARAMETER KeyCredential
-        Pass a credential object for the password
+    .PARAMETER FileBaseName
+        Override the default naming convention with a fixed name for the service master key, useful when exporting a single one.
+        ".key" will be appended to the filename.
 
     .PARAMETER SecurePassword
         The password to encrypt the exported key. This must be a SecureString.
@@ -72,13 +76,13 @@ function Backup-DbaServiceMasterKey {
         [Alias("Password")]
         [Security.SecureString]$SecurePassword,
         [string]$Path,
+        [string]$FileBaseName,
         [switch]$EnableException
     )
     begin {
         if ($KeyCredential) {
             $SecurePassword = $KeyCredential.Password
         }
-        $time = Get-Date -Format yyyMMddHHmmss
     }
     process {
         foreach ($instance in $SqlInstance) {
@@ -116,16 +120,24 @@ function Backup-DbaServiceMasterKey {
             $Path = $Path.TrimEnd("\")
             $Path = $Path.TrimEnd("/")
             $fileinstance = $instance.ToString().Replace('\', '$')
-            $filename = Join-DbaPath -SqlInstance $server -Path $Path -ChildPath "$fileinstance-servicemasterkey.key"
-
-            # if the base file name exists, then default to old style of appending a timestamp
-            if (Test-DbaPath -SqlInstance $server -Path $filename) {
-                $filename = Join-DbaPath -SqlInstance $server -Path $Path -ChildPath "$fileinstance-servicemasterkey-$time.key"
+            $targetBaseName = "$fileinstance-servicemasterkey"
+            if ($FileBaseName) {
+                $targetBaseName = $FileBaseName
             }
 
-            if ($Pscmdlet.ShouldProcess($instance, "Backing up service master key to $filename")) {
+            $exportFileName = Join-DbaPath -SqlInstance $server -Path $Path -ChildPath "$targetBaseName.key"
+
+            # if the base file name exists, then default to old style of appending a timestamp
+            if (Test-DbaPath -SqlInstance $server -Path $exportFileName) {
+                $time = Get-Date -Format yyyyMMddHHmmss
+                $exportFileName = Join-DbaPath -SqlInstance $server -Path $Path -ChildPath "$targetBaseName-$time.key"
+                # Sleep for a second to avoid another export in the same second
+                Start-Sleep -Seconds 1
+            }
+
+            if ($Pscmdlet.ShouldProcess($instance, "Backing up service master key to $exportFileName")) {
                 try {
-                    $masterkey.Export($filename, ($SecurePassword | ConvertFrom-SecurePass))
+                    $masterkey.Export($exportFileName, ($SecurePassword | ConvertFrom-SecurePass))
                     $status = "Success"
                 } catch {
                     $status = "Failure"
@@ -135,7 +147,7 @@ function Backup-DbaServiceMasterKey {
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Filename -value $filename
+                Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Filename -value $exportFileName
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Status -value $status
 
                 Select-DefaultView -InputObject $masterkey -Property ComputerName, InstanceName, SqlInstance, 'Filename as Path', Status
