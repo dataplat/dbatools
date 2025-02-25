@@ -693,11 +693,18 @@ function Connect-DbaInstance {
                     $authType = 'local '
                 }
                 if ($SqlCredential) {
-                    # support both ad\username and username@ad
-                    # username@ad works only for domain joined
-                    # so we stick to what we get and allow ad\username
-                    # as well, that works on local and workgroup
                     $username = ($SqlCredential.UserName).TrimStart("\")
+                    # support both ad\username and username@ad
+                    # username@ad works only for domain joined and workgroup
+                    # nobody remembers why, but username@ad is preferred
+                    # so we switch ad\username to username@ad only doing a raw guess
+                    # when USERDOMAIN -ne COMPUTERNAME, we're probably joined to ad
+                    if ($env:USERDOMAIN -ne $env:COMPUTERNAME) {
+                        if ($username -like "*\*") {
+                            $domain, $login = $username.Split("\")
+                            $username = "$login@$domain"
+                        }
+                    }
                     if ($username -like '*@*' -or $username -like '*\*') {
                         $authType += 'ad'
                     } else {
