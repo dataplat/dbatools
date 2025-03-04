@@ -1,11 +1,11 @@
 
 -- SQL Server 2019 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: November 13, 2024
+-- Last Modified: March 1, 2025
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
--- Twitter: GlennAlanBerry
+-- Blue Sky: https://bsky.app/profile/glennalanberry.bsky.social
 
 -- Diagnostic Queries are available here
 -- https://glennsqlperformance.com/resources/
@@ -25,7 +25,7 @@
 
 
 --******************************************************************************
---*   Copyright (C) 2024 Glenn Berry
+--*   Copyright (C) 2025 Glenn Berry
 --*   All rights reserved. 
 --*
 --*
@@ -107,7 +107,9 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 15.0.4390.2		CU28 + GDR							9/10/2024		https://support.microsoft.com/en-us/topic/kb5042749-description-of-the-security-update-for-sql-server-2019-cu28-september-10-2024-17402ce5-07d3-4e30-9037-9ef997104f34
 -- 15.0.4405.4		CU29								10/31/2024		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2019/cumulativeupdate29
 -- 15.0.4410.1		CU29 + GDR							11/12/2024		https://support.microsoft.com/en-us/topic/kb5046860-description-of-the-security-update-for-sql-server-2019-cu29-november-12-2024-4bddde28-482c-4628-a6e2-2d4f542088b7
-
+-- 15.0.4415.2		CU30								12/12/2024		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2019/cumulativeupdate30
+-- 15.0.4420.2		CU31								2/13/2025		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2019/cumulativeupdate31
+-- 15.0.4430.1      CU32                                2/27/2025       https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2019/cumulativeupdate32
 
 -- How to determine the version, edition and update level of SQL Server and its components 
 -- https://bit.ly/2oAjKgW	
@@ -132,9 +134,6 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 
 -- Download SQL Server Management Studio (SSMS)
 -- https://bit.ly/1OcupT9
-
--- Download and install Azure Data Studio 
--- https://bit.ly/2vgke1A
 
 -- SQL Server 2019 Configuration Manager is SQLServerManager15.msc
 
@@ -1639,7 +1638,7 @@ ORDER BY qs.execution_count DESC OPTION (RECOMPILE);
 -- Queries 61 through 67 are the "Bad Man List" for stored procedures
 
 -- Top Cached SPs By Execution Count (Query 61) (SP Execution Counts)
-SELECT TOP(100) p.name AS [SP Name], qs.execution_count AS [Execution Count],
+SELECT TOP(100) CONCAT(SCHEMA_NAME(p.schema_id), '.', p.name) AS [SP Name], qs.execution_count AS [Execution Count],
 ISNULL(qs.execution_count/DATEDIFF(Minute, qs.cached_time, GETDATE()), 0) AS [Calls/Minute],
 qs.total_elapsed_time/qs.execution_count AS [Avg Elapsed Time],
 qs.total_worker_time/qs.execution_count AS [Avg Worker Time],    
@@ -1663,7 +1662,7 @@ ORDER BY qs.execution_count DESC OPTION (RECOMPILE);
 
 
 -- Top Cached SPs By Avg Elapsed Time (Query 62) (SP Avg Elapsed Time)
-SELECT TOP(25) p.name AS [SP Name], qs.min_elapsed_time, qs.total_elapsed_time/qs.execution_count AS [avg_elapsed_time], 
+SELECT TOP(25) CONCAT(SCHEMA_NAME(p.schema_id), '.', p.name) AS [SP Name], qs.min_elapsed_time, qs.total_elapsed_time/qs.execution_count AS [avg_elapsed_time], 
 qs.max_elapsed_time, qs.last_elapsed_time, qs.total_elapsed_time, qs.execution_count, 
 ISNULL(qs.execution_count/DATEDIFF(Minute, qs.cached_time, GETDATE()), 0) AS [Calls/Minute], 
 qs.total_worker_time/qs.execution_count AS [AvgWorkerTime], 
@@ -1687,7 +1686,7 @@ ORDER BY avg_elapsed_time DESC OPTION (RECOMPILE);
 
 
 -- Top Cached SPs By Total Worker time. Worker time relates to CPU cost  (Query 63) (SP Worker Time)
-SELECT TOP(25) p.name AS [SP Name], qs.total_worker_time AS [TotalWorkerTime], 
+SELECT TOP(25) CONCAT(SCHEMA_NAME(p.schema_id), '.', p.name) AS [SP Name], qs.total_worker_time AS [TotalWorkerTime], 
 qs.total_worker_time/qs.execution_count AS [AvgWorkerTime], qs.execution_count, 
 ISNULL(qs.execution_count/DATEDIFF(Minute, qs.cached_time, GETDATE()), 0) AS [Calls/Minute],
 qs.total_elapsed_time, qs.total_elapsed_time/qs.execution_count AS [avg_elapsed_time],
@@ -1709,7 +1708,7 @@ ORDER BY qs.total_worker_time DESC OPTION (RECOMPILE);
 
 
 -- Top Cached SPs By Total Logical Reads. Logical reads relate to memory pressure  (Query 64) (SP Logical Reads)
-SELECT TOP(25) p.name AS [SP Name], qs.total_logical_reads AS [TotalLogicalReads], 
+SELECT TOP(25) CONCAT(SCHEMA_NAME(p.schema_id), '.', p.name) AS [SP Name], qs.total_logical_reads AS [TotalLogicalReads], 
 qs.total_logical_reads/qs.execution_count AS [AvgLogicalReads],qs.execution_count, 
 ISNULL(qs.execution_count/DATEDIFF(Minute, qs.cached_time, GETDATE()), 0) AS [Calls/Minute], 
 qs.total_elapsed_time, qs.total_elapsed_time/qs.execution_count AS [avg_elapsed_time],
@@ -1731,7 +1730,7 @@ ORDER BY qs.total_logical_reads DESC OPTION (RECOMPILE);
 
 
 -- Top Cached SPs By Total Physical Reads. Physical reads relate to disk read I/O pressure  (Query 65) (SP Physical Reads)
-SELECT TOP(25) p.name AS [SP Name],qs.total_physical_reads AS [TotalPhysicalReads], 
+SELECT TOP(25) CONCAT(SCHEMA_NAME(p.schema_id), '.', p.name) AS [SP Name], qs.total_physical_reads AS [TotalPhysicalReads], 
 qs.total_physical_reads/qs.execution_count AS [AvgPhysicalReads], qs.execution_count, 
 qs.total_logical_reads,qs.total_elapsed_time, qs.total_elapsed_time/qs.execution_count AS [avg_elapsed_time],
 CASE WHEN CONVERT(nvarchar(max), qp.query_plan) COLLATE Latin1_General_BIN2 LIKE N'%<MissingIndexes>%' THEN 1 ELSE 0 END AS [Has Missing Index],
@@ -1754,7 +1753,7 @@ ORDER BY qs.total_physical_reads DESC, qs.total_logical_reads DESC OPTION (RECOM
 
 -- Top Cached SPs By Total Logical Writes (Query 66) (SP Logical Writes)
 -- Logical writes relate to both memory and disk I/O pressure 
-SELECT TOP(25) p.name AS [SP Name], qs.total_logical_writes AS [TotalLogicalWrites], 
+SELECT TOP(25) CONCAT(SCHEMA_NAME(p.schema_id), '.', p.name) AS [SP Name], qs.total_logical_writes AS [TotalLogicalWrites], 
 qs.total_logical_writes/qs.execution_count AS [AvgLogicalWrites], qs.execution_count,
 ISNULL(qs.execution_count/DATEDIFF(Minute, qs.cached_time, GETDATE()), 0) AS [Calls/Minute],
 qs.total_elapsed_time, qs.total_elapsed_time/qs.execution_count AS [avg_elapsed_time],
@@ -1778,7 +1777,7 @@ ORDER BY qs.total_logical_writes DESC OPTION (RECOMPILE);
 
 
 -- Cached SPs Missing Indexes by Execution Count (Query 67) (SP Missing Index)
-SELECT TOP(25) p.name AS [SP Name], qs.execution_count AS [Execution Count],
+SELECT TOP(25) CONCAT(SCHEMA_NAME(p.schema_id), '.', p.name) AS [SP Name], qs.execution_count AS [Execution Count],
 ISNULL(qs.execution_count/DATEDIFF(Minute, qs.cached_time, GETDATE()), 0) AS [Calls/Minute],
 qs.total_elapsed_time/qs.execution_count AS [Avg Elapsed Time],
 qs.total_worker_time/qs.execution_count AS [Avg Worker Time],    
@@ -1854,7 +1853,7 @@ COUNT(1) OVER(PARTITION BY mid.[statement]) AS [missing_indexes_for_table],
 COUNT(1) OVER(PARTITION BY mid.[statement], mid.equality_columns) AS [similar_missing_indexes_for_table], 
 mid.equality_columns, mid.inequality_columns, mid.included_columns, migs.user_seeks, 
 CONVERT(decimal(18,2), migs.avg_total_user_cost) AS [avg_total_user_,cost], migs.avg_user_impact,
-REPLACE(REPLACE(LEFT(st.[text], 255), CHAR(10),''), CHAR(13),'') AS [Short Query Text],
+REPLACE(REPLACE(LEFT(st.[text], 512), CHAR(10),''), CHAR(13),'') AS [Short Query Text],
 OBJECT_NAME(mid.[object_id]) AS [Table Name], p.rows AS [Table Rows]
 FROM sys.dm_db_missing_index_groups AS mig WITH (NOLOCK) 
 INNER JOIN sys.dm_db_missing_index_group_stats_query AS migs WITH(NOLOCK) 
@@ -1878,7 +1877,8 @@ ORDER BY index_advantage DESC OPTION (RECOMPILE);
 -- Find missing index warnings for cached plans in the current database  (Query 71) (Missing Index Warnings)
 -- Note: This query could take some time on a busy instance
 SELECT TOP(25) OBJECT_NAME(objectid) AS [ObjectName], 
-               cp.objtype, cp.usecounts, cp.size_in_bytes, qp.query_plan
+               cp.objtype, cp.usecounts, cp.size_in_bytes
+			   , qp.query_plan								-- Uncomment if you want the Query Plan
 FROM sys.dm_exec_cached_plans AS cp WITH (NOLOCK)
 CROSS APPLY sys.dm_exec_query_plan(cp.plan_handle) AS qp
 WHERE CAST(qp.query_plan AS NVARCHAR(MAX)) LIKE N'%MissingIndex%'
