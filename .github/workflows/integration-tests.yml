@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Install and cache PowerShell modules
-        uses: potatoqualitee/psmodulecache@v6.0
+        uses: potatoqualitee/psmodulecache@v6.2.1
         with:
           modules-to-cache: dbatools.library:2024.4.12
 
@@ -68,7 +68,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Install and cache PowerShell modules
-        uses: potatoqualitee/psmodulecache@v6.0
+        uses: potatoqualitee/psmodulecache@v6.2.1
         with:
           shell: powershell, pwsh
           modules-to-cache: dbatools.library:2024.4.12
