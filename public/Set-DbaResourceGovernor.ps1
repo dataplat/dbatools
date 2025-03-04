@@ -114,7 +114,7 @@ function Set-DbaResourceGovernor {
                     if ($ClassifierFunction -eq "NULL") {
                         $server.ResourceGovernor.ClassifierFunction = $ClassifierFunction
                     } else {
-                        $objClassifierFunction = Get-DbaDbUdf -SqlInstance $instance -Database "master" -Name $ClassifierFunction
+                        $objClassifierFunction = Get-DbaDbUdf -SqlInstance $instance -SqlCredential $SqlCredential -Database "master" -Name $ClassifierFunction
                         if ($objClassifierFunction) {
                             $server.ResourceGovernor.ClassifierFunction = $objClassifierFunction
                         } else {
