@@ -15,6 +15,7 @@ Describe "Backup-DbaServiceMasterKey" -Tag "UnitTests" {
                 "KeyCredential",
                 "SecurePassword",
                 "Path",
+                "FileBaseName",
                 "EnableException",
                 "Confirm",
                 "WhatIf"
@@ -36,7 +37,6 @@ Describe "Backup-DbaServiceMasterKey" -Tag "IntegrationTests" {
     Context "Can backup a service master key" {
         BeforeAll {
             $securePassword = ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force
-            $results = Backup-DbaServiceMasterKey -SqlInstance $TestConfig.instance1 -SecurePassword $securePassword -Confirm:$false
         }
 
         AfterAll {
@@ -44,6 +44,14 @@ Describe "Backup-DbaServiceMasterKey" -Tag "IntegrationTests" {
         }
 
         It "backs up the SMK" {
+            $results = Backup-DbaServiceMasterKey -SqlInstance $TestConfig.instance1 -SecurePassword $securePassword -Confirm:$false
+            $results.Status | Should -Be "Success"
+        }
+
+        It "backs up the SMK with a specific filename (see #9483)" {
+            $random = Get-Random
+            $results = Backup-DbaServiceMasterKey -SqlInstance $TestConfig.instance1 -SecurePassword $securePassword -FileBaseName "smk($random)" -Confirm:$false
+            [IO.Path]::GetFileNameWithoutExtension($results.Path) | Should -Be "smk($random)"
             $results.Status | Should -Be "Success"
         }
     }

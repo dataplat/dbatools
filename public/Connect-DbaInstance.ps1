@@ -673,6 +673,22 @@ function Connect-DbaInstance {
                     $sqlConnectionInfo.Password = $csb.Password
                     $null = $csb.Remove('Password')
                 }
+                # look for 'Initial Catalog' and 'Database' in the connection string
+                $specifiedDatabase = $csb['Database']
+                if ($specifiedDatabase -eq '') {
+                    $specifiedDatabase = $csb['Initial Catalog']
+                }
+                if ($Database -and $Database -ne $specifiedDatabase) {
+                    Write-Message -Level Debug -Message "Database specified in connection string '$specifiedDatabase' does not match Database parameter '$Database'. Database parameter will be used."
+                    # clear both, in order to not be overridden later by setting all AddtionalParameters
+                    if ($csb.ShouldSerialize('Database')) {
+                        $csb.Remove('Database')
+                    }
+                    if ($csb.ShouldSerialize('Initial Catalog')) {
+                        $csb.Remove('Initial Catalog')
+                    }
+                    $sqlConnectionInfo.DatabaseName = $Database
+                }
 
                 # Add all remaining parts of the connection string as additional parameters.
                 $sqlConnectionInfo.AdditionalParameters = $csb.ConnectionString
@@ -693,13 +709,19 @@ function Connect-DbaInstance {
                     $authType = 'local '
                 }
                 if ($SqlCredential) {
-                    # support both ad\username and username@ad
                     $username = ($SqlCredential.UserName).TrimStart("\")
-                    if ($username -like "*\*") {
-                        $domain, $login = $username.Split("\")
-                        $username = "$login@$domain"
+                    # support both ad\username and username@ad
+                    # username@ad works only for domain joined and workgroup
+                    # nobody remembers why, but username@ad is preferred
+                    # so we switch ad\username to username@ad only doing a raw guess
+                    # when USERDOMAIN -ne COMPUTERNAME, we're probably joined to ad
+                    if ($env:USERDOMAIN -ne $env:COMPUTERNAME) {
+                        if ($username -like "*\*") {
+                            $domain, $login = $username.Split("\")
+                            $username = "$login@$domain"
+                        }
                     }
-                    if ($username -like '*@*') {
+                    if ($username -like '*@*' -or $username -like '*\*') {
                         $authType += 'ad'
                     } else {
                         $authType += 'sql'

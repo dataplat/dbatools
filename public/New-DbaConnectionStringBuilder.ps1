@@ -44,6 +44,11 @@ function New-DbaConnectionStringBuilder {
 
     .PARAMETER Legacy
         Use this switch to create a connection string using System.Data.SqlClient instead of Microsoft.Data.SqlClient.
+    
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
         Tags: SqlBuild, ConnectionString, Connection
@@ -89,20 +94,18 @@ function New-DbaConnectionStringBuilder {
         [string]$ColumnEncryptionSetting,
         [switch]$Legacy,
         [switch]$NonPooledConnection,
-        [string]$WorkstationId = $env:COMPUTERNAME
+        [string]$WorkstationID = $env:COMPUTERNAME,
+        [switch]$EnableException
     )
     process {
         $pooling = (-not $NonPooledConnection)
         if ($SqlCredential -and ($Username -or $Password)) {
-            Stop-Function -Message "You can only specify SQL Credential or Username/Password, not both."
+            Stop-Function -Message "You can only specify SQL Credential or Username/Password, not both." -EnableException $EnableException
             return
         }
         if ($SqlCredential) {
             $UserName = $SqlCredential.UserName
             $Password = $SqlCredential.GetNetworkCredential().Password
-        }
-        if (-not $UserName) {
-            $PSBoundParameters.IntegratedSecurity = $true
         }
 
         foreach ($cs in $ConnectionString) {
@@ -112,34 +115,50 @@ function New-DbaConnectionStringBuilder {
                 $builder = New-Object Microsoft.Data.SqlClient.SqlConnectionStringBuilder $cs
             }
 
-            if ($builder.ApplicationName -in "Framework Microsoft SqlClient Data Provider", ".Net SqlClient Data Provider") {
+            if (!$builder.ShouldSerialize('Application Name')) {
                 $builder['Application Name'] = $ApplicationName
             }
-            if ($PSBoundParameters.DataSource) {
+            if (Test-Bound -ParameterName DataSource) {
                 $builder['Data Source'] = $DataSource
             }
-            if ($PSBoundParameters.InitialCatalog) {
+            if (Test-Bound -ParameterName InitialCatalog) {
                 $builder['Initial Catalog'] = $InitialCatalog
             }
-            if ($PSBoundParameters.IntegratedSecurity) {
-                $builder['Integrated Security'] = $PSBoundParameters.IntegratedSecurity
+            if (Test-Bound -ParameterName IntegratedSecurity) {
+                if ($IntegratedSecurity) {
+                    $builder['Integrated Security'] = $true
+                } else {
+                    $builder['Integrated Security'] = $false
+                }
             }
             if ($UserName) {
                 $builder["User ID"] = $UserName
+            } elseif (!$IntegratedSecurity) {
+                $builder['Integrated Security'] = $false
             }
             if ($Password) {
                 $builder['Password'] = $Password
             }
-            if ($WorkstationId) {
-                $builder['Workstation ID'] = $WorkstationId
+            if (!$builder.ShouldSerialize('Workstation ID')) {
+                $builder['Workstation ID'] = $WorkstationID
             }
-            if ($MultipleActiveResultSets -eq $true) {
-                $builder['MultipleActiveResultSets'] = $true
+            if (Test-Bound -ParameterName WorkstationID) {
+                $builder['Workstation ID'] = $WorkstationID
+            }
+            if (Test-Bound -ParameterName MultipleActiveResultSets) {
+                if ($MultipleActiveResultSets) {
+                    $builder['MultipleActiveResultSets'] = $true
+                } else {
+                    $builder['MultipleActiveResultSets'] = $false
+                }
             }
             if ($ColumnEncryptionSetting -eq "Enabled") {
                 $builder['Column Encryption Setting'] = "Enabled"
             }
-            if ($pooling) {
+            if (-not($builder.ShouldSerialize('Pooling'))) {
+                $builder['Pooling'] = $pooling
+            }
+            if (Test-Bound -ParameterName NonPooledConnection) {
                 $builder['Pooling'] = $pooling
             }
             $builder

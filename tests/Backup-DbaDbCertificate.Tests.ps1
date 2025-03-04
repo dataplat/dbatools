@@ -19,6 +19,7 @@ Describe "Backup-DbaDbCertificate" -Tag "UnitTests" {
                 "DecryptionPassword",
                 "Path",
                 "Suffix",
+                "FileBaseName",
                 "InputObject",
                 "EnableException",
                 "Confirm",
@@ -63,6 +64,15 @@ Describe "Backup-DbaDbCertificate" -Tag "IntegrationTests" {
             $results.DatabaseID | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $db1Name).ID
         }
 
+        It "backs up the db cert with a filename (see #9485)" {
+            $results = Backup-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Certificate $cert.Name -Database $db1Name -EncryptionPassword $pw -DecryptionPassword $pw -FileBaseName "dbatoolscli_cert1_$random"
+            $results.Certificate | Should -Be $cert.Name
+            $results.Status | Should -Match "Success"
+            $results.DatabaseID | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $db1Name).ID
+            [IO.Path]::GetFileNameWithoutExtension($results.Path) | Should -Be "dbatoolscli_cert1_$random"
+            $null = Get-ChildItem -Path $results.Path -ErrorAction Ignore | Remove-Item -Confirm:$false -ErrorAction Ignore
+        }
+
         It "warns the caller if the cert cannot be found" {
             $invalidDBCertName = "dbatoolscli_invalidCertName"
             $invalidDBCertName2 = "dbatoolscli_invalidCertName2"
@@ -82,5 +92,6 @@ Describe "Backup-DbaDbCertificate" -Tag "IntegrationTests" {
             $results = Backup-DbaDbCertificate -SqlInstance $TestConfig.instance1 -EncryptionPassword $pw
             $null = Get-ChildItem -Path $results.Path -ErrorAction Ignore | Remove-Item -Confirm:$false -ErrorAction Ignore
         }
+
     }
 }

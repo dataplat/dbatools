@@ -31,7 +31,10 @@ function Get-DbaDbBackupHistory {
         If this switch is enabled, a large amount of information is returned, similar to what SQL Server itself returns.
 
     .PARAMETER Since
-        Specifies a starting point for the search for backups. If a DateTime object is passed, that will be used. If a TimeSpan object is passed, that will be added to Get-Date and the resulting value will be used.
+        Specifies a starting point for the search for backups.
+        This is compared to the date stored in msdb, which gets stored in the timezone of the running SQL Server instance.
+        If a DateTime object is passed, that will be used.
+        If a TimeSpan object is passed, that will be added to Get-Date and the resulting value will be used.
 
     .PARAMETER RecoveryFork
         Specifies the Recovery Fork you want backup history for.
@@ -100,7 +103,7 @@ function Get-DbaDbBackupHistory {
         Does the same as above but connect to SqlInstance2014a as SQL user "sqladmin"
 
     .EXAMPLE
-        PS C:\> Get-DbaDbBackupHistory -SqlInstance SqlInstance2014a -Database db1, db2 -Since '2016-07-01 10:47:00'
+        PS C:\> Get-DbaDbBackupHistory -SqlInstance SqlInstance2014a -Database db1, db2 -Since ([DateTime]'2016-07-01 10:47:00')
 
         Returns backup information only for databases db1 and db2 on SqlInstance2014a since July 1, 2016 at 10:47 AM.
 
@@ -161,7 +164,7 @@ function Get-DbaDbBackupHistory {
         [switch]$IncludeCopyOnly,
         [Parameter(ParameterSetName = "NoLast")]
         [switch]$Force,
-        [psobject]$Since = (Get-Date '01/01/1970'),
+        [psobject]$Since = ([DateTime]::ParseExact("1970-01-01", "yyyy-MM-dd", [System.Globalization.CultureInfo]::InvariantCulture)),
         [ValidateScript( { ($_ -match '^(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}$') -or ('' -eq $_) })]
         [string]$RecoveryFork,
         [switch]$Last,
@@ -230,9 +233,9 @@ function Get-DbaDbBackupHistory {
             return
         }
 
-        if ($Since -is [timespan]) {
-            $Since = (Get-Date).add($Since);
-        } elseif ($Since -isnot [datetime]) {
+        if ($Since -is [TimeSpan]) {
+            $Since = (Get-Date).Add($Since);
+        } elseif ($Since -isnot [DateTime]) {
             Stop-Function -Message "-Since must be either a DateTime or TimeSpan object."
             return
         }

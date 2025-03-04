@@ -24,14 +24,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job 'dbatoolsci_testjob' -OwnerLogin 'sa'
             $null = New-DbaAgentJobStep -SqlInstance $TestConfig.instance2 -Job 'dbatoolsci_testjob' -StepId 1 -StepName 'dbatoolsci Failed' -Subsystem TransactSql -SubsystemServer $srvName.sn -Command "RAISERROR (15600,-1,-1, 'dbatools_error');" -CmdExecSuccessCode 0 -OnSuccessAction QuitWithSuccess -OnFailAction QuitWithFailure -Database master -RetryAttempts 1 -RetryInterval 2
             $null = Start-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job 'dbatoolsci_testjob'
-            $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job 'dbatoolsci_testjob' -OwnerLogin 'sa'
-            $null = New-DbaAgentJobStep -SqlInstance $TestConfig.instance2 -Job 'dbatoolsci_testjob' -StepId 1 -StepName 'dbatoolsci Failed' -Subsystem TransactSql -SubsystemServer $srvName.sn -Command "RAISERROR (15600,-1,-1, 'dbatools_error');" -CmdExecSuccessCode 0 -OnSuccessAction QuitWithSuccess -OnFailAction QuitWithFailure -Database master -RetryAttempts 1 -RetryInterval 2
+            $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job 'dbatoolsregr_testjob' -OwnerLogin 'sa'
+            $null = New-DbaAgentJobStep -SqlInstance $TestConfig.instance2 -Job 'dbatoolsregr_testjob' -StepId 1 -StepName 'dbatoolsci Failed' -Subsystem TransactSql -SubsystemServer $srvName.sn -Command "RAISERROR (15600,-1,-1, 'dbatools_error');" -CmdExecSuccessCode 0 -OnSuccessAction QuitWithSuccess -OnFailAction QuitWithFailure -Database master -RetryAttempts 1 -RetryInterval 2
             $null = New-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category 'dbatoolsci_job_category' -CategoryType LocalJob
             $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job 'dbatoolsci_testjob_disabled' -Category 'dbatoolsci_job_category' -Disabled
             $null = New-DbaAgentJobStep -SqlInstance $TestConfig.instance2 -Job 'dbatoolsci_testjob_disabled' -StepId 1 -StepName 'dbatoolsci Test Step' -Subsystem TransactSql -SubsystemServer $srvName.sn -Command 'SELECT * FROM master.sys.all_columns' -CmdExecSuccessCode 0 -OnSuccessAction QuitWithSuccess -OnFailAction QuitWithFailure -Database master -RetryAttempts 1 -RetryInterval 2
         }
         AfterAll {
-            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob, dbatoolsci_testjob_disabled -Confirm:$false
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob, dbatoolsregr_testjob, dbatoolsci_testjob_disabled -Confirm:$false
             $null = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category 'dbatoolsci_job_category' -Confirm:$false
         }
 
@@ -39,7 +39,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Should find a specific job" {
             $results.name | Should Be "dbatoolsci_testjob"
         }
-        $results = Find-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job *dbatoolsci* -Exclude dbatoolsci_testjob_disabled
+        $results = Find-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job *dbatoolsci* -ExcludeJobName dbatoolsci_testjob_disabled
         It "Should find a specific job but not an excluded job" {
             $results.name | Should Not Be "dbatoolsci_testjob_disabled"
         }
@@ -79,11 +79,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Should find jobs that are owned by sa" {
             $results | Should not be null
         }
-
-
         $results = Find-DbaAgentJob -SqlInstance $TestConfig.instance2 -IsFailed -Since '2016-07-01 10:47:00'
         It "Should find jobs that have been failed since July of 2016" {
             $results | Should not be null
+        }
+        $results = Find-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job *dbatoolsci*,*dbatoolsregr* -ExcludeJobName dbatoolsci_testjob_disabled
+        It "Should work with multiple wildcard passed in (see #9572)" {
+            $results.Count | Should -Be 2
         }
     }
 }

@@ -170,6 +170,7 @@ function Test-DbaWindowsLogin {
             }
             Write-Message -Message "Parsing Login $adLogin." -Level Verbose
             $exists = $false
+            $samAccountNameMismatch = $false
             try {
                 $loginBinary = [byte[]]$winLogin.Sid
                 $SID = New-Object Security.Principal.SecurityIdentifier($loginBinary, 0)
@@ -196,6 +197,7 @@ function Test-DbaWindowsLogin {
                 if ($u.SamAccountName -ne $username) {
                     Write-Message -Message "SamAccountName mismatch detected for $adLogin." -Level Warning
                     Write-Message -Message "SamAccountName mismatch detected for $adLogin (MSSQL: $username, AD: $($u.SamAccountName))." -Level Debug
+                    $samAccountNameMismatch = $true
                 }
             } catch {
                 Write-Message -Message "AD Searcher Error for $username." -Level Warning
@@ -236,6 +238,7 @@ function Test-DbaWindowsLogin {
                 Login                             = $username
                 Type                              = $adType
                 Found                             = $exists
+                SamAccountNameMismatch            = $samAccountNameMismatch
                 DisabledInSQLServer               = $winLogin.IsDisabled
                 AccountNotDelegated               = $additionalProps.AccountNotDelegated
                 AllowReversiblePasswordEncryption = $additionalProps.AllowReversiblePasswordEncryption
@@ -263,6 +266,7 @@ function Test-DbaWindowsLogin {
             }
             Write-Message -Message "Parsing Login $adLogin on $($_.Parent)." -Level Verbose
             $exists = $false
+            $samAccountNameMismatch = $false
             try {
                 $loginBinary = [byte[]]$winLogin.Sid
                 $SID = New-Object Security.Principal.SecurityIdentifier($loginBinary, 0)
@@ -282,6 +286,7 @@ function Test-DbaWindowsLogin {
                 if ($u.SamAccountName -ne $groupName) {
                     Write-Message -Message "SamAccountName mismatch detected for $adLogin." -Level Warning
                     Write-Message -Message "SamAccountName mismatch detected for $adLogin (MSSQL: $groupName, AD: $($u.SamAccountName))." -Level Debug
+                    $samAccountNameMismatch = $true
                 }
             } catch {
                 Write-Message -Message "AD Searcher Error for $groupName on $($_.Parent)" -Level Warning
@@ -292,6 +297,7 @@ function Test-DbaWindowsLogin {
                 Login                             = $groupName
                 Type                              = "Group"
                 Found                             = $exists
+                SamAccountNameMismatch            = $samAccountNameMismatch
                 DisabledInSQLServer               = $winLogin.IsDisabled
                 AccountNotDelegated               = $null
                 AllowReversiblePasswordEncryption = $null

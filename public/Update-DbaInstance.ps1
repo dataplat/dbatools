@@ -42,7 +42,7 @@ function Update-DbaInstance {
         Use -Version to limit upgrade to a certain Major version of SQL Server.
 
     .PARAMETER KB
-        Install a specific update or list of updates. Can be a number of a string KBXXXXXXX.
+        Install a specific update or list of updates. Can be a number or a string KBXXXXXXX.
 
     .PARAMETER Version
         A target version of the installation you want to reach. If not specified, a latest available version would be used by default.
@@ -136,7 +136,7 @@ function Update-DbaInstance {
     .EXAMPLE
         PS C:\> Update-DbaInstance -ComputerName SQL1, SQL2 -Restart -Path \\network\share -Confirm:$false
 
-        Updates all applicable SQL Server installations on SQL1 and SQL2 with the most recent patch.
+        Updates all applicable SQL Server installations on SQL1 and SQL2 with the most recent patch (that has at least a "CU" flag).
         It will install latest ServicePack, restart the computers, install latest Cumulative Update, and finally restart the computer once again.
         Binary files for the update will be searched among all files and folders recursively in \\network\share.
         Does not prompt for confirmation.

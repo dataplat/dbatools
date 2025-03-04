@@ -13,7 +13,9 @@ Describe "Disable-DbaTraceFlag" -Tag "UnitTests" {
                 "SqlInstance",
                 "SqlCredential",
                 "TraceFlag",
-                "EnableException"
+                "EnableException",
+                "Confirm",
+                "WhatIf"
             )
         }
 

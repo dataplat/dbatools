@@ -1,14 +1,20 @@
 
 -- SQL Managed Instance Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: February 7, 2024
+-- Last Modified: February 13, 2025
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
--- Twitter: GlennAlanBerry
+-- Blue Sky: https://bsky.app/profile/glennalanberry.bsky.social
 
 -- Diagnostic Queries are available here
 -- https://glennsqlperformance.com/resources/
+
+-- YouTube video demonstrating these queries
+-- https://bit.ly/3aXNDzJ
+
+
+-- Please make sure you are using the correct version of these diagnostic queries for your version of SQL Server
 
 
 -- If you like PowerShell, there is a very useful community solution for running these queries in an automated fashion
@@ -19,7 +25,7 @@
 
 
 --******************************************************************************
---*   Copyright (C) 2024 Glenn Berry
+--*   Copyright (C) 2025 Glenn Berry
 --*   All rights reserved. 
 --*
 --*
@@ -57,10 +63,6 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 
 -- Download SQL Server Management Studio (SSMS)
 -- https://bit.ly/1OcupT9
-
--- Download and install Azure Data Studio 
--- https://bit.ly/2vgke1A
-
 
 
 -- Get selected server properties (Query 2) (Server Properties)
