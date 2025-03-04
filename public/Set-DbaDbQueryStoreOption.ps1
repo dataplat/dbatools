@@ -251,7 +251,7 @@ function Set-DbaDbQueryStoreOption {
                     if ($db.QueryStoreOptions.QueryCaptureMode -eq "CUSTOM") {
                         if ($CustomCapturePolicyStaleThresholdHours) {
                             if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing CustomCapturePolicyStaleThresholdHours to $($CustomCapturePolicyStaleThresholdHours)")) {
-                                $query += "ALTER DATABASE $db SET QUERY_STORE = ON ( QUERY_CAPTURE_POLICY = ( STALE_CAPTURE_POLICY_THRESHOLD = $($CustomCapturePolicyStaleThresholdHours))); "
+                                $query += "ALTER DATABASE $db SET QUERY_STORE = ON ( QUERY_CAPTURE_POLICY = ( STALE_CAPTURE_POLICY_THRESHOLD = $($CustomCapturePolicyStaleThresholdHours) HOURS)); "
                             }
                         }
 
