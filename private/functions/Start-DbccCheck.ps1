@@ -31,37 +31,32 @@ function Start-DbccCheck {
         } catch {
             $originalException = $_.Exception
             $loopNo = 0
-            while ($loopNo -ne 5)
-            {
+            while ($loopNo -ne 5) {
                 $loopNo ++
-                if ($null -ne $originalException.InnerException) { 
-                    $originalException = $originalException.InnerException 
+                if ($null -ne $originalException.InnerException) {
+                    $originalException = $originalException.InnerException
                 } else {
                     break
                 }
             }
             $message = $originalException.ToString()
-            
+
             # english cleanup only sorry
             try {
                 $newmessage = $message
-                if ($newmessage -like '*at Microsoft.SqlServer.Management.Common.ConnectionManager.ExecuteTSql*')
-                {
+                if ($newmessage -like '*at Microsoft.SqlServer.Management.Common.ConnectionManager.ExecuteTSql*') {
                     $newmessage = ($newmessage -split "at Microsoft.SqlServer.Management.Common.ConnectionManager.ExecuteTSql")[0]
                 }
-                if ($newmessage -like '*Microsoft.SqlServer.Management.Common.ExecutionFailureException:*')
-                {
+                if ($newmessage -like '*Microsoft.SqlServer.Management.Common.ExecutionFailureException:*') {
                     $newmessage = ($newmessage -split "Microsoft.SqlServer.Management.Common.ExecutionFailureException:")[1]
                 }
-                if ($newmessage -like '*An exception occurred while executing a Transact-SQL statement or batch. ---> Microsoft.Data.SqlClient.SqlException:*')
-                {
+                if ($newmessage -like '*An exception occurred while executing a Transact-SQL statement or batch. ---> Microsoft.Data.SqlClient.SqlException:*') {
                     $newmessage = ($newmessage -replace "An exception occurred while executing a Transact-SQL statement or batch. ---> Microsoft.Data.SqlClient.SqlException:").Trim()
                 }
-                if ($newmessage -like '*An exception occurred while executing a Transact-SQL statement or batch*')
-                {
+                if ($newmessage -like '*An exception occurred while executing a Transact-SQL statement or batch*') {
                     $newmessage = ($newmessage -split "An exception occurred while executing a Transact-SQL statement or batch")[1]
                 }
-                
+
                 $message = $newmessage
             } catch {
                 $null
