@@ -198,7 +198,7 @@ function New-DbaDbMaskingConfig {
         $supportedDataTypes = @(
             'bit', 'bigint', 'bool',
             'char', 'date',
-            'datetime', 'datetime2', 
+            'datetime', 'datetime2',
             'decimal', 'numeric',
             'float',
             'int',
