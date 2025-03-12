@@ -51,12 +51,12 @@ function Remove-DbaAgentOperator {
         https://dbatools.io/Remove-DbaAgentOperator
 
     .EXAMPLE
-        PS:\> Remove-DbaAgentOperator -SqlInstance sql01 -Operator DBA
+        PS C:\> Remove-DbaAgentOperator -SqlInstance sql01 -Operator DBA
 
         This removes an operator named DBA from the instance.
 
     .EXAMPLE
-        PS C:\>  Get-DbaAgentOperator -SqlInstance SRV1 | Out-GridView -Title 'Select SQL Agent operator(s) to drop' -OutputMode Multiple | Remove-DbaAgentOperator
+        PS C:\> Get-DbaAgentOperator -SqlInstance SRV1 | Out-GridView -Title 'Select SQL Agent operator(s) to drop' -OutputMode Multiple | Remove-DbaAgentOperator
 
         Using a pipeline this command gets all SQL Agent operator(s) on SRV1, lets the user select those to remove and then removes the selected SQL Agent alert category(-ies).
 
