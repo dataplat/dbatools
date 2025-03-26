@@ -198,7 +198,8 @@ function New-DbaDbMaskingConfig {
         $supportedDataTypes = @(
             'bit', 'bigint', 'bool',
             'char', 'date',
-            'datetime', 'datetime2', 'decimal',
+            'datetime', 'datetime2',
+            'decimal', 'numeric',
             'float',
             'int',
             'money',
@@ -525,6 +526,7 @@ function New-DbaDbMaskingConfig {
                                 $subType = "Past"
                             }
                             "decimal" { $subType = "Decimal" }
+                            "numeric" { $subType = "Decimal" }
                             "float" { $subType = "Float" }
                             "int" { $subType = "Number" }
                             "money" {
