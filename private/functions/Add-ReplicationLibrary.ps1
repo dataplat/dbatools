@@ -4,6 +4,13 @@ function Add-ReplicationLibrary {
     )
     try {
         $platformlib = Join-DbaPath -Path $script:libraryroot -ChildPath lib
+
+        if ($PSVersionTable.PSEdition -eq 'Core') {
+            $platformlib = Join-DbaPath -Path $platformlib -ChildPath core
+        } else {
+            $platformlib = Join-DbaPath -Path $platformlib -ChildPath desktop
+        }
+
         $repdll = Join-DbaPath -Path $platformlib -ChildPath Microsoft.SqlServer.Replication.dll
         $rmodll = Join-DbaPath -Path $platformlib -ChildPath Microsoft.SqlServer.Rmo.dll
         Add-Type -Path $rmodll -ErrorAction Stop
