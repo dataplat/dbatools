@@ -4,6 +4,13 @@ function Add-PbmLibrary {
     )
     try {
         $platformlib = Join-DbaPath -Path $script:libraryroot -ChildPath lib
+
+        if ($PSVersionTable.PSEdition -eq 'Core') {
+            $platformlib = Join-DbaPath -Path $platformlib -ChildPath core
+        } else {
+            $platformlib = Join-DbaPath -Path $platformlib -ChildPath desktop
+        }
+
         $dmfdll = Join-DbaPath -Path $platformlib -ChildPath Microsoft.SqlServer.Dmf.dll
         $dmfcommon = Join-DbaPath -Path $platformlib -ChildPath Microsoft.SqlServer.Dmf.Common.DLL
         Add-Type -Path $dmfcommon -ErrorAction Stop
