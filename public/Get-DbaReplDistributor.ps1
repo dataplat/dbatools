@@ -60,8 +60,10 @@ function Get-DbaReplDistributor {
             } catch {
                 Stop-Function -Message "Error occurred getting information about $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            Write-Message -Level Verbose -Message "Getting publisher for $server"
+            Write-Message -Level Verbose -Message "Getting publisher for $instance"
 
+            # Return the distributor information
+            # The properties are the same as before, but now they come from our custom DbaReplServer object
             Select-DefaultView -InputObject $distributor -Property ComputerName, InstanceName, SqlInstance, IsPublisher, IsDistributor, DistributionServer, DistributionDatabase, DistributorInstalled, DistributorAvailable, HasRemotePublisher
         }
     }

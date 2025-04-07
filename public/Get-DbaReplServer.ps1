@@ -54,18 +54,24 @@ function Get-DbaReplServer {
         [switch]$EnableException
     )
     begin {
-        Add-ReplicationLibrary
+        # Load our custom replication library instead of the RMO library
+        Add-DbaReplicationLibrary -EnableException:$EnableException
     }
     process {
         if (Test-FunctionInterrupt) { return }
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
-                $replServer = New-Object Microsoft.SqlServer.Replication.ReplicationServer
-                $replServer.ConnectionContext = $Server.ConnectionContext.SqlConnectionObject
-                $replServer | Add-Member -Type NoteProperty -Name ComputerName -Value $server.ComputerName -Force
-                $replServer | Add-Member -Type NoteProperty -Name InstanceName -Value $server.ServiceName -Force
-                $replServer | Add-Member -Type NoteProperty -Name SqlInstance -Value $server.DomainInstanceName -Force
+
+                # Create our custom DbaReplServer object instead of the RMO ReplicationServer object
+                $replServer = New-Object DbaReplServer
+                $replServer.ConnectionContext = $server.ConnectionContext.SqlConnectionObject
+                $replServer.ComputerName = $server.ComputerName
+                $replServer.InstanceName = $server.ServiceName
+                $replServer.SqlInstance = $server.DomainInstanceName
+
+                # Load the properties from the server
+                $null = $replServer.LoadProperties()
 
                 Select-DefaultView -InputObject $replServer -Property ComputerName, InstanceName, SqlInstance, IsDistributor, IsPublisher, DistributionServer, DistributionDatabase
             } catch {
