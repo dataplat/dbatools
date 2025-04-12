@@ -134,12 +134,13 @@ function Set-DbaAgentJobOutputFile {
                         $jobStep.Refresh()
 
                         [PSCustomObject]@{
-                            ComputerName   = $server.ComputerName
-                            InstanceName   = $server.ServiceName
-                            SqlInstance    = $server.DomainInstanceName
-                            Job            = $currentJob.Name
-                            JobStep        = $jobStep.Name
-                            OutputFileName = $currentOutputFile
+                            ComputerName      = $server.ComputerName
+                            InstanceName      = $server.ServiceName
+                            SqlInstance       = $server.DomainInstanceName
+                            Job               = $currentJob.Name
+                            JobStep           = $jobStep.Name
+                            OldOutputFileName = $currentOutputFile
+                            NewOutputFileName = $OutputFile
                         }
                     }
                 } catch {
