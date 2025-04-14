@@ -139,8 +139,8 @@ function Set-DbaAgentJobOutputFile {
                             SqlInstance       = $server.DomainInstanceName
                             Job               = $currentJob.Name
                             JobStep           = $jobStep.Name
+                            OutputFileName    = $OutputFile
                             OldOutputFileName = $currentOutputFile
-                            NewOutputFileName = $OutputFile
                         }
                     }
                 } catch {
