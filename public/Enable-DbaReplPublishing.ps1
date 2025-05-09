@@ -48,9 +48,9 @@ function Enable-DbaReplPublishing {
         https://dbatools.io/Enable-DbaReplPublishing
 
     .EXAMPLE
-        PS C:\> Enable-DbaReplPublishing -SqlInstance SqlBox1\Instance2 -StartupProcedure '[dbo].[StartUpProc1]'
+        PS C:\> Enable-DbaReplPublishing -SqlInstance SqlBox1\Instance2
 
-        Attempts to set the procedure '[dbo].[StartUpProc1]' in the master database of SqlBox1\Instance2 for automatic execution when the instance is started.
+        Enables replication publishing for instance SqlBox1\Instance2 using Windows Auth using the default InstallDataDirectory\ReplData as the snapshot folder
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
