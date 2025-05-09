@@ -237,14 +237,28 @@ function New-DbaLogShippingSecondaryDatabase {
         $Query += ";"
     }
 
-    $Query += "
+    if ($ServerSecondary.Version.Major -ge 11) {
+        $Query += "
+            IF (@SP_Add_RetCode <> 0)
+            BEGIN
+                DECLARE @msg VARCHAR(1000);
+                SELECT @msg = 'Unexpected result executing sp_add_log_shipping_secondary_database ('
+                    + CAST (@SP_Add_RetCode AS VARCHAR(5)) + ').';
+                THROW 51000, @msg, 1;
+            END
+            "
+    } else {
+        $Query += "
         IF (@SP_Add_RetCode <> 0)
         BEGIN
             DECLARE @msg VARCHAR(1000);
-            SELECT @msg = 'Unexpected result executing sp_add_log_shipping_seondary_database ('
+            SELECT @msg = 'Unexpected result executing sp_add_log_shipping_secondary_database ('
                 + CAST (@SP_Add_RetCode AS VARCHAR(5)) + ').';
-            THROW 51000, @msg, 1;
-        END"
+            RAISERROR (@msg, 16, 1) WITH NOWAIT;
+            RETURN;
+        END
+        "
+    }
 
     # Execute the query to add the log shipping primary
     if ($PSCmdlet.ShouldProcess($SqlServer, ("Configuring logshipping for secondary database $SecondaryDatabase on $SqlInstance"))) {
