@@ -176,7 +176,7 @@ function Export-DbaLogin {
         [switch]$NoClobber,
         [switch]$Append,
         [string]$BatchSeparator = (Get-DbatoolsConfigValue -FullName 'Formatting.BatchSeparator'),
-        [ValidateSet('SQLServer2000', 'SQLServer2005', 'SQLServer2008/2008R2', 'SQLServer2012', 'SQLServer2014', 'SQLServer2016', 'SQLServer2017', 'SQLServer2019')]
+        [ValidateSet('SQLServer2000', 'SQLServer2005', 'SQLServer2008/2008R2', 'SQLServer2012', 'SQLServer2014', 'SQLServer2016', 'SQLServer2017', 'SQLServer2019', 'SQLServer2022')]
         [string]$DestinationVersion,
         [switch]$NoPrefix,
         [switch]$Passthru,
