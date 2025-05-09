@@ -39,20 +39,24 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $sql = "CREATE TABLE [dbo].[people](
                     [fname] [varchar](50) NULL,
                     [lname] [varchar](50) NULL,
-                    [dob] [datetime] NULL
+                    [dob] [datetime] NULL,
+                    [percenttest] [decimal](15,3) NULL,
+                    [bittest] bit NULL
                 ) ON [PRIMARY]
                 GO
-                INSERT INTO people (fname, lname, dob) VALUES ('Joe','Schmoe','2/2/2000')
-                INSERT INTO people (fname, lname, dob) VALUES ('Jane','Schmee','2/2/1950')
+                INSERT INTO people (fname, lname, dob, percenttest,bittest) VALUES ('Joe','Schmoe','2/2/2000',29.53,1)
+                INSERT INTO people (fname, lname, dob, percenttest,bittest) VALUES ('Jane','Schmee','2/2/1950',65.38,0)
                 GO
                 CREATE TABLE [dbo].[people2](
                                     [fname] [varchar](50) NULL,
                                     [lname] [varchar](50) NULL,
-                                    [dob] [datetime] NULL
+                                    [dob] [datetime] NULL,
+                                    [percenttest] [decimal](15,3) NULL,
+                                    [bittest] bit NULL
                                 ) ON [PRIMARY]
                 GO
-                INSERT INTO people2 (fname, lname, dob) VALUES ('Layla','Schmoe','2/2/2000')
-                INSERT INTO people2 (fname, lname, dob) VALUES ('Eric','Schmee','2/2/1950')"
+                INSERT INTO people2 (fname, lname, dob, percenttest,bittest) VALUES ('Layla','Schmoe','2/2/2000',29.53,1)
+                INSERT INTO people2 (fname, lname, dob, percenttest,bittest) VALUES ('Eric','Schmee','2/2/1950',65.38,0)"
         New-DbaDatabase -SqlInstance $TestConfig.instance2 -SqlCredential $TestConfig.SqlCredential -Name $db
         Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -SqlCredential $TestConfig.SqlCredential -Database $db -Query $sql
     }
@@ -66,6 +70,10 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "starts with the right data" {
             Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -SqlCredential $TestConfig.SqlCredential -Database $db -Query "select * from people where fname = 'Joe'" | Should -Not -Be $null
             Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -SqlCredential $TestConfig.SqlCredential -Database $db -Query "select * from people where lname = 'Schmee'" | Should -Not -Be $null
+            Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -SqlCredential $TestConfig.SqlCredential -Database $db -Query "select * from people where percenttest = 29.53" | Should -Not -Be $null
+            Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -SqlCredential $TestConfig.SqlCredential -Database $db -Query "select * from people where percenttest = 65.38" | Should -Not -Be $null
+            Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -SqlCredential $TestConfig.SqlCredential -Database $db -Query "select * from people where bittest = 1 AND lname = 'Schmoe'" | Should -Not -Be $null
+            Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -SqlCredential $TestConfig.SqlCredential -Database $db -Query "select * from people where bittest = 0 AND lname = 'Schmee'" | Should -Not -Be $null
         }
         It "returns the proper output" {
             $file = New-DbaDbMaskingConfig -SqlInstance $TestConfig.instance2 -SqlCredential $TestConfig.SqlCredential -Database $db -Path C:\temp
@@ -83,6 +91,10 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -SqlCredential $TestConfig.SqlCredential -Database $db -Query "select * from people" | Should -Not -Be $null
             Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -SqlCredential $TestConfig.SqlCredential -Database $db -Query "select * from people where fname = 'Joe'" | Should -Be $null
             Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -SqlCredential $TestConfig.SqlCredential -Database $db -Query "select * from people where lname = 'Schmee'" | Should -Be $null
+            Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -SqlCredential $TestConfig.SqlCredential -Database $db -Query "select * from people where percenttest = 29.53" | Should -Be $null
+            Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -SqlCredential $TestConfig.SqlCredential -Database $db -Query "select * from people where percenttest = 65.38" | Should -Be $null
+            Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -SqlCredential $TestConfig.SqlCredential -Database $db -Query "select * from people where bittest = 1 AND lname = 'Schmoe'" | Should -Be $null
+            Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -SqlCredential $TestConfig.SqlCredential -Database $db -Query "select * from people where bittest = 0 AND lname = 'Schmee'" | Should -Be $null
         }
     }
 }
