@@ -188,6 +188,10 @@ function New-DbaDbSnapshot {
                     Write-Message -Level Warning -Message "$($db.name) is a snapshot, skipping"
                 } elseif ($db.name -in $NoSupportForSnap) {
                     Write-Message -Level Warning -Message "$($db.name) snapshots are prohibited"
+                } elseif ($db.IsAccessible -ne $true -and ($server.AvailabilityGroups | Where-Object Name -eq $db.AvailabilityGroupName).LocalReplicaRole -eq 'Secondary') {
+                    # Readable secondaries are considered accessible.
+                    # This accounts for every other valid state of an AG (e.g. a database in a Basic Availability Group is a valid target).
+                    $InputObject += $db
                 } elseif ($db.IsAccessible -ne $true) {
                     Write-Message -Level Verbose -Message "$($db.name) is not accessible, skipping"
                 } else {
