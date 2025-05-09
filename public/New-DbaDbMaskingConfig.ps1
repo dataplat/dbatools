@@ -198,7 +198,8 @@ function New-DbaDbMaskingConfig {
         $supportedDataTypes = @(
             'bit', 'bigint', 'bool',
             'char', 'date',
-            'datetime', 'datetime2', 'decimal',
+            'datetime', 'datetime2',
+            'decimal', 'numeric',
             'float',
             'int',
             'money',
@@ -525,6 +526,7 @@ function New-DbaDbMaskingConfig {
                                 $subType = "Past"
                             }
                             "decimal" { $subType = "Decimal" }
+                            "numeric" { $subType = "Decimal" }
                             "float" { $subType = "Float" }
                             "int" { $subType = "Number" }
                             "money" {
@@ -607,7 +609,11 @@ function New-DbaDbMaskingConfig {
                     $filenamepart = $server.Name.Replace('\', '$').Replace('TCP:', '').Replace(',', '.')
 
                     if ($Table) {
-                        $temppath = Join-Path -Path $Path -ChildPath "$($filenamepart).$($db.Name).$($Table -join '-').DataMaskingConfig.json"
+                        if ($Table.Count -ge 5) {
+                            $temppath = Join-Path -Path $Path -ChildPath "$($filenamepart).$($db.Name).Tables_$(Get-Date -f 'yyyyMMddHHmmss').DataMaskingConfig.json"
+                        } else {
+                            $temppath = Join-Path -Path $Path -ChildPath "$($filenamepart).$($db.Name).$($Table -join '-').DataMaskingConfig.json"
+                        }
                     } else {
                         $temppath = Join-Path -Path $Path -ChildPath "$($filenamepart).$($db.Name).DataMaskingConfig.json"
                     }

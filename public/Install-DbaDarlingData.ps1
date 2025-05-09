@@ -4,7 +4,7 @@ function Install-DbaDarlingData {
         Installs or updates Erik Darling's stored procedures.
 
     .DESCRIPTION
-        Downloads, extracts and installs Erik Darling's stored procedures
+        Downloads, extracts and installs Erik Darling's stored procedures. It does not install anything else from the repository. For example, the WhatsUpMemory view is not installed.
 
         DarlingData links:
         https://www.erikdarling.com
@@ -32,10 +32,16 @@ function Install-DbaDarlingData {
     .PARAMETER Procedure
         Specifies the name(s) of the procedures to install
         Allowed Values or Combination of Values:
-            All (default, to install all 3 procedures)
-            Human (to install sp_HumanEvents)
-            Pressure (to install sp_PressureDetector)
-            Quickie (to install sp_QuickieStore)
+            All (default, to install all procedures)
+            HumanEvents (to install sp_HumanEvents)
+            PressureDetector (to install sp_PressureDetector)
+            QuickieStore (to install sp_QuickieStore)
+            HumanEventsBlockViewer (to install sp_HumanEventsBlockViewer)
+            LogHunter (to install sp_LogHunter)
+            HealthParser (to install sp_HealthParser)
+            IndexCleanup (to install sp_IndexCleanup)
+            PerfCheck (to install sp_PerfCheck)
+        The following shorthands are allowed, ordered as above: Human, Pressure, Quickie, Block, Log, Health, Index, Perf.
 
     .PARAMETER LocalFile
         Specifies the path to a local file to install from. This *should* be the zip file as distributed by the maintainers.
@@ -74,7 +80,7 @@ function Install-DbaDarlingData {
     .EXAMPLE
         PS C:\> Install-DbaDarlingData -SqlInstance server1\instance1 -Database DBA
 
-        Logs into server1\instance1 with Windows authentication and then installs tall of Erik's scripts in the DBA database.
+        Logs into server1\instance1 with Windows authentication and then installs all of Erik's scripts in the DBA database.
 
     .EXAMPLE
         PS C:\> Install-DbaDarlingData -SqlInstance server1\instance1 -Database master -SqlCredential $cred
@@ -104,7 +110,7 @@ function Install-DbaDarlingData {
         [object]$Database = "master",
         [ValidateSet('main', 'dev')]
         [string]$Branch = "main",
-        [ValidateSet('All', 'Human', 'Pressure', 'Quickie', 'HumanEvents', 'PressureDetector', 'QuickieStore', 'HumanEventsBlockViewer', 'LogHunter', 'HealthParser')]
+        [ValidateSet('All', 'Human', 'HumanEvents', 'Pressure', 'PressureDetector', 'Quickie', 'QuickieStore', 'Block', 'HumanEventsBlockViewer', 'Log', 'LogHunter', 'Health', 'HealthParser', 'Index', 'IndexCleanup', 'Perf', 'PerfCheck')]
         [string[]]$Procedure = "All",
         [string]$LocalFile,
         [switch]$Force,
@@ -164,14 +170,20 @@ function Install-DbaDarlingData {
                     if ($Procedure -contains "Quickie" -or $Procedure -contains "QuickieStore") {
                         $sqlScripts += Get-ChildItem $localCachedCopy -Filter "sp_QuickieStore.sql" -Recurse
                     }
-                    if ($Procedure -contains "HumanEventsBlockViewer") {
+                    if ($Procedure -contains "Block" -or $Procedure -contains "HumanEventsBlockViewer") {
                         $sqlScripts += Get-ChildItem $localCachedCopy -Filter "sp_HumanEventsBlockViewer.sql" -Recurse
                     }
-                    if ($Procedure -contains "LogHunter") {
+                    if ($Procedure -contains "Log" -or $Procedure -contains "LogHunter") {
                         $sqlScripts += Get-ChildItem $localCachedCopy -Filter "sp_LogHunter.sql" -Recurse
                     }
-                    if ($Procedure -contains "HealthParser") {
+                    if ($Procedure -contains "Health" -or $Procedure -contains "HealthParser") {
                         $sqlScripts += Get-ChildItem $localCachedCopy -Filter "sp_HealthParser.sql" -Recurse
+                    }
+                    if ($Procedure -contains "Index" -or $Procedure -contains "IndexCleanup") {
+                        $sqlScripts += Get-ChildItem $localCachedCopy -Filter "sp_IndexCleanup.sql" -Recurse
+                    }
+                    if ($Procedure -contains "Perf" -or $Procedure -contains "PerfCheck") {
+                        $sqlScripts += Get-ChildItem $localCachedCopy -Filter "sp_PerfCheck.sql" -Recurse
                     }
                 }
 
