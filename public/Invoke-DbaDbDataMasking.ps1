@@ -957,14 +957,10 @@ function Invoke-DbaDbDataMasking {
 
                                         # Convert the values so they can used in T-SQL
                                         try {
-                                            if ($row.($columnobject.Name) -eq '') {
-                                                if ($columnobject.ColumnType -in 'decimal') {
-                                                    $newvalue = "0.00"
-                                                }
-                                                $convertedValue = Convert-DbaMaskingValue -Value $newvalue -DataType $columnobject.ColumnType -Nullable:$columnobject.Nullable -EnableException
-                                            } else {
-                                                $convertedValue = Convert-DbaMaskingValue -Value $newValue -DataType $columnobject.ColumnType -Nullable:$columnobject.Nullable -EnableException
+                                            if ($row.($columnobject.Name) -eq '' -and $columnobject.ColumnType -in 'decimal') {
+                                                $newvalue = "0.00"
                                             }
+                                            $convertedValue = Convert-DbaMaskingValue -Value $newValue -DataType $columnobject.ColumnType -Nullable:$columnobject.Nullable -EnableException
 
                                             if ($convertedValue.ErrorMessage) {
                                                 $maskingErrorFlag = $true

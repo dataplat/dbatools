@@ -111,11 +111,11 @@ function Convert-DbaMaskingValue {
             } else {
                 switch ($DataType.ToLower()) {
                     { $_ -in 'bit', 'bool' } {
-                        if ($item -match "^[0-1]$") {
+                        if ($item -match "^[01]$") {
                             $newValue = "$item"
-                        } elseif ($item -in "True", "true", "TRUE") {
+                        } elseif ($item -eq "true") {
                             $newValue = "1"
-                        } elseif ($item -in "False", "false", "FALSE") {
+                        } elseif ($item -eq "false") {
                             $newValue = "0"
                         } else {
                             $errorMessage = "Value '$($item)' is not valid BIT or BOOL"
