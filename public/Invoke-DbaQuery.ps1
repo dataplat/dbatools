@@ -460,6 +460,9 @@ function Invoke-DbaQuery {
                             Verbose                = $false
                             AppendConnectionString = $AppendConnectionString
                         }
+                        if (Test-Bound -Not -ParameterName AppendConnectionString) {
+                            $connDbaInstanceParams.Remove('AppendConnectionString')
+                        }
                         if ($ReadOnly) {
                             $connDbaInstanceParams.ApplicationIntent = "ReadOnly"
                         }
@@ -479,6 +482,9 @@ function Invoke-DbaQuery {
                         NonPooledConnection    = $true           # see #8491 for details, also #7725 is still relevant
                         Verbose                = $false
                         AppendConnectionString = $AppendConnectionString
+                    }
+                    if (Test-Bound -Not -ParameterName AppendConnectionString) {
+                        $connDbaInstanceParams.Remove('AppendConnectionString')
                     }
                     if ($ReadOnly) {
                         $connDbaInstanceParams.ApplicationIntent = "ReadOnly"
