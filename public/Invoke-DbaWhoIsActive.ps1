@@ -141,6 +141,9 @@ function Invoke-DbaWhoIsActive {
 
         PSObject output introduces overhead but adds flexibility for working with results: https://forums.powershell.org/t/dealing-with-dbnull/2328/2
 
+    .PARAMETER AppendServerInstance
+        If this switch is enabled, the SQL Server instance will be appended to PSObject and DataRow output.
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -230,6 +233,7 @@ function Invoke-DbaWhoIsActive {
         [switch]$Help,
         [ValidateSet("DataSet", "DataTable", "DataRow", "PSObject")]
         [string]$As = "DataRow",
+        [switch]$AppendServerInstance,
         [switch]$EnableException
     )
     begin {
@@ -292,7 +296,7 @@ function Invoke-DbaWhoIsActive {
                         $sqlParameter[$sqlParam] = $value
                     }
                 }
-                Invoke-DbaQuery -SqlInstance $server -Query "dbo.sp_WhoIsActive" -CommandType "StoredProcedure" -SqlParameter $sqlParameter -As $As -EnableException
+                Invoke-DbaQuery -SqlInstance $server -Query "dbo.sp_WhoIsActive" -CommandType "StoredProcedure" -SqlParameter $sqlParameter -As $As -AppendServerInstance:$AppendServerInstance -EnableException
             } catch {
                 if ($_.Exception.InnerException -Like "*Could not find*") {
                     Stop-Function -Message "sp_whoisactive not found, please install using Install-DbaWhoIsActive." -Continue
