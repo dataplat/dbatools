@@ -411,7 +411,7 @@ function Invoke-DbaQuery {
                 (-not $ReadOnly) -and # no readonly intent is requested and
                 (-not $Database -or $instance.InputObject.ConnectionContext.DatabaseName -eq $Database)  # the database is not set or the currently connected
                 if ($startedWithAnOpenConnection) {
-                    Write-Message -Level Debug -Message "Current connection can be reused"
+                    Write-Message -Level Debug -Message "Current connection could be reused"
                     # We got another nightmare to solve, but fortunately @andreasjordan is "the king"
                     # So. Here we are with a passed down "Server" instance. Problem is, we got two VERY different
                     # libraries built with VERY different agendas. And we want to get the best of both worlds.
@@ -453,15 +453,14 @@ function Invoke-DbaQuery {
                         $secStringPassword = ConvertTo-SecureString $instance.InputObject.ConnectionContext.ConnectAsUserPassword -AsPlainText -Force
                         [PSCredential]$serverCredentialFromSMO = New-Object System.Management.Automation.PSCredential($instance.InputObject.ConnectionContext.ConnectAsUserName, $secStringPassword)
                         $connDbaInstanceParams = @{
-                            SqlInstance            = $instance
+                            SqlInstance            = "$instance" # pass down "as a string" so it's forced to open a new one
                             SqlCredential          = $serverCredentialFromSMO
                             Database               = $Database
                             NonPooledConnection    = $true           # see #8491 for details, also #7725 is still relevant
                             Verbose                = $false
-                            AppendConnectionString = $AppendConnectionString
                         }
-                        if (Test-Bound -Not -ParameterName AppendConnectionString) {
-                            $connDbaInstanceParams.Remove('AppendConnectionString')
+                        if (Test-Bound -ParameterName AppendConnectionString) {
+                            $connDbaInstanceParams.AppendConnectionString = $AppendConnectionString
                         }
                         if ($ReadOnly) {
                             $connDbaInstanceParams.ApplicationIntent = "ReadOnly"
@@ -475,16 +474,27 @@ function Invoke-DbaQuery {
                     }
 
                 } else {
+                    $credentialsToUse = $SqlCredential
+                    $instanceToUse = $instance
+                    if ((Test-Bound -Not -ParameterName SqlCredential) -and ($instance.InputObject.GetType().Name -eq "Server"))
+                    {
+                        if ($instance.InputObject.ConnectionContext.ConnectAsUserName -ne '') {
+                            Write-Message -Level Debug -Message "Using 'alternate' credentials from connection"
+                            $secStringPassword = ConvertTo-SecureString $instance.InputObject.ConnectionContext.ConnectAsUserPassword -AsPlainText -Force
+                            [PSCredential]$serverCredentialFromSMO = New-Object System.Management.Automation.PSCredential($instance.InputObject.ConnectionContext.ConnectAsUserName, $secStringPassword)
+                            $credentialsToUse = $serverCredentialFromSMO
+                            $instanceToUse = "$instance" # pass down "as a string" so it's forced to open a new one
+                        }
+                    }
                     $connDbaInstanceParams = @{
-                        SqlInstance            = $instance
-                        SqlCredential          = $SqlCredential
+                        SqlInstance            = $instanceToUse
+                        SqlCredential          = $credentialsToUse
                         Database               = $Database
                         NonPooledConnection    = $true           # see #8491 for details, also #7725 is still relevant
                         Verbose                = $false
-                        AppendConnectionString = $AppendConnectionString
                     }
-                    if (Test-Bound -Not -ParameterName AppendConnectionString) {
-                        $connDbaInstanceParams.Remove('AppendConnectionString')
+                    if (Test-Bound -ParameterName AppendConnectionString) {
+                        $connDbaInstanceParams.AppendConnectionString = $AppendConnectionString
                     }
                     if ($ReadOnly) {
                         $connDbaInstanceParams.ApplicationIntent = "ReadOnly"
@@ -494,6 +504,7 @@ function Invoke-DbaQuery {
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $instance -Continue
             }
+            
             $conncontext = $server.ConnectionContext
             try {
                 if ($File -or $SqlObject) {
