@@ -592,6 +592,8 @@ function Connect-DbaInstance {
                 # Currently only if we have a different Database or have to switch to a NonPooledConnection or using a specific StatementTimeout or using ApplicationIntent
                 # We do not test for SqlCredential as this would change the behavior compared to the legacy code path
                 $copyContext = $false
+                $changeDatabase = $false
+                $createNewConnection = $false
                 if ($Database) {
                     Write-Message -Level Debug -Message "Database [$Database] provided."
                     if (-not $inputObject.ConnectionContext.CurrentDatabase) {
@@ -602,6 +604,11 @@ function Connect-DbaInstance {
                     if ($inputObject.ConnectionContext.CurrentDatabase -ne $Database) {
                         Write-Message -Level Verbose -Message "Database [$Database] provided. Does not match ConnectionContext.CurrentDatabase [$($inputObject.ConnectionContext.CurrentDatabase)], copying ConnectionContext and setting the CurrentDatabase"
                         $copyContext = $true
+                        $changeDatabase = $true
+                        if ($inputObject.ConnectionContext.ConnectAsUserName -ne '') {
+                            Write-Message -Level Debug -Message "Using ConnectAsUserName [$($inputObject.ConnectionContext.ConnectAsUserName)], so changing database context is not possible without loosing this information. We will create a new connection targeting database [$Database]"
+                            $createNewConnection = $true
+                        }
                     }
                 }
                 if ($ApplicationIntent -and $inputObject.ConnectionContext.ApplicationIntent -ne $ApplicationIntent) {
@@ -620,7 +627,15 @@ function Connect-DbaInstance {
                     Write-Message -Level Verbose -Message "DedicatedAdminConnection provided. Does not match ConnectionContext.ServerInstance, copying ConnectionContext and setting the ServerInstance"
                     $copyContext = $true
                 }
-                if ($copyContext) {
+                if ($createNewConnection) {
+                    $isNewConnection = $true
+                    $secStringPassword = ConvertTo-SecureString -String $inputObject.ConnectionContext.ConnectAsUserPassword -AsPlainText -Force
+                    $serverCredentialFromSMO = New-Object System.Management.Automation.PSCredential($inputObject.ConnectionContext.ConnectAsUserName, $secStringPassword)
+                    $connectParams = $PSBoundParameters
+                    $connectParams.SqlInstance = $inputObject.Name
+                    $connectParams.SqlCredential = $serverCredentialFromSMO
+                    $server = Connect-DbaInstance @connectParams
+                } elseif ($copyContext) {
                     $isNewConnection = $true
                     $connContext = $inputObject.ConnectionContext.Copy()
                     if ($ApplicationIntent) {
@@ -636,7 +651,7 @@ function Connect-DbaInstance {
                         $connContext.ServerInstance = 'ADMIN:' + $connContext.ServerInstance
                         $connContext.NonPooledConnection = $true
                     }
-                    if ($Database) {
+                    if ($changeDatabase) {
                         # Save StatementTimeout because it might be reset on GetDatabaseConnection
                         $savedStatementTimeout = $connContext.StatementTimeout
                         $connContext = $connContext.GetDatabaseConnection($Database, $false)
