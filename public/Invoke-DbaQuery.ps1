@@ -443,7 +443,8 @@ function Invoke-DbaQuery {
                 $startedWithAnOpenConnection = # we want to bypass Connect-DbaInstance if
                 ($instance.InputObject.GetType().Name -eq "Server") -and # we have Server SMO object and
                 (-not $ReadOnly) -and # no readonly intent is requested and
-                (-not $Database -or $instance.InputObject.ConnectionContext.DatabaseName -eq $Database) -and # the database is not set or the currently connected
+                (-not $Database -or $instance.InputObject.ConnectionContext.DatabaseName -eq $Database) -and # the database is not set or the currently connected and
+                (-not $AppendConnectionString) -and # we don't use AppendConnectionString and
                 ($instance.InputObject.ConnectionContext.ConnectAsUserName -eq '') # we don't use a DIFFERENT operating system user than the current logged in
                 if ($startedWithAnOpenConnection) {
                     Write-Message -Level Debug -Message "Current connection will be reused"
