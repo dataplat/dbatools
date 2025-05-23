@@ -289,6 +289,7 @@ function Connect-DbaInstance {
 
     #>
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingConvertToSecureStringWithPlainText", "")]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
         [Alias("Connstring", "ConnectionString")]
