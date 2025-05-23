@@ -656,7 +656,7 @@ function Connect-DbaInstance {
                         # Currently, the second parameter (bool poolConnection = true) has no effect
                         # The method always returns a non-pooled connection
                         # The attribute can not be changed later, as the method already opens the connection
-                        $connContext = $connContext.GetDatabaseConnection($Database, $false)
+                        $connContext = $connContext.GetDatabaseConnection($Database)
                         $connContext.StatementTimeout = $savedStatementTimeout
                     }
                     $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $connContext
