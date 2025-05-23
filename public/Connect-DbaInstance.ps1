@@ -592,7 +592,6 @@ function Connect-DbaInstance {
                 # Currently only if we have a different Database or have to switch to a NonPooledConnection or using a specific StatementTimeout or using ApplicationIntent
                 # We do not test for SqlCredential as this would change the behavior compared to the legacy code path
                 $copyContext = $false
-                $changeDatabase = $false
                 $createNewConnection = $false
                 if ($Database) {
                     Write-Message -Level Debug -Message "Database [$Database] provided."
@@ -604,7 +603,6 @@ function Connect-DbaInstance {
                     if ($inputObject.ConnectionContext.CurrentDatabase -ne $Database) {
                         Write-Message -Level Verbose -Message "Database [$Database] provided. Does not match ConnectionContext.CurrentDatabase [$($inputObject.ConnectionContext.CurrentDatabase)], copying ConnectionContext and setting the CurrentDatabase"
                         $copyContext = $true
-                        $changeDatabase = $true
                         if ($inputObject.ConnectionContext.ConnectAsUserName -ne '') {
                             Write-Message -Level Debug -Message "Using ConnectAsUserName [$($inputObject.ConnectionContext.ConnectAsUserName)], so changing database context is not possible without loosing this information. We will create a new connection targeting database [$Database]"
                             $createNewConnection = $true
@@ -651,10 +649,13 @@ function Connect-DbaInstance {
                         $connContext.ServerInstance = 'ADMIN:' + $connContext.ServerInstance
                         $connContext.NonPooledConnection = $true
                     }
-                    if ($changeDatabase) {
+                    if ($Database) {
                         # Save StatementTimeout because it might be reset on GetDatabaseConnection
                         $savedStatementTimeout = $connContext.StatementTimeout
-                        $connContext = $connContext.GetDatabaseConnection($Database, $false)
+                        # Currently, the second parameter (bool poolConnection = true) has no effect
+                        # The method always returns a non-pooled connection
+                        # The attribute can not be changed later, as the method already opens the connection
+                        $connContext = $connContext.GetDatabaseConnection($Database)
                         $connContext.StatementTimeout = $savedStatementTimeout
                     }
                     $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $connContext
