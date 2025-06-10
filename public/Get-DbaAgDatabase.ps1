@@ -56,7 +56,7 @@ function Get-DbaAgDatabase {
         Returns all the databases in the availability group AG101 on sql2017a
 
     .EXAMPLE
-        PS C:\> Get-DbaAgDatabase -SqlInstance sqlcluster -AvailabilityGroup SharePoint -Database Sharepoint_Config
+        PS C:\> Get-DbaAvailabilityGroup -SqlInstance sqlcluster -AvailabilityGroup SharePoint | Get-DbaAgDatabase -Database Sharepoint_Config
 
         Returns the database Sharepoint_Config found in the availability group SharePoint on server sqlcluster
     #>
