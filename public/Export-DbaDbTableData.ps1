@@ -71,13 +71,13 @@ function Export-DbaDbTableData {
         Exports data from EmployeePayHistory in AdventureWorks2014 in sql2017
 
     .EXAMPLE
-        PS C:\> Get-DbaDbTable -SqlInstance sql2017 -Database AdventureWorks2014 -Table EmployeePayHistory | Export-DbaDbTableData -Path C:\temp\export.sql -Append
+        PS C:\> Get-DbaDbTable -SqlInstance sql2017 -Database AdventureWorks2014 -Table EmployeePayHistory | Export-DbaDbTableData -FilePath C:\temp\export.sql -Append
 
         Exports data from EmployeePayHistory in AdventureWorks2014 in sql2017 using a trusted connection - Will append the output to the file C:\temp\export.sql if it already exists
         Script does not include Batch Separator and will not compile
 
     .EXAMPLE
-        PS C:\> Get-DbaDbTable -SqlInstance sql2016 -Database MyDatabase -Table 'dbo.Table1', 'dbo.Table2' -SqlCredential sqladmin | Export-DbaDbTableData -Path C:\temp\export.sql
+        PS C:\> Get-DbaDbTable -SqlInstance sql2016 -Database MyDatabase -Table 'dbo.Table1', 'dbo.Table2' -SqlCredential sqladmin | Export-DbaDbTableData -FilePath C:\temp\export.sql -Append
 
         Exports only data from 'dbo.Table1' and 'dbo.Table2' in MyDatabase to C:\temp\export.sql and uses the SQL login "sqladmin" to login to sql2016
     #>
