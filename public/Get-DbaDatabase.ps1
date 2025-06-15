@@ -274,6 +274,9 @@ function Get-DbaDatabase {
                                 SUSER_SNAME(sid) AS [Owner]
                             FROM master.dbo.sysdatabases
                         ")
+                    } elseif ($server.VersionMajor -eq 9) {
+                        # CDC did not exist in version 9, but did afterwards.
+                        $server.Query("SELECT name, state, SUSER_SNAME(owner_sid) AS [Owner], 0 AS is_cdc_enabled FROM sys.databases")
                     } else {
                         $server.Query("SELECT name, state, SUSER_SNAME(owner_sid) AS [Owner], is_cdc_enabled FROM sys.databases")
                     }
