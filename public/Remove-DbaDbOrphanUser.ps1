@@ -118,7 +118,7 @@ function Remove-DbaDbOrphanUser {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $DatabaseCollection = $server.Databases | Where-Object IsAccessible | Where-Object -Not ReadOnly
+            $DatabaseCollection = $server.Databases | Where-Object IsAccessible | Where-Object ReadOnly -eq $false
 
             if ($Database) {
                 $DatabaseCollection = $DatabaseCollection | Where-Object Name -In $Database
