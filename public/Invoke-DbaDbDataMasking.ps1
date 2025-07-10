@@ -917,7 +917,7 @@ function Invoke-DbaDbDataMasking {
                                                     Format          = $columnobject.Format
                                                     Locale          = $Locale
                                                 }
-                                            } elseif ($columnobject.SubType.ToLowerInvariant() -eq 'shuffle') {
+                                            } elseif ($columnobject.SubType.ToLowerInvariant() -in 'shuffle', 'string2', 'string') {
                                                 if ($columnobject.ColumnType -in 'bigint', 'char', 'int', 'nchar', 'nvarchar', 'smallint', 'tinyint', 'varchar') {
                                                     $newValueParams = @{
                                                         RandomizerType    = "Random"
@@ -957,11 +957,10 @@ function Invoke-DbaDbDataMasking {
 
                                         # Convert the values so they can used in T-SQL
                                         try {
-                                            if ($row.($columnobject.Name) -eq '') {
-                                                $convertedValue = Convert-DbaMaskingValue -Value ' ' -DataType $columnobject.ColumnType -Nullable:$columnobject.Nullable -EnableException
-                                            } else {
-                                                $convertedValue = Convert-DbaMaskingValue -Value $newValue -DataType $columnobject.ColumnType -Nullable:$columnobject.Nullable -EnableException
+                                            if ($row.($columnobject.Name) -eq '' -and $columnobject.ColumnType -in 'decimal') {
+                                                $newvalue = "0.00"
                                             }
+                                            $convertedValue = Convert-DbaMaskingValue -Value $newValue -DataType $columnobject.ColumnType -Nullable:$columnobject.Nullable -EnableException
 
                                             if ($convertedValue.ErrorMessage) {
                                                 $maskingErrorFlag = $true
