@@ -122,6 +122,7 @@ function Remove-DbaDatabaseSafely {
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
+        [Alias('Name')]
         [object[]]$Database,
         [DbaInstanceParameter]$Destination = $SqlInstance,
         [PSCredential]$DestinationSqlCredential,
