@@ -1,5 +1,12 @@
 name: Run Prerelease Tests
-on: workflow_dispatch
+on: 
+  workflow_dispatch:
+    inputs:
+      dbatools-library-version:
+        description: 'Override dbatools.library version (e.g., 2024.5.1-preview)'
+        required: false
+        type: string
+
 defaults:
   run:
     shell: pwsh
@@ -71,11 +78,30 @@ jobs:
           Set-PSRepository PSGallery -InstallationPolicy Trusted
           Install-Module dbatools -AllowPrerelease
 
+      - name: Read dbatools.library version
+        id: version
+        shell: pwsh
+        run: |
+          if ('${{ github.event.inputs.dbatools-library-version }}') {
+            $version = '${{ github.event.inputs.dbatools-library-version }}'
+            Write-Host "Using workflow input version: $version"
+          } else {
+            $config = Get-Content ./.github/dbatools-library-version.json | ConvertFrom-Json
+            $version = $config.version
+            Write-Host "Using config file version: $version"
+          }
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Install dbatools.library
+        uses: ./.github/actions/install-dbatools-library
+        with:
+          version: ${{ steps.version.outputs.version }}
+          shell: powershell
+
       - name: Install dbatools prerelease on powershell
         shell: powershell
         run: |
           Set-PSRepository PSGallery -InstallationPolicy Trusted
-          Install-Module dbatools.library
           Install-Module dbatools -AllowPrerelease
 
       - name: Measure import speed on pwsh
@@ -86,7 +112,6 @@ jobs:
       - name: Measure import speed on powershell
         shell: powershell
         run: |
-          Import-Module dbatools.library
           Measure-Command { Import-Module dbatools }
           Get-Module dbatools
 

@@ -36,10 +36,10 @@ jobs:
         }
         "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
-    - name: Install and cache PowerShell modules
-      uses: potatoqualitee/psmodulecache@v6.2.1
+    - name: Install dbatools.library
+      uses: ./.github/actions/install-dbatools-library
       with:
-          modules-to-cache: dbatools.library:${{ steps.version.outputs.version }}
+          version: ${{ steps.version.outputs.version }}
 
     - name: Perform the import
       shell: pwsh

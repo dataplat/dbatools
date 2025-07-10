@@ -1,0 +1,72 @@
+name: 'Install dbatools.library'
+description: 'Installs dbatools.library from PowerShell Gallery or appveyor-lab fallback'
+inputs:
+  version:
+    description: 'Version of dbatools.library to install'
+    required: true
+  shell:
+    description: 'Shell to use for psmodulecache (powershell, pwsh, or both)'
+    required: false
+    default: 'pwsh'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Clone appveyor-lab if needed
+      shell: pwsh
+      run: |
+        if (-not (Test-Path "/tmp/appveyor-lab")) {
+          Write-Host "Cloning appveyor-lab repository..."
+          Push-Location /tmp
+          gh repo clone dataplat/appveyor-lab
+          Pop-Location
+        }
+
+    - name: Check module availability
+      id: check
+      shell: pwsh
+      run: |
+        $version = '${{ inputs.version }}'
+        Write-Host "Checking availability of dbatools.library version: $version"
+        
+        try {
+          $galleryCheck = Find-Module -Name dbatools.library -RequiredVersion $version -ErrorAction Stop
+          Write-Host "✓ Version $version exists in PowerShell Gallery"
+          "source=gallery" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+        }
+        catch {
+          Write-Host "Version $version not found in PowerShell Gallery"
+          
+          # Check templib branch in appveyor-lab
+          $branchUrl = "https://github.com/dataplat/appveyor-lab/raw/templib/modules/dbatools.library/$version.zip"
+          try {
+            $response = Invoke-WebRequest -Uri $branchUrl -Method Head -ErrorAction Stop
+            Write-Host "✓ Version $version found in templib branch"
+            "source=templib" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            "download_url=$branchUrl" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          }
+          catch {
+            Write-Host "✗ Version $version not found in templib branch"
+            "source=not-found" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          }
+        }
+
+    - name: Install from PowerShell Gallery
+      if: steps.check.outputs.source == 'gallery'
+      uses: potatoqualitee/psmodulecache@v6.2.1
+      with:
+        shell: ${{ inputs.shell }}
+        modules-to-cache: dbatools.library:${{ inputs.version }}
+
+    - name: Install from templib branch
+      if: steps.check.outputs.source == 'templib'
+      shell: pwsh
+      run: |
+        Write-Host "Installing dbatools.library from templib branch..."
+        & ${{ github.workspace }}/.github/scripts/Install-DbatoolsLibrary.ps1 -Version '${{ inputs.version }}' -DownloadUrl '${{ steps.check.outputs.download_url }}'
+
+    - name: Fail if module not found
+      if: steps.check.outputs.source == 'not-found'
+      shell: pwsh
+      run: |
+        throw "dbatools.library version ${{ inputs.version }} not found in PowerShell Gallery or appveyor-lab"
