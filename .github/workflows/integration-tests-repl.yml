@@ -1,5 +1,13 @@
 name: Run Replication Tests
-on: [push]
+on: 
+  push:
+  workflow_dispatch:
+    inputs:
+      dbatools-library-version:
+        description: 'Override dbatools.library version (e.g., 2024.5.1-preview)'
+        required: false
+        type: string
+
 defaults:
   run:
     shell: pwsh
@@ -12,10 +20,23 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Read dbatools.library version
+        id: version
+        run: |
+          if ('${{ github.event.inputs.dbatools-library-version }}') {
+            $version = '${{ github.event.inputs.dbatools-library-version }}'
+            Write-Host "Using workflow input version: $version"
+          } else {
+            $config = Get-Content ./.github/dbatools-library-version.json | ConvertFrom-Json
+            $version = $config.version
+            Write-Host "Using config file version: $version"
+          }
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
       - name: Install and cache PowerShell modules
         uses: potatoqualitee/psmodulecache@v6.2.1
         with:
-          modules-to-cache: dbatools.library:2024.4.12
+          modules-to-cache: dbatools.library:${{ steps.version.outputs.version }}
 
       - name: Set encryption values
         run: |
@@ -62,10 +83,23 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Read dbatools.library version
+        id: version
+        run: |
+          if ('${{ github.event.inputs.dbatools-library-version }}') {
+            $version = '${{ github.event.inputs.dbatools-library-version }}'
+            Write-Host "Using workflow input version: $version"
+          } else {
+            $config = Get-Content ./.github/dbatools-library-version.json | ConvertFrom-Json
+            $version = $config.version
+            Write-Host "Using config file version: $version"
+          }
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
       - name: Install and cache PowerShell modules
         uses: potatoqualitee/psmodulecache@v6.2.1
         with:
-          modules-to-cache: dbatools.library:2024.4.12
+          modules-to-cache: dbatools.library:${{ steps.version.outputs.version }}
 
       - name: Set encryption values
         run: |
@@ -112,10 +146,23 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Read dbatools.library version
+        id: version
+        run: |
+          if ('${{ github.event.inputs.dbatools-library-version }}') {
+            $version = '${{ github.event.inputs.dbatools-library-version }}'
+            Write-Host "Using workflow input version: $version"
+          } else {
+            $config = Get-Content ./.github/dbatools-library-version.json | ConvertFrom-Json
+            $version = $config.version
+            Write-Host "Using config file version: $version"
+          }
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
       - name: Install and cache PowerShell modules
         uses: potatoqualitee/psmodulecache@v6.2.1
         with:
-          modules-to-cache: dbatools.library:2024.4.12
+          modules-to-cache: dbatools.library:${{ steps.version.outputs.version }}
 
       - name: Set encryption values
         run: |
