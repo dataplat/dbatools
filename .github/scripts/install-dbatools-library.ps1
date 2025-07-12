@@ -190,7 +190,8 @@ function Install-FromGitHubRelease {
             }
         }
 
-        $finalInstallPath = Join-Path -Path (Join-Path -Path $installBasePath -ChildPath $ModuleName) -ChildPath $RequiredVersion
+        # Install directly to module directory without version subdirectory for preview versions
+        $finalInstallPath = Join-Path -Path $installBasePath -ChildPath $ModuleName
 
         # Create installation directory
         Write-Log "Installing to: $finalInstallPath"
@@ -384,12 +385,11 @@ try {
             Write-Log "  Version: $($module.Version) | Path: $($module.ModuleBase)"
         }
 
-        # Check if the specific version we wanted is installed
-        $targetModule = $installedModules | Where-Object { $_.Version -eq $requiredVersion }
-        if ($targetModule) {
-            Write-Log "Target version $requiredVersion found and available!" -Level 'Success'
+        # For preview versions, we install without version directory, so just check if any version is available
+        if ($installedModules.Count -gt 0) {
+            Write-Log "dbatools.library module found and available (version: $($installedModules[0].Version))!" -Level 'Success'
         } else {
-            Write-Log "Target version $requiredVersion not found, but other versions are available. This may be acceptable for preview versions." -Level 'Warning'
+            Write-Log "No dbatools.library versions found after installation" -Level 'Warning'
         }
     } else {
         Write-Log "CRITICAL: No dbatools.library module found after installation" -Level 'Error'
