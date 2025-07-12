@@ -155,7 +155,7 @@ function Install-FromGitHubRelease {
             }
         }
 
-        $finalInstallPath = Join-Path $installBasePath $ModuleName $RequiredVersion
+        $finalInstallPath = Join-Path -Path (Join-Path -Path $installBasePath -ChildPath $ModuleName) -ChildPath $RequiredVersion
 
         # Create installation directory
         Write-Log "Installing to: $finalInstallPath"
@@ -170,6 +170,16 @@ function Install-FromGitHubRelease {
 
         # Copy module files
         Copy-Item -Path $moduleDir.FullName -Destination $finalInstallPath -Recurse -Force
+
+        # Add the modules directory to PSModulePath if not already present
+        $modulesBasePath = Split-Path $finalInstallPath -Parent
+        $modulesRootPath = Split-Path $modulesBasePath -Parent
+        $currentPSModulePath = $env:PSModulePath -split [System.IO.Path]::PathSeparator
+
+        if ($modulesRootPath -notin $currentPSModulePath) {
+            $env:PSModulePath = $modulesRootPath + [System.IO.Path]::PathSeparator + $env:PSModulePath
+            Write-Log "Added '$modulesRootPath' to PSModulePath for this session" -Level 'Success'
+        }
 
         # Cleanup
         Remove-Item $downloadPath -Force -ErrorAction SilentlyContinue
@@ -216,26 +226,81 @@ try {
         Write-Log "Force installation requested, will reinstall if already present"
     }
 
-    # Attempt installation from PowerShell Gallery first
-    $gallerySuccess = Install-FromPowerShellGallery -ModuleName 'dbatools.library' -RequiredVersion $requiredVersion -InstallScope $Scope -ForceInstall $Force
+    # Check if this is a preview version - skip Gallery for these
+    $isPreviewVersion = $requiredVersion -match "preview|main-\d+" -or $requiredVersion -match "\d+\.\d+\.\d+-.*"
 
-    if (-not $gallerySuccess) {
-        Write-Log "PowerShell Gallery installation failed, attempting GitHub releases..."
+    if ($isPreviewVersion) {
+        Write-Log "Detected preview version '$requiredVersion'. Skipping PowerShell Gallery and attempting GitHub releases directly." -Level 'Warning'
         $githubSuccess = Install-FromGitHubRelease -ModuleName 'dbatools.library' -RequiredVersion $requiredVersion
 
         if (-not $githubSuccess) {
-            throw "Failed to install dbatools.library version $requiredVersion from both PowerShell Gallery and GitHub releases"
+            throw "Failed to install preview version $requiredVersion from GitHub releases"
+        }
+    } else {
+        # Attempt installation from PowerShell Gallery first for stable versions
+        $gallerySuccess = Install-FromPowerShellGallery -ModuleName 'dbatools.library' -RequiredVersion $requiredVersion -InstallScope $Scope -ForceInstall $Force
+
+        if (-not $gallerySuccess) {
+            Write-Log "PowerShell Gallery installation failed, attempting GitHub releases..."
+            $githubSuccess = Install-FromGitHubRelease -ModuleName 'dbatools.library' -RequiredVersion $requiredVersion
+
+            if (-not $githubSuccess) {
+                throw "Failed to install dbatools.library version $requiredVersion from both PowerShell Gallery and GitHub releases"
+            }
         }
     }
 
-    <# Verify installation
-    if (Test-ModuleInstalled -ModuleName 'dbatools.library' -RequiredVersion $requiredVersion) {
-        Write-Log "Installation verification successful!" -Level 'Success'
-        Write-Log "dbatools.library version $requiredVersion is now available"
+    # Verify installation and provide debugging information
+    Write-Log "Verifying installation..."
+    $installedModules = Get-Module -ListAvailable -Name 'dbatools.library'
+
+    if ($installedModules) {
+        Write-Log "Found dbatools.library installations:" -Level 'Success'
+        foreach ($module in $installedModules) {
+            Write-Log "  Version: $($module.Version) | Path: $($module.ModuleBase)"
+        }
+
+        # Check if the specific version we wanted is installed
+        $targetModule = $installedModules | Where-Object { $_.Version -eq $requiredVersion }
+        if ($targetModule) {
+            Write-Log "Target version $requiredVersion found and available!" -Level 'Success'
+        } else {
+            Write-Log "Target version $requiredVersion not found, but other versions are available. This may be acceptable for preview versions." -Level 'Warning'
+        }
     } else {
-        throw "Installation completed but module verification failed"
+        throw "No dbatools.library module found after installation"
     }
-    #>
+
+    # Test import to ensure the module works
+    Write-Log "Testing module import..."
+    try {
+        Import-Module dbatools.library -Force -ErrorAction Stop
+        Write-Log "Module import test successful" -Level 'Success'
+        Remove-Module dbatools.library -Force -ErrorAction SilentlyContinue
+    } catch {
+        Write-Log "Module import test failed: $($_.Exception.Message)" -Level 'Warning'
+        Write-Log "This may be expected if there are version compatibility issues with preview versions"
+    }
+
+    # Output PSModulePath for debugging
+    Write-Log "Current PSModulePath:"
+    $env:PSModulePath -split [System.IO.Path]::PathSeparator | ForEach-Object {
+        Write-Log "  $_"
+    }
+
+    # For CI/CD scenarios, prepare dbatools manifest for version compatibility
+    $prepareScriptPath = Join-Path $PSScriptRoot "prepare-dbatools-for-ci.ps1"
+    if (Test-Path $prepareScriptPath) {
+        Write-Log "Preparing dbatools manifest for CI/CD compatibility..."
+        & $prepareScriptPath
+        if ($LASTEXITCODE -eq 0) {
+            Write-Log "dbatools manifest preparation completed successfully" -Level 'Success'
+        } else {
+            Write-Log "dbatools manifest preparation failed, but continuing..." -Level 'Warning'
+        }
+    } else {
+        Write-Log "CI preparation script not found at: $prepareScriptPath" -Level 'Warning'
+    }
 
 } catch {
     Write-Log "Installation failed: $($_.Exception.Message)" -Level 'Error'
