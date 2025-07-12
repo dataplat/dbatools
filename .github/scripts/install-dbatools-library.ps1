@@ -93,6 +93,11 @@ function Install-FromPowerShellGallery {
             SkipPublisherCheck = $true
         }
 
+        # Add AllowPrerelease for preview versions
+        if ($RequiredVersion -like "*preview*") {
+            $installParams.AllowPrerelease = $true
+        }
+
         Install-Module @installParams -ErrorAction Stop
         Write-Log "Successfully installed $ModuleName version $RequiredVersion from PowerShell Gallery" -Level 'Success'
         return $true
