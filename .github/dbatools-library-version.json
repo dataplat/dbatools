@@ -1,5 +1,5 @@
 {
-  "version": "2024.4.12",
+  "version": "2025.7.12-preview-main-20250712.175548",
   "allowPrerelease": false,
   "comment": "Update this file to change the dbatools.library version used in GitHub Actions workflows"
 }
