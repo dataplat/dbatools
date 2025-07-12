@@ -246,12 +246,11 @@ function Install-FromGitHubRelease {
 
         # Add the modules directory to PSModulePath if not already present
         $modulesBasePath = Split-Path $finalInstallPath -Parent
-        $modulesRootPath = Split-Path $modulesBasePath -Parent
         $currentPSModulePath = $env:PSModulePath -split [System.IO.Path]::PathSeparator
 
-        if ($modulesRootPath -notin $currentPSModulePath) {
-            $env:PSModulePath = $modulesRootPath + [System.IO.Path]::PathSeparator + $env:PSModulePath
-            Write-Log "Added '$modulesRootPath' to PSModulePath for this session" -Level 'Success'
+        if ($modulesBasePath -notin $currentPSModulePath) {
+            $env:PSModulePath = $modulesBasePath + [System.IO.Path]::PathSeparator + $env:PSModulePath
+            Write-Log "Added '$modulesBasePath' to PSModulePath for this session" -Level 'Success'
         }
 
         # Cleanup
