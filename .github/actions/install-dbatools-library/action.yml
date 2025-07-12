@@ -1,5 +1,5 @@
 name: 'Install dbatools.library'
-description: 'Installs dbatools.library from PowerShell Gallery or appveyor-lab fallback'
+description: 'Installs dbatools.library from PowerShell Gallery or GitHub releases'
 inputs:
   version:
     description: 'Version of dbatools.library to install'
@@ -12,16 +12,6 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Clone appveyor-lab if needed
-      shell: pwsh
-      run: |
-        if (-not (Test-Path "/tmp/appveyor-lab")) {
-          Write-Host "Cloning appveyor-lab repository..."
-          Push-Location /tmp
-          gh repo clone dataplat/appveyor-lab
-          Pop-Location
-        }
-
     - name: Check module availability
       id: check
       shell: pwsh
@@ -29,25 +19,21 @@ runs:
         $version = '${{ inputs.version }}'
         Write-Host "Checking availability of dbatools.library version: $version"
         
-        try {
-          $galleryCheck = Find-Module -Name dbatools.library -RequiredVersion $version -ErrorAction Stop
-          Write-Host "✓ Version $version exists in PowerShell Gallery"
-          "source=gallery" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+        # Check if it's a preview version
+        if ($version -match '-preview-') {
+          Write-Host "Preview version detected, will use GitHub releases"
+          "source=github-preview" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
         }
-        catch {
-          Write-Host "Version $version not found in PowerShell Gallery"
-          
-          # Check templib branch in appveyor-lab
-          $branchUrl = "https://github.com/dataplat/appveyor-lab/raw/templib/modules/dbatools.library/$version.zip"
+        else {
           try {
-            $response = Invoke-WebRequest -Uri $branchUrl -Method Head -ErrorAction Stop
-            Write-Host "✓ Version $version found in templib branch"
-            "source=templib" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-            "download_url=$branchUrl" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            $galleryCheck = Find-Module -Name dbatools.library -RequiredVersion $version -ErrorAction Stop
+            Write-Host "✓ Version $version exists in PowerShell Gallery"
+            "source=gallery" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           }
           catch {
-            Write-Host "✗ Version $version not found in templib branch"
-            "source=not-found" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            Write-Host "Version $version not found in PowerShell Gallery"
+            Write-Host "Will check GitHub releases as fallback"
+            "source=github-release" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           }
         }
 
@@ -58,15 +44,58 @@ runs:
         shell: ${{ inputs.shell }}
         modules-to-cache: dbatools.library:${{ inputs.version }}
 
-    - name: Install from templib branch
-      if: steps.check.outputs.source == 'templib'
+    - name: Install from GitHub Releases
+      if: steps.check.outputs.source == 'github-preview' || steps.check.outputs.source == 'github-release'
       shell: pwsh
       run: |
-        Write-Host "Installing dbatools.library from templib branch..."
-        & ${{ github.workspace }}/.github/scripts/Install-DbatoolsLibrary.ps1 -Version '${{ inputs.version }}' -DownloadUrl '${{ steps.check.outputs.download_url }}'
+        Write-Host "Installing dbatools.library from GitHub releases..."
+        $version = '${{ inputs.version }}'
+        
+        # For preview versions, use the exact tag
+        if ($version -match '-preview-') {
+          $tag = "v$version"
+        }
+        else {
+          # For regular versions, check if a release exists
+          $tag = "v$version"
+        }
+        
+        $downloadUrl = "https://github.com/dataplat/dbatools.library/releases/download/$tag/dbatools.library.zip"
+        
+        try {
+          # Download the release
+          $tempPath = Join-Path $env:TEMP "dbatools.library.zip"
+          Write-Host "Downloading from: $downloadUrl"
+          Invoke-WebRequest -Uri $downloadUrl -OutFile $tempPath -ErrorAction Stop
+          
+          # Extract to appropriate module path
+          $modulePaths = $env:PSModulePath -split [IO.Path]::PathSeparator
+          $targetPath = $modulePaths[0]  # Use first path (usually user path)
+          
+          Write-Host "Extracting to: $targetPath"
+          Expand-Archive -Path $tempPath -DestinationPath $targetPath -Force
+          
+          # Verify installation
+          $module = Get-Module -ListAvailable -Name dbatools.library | Where-Object { $_.Version -like "*$version*" -or $_.Path -like "*$version*" }
+          if ($module) {
+            Write-Host "✓ Successfully installed dbatools.library from GitHub release"
+            Write-Host "Installed version: $($module.Version)"
+            Write-Host "Module path: $($module.ModuleBase)"
+          }
+          else {
+            throw "Module installation verification failed"
+          }
+          
+          # Clean up
+          Remove-Item -Path $tempPath -Force -ErrorAction SilentlyContinue
+        }
+        catch {
+          Write-Error "Failed to install dbatools.library from GitHub releases: $_"
+          throw
+        }
 
     - name: Fail if module not found
       if: steps.check.outputs.source == 'not-found'
       shell: pwsh
       run: |
-        throw "dbatools.library version ${{ inputs.version }} not found in PowerShell Gallery or appveyor-lab"
+        throw "dbatools.library version ${{ inputs.version }} not found in PowerShell Gallery or GitHub releases"

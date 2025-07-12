@@ -1,0 +1,36 @@
+name: Test with Preview dbatools.library
+on:
+  workflow_dispatch:
+    inputs:
+      preview-tag:
+        description: 'Preview release tag (e.g., v2024.12.13-preview-main-20241213.120000)'
+        required: true
+        type: string
+
+defaults:
+  run:
+    shell: pwsh
+
+jobs:
+  test-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install preview dbatools.library
+        uses: ./.github/actions/install-dbatools-library
+        with:
+          version: ${{ github.event.inputs.preview-tag }}
+          
+      - name: Verify installation
+        run: |
+          Import-Module dbatools.library -Force
+          $module = Get-Module dbatools.library
+          Write-Host "Loaded dbatools.library version: $($module.Version)"
+          Write-Host "Module path: $($module.Path)"
+          
+      - name: Test basic functionality
+        run: |
+          Import-Module ./dbatools.psd1 -Force
+          # Run a simple test to verify everything works
+          Get-DbaToolsLibrary | Out-String
