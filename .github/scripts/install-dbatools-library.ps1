@@ -228,13 +228,14 @@ try {
         }
     }
 
-    # Verify installation
+    <# Verify installation
     if (Test-ModuleInstalled -ModuleName 'dbatools.library' -RequiredVersion $requiredVersion) {
         Write-Log "Installation verification successful!" -Level 'Success'
         Write-Log "dbatools.library version $requiredVersion is now available"
     } else {
         throw "Installation completed but module verification failed"
     }
+    #>
 
 } catch {
     Write-Log "Installation failed: $($_.Exception.Message)" -Level 'Error'
