@@ -52,7 +52,12 @@ if (-not $script:libraryroot) {
 }
 
 try {
-    $dll = [System.IO.Path]::Combine($script:libraryroot, "dbatools.dll")
+    # if core add core to the path, otherwise add desktop
+    if ($PSVersionTable.PSEdition -eq 'Core') {
+        $script:libraryroot = [System.IO.Path]::Combine($script:libraryroot, 'core', 'dbatools.dll')
+    } else {
+        $script:libraryroot = [System.IO.Path]::Combine($script:libraryroot, 'desktop', 'dbatools.dll')
+    }
     Import-Module $dll
 } catch {
     throw "Couldn't import dbatools library | $PSItem"
