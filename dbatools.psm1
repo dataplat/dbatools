@@ -54,9 +54,9 @@ if (-not $script:libraryroot) {
 try {
     # if core add core to the path, otherwise add desktop
     if ($PSVersionTable.PSEdition -eq 'Core') {
-        $script:libraryroot = [System.IO.Path]::Combine($script:libraryroot, 'core', 'dbatools.dll')
+        $dll = $script:libraryroot = [System.IO.Path]::Combine($script:libraryroot, 'lib', 'core', 'dbatools.dll')
     } else {
-        $script:libraryroot = [System.IO.Path]::Combine($script:libraryroot, 'desktop', 'dbatools.dll')
+        $dll = $script:libraryroot = [System.IO.Path]::Combine($script:libraryroot, 'lib', 'desktop', 'dbatools.dll')
     }
     Import-Module $dll
 } catch {
