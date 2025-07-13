@@ -180,13 +180,25 @@ function Install-FromGitHubRelease {
             if ($PSVersionTable.Platform -eq 'Unix') {
                 $installBasePath = '/usr/local/share/powershell/Modules'
             } else {
-                $installBasePath = "$env:ProgramFiles\PowerShell\Modules"
+                # Windows - handle both PowerShell editions
+                if ($PSVersionTable.PSEdition -eq 'Core') {
+                    $installBasePath = "$env:ProgramFiles\PowerShell\Modules"
+                } else {
+                    # Windows PowerShell 5.1
+                    $installBasePath = "$env:ProgramFiles\WindowsPowerShell\Modules"
+                }
             }
         } else {
             if ($PSVersionTable.Platform -eq 'Unix') {
                 $installBasePath = "$env:HOME/.local/share/powershell/Modules"
             } else {
-                $installBasePath = "$env:USERPROFILE\Documents\PowerShell\Modules"
+                # Windows - handle both PowerShell editions
+                if ($PSVersionTable.PSEdition -eq 'Core') {
+                    $installBasePath = "$env:USERPROFILE\Documents\PowerShell\Modules"
+                } else {
+                    # Windows PowerShell 5.1
+                    $installBasePath = "$env:USERPROFILE\Documents\WindowsPowerShell\Modules"
+                }
             }
         }
 
@@ -194,6 +206,7 @@ function Install-FromGitHubRelease {
         $finalInstallPath = Join-Path -Path $installBasePath -ChildPath $ModuleName
 
         # Create installation directory
+        Write-Log "Module base path: $installBasePath"
         Write-Log "Installing to: $finalInstallPath"
         if (-not (Test-Path (Split-Path $finalInstallPath))) {
             New-Item -Path (Split-Path $finalInstallPath) -ItemType Directory -Force | Out-Null
@@ -287,6 +300,8 @@ try {
 
     Write-Log "Target version: $requiredVersion"
     Write-Log "Installation scope: $Scope"
+    Write-Log "PowerShell Edition: $($PSVersionTable.PSEdition)"
+    Write-Log "PowerShell Version: $($PSVersionTable.PSVersion)"
 
     # Check if module is already installed (unless Force is specified)
     if (-not $Force) {
