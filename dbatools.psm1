@@ -52,7 +52,7 @@ if (-not $script:libraryroot) {
 }
 
 try {
-    $dll = [System.IO.Path]::Combine($script:libraryroot, "lib", "dbatools.dll")
+    $dll = [System.IO.Path]::Combine($script:libraryroot, "dbatools.dll")
     Import-Module $dll
 } catch {
     throw "Couldn't import dbatools library | $PSItem"
