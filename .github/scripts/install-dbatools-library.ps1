@@ -182,7 +182,7 @@ function Install-FromGitHubRelease {
             } else {
                 # CurrentUser scope - User profile locations
                 $installBasePaths += "$env:USERPROFILE\Documents\PowerShell\Modules"
-                $installBasePaths += "$env:USERPROFILE\Documents\WindowsPowerShell\Modules"
+                $installBasePaths += "$env:ProgramFiles\WindowsPowerShell\Modules"
             }
         }
 
