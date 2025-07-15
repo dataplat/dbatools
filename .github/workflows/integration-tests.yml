@@ -121,8 +121,7 @@ jobs:
       - name: Connect to localdb instance powershell
         shell: powershell
         run: |
-          (Get-Module dbatools.library -ListAvailable) | Write-Warning
-          Ipmo C:\Users\runneradmin\Documents\WindowsPowerShell\Modules\dbatools.library\dbatools.library.psd1
+          $env:PSModulePath -split ";" | Write-Warning
           Import-Module dbatools.library
           Import-Module ./dbatools -Force
           Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -PassThru | Register-DbatoolsConfig -Scope FileUserShared
