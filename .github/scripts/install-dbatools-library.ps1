@@ -175,96 +175,114 @@ function Install-FromGitHubRelease {
             Write-Log "Manifest found at: $manifestInModuleDir" -Level 'Warning'
         }
 
-        # Determine installation path based on scope
-        if ($Scope -eq 'AllUsers') {
-            if ($PSVersionTable.Platform -eq 'Unix') {
-                $installBasePath = '/usr/local/share/powershell/Modules'
+        # Determine installation paths based on scope
+        $installBasePaths = @()
+
+        if ($PSVersionTable.Platform -eq 'Unix') {
+            # Unix systems - single path based on scope
+            if ($Scope -eq 'AllUsers') {
+                $installBasePaths += '/usr/local/share/powershell/Modules'
             } else {
-                # Windows - handle both PowerShell editions
-                if ($PSVersionTable.PSEdition -eq 'Core') {
-                    $installBasePath = "$env:ProgramFiles\PowerShell\Modules"
-                } else {
-                    # Windows PowerShell 5.1
-                    $installBasePath = "$env:ProgramFiles\WindowsPowerShell\Modules"
-                }
+                $installBasePaths += "$env:HOME/.local/share/powershell/Modules"
             }
         } else {
-            if ($PSVersionTable.Platform -eq 'Unix') {
-                $installBasePath = "$env:HOME/.local/share/powershell/Modules"
+            # Windows systems - install to both PowerShell Core and Windows PowerShell paths
+            if ($Scope -eq 'AllUsers') {
+                # AllUsers scope - Program Files locations
+                $installBasePaths += "$env:ProgramFiles\PowerShell\Modules"
+                $installBasePaths += "$env:ProgramFiles\WindowsPowerShell\Modules"
             } else {
-                # Windows - handle both PowerShell editions
-                if ($PSVersionTable.PSEdition -eq 'Core') {
-                    $installBasePath = "$env:USERPROFILE\Documents\PowerShell\Modules"
+                # CurrentUser scope - User profile locations
+                $installBasePaths += "$env:USERPROFILE\Documents\PowerShell\Modules"
+                $installBasePaths += "$env:USERPROFILE\Documents\WindowsPowerShell\Modules"
+            }
+        }
+
+        Write-Log "Will install to the following paths:" -Level 'Warning'
+        foreach ($path in $installBasePaths) {
+            Write-Log "  $path" -Level 'Warning'
+        }
+
+        $success = $false
+
+        # Install to each path
+        foreach ($installBasePath in $installBasePaths) {
+            # Install directly to module directory without version subdirectory for preview versions
+            $finalInstallPath = Join-Path -Path $installBasePath -ChildPath $ModuleName
+
+            # Create installation directory
+            Write-Log "Module base path: $installBasePath"
+            Write-Log "Installing to: $finalInstallPath"
+            if (-not (Test-Path (Split-Path $finalInstallPath))) {
+                New-Item -Path (Split-Path $finalInstallPath) -ItemType Directory -Force | Out-Null
+            }
+
+            # Remove existing installation if it exists
+            if (Test-Path $finalInstallPath) {
+                Remove-Item $finalInstallPath -Recurse -Force
+            }
+
+            # Copy module files
+            Write-Log "Copying from: $($moduleDir.FullName)" -Level 'Warning'
+            Write-Log "Copying to: $finalInstallPath" -Level 'Warning'
+
+            # Ensure parent directory exists
+            $parentDir = Split-Path $finalInstallPath -Parent
+            if (-not (Test-Path $parentDir)) {
+                Write-Log "Creating parent directory: $parentDir" -Level 'Warning'
+                New-Item -Path $parentDir -ItemType Directory -Force | Out-Null
+            }
+
+            Copy-Item -Path $moduleDir.FullName -Destination $finalInstallPath -Recurse -Force
+
+            # Diagnostic: Verify copy results
+            Write-Log "Verifying copy operation..." -Level 'Warning'
+            if (Test-Path $finalInstallPath) {
+                Write-Log "Installation directory created successfully" -Level 'Warning'
+                Write-Log "Final installation contents:" -Level 'Warning'
+                Get-ChildItem -Path $finalInstallPath | ForEach-Object {
+                    Write-Log "  $($_.Name)" -Level 'Warning'
+                }
+
+                # Verify manifest exists in final location
+                $finalManifest = Join-Path $finalInstallPath "dbatools.library.psd1"
+                if (Test-Path $finalManifest) {
+                    Write-Log "Manifest confirmed at final location: $finalManifest" -Level 'Warning'
+                    try {
+                        $manifestTest = Test-ModuleManifest -Path $finalManifest -ErrorAction Stop
+                        Write-Log "Manifest validation successful, version: $($manifestTest.Version)" -Level 'Warning'
+                        $success = $true
+                    } catch {
+                        Write-Log "Manifest validation failed: $($_.Exception.Message)" -Level 'Error'
+                    }
                 } else {
-                    # Windows PowerShell 5.1
-                    $installBasePath = "$env:USERPROFILE\Documents\WindowsPowerShell\Modules"
-                }
-            }
-        }
-
-        # Install directly to module directory without version subdirectory for preview versions
-        $finalInstallPath = Join-Path -Path $installBasePath -ChildPath $ModuleName
-
-        # Create installation directory
-        Write-Log "Module base path: $installBasePath"
-        Write-Log "Installing to: $finalInstallPath"
-        if (-not (Test-Path (Split-Path $finalInstallPath))) {
-            New-Item -Path (Split-Path $finalInstallPath) -ItemType Directory -Force | Out-Null
-        }
-
-        # Remove existing installation if it exists
-        if (Test-Path $finalInstallPath) {
-            Remove-Item $finalInstallPath -Recurse -Force
-        }
-
-        # Copy module files
-        Write-Log "Copying from: $($moduleDir.FullName)" -Level 'Warning'
-        Write-Log "Copying to: $finalInstallPath" -Level 'Warning'
-
-        # Ensure parent directory exists
-        $parentDir = Split-Path $finalInstallPath -Parent
-        if (-not (Test-Path $parentDir)) {
-            Write-Log "Creating parent directory: $parentDir" -Level 'Warning'
-            New-Item -Path $parentDir -ItemType Directory -Force | Out-Null
-        }
-
-        Copy-Item -Path $moduleDir.FullName -Destination $finalInstallPath -Recurse -Force
-
-        # Diagnostic: Verify copy results
-        Write-Log "Verifying copy operation..." -Level 'Warning'
-        if (Test-Path $finalInstallPath) {
-            Write-Log "Installation directory created successfully" -Level 'Warning'
-            Write-Log "Final installation contents:" -Level 'Warning'
-            Get-ChildItem -Path $finalInstallPath | ForEach-Object {
-                Write-Log "  $($_.Name)" -Level 'Warning'
-            }
-
-            # Verify manifest exists in final location
-            $finalManifest = Join-Path $finalInstallPath "dbatools.library.psd1"
-            if (Test-Path $finalManifest) {
-                Write-Log "Manifest confirmed at final location: $finalManifest" -Level 'Warning'
-                try {
-                    $manifestTest = Test-ModuleManifest -Path $finalManifest -ErrorAction Stop
-                    Write-Log "Manifest validation successful, version: $($manifestTest.Version)" -Level 'Warning'
-                } catch {
-                    Write-Log "Manifest validation failed: $($_.Exception.Message)" -Level 'Error'
+                    Write-Log "ERROR: Manifest missing from final installation location!" -Level 'Error'
                 }
             } else {
-                Write-Log "ERROR: Manifest missing from final installation location!" -Level 'Error'
+                Write-Log "ERROR: Installation directory was not created!" -Level 'Error'
+                Write-Log "Failed to create installation directory at $finalInstallPath" -Level 'Error'
+                # Continue to next path instead of throwing
+                continue
             }
-        } else {
-            Write-Log "ERROR: Installation directory was not created!" -Level 'Error'
-            throw "Failed to create installation directory at $finalInstallPath"
+
+            # Add the modules directory to PSModulePath if not already present
+            $modulesBasePath = Split-Path $finalInstallPath -Parent
+            $currentPSModulePath = $env:PSModulePath -split [System.IO.Path]::PathSeparator
+
+            if ($modulesBasePath -notin $currentPSModulePath) {
+                $env:PSModulePath = $modulesBasePath + [System.IO.Path]::PathSeparator + $env:PSModulePath
+                Write-Log "Added '$modulesBasePath' to PSModulePath for this session" -Level 'Success'
+            }
         }
 
-        # Add the modules directory to PSModulePath if not already present
-        $modulesBasePath = Split-Path $finalInstallPath -Parent
-        $currentPSModulePath = $env:PSModulePath -split [System.IO.Path]::PathSeparator
-
-        if ($modulesBasePath -notin $currentPSModulePath) {
-            $env:PSModulePath = $modulesBasePath + [System.IO.Path]::PathSeparator + $env:PSModulePath
-            Write-Log "Added '$modulesBasePath' to PSModulePath for this session" -Level 'Success'
+        # Check if at least one installation succeeded
+        if (-not $success) {
+            throw "Failed to install module to any of the target paths"
         }
+
+        # Cleanup
+        Remove-Item $downloadPath -Force -ErrorAction SilentlyContinue
+        Remove-Item $extractPath -Recurse -Force -ErrorAction SilentlyContinue
 
         # Cleanup
         Remove-Item $downloadPath -Force -ErrorAction SilentlyContinue
