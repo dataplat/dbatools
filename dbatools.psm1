@@ -95,8 +95,9 @@ if (($PSVersionTable.PSVersion.Major -lt 6) -or ($PSVersionTable.Platform -and $
 
 Write-ImportTime -Text "Setting some OS variables"
 
-Add-Type -AssemblyName System.Security
-Write-ImportTime -Text "Loading System.Security"
+# Failing on newer module library
+#Add-Type -AssemblyName System.Security
+#Write-ImportTime -Text "Loading System.Security"
 
 # SQLSERVER:\ path not supported
 if ($ExecutionContext.SessionState.Path.CurrentLocation.Drive.Name -eq 'SqlServer') {
