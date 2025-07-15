@@ -303,8 +303,8 @@ $forever = @{
     'Get-DbaBuildReference'   = 'Get-DbaBuild'
     'Copy-DbaSysDbUserObject' = 'Copy-DbaSystemDbUserObject'
 }
-foreach ($_ in $forever.GetEnumerator()) {
-    Set-Alias -Name $_.Key -Value $_.Value
+foreach ($command in $forever.GetEnumerator()) {
+    Set-Alias -Name $command.Key -Value $command.Value
 }
 
 # Replication Aliases
@@ -315,8 +315,8 @@ $replAliases = @{
     'Test-DbaRepLatency'         = 'Test-DbaReplLatency'
     'Get-DbaRepPublication'      = 'Get-DbaReplPublication'
 }
-foreach ($_ in $replAliases.GetEnumerator()) {
-    Set-Alias -Name $_.Key -Value $_.Value
+foreach ($command in $replAliases.GetEnumerator()) {
+    Set-Alias -Name $command.Key -Value $command.Value
 }
 #endregion Aliases
 

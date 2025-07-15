@@ -133,38 +133,9 @@ function Install-FromGitHubRelease {
         }
         Expand-Archive -Path $downloadPath -DestinationPath $extractPath -ErrorAction Stop
 
-        # Diagnostic: Show extraction results
-        Write-Log "Contents after extraction:" -Level 'Warning'
-        Get-ChildItem -Path $extractPath -Recurse | Select-Object -First 15 | ForEach-Object {
-            Write-Log "  $($_.FullName)" -Level 'Warning'
-        }
-
         # Find the module directory
         $moduleDir = Get-ChildItem -Path $extractPath -Directory | Where-Object { $_.Name -eq 'dbatools.library' }
-        if (-not $moduleDir) {
-            # Sometimes the module is in the root of the extract path
-            Write-Log "No 'dbatools.library' subdirectory found, checking if module files are in root..." -Level 'Warning'
-            # Check if manifest exists in root
-            $rootManifest = Join-Path $extractPath "dbatools.library.psd1"
-            if (Test-Path $rootManifest) {
-                Write-Log "Found manifest in root, using extract path as module directory" -Level 'Warning'
-                $moduleDir = Get-Item $extractPath
-            } else {
-                Write-Log "No manifest found in root either. Available items:" -Level 'Warning'
-                Get-ChildItem -Path $extractPath | ForEach-Object {
-                    Write-Log "  $($_.Name) ($($_.GetType().Name))" -Level 'Warning'
-                }
-                throw "Could not locate dbatools.library module in extracted archive"
-            }
-        } else {
-            Write-Log "Found dbatools.library directory: $($moduleDir.FullName)" -Level 'Warning'
-        }
 
-        # Diagnostic: Verify module directory contents
-        Write-Log "Module directory contents:" -Level 'Warning'
-        Get-ChildItem -Path $moduleDir.FullName | ForEach-Object {
-            Write-Log "  $($_.Name)" -Level 'Warning'
-        }
 
         # Verify manifest exists in module directory
         $manifestInModuleDir = Join-Path $moduleDir.FullName "dbatools.library.psd1"
@@ -198,11 +169,6 @@ function Install-FromGitHubRelease {
             }
         }
 
-        Write-Log "Will install to the following paths:" -Level 'Warning'
-        foreach ($path in $installBasePaths) {
-            Write-Log "  $path" -Level 'Warning'
-        }
-
         $success = $false
 
         # Install to each path
@@ -234,36 +200,6 @@ function Install-FromGitHubRelease {
             }
 
             Copy-Item -Path $moduleDir.FullName -Destination $finalInstallPath -Recurse -Force
-
-            # Diagnostic: Verify copy results
-            Write-Log "Verifying copy operation..." -Level 'Warning'
-            if (Test-Path $finalInstallPath) {
-                Write-Log "Installation directory created successfully" -Level 'Warning'
-                Write-Log "Final installation contents:" -Level 'Warning'
-                Get-ChildItem -Path $finalInstallPath | ForEach-Object {
-                    Write-Log "  $($_.Name)" -Level 'Warning'
-                }
-
-                # Verify manifest exists in final location
-                $finalManifest = Join-Path $finalInstallPath "dbatools.library.psd1"
-                if (Test-Path $finalManifest) {
-                    Write-Log "Manifest confirmed at final location: $finalManifest" -Level 'Warning'
-                    try {
-                        $manifestTest = Test-ModuleManifest -Path $finalManifest -ErrorAction Stop
-                        Write-Log "Manifest validation successful, version: $($manifestTest.Version)" -Level 'Warning'
-                        $success = $true
-                    } catch {
-                        Write-Log "Manifest validation failed: $($_.Exception.Message)" -Level 'Error'
-                    }
-                } else {
-                    Write-Log "ERROR: Manifest missing from final installation location!" -Level 'Error'
-                }
-            } else {
-                Write-Log "ERROR: Installation directory was not created!" -Level 'Error'
-                Write-Log "Failed to create installation directory at $finalInstallPath" -Level 'Error'
-                # Continue to next path instead of throwing
-                continue
-            }
 
             # Add the modules directory to PSModulePath if not already present
             $modulesBasePath = Split-Path $finalInstallPath -Parent
@@ -380,55 +316,6 @@ try {
         Write-Log "No dbatools-related modules found at all!" -Level 'Warning'
     }
 
-    # Diagnostic: Try multiple module discovery approaches
-    Write-Log "Attempting multiple discovery methods..." -Level 'Warning'
-
-    # Method 1: Standard Get-Module
-    $installedModules = Get-Module -ListAvailable -Name 'dbatools.library'
-    Write-Log "Method 1 (Get-Module -Name): Found $($installedModules.Count) modules" -Level 'Warning'
-
-    # Method 2: Wildcard search
-    $wildcardModules = Get-Module -ListAvailable -Name '*dbatools.library*'
-    Write-Log "Method 2 (Wildcard search): Found $($wildcardModules.Count) modules" -Level 'Warning'
-
-    # Method 3: Direct path check if we have the installation path
-    if ($finalInstallPath -and (Test-Path $finalInstallPath)) {
-        Write-Log "Method 3: Checking direct installation path: $finalInstallPath" -Level 'Warning'
-        $manifestPath = Join-Path $finalInstallPath "dbatools.library.psd1"
-        if (Test-Path $manifestPath) {
-            try {
-                $directModule = Test-ModuleManifest -Path $manifestPath -ErrorAction Stop
-                Write-Log "Method 3 (Direct path): Found module version $($directModule.Version)" -Level 'Warning'
-                # Try to import it directly to see if it works
-                $importedModule = Import-Module $manifestPath -PassThru -Force -ErrorAction Stop
-                Write-Log "Method 3 (Direct import): Successfully imported version $($importedModule.Version)" -Level 'Warning'
-                Remove-Module $importedModule -Force -ErrorAction SilentlyContinue
-            } catch {
-                Write-Log "Method 3 (Direct path): Failed - $($_.Exception.Message)" -Level 'Warning'
-            }
-        } else {
-            Write-Log "Method 3 (Direct path): Manifest not found at $manifestPath" -Level 'Warning'
-        }
-    }
-
-    if ($installedModules) {
-        Write-Log "Found dbatools.library installations:" -Level 'Success'
-        foreach ($module in $installedModules) {
-            Write-Log "  Version: $($module.Version) | Path: $($module.ModuleBase)"
-        }
-
-        # For preview versions, we install without version directory, so just check if any version is available
-        if ($installedModules.Count -gt 0) {
-            Write-Log "dbatools.library module found and available (version: $($installedModules[0].Version))!" -Level 'Success'
-        } else {
-            Write-Log "No dbatools.library versions found after installation" -Level 'Warning'
-        }
-    } else {
-        Write-Log "CRITICAL: No dbatools.library module found after installation" -Level 'Error'
-        Write-Log "This indicates a problem with module installation or PowerShell module discovery" -Level 'Error'
-        throw "No dbatools.library module found after installation"
-    }
-
     # Test import to ensure the module works
     Write-Log "Testing module import..."
     try {
@@ -445,21 +332,6 @@ try {
     $env:PSModulePath -split [System.IO.Path]::PathSeparator | ForEach-Object {
         Write-Log "  $_"
     }
-
-    # For CI/CD scenarios, prepare dbatools manifest for version compatibility
-    $prepareScriptPath = Join-Path $PSScriptRoot "prepare-dbatools-for-ci.ps1"
-    if (Test-Path $prepareScriptPath) {
-        Write-Log "Preparing dbatools manifest for CI/CD compatibility..."
-        & $prepareScriptPath
-        if ($LASTEXITCODE -eq 0) {
-            Write-Log "dbatools manifest preparation completed successfully" -Level 'Success'
-        } else {
-            Write-Log "dbatools manifest preparation failed, but continuing..." -Level 'Warning'
-        }
-    } else {
-        Write-Log "CI preparation script not found at: $prepareScriptPath" -Level 'Warning'
-    }
-
 } catch {
     Write-Log "Installation failed: $($_.Exception.Message)" -Level 'Error'
     exit 1
