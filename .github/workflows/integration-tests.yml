@@ -116,7 +116,7 @@ jobs:
       - name: Install SQL Server localdb
         uses: potatoqualitee/mssqlsuite@v1.8
         with:
-          install: localdb
+          install: localdb, sqlengine
 
       - name: Connect to localdb instance powershell
         shell: powershell
