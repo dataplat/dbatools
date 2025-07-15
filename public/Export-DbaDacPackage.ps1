@@ -249,8 +249,10 @@ function Export-DbaDacPackage {
                                 $startprocess.FileName = "$script:libraryroot/core/lib/dac/linux/sqlpackage"
                             } elseif ($IsMacOS) {
                                 $startprocess.FileName = "$script:libraryroot/core/lib/dac/mac/sqlpackage"
-                            } else {
+                            } elseif ($IsWindows) {
                                 $startprocess.FileName = "$script:libraryroot\core\lib\dac\windows\sqlpackage.exe"
+                            } else {
+                                $startprocess.FileName = "$script:libraryroot\desktop\lib\dac\windows\sqlpackage.exe"
                             }
                         }
                         $startprocess.Arguments = $sqlPackageArgs

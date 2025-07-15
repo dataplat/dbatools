@@ -79,6 +79,12 @@ If ($PSVersionTable.PSEdition -in "Desktop", $null) {
 }
 Write-ImportTime -Text "Checking for .NET"
 
+# Core needs to be at least 7.4.5
+if ($PSVersionTable.PSEdition -eq 'Core' -and $PSVersionTable.PSVersion.Major -lt 7 -and $PSVersionTable.PSVersion.Minor -lt 4 -and $PSVersionTable.PSVersion.Build -lt 5) {
+    throw "dbatools requires at least PowerShell 7.4.5 when running on Core. Please update your PowerShell."
+}
+
+
 if (($PSVersionTable.PSVersion.Major -lt 6) -or ($PSVersionTable.Platform -and $PSVersionTable.Platform -eq 'Win32NT')) {
     $script:isWindows = $true
 } else {
@@ -96,7 +102,10 @@ if (($PSVersionTable.PSVersion.Major -lt 6) -or ($PSVersionTable.Platform -and $
 Write-ImportTime -Text "Setting some OS variables"
 
 # Failing on newer module library
-#Add-Type -AssemblyName System.Security
+# if core then run this
+if ($PSVersionTable.PSEdition -eq 'Core') {
+    Add-Type -AssemblyName System.Security
+}
 #Write-ImportTime -Text "Loading System.Security"
 
 # SQLSERVER:\ path not supported
