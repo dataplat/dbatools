@@ -1,6 +1,13 @@
 Describe "Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $PSDefaultParameterValues["*:SqlInstance"] = "(localdb)\MSSQLLocalDB"
+
+        $password = ConvertTo-SecureString "dbatools.I0" -AsPlainText -Force
+        $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sa", $password
+
+        $PSDefaultParameterValues["*:SqlInstance"] = "localhost"
+        $PSDefaultParameterValues["*:SqlCredential"] = $cred
+        $global:ProgressPreference = "SilentlyContinue"
+
         $PSDefaultParameterValues["*:Confirm"] = $false
         #$PSDefaultParameterValues["*:WarningAction"] = "SilentlyContinue"
         $global:ProgressPreference = "SilentlyContinue"

@@ -114,7 +114,7 @@ jobs:
           ./.github/scripts/install-dbatools-library.ps1
 
       - name: Install SQL Server localdb
-        uses: potatoqualitee/mssqlsuite@v1.3
+        uses: potatoqualitee/mssqlsuite@v1.8
         with:
           install: localdb
 

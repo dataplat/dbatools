@@ -90,10 +90,10 @@ jobs:
           Measure-Command { Import-Module dbatools }
           Get-Module dbatools
 
-      - name: Install SQL Server localdb
-        uses: potatoqualitee/mssqlsuite@v1.3
+      - name: Install SQL Server localdb and sqlengine
+        uses: potatoqualitee/mssqlsuite@v1.8
         with:
-          install: localdb
+          install: localdb, sqlengine
 
       - name: Connect to localdb instance powershell
         shell: powershell
@@ -102,12 +102,14 @@ jobs:
           Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -PassThru | Register-DbatoolsConfig -Scope FileUserShared
           Connect-DbaInstance -SqlInstance "(localdb)\MSSQLLocalDB"
 
-      - name: Connect to localdb instance pwsh
+      - name: Connect to sqlengine instance pwsh
         shell: pwsh
         run: |
-          Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -PassThru | Register-DbatoolsConfig -Scope FileUserShared
-          Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -PassThru | Register-DbatoolsConfig -Scope FileUserShared
-          Connect-DbaInstance -SqlInstance "(localdb)\MSSQLLocalDB"
+          $password = ConvertTo-SecureString "dbatools.I0" -AsPlainText -Force
+          $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sa", $password
+          $PSDefaultParameterValues["*:SqlInstance"] = "localhost"
+          $PSDefaultParameterValues["*:SqlCredential"] = $cred
+            Connect-DbaInstance
 
       - name: Run pwsh tests
         env:
