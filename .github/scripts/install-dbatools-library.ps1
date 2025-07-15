@@ -429,21 +429,6 @@ try {
     $env:PSModulePath -split [System.IO.Path]::PathSeparator | ForEach-Object {
         Write-Log "  $_"
     }
-
-    # For CI/CD scenarios, prepare dbatools manifest for version compatibility
-    $prepareScriptPath = Join-Path $PSScriptRoot "prepare-dbatools-for-ci.ps1"
-    if (Test-Path $prepareScriptPath) {
-        Write-Log "Preparing dbatools manifest for CI/CD compatibility..."
-        & $prepareScriptPath
-        if ($LASTEXITCODE -eq 0) {
-            Write-Log "dbatools manifest preparation completed successfully" -Level 'Success'
-        } else {
-            Write-Log "dbatools manifest preparation failed, but continuing..." -Level 'Warning'
-        }
-    } else {
-        Write-Log "CI preparation script not found at: $prepareScriptPath" -Level 'Warning'
-    }
-
 } catch {
     Write-Log "Installation failed: $($_.Exception.Message)" -Level 'Error'
     exit 1

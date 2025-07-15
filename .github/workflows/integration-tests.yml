@@ -121,6 +121,7 @@ jobs:
       - name: Connect to localdb instance powershell
         shell: powershell
         run: |
+          Import-Module dbatools.library
           Import-Module ./dbatools -Force
           Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -PassThru | Register-DbatoolsConfig -Scope FileUserShared
           Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -PassThru | Register-DbatoolsConfig -Scope FileUserShared
@@ -129,6 +130,7 @@ jobs:
       - name: Connect to SQL Server instance pwsh
         shell: pwsh
         run: |
+          Import-Module dbatools.library
           Import-Module ./dbatools -Force
           $password = ConvertTo-SecureString "dbatools.I0" -AsPlainText -Force
           $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sa", $password
