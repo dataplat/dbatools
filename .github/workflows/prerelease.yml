@@ -102,7 +102,7 @@ jobs:
           Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -PassThru | Register-DbatoolsConfig -Scope FileUserShared
           Connect-DbaInstance -SqlInstance "(localdb)\MSSQLLocalDB"
 
-      - name: Connect to sqlengine instance pwsh
+      - name: Connect to SQL Server instance pwsh
         shell: pwsh
         run: |
           $password = ConvertTo-SecureString "dbatools.I0" -AsPlainText -Force
