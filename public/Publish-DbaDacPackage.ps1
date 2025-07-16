@@ -175,15 +175,15 @@ function Publish-DbaDacPackage {
             $Type = 'Bacpac'
         }
 
-        #Check Option object types - should have a specific type
+        #Check Option object types - accept both legacy Microsoft DAC types and new SqlPackage-compatible types
         if ($Type -eq 'Dacpac') {
-            if ($DacOption -and $DacOption -isnot [Microsoft.SqlServer.Dac.PublishOptions]) {
-                Stop-Function -Message "Microsoft.SqlServer.Dac.PublishOptions object type is expected for `"-Type Dacpac`" but $($DacOption.GetType()) was passed in."
+            if ($DacOption -and $DacOption -isnot [Microsoft.SqlServer.Dac.PublishOptions] -and $DacOption.PSTypeName -ne "DbaTools.SqlPackage.Options") {
+                Stop-Function -Message "Microsoft.SqlServer.Dac.PublishOptions or DbaTools.SqlPackage.Options object type is expected for `"-Type Dacpac`" but $($DacOption.GetType()) was passed in."
                 return
             }
         } elseif ($Type -eq 'Bacpac') {
-            if ($DacOption -and $DacOption -isnot [Microsoft.SqlServer.Dac.DacImportOptions]) {
-                Stop-Function -Message "Microsoft.SqlServer.Dac.DacImportOptions object type is expected for `"-Type Bacpac`" but $($DacOption.GetType()) was passed in."
+            if ($DacOption -and $DacOption -isnot [Microsoft.SqlServer.Dac.DacImportOptions] -and $DacOption.PSTypeName -ne "DbaTools.SqlPackage.Options") {
+                Stop-Function -Message "Microsoft.SqlServer.Dac.DacImportOptions or DbaTools.SqlPackage.Options object type is expected for `"-Type Bacpac`" but $($DacOption.GetType()) was passed in."
                 return
             }
         }
@@ -285,6 +285,64 @@ function Publish-DbaDacPackage {
                     $null = $output = Register-ObjectEvent -InputObject $dacServices -EventName "Message" -SourceIdentifier "msg" -ErrorAction SilentlyContinue -Action {
                         $EventArgs.Message.Message
                     }
+
+                    # Ensure $options is a native DacFx type before invoking DacServices methods
+                    function ConvertTo-PublishOrImportOptions {
+                        param (
+                            [object]$InputOptions,
+                            [string]$Type
+                        )
+                        if ($Type -eq 'Dacpac') {
+                            if ($InputOptions -is [Microsoft.SqlServer.Dac.PublishOptions]) {
+                                return $InputOptions
+                            } elseif ($InputOptions.PSTypeName -eq "DbaTools.SqlPackage.Options" -or $InputOptions -is [hashtable] -or $InputOptions -is [PSCustomObject]) {
+                                $out = New-Object Microsoft.SqlServer.Dac.PublishOptions
+                                $fields = @{
+                                    CommandTimeout            = $null
+                                    GenerateDeploymentScript  = $null
+                                    GenerateDeploymentReport  = $null
+                                    BlockOnPossibleDataLoss   = $null
+                                    DropObjectsNotInSource    = $null
+                                    DoNotDropObjectTypes      = $null
+                                    ExcludeObjectTypes        = $null
+                                    IgnorePermissions         = $null
+                                    IgnoreUserLoginMappings   = $null
+                                    DatabaseScriptPath        = $null
+                                    MasterDbScriptPath        = $null
+                                }
+                                foreach ($prop in $fields.Keys) {
+                                    if ($InputOptions.PSObject.Properties[$prop] -and $out.PSObject.Properties[$prop]) {
+                                        $out.$prop = $InputOptions.$prop
+                                    }
+                                }
+                                return $out
+                            } else {
+                                throw "DacOption must be a Microsoft.SqlServer.Dac.PublishOptions or a convertible object (`DbaTools.SqlPackage.Options`, hashtable, or PSCustomObject). Got $($InputOptions.GetType().FullName)."
+                            }
+                        } elseif ($Type -eq 'Bacpac') {
+                            if ($InputOptions -is [Microsoft.SqlServer.Dac.DacImportOptions]) {
+                                return $InputOptions
+                            } elseif ($InputOptions.PSTypeName -eq "DbaTools.SqlPackage.Options" -or $InputOptions -is [hashtable] -or $InputOptions -is [PSCustomObject]) {
+                                $out = New-Object Microsoft.SqlServer.Dac.DacImportOptions
+                                $fields = @{
+                                    CommandTimeout            = $null
+                                    DatabaseEdition           = $null
+                                    DatabaseServiceObjective  = $null
+                                }
+                                foreach ($prop in $fields.Keys) {
+                                    if ($InputOptions.PSObject.Properties[$prop]) {
+                                        $out.$prop = $InputOptions.$prop
+                                    }
+                                }
+                                return $out
+                            } else {
+                                throw "DacOption must be a Microsoft.SqlServer.Dac.DacImportOptions or a convertible object (`DbaTools.SqlPackage.Options`, hashtable, or PSCustomObject). Got $($InputOptions.GetType().FullName)."
+                            }
+                        }
+                    }
+
+                    $options = ConvertTo-PublishOrImportOptions -InputOptions $options -Type $Type
+
                     #Perform proper action depending on the Type
                     if ($Type -eq 'Dacpac') {
                         if ($options.GenerateDeploymentScript) {
