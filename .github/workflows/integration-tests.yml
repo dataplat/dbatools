@@ -53,9 +53,6 @@ jobs:
           Get-DbatoolsConfigValue -FullName sql.connection.encrypt | Write-Warning
           mkdir /tmp/DbatoolsExport
 
-      - name: Ensure sqlpackage is executable
-        run: chmod +x /home/runner/.local/share/powershell/Modules/dbatools.library/core/lib/dac/linux/sqlpackage || true
-
       - name:  Setup docker images
         run: |
           # create a shared network
