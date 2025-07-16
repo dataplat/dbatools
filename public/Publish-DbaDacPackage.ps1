@@ -175,15 +175,15 @@ function Publish-DbaDacPackage {
             $Type = 'Bacpac'
         }
 
-        #Check Option object types - accept both legacy Microsoft DAC types and new SqlPackage-compatible types
+        #Check Option object types - accept both legacy Microsoft DAC types and new sqlpackage-compatible types
         if ($Type -eq 'Dacpac') {
-            if ($DacOption -and $DacOption -isnot [Microsoft.SqlServer.Dac.PublishOptions] -and $DacOption.PSTypeName -ne "DbaTools.SqlPackage.Options") {
-                Stop-Function -Message "Microsoft.SqlServer.Dac.PublishOptions or DbaTools.SqlPackage.Options object type is expected for `"-Type Dacpac`" but $($DacOption.GetType()) was passed in."
+            if ($DacOption -and $DacOption -isnot [Microsoft.SqlServer.Dac.PublishOptions] -and $DacOption.PSTypeName -ne "DbaTools.sqlpackage.Options") {
+                Stop-Function -Message "Microsoft.SqlServer.Dac.PublishOptions or DbaTools.sqlpackage.Options object type is expected for `"-Type Dacpac`" but $($DacOption.GetType()) was passed in."
                 return
             }
         } elseif ($Type -eq 'Bacpac') {
-            if ($DacOption -and $DacOption -isnot [Microsoft.SqlServer.Dac.DacImportOptions] -and $DacOption.PSTypeName -ne "DbaTools.SqlPackage.Options") {
-                Stop-Function -Message "Microsoft.SqlServer.Dac.DacImportOptions or DbaTools.SqlPackage.Options object type is expected for `"-Type Bacpac`" but $($DacOption.GetType()) was passed in."
+            if ($DacOption -and $DacOption -isnot [Microsoft.SqlServer.Dac.DacImportOptions] -and $DacOption.PSTypeName -ne "DbaTools.sqlpackage.Options") {
+                Stop-Function -Message "Microsoft.SqlServer.Dac.DacImportOptions or DbaTools.sqlpackage.Options object type is expected for `"-Type Bacpac`" but $($DacOption.GetType()) was passed in."
                 return
             }
         }
@@ -295,7 +295,7 @@ function Publish-DbaDacPackage {
                         if ($Type -eq 'Dacpac') {
                             if ($InputOptions -is [Microsoft.SqlServer.Dac.PublishOptions]) {
                                 return $InputOptions
-                            } elseif ($InputOptions.PSTypeName -eq "DbaTools.SqlPackage.Options" -or $InputOptions -is [hashtable] -or $InputOptions -is [PSCustomObject]) {
+                            } elseif ($InputOptions.PSTypeName -eq "DbaTools.sqlpackage.Options" -or $InputOptions -is [hashtable] -or $InputOptions -is [PSCustomObject]) {
                                 $out = New-Object Microsoft.SqlServer.Dac.PublishOptions
                                 $fields = @{
                                     CommandTimeout            = $null
@@ -317,12 +317,12 @@ function Publish-DbaDacPackage {
                                 }
                                 return $out
                             } else {
-                                throw "DacOption must be a Microsoft.SqlServer.Dac.PublishOptions or a convertible object (`DbaTools.SqlPackage.Options`, hashtable, or PSCustomObject). Got $($InputOptions.GetType().FullName)."
+                                throw "DacOption must be a Microsoft.SqlServer.Dac.PublishOptions or a convertible object (`DbaTools.sqlpackage.Options`, hashtable, or PSCustomObject). Got $($InputOptions.GetType().FullName)."
                             }
                         } elseif ($Type -eq 'Bacpac') {
                             if ($InputOptions -is [Microsoft.SqlServer.Dac.DacImportOptions]) {
                                 return $InputOptions
-                            } elseif ($InputOptions.PSTypeName -eq "DbaTools.SqlPackage.Options" -or $InputOptions -is [hashtable] -or $InputOptions -is [PSCustomObject]) {
+                            } elseif ($InputOptions.PSTypeName -eq "DbaTools.sqlpackage.Options" -or $InputOptions -is [hashtable] -or $InputOptions -is [PSCustomObject]) {
                                 $out = New-Object Microsoft.SqlServer.Dac.DacImportOptions
                                 $fields = @{
                                     CommandTimeout            = $null
@@ -336,7 +336,7 @@ function Publish-DbaDacPackage {
                                 }
                                 return $out
                             } else {
-                                throw "DacOption must be a Microsoft.SqlServer.Dac.DacImportOptions or a convertible object (`DbaTools.SqlPackage.Options`, hashtable, or PSCustomObject). Got $($InputOptions.GetType().FullName)."
+                                throw "DacOption must be a Microsoft.SqlServer.Dac.DacImportOptions or a convertible object (`DbaTools.sqlpackage.Options`, hashtable, or PSCustomObject). Got $($InputOptions.GetType().FullName)."
                             }
                         }
                     }

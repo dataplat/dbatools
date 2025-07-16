@@ -1,10 +1,10 @@
 function New-DbaDacOption {
     <#
     .SYNOPSIS
-        Creates a new SqlPackage-compatible options object for dacpac/bacpac operations
+        Creates a new sqlpackage-compatible options object for dacpac/bacpac operations
 
     .DESCRIPTION
-        Creates a new SqlPackage-compatible options object that can be used during DacPackage extract/export operations.
+        Creates a new sqlpackage-compatible options object that can be used during DacPackage extract/export operations.
         This replaces the deprecated Microsoft.SqlServer.Dac classes with a custom object that works with sqlpackage command-line tool.
 
         For sqlpackage parameters and properties, refer to:
@@ -40,9 +40,9 @@ function New-DbaDacOption {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Deployment, Dacpac, SqlPackage
+        Tags: Deployment, Dacpac, sqlpackage
         Author: Kirill Kravtsov (@nvarscar), nvarscar.wordpress.com
-        Updated: 2025 - Converted to use SqlPackage instead of deprecated DAC classes
+        Updated: 2025 - Converted to use sqlpackage instead of deprecated DAC classes
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -57,20 +57,20 @@ function New-DbaDacOption {
         PS C:\> $options.CommandTimeout = 0
         PS C:\> Export-DbaDacPackage -SqlInstance sql2016 -Database DB1 -DacOption $options
 
-        Creates a SqlPackage-compatible options object and sets properties for extracting a dacpac with all table data.
+        Creates a sqlpackage-compatible options object and sets properties for extracting a dacpac with all table data.
 
     .EXAMPLE
         PS C:\> $options = New-DbaDacOption -Type Dacpac -Action Export -Property @{ExtractAllTableData=$true;CommandTimeout=0}
         PS C:\> Export-DbaDacPackage -SqlInstance sql2016 -Database DB1 -DacOption $options
 
-        Creates a pre-initialized DacOption object using SqlPackage parameters.
+        Creates a pre-initialized DacOption object using sqlpackage parameters.
 
     .EXAMPLE
         PS C:\> $options = New-DbaDacOption -Type Dacpac -Action Publish
         PS C:\> $options.DropObjectsNotInSource = $true
         PS C:\> Publish-DbaDacPackage -SqlInstance sql2016 -Database DB1 -DacOption $options -Path c:\temp\db.dacpac
 
-        Creates a SqlPackage-compatible options object for publishing a dacpac.
+        Creates a sqlpackage-compatible options object for publishing a dacpac.
 
     #>
     [CmdletBinding(SupportsShouldProcess)]
@@ -85,13 +85,13 @@ function New-DbaDacOption {
         [switch]$EnableException
     )
     process {
-        if ($PScmdlet.ShouldProcess("$type", "Creating New SqlPackage-compatible options for $action")) {
+        if ($PScmdlet.ShouldProcess("$type", "Creating New sqlpackage-compatible options for $action")) {
 
             # Create a custom object that mimics the old DAC options but works with sqlpackage
             $options = [PSCustomObject]@{
                 Type = $Type
                 Action = $Action
-                PSTypeName = "DbaTools.SqlPackage.Options"
+                PSTypeName = "DbaTools.sqlpackage.Options"
             }
 
             # Set default properties based on action and type

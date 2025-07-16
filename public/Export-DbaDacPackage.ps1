@@ -6,7 +6,7 @@ function Export-DbaDacPackage {
     .DESCRIPTION
         Using SQLPackage, export a dacpac from an instance of SQL Server.
 
-        This function now uses SqlPackage command-line tool by default when using New-DbaDacOption, providing better compatibility with newer SQL Server versions. Legacy DAC framework support is maintained for backward compatibility.
+        This function now uses sqlpackage command-line tool by default when using New-DbaDacOption, providing better compatibility with newer SQL Server versions. Legacy DAC framework support is maintained for backward compatibility.
 
         Note - Extract from SQL Server is notoriously flaky - for example if you have three part references to external databases it will not work.
 
@@ -43,7 +43,7 @@ function Export-DbaDacPackage {
 
     .PARAMETER DacOption
         Export options for a corresponding export type. Can be created by New-DbaDacOption -Type Dacpac | Bacpac
-        When using New-DbaDacOption, creates SqlPackage-compatible options that work with newer SQL Server versions.
+        When using New-DbaDacOption, creates sqlpackage-compatible options that work with newer SQL Server versions.
         Legacy Microsoft.SqlServer.Dac objects are still supported for backward compatibility.
 
     .PARAMETER ExtendedParameters
@@ -81,7 +81,7 @@ function Export-DbaDacPackage {
         PS C:\> $options.CommandTimeout = 0
         PS C:\> Export-DbaDacPackage -SqlInstance sql2016 -Database DB1 -DacOption $options
 
-        Uses SqlPackage-compatible DacOption object to set the CommandTimeout to 0 then extracts the dacpac for DB1 on sql2016 to C:\Users\username\Documents\DbatoolsExport\sql2016-DB1-20201227140759-dacpackage.dacpac including all table data. As noted the generated filename will contain the server name, database name, and the current timestamp in the "%Y%m%d%H%M%S" format.
+        Uses sqlpackage-compatible DacOption object to set the CommandTimeout to 0 then extracts the dacpac for DB1 on sql2016 to C:\Users\username\Documents\DbatoolsExport\sql2016-DB1-20201227140759-dacpackage.dacpac including all table data. As noted the generated filename will contain the server name, database name, and the current timestamp in the "%Y%m%d%H%M%S" format.
 
     .EXAMPLE
         PS C:\> Export-DbaDacPackage -SqlInstance sql2016 -AllUserDatabases -ExcludeDatabase "DBMaintenance","DBMonitoring" -Path "C:\temp"
@@ -133,10 +133,10 @@ function Export-DbaDacPackage {
         if (!$AllUserDatabases -and !$Database) {
             Stop-Function -Message "Either -Database or -AllUserDatabases should be specified" -Continue
         }
-        #Check Option object types - should be our custom SqlPackage-compatible type or allow legacy objects
+        #Check Option object types - should be our custom sqlpackage-compatible type or allow legacy objects
         if ($DacOption) {
             $validTypes = @(
-                'DbaTools.SqlPackage.Options',
+                'DbaTools.sqlpackage.Options',
                 'Microsoft.SqlServer.Dac.DacExtractOptions',
                 'Microsoft.SqlServer.Dac.DacExportOptions'
             )
@@ -150,7 +150,7 @@ function Export-DbaDacPackage {
             }
 
             if (-not $isValidType) {
-                Stop-Function -Message "Expected SqlPackage-compatible options object or legacy DAC options object - got $($DacOption.GetType())."
+                Stop-Function -Message "Expected sqlpackage-compatible options object or legacy DAC options object - got $($DacOption.GetType())."
                 return
             }
         }
@@ -215,18 +215,18 @@ function Export-DbaDacPackage {
                         $opts = $DacOption
                     }
 
-                    # Check if we have a new SqlPackage-compatible options object or legacy DAC object
-                    $useSqlPackage = $opts.PSTypeNames -contains 'DbaTools.SqlPackage.Options'
+                    # Check if we have a new sqlpackage-compatible options object or legacy DAC object
+                    $usesqlpackage = $opts.PSTypeNames -contains 'DbaTools.sqlpackage.Options'
 
-                    if ($useSqlPackage) {
+                    if ($usesqlpackage) {
                         # Use sqlpackage command line for new options objects
-                        Write-Message -Level Verbose -Message "Using SqlPackage command-line tool for $Type extraction"
+                        Write-Message -Level Verbose -Message "Using sqlpackage command-line tool for $Type extraction"
 
                         if ($Type -eq 'Dacpac') { $action = 'Extract' }
                         elseif ($Type -eq 'Bacpac') { $action = 'Export' }
 
                         $cmdConnString = $connstring.Replace('"', "'")
-                        $sqlPackageParams = $opts.ToSqlPackageParameters()
+                        $sqlPackageParams = $opts.TosqlpackageParameters()
                         $sqlPackageArgs = "/action:$action /tf:""$FilePath"" /SourceConnectionString:""$cmdConnString"" $sqlPackageParams"
 
                         try {
@@ -246,7 +246,7 @@ function Export-DbaDacPackage {
                                     $startprocess.FileName = Join-DbaPath -Path $(Get-DbatoolsLibraryPath) -ChildPath desktop, lib, dac, sqlpackage.exe
                                 }
                             }
-                            WRITE-WARNING "Using SqlPackage at: $($startprocess.FileName)"
+                            WRITE-WARNING "Using sqlpackage at: $($startprocess.FileName)"
                             # Ensure working directory exists
                             [System.IO.Directory]::CreateDirectory([System.IO.Path]::GetDirectoryName($FilePath)) | Out-Null
                             $startprocess.WorkingDirectory = [System.IO.Path]::GetDirectoryName($FilePath)
@@ -268,7 +268,7 @@ function Export-DbaDacPackage {
                         }
 
                         if ($process.ExitCode -ne 0) {
-                            Stop-Function -Message "SqlPackage error - $stderr" -Continue
+                            Stop-Function -Message "sqlpackage error - $stderr" -Continue
                         }
                     } else {
                         # Use legacy DAC services for backward compatibility
@@ -324,9 +324,9 @@ function Export-DbaDacPackage {
                             } elseif ($IsMacOS) {
                                 $startprocess.FileName = "$(Get-DbatoolsLibraryPath)/core/lib/dac/mac/sqlpackage"
                             } elseif ($IsWindows) {
-                                $startprocess.FileName = Join-DbaPath -Path $(Get-DbatoolsLibraryPath) -ChildPath desktop, lib, SqlPackage.exe
+                                $startprocess.FileName = Join-DbaPath -Path $(Get-DbatoolsLibraryPath) -ChildPath desktop, lib, sqlpackage.exe
                             } else {
-                                $startprocess.FileName = Join-DbaPath -Path $(Get-DbatoolsLibraryPath) -ChildPath desktop, lib, SqlPackage.exe
+                                $startprocess.FileName = Join-DbaPath -Path $(Get-DbatoolsLibraryPath) -ChildPath desktop, lib, sqlpackage.exe
                             }
                         }
                         $startprocess.Arguments = $sqlPackageArgs
