@@ -80,4 +80,4 @@ jobs:
           CLIENT_GUID_SECRET: ${{secrets.CLIENT_GUID_SECRET}}
         run: |
           Import-Module dbatools -Force
-          $null = Invoke-Pester ./tests/gh-actions.ps1 -Output Detailed -PassThru
+          $null = Invoke-Pester .github/scripts/gh-actions.ps1 -Output Detailed -PassThru

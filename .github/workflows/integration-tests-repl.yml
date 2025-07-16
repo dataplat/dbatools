@@ -72,7 +72,7 @@ jobs:
         run: |
           Import-Module ./dbatools.psd1 -Force
           # Disabled for now, it's suddenly failing
-          # $null = Invoke-Pester ./tests/gh-actions-repl-1.ps1 -Output Detailed -PassThru -Verbose
+          # $null = Invoke-Pester .github/scripts/gh-actions-repl-1.ps1 -Output Detailed -PassThru -Verbose
 
   repl-tests-part2:
     runs-on: ubuntu-latest
@@ -142,7 +142,7 @@ jobs:
         if: env.TESTS_FIXED == 'true'
         run: |
           Import-Module ./dbatools.psd1 -Force
-          $null = Invoke-Pester ./tests/gh-actions-repl-2.ps1 -Output Detailed -PassThru -Verbose
+          $null = Invoke-Pester .github/scripts/gh-actions-repl-2.ps1 -Output Detailed -PassThru -Verbose
 
   repl-tests-part3:
     runs-on: ubuntu-latest
@@ -211,4 +211,4 @@ jobs:
       - name: Run replication tests part 3
         run: |
           Import-Module ./dbatools.psd1 -Force
-          # Invoke-Pester ./tests/gh-actions-repl-3.ps1 -Output Detailed -PassThru -Verbose
+          # Invoke-Pester .github/scripts/gh-actions-repl-3.ps1 -Output Detailed -PassThru -Verbose

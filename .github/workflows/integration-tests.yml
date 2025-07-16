@@ -75,7 +75,7 @@ jobs:
           Import-Module ./dbatools.psd1 -Force
           Get-DbatoolsConfigValue -FullName sql.connection.trustcert | Write-Warning
           Get-DbatoolsConfigValue -FullName sql.connection.encrypt | Write-Warning
-          $null = Invoke-Pester ./tests/gh-actions.ps1 -Output Detailed -PassThru
+          $null = Invoke-Pester .github/scripts/gh-actions.ps1 -Output Detailed -PassThru
 
   windows-tests:
     env:
@@ -150,7 +150,7 @@ jobs:
           CLIENT_GUID: ${{secrets.CLIENT_GUID}}
           CLIENT_GUID_SECRET: ${{secrets.CLIENT_GUID_SECRET}}
         shell: pwsh
-        run: $null = Invoke-Pester ./tests/gh-winactions.ps1 -Output Detailed -PassThru
+        run: $null = Invoke-Pester .github/scripts/gh-winactions.ps1 -Output Detailed -PassThru
 
       - name: Run PowerShell tests
         env:
@@ -158,4 +158,4 @@ jobs:
           CLIENTID: ${{secrets.CLIENTID}}
           CLIENTSECRET: ${{secrets.CLIENTSECRET}}
         shell: powershell
-        run: $null = Invoke-Pester ./tests/gh-winactions.ps1 -Output Detailed -PassThru
+        run: $null = Invoke-Pester .github/scripts/gh-winactions.ps1 -Output Detailed -PassThru
