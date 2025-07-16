@@ -179,17 +179,21 @@ if (-not $Finalize) {
 #Make things faster by removing most output
 if (-not $Finalize) {
     Set-Variable ProgressPreference -Value SilentlyContinue
+    Write-Host "### DEBUG: Entering test execution phase"
     if ($AllScenarioTests.Count -eq 0) {
         Write-Host -ForegroundColor DarkGreen "Nothing to do in this scenario"
         return
     }
     # Remove any previously loaded pester module
     Remove-Module -Name pester -ErrorAction SilentlyContinue
+    Write-Host "### DEBUG: Importing Pester 4"
     # Import pester 4
     Import-Module pester -RequiredVersion 4.4.2
+    Write-Host "### DEBUG: Imported Pester 4"
     Write-Host -Object "appveyor.pester: Running with Pester Version $((Get-Command Invoke-Pester -ErrorAction SilentlyContinue).Version)" -ForegroundColor DarkGreen
     # invoking a single invoke-pester consumes too much memory, let's go file by file
     $AllTestsWithinScenario = Get-ChildItem -File -Path $AllScenarioTests
+    Write-Host "### DEBUG: After file gather, $($AllTestsWithinScenario.Count) files"
     #start the round for pester 4 tests
     $Counter = 0
     foreach ($f in $AllTestsWithinScenario) {
@@ -222,7 +226,9 @@ if (-not $Finalize) {
                 $appvTestName = "$($f.Name), attempt #$trialNo"
             }
             Add-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome Running
+            Write-Host "### DEBUG: Before Invoke-Pester $($f.FullName)"
             $PesterRun = Invoke-Pester @PesterSplat
+            Write-Host "### DEBUG: After Invoke-Pester $($f.FullName)"
             $PesterRun | Export-Clixml -Path "$ModuleBase\PesterResults$PSVersion$Counter.xml"
             if ($PesterRun.FailedCount -gt 0) {
                 $trialno += 1
@@ -237,8 +243,10 @@ if (-not $Finalize) {
     #start the round for pester 5 tests
     # Remove any previously loaded pester module
     Remove-Module -Name pester -ErrorAction SilentlyContinue
+    Write-Host "### DEBUG: Importing Pester 5"
     # Import pester 5
     Import-Module pester -RequiredVersion 5.6.1
+    Write-Host "### DEBUG: Imported Pester 5"
     Write-Host -Object "appveyor.pester: Running with Pester Version $((Get-Command Invoke-Pester -ErrorAction SilentlyContinue).Version)" -ForegroundColor DarkGreen
     $Counter = 0
     foreach ($f in $AllTestsWithinScenario) {
@@ -272,7 +280,9 @@ if (-not $Finalize) {
             }
             Write-Host -Object "Running $($f.FullName) ..." -ForegroundColor Cyan -NoNewLine
             Add-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome Running
+            Write-Host "### DEBUG: Before Invoke-Pester (Pester5) $($f.FullName)"
             $PesterRun = Invoke-Pester -Configuration $pester5config
+            Write-Host "### DEBUG: After Invoke-Pester (Pester5) $($f.FullName)"
             Write-Host -Object "`rCompleted $($f.FullName) in $([int]$PesterRun.Duration.TotalMilliseconds)ms" -ForegroundColor Cyan
             $PesterRun | Export-Clixml -Path "$ModuleBase\Pester5Results$PSVersion$Counter.xml"
             if ($PesterRun.FailedCount -gt 0) {
