@@ -247,6 +247,8 @@ function Export-DbaDacPackage {
                                 }
                             }
                             WRITE-WARNING "Using SqlPackage at: $($startprocess.FileName)"
+                            # Ensure working directory exists
+                            [System.IO.Directory]::CreateDirectory([System.IO.Path]::GetDirectoryName($FilePath)) | Out-Null
                             $startprocess.WorkingDirectory = [System.IO.Path]::GetDirectoryName($FilePath)
                             $startprocess.Arguments = $sqlPackageArgs
                             $startprocess.RedirectStandardError = $true
