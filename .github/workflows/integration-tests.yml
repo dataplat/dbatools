@@ -45,6 +45,7 @@ jobs:
 
       - name: Set encryption values
         run: |
+          Get-ChildItem /home/runner/.local/share/powershell/Modules/dbatools.library/core/lib/dac/linux/sqlpackage -ErrorAction SilentlyContinue | Select -expandProperty fullname | Write-Warning
           Import-Module ./dbatools.psd1 -Force
           Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -Register
           Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -Register
