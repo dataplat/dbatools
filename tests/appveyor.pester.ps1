@@ -48,8 +48,15 @@ $dbatools_serialimport = $true
 
 #imports the module making sure DLL is loaded ok
 # Import Pester early to avoid loader deadlock
+Write-Host "### DEBUG: Early Import-Module Pester 5"
+Import-Module pester -RequiredVersion 5.6.1 -Verbose
+Remove-Module pester
+Write-Host "### DEBUG: Early Import-Module Pester 4 done"
+
+#imports the module making sure DLL is loaded ok
+# Import Pester early to avoid loader deadlock
 Write-Host "### DEBUG: Early Import-Module Pester 4"
-Import-Module pester -RequiredVersion 4.4.2
+Import-Module pester -RequiredVersion 4.4.2 -Verbose
 Write-Host "### DEBUG: Early Import-Module Pester 4 done"
 
 Import-Module "$ModuleBase\dbatools.psd1"
