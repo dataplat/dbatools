@@ -203,6 +203,16 @@ if (-not $Finalize) {
     Import-Module pester -RequiredVersion 4.10.1
     Write-Host "### DEBUG: Imported Pester 4"
     Write-Host -Object "appveyor.pester: Running with Pester Version $((Get-Command Invoke-Pester -ErrorAction SilentlyContinue).Version)" -ForegroundColor DarkGreen
+
+    # Import dbatools modules and configure connection, after Pester is imported (for loader safety)
+    Import-Module dbatools.library
+    Import-Module C:\github\dbatools\dbatools.psd1
+    Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -Register
+    Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -Register
+    Write-Host -Object "========== Get-DbaManagementObject diagnostic (Pester 4) ==========" -ForegroundColor Yellow
+    Get-DbaManagementObject | Format-List
+    Write-Host -Object "========== End diagnostics ==========" -ForegroundColor Yellow
+
     # invoking a single invoke-pester consumes too much memory, let's go file by file
     $AllTestsWithinScenario = Get-ChildItem -File -Path $AllScenarioTests
     Write-Host "### DEBUG: After file gather, $($AllTestsWithinScenario.Count) files"
@@ -260,6 +270,16 @@ if (-not $Finalize) {
     Import-Module pester -RequiredVersion 5.6.1
     Write-Host "### DEBUG: Imported Pester 5"
     Write-Host -Object "appveyor.pester: Running with Pester Version $((Get-Command Invoke-Pester -ErrorAction SilentlyContinue).Version)" -ForegroundColor DarkGreen
+
+    # Import dbatools modules and configure connection, after Pester is imported (for loader safety)
+    Import-Module dbatools.library
+    Import-Module C:\github\dbatools\dbatools.psd1
+    Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -Register
+    Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -Register
+    Write-Host -Object "========== Get-DbaManagementObject diagnostic (Pester 5) ==========" -ForegroundColor Yellow
+    Get-DbaManagementObject | Format-List
+    Write-Host -Object "========== End diagnostics ==========" -ForegroundColor Yellow
+
     $Counter = 0
     foreach ($f in $AllTestsWithinScenario) {
         $Counter += 1

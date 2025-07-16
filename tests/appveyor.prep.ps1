@@ -66,15 +66,9 @@ if (-not(Test-Path 'C:\Users\appveyor\Documents\DbatoolsExport')) {
 }
 
 
-Write-Host -Object "appveyor.prep: Trust SQL Server Cert (now required)" -ForegroundColor DarkGreen
-Import-Module dbatools.library
-Import-Module C:\github\dbatools\dbatools.psd1
-Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -Register
-Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -Register
-
-Write-Host -Object "========== Get-DbaManagementObject diagnostic ==========" -ForegroundColor Yellow
-Get-DbaManagementObject | Format-List
-Write-Host -Object "========== End diagnostics ==========" -ForegroundColor Yellow
+# DELIBERATELY REMOVED: All dbatools/library imports, configs, and SMO inspections must occur
+# only AFTER the correct Pester version is imported in the actual test runner script,
+# to avoid native loader deadlocks and ensure correct SMO initialization.
 
 $sw.Stop()
 Update-AppveyorTest -Name "appveyor.prep" -Framework NUnit -FileName "appveyor.prep.ps1" -Outcome Passed -Duration $sw.ElapsedMilliseconds
