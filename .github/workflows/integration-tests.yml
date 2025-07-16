@@ -45,8 +45,8 @@ jobs:
 
       - name: Set encryption values
         run: |
-          (Get-Module dbatools).Path | Write-Warning
           Import-Module ./dbatools.psd1 -Force
+          (Get-Module dbatools.library).Path | Write-Warning
           Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -Register
           Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -Register
           Get-DbatoolsConfigValue -FullName sql.connection.encrypt | Write-Warning
