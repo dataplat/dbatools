@@ -47,6 +47,11 @@ $global:dbatools_dotsourcemodule = $true
 $dbatools_serialimport = $true
 
 #imports the module making sure DLL is loaded ok
+# Import Pester early to avoid loader deadlock
+Write-Host "### DEBUG: Early Import-Module Pester 4"
+Import-Module pester -RequiredVersion 4.4.2
+Write-Host "### DEBUG: Early Import-Module Pester 4 done"
+
 Import-Module "$ModuleBase\dbatools.psd1"
 #imports the psm1 to be able to use internal functions in tests
 Import-Module "$ModuleBase\dbatools.psm1" -Force
