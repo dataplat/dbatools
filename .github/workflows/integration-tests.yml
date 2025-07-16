@@ -50,6 +50,7 @@ jobs:
           Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -Register
           Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -Register
           Get-DbatoolsConfigValue -FullName sql.connection.encrypt | Write-Warning
+          mkdir /tmp/DbatoolsExport
 
       - name:  Setup docker images
         run: |
