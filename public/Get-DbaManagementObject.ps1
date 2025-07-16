@@ -118,10 +118,11 @@ function Get-DbaManagementObject {
                             }
                         }
                         [PSCustomObject]@{
-                            ComputerName = $env:COMPUTERNAME
-                            Version      = $localversion
-                            Loaded       = $isLoaded
-                            LoadTemplate = "Add-Type -Path $loadedversionPath"
+                            ComputerName = [string]$env:COMPUTERNAME
+                            Version      = [string]$localversion
+                            Loaded       = [bool]$isLoaded
+                            Path         = [string]$loadedversionPath
+                            LoadTemplate = [string]("Add-Type -Path " + [string]$loadedversionPath)
                         }
                     } else {
                         <# DO NOT use Write-Message as this is inside of a script block #>
@@ -141,10 +142,11 @@ function Get-DbaManagementObject {
                                 }
                             }
                             [PSCustomObject]@{
-                                ComputerName = $env:COMPUTERNAME
-                                Version      = $localversion
-                                Loaded       = $isLoaded
-                                LoadTemplate = "Add-Type -Path $loadedversionPath"
+                                ComputerName = [string]$env:COMPUTERNAME
+                                Version      = [string]$localversion
+                                Loaded       = [bool]$isLoaded
+                                Path         = [string]$loadedversionPath
+                                LoadTemplate = [string]("Add-Type -Path " + [string]$loadedversionPath)
                             }
                         }
                     }
@@ -169,10 +171,11 @@ function Get-DbaManagementObject {
                     # Only output if not already covered by local file detection
                     if (-not $alreadyCovered -and $assemblyVersion) {
                         [PSCustomObject]@{
-                            ComputerName = $env:COMPUTERNAME
-                            Version      = $assemblyVersion
+                            ComputerName = [string]$env:COMPUTERNAME
+                            Version      = [string]$assemblyVersion
                             Loaded       = $true
-                            LoadTemplate = "Add-Type -Path `"$($assembly.Location)`""
+                            Path         = [string]$assembly.Location
+                            LoadTemplate = [string]("Add-Type -Path `"" + [string]$assembly.Location + "`"")
                         }
                     }
                 }
@@ -206,10 +209,11 @@ function Get-DbaManagementObject {
                         Write-Verbose -Message "Did not pass a version, looking for all versions"
 
                         [PSCustomObject]@{
-                            ComputerName = $env:COMPUTERNAME
-                            Version      = $currentversion
-                            Loaded       = $loadedversion -contains $currentversion
-                            LoadTemplate = "Add-Type -AssemblyName `"Microsoft.SqlServer.Smo, Version=$($currentversion), Culture=neutral, PublicKeyToken=89845dcd8080cc91`""
+                            ComputerName = [string]$env:COMPUTERNAME
+                            Version      = [string]$currentversion
+                            Loaded       = [bool]($loadedversion -contains $currentversion)
+                            Path         = $null
+                            LoadTemplate = [string]("Add-Type -AssemblyName `"Microsoft.SqlServer.Smo, Version=" + [string]$currentversion + ", Culture=neutral, PublicKeyToken=89845dcd8080cc91`"")
                         }
                     } else {
                         <# DO NOT use Write-Message as this is inside of a script block #>
@@ -219,10 +223,11 @@ function Get-DbaManagementObject {
                             Write-Verbose -Message "Found the Version $VersionNumber"
 
                             [PSCustomObject]@{
-                                ComputerName = $env:COMPUTERNAME
-                                Version      = $currentversion
-                                Loaded       = $loadedversion -contains $currentversion
-                                LoadTemplate = "Add-Type -AssemblyName `"Microsoft.SqlServer.Smo, Version=$($currentversion), Culture=neutral, PublicKeyToken=89845dcd8080cc91`""
+                                ComputerName = [string]$env:COMPUTERNAME
+                                Version      = [string]$currentversion
+                                Loaded       = [bool]($loadedversion -contains $currentversion)
+                                Path         = $null
+                                LoadTemplate = [string]("Add-Type -AssemblyName `"Microsoft.SqlServer.Smo, Version=" + [string]$currentversion + ", Culture=neutral, PublicKeyToken=89845dcd8080cc91`"")
                             }
                         }
 
@@ -266,10 +271,11 @@ function Get-DbaManagementObject {
                 }
 
                 [PSCustomObject]@{
-                    ComputerName = $env:COMPUTERNAME
-                    Version      = $moduleVersion
+                    ComputerName = [string]$env:COMPUTERNAME
+                    Version      = [string]$moduleVersion
                     Loaded       = $true
-                    LoadTemplate = if ($sqlClientPath) { "Add-Type -Path `"$sqlClientPath`" -ReferencedAssemblies `"$($sniModule.FileName)`"" } else { "" }
+                    Path         = [string]$sniModule.FileName
+                    LoadTemplate = if ($sqlClientPath) { [string]("Add-Type -Path `"" + [string]$sqlClientPath + "`" -ReferencedAssemblies `"" + [string]$sniModule.FileName + "`"") } else { "" }
                 }
             }
         }

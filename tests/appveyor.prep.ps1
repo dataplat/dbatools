@@ -71,5 +71,10 @@ Import-Module dbatools.library
 Import-Module C:\github\dbatools\dbatools.psd1
 Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -Register
 Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -Register
+
+Write-Host -Object "========== Get-DbaManagementObject diagnostic ==========" -ForegroundColor Yellow
+Get-DbaManagementObject | Format-List
+Write-Host -Object "========== End diagnostics ==========" -ForegroundColor Yellow
+
 $sw.Stop()
 Update-AppveyorTest -Name "appveyor.prep" -Framework NUnit -FileName "appveyor.prep.ps1" -Outcome Passed -Duration $sw.ElapsedMilliseconds
