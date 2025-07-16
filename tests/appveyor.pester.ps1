@@ -65,7 +65,7 @@ function Split-ArrayInParts($array, [int]$parts) {
     }
     $rtn
 }
-
+#temp
 function Get-CoverageIndications($Path, $ModuleBase) {
     # takes a test file path and figures out what to analyze for coverage (i.e. dependencies)
     $CBHRex = [regex]'(?smi)<#(.*)#>'
