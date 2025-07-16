@@ -123,8 +123,10 @@ jobs:
         run: |
           $env:PSModulePath -split ";" | Write-Warning
           Import-Module ./dbatools -Force
+          (Get-Module dbatools.library).Path | Write-Warning
           Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -PassThru | Register-DbatoolsConfig -Scope FileUserShared
           Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -PassThru | Register-DbatoolsConfig -Scope FileUserShared
+          Write-Host "Connecting to SQL Server instance (localdb)\MSSQLLocalDB..."
           Connect-DbaInstance -SqlInstance "(localdb)\MSSQLLocalDB"
 
       - name: Connect to SQL Server instance pwsh
