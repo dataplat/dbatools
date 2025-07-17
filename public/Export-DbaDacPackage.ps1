@@ -247,6 +247,7 @@ function Export-DbaDacPackage {
                                 }
                             }
                             WRITE-WARNING "Using sqlpackage at: $($startprocess.FileName)"
+                            Write-Host "Using sqlpackage at: $($startprocess.FileName)"
                             # Ensure working directory exists
                             [System.IO.Directory]::CreateDirectory([System.IO.Path]::GetDirectoryName($FilePath)) | Out-Null
                             $startprocess.WorkingDirectory = [System.IO.Path]::GetDirectoryName($FilePath)
