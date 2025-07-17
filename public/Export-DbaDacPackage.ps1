@@ -240,8 +240,6 @@ function Export-DbaDacPackage {
                                     $startprocess.FileName = "$(Get-DbatoolsLibraryPath)/core/lib/dac/linux/sqlpackage"
                                 } elseif ($IsMacOS) {
                                     $startprocess.FileName = "$(Get-DbatoolsLibraryPath)/core/lib/dac/mac/sqlpackage"
-                                } elseif ($IsWindows -and $isCore) {
-                                    $startprocess.FileName = Join-DbaPath -Path $(Get-DbatoolsLibraryPath) -ChildPath desktop, lib, dac, windows, sqlpackage.exe
                                 } else {
                                     $startprocess.FileName = Join-DbaPath -Path $(Get-DbatoolsLibraryPath) -ChildPath desktop, lib, dac, sqlpackage.exe
                                 }
