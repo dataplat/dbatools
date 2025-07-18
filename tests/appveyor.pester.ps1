@@ -290,10 +290,11 @@ if (-not $Finalize) {
             # we're in the "region" of pester 5, so skip
             continue
         }
-        $pester5Config = New-PesterConfiguration
+        # Load global Pester config and merge with test-specific settings
+        $pester5Config = New-PesterConfiguration -Path "$ProjectRoot/.Pester.psd1"
         $pester5Config.Run.Path = $f.FullName
-        $pester5config.Run.PassThru = $true
-        $pester5config.Output.Verbosity = "None"
+        $pester5Config.Run.PassThru = $true
+        $pester5Config.Output.Verbosity = "None"
         #opt-in
         if ($IncludeCoverage) {
             $CoverFiles = Get-CoverageIndications -Path $f -ModuleBase $ModuleBase
