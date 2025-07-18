@@ -7,15 +7,6 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $PSDefaultParameterValues["*:SqlInstance"] = "localhost"
         $PSDefaultParameterValues["*:SqlCredential"] = $cred
         $global:ProgressPreference = "SilentlyContinue"
-
-        Connect-DbaInstance -Verbose *>&1 | ForEach-Object {
-            if ($_ -is [System.Management.Automation.VerboseRecord]) {
-                Write-Warning $_.Message
-            } else {
-                $_
-            }
-        }
-
         $PSDefaultParameterValues["*:Confirm"] = $false
         #$PSDefaultParameterValues["*:WarningAction"] = "SilentlyContinue"
         $global:ProgressPreference = "SilentlyContinue"
@@ -25,6 +16,15 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             Import-Module dbatools.library
             Import-Module ./dbatools.psd1 -Force
         }
+
+        Connect-DbaInstance -Verbose *>&1 | ForEach-Object {
+            if ($_ -is [System.Management.Automation.VerboseRecord]) {
+                Write-Warning $_.Message
+            } else {
+                $_
+            }
+        }
+
     }
 
     It "publishes a package" {
