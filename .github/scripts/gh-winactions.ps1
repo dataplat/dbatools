@@ -19,17 +19,18 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    It -Skip "publishes a package" {
+    It "publishes a package" {
         write-warning pre
         $db = New-DbaDatabase
         $dbname = $db.Name
+        write-warning bouttoquery
         $null = $db.Query("CREATE TABLE dbo.example (id int, PRIMARY KEY (id));
             INSERT dbo.example
             SELECT top 100 object_id
             FROM sys.objects")
-        return $true
         write-warning profiling
         $publishprofile = New-DbaDacProfile -Database $dbname -Path C:\temp
+        write-warning dacpacking
         $extractOptions = New-DbaDacOption -Action Export
         $extractOptions.ExtractAllTableData = $true
 
