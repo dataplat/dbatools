@@ -21,7 +21,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     It "impacts the connection timeout" {
         $null = Set-DbatoolsConfig -FullName sql.connection.timeout -Value 60
-        $results = New-DbaConnectionString -SqlInstance test -Database dbatools -ConnectTimeout ([Dataplat.Dbatools.Connection.ConnectionHost]::SqlConnectionTimeout)
+        $results = New-DbaConnectionString -SqlInstance test -Database dbatools -ConnectTimeout (Get-DbatoolsConfigValue -FullName 'sql.connection.timeout')
         $results | Should -Match 'Connect Timeout=60'
     }
 }
