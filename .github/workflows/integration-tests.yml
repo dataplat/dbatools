@@ -148,6 +148,14 @@ jobs:
           $PSDefaultParameterValues["*:SqlCredential"] = $cred
           Connect-DbaInstance
 
+      - name: Run PowerShell tests
+        env:
+          TENANTID: ${{secrets.TENANTID}}
+          CLIENTID: ${{secrets.CLIENTID}}
+          CLIENTSECRET: ${{secrets.CLIENTSECRET}}
+        shell: powershell
+        run: $null = Invoke-Pester .github/scripts/gh-winactions.ps1 -Output Detailed -PassThru
+
       - name: Run pwsh tests
         env:
           TENANTID: ${{secrets.TENANTID}}
@@ -156,12 +164,4 @@ jobs:
           CLIENT_GUID: ${{secrets.CLIENT_GUID}}
           CLIENT_GUID_SECRET: ${{secrets.CLIENT_GUID_SECRET}}
         shell: pwsh
-        run: $null = Invoke-Pester .github/scripts/gh-winactions.ps1 -Output Detailed -PassThru
-
-      - name: Run PowerShell tests
-        env:
-          TENANTID: ${{secrets.TENANTID}}
-          CLIENTID: ${{secrets.CLIENTID}}
-          CLIENTSECRET: ${{secrets.CLIENTSECRET}}
-        shell: powershell
         run: $null = Invoke-Pester .github/scripts/gh-winactions.ps1 -Output Detailed -PassThru
