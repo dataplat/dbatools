@@ -8,6 +8,9 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $PSDefaultParameterValues["*:SqlCredential"] = $cred
         $global:ProgressPreference = "SilentlyContinue"
 
+        $VerbosePreference = 'Continue'
+        Connect-DbaInstance -Verbose
+
         $PSDefaultParameterValues["*:Confirm"] = $false
         #$PSDefaultParameterValues["*:WarningAction"] = "SilentlyContinue"
         $global:ProgressPreference = "SilentlyContinue"
@@ -21,7 +24,8 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
     It "publishes a package" {
         write-warning pre
-        $db = New-DbaDatabase
+        $VerbosePreference = 'Continue'
+        $db = New-DbaDatabase -Verbose
         $dbname = $db.Name
         write-warning bouttoquery
         $null = $db.Query("CREATE TABLE dbo.example (id int, PRIMARY KEY (id));
