@@ -7,7 +7,6 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $PSDefaultParameterValues["*:SqlInstance"] = "localhost"
         $PSDefaultParameterValues["*:SqlCredential"] = $cred
         $global:ProgressPreference = "SilentlyContinue"
-
         $PSDefaultParameterValues["*:Confirm"] = $false
         #$PSDefaultParameterValues["*:WarningAction"] = "SilentlyContinue"
         $global:ProgressPreference = "SilentlyContinue"
@@ -17,19 +16,32 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             Import-Module dbatools.library
             Import-Module ./dbatools.psd1 -Force
         }
+        $VerbosePreference = 'Continue'
+        $PSDefaultParameterValues["*:Verbose"] = $true
+        write-verbose "Verbose preference set to $VerbosePreference"
+        [Dataplat.Dbatools.Connection.ConnectionHost]::SqlConnectionTimeout | Write-Warning
+        Get-DbatoolsConfigValue -FullName 'sql.connection.encrypt' | Write-Warning
+        Get-DbaManagementObject | Out-String | Write-Warning
+        Connect-DbaInstance -Verbose *>&1 | Write-Warning
+
     }
 
     It "publishes a package" {
-        $db = New-DbaDatabase
+        write-warning pre
+        $VerbosePreference = 'Continue'
+        $db = New-DbaDatabase -Verbose *>&1 | Write-Warning
         $dbname = $db.Name
+        write-warning bouttoquery
         $null = $db.Query("CREATE TABLE dbo.example (id int, PRIMARY KEY (id));
             INSERT dbo.example
             SELECT top 100 object_id
             FROM sys.objects")
-
+        write-warning profiling
         $publishprofile = New-DbaDacProfile -Database $dbname -Path C:\temp
+        write-warning dacpacking
         $extractOptions = New-DbaDacOption -Action Export
         $extractOptions.ExtractAllTableData = $true
+
         $dacpac = Export-DbaDacPackage -Database $dbname -DacOption $extractOptions
         $null = Remove-DbaDatabase -Database $db.Name
 
