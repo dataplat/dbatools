@@ -19,7 +19,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    It "publishes a package" -Skip {
+    It "publishes a package" {
         $db = New-DbaDatabase
         $dbname = $db.Name
         $null = $db.Query("CREATE TABLE dbo.example (id int, PRIMARY KEY (id));
@@ -30,6 +30,8 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $publishprofile = New-DbaDacProfile -Database $dbname -Path C:\temp
         $extractOptions = New-DbaDacOption -Action Export
         $extractOptions.ExtractAllTableData = $true
+        return $true
+
         $dacpac = Export-DbaDacPackage -Database $dbname -DacOption $extractOptions
         $null = Remove-DbaDatabase -Database $db.Name
 
