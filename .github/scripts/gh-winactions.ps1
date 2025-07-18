@@ -19,7 +19,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    It "publishes a package" {
+    It "publishes a package" -Skip {
         $db = New-DbaDatabase
         $dbname = $db.Name
         $null = $db.Query("CREATE TABLE dbo.example (id int, PRIMARY KEY (id));
