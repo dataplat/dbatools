@@ -301,7 +301,7 @@ function Connect-DbaInstance {
         [switch]$AzureUnsupported,
         [string]$BatchSeparator,
         [string]$ClientName = (Get-DbatoolsConfigValue -FullName 'sql.connection.clientname'),
-        [int]$ConnectTimeout = (Get-DbatoolsConfigValue -FullName 'sql.connection.timeout'),
+        [int]$ConnectTimeout = ([Dataplat.Dbatools.Connection.ConnectionHost]::SqlConnectionTimeout),
         [switch]$EncryptConnection = (Get-DbatoolsConfigValue -FullName 'sql.connection.encrypt'),
         [string]$FailoverPartner,
         [int]$LockTimeout,

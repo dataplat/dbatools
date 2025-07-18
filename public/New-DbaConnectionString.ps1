@@ -269,7 +269,7 @@ function New-DbaConnectionString {
                     $ClientName = (Get-DbatoolsConfigValue -FullName 'sql.connection.clientname')
                 }
                 if (Test-Bound -Not -ParameterName 'ConnectTimeout') {
-                    $ConnectTimeout = (Get-DbatoolsConfigValue -FullName 'sql.connection.timeout')
+                    $ConnectTimeout = ([Dataplat.Dbatools.Connection.ConnectionHost]::SqlConnectionTimeout)
                 }
                 if (Test-Bound -Not -ParameterName 'EncryptConnection') {
                     $EncryptConnection = (Get-DbatoolsConfigValue -FullName 'sql.connection.encrypt')
