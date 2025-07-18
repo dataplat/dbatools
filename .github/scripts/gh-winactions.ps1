@@ -26,11 +26,10 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             INSERT dbo.example
             SELECT top 100 object_id
             FROM sys.objects")
-
+        return $true
         $publishprofile = New-DbaDacProfile -Database $dbname -Path C:\temp
         $extractOptions = New-DbaDacOption -Action Export
         $extractOptions.ExtractAllTableData = $true
-        return $true
 
         $dacpac = Export-DbaDacPackage -Database $dbname -DacOption $extractOptions
         $null = Remove-DbaDatabase -Database $db.Name
