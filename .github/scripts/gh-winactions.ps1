@@ -1,5 +1,12 @@
 Describe "Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
+        # Show Pester config for this run
+        if ($null -ne (Get-Command Get-PesterConfiguration -ErrorAction SilentlyContinue)) {
+            $pesterConfig = Get-PesterConfiguration
+            Write-Warning "Pester config for this run: MaxThreads=$($pesterConfig.Run.MaxThreads), WriteDebugMessages=$($pesterConfig.Debug.WriteDebugMessages)"
+        } else {
+            Write-Warning "Get-PesterConfiguration not available (Pester <5.0?)"
+        }
 
         $password = ConvertTo-SecureString "dbatools.I0" -AsPlainText -Force
         $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sa", $password
