@@ -1,5 +1,9 @@
 Describe "Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
+        $PesterPreference = [PesterConfiguration]::Default
+        $PesterPreference.Run.MaxThreads = 1
+        $PesterPreference.Debug.WriteDebugMessages = $true
+
         $password = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
         $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sqladmin", $password
 
