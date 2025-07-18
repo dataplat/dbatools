@@ -40,7 +40,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             $true
         } else {
             $results.Result | Should -BeLike '*Update complete.*'
-            $ids = Invoke-DbaQuery -Database $dbname -SqlInstance localhost:14333 -Query 'SELECT id FROM dbo.example'
+            $ids = Invoke-DbaQuery -Database $dbname -SqlInstance localhost -Query 'SELECT id FROM dbo.example'
             $ids.id | Should -Not -BeNullOrEmpty
             $null = Remove-DbaDatabase -Database $db.Name
         }
