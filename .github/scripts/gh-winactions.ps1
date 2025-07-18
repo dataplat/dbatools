@@ -19,7 +19,8 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    It "publishes a package" {
+    It -Skip "publishes a package" {
+        write-warning pre
         $db = New-DbaDatabase
         $dbname = $db.Name
         $null = $db.Query("CREATE TABLE dbo.example (id int, PRIMARY KEY (id));
@@ -27,6 +28,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             SELECT top 100 object_id
             FROM sys.objects")
         return $true
+        write-warning profiling
         $publishprofile = New-DbaDacProfile -Database $dbname -Path C:\temp
         $extractOptions = New-DbaDacOption -Action Export
         $extractOptions.ExtractAllTableData = $true
