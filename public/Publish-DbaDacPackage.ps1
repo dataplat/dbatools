@@ -107,7 +107,7 @@ function Publish-DbaDacPackage {
         [PSCredential]$SqlCredential,
         [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [string]$Path,
-        [Parameter(ParameterSetName = 'Xml')]
+        [Parameter(ParameterSetName = 'Xml', ValueFromPipelineByPropertyName)]
         [string]$PublishXml,
         [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [string[]]$Database,

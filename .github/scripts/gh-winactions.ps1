@@ -33,7 +33,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $dacpac = Export-DbaDacPackage -Database $dbname -DacOption $extractOptions
         $null = Remove-DbaDatabase -Database $db.Name
 
-        $results = $dacpac | Publish-DbaDacPackage -PublishXml
+        $results = $dacpac | Publish-DbaDacPackage -PublishXml $publishprofile.FileName -Database $dbname -SqlInstance localhost:14333 -Confirm:$false
 
         if ($results.Result -match 'NET Core') {
             Write-Warning "Skipping test: encountered known .NET Core sqlpackage limitation. Full output:`n$($results.Result)"
