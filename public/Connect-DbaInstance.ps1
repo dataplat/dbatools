@@ -330,6 +330,7 @@ function Connect-DbaInstance {
         [switch]$DisableException
     )
     begin {
+        write-warning start
         function Invoke-TEPPCacheUpdate {
             [CmdletBinding()]
             param (
@@ -375,6 +376,7 @@ function Connect-DbaInstance {
             $EnableException = $true
         }
 
+        write-warning start2
         $loadedSmoVersion = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object {
             $_.Fullname -like "Microsoft.SqlServer.SMO,*"
         }
@@ -403,6 +405,7 @@ function Connect-DbaInstance {
         if ($AzureDomain) { $AzureDomain = [regex]::escape($AzureDomain) }
     }
     process {
+        write-warning start3
         if (Test-FunctionInterrupt) { return }
 
         # if tenant is specified with a GUID username such as 21f5633f-6776-4bab-b878-bbd5e3e5ed72 (for clientid)
@@ -981,7 +984,7 @@ function Connect-DbaInstance {
 
             $maskedConnString = Hide-ConnectionString $server.ConnectionContext.ConnectionString
             Write-Message -Level Debug -Message "The masked server.ConnectionContext.ConnectionString is $maskedConnString"
-
+write-warning HELLO
             # It doesn't matter which input we have, we pass this line and have a server SMO in $server to work with
             # It might be a brand new one or an already used one.
             # "Pooled connections are always closed directly after an operation" (so .IsOpen does not tell us anything):

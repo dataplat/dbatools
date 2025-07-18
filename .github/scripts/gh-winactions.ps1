@@ -19,6 +19,8 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $VerbosePreference = 'Continue'
         $PSDefaultParameterValues["*:Verbose"] = $true
         write-verbose "Verbose preference set to $VerbosePreference"
+        [Dataplat.Dbatools.Connection.ConnectionHost]::SqlConnectionTimeout | Write-Warning
+        Get-DbatoolsConfigValue -FullName 'sql.connection.encrypt' | Write-Warning
         Get-DbaManagementObject | Out-String | Write-Warning
         Connect-DbaInstance -Verbose *>&1 | Write-Warning
 
