@@ -16,27 +16,17 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             Import-Module dbatools.library
             Import-Module ./dbatools.psd1 -Force
         }
-
-        Connect-DbaInstance -Verbose *>&1 | ForEach-Object {
-            if ($_ -is [System.Management.Automation.VerboseRecord]) {
-                Write-Warning $_.Message
-            } else {
-                $_
-            }
-        }
+        $VerbosePreference = 'Continue'
+        $PSDefaultParameterValues["*:Verbose"] = $true
+        write-verbose "Verbose preference set to $VerbosePreference"
+        Connect-DbaInstance -Verbose *>&1 | Write-Warning
 
     }
 
     It "publishes a package" {
         write-warning pre
         $VerbosePreference = 'Continue'
-        $db = New-DbaDatabase *>&1 | ForEach-Object {
-            if ($_ -is [System.Management.Automation.VerboseRecord]) {
-                Write-Warning $_.Message
-            } else {
-                $_
-            }
-        }
+        $db = New-DbaDatabase -Verbose *>&1 | Write-Warning
         $dbname = $db.Name
         write-warning bouttoquery
         $null = $db.Query("CREATE TABLE dbo.example (id int, PRIMARY KEY (id));
