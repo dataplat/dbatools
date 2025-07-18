@@ -60,8 +60,9 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $extractOptions.ExtractAllTableData = $true
         $dacpac = Export-DbaDacPackage -Database $dbname -DacOption $extractOptions
 
-        $results = $dacpac | Publish-DbaDacPackage -PublishXml $publishprofile.FileName -Database $dbname -SqlInstance localhost:14333 -Confirm:$false
-        if ($results.Result -match 'NET Core') {
+        $results = $dacpac | Publish-DbaDacPackage -PublishXml $publishprofile.FileName -Database $dbname -SqlInstance localhost:14333 -Confirm:$false -WarningVariable publishWarnings
+
+        if ($publishWarnings -match 'NET Core') {
             Write-Warning "Skipping test: encountered known .NET Core sqlpackage limitation. Full output:`n$($results.Result)"
             $true
         } else {
