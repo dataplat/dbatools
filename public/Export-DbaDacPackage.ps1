@@ -322,7 +322,12 @@ function Export-DbaDacPackage {
                             } elseif ($IsMacOS) {
                                 $startprocess.FileName = "$(Get-DbatoolsLibraryPath)/lib/dac/mac/sqlpackage"
                             } else {
-                                $startprocess.FileName = Join-DbaPath -Path $(Get-DbatoolsLibraryPath) -ChildPath lib, sqlpackage.exe
+                                if ($PSVersionTable.PSEdition -eq 'Core') {
+                                    $parentpath = Split-Path (Get-DbatoolsLibraryPath)
+                                    $startprocess.FileName = Join-DbaPath -Path $parentpath -ChildPath desktop, lib, dac, sqlpackage.exe
+                                } else {
+                                    $startprocess.FileName = Join-DbaPath -Path $(Get-DbatoolsLibraryPath) -ChildPath lib, dac, sqlpackage.exe
+                                }
                             }
                         }
                         $startprocess.Arguments = $sqlPackageArgs
