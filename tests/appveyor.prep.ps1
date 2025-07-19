@@ -16,7 +16,10 @@ $sw = [system.diagnostics.stopwatch]::startNew()
 Write-Host -Object "appveyor.prep: Cloning lab materials"  -ForegroundColor DarkGreen
 git clone -q --branch=master --depth=1 https://github.com/dataplat/appveyor-lab.git C:\github\appveyor-lab
 
-# (Codecov installation removed by user request)
+#Get codecov (to upload coverage results)
+Write-Host -Object "appveyor.prep: Install codecov" -ForegroundColor DarkGreen
+choco install codecov | Out-Null
+#FIXME : read about the new uploader https://docs.codecov.com/docs/codecov-uploader#using-the-uploader
 
 #Get PSScriptAnalyzer (to check warnings)
 Write-Host -Object "appveyor.prep: Install PSScriptAnalyzer" -ForegroundColor DarkGreen
