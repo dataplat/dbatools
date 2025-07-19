@@ -119,7 +119,7 @@ jobs:
           Write-Output "Preview version detected, bypassing PSModuleCache and using install script"
           ./.github/scripts/install-dbatools-library.ps1
 
-      - name: Install SQL Server localdb
+      - name: Install SQL Server engine and localdb
         uses: potatoqualitee/mssqlsuite@v1.8
         with:
           install: localdb, sqlengine
