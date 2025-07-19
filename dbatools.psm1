@@ -53,7 +53,7 @@ if (-not $script:libraryroot) {
 
 try {
     # if core add core to the path, otherwise add desktop
-    $dll = $script:libraryroot = [System.IO.Path]::Combine($script:libraryroot, 'lib',  'dbatools.dll')
+    $dll = [System.IO.Path]::Combine($script:libraryroot, 'lib',  'dbatools.dll')
     Import-Module $dll
 } catch {
     throw "Couldn't import dbatools library | $PSItem"
