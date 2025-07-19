@@ -1,6 +1,16 @@
 Describe "Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $PSDefaultParameterValues["*:SqlInstance"] = "(localdb)\MSSQLLocalDB"
+        # if desktop then use localdb if desktop then use full
+        if ($PSVersionTable.PSEdition -eq "Core") {
+            # [New-DbaDatabase] Failure | LocalDB is not supported on this platform.
+            $password = ConvertTo-SecureString "dbatools.I0" -AsPlainText -Force
+            $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sa", $password
+            $PSDefaultParameterValues["*:SqlInstance"] = "localhost"
+            $PSDefaultParameterValues["*:SqlCredential"] = $cred
+        } else {
+            $PSDefaultParameterValues["*:SqlInstance"] = "(localdb)\MSSQLLocalDB"
+        }
+
         $PSDefaultParameterValues["*:Confirm"] = $false
         #$PSDefaultParameterValues["*:WarningAction"] = "SilentlyContinue"
         $global:ProgressPreference = "SilentlyContinue"
