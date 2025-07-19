@@ -21,6 +21,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results | Should Not Be $Null
             $results.DatabaseId | Should -Be $masterDb.Id
         }
+        It "Should have a name of Microsoft.SqlServer.Types" {
+            $results.name | Should Be "Microsoft.SqlServer.Types"
+        }
         It "Should have an owner of sys" {
             $results.owner | Should Be "sys"
         }
