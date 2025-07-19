@@ -301,7 +301,7 @@ function Connect-DbaInstance {
         [switch]$AzureUnsupported,
         [string]$BatchSeparator,
         [string]$ClientName = (Get-DbatoolsConfigValue -FullName 'sql.connection.clientname'),
-        [int]$ConnectTimeout = ([Dataplat.Dbatools.Connection.ConnectionHost]::SqlConnectionTimeout),
+        [int]$ConnectTimeout,
         [switch]$EncryptConnection = (Get-DbatoolsConfigValue -FullName 'sql.connection.encrypt'),
         [string]$FailoverPartner,
         [int]$LockTimeout,
@@ -330,6 +330,9 @@ function Connect-DbaInstance {
         [switch]$DisableException
     )
     begin {
+        if (-not (Test-Bound 'ConnectTimeout')) {
+            $ConnectTimeout = [Dataplat.Dbatools.Connection.ConnectionHost]::SqlConnectionTimeout
+        }
         function Invoke-TEPPCacheUpdate {
             [CmdletBinding()]
             param (

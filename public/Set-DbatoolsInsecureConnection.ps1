@@ -43,10 +43,13 @@ function Set-DbatoolsInsecureConnection {
     [CmdletBinding()]
     param (
         [switch]$SessionOnly,
-        [Dataplat.Dbatools.Configuration.ConfigScope]$Scope = [Dataplat.Dbatools.Configuration.ConfigScope]::UserDefault,
+        [Dataplat.Dbatools.Configuration.ConfigScope]$Scope,
         [switch]$Register
     )
     process {
+        if (-not (Test-Bound 'Scope')) {
+            $Scope = [Dataplat.Dbatools.Configuration.ConfigScope]::UserDefault
+        }
         if ($Register) {
             Write-Message -Level Warning -Message "The Register parameter is deprecated and will be removed in a future release."
         }
