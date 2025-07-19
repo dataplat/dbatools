@@ -36,7 +36,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $null = Remove-DbaDatabase -Database $db.Name
     }
 
-    It "connects to Azure" -Skip {
+    It "connects to Azure" {
         $PSDefaultParameterValues.Clear()
         $securestring = ConvertTo-SecureString $env:CLIENTSECRET -AsPlainText -Force
         $azurecred = New-Object PSCredential -ArgumentList $env:CLIENTID, $securestring

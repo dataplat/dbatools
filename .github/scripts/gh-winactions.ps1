@@ -63,7 +63,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    It "gets a database from Azure" -Skip {
+    It "gets a database from Azure" {
         $PSDefaultParameterValues.Clear()
         $securestring = ConvertTo-SecureString $env:CLIENTSECRET -AsPlainText -Force
         $azurecred = New-Object PSCredential -ArgumentList $env:CLIENTID, $securestring

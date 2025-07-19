@@ -256,7 +256,7 @@ exec sp_addrolemember 'userrole','bob';
         $results.Status | Should -Be "Successful"
     }
 
-    It "connects to Azure" -Skip {
+    It "connects to Azure" {
         $PSDefaultParameterValues.Clear()
         $securestring = ConvertTo-SecureString $env:CLIENTSECRET -AsPlainText -Force
         $azurecred = New-Object PSCredential -ArgumentList $env:CLIENTID, $securestring
@@ -264,7 +264,7 @@ exec sp_addrolemember 'userrole','bob';
         Connect-DbaInstance -SqlInstance "Server=dbatoolstest.database.windows.net; Authentication=Active Directory Service Principal; Database=test; User Id=$env:CLIENTID; Password=$env:CLIENTSECRET;" | Select-Object -ExpandProperty ComputerName | Should -Be "dbatoolstest.database.windows.net"
     }
 
-    It "gets a database from Azure" -Skip {
+    It "gets a database from Azure" {
         $PSDefaultParameterValues.Clear()
         $securestring = ConvertTo-SecureString $env:CLIENTSECRET -AsPlainText -Force
         $azurecred = New-Object PSCredential -ArgumentList $env:CLIENTID, $securestring
@@ -272,7 +272,7 @@ exec sp_addrolemember 'userrole','bob';
         (Get-DbaDatabase -SqlInstance $server -Database test).Name | Should -Be "test"
     }
 
-    It "tests Get-DbaLastGoodCheckDb against Azure" -Skip {
+    It "tests Get-DbaLastGoodCheckDb against Azure" {
         $PSDefaultParameterValues.Clear()
         $securestring = ConvertTo-SecureString $env:CLIENTSECRET -AsPlainText -Force
         $azurecred = New-Object PSCredential -ArgumentList $env:CLIENTID, $securestring
