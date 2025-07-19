@@ -32,7 +32,6 @@ Describe "Enable-DbaAgHadr" -Tag "UnitTests" {
 
 Describe "Enable-DbaAgHadr" -Tag "IntegrationTests" {
     BeforeAll {
-        # Ensure HADR is disabled before testing
         Disable-DbaAgHadr -SqlInstance $TestConfig.instance3 -Confirm:$false -Force
     }
 
@@ -44,10 +43,5 @@ Describe "Enable-DbaAgHadr" -Tag "IntegrationTests" {
         It "Successfully enables HADR" {
             $results.IsHadrEnabled | Should -BeTrue
         }
-    }
-
-    AfterAll {
-        # Clean up - disable HADR
-        Disable-DbaAgHadr -SqlInstance $TestConfig.instance3 -Confirm:$false -Force
     }
 }

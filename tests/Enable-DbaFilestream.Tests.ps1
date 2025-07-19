@@ -37,19 +37,19 @@ Describe "Enable-DbaFilestream" -Tag "IntegrationTests" {
     BeforeAll {
         $global:OriginalFileStream = Get-DbaFilestream -SqlInstance $TestConfig.instance1
     }
-    
+
     AfterAll {
         if ($global:OriginalFileStream.InstanceAccessLevel -eq 0) {
-            Disable-DbaFilestream -SqlInstance $TestConfig.instance1 -Confirm:$false
+            Disable-DbaFilestream -SqlInstance $TestConfig.instance1 -Confirm:$false -WarningAction SilentlyContinue
         } else {
-            Enable-DbaFilestream -SqlInstance $TestConfig.instance1 -FileStreamLevel $global:OriginalFileStream.InstanceAccessLevel -Confirm:$false
+            Enable-DbaFilestream -SqlInstance $TestConfig.instance1 -FileStreamLevel $global:OriginalFileStream.InstanceAccessLevel -Confirm:$false -WarningAction SilentlyContinue
         }
     }
 
     Context "When changing FileStream Level" {
         BeforeAll {
-            $NewLevel = ($global:OriginalFileStream.FileStreamStateId + 1) % 3 #Move it on one, but keep it less than 4 with modulo division
-            $results = Enable-DbaFilestream -SqlInstance $TestConfig.instance1 -FileStreamLevel $NewLevel -Confirm:$false
+            $NewLevel = ($global:OriginalFileStream.InstanceAccessLevel + 1) % 3 #Move it on one, but keep it less than 4 with modulo division
+            $results = Enable-DbaFilestream -SqlInstance $TestConfig.instance1 -FileStreamLevel $NewLevel -Confirm:$false -WarningAction SilentlyContinue
         }
 
         It "Should change the FileStream Level to the new value" {
