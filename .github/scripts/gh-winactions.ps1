@@ -1,13 +1,6 @@
 Describe "Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-
-        $password = ConvertTo-SecureString "dbatools.I0" -AsPlainText -Force
-        $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sa", $password
-
-        $PSDefaultParameterValues["*:SqlInstance"] = "localhost"
-        $PSDefaultParameterValues["*:SqlCredential"] = $cred
-        $global:ProgressPreference = "SilentlyContinue"
-
+        $PSDefaultParameterValues["*:SqlInstance"] = "(localdb)\MSSQLLocalDB"
         $PSDefaultParameterValues["*:Confirm"] = $false
         #$PSDefaultParameterValues["*:WarningAction"] = "SilentlyContinue"
         $global:ProgressPreference = "SilentlyContinue"
@@ -33,18 +26,11 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $dacpac = Export-DbaDacPackage -Database $dbname -DacOption $extractOptions
         $null = Remove-DbaDatabase -Database $db.Name
 
-        # if core
-        if ($PSVersionTable.PSEdition -eq "Core") {
-            $results = $dacpac | Publish-DbaDacPackage -PublishXml $publishprofile.FileName -Database $dbname -SqlInstance localhost -Confirm:$false
-
-            $results.Result | Should -BeLike '*Update complete.*'
-            $ids = Invoke-DbaQuery -Database $dbname -SqlInstance localhost -Query 'SELECT id FROM dbo.example'
-            $ids.id | Should -Not -BeNullOrEmpty
-            $null = Remove-DbaDatabase -Database $db.Name
-        } else {
-            # desktop segfaults but only within pester?
-            $true
-        }
+        $results = $dacpac | Publish-DbaDacPackage -PublishXml $publishprofile.FileName -Database $dbname -Confirm:$false
+        $results.Result | Should -BeLike '*Update complete.*'
+        $ids = Invoke-DbaQuery -Database $dbname -Query 'SELECT id FROM dbo.example'
+        $ids.id | Should -Not -BeNullOrEmpty
+        $null = Remove-DbaDatabase -Database $db.Name
     }
 
     It "connects to Azure using tenant and client id + client secret" -Skip {
