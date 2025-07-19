@@ -32,9 +32,9 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             if (-not $sqlpackage) {
                 $libraryPath = Get-DbatoolsLibraryPath
                 if ($libraryPath -match 'desktop$') {
-                    $sqlpackage = Join-DbaPath -Path (Get-DbatoolsLibraryPath) -ChildPath desktop, lib, dac, sqlpackage.exe
+                    $sqlpackage = Join-DbaPath -Path (Get-DbatoolsLibraryPath) -ChildPath lib, dac, sqlpackage.exe
                 } elseif ($isWindows) {
-                    $sqlpackage = Join-DbaPath -Path (Get-DbatoolsLibraryPath) -ChildPath core,lib, dac, sqlpackage.exe
+                    $sqlpackage = Join-DbaPath -Path (Get-DbatoolsLibraryPath) -ChildPath lib, dac, sqlpackage.exe
                 } else {
                     # Not implemented
                 }

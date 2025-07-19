@@ -123,11 +123,7 @@ function Start-DbaXESmartTarget {
             )
             begin {
                 try {
-                    if ($IsWindows -and $PSVersionTable.PSEdition -eq 'Desktop') {
-                        $xedll = Join-DbaPath -Path $script:libraryroot -ChildPath 'desktop', 'third-party', 'XESmartTarget', 'XESmartTarget.Core.dll'
-                    } else {
-                        $xedll = Join-DbaPath -Path $script:libraryroot -ChildPath 'core', 'third-party', 'XESmartTarget', 'XESmartTarget.Core.dll'
-                    }
+                    $xedll = Join-DbaPath -Path $script:libraryroot -ChildPath 'third-party', 'XESmartTarget', 'XESmartTarget.Core.dll'
                     Add-Type -Path $xedll -ErrorAction Stop
                 } catch {
                     Stop-Function -Message "Could not load XESmartTarget.Core.dll" -ErrorRecord $_ -Target "XESmartTarget"

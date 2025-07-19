@@ -237,15 +237,14 @@ function Export-DbaDacPackage {
                                 $startprocess.FileName = $sqlpackage
                             } else {
                                 if ($IsLinux) {
-                                    $startprocess.FileName = "$(Get-DbatoolsLibraryPath)/core/lib/dac/linux/sqlpackage"
+                                    $startprocess.FileName = "$(Get-DbatoolsLibraryPath)/lib/dac/linux/sqlpackage"
                                 } elseif ($IsMacOS) {
-                                    $startprocess.FileName = "$(Get-DbatoolsLibraryPath)/core/lib/dac/mac/sqlpackage"
+                                    $startprocess.FileName = "$(Get-DbatoolsLibraryPath)/lib/dac/mac/sqlpackage"
                                 } else {
-                                    $startprocess.FileName = Join-DbaPath -Path $(Get-DbatoolsLibraryPath) -ChildPath desktop, lib, dac, sqlpackage.exe
+                                    $startprocess.FileName = Join-DbaPath -Path $(Get-DbatoolsLibraryPath) -ChildPath lib, dac, sqlpackage.exe
                                 }
                             }
-                            WRITE-WARNING "Using sqlpackage at: $($startprocess.FileName)"
-                            Write-Host "Using sqlpackage at: $($startprocess.FileName)"
+
                             # Ensure working directory exists
                             [System.IO.Directory]::CreateDirectory([System.IO.Path]::GetDirectoryName($FilePath)) | Out-Null
                             $startprocess.WorkingDirectory = [System.IO.Path]::GetDirectoryName($FilePath)
@@ -319,13 +318,11 @@ function Export-DbaDacPackage {
                             $startprocess.FileName = $sqlpackage
                         } else {
                             if ($IsLinux) {
-                                $startprocess.FileName = "$(Get-DbatoolsLibraryPath)/core/lib/sqlpackage"
+                                $startprocess.FileName = "$(Get-DbatoolsLibraryPath)/lib/sqlpackage"
                             } elseif ($IsMacOS) {
-                                $startprocess.FileName = "$(Get-DbatoolsLibraryPath)/core/lib/dac/mac/sqlpackage"
-                            } elseif ($IsWindows) {
-                                $startprocess.FileName = Join-DbaPath -Path $(Get-DbatoolsLibraryPath) -ChildPath desktop, lib, sqlpackage.exe
+                                $startprocess.FileName = "$(Get-DbatoolsLibraryPath)/lib/dac/mac/sqlpackage"
                             } else {
-                                $startprocess.FileName = Join-DbaPath -Path $(Get-DbatoolsLibraryPath) -ChildPath desktop, lib, sqlpackage.exe
+                                $startprocess.FileName = Join-DbaPath -Path $(Get-DbatoolsLibraryPath) -ChildPath lib, sqlpackage.exe
                             }
                         }
                         $startprocess.Arguments = $sqlPackageArgs
