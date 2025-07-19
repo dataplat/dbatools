@@ -43,7 +43,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $null = Remove-DbaDatabase -Database $db.Name
     }
 
-    It "connects to Azure using tenant and client id + client secret" -Skip {
+    It "connects to Azure using tenant and client id + client secret" {
         $PSDefaultParameterValues.Clear()
         $securestring = ConvertTo-SecureString $env:CLIENTSECRET -AsPlainText -Force
         $azurecred = New-Object PSCredential -ArgumentList $env:CLIENTID, $securestring
@@ -51,7 +51,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
     }
 
 
-    It "connects to Azure using a query string" -Skip {
+    It "connects to Azure using a query string" {
         # this doesn't work on github, it throws
         # Method not found: 'Microsoft.Identity.Client.AcquireTokenByUsernamePasswordParameterBuilder'
         if ($PSVersionTable.PSEdition -eq "Core") {
