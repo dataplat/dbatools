@@ -1,4 +1,3 @@
-Write-Host "### DEBUG: Entering Get-DbaDatabase.Tests.ps1"
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 $global:TestConfig = Get-TestConfig
