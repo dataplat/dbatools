@@ -252,11 +252,10 @@ function Export-DbaDacPackage {
                             } else {
                                 # if core then get the parent of lib path and then use the desktop location
                                 if ($PsVersionTable.PSEdition -eq 'Core') {
-                                    $parentpath = Split-Path -Path (Get-DbatoolsLibraryPath) -Parent
-                                    $startprocess.FileName = "$parentpath\desktop\lib\dac\sqlpackage.exe"
+                                    $startprocess.FileName = "$(Get-DbatoolsLibraryPath)/lib/dac/windows/sqlpackage.exe"
                                 } else {
                                     # otherwise use the lib path
-                                    $startprocess.FileName = "$(Get-DbatoolsLibraryPath)\lib\dac\sqlpackage.exe"
+                                    $startprocess.FileName = "$(Get-DbatoolsLibraryPath)\lib\dac\SqlPackage.exe"
                                 }
                             }
                         }
