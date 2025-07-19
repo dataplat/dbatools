@@ -49,10 +49,10 @@ if ($installedModule.Version.ToString() -notmatch [regex]::Escape($expectedVersi
     Write-Host -Object "appveyor.prep: Version validation successful" -ForegroundColor Green
 }
 
-#Get Pester (to run tests) - choco isn't working onall scenarios, weird
+##Get Pester (to run tests) - choco isn't working onall scenarios, weird
 Write-Host -Object "appveyor.prep: Install Pester4" -ForegroundColor DarkGreen
-if (-not(Test-Path 'C:\Program Files\WindowsPowerShell\Modules\Pester\4.10.1')) {
-    Install-Module -Name Pester -Force -SkipPublisherCheck -MaximumVersion 4.10.1 | Out-Null
+if (-not(Test-Path 'C:\Program Files\WindowsPowerShell\Modules\Pester\4.4.2')) {
+    Install-Module -Name Pester -Force -SkipPublisherCheck -MaximumVersion 4.4.2 | Out-Null
 }
 Write-Host -Object "appveyor.prep: Install Pester5" -ForegroundColor DarkGreen
 if (-not(Test-Path 'C:\Program Files\WindowsPowerShell\Modules\Pester\5.6.1')) {
@@ -66,9 +66,10 @@ if (-not(Test-Path 'C:\Users\appveyor\Documents\DbatoolsExport')) {
 }
 
 
-# DELIBERATELY REMOVED: All dbatools/library imports, configs, and SMO inspections must occur
-# only AFTER the correct Pester version is imported in the actual test runner script,
-# to avoid native loader deadlocks and ensure correct SMO initialization.
-
+Write-Host -Object "appveyor.prep: Trust SQL Server Cert (now required)" -ForegroundColor DarkGreen
+Import-Module dbatools.library
+Import-Module C:\github\dbatools\dbatools.psd1
+Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -Register
+Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -Register
 $sw.Stop()
 Update-AppveyorTest -Name "appveyor.prep" -Framework NUnit -FileName "appveyor.prep.ps1" -Outcome Passed -Duration $sw.ElapsedMilliseconds
