@@ -17,9 +17,6 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             Import-Module dbatools.library
             Import-Module ./dbatools.psd1 -Force
         }
-        write-warning before
-        [dbainstance]
-        write-warning after
     }
 
     It "publishes a package" {
