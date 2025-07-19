@@ -63,7 +63,7 @@ Import-Module "$ModuleBase\dbatools.psd1"
 #imports the psm1 to be able to use internal functions in tests
 Import-Module "$ModuleBase\dbatools.psm1" -Force
 # Force all SQL connections to trust the server certificate in CI
-Set-DbatoolsInsecureConnection
+$null = Set-DbatoolsInsecureConnection
 
 Update-TypeData -AppendPath "$ModuleBase\xml\dbatools.types.ps1xml" -ErrorAction SilentlyContinue # ( this should already be loaded by dbatools.psd1 )
 Start-Sleep 5
