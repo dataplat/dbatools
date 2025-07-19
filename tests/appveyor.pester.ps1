@@ -47,23 +47,9 @@ $global:dbatools_dotsourcemodule = $true
 $dbatools_serialimport = $true
 
 #imports the module making sure DLL is loaded ok
-# Import Pester early to avoid loader deadlock
-Write-Host "### DEBUG: Early Import-Module Pester 5"
-Import-Module pester -RequiredVersion 5.6.1
-Remove-Module pester
-Write-Host "### DEBUG: Early Import-Module Pester 5 done"
-
-#imports the module making sure DLL is loaded ok
-# Import Pester early to avoid loader deadlock
-Write-Host "### DEBUG: Early Import-Module Pester 4"
-Import-Module pester -RequiredVersion 4.10.1
-Write-Host "### DEBUG: Early Import-Module Pester 4 done"
-
 Import-Module "$ModuleBase\dbatools.psd1"
 #imports the psm1 to be able to use internal functions in tests
 Import-Module "$ModuleBase\dbatools.psm1" -Force
-# Force all SQL connections to trust the server certificate in CI
-$null = Set-DbatoolsInsecureConnection
 
 Update-TypeData -AppendPath "$ModuleBase\xml\dbatools.types.ps1xml" -ErrorAction SilentlyContinue # ( this should already be loaded by dbatools.psd1 )
 Start-Sleep 5
@@ -193,27 +179,17 @@ if (-not $Finalize) {
 #Make things faster by removing most output
 if (-not $Finalize) {
     Set-Variable ProgressPreference -Value SilentlyContinue
-    Write-Host "### DEBUG: Entering test execution phase"
     if ($AllScenarioTests.Count -eq 0) {
         Write-Host -ForegroundColor DarkGreen "Nothing to do in this scenario"
         return
     }
     # Remove any previously loaded pester module
     Remove-Module -Name pester -ErrorAction SilentlyContinue
-    Write-Host "### DEBUG: Importing Pester 4"
     # Import pester 4
-    Import-Module pester -RequiredVersion 4.10.1
-    Write-Host "### DEBUG: Imported Pester 4"
+    Import-Module pester -RequiredVersion 4.4.2
     Write-Host -Object "appveyor.pester: Running with Pester Version $((Get-Command Invoke-Pester -ErrorAction SilentlyContinue).Version)" -ForegroundColor DarkGreen
-
-    # Import dbatools modules and configure connection, after Pester is imported (for loader safety)
-    Import-Module dbatools.library
-    Import-Module C:\github\dbatools\dbatools.psd1
-    $null = Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -Register
-    $null = Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -Register
     # invoking a single invoke-pester consumes too much memory, let's go file by file
     $AllTestsWithinScenario = Get-ChildItem -File -Path $AllScenarioTests
-
     #start the round for pester 4 tests
     $Counter = 0
     foreach ($f in $AllTestsWithinScenario) {
@@ -261,18 +237,9 @@ if (-not $Finalize) {
     #start the round for pester 5 tests
     # Remove any previously loaded pester module
     Remove-Module -Name pester -ErrorAction SilentlyContinue
-    Write-Host "### DEBUG: Importing Pester 5"
     # Import pester 5
     Import-Module pester -RequiredVersion 5.6.1
-    Write-Host "### DEBUG: Imported Pester 5"
     Write-Host -Object "appveyor.pester: Running with Pester Version $((Get-Command Invoke-Pester -ErrorAction SilentlyContinue).Version)" -ForegroundColor DarkGreen
-
-    # Import dbatools modules and configure connection, after Pester is imported (for loader safety)
-    Import-Module dbatools.library
-    Import-Module C:\github\dbatools\dbatools.psd1
-    $null = Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -Register
-    $null = Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -Register
-
     $Counter = 0
     foreach ($f in $AllTestsWithinScenario) {
         $Counter += 1
