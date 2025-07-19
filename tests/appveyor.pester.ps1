@@ -49,14 +49,14 @@ $dbatools_serialimport = $true
 #imports the module making sure DLL is loaded ok
 # Import Pester early to avoid loader deadlock
 Write-Host "### DEBUG: Early Import-Module Pester 5"
-Import-Module pester -RequiredVersion 5.6.1 -Verbose
+Import-Module pester -RequiredVersion 5.6.1
 Remove-Module pester
 Write-Host "### DEBUG: Early Import-Module Pester 5 done"
 
 #imports the module making sure DLL is loaded ok
 # Import Pester early to avoid loader deadlock
 Write-Host "### DEBUG: Early Import-Module Pester 4"
-Import-Module pester -RequiredVersion 4.10.1 -Verbose
+Import-Module pester -RequiredVersion 4.10.1
 Write-Host "### DEBUG: Early Import-Module Pester 4 done"
 
 Import-Module "$ModuleBase\dbatools.psd1"
@@ -209,15 +209,11 @@ if (-not $Finalize) {
     # Import dbatools modules and configure connection, after Pester is imported (for loader safety)
     Import-Module dbatools.library
     Import-Module C:\github\dbatools\dbatools.psd1
-    Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -Register
-    Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -Register
-    Write-Host -Object "========== Get-DbaManagementObject diagnostic (Pester 4) ==========" -ForegroundColor Yellow
-    Get-DbaManagementObject | Format-List
-    Write-Host -Object "========== End diagnostics ==========" -ForegroundColor Yellow
-
+    $null = Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -Register
+    $null = Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -Register
     # invoking a single invoke-pester consumes too much memory, let's go file by file
     $AllTestsWithinScenario = Get-ChildItem -File -Path $AllScenarioTests
-    Write-Host "### DEBUG: After file gather, $($AllTestsWithinScenario.Count) files"
+
     #start the round for pester 4 tests
     $Counter = 0
     foreach ($f in $AllTestsWithinScenario) {
@@ -250,9 +246,7 @@ if (-not $Finalize) {
                 $appvTestName = "$($f.Name), attempt #$trialNo"
             }
             Add-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome Running
-            Write-Host "### DEBUG: Before Invoke-Pester $($f.FullName)"
             $PesterRun = Invoke-Pester @PesterSplat
-            Write-Host "### DEBUG: After Invoke-Pester $($f.FullName)"
             $PesterRun | Export-Clixml -Path "$ModuleBase\PesterResults$PSVersion$Counter.xml"
             if ($PesterRun.FailedCount -gt 0) {
                 $trialno += 1
@@ -276,11 +270,8 @@ if (-not $Finalize) {
     # Import dbatools modules and configure connection, after Pester is imported (for loader safety)
     Import-Module dbatools.library
     Import-Module C:\github\dbatools\dbatools.psd1
-    Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -Register
-    Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -Register
-    Write-Host -Object "========== Get-DbaManagementObject diagnostic (Pester 5) ==========" -ForegroundColor Yellow
-    Get-DbaManagementObject | Format-List
-    Write-Host -Object "========== End diagnostics ==========" -ForegroundColor Yellow
+    $null = Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -Register
+    $null = Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -Register
 
     $Counter = 0
     foreach ($f in $AllTestsWithinScenario) {
@@ -314,9 +305,7 @@ if (-not $Finalize) {
             }
             Write-Host -Object "Running $($f.FullName) ..." -ForegroundColor Cyan -NoNewLine
             Add-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome Running
-            Write-Host "### DEBUG: Before Invoke-Pester (Pester5) $($f.FullName)"
             $PesterRun = Invoke-Pester -Configuration $pester5config
-            Write-Host "### DEBUG: After Invoke-Pester (Pester5) $($f.FullName)"
             Write-Host -Object "`rCompleted $($f.FullName) in $([int]$PesterRun.Duration.TotalMilliseconds)ms" -ForegroundColor Cyan
             $PesterRun | Export-Clixml -Path "$ModuleBase\Pester5Results$PSVersion$Counter.xml"
             if ($PesterRun.FailedCount -gt 0) {
