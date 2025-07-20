@@ -3,6 +3,7 @@ function Add-ReplicationLibrary {
         [switch]$EnableException
     )
     try {
+        $script:libraryroot = Get-DbatoolsLibraryPath
         $platformlib = Join-DbaPath -Path $script:libraryroot -ChildPath lib
         $repdll = Join-DbaPath -Path $platformlib -ChildPath Microsoft.SqlServer.Replication.dll
         $rmodll = Join-DbaPath -Path $platformlib -ChildPath Microsoft.SqlServer.Rmo.dll
