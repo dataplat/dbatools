@@ -18,7 +18,13 @@ function Disable-DbaTraceFlag {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER TraceFlag
-        Trace flag number to enable globally
+        Trace flag number to disable globally
+
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
+
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -42,7 +48,7 @@ function Disable-DbaTraceFlag {
         Disable the globally running trace flag 3226 on SQL Server instance sql2016
 
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -80,18 +86,19 @@ function Disable-DbaTraceFlag {
                     Write-Message -Level Warning -Message "Trace Flag $tf is not currently running on $instance"
                     continue
                 }
-
-                try {
-                    $query = "DBCC TRACEOFF ($tf, -1)"
-                    $server.Query($query)
-                } catch {
-                    $TraceFlagInfo.Status = "Failed"
-                    $TraceFlagInfo.Notes = $_.Exception.Message
+                if ($Pscmdlet.ShouldProcess($instance, "Disabling flag '$tf'")) {
+                    try {
+                        $query = "DBCC TRACEOFF ($tf, -1)"
+                        $server.Query($query)
+                    } catch {
+                        $TraceFlagInfo.Status = "Failed"
+                        $TraceFlagInfo.Notes = $_.Exception.Message
+                        $TraceFlagInfo
+                        Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
+                    }
+                    $TraceFlagInfo.Status = "Successful"
                     $TraceFlagInfo
-                    Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
                 }
-                $TraceFlagInfo.Status = "Successful"
-                $TraceFlagInfo
             }
         }
     }

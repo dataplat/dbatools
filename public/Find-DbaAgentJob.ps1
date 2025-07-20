@@ -93,7 +93,7 @@ function Find-DbaAgentJob {
         Finds all failed job then starts them. Consider using a -WhatIf at the end of Start-DbaAgentJob to see what it'll do first
 
     .EXAMPLE
-        PS C:\> Find-DbaAgentJob -SqlInstance Dev01 -LastUsed 10 -Exclude "Yearly - RollUp Workload", "SMS - Notification"
+        PS C:\> Find-DbaAgentJob -SqlInstance Dev01 -LastUsed 10 -ExcludeJobName "Yearly - RollUp Workload", "SMS - Notification"
 
         Returns all agent jobs that have not ran in the last 10 days ignoring jobs "Yearly - RollUp Workload" and "SMS - Notification"
 
@@ -222,9 +222,9 @@ function Find-DbaAgentJob {
                 }
             }
 
-            if ($Exclude) {
+            if ($ExcludeJobName) {
                 Write-Message -Level Verbose -Message "Excluding job/s based on Exclude"
-                $output = $output | Where-Object { $Exclude -notcontains $_.Name }
+                $output = $output | Where-Object { $ExcludeJobName -notcontains $_.Name }
             }
 
             if ($Since) {

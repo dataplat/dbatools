@@ -18,17 +18,43 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Install and cache PowerShell modules
-        uses: potatoqualitee/psmodulecache@v5.2
+      - name: Read dbatools.library version
+        id: get-version
+        shell: pwsh
+        run: |
+          $versionConfig = Get-Content '.github/dbatools-library-version.json' | ConvertFrom-Json
+          $version = $versionConfig.version
+          $isPreview = $version -like "*preview*"
+          Write-Output "version=$version" >> $env:GITHUB_OUTPUT
+          Write-Output "is_preview=$isPreview" >> $env:GITHUB_OUTPUT
+          Write-Output "Using dbatools.library version: $version"
+          Write-Output "Is preview version: $isPreview"
+
+      - name: Install and cache PowerShell modules (stable versions)
+        if: steps.get-version.outputs.is_preview == 'False'
+        uses: potatoqualitee/psmodulecache@v6.2.1
         with:
-          modules-to-cache: dbatools.library:2024.4.12
+          modules-to-cache: dbatools.library:${{ steps.get-version.outputs.version }}
+
+      - name: Install dbatools.library (preview versions)
+        if: steps.get-version.outputs.is_preview == 'True'
+        shell: pwsh
+        run: |
+          Write-Output "Preview version detected, bypassing PSModuleCache and using install script"
+          ./.github/scripts/install-dbatools-library.ps1
 
       - name: Set encryption values
         run: |
           Import-Module ./dbatools.psd1 -Force
+          (Get-Module dbatools.library).Path | Write-Warning
+          Get-ChildItem /home/runner/.local/share/powershell/Modules/dbatools.library/core/lib/dac/linux | Write-Warning
           Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -Register
           Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -Register
           Get-DbatoolsConfigValue -FullName sql.connection.encrypt | Write-Warning
+          mkdir /tmp/DbatoolsExport
+
+      - name: Ensure sqlpackage is executable
+        run: chmod +x /home/runner/.local/share/powershell/Modules/dbatools.library/core/lib/dac/linux/sqlpackage || true
 
       - name:  Setup docker images
         run: |
@@ -55,7 +81,7 @@ jobs:
           Import-Module ./dbatools.psd1 -Force
           Get-DbatoolsConfigValue -FullName sql.connection.trustcert | Write-Warning
           Get-DbatoolsConfigValue -FullName sql.connection.encrypt | Write-Warning
-          $null = Invoke-Pester ./tests/gh-actions.ps1 -Output Detailed -PassThru
+          $null = Invoke-Pester .github/scripts/gh-actions.ps1 -Output Detailed -PassThru
 
   windows-tests:
     env:
@@ -67,32 +93,68 @@ jobs:
       - name: Checkout dbatools repo
         uses: actions/checkout@v3
 
-      - name: Install and cache PowerShell modules
-        uses: potatoqualitee/psmodulecache@v5.2
+      - name: Read dbatools.library version
+        id: get-version
+        shell: pwsh
+        run: |
+          $versionConfig = Get-Content '.github/dbatools-library-version.json' | ConvertFrom-Json
+          $version = $versionConfig.version
+          $isPreview = $version -like "*preview*"
+          Write-Output "version=$version" >> $env:GITHUB_OUTPUT
+          Write-Output "is_preview=$isPreview" >> $env:GITHUB_OUTPUT
+          Write-Output "Using dbatools.library version: $version"
+          Write-Output "Is preview version: $isPreview"
+
+      - name: Install and cache PowerShell modules (stable versions)
+        if: steps.get-version.outputs.is_preview == 'False'
+        uses: potatoqualitee/psmodulecache@v6.2.1
         with:
           shell: powershell, pwsh
-          modules-to-cache: dbatools.library:2024.4.12
+          modules-to-cache: dbatools.library:${{ steps.get-version.outputs.version }}
 
-      - name: Install SQL Server localdb
-        uses: potatoqualitee/mssqlsuite@v1.3
+      - name: Install dbatools.library (preview versions)
+        if: steps.get-version.outputs.is_preview == 'True'
+        shell: pwsh
+        run: |
+          Write-Output "Preview version detected, bypassing PSModuleCache and using install script"
+          ./.github/scripts/install-dbatools-library.ps1
+
+      - name: Install SQL Server engine and localdb
+        uses: potatoqualitee/mssqlsuite@v1.8
         with:
-          install: localdb
+          install: localdb, sqlengine
 
       - name: Connect to localdb instance powershell
         shell: powershell
         run: |
+          $env:PSModulePath -split ";" | Write-Warning
           Import-Module ./dbatools -Force
+          (Get-Module dbatools.library).Path | Write-Warning
           Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -PassThru | Register-DbatoolsConfig -Scope FileUserShared
           Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -PassThru | Register-DbatoolsConfig -Scope FileUserShared
+          Write-Host "Connecting to SQL Server instance (localdb)\MSSQLLocalDB..."
           Connect-DbaInstance -SqlInstance "(localdb)\MSSQLLocalDB"
 
-      - name: Connect to localdb instance pwsh
+      - name: Connect to SQL Server instance pwsh
         shell: pwsh
         run: |
           Import-Module ./dbatools -Force
           Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -PassThru | Register-DbatoolsConfig -Scope FileUserShared
           Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -PassThru | Register-DbatoolsConfig -Scope FileUserShared
-          Connect-DbaInstance -SqlInstance "(localdb)\MSSQLLocalDB"
+
+          $password = ConvertTo-SecureString "dbatools.I0" -AsPlainText -Force
+          $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sa", $password
+          $PSDefaultParameterValues["*:SqlInstance"] = "localhost"
+          $PSDefaultParameterValues["*:SqlCredential"] = $cred
+          Connect-DbaInstance
+
+      - name: Run PowerShell tests
+        env:
+          TENANTID: ${{secrets.TENANTID}}
+          CLIENTID: ${{secrets.CLIENTID}}
+          CLIENTSECRET: ${{secrets.CLIENTSECRET}}
+        shell: powershell
+        run: $null = Invoke-Pester .github/scripts/gh-winactions.ps1 -Output Detailed -PassThru
 
       - name: Run pwsh tests
         env:
@@ -102,12 +164,4 @@ jobs:
           CLIENT_GUID: ${{secrets.CLIENT_GUID}}
           CLIENT_GUID_SECRET: ${{secrets.CLIENT_GUID_SECRET}}
         shell: pwsh
-        run: $null = Invoke-Pester ./tests/gh-winactions.ps1 -Output Detailed -PassThru
-
-      - name: Run PowerShell tests
-        env:
-          TENANTID: ${{secrets.TENANTID}}
-          CLIENTID: ${{secrets.CLIENTID}}
-          CLIENTSECRET: ${{secrets.CLIENTSECRET}}
-        shell: powershell
-        run: $null = Invoke-Pester ./tests/gh-winactions.ps1 -Output Detailed -PassThru
+        run: $null = Invoke-Pester .github/scripts/gh-winactions.ps1 -Output Detailed -PassThru

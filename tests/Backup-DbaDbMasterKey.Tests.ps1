@@ -17,6 +17,7 @@ Describe "Backup-DbaDbMasterKey" -Tag "UnitTests" {
                 "ExcludeDatabase",
                 "SecurePassword",
                 "Path",
+                "FileBaseName",
                 "InputObject",
                 "EnableException",
                 "WhatIf",
@@ -45,13 +46,6 @@ Describe "Backup-DbaDbMasterKey" -Tag "IntegrationTests" {
             if (-not (Get-DbaDbMasterKey -SqlInstance $instance -Database $database)) {
                 $null = New-DbaDbMasterKey -SqlInstance $instance -Database $database -Password $password -Confirm:$false
             }
-
-            $splatBackup = @{
-                SqlInstance = $instance
-                Database = $database
-                SecurePassword = $password
-                Confirm = $false
-            }
         }
 
         AfterAll {
@@ -59,6 +53,12 @@ Describe "Backup-DbaDbMasterKey" -Tag "IntegrationTests" {
         }
 
         It "Backs up the database master key" {
+            $splatBackup = @{
+                SqlInstance = $instance
+                Database = $database
+                SecurePassword = $password
+                Confirm = $false
+            }
             $results = Backup-DbaDbMasterKey @splatBackup
             $results | Should -Not -BeNullOrEmpty
             $results.Database | Should -Be $database
@@ -67,5 +67,24 @@ Describe "Backup-DbaDbMasterKey" -Tag "IntegrationTests" {
 
             $null = Remove-Item -Path $results.Path -ErrorAction SilentlyContinue -Confirm:$false
         }
+
+        It "Backs up the database master key with a specific filename (see #9484)" {
+            $random = Get-Random
+            $splatBackup = @{
+                SqlInstance = $instance
+                Database = $database
+                SecurePassword = $password
+                FileBaseName = "dbatoolscli_dbmasterkey_$random"
+                Confirm = $false
+            }
+            $results = Backup-DbaDbMasterKey @splatBackup
+            $results | Should -Not -BeNullOrEmpty
+            $results.Database | Should -Be $database
+            $results.Status | Should -Be "Success"
+            $results.DatabaseID | Should -Be (Get-DbaDatabase -SqlInstance $instance -Database $database).ID
+            [IO.Path]::GetFileNameWithoutExtension($results.Path) | Should -Be "dbatoolscli_dbmasterkey_$random"
+            $null = Remove-Item -Path $results.Path -ErrorAction SilentlyContinue -Confirm:$false
+        }
+
     }
 }

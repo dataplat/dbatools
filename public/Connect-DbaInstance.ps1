@@ -289,6 +289,7 @@ function Connect-DbaInstance {
 
     #>
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingConvertToSecureStringWithPlainText", "")]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
         [Alias("Connstring", "ConnectionString")]
@@ -592,6 +593,7 @@ function Connect-DbaInstance {
                 # Currently only if we have a different Database or have to switch to a NonPooledConnection or using a specific StatementTimeout or using ApplicationIntent
                 # We do not test for SqlCredential as this would change the behavior compared to the legacy code path
                 $copyContext = $false
+                $createNewConnection = $false
                 if ($Database) {
                     Write-Message -Level Debug -Message "Database [$Database] provided."
                     if (-not $inputObject.ConnectionContext.CurrentDatabase) {
@@ -602,6 +604,10 @@ function Connect-DbaInstance {
                     if ($inputObject.ConnectionContext.CurrentDatabase -ne $Database) {
                         Write-Message -Level Verbose -Message "Database [$Database] provided. Does not match ConnectionContext.CurrentDatabase [$($inputObject.ConnectionContext.CurrentDatabase)], copying ConnectionContext and setting the CurrentDatabase"
                         $copyContext = $true
+                        if ($inputObject.ConnectionContext.ConnectAsUserName -ne '') {
+                            Write-Message -Level Debug -Message "Using ConnectAsUserName [$($inputObject.ConnectionContext.ConnectAsUserName)], so changing database context is not possible without loosing this information. We will create a new connection targeting database [$Database]"
+                            $createNewConnection = $true
+                        }
                     }
                 }
                 if ($ApplicationIntent -and $inputObject.ConnectionContext.ApplicationIntent -ne $ApplicationIntent) {
@@ -620,7 +626,15 @@ function Connect-DbaInstance {
                     Write-Message -Level Verbose -Message "DedicatedAdminConnection provided. Does not match ConnectionContext.ServerInstance, copying ConnectionContext and setting the ServerInstance"
                     $copyContext = $true
                 }
-                if ($copyContext) {
+                if ($createNewConnection) {
+                    $isNewConnection = $true
+                    $secStringPassword = ConvertTo-SecureString -String $inputObject.ConnectionContext.ConnectAsUserPassword -AsPlainText -Force
+                    $serverCredentialFromSMO = New-Object System.Management.Automation.PSCredential($inputObject.ConnectionContext.ConnectAsUserName, $secStringPassword)
+                    $connectParams = $PSBoundParameters
+                    $connectParams.SqlInstance = $inputObject.Name
+                    $connectParams.SqlCredential = $serverCredentialFromSMO
+                    $server = Connect-DbaInstance @connectParams
+                } elseif ($copyContext) {
                     $isNewConnection = $true
                     $connContext = $inputObject.ConnectionContext.Copy()
                     if ($ApplicationIntent) {
@@ -673,6 +687,22 @@ function Connect-DbaInstance {
                     $sqlConnectionInfo.Password = $csb.Password
                     $null = $csb.Remove('Password')
                 }
+                # look for 'Initial Catalog' and 'Database' in the connection string
+                $specifiedDatabase = $csb['Database']
+                if ($specifiedDatabase -eq '') {
+                    $specifiedDatabase = $csb['Initial Catalog']
+                }
+                if ($Database -and $Database -ne $specifiedDatabase) {
+                    Write-Message -Level Debug -Message "Database specified in connection string '$specifiedDatabase' does not match Database parameter '$Database'. Database parameter will be used."
+                    # clear both, in order to not be overridden later by setting all AddtionalParameters
+                    if ($csb.ShouldSerialize('Database')) {
+                        $csb.Remove('Database')
+                    }
+                    if ($csb.ShouldSerialize('Initial Catalog')) {
+                        $csb.Remove('Initial Catalog')
+                    }
+                    $sqlConnectionInfo.DatabaseName = $Database
+                }
 
                 # Add all remaining parts of the connection string as additional parameters.
                 $sqlConnectionInfo.AdditionalParameters = $csb.ConnectionString
@@ -693,13 +723,19 @@ function Connect-DbaInstance {
                     $authType = 'local '
                 }
                 if ($SqlCredential) {
-                    # support both ad\username and username@ad
                     $username = ($SqlCredential.UserName).TrimStart("\")
-                    if ($username -like "*\*") {
-                        $domain, $login = $username.Split("\")
-                        $username = "$login@$domain"
+                    # support both ad\username and username@ad
+                    # username@ad works only for domain joined and workgroup
+                    # nobody remembers why, but username@ad is preferred
+                    # so we switch ad\username to username@ad only doing a raw guess
+                    # when USERDOMAIN -ne COMPUTERNAME, we're probably joined to ad
+                    if ($env:USERDOMAIN -ne $env:COMPUTERNAME) {
+                        if ($username -like "*\*") {
+                            $domain, $login = $username.Split("\")
+                            $username = "$login@$domain"
+                        }
                     }
-                    if ($username -like '*@*') {
+                    if ($username -like '*@*' -or $username -like '*\*') {
                         $authType += 'ad'
                     } else {
                         $authType += 'sql'

@@ -17,13 +17,19 @@ function Set-DbaAgentJobOutputFile {
         For MFA support, please use Connect-DbaInstance. be it Windows or SQL Server. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
 
     .PARAMETER Job
-        The job to process - this list is auto-populated from the server.
+        The name of the job to process.
+        
+        This parameter is not officially mandatory, but you will always be asked to provide a job if you have not.
 
     .PARAMETER Step
-        The Agent Job Step to provide Output File Path for. Also available dynamically
+        The name of the Agent Job Step to provide Output File Path for.
+        
+        Within a job, step names are unique so this is a safe way to select steps.
+        
+        Also available dynamically. If you do not specify this parameter and the target job has only one step, then we use that step. If it has more than one, then a GUI will be used to make you pick steps. If that GUI does not work, then we use all steps.
 
     .PARAMETER OutputFile
-        The Full Path to the New Output file
+        The Full Path to the New Output file.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -134,12 +140,13 @@ function Set-DbaAgentJobOutputFile {
                         $jobStep.Refresh()
 
                         [PSCustomObject]@{
-                            ComputerName   = $server.ComputerName
-                            InstanceName   = $server.ServiceName
-                            SqlInstance    = $server.DomainInstanceName
-                            Job            = $currentJob.Name
-                            JobStep        = $jobStep.Name
-                            OutputFileName = $currentOutputFile
+                            ComputerName      = $server.ComputerName
+                            InstanceName      = $server.ServiceName
+                            SqlInstance       = $server.DomainInstanceName
+                            Job               = $currentJob.Name
+                            JobStep           = $jobStep.Name
+                            OutputFileName    = $OutputFile
+                            OldOutputFileName = $currentOutputFile
                         }
                     }
                 } catch {
