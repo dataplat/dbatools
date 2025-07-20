@@ -29,7 +29,10 @@
     Description        = "The community module that enables SQL Server Pros to automate database development and server administration"
 
     # Modules that must be imported into the global environment prior to importing this module
-    RequiredModules    = @{ ModuleName = 'dbatools.library'; ModuleVersion = '2024.4.12' }
+    RequiredModules    = @{
+        ModuleName = 'dbatools.library';
+        ModuleVersion = '2025.7.19'
+    }
 
     # Assemblies that must be loaded prior to importing this module
     RequiredAssemblies = @()
