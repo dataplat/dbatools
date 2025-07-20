@@ -244,14 +244,28 @@ function New-DbaLogShippingPrimaryDatabase {
     }
 
     # ensure unexpected non-success results are caught and thrown as errors:
-    $Query += "
-    IF (@SP_Add_RetCode <> 0)
-    BEGIN
-        DECLARE @msg VARCHAR(1000);
-        SELECT @msg = 'Unexpected result executing sp_add_log_shipping_primary_database ('
-            + CAST (@SP_Add_RetCode AS VARCHAR(5)) + ').';
-        THROW 51000, @msg, 1;
-    END"
+    if ($server.Version.Major -ge 11) {
+        $Query += "
+        IF (@SP_Add_RetCode <> 0)
+        BEGIN
+            DECLARE @msg VARCHAR(1000);
+            SELECT @msg = 'Unexpected result executing sp_add_log_shipping_primary_database ('
+                + CAST (@SP_Add_RetCode AS VARCHAR(5)) + ').';
+            THROW 51000, @msg, 1;
+        END
+        "
+    } else {
+        $Query += "
+        IF (@SP_Add_RetCode <> 0)
+        BEGIN
+            DECLARE @msg VARCHAR(1000);
+            SELECT @msg = 'Unexpected result executing sp_add_log_shipping_primary_database ('
+                + CAST (@SP_Add_RetCode AS VARCHAR(5)) + ').';
+            RAISERROR (@msg, 16, 1) WITH NOWAIT;
+            RETURN;
+        END
+        "
+    }
 
     # Execute the query to add the log shipping primary
     if ($PSCmdlet.ShouldProcess($SqlServer, ("Configuring logshipping for primary database $Database on $SqlInstance"))) {

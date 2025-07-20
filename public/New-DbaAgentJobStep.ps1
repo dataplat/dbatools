@@ -42,15 +42,15 @@ function New-DbaAgentJobStep {
     .PARAMETER OnSuccessAction
         The action to perform if the step succeeds.
         Allowed values  "QuitWithSuccess" (default), "QuitWithFailure", "GoToNextStep", "GoToStep".
-        The text value van either be lowercase, uppercase or something in between as long as the text is correct.
+        The text value can either be lowercase, uppercase or something in between as long as the text is correct.
 
     .PARAMETER OnSuccessStepId
         The ID of the step in this job to execute if the step succeeds and OnSuccessAction is "GoToStep".
 
     .PARAMETER OnFailAction
         The action to perform if the step fails.
-        Allowed values  "QuitWithSuccess" (default), "QuitWithFailure", "GoToNextStep", "GoToStep".
-        The text value van either be lowercase, uppercase or something in between as long as the text is correct.
+        Allowed values  "QuitWithFailure" (default), "QuitWithSuccess", "GoToNextStep", "GoToStep".
+        The text value can either be lowercase, uppercase or something in between as long as the text is correct.
 
     .PARAMETER OnFailStepId
         The ID of the step in this job to execute if the step fails and OnFailAction is "GoToStep".

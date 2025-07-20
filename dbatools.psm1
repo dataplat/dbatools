@@ -52,7 +52,8 @@ if (-not $script:libraryroot) {
 }
 
 try {
-    $dll = [System.IO.Path]::Combine($script:libraryroot, "lib", "dbatools.dll")
+    # if core add core to the path, otherwise add desktop
+    $dll = [System.IO.Path]::Combine($script:libraryroot, 'lib',  'dbatools.dll')
     Import-Module $dll
 } catch {
     throw "Couldn't import dbatools library | $PSItem"
@@ -74,6 +75,12 @@ If ($PSVersionTable.PSEdition -in "Desktop", $null) {
 }
 Write-ImportTime -Text "Checking for .NET"
 
+# Core needs to be at least 7.4.5
+if ($PSVersionTable.PSEdition -eq 'Core' -and $PSVersionTable.PSVersion.Major -lt 7 -and $PSVersionTable.PSVersion.Minor -lt 4 -and $PSVersionTable.PSVersion.Build -lt 5) {
+    throw "dbatools requires at least PowerShell 7.4.5 when running on Core. Please update your PowerShell."
+}
+
+
 if (($PSVersionTable.PSVersion.Major -lt 6) -or ($PSVersionTable.Platform -and $PSVersionTable.Platform -eq 'Win32NT')) {
     $script:isWindows = $true
 } else {
@@ -90,8 +97,12 @@ if (($PSVersionTable.PSVersion.Major -lt 6) -or ($PSVersionTable.Platform -and $
 
 Write-ImportTime -Text "Setting some OS variables"
 
-Add-Type -AssemblyName System.Security
-Write-ImportTime -Text "Loading System.Security"
+# Failing on newer module library
+# if core then run this
+if ($PSVersionTable.PSEdition -eq 'Core') {
+    Add-Type -AssemblyName System.Security
+}
+#Write-ImportTime -Text "Loading System.Security"
 
 # SQLSERVER:\ path not supported
 if ($ExecutionContext.SessionState.Path.CurrentLocation.Drive.Name -eq 'SqlServer') {
@@ -297,8 +308,8 @@ $forever = @{
     'Get-DbaBuildReference'   = 'Get-DbaBuild'
     'Copy-DbaSysDbUserObject' = 'Copy-DbaSystemDbUserObject'
 }
-foreach ($_ in $forever.GetEnumerator()) {
-    Set-Alias -Name $_.Key -Value $_.Value
+foreach ($command in $forever.GetEnumerator()) {
+    Set-Alias -Name $command.Key -Value $command.Value
 }
 
 # Replication Aliases
@@ -309,8 +320,8 @@ $replAliases = @{
     'Test-DbaRepLatency'         = 'Test-DbaReplLatency'
     'Get-DbaRepPublication'      = 'Get-DbaReplPublication'
 }
-foreach ($_ in $replAliases.GetEnumerator()) {
-    Set-Alias -Name $_.Key -Value $_.Value
+foreach ($command in $replAliases.GetEnumerator()) {
+    Set-Alias -Name $command.Key -Value $command.Value
 }
 #endregion Aliases
 

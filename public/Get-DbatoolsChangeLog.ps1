@@ -4,10 +4,10 @@ function Get-DbatoolsChangeLog {
         Opens the link to our online change log
 
     .DESCRIPTION
-        Opens the link to our online change log. To see the local changelog instead, use the Local parameter.
+        Opens the link to our online change log.
 
     .PARAMETER Local
-        Return the local change log to the console
+        Once upon a time, there was a local changelog. This is not available anymore so a proper warning will be raised
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -30,10 +30,6 @@ function Get-DbatoolsChangeLog {
 
         Opens a browser to our online changelog
 
-    .EXAMPLE
-        Get-DbatoolsChangeLog -Local
-
-        Returns the content from changelog.md
     #>
     [CmdletBinding()]
     param (
@@ -43,15 +39,9 @@ function Get-DbatoolsChangeLog {
 
     try {
         if (-not $Local) {
-            Start-Process "https://github.com/dataplat/dbatools/blob/development/changelog.md"
+            Start-Process "https://github.com/dataplat/dbatools/releases"
         } else {
-            $releasenotes = Get-Content $script:PSModuleRoot\changelog.md -Raw
-
-            if ($Local) {
-                ($releasenotes -Split "##Local")[0]
-            } else {
-                $releasenotes
-            }
+            Write-Message -Level "Warning" -Message "Sorry, changelog is only available online"
         }
     } catch {
         Stop-Function -Message "Failure" -ErrorRecord $_
