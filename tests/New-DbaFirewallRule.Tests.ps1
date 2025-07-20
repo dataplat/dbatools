@@ -29,8 +29,9 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
 
     $instanceName = ([DbaInstanceParameter]$TestConfig.instance2).InstanceName
 
-    It "creates two firewall rules" {
-        $resultsNew.Count | Should -Be 2
+    # If remote DAC is enabled, also creates rule for DAC.
+    It "creates at least two firewall rules" {
+        $resultsNew.Count | Should -BeGreaterOrEqual 2
     }
 
     It "creates first firewall rule for SQL Server instance" {
@@ -47,8 +48,9 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $resultsNew[1].Status | Should -Be 'The rule was successfully created.'
     }
 
-    It "returns two firewall rules" {
-        $resultsGet.Count | Should -Be 2
+    # If remote DAC is enabled, also creates rule for DAC.
+    It "returns at least two firewall rules" {
+        $resultsGet.Count | Should -BeGreaterOrEqual 2
     }
 
     It "returns one firewall rule for SQL Server instance" {
@@ -68,9 +70,10 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $resultsRemoveBrowser.Status | Should -Be 'The rule was successfully removed.'
     }
 
-    It "removes other firewall rule" {
-        $resultsRemove.Type | Should -Be 'Engine'
-        $resultsRemove.IsRemoved | Should -Be $true
-        $resultsRemove.Status | Should -Be 'The rule was successfully removed.'
+    # If remote DAC is enabled, removed Engine and DAC. Use foreach when moved to pester5.
+    It "removes other firewall rules" {
+        $resultsRemove.Type | Should -Contain 'Engine'
+        $resultsRemove.IsRemoved | Should -Contain $true
+        $resultsRemove.Status | Should -Contain 'The rule was successfully removed.'
     }
 }
