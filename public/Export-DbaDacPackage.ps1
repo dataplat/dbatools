@@ -8,7 +8,7 @@ function Export-DbaDacPackage {
 
         Note - Extract from SQL Server is notoriously flaky - for example if you have three part references to external databases it will not work.
 
-        For help with the extract action parameters and properties, refer to https://msdn.microsoft.com/en-us/library/hh550080(v=vs.103).aspx
+        For help with the extract action parameters and properties, refer to https://learn.microsoft.com/en-us/sql/tools/sqlpackage/sqlpackage-extract
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -246,11 +246,17 @@ function Export-DbaDacPackage {
                             $startprocess.FileName = $sqlpackage
                         } else {
                             if ($IsLinux) {
-                                $startprocess.FileName = "$script:libraryroot/lib/sqlpackage"
+                                $startprocess.FileName = "$(Get-DbatoolsLibraryPath)/lib/dac/linux/sqlpackage"
                             } elseif ($IsMacOS) {
-                                $startprocess.FileName = "$script:libraryroot/lib/mac/sqlpackage"
+                                $startprocess.FileName = "$(Get-DbatoolsLibraryPath)/lib/dac/mac/sqlpackage"
                             } else {
-                                $startprocess.FileName = "$script:libraryroot\lib\sqlpackage.exe"
+                                # if core then get the parent of lib path and then use the desktop location
+                                if ($PsVersionTable.PSEdition -eq 'Core') {
+                                    $startprocess.FileName = "$(Get-DbatoolsLibraryPath)/lib/dac/windows/sqlpackage.exe"
+                                } else {
+                                    # otherwise use the lib path
+                                    $startprocess.FileName = "$(Get-DbatoolsLibraryPath)\lib\dac\SqlPackage.exe"
+                                }
                             }
                         }
                         $startprocess.Arguments = $sqlPackageArgs

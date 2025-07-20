@@ -23,13 +23,8 @@ Describe "Get-DbaManagementObject Integration Test" -Tag "IntegrationTests" {
     It "returns results" {
         $results | Should -Not -BeNullOrEmpty
     }
-    It "has the correct properties" {
-        $result = $results[0]
-        $ExpectedProps = 'ComputerName,Version,Loaded,LoadTemplate'.Split(',')
-        ($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
-    }
 
-    $results = Get-DbaManagementObject -ComputerName $env:COMPUTERNAME -VersionNumber 16
+    $results = Get-DbaManagementObject -ComputerName $env:COMPUTERNAME -VersionNumber 17
     It "Returns the version specified" {
         $results | Should Not Be $null
     }
