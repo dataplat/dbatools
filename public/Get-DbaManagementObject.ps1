@@ -62,35 +62,67 @@ function Get-DbaManagementObject {
             $VersionNumber = [int]$args[0]
             $remote = $args[1]
             <# DO NOT use Write-Message as this is inside of a script block #>
-            Write-Verbose -Message "Checking currently loaded SMO version"
-            $loadedversion = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.Fullname -like "Microsoft.SqlServer.SMO,*" }
-            if ($loadedversion) {
-                $loadedversion = $loadedversion | ForEach-Object {
-                    if ($_.Location -match "__") {
+            Write-Verbose -Message "Checking currently loaded SMO, SqlClient, and related assemblies"
+            $loadedassemblies = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.Fullname -like "Microsoft.SqlServer.SMO,*" -or $_.Fullname -like "*.smo.*" -or $_.Fullname -like "*SqlClient*" -or $_.Fullname -like "*sqlclient*sni*" }
+            $loadedversion = @()
+            $loadedversionPath = $null
+            if ($loadedassemblies) {
+                Write-Verbose -Message "Found $($loadedassemblies.Count) loaded SQL-related assemblies: $($loadedassemblies.FullName -join ', ')"
+                $loadedversion = $loadedassemblies | ForEach-Object {
+                    # Extract version from assembly FullName (e.g., "Microsoft.SqlServer.Smo, Version=17.100.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91")
+                    if ($_.FullName -match "Version=([^,]+)") {
+                        $matches[1]
+                    } elseif ($_.Location -match "__") {
                         ((Split-Path (Split-Path $_.Location) -Leaf) -split "__")[0]
                     } else {
                         ((Get-ChildItem -Path $_.Location).VersionInfo.ProductVersion)
                     }
                 }
+                $loadedversionPath = $loadedassemblies[0].Location
+            } else {
+                Write-Verbose -Message "No SQL-related assemblies currently loaded in AppDomain"
             }
-            $loadedversionPath = $loadedversion.Location
+
+            # Check for SNI modules loaded in the current process
+            $sniModules = @()
+            try {
+                $sniModules = Get-Process -Id $PID | ForEach-Object {
+                    $_.Modules | Where-Object { $_.ModuleName -like '*SNI*' }
+                }
+                if ($sniModules) {
+                    Write-Verbose -Message "Found $($sniModules.Count) SNI modules: $($sniModules.ModuleName -join ', ')"
+                }
+            } catch {
+                Write-Verbose -Message "Error checking for SNI modules: $($_.Exception.Message)"
+            }
+
             if (-not $remote) {
                 <# DO NOT use Write-Message as this is inside of a script block #>
-                $liblocation = ([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.Fullname -like "Microsoft.SqlServer.SMO,*" }).Location
+                $liblocation = ([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.Fullname -like "Microsoft.SqlServer.SMO,*" -or $_.Fullname -like "*.smo.*" -or $_.Fullname -like "*SqlClient*" -or $_.Fullname -like "*sqlclient*sni*" } | Select-Object -First 1).Location
 
                 Write-Verbose -Message "Looking for included smo library at $liblocation"
                 $initialversion = (Get-ChildItem -Path $liblocation).VersionInfo.ProductVersion -split "\+" | Select-Object -First 1
-                $localversion = [version]$iniitalversion
+                $localversion = [version]$initialversion
 
                 foreach ($version in $localversion) {
                     if ($VersionNumber -eq 0) {
                         <# DO NOT use Write-Message as this is inside of a script block #>
                         Write-Verbose -Message "Did not pass a version"
+                        # Check if any loaded version matches this local version (compare major.minor versions)
+                        $isLoaded = $false
+                        foreach ($loadedVer in $loadedversion) {
+                            $loadedVerObj = [version]$loadedVer
+                            if ($loadedVerObj.Major -eq $localversion.Major -and $loadedVerObj.Minor -eq $localversion.Minor) {
+                                $isLoaded = $true
+                                break
+                            }
+                        }
                         [PSCustomObject]@{
-                            ComputerName = $env:COMPUTERNAME
-                            Version      = $localversion
-                            Loaded       = $loadedversion -contains $localversion
-                            LoadTemplate = "Add-Type -Path $loadedversionPath"
+                            ComputerName = [string]$env:COMPUTERNAME
+                            Version      = [string]$localversion
+                            Loaded       = [bool]$isLoaded
+                            Path         = [string]$loadedversionPath
+                            LoadTemplate = [string]("Add-Type -Path " + [string]$loadedversionPath)
                         }
                     } else {
                         <# DO NOT use Write-Message as this is inside of a script block #>
@@ -100,12 +132,50 @@ function Get-DbaManagementObject {
                             $loadedversionPath = $loadedversion.Location
                             <# DO NOT use Write-Message as this is inside of a script block #>
                             Write-Verbose -Message "Found the Version $VersionNumber"
-                            [PSCustomObject]@{
-                                ComputerName = $env:COMPUTERNAME
-                                Version      = $localversion
-                                Loaded       = $loadedversion -contains $localversion
-                                LoadTemplate = "Add-Type -Path $loadedversionPath"
+                            # Check if any loaded version matches this local version (compare major.minor versions)
+                            $isLoaded = $false
+                            foreach ($loadedVer in $loadedversion) {
+                                $loadedVerObj = [version]$loadedVer
+                                if ($loadedVerObj.Major -eq $localversion.Major -and $loadedVerObj.Minor -eq $localversion.Minor) {
+                                    $isLoaded = $true
+                                    break
+                                }
                             }
+                            [PSCustomObject]@{
+                                ComputerName = [string]$env:COMPUTERNAME
+                                Version      = [string]$localversion
+                                Loaded       = [bool]$isLoaded
+                                Path         = [string]$loadedversionPath
+                                LoadTemplate = [string]("Add-Type -Path " + [string]$loadedversionPath)
+                            }
+                        }
+                    }
+                }
+
+                # Output loaded assemblies that don't have corresponding local files
+                foreach ($assembly in $loadedassemblies) {
+                    $assemblyVersion = ""
+                    if ($assembly.FullName -match "Version=([^,]+)") {
+                        $assemblyVersion = $matches[1]
+                    }
+
+                    # Check if this assembly version is already covered by local files
+                    $alreadyCovered = $false
+                    if ($assemblyVersion) {
+                        $assemblyVerObj = [version]$assemblyVersion
+                        if ($localversion -and $assemblyVerObj.Major -eq $localversion.Major -and $assemblyVerObj.Minor -eq $localversion.Minor) {
+                            $alreadyCovered = $true
+                        }
+                    }
+
+                    # Only output if not already covered by local file detection
+                    if (-not $alreadyCovered -and $assemblyVersion) {
+                        [PSCustomObject]@{
+                            ComputerName = [string]$env:COMPUTERNAME
+                            Version      = [string]$assemblyVersion
+                            Loaded       = $true
+                            Path         = [string]$assembly.Location
+                            LoadTemplate = [string]("Add-Type -Path `"" + [string]$assembly.Location + "`"")
                         }
                     }
                 }
@@ -139,10 +209,11 @@ function Get-DbaManagementObject {
                         Write-Verbose -Message "Did not pass a version, looking for all versions"
 
                         [PSCustomObject]@{
-                            ComputerName = $env:COMPUTERNAME
-                            Version      = $currentversion
-                            Loaded       = $loadedversion -contains $currentversion
-                            LoadTemplate = "Add-Type -AssemblyName `"Microsoft.SqlServer.Smo, Version=$($currentversion), Culture=neutral, PublicKeyToken=89845dcd8080cc91`""
+                            ComputerName = [string]$env:COMPUTERNAME
+                            Version      = [string]$currentversion
+                            Loaded       = [bool]($loadedversion -contains $currentversion)
+                            Path         = $null
+                            LoadTemplate = [string]("Add-Type -AssemblyName `"Microsoft.SqlServer.Smo, Version=" + [string]$currentversion + ", Culture=neutral, PublicKeyToken=89845dcd8080cc91`"")
                         }
                     } else {
                         <# DO NOT use Write-Message as this is inside of a script block #>
@@ -152,13 +223,59 @@ function Get-DbaManagementObject {
                             Write-Verbose -Message "Found the Version $VersionNumber"
 
                             [PSCustomObject]@{
-                                ComputerName = $env:COMPUTERNAME
-                                Version      = $currentversion
-                                Loaded       = $loadedversion -contains $currentversion
-                                LoadTemplate = "Add-Type -AssemblyName `"Microsoft.SqlServer.Smo, Version=$($currentversion), Culture=neutral, PublicKeyToken=89845dcd8080cc91`""
+                                ComputerName = [string]$env:COMPUTERNAME
+                                Version      = [string]$currentversion
+                                Loaded       = [bool]($loadedversion -contains $currentversion)
+                                Path         = $null
+                                LoadTemplate = [string]("Add-Type -AssemblyName `"Microsoft.SqlServer.Smo, Version=" + [string]$currentversion + ", Culture=neutral, PublicKeyToken=89845dcd8080cc91`"")
                             }
                         }
+
                     }
+                }
+            }
+
+            # Output SNI modules found (always run this regardless of other conditions)
+            foreach ($sniModule in $sniModules) {
+                $moduleVersion = "Unknown"
+                try {
+                    if ($sniModule.FileVersionInfo -and $sniModule.FileVersionInfo.FileVersion) {
+                        $moduleVersion = $sniModule.FileVersionInfo.FileVersion
+                    }
+                } catch {
+                    # Ignore version extraction errors
+                }
+
+                # Find the corresponding SqlClient assembly for this SNI module by matching directory structure
+                $sqlClientPath = ""
+                $sniPath = $sniModule.FileName
+
+                # Look for SqlClient in the same directory tree (usually parent of runtimes folder)
+                $sqlClientAssembly = $loadedassemblies | Where-Object {
+                    $_.FullName -like "*SqlClient*" -and
+                    $sniPath -like "*$([System.IO.Path]::GetDirectoryName([System.IO.Path]::GetDirectoryName([System.IO.Path]::GetDirectoryName($_.Location))))*"
+                }
+
+                if (-not $sqlClientAssembly) {
+                    # Fallback: try to find SqlClient in parent directories of SNI path
+                    $sniDir = [System.IO.Path]::GetDirectoryName($sniPath)
+                    while ($sniDir -and -not $sqlClientAssembly) {
+                        $sniDir = [System.IO.Path]::GetDirectoryName($sniDir)
+                        $potentialSqlClientPath = Join-Path $sniDir "Microsoft.Data.SqlClient.dll"
+                        $sqlClientAssembly = $loadedassemblies | Where-Object { $_.Location -eq $potentialSqlClientPath }
+                    }
+                }
+
+                if ($sqlClientAssembly) {
+                    $sqlClientPath = $sqlClientAssembly.Location
+                }
+
+                [PSCustomObject]@{
+                    ComputerName = [string]$env:COMPUTERNAME
+                    Version      = [string]$moduleVersion
+                    Loaded       = $true
+                    Path         = [string]$sniModule.FileName
+                    LoadTemplate = if ($sqlClientPath) { [string]("Add-Type -Path `"" + [string]$sqlClientPath + "`" -ReferencedAssemblies `"" + [string]$sniModule.FileName + "`"") } else { "" }
                 }
             }
         }
