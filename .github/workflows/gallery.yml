@@ -21,10 +21,30 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Install and cache PowerShell modules
+      - name: Read dbatools.library version
+        id: get-version
+        shell: pwsh
+        run: |
+          $versionConfig = Get-Content '.github/dbatools-library-version.json' | ConvertFrom-Json
+          $version = $versionConfig.version
+          $isPreview = $version -like "*preview*"
+          Write-Output "version=$version" >> $env:GITHUB_OUTPUT
+          Write-Output "is_preview=$isPreview" >> $env:GITHUB_OUTPUT
+          Write-Output "Using dbatools.library version: $version"
+          Write-Output "Is preview version: $isPreview"
+
+      - name: Install and cache PowerShell modules (stable versions)
+        if: steps.get-version.outputs.is_preview == 'False'
         uses: potatoqualitee/psmodulecache@v6.2.1
         with:
-          modules-to-cache: dbatools.library:2024.4.12
+          modules-to-cache: dbatools.library:${{ steps.get-version.outputs.version }}
+
+      - name: Install dbatools.library (preview versions)
+        if: steps.get-version.outputs.is_preview == 'True'
+        shell: pwsh
+        run: |
+          Write-Output "Preview version detected, bypassing PSModuleCache and using install script"
+          ./.github/scripts/install-dbatools-library.ps1
 
       - name: Download dbatools from Gallery
         run: |
@@ -60,4 +80,4 @@ jobs:
           CLIENT_GUID_SECRET: ${{secrets.CLIENT_GUID_SECRET}}
         run: |
           Import-Module dbatools -Force
-          $null = Invoke-Pester ./tests/gh-actions.ps1 -Output Detailed -PassThru
+          $null = Invoke-Pester .github/scripts/gh-actions.ps1 -Output Detailed -PassThru

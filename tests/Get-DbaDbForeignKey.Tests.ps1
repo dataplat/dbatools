@@ -53,11 +53,11 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "Parameters are returned correctly" {
         $results = Get-DbaDbForeignKey -SqlInstance $TestConfig.instance2 -ExcludeDatabase master
         It "Has the correct default properties" {
-            $expectedStdProps = 'ComputerName,CreateDate,Database,DateLastModified,ID,InstanceName,IsChecked,IsEnabled,Name,NotForReplication,ReferencedKey,ReferencedTable,ReferencedTableSchema,SqlInstance,Table'.split(',')
+            $expectedStdProps = 'ComputerName,CreateDate,Database,DateLastModified,ID,InstanceName,IsChecked,IsEnabled,Name,NotForReplication,ReferencedKey,ReferencedTable,ReferencedTableSchema,SqlInstance,Schema,Table'.split(',')
             ($results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should Be ($ExpectedStdProps | Sort-Object)
         }
         It "Has the correct properties" {
-            $ExpectedProps = "Columns,ComputerName,CreateDate,Database,DatabaseEngineEdition,DatabaseEngineType,DateLastModified,DeleteAction,ExecutionManager,ExtendedProperties,ID,InstanceName,IsChecked,IsDesignMode,IsEnabled,IsFileTableDefined,IsMemoryOptimized,IsSystemNamed,Name,NotForReplication,Parent,ParentCollection,Properties,ReferencedKey,ReferencedTable,ReferencedTableSchema,ScriptReferencedTable,ScriptReferencedTableSchema,ServerVersion,SqlInstance,State,Table,UpdateAction,Urn,UserData".split(',')
+            $ExpectedProps = "Columns,ComputerName,CreateDate,Database,DatabaseEngineEdition,DatabaseEngineType,DateLastModified,DeleteAction,ExecutionManager,ExtendedProperties,ID,InstanceName,IsChecked,IsDesignMode,IsEnabled,IsFileTableDefined,IsMemoryOptimized,IsSystemNamed,Name,NotForReplication,Parent,ParentCollection,Properties,ReferencedKey,ReferencedTable,ReferencedTableSchema,ScriptReferencedTable,ScriptReferencedTableSchema,ServerVersion,SqlInstance,State,Schema,Table,UpdateAction,Urn,UserData".split(',')
             ($results[0].PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
         }
     }
