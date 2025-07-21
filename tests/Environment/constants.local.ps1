@@ -23,10 +23,12 @@ $securePassword = ConvertTo-SecureString "P#ssw0rd" -AsPlainText -Force
 $config['SqlCred'] = New-Object System.Management.Automation.PSCredential ("sa", $securePassword)
 
 # Default parameter values for the tests
-# Try to use windows integrated auth if possible
-#$config['PSDefaultParameterValues'] = @{
-#    "*:SqlCredential" = $config['SqlCred']
-#}
+$config['PSDefaultParameterValues'] = @{
+    "*:SqlCredential"            = $config['SqlCred']
+    "*:SourceSqlCredential"      = $config['SqlCred']
+    "*:DestinationSqlCredential" = $config['SqlCred']
+    "*:Confirm"                  = $false
+}
 
 # Additional configurations
 $config['dbatoolsci_computer'] = $config['host1']    # Replace if your CI computer is different
