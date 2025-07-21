@@ -37,7 +37,7 @@ Describe "Add-DbaExtendedProperty" -Tag "IntegrationTests" {
     BeforeAll {
         $random = Get-Random
         $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $null = Get-DbaProcess -SqlInstance $server2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false
+        $null = Get-DbaProcess -SqlInstance $server2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
         $newDbName = "dbatoolsci_newdb_$random"
         $db = New-DbaDatabase -SqlInstance $server2 -Name $newDbName
     }

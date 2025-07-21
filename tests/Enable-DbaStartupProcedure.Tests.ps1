@@ -75,21 +75,27 @@ Describe "Enable-DbaStartupProcedure" -Tag "IntegrationTests" {
 
     Context "When enabling a non-existent procedure" {
         BeforeAll {
-            $result = Enable-DbaStartupProcedure -SqlInstance $TestConfig.Instance2 -StartupProcedure "Unknown.NotHere" -Confirm:$false
+            $result = Enable-DbaStartupProcedure -SqlInstance $TestConfig.Instance2 -StartupProcedure "Unknown.NotHere" -Confirm:$false -WarningVariable warn -WarningAction SilentlyContinue
         }
 
         It "Should return null" {
             $result | Should -BeNull
+        }
+        It "Should warn that procedure does not exist" {
+            $warn | Should -Match "Requested procedure Unknown.NotHere does not exist"
         }
     }
 
     Context "When using an invalid procedure name format" {
         BeforeAll {
-            $result = Enable-DbaStartupProcedure -SqlInstance $TestConfig.Instance2 -StartupProcedure "Four.Part.Schema.Name" -Confirm:$false
+            $result = Enable-DbaStartupProcedure -SqlInstance $TestConfig.Instance2 -StartupProcedure "Four.Part.Schema.Name" -Confirm:$false -WarningVariable warn -WarningAction SilentlyContinue
         }
 
         It "Should return null" {
             $result | Should -BeNull
+        }
+        It "Should warn that procedure name could not be parsed" {
+            $warn | Should -Match "Requested procedure Four.Part.Schema.Name could not be parsed"
         }
     }
 }

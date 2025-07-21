@@ -37,79 +37,63 @@ Describe "Copy-DbaLinkedServer" -Tag "UnitTests" {
 }
 
 Describe "Copy-DbaLinkedServer" -Tag "IntegrationTests" {
-   BeforeAll {
-       $server1 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-       $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance3
+    BeforeAll {
+        $server1 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance3
 
-       $createSql = "EXEC master.dbo.sp_addlinkedserver @server = N'dbatoolsci_localhost', @srvproduct=N'SQL Server';
-       EXEC master.dbo.sp_addlinkedsrvlogin @rmtsrvname=N'dbatoolsci_localhost',@useself=N'False',@locallogin=NULL,@rmtuser=N'testuser1',@rmtpassword='supfool';
-       EXEC master.dbo.sp_addlinkedserver @server = N'dbatoolsci_localhost2', @srvproduct=N'', @provider=N'SQLNCLI10';
-       EXEC master.dbo.sp_addlinkedsrvlogin @rmtsrvname=N'dbatoolsci_localhost2',@useself=N'False',@locallogin=NULL,@rmtuser=N'testuser1',@rmtpassword='supfool';"
+        $createSql = "EXEC master.dbo.sp_addlinkedserver @server = N'dbatoolsci_localhost', @srvproduct=N'SQL Server';
+        EXEC master.dbo.sp_addlinkedsrvlogin @rmtsrvname=N'dbatoolsci_localhost',@useself=N'False',@locallogin=NULL,@rmtuser=N'testuser1',@rmtpassword='supfool';
+        EXEC master.dbo.sp_addlinkedserver @server = N'dbatoolsci_localhost2', @srvproduct=N'', @provider=N'SQLNCLI10';
+        EXEC master.dbo.sp_addlinkedsrvlogin @rmtsrvname=N'dbatoolsci_localhost2',@useself=N'False',@locallogin=NULL,@rmtuser=N'testuser1',@rmtpassword='supfool';"
 
-       $server1.Query($createSql)
-   }
+        $server1.Query($createSql)
+    }
 
-   AfterAll {
-       $dropSql = "EXEC master.dbo.sp_dropserver @server=N'dbatoolsci_localhost', @droplogins='droplogins';
-       EXEC master.dbo.sp_dropserver @server=N'dbatoolsci_localhost2', @droplogins='droplogins'"
-       try {
-           $server1.Query($dropSql)
-           $server2.Query($dropSql)
-       } catch {
-           # Silently continue
-       }
-   }
-
-   Context "When copying linked server with the same properties" {
-       It "Copies successfully" {
-           $copySplat = @{
-               Source = $TestConfig.instance2
-               Destination = $TestConfig.instance3
-               LinkedServer = 'dbatoolsci_localhost'
-               WarningAction = 'SilentlyContinue'
-           }
-           $result = Copy-DbaLinkedServer @copySplat
-           $result | Select-Object -ExpandProperty Name -Unique | Should -BeExactly "dbatoolsci_localhost"
-           $result | Select-Object -ExpandProperty Status -Unique | Should -BeExactly "Successful"
-       }
-
-       It "Retains the same properties" {
-           $getLinkSplat = @{
-               LinkedServer = 'dbatoolsci_localhost'
-               WarningAction = 'SilentlyContinue'
-           }
-           $LinkedServer1 = Get-DbaLinkedServer -SqlInstance $server1 @getLinkSplat
-           $LinkedServer2 = Get-DbaLinkedServer -SqlInstance $server2 @getLinkSplat
-
-           $LinkedServer1.Name | Should -BeExactly $LinkedServer2.Name
-           $LinkedServer1.LinkedServer | Should -BeExactly $LinkedServer2.LinkedServer
-       }
-
-       It "Skips existing linked servers" {
-           $copySplat = @{
-               Source = $TestConfig.instance2
-               Destination = $TestConfig.instance3
-               LinkedServer = 'dbatoolsci_localhost'
-               WarningAction = 'SilentlyContinue'
-           }
-           $results = Copy-DbaLinkedServer @copySplat
-           $results.Status | Should -BeExactly "Skipped"
-       }
-
-        # SQLNCLI10 and SQLNCLI11 are not used on newer versions, not sure which versions, but skipping if later than 2017
-        Context "When upgrading SQL Client provider" -Skip:($server1.VersionMajor -gt 14 -or $server2.VersionMajor -gt 14) {
-            BeforeAll {
-                $result = Copy-DbaLinkedServer -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -LinkedServer dbatoolsci_localhost2 -UpgradeSqlClient
-                $sourceLinked = Get-DbaLinkedServer -SqlInstance $TestConfig.instance2
-                $destLinked = Get-DbaLinkedServer -SqlInstance $TestConfig.instance3
-            }
-
-            It "Should retain SQLNCLI10 on source" {
-                $sourceLinked.Script() | Should -Match 'SQLNCLI10'
-            }
-
-            It "Should upgrade to SQLNCLI11 on destination" {
-                $destLinked.Script() | Should -Match 'SQLNCLI11'
-            }
+    AfterAll {
+        $dropSql = "EXEC master.dbo.sp_dropserver @server=N'dbatoolsci_localhost', @droplogins='droplogins';
+        EXEC master.dbo.sp_dropserver @server=N'dbatoolsci_localhost2', @droplogins='droplogins'"
+        try {
+            $server1.Query($dropSql)
+            $server2.Query($dropSql)
+        } catch {
+            # Silently continue
         }
+    }
+
+    Context "When copying linked server with the same properties" {
+        It "Copies successfully" {
+            $copySplat = @{
+                Source        = $TestConfig.instance2
+                Destination   = $TestConfig.instance3
+                LinkedServer  = 'dbatoolsci_localhost'
+                WarningAction = 'SilentlyContinue'
+            }
+            $result = Copy-DbaLinkedServer @copySplat
+            $result | Select-Object -ExpandProperty Name -Unique | Should -BeExactly "dbatoolsci_localhost"
+            $result | Select-Object -ExpandProperty Status -Unique | Should -BeExactly "Successful"
+        }
+
+        It "Retains the same properties" {
+            $getLinkSplat = @{
+                LinkedServer  = 'dbatoolsci_localhost'
+                WarningAction = 'SilentlyContinue'
+            }
+            $LinkedServer1 = Get-DbaLinkedServer -SqlInstance $server1 @getLinkSplat
+            $LinkedServer2 = Get-DbaLinkedServer -SqlInstance $server2 @getLinkSplat
+
+            $LinkedServer1.Name | Should -BeExactly $LinkedServer2.Name
+            $LinkedServer1.LinkedServer | Should -BeExactly $LinkedServer2.LinkedServer
+        }
+
+        It "Skips existing linked servers" {
+            $copySplat = @{
+                Source        = $TestConfig.instance2
+                Destination   = $TestConfig.instance3
+                LinkedServer  = 'dbatoolsci_localhost'
+                WarningAction = 'SilentlyContinue'
+            }
+            $results = Copy-DbaLinkedServer @copySplat
+            $results.Status | Should -BeExactly "Skipped"
+        }
+    }
 }

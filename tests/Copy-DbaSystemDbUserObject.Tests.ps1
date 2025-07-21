@@ -48,7 +48,7 @@ BEGIN
           -DATEPART(wk,CAST(DATEPART(yy,@DATE) as CHAR(4))+'0104');
 --Special cases: Jan 1-3 may belong to the previous year
      IF (@ISOweek=0)
-          SET @ISOweek=dbo.ISOweek(CAST(DATEPART(yy,@DATE)-1
+          SET @ISOweek=dbo.dbatoolscs_ISOweek(CAST(DATEPART(yy,@DATE)-1
                AS CHAR(4))+'12'+ CAST(24+DATEPART(DAY,@DATE) AS CHAR(2)))+1;
 --Special case: Dec 29-31 may belong to the next year
      IF ((DATEPART(mm,@DATE)=12) AND
@@ -58,7 +58,7 @@ BEGIN
 END;
 GO
 SET DATEFIRST 1;
-SELECT dbo.ISOweek(CONVERT(DATETIME,'12/26/2004',101)) AS 'ISO Week';
+SELECT dbo.dbatoolscs_ISOweek(CONVERT(DATETIME,'12/26/2004',101)) AS 'ISO Week';
 "@
         $TableFunction = @"
 CREATE FUNCTION dbo.dbatoolsci_TableFunction (@pid int)
@@ -74,7 +74,7 @@ GO
         $Rule = @"
 CREATE RULE dbo.dbatoolsci_range_rule
 AS
-@range>= $1000 AND @range <$20000;
+@range>= 1000 AND @range <20000;
 "@
         $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $Function
         $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $TableFunction

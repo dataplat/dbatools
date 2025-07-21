@@ -149,8 +149,9 @@ Describe "Copy-DbaDbTableData" -Tag "IntegrationTests" {
 
     Context "When handling edge cases" {
         It "Should return nothing if Source and Destination are same" {
-            $result = Copy-DbaDbTableData -SqlInstance $TestConfig.instance1 -Database tempdb -Table dbatoolsci_example -Truncate
+            $result = Copy-DbaDbTableData -SqlInstance $TestConfig.instance1 -Database tempdb -Table dbatoolsci_example -Truncate -WarningVariable warn -WarningAction SilentlyContinue
             $result | Should -Be $null
+            $warn | Should -Match "Cannot copy .* into itself"
         }
 
         It "Should warn if the destinaton table doesn't exist" {
