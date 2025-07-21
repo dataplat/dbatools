@@ -39,7 +39,7 @@ $instanceParams = @{
     }
     AuthenticationMode = 'Mixed'
     SaCredential       = $TestConfig.SqlCred
-    AdminAccount       = "$(hostname)\Administrators"
+    AdminAccount       = "BUILTIN\Administrators"
     EnableException    = $false
 }
 
