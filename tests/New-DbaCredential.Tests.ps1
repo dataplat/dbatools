@@ -16,7 +16,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $logins = "dbatoolsci_thor", "dbatoolsci_thorsmomma"
+        $logins = "thor", "thorsmomma"
         $plaintext = "BigOlPassword!"
         $password = ConvertTo-SecureString $plaintext -AsPlainText -Force
 
@@ -27,29 +27,28 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
     AfterAll {
         try {
-            (Get-DbaCredential -SqlInstance $TestConfig.instance2 -Identity dbatoolsci_thor, dbatoolsci_thorsmomma -ErrorAction Stop -WarningAction SilentlyContinue).Drop()
+            (Get-DbaCredential -SqlInstance $TestConfig.instance2 -Identity thor, thorsmomma -ErrorAction Stop -WarningAction SilentlyContinue).Drop()
             (Get-DbaCredential -SqlInstance $TestConfig.instance2 -Name "https://mystorageaccount.blob.core.windows.net/mycontainer" -ErrorAction Stop -WarningAction SilentlyContinue).Drop()
         } catch { }
 
         foreach ($login in $logins) {
-            $null = Invoke-Command2 -ScriptBlock { net user $args /delete *>&1 } -ArgumentList $login -ComputerName $TestConfig.instance2
             $null = Invoke-Command2 -ScriptBlock { net user $args /delete *>&1 } -ArgumentList $login -ComputerName $TestConfig.instance2
         }
     }
 
     Context "Create a new credential" {
         It "Should create new credentials with the proper properties" {
-            $results = New-DbaCredential -SqlInstance $TestConfig.instance2 -Name dbatoolsci_thorcred -Identity dbatoolsci_thor -Password $password
-            $results.Name | Should Be "dbatoolsci_thorcred"
-            $results.Identity | Should Be "dbatoolsci_thor"
+            $results = New-DbaCredential -SqlInstance $TestConfig.instance2 -Name thorcred -Identity thor -Password $password
+            $results.Name | Should Be "thorcred"
+            $results.Identity | Should Be "thor"
 
-            $results = New-DbaCredential -SqlInstance $TestConfig.instance2 -Identity dbatoolsci_thorsmomma -Password $password
+            $results = New-DbaCredential -SqlInstance $TestConfig.instance2 -Identity thorsmomma -Password $password
             $results | Should Not Be $null
         }
         It "Gets the newly created credential" {
-            $results = Get-DbaCredential -SqlInstance $TestConfig.instance2 -Identity dbatoolsci_thorsmomma
-            $results.Name | Should Be "dbatoolsci_thorsmomma"
-            $results.Identity | Should Be "dbatoolsci_thorsmomma"
+            $results = Get-DbaCredential -SqlInstance $TestConfig.instance2 -Identity thorsmomma
+            $results.Name | Should Be "thorsmomma"
+            $results.Identity | Should Be "thorsmomma"
         }
     }
 
