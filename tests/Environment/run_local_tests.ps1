@@ -10,10 +10,19 @@ $TestConfig = Get-TestConfig
 $tests = Get-ChildItem -Path "$repoBase\tests\*-Dba*.Tests.ps1"
 
 $skipTests = @(
-    'Add-DbaAgReplica.Tests.ps1'              # Needs an seconds Hadr-instance
-    'Invoke-DbaDbMirroring.Tests.ps1'         # "the partner server name must be distinct"
-    'Watch-DbaDbLogin.Tests.ps1'              # Command does not work
-    'Get-DbaWindowsLog.Tests.ps1'  # stale?
+    'Add-DbaAgReplica.Tests.ps1'       # Needs an seconds Hadr-instance
+    'Invoke-DbaDbMirroring.Tests.ps1'  # "the partner server name must be distinct"
+    'Watch-DbaDbLogin.Tests.ps1'       # Command does not work
+    'Get-DbaWindowsLog.Tests.ps1'      # Sometimes failes (gets no data), sometimes takes forever
+    'Get-DbaPageFileSetting'           # Classes Win32_PageFile and Win32_PageFileSetting do not return any information
+    'New-DbaSsisCatalog.Tests.ps1'     # needs an SSIS server
+    'Get-DbaClientProtocol.Tests.ps1'  # No ComputerManagement Namespace on CLIENT.dom.local
+    'Watch-DbaXESession.Tests.ps1'     # [Watch-DbaXESession] Failure | The module 'SqlServer.XEvent' could not be loaded. For more information, run 'Import-Module SqlServer.XEvent'.
+    'Read-DbaAuditFile.Tests.ps1'
+    'Read-DbaXEFile.Tests.ps1'
+    'New-DbaLogin.Tests.ps1'      # fixed in other pr
+    'Copy-DbaDatabase.Tests.ps1'  # fixed in other pr
+    # 'Remove-DbaDatabaseSafely.Tests.ps1'  # works most of the time
 )
 $tests = $tests | Where-Object Name -notin $skipTests
 
@@ -26,6 +35,17 @@ if ($PSVersionTable.PSVersion.Major -gt 5) {
     )
 }
 $tests = $tests | Where-Object Name -notin $skipTests
+
+
+$firstTests = @(
+    'Find-DbaStoredProcedure.Tests.ps1'
+    'Get-DbaDbUserDefinedTableType.Tests.ps1'
+    'Copy-DbaDbAssembly.Tests.ps1'
+    'New-DbaDbMailAccount.Tests.ps1'
+)
+
+$tests = ($tests | Where-Object Name -in $firstTests) + ($tests | Where-Object Name -notin $firstTests)
+
 
 
 # Pester 5
