@@ -1,6 +1,8 @@
 $ErrorActionPreference = 'Stop'
 
 if ((Get-ScheduledTask).TaskName -notcontains 'RunMeAtStartup') {
+    Add-Content -Path $PSScriptRoot\logs\status.txt -Value "[$([datetime]::Now.ToString('HH:mm:ss'))] Starting uninstall"
+
     $scheduledTaskActionParams = @{
         Execute  = 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe'
         Argument = "-ExecutionPolicy RemoteSigned -NonInteractive -File $($MyInvocation.MyCommand.Path)"
@@ -15,8 +17,6 @@ if ((Get-ScheduledTask).TaskName -notcontains 'RunMeAtStartup') {
     Restart-Computer -Force
     exit
 }
-
-Add-Content -Path $PSScriptRoot\logs\status.txt -Value "[$([datetime]::Now.ToString('HH:mm:ss'))] Starting uninstall"
 
 $repoBase = 'C:\GitHub\dbatools'
 

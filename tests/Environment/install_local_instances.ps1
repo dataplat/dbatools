@@ -1,6 +1,8 @@
 $ErrorActionPreference = 'Stop'
 
 if ((Get-ScheduledTask).TaskName -notcontains 'RunMeAtStartup') {
+    Add-Content -Path $PSScriptRoot\logs\status.txt -Value "[$([datetime]::Now.ToString('HH:mm:ss'))] Starting install"
+
     $scheduledTaskActionParams = @{
         Execute  = 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe'
         Argument = "-ExecutionPolicy RemoteSigned -NonInteractive -File $($MyInvocation.MyCommand.Path)"
@@ -15,8 +17,6 @@ if ((Get-ScheduledTask).TaskName -notcontains 'RunMeAtStartup') {
     Restart-Computer -Force
     exit
 }
-
-Add-Content -Path $PSScriptRoot\logs\status.txt -Value "[$([datetime]::Now.ToString('HH:mm:ss'))] Starting install"
 
 $repoBase = 'C:\GitHub\dbatools'
 
@@ -65,16 +65,9 @@ foreach ($instance in $sqlInstance) {
 $null = Set-DbaSpConfigure -SqlInstance $sqlInstance -SqlCredential $TestConfig.SqlCred -Name IsSqlClrEnabled -Value $true
 $null = Set-DbaSpConfigure -SqlInstance $sqlInstance -SqlCredential $TestConfig.SqlCred -Name ClrStrictSecurity -Value $false
 
-Add-Content -Path $PSScriptRoot\logs\status.txt -Value "[$([datetime]::Now.ToString('HH:mm:ss'))] Step 1"
-
 $null = Set-DbaSpConfigure -SqlInstance $sqlInstance[1, 2] -SqlCredential $TestConfig.SqlCred -Name ExtensibleKeyManagementEnabled -Value $true
 Invoke-DbaQuery -SqlInstance $sqlInstance[1, 2] -SqlCredential $TestConfig.SqlCred -Query "CREATE CRYPTOGRAPHIC PROVIDER dbatoolsci_AKV FROM FILE = '$($TestConfig.appveyorlabrepo)\keytests\ekm\Microsoft.AzureKeyVaultService.EKM.dll'"
-
-Add-Content -Path $PSScriptRoot\logs\status.txt -Value "[$([datetime]::Now.ToString('HH:mm:ss'))] Step 2"
-
 $null = Enable-DbaAgHadr -SqlInstance $sqlInstance[1, 2] -Force
-
-Add-Content -Path $PSScriptRoot\logs\status.txt -Value "[$([datetime]::Now.ToString('HH:mm:ss'))] Step 3"
 
 Invoke-DbaQuery -SqlInstance $sqlInstance[2] -SqlCredential $TestConfig.SqlCred -Query "IF NOT EXISTS (select * from sys.symmetric_keys where name like '%DatabaseMasterKey%') CREATE MASTER KEY ENCRYPTION BY PASSWORD = '<StrongPassword>'"
 Invoke-DbaQuery -SqlInstance $sqlInstance[2] -SqlCredential $TestConfig.SqlCred -Query "IF EXISTS ( SELECT * FROM sys.tcp_endpoints WHERE name = 'End_Mirroring') DROP ENDPOINT endpoint_mirroring"
