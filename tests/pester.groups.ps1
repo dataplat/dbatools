@@ -35,7 +35,6 @@ $TestsRunGroups = @{
         'Dismount-DbaDatabase',
         # tests that fail locally against SQL Server 2022 instances and fail on AppVeyor
         'Set-DbaAgentJobStep',
-        'New-DbaLogin',
         'Watch-DbaDbLogin',
         # tests that fail because the command does not work
         'Copy-DbaDbCertificate',
