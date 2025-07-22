@@ -532,7 +532,7 @@ function New-DbaLogin {
                         }
 
                         #Process the MustChangePassword property
-                        if ($currentPasswordMustChange -ne $newLogin.MustChangePassword) {
+                        if ($null -ne $currentPasswordMustChange -and $currentPasswordMustChange -ne $newLogin.MustChangePassword) {
                             try {
                                 $newLogin.ChangePassword($SecurePassword, $true, $true)
                                 Write-Message -Level Verbose -Message "Login $loginName has been marked as must change password."
