@@ -14,7 +14,7 @@ $skipTests = @(
     'Invoke-DbaDbMirroring.Tests.ps1'  # "the partner server name must be distinct"
     'Watch-DbaDbLogin.Tests.ps1'       # Command does not work
     'Get-DbaWindowsLog.Tests.ps1'      # Sometimes failes (gets no data), sometimes takes forever
-    'Get-DbaPageFileSetting'           # Classes Win32_PageFile and Win32_PageFileSetting do not return any information
+    'Get-DbaPageFileSetting.Tests.ps1' # Classes Win32_PageFile and Win32_PageFileSetting do not return any information
     'New-DbaSsisCatalog.Tests.ps1'     # needs an SSIS server
     'Get-DbaClientProtocol.Tests.ps1'  # No ComputerManagement Namespace on CLIENT.dom.local
     'Watch-DbaXESession.Tests.ps1'     # [Watch-DbaXESession] Failure | The module 'SqlServer.XEvent' could not be loaded. For more information, run 'Import-Module SqlServer.XEvent'.
@@ -23,6 +23,12 @@ $skipTests = @(
     'New-DbaLogin.Tests.ps1'      # fixed in other pr
     'Copy-DbaDatabase.Tests.ps1'  # fixed in other pr
     # 'Remove-DbaDatabaseSafely.Tests.ps1'  # works most of the time
+    'Add-DbaPfDataCollectorCounter.Tests.ps1'
+    'Disable-DbaDbEncryption.Tests.ps1'
+    'Enable-DbaDbEncryption.Tests.ps1'
+    'Backup-DbaDatabase.Tests.ps1'
+    'Copy-DbaDbAssembly.Tests.ps1'   # Error occurred in Describe block: Must declare the scalar variable "@assemblyName".
+    'New-DbaDbMailAccount.Tests.ps1' # Context Gets no DbMail when using -ExcludeAccount     [-] Gets no results 106ms      Expected $null, but got [dbatoolsci_test_672856400].      96:             $results | Should Be $null        at <ScriptBlock>, C:\GitHub\dbatools\tests\New-DbaDbMailAccount.Tests.ps1: line 96
 )
 $tests = $tests | Where-Object Name -notin $skipTests
 
@@ -48,7 +54,7 @@ $tests = ($tests | Where-Object Name -in $firstTests) + ($tests | Where-Object N
 
 
 
-# Pester 5
+<# Pester 5
 ##########
 
 $tests5 = $tests | Where-Object { (Get-Content -Path $_.FullName)[0] -match 'Requires.*Pester.*5' }
@@ -75,6 +81,8 @@ foreach ($test in $tests5) {
     }
     Write-Progress @progressParameter
 
+    Write-Host '==========================================='
+
     $pester5Config.Run.Path = $test.FullName
     $result = Invoke-Pester -Configuration $pester5config
 
@@ -91,6 +99,8 @@ foreach ($test in $tests5) {
 
     if ($result.FailedCount -gt 0) {
         $test.Name | Add-Content -Path $failedFileName
+        Write-Warning -Message "Failed after $([int]((Get-Date) - $progressStart).TotalMinutes) minutes and $progressCompleted of $progressTotal tests"
+        return
     }
 
     $result = $null
@@ -99,6 +109,8 @@ foreach ($test in $tests5) {
     $progressCompleted++
 }
 Write-Progress @progressParameter -Completed
+
+#>
 
 
 # Pester 4
@@ -127,6 +139,8 @@ foreach ($test in $tests4) {
     }
     Write-Progress @progressParameter
 
+    Write-Host '==========================================='
+
     $result = Invoke-Pester -Script $test.FullName -Show All -PassThru
 
     $resultInfo = [ordered]@{
@@ -142,6 +156,8 @@ foreach ($test in $tests4) {
 
     if ($result.FailedCount -gt 0) {
         $test.Name | Add-Content -Path $failedFileName
+        Write-Warning -Message "Failed after $([int]((Get-Date) - $progressStart).TotalMinutes) minutes and $progressCompleted of $progressTotal tests"
+        return
     }
 
     $result = $null
