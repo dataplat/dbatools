@@ -75,9 +75,9 @@ If ($PSVersionTable.PSEdition -in "Desktop", $null) {
 }
 Write-ImportTime -Text "Checking for .NET"
 
-# Core needs to be at least 7.4.11
-if ($PSVersionTable.PSEdition -eq 'Core' -and $PSVersionTable.PSVersion -lt [version]"7.4.11") {
-    throw "dbatools requires at least PowerShell 7.4.11 when running on Core. Please update your PowerShell."
+# Core needs to be at least 7.4.0
+if ($PSVersionTable.PSEdition -eq 'Core' -and $PSVersionTable.PSVersion -lt [version]"7.4.0") {
+    throw "dbatools requires at least PowerShell 7.4.0 when running on Core. Please update your PowerShell."
 }
 
 

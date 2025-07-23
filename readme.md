@@ -18,7 +18,7 @@ _Need an invite to the SQL Community Slack workspace? Check out the [self-invite
 
 ## Installer
 
-dbatools works on Windows, Linux and macOS (M1 and Intel!) 🤩👍 Windows requires PowerShell v3 and above, while those using dbatools on PowerShell Core will need to be running 7.4.11 and above.
+dbatools works on Windows, Linux and macOS (M1 and Intel!) 🤩👍 Windows requires PowerShell v3 and above, while those using dbatools on PowerShell Core will need to be running 7.4.0 and above.
 
 Run the following command to install dbatools from the PowerShell Gallery (to install on a server or for all users, remove the `-Scope` parameter and run in an elevated session):
 
@@ -41,7 +41,7 @@ In addition to the simple things you can do in SSMS (e.g. starting a job, backin
 
 As previously mentioned, dbatools now offers [over 700 commands](https://dbatools.io/commands)! [Here are some of the ones we highlight at conferences](https://gist.github.com/potatoqualitee/e8932b64aeb6ef404e252d656b6318a2).
 
-PowerShell v3 and above required for Windows PowerShell, PowerShell Core 7.4.11+ required for cross-platform. (See below for important information about alternative logins and specifying SQL Server ports).
+PowerShell v3 and above required for Windows PowerShell, PowerShell Core 7.4.0+ required for cross-platform. (See below for important information about alternative logins and specifying SQL Server ports).
 
 ```powershell
 # Set some vars
@@ -248,7 +248,7 @@ Stop-Transcript
 
 dbatools aims to support as many configurations as possible, including
 
-* PowerShell v3 and above (Windows PowerShell) or PowerShell Core 7.4.11+ (cross-platform)
+* PowerShell v3 and above (Windows PowerShell) or PowerShell Core 7.4.0+ (cross-platform)
 * Windows, macOS and Linux
 * SQL Server 2000 - Current
 * Express - Datacenter Edition
