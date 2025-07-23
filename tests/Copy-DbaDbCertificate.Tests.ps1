@@ -22,7 +22,9 @@ Describe "Copy-DbaDbCertificate" -Tag "UnitTests" {
                 'MasterKeyPassword',
                 'EncryptionPassword',
                 'DecryptionPassword',
-                'EnableException'
+                'EnableException',
+                "Confirm",
+                "WhatIf"
             )
         }
 
@@ -41,13 +43,13 @@ Describe "Copy-DbaDbCertificate" -Tag "IntegrationTests" {
     Context "Can create a database certificate" {
         BeforeAll {
             $securePassword = ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force
-            
+
             # Create master key on instance2
             $masterKey = New-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database master -SecurePassword $securePassword -Confirm:$false -ErrorAction SilentlyContinue
 
             # Create test databases
             $testDatabases = New-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Name dbatoolscopycred
-            
+
             # Create master key and certificate on source
             $null = New-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database dbatoolscopycred -SecurePassword $securePassword -Confirm:$false
             $certificateName = "Cert_$(Get-Random)"
@@ -74,13 +76,13 @@ Describe "Copy-DbaDbCertificate" -Tag "IntegrationTests" {
 
         It -Skip "Successfully copies a certificate" {
             $results = Copy-DbaDbCertificate @splatCopyCert | Where-Object SourceDatabase -eq dbatoolscopycred | Select-Object -First 1
-            
+
             $results.Notes | Should -BeNullOrEmpty
             $results.Status | Should -Be "Successful"
-            
+
             $sourceDb = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database dbatoolscopycred
             $destDb = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database dbatoolscopycred
-            
+
             $results.SourceDatabaseID | Should -Be $sourceDb.ID
             $results.DestinationDatabaseID | Should -Be $destDb.ID
 

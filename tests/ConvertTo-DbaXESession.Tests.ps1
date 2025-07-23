@@ -13,9 +13,7 @@ Describe "ConvertTo-DbaXESession" -Tag "UnitTests" {
                 "InputObject",
                 "Name",
                 "OutputScriptOnly",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
+                "EnableException"
             )
         }
 
@@ -113,24 +111,23 @@ select TraceID=@TraceID
 "@
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $traceid = ($server.Query($sql)).TraceID
-        $TestConfig.name = "dbatoolsci-session"
+        $sessionName = "dbatoolsci-session"
     }
 
     AfterAll {
-        $null = Remove-DbaXESession -SqlInstance $TestConfig.instance2 -Session $TestConfig.name
+        $null = Remove-DbaXESession -SqlInstance $TestConfig.instance2 -Session $sessionName
         $null = Remove-DbaTrace -SqlInstance $TestConfig.instance2 -Id $traceid
         Remove-Item C:\windows\temp\temptrace.trc -ErrorAction SilentlyContinue
     }
 
     Context "Test Trace Conversion" {
         BeforeAll {
-            $results = Get-DbaTrace -SqlInstance $TestConfig.instance2 -Id $traceid |
-                       ConvertTo-DbaXESession -Name $TestConfig.name |
-                       Start-DbaXESession
+            $null = Get-DbaTrace -SqlInstance $TestConfig.instance2 -Id $traceid | ConvertTo-DbaXESession -Name $sessionName
+            $results = Start-DbaXESession -SqlInstance $TestConfig.instance2 -Session $sessionName
         }
 
         It "Returns the right results" {
-            $results.Name | Should -Be $TestConfig.name
+            $results.Name | Should -Be $sessionName
             $results.Status | Should -Be "Running"
             $results.Targets.Name | Should -Be "package0.event_file"
         }

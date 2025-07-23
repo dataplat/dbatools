@@ -66,7 +66,7 @@ Describe "Copy-DbaDbMail" -Tags "IntegrationTests" {
             SqlInstance         = $TestConfig.instance2
             Name                = $profilename
             Description         = $profile_description
-            MailAccountName     = $email_address
+            MailAccountName     = $accountName
             MailAccountPriority = $mailaccountpriority
         }
         $null = New-DbaDbMailProfile @splat2

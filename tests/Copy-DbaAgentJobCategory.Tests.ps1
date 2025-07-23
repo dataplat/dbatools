@@ -10,6 +10,7 @@ Describe "Copy-DbaAgentJobCategory" -Tag "IntegrationTests" {
     }
     AfterAll {
         $null = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category 'dbatoolsci test category' -Confirm:$false
+        $null = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance3 -Category 'dbatoolsci test category' -Confirm:$false
     }
 
     Context "Parameter validation" {

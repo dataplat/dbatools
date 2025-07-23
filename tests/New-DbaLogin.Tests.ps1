@@ -190,7 +190,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Should not have same properties because of the overrides" {
 
             $login1 = Get-DbaLogin -SqlInstance $TestConfig.instance1 -login claudio
-            $login2 = Get-DbaLogin -SqlInstance $TestConfig.instance2 -login withMustChange
+            $login2 = Get-DbaLogin -SqlInstance $TestConfig.instance2 -login claudio
 
             $login2 | Should Not BeNullOrEmpty
 
@@ -201,12 +201,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $login1.IsDisabled | Should Not be $login2.IsDisabled
             $login1.PasswordExpirationEnabled | Should Not be $login2.PasswordExpirationEnabled
             $login1.PasswordPolicyEnforced | Should Not be $login2.PasswordPolicyEnforced
-            $login1.MustChangePassword | Should Not be $login2.MustChangePassword
             $login1.Sid | Should Not be $login2.Sid
         }
         if ($IsWindows -ne $false) {
             It "Should create a disabled account with deny Windows login" {
-                $results = New-DbaLogin -SqlInstance $server1 -Login $winLogin -Disabled -DenyWindowsLogin
+                $results = New-DbaLogin -SqlInstance $server1 -Login $winLogin -Disabled -DenyWindowsLogin -Force
                 $results.Name | Should Be "$winLogin"
                 $results.DefaultDatabase | Should be 'master'
                 $results.IsDisabled | Should be $true

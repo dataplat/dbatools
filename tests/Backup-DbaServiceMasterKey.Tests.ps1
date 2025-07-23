@@ -39,13 +39,10 @@ Describe "Backup-DbaServiceMasterKey" -Tag "IntegrationTests" {
             $securePassword = ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force
         }
 
-        AfterAll {
-            $null = Remove-Item -Path $results.Path -ErrorAction SilentlyContinue -Confirm:$false
-        }
-
         It "backs up the SMK" {
             $results = Backup-DbaServiceMasterKey -SqlInstance $TestConfig.instance1 -SecurePassword $securePassword -Confirm:$false
             $results.Status | Should -Be "Success"
+            $null = Remove-Item -Path $results.Path -ErrorAction SilentlyContinue -Confirm:$false
         }
 
         It "backs up the SMK with a specific filename (see #9483)" {
@@ -53,6 +50,7 @@ Describe "Backup-DbaServiceMasterKey" -Tag "IntegrationTests" {
             $results = Backup-DbaServiceMasterKey -SqlInstance $TestConfig.instance1 -SecurePassword $securePassword -FileBaseName "smk($random)" -Confirm:$false
             [IO.Path]::GetFileNameWithoutExtension($results.Path) | Should -Be "smk($random)"
             $results.Status | Should -Be "Success"
+            $null = Remove-Item -Path $results.Path -ErrorAction SilentlyContinue -Confirm:$false
         }
     }
 }
