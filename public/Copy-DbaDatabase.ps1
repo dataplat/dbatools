@@ -1397,9 +1397,17 @@ function Copy-DbaDatabase {
                                     $NewDatabase.Alter()
                                     Write-Message -Level Verbose -Message "Successfully updated BrokerEnabled to $sourceDbBrokerEnabled for $destinationDbName on $destinstance."
                                 } catch {
-                                    Write-Message -Level Warning -Message "Failed to update BrokerEnabled to $sourceDbBrokerEnabled for $destinationDbName on $destinstance."
-
-                                    $propfailures += "Message broker"
+                                    try {
+                                        Write-Message -Level Verbose -Message "Updating BrokerEnabled to $sourceDbBrokerEnabled for $destinationDbName on $destinstance failed so we try to regenerate the broker identifier."
+                                        $quotedDatabaseName = $destserver.Query("SELECT QUOTENAME('$($destinationDbName.Replace("'", "''"))') AS quotename").quotename
+                                        $null = $destserver.Query("ALTER DATABASE $quotedDatabaseName SET NEW_BROKER WITH ROLLBACK IMMEDIATE")
+                                        $NewDatabase.BrokerEnabled = $sourceDbBrokerEnabled
+                                        $null = $NewDatabase.Alter()
+                                        Write-Message -Level Verbose -Message "Successfully updated BrokerEnabled to $sourceDbBrokerEnabled for $destinationDbName on $destinstance."
+                                    } catch {
+                                        Write-Message -Level Warning -Message "Failed to update BrokerEnabled to $sourceDbBrokerEnabled for $destinationDbName on $destinstance."
+                                        $propfailures += "Message broker"
+                                    }
                                 }
                             }
                         }
