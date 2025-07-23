@@ -1402,7 +1402,7 @@ function Copy-DbaDatabase {
                                         $quotedDatabaseName = $destserver.Query("SELECT QUOTENAME('$($destinationDbName.Replace("'", "''"))') AS quotename").quotename
                                         $null = $destserver.Query("ALTER DATABASE $quotedDatabaseName SET NEW_BROKER WITH ROLLBACK IMMEDIATE")
                                         $NewDatabase.BrokerEnabled = $sourceDbBrokerEnabled
-                                        $NewDatabase.Alter()
+                                        $null = $NewDatabase.Alter()
                                         Write-Message -Level Verbose -Message "Successfully updated BrokerEnabled to $sourceDbBrokerEnabled for $destinationDbName on $destinstance."
                                     } catch {
                                         Write-Message -Level Warning -Message "Failed to update BrokerEnabled to $sourceDbBrokerEnabled for $destinationDbName on $destinstance."
