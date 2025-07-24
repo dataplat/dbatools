@@ -59,7 +59,7 @@ function Get-DbaDeprecatedFeature {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $usedDeprecatedFeatures = $server.Query("SELECT TRIM(instance_name) AS DeprecatedFeature, cntr_value AS UsageCount FROM sys.dm_os_performance_counters WHERE object_name LIKE '%SQL%Deprecated Features%' AND cntr_value > 0")
+            $usedDeprecatedFeatures = $server.Query("SELECT LTRIM(RTRIM(instance_name)) AS DeprecatedFeature, cntr_value AS UsageCount FROM sys.dm_os_performance_counters WHERE object_name LIKE '%SQL%Deprecated Features%' AND cntr_value > 0")
             foreach ($feature in $usedDeprecatedFeatures) {
                 [PSCustomObject]@{
                     ComputerName      = $server.ComputerName
