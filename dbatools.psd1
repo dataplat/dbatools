@@ -679,7 +679,6 @@
         'Test-DbaDbOwner',
         'Test-DbaDbQueryStore',
         'Test-DbaDbRecoveryModel',
-        'Test-DbaDeprecatedFeature',
         'Test-DbaDiskAlignment',
         'Test-DbaDiskAllocation',
         'Test-DbaDiskSpeed',
