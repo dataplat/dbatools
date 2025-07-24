@@ -13,12 +13,19 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     }
 }
 
-# This command is special and runs infinitely so don't actually try to run it
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command functions as expected" {
-        It "warns if SQL instance version is not supported" {
-            $results = Watch-DbaXESession -SqlInstance $TestConfig.instance1 -Session system_health -WarningAction SilentlyContinue -WarningVariable versionwarn
-            $versionwarn -join '' -match "SQL Server version 11 required" | Should Be $true
+        BeforeAll {
+            Stop-DbaXESession -SqlInstance $TestConfig.instance1 -Session system_health -EnableException -Confirm:$false
+        }
+        AfterAll {
+            Start-DbaXESession -SqlInstance $TestConfig.instance1 -Session system_health -EnableException -Confirm:$false
+        }
+
+        # This command is special and runs infinitely so don't actually try to run it
+        It "warns if XE session is not running" {
+            $results = Watch-DbaXESession -SqlInstance $TestConfig.instance1 -Session system_health -WarningAction SilentlyContinue -WarningVariable warn
+            $warn | Should -Match 'system_health is not running'
         }
     }
 }

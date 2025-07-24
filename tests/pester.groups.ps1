@@ -39,8 +39,6 @@ $TestsRunGroups = @{
         # tests that fail because the command does not work
         'Copy-DbaDbCertificate',
         'Export-DbaDacPackage',
-        'Read-DbaAuditFile',
-        'Read-DbaXEFile',
         # takes too long
         'Install-DbaSqlWatch',
         'Uninstall-DbaSqlWatch',

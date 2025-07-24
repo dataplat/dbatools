@@ -82,23 +82,23 @@ function Read-DbaAuditFile {
                 }
             }
 
-            $accessible = Test-Path -Path $currentFile
-            $whoami = whoami
+            # $currentFile is only the base filename and must be expanded using a wildcard
+            $fileNames = (Get-ChildItem -Path ($currentFile -replace '\.sqlaudit$', '*.sqlaudit') | Sort-Object CreationTime).FullName
+            $enum = @( )
+            foreach ($fileName in $fileNames) {
+                $accessible = Test-Path -Path $fileName
+                $whoami = whoami
+                if (-not $accessible) {
+                    Stop-Function -Continue -Message "$fileName cannot be accessed from $($env:COMPUTERNAME). Does $whoami have access?"
+                }
 
-            if (-not $accessible) {
-                if ($file.Status -eq "Stopped") { continue }
-                Stop-Function -Continue -Message "$currentFile cannot be accessed from $($env:COMPUTERNAME). Does $whoami have access?"
+                $enum += Read-XEvent -FileName $fileName
             }
 
             if ($Raw) {
-                return (SqlServer.XEvent\Read-SqlXEvent -FileName $currentfile)
+                return $enum
             }
 
-            # use the SqlServer.XEvent\Read-SqlXEvent cmdlet from Microsoft
-            # because the underlying Class uses Tasks
-            # which is hard to handle in PowerShell
-
-            $enum = SqlServer.XEvent\Read-SqlXEvent -FileName $currentfile
             $newcolumns = ($enum.Fields.Name | Select-Object -Unique)
 
             $actions = ($enum.Actions.Name | Select-Object -Unique)
