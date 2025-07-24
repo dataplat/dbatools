@@ -1,10 +1,15 @@
 $ErrorActionPreference = 'Stop'
 
+$stopOnFailure = $false
+
+$start = Get-Date
+
 $repoBase = 'C:\GitHub\dbatools'
 
 Import-Module -Name "$repoBase\dbatools.psm1" -Force
 $null = Set-DbatoolsInsecureConnection
 
+Copy-Item -Path "$repoBase\tests\Environment\constants.local.ps1" -Destination "$repoBase\tests\"
 $TestConfig = Get-TestConfig
 
 $tests = Get-ChildItem -Path "$repoBase\tests\*-Dba*.Tests.ps1"
@@ -17,18 +22,11 @@ $skipTests = @(
     'Get-DbaPageFileSetting.Tests.ps1' # Classes Win32_PageFile and Win32_PageFileSetting do not return any information
     'New-DbaSsisCatalog.Tests.ps1'     # needs an SSIS server
     'Get-DbaClientProtocol.Tests.ps1'  # No ComputerManagement Namespace on CLIENT.dom.local
-    'Watch-DbaXESession.Tests.ps1'     # [Watch-DbaXESession] Failure | The module 'SqlServer.XEvent' could not be loaded. For more information, run 'Import-Module SqlServer.XEvent'.
-    'Read-DbaAuditFile.Tests.ps1'
-    'Read-DbaXEFile.Tests.ps1'
-    'New-DbaLogin.Tests.ps1'      # fixed in other pr
-    'Copy-DbaDatabase.Tests.ps1'  # fixed in other pr
-    # 'Remove-DbaDatabaseSafely.Tests.ps1'  # works most of the time
-    'Add-DbaPfDataCollectorCounter.Tests.ps1'
-    'Disable-DbaDbEncryption.Tests.ps1'
-    'Enable-DbaDbEncryption.Tests.ps1'
-    'Backup-DbaDatabase.Tests.ps1'
-    'Copy-DbaDbAssembly.Tests.ps1'   # Error occurred in Describe block: Must declare the scalar variable "@assemblyName".
-    'New-DbaDbMailAccount.Tests.ps1' # Context Gets no DbMail when using -ExcludeAccount     [-] Gets no results 106ms      Expected $null, but got [dbatoolsci_test_672856400].      96:             $results | Should Be $null        at <ScriptBlock>, C:\GitHub\dbatools\tests\New-DbaDbMailAccount.Tests.ps1: line 96
+    #'Copy-DbaDbAssembly.Tests.ps1'     # Sometimes: Error occurred in Describe block: Must declare the scalar variable "@assemblyName".
+    #'New-DbaDbMailAccount.Tests.ps1'   # Sometimes: Context Gets no DbMail when using -ExcludeAccount     [-] Gets no results 106ms      Expected $null, but got [dbatoolsci_test_672856400].      96:             $results | Should Be $null        at <ScriptBlock>, C:\GitHub\dbatools\tests\New-DbaDbMailAccount.Tests.ps1: line 96
+    'New-DbaLogin.Tests.ps1'           # fixed in other pr
+    'Copy-DbaDatabase.Tests.ps1'       # fixed in other pr
+    'Test-DbaDeprecatedFeature.Tests.ps1'  # The command will be deleted
 )
 $tests = $tests | Where-Object Name -notin $skipTests
 
@@ -43,18 +41,7 @@ if ($PSVersionTable.PSVersion.Major -gt 5) {
 $tests = $tests | Where-Object Name -notin $skipTests
 
 
-$firstTests = @(
-    'Find-DbaStoredProcedure.Tests.ps1'
-    'Get-DbaDbUserDefinedTableType.Tests.ps1'
-    'Copy-DbaDbAssembly.Tests.ps1'
-    'New-DbaDbMailAccount.Tests.ps1'
-)
-
-$tests = ($tests | Where-Object Name -in $firstTests) + ($tests | Where-Object Name -notin $firstTests)
-
-
-
-<# Pester 5
+# Pester 5
 ##########
 
 $tests5 = $tests | Where-Object { (Get-Content -Path $_.FullName)[0] -match 'Requires.*Pester.*5' }
@@ -81,7 +68,7 @@ foreach ($test in $tests5) {
     }
     Write-Progress @progressParameter
 
-    Write-Host '==========================================='
+    Write-Host "`n======================================================================================`n"
 
     $pester5Config.Run.Path = $test.FullName
     $result = Invoke-Pester -Configuration $pester5config
@@ -99,8 +86,10 @@ foreach ($test in $tests5) {
 
     if ($result.FailedCount -gt 0) {
         $test.Name | Add-Content -Path $failedFileName
-        Write-Warning -Message "Failed after $([int]((Get-Date) - $progressStart).TotalMinutes) minutes and $progressCompleted of $progressTotal tests"
-        return
+        if ($stopOnFailure) {
+            Write-Warning -Message "Failed after $([int]((Get-Date) - $progressStart).TotalMinutes) minutes and $progressCompleted of $progressTotal tests"
+            return
+        }
     }
 
     $result = $null
@@ -110,13 +99,11 @@ foreach ($test in $tests5) {
 }
 Write-Progress @progressParameter -Completed
 
-#>
-
 
 # Pester 4
 ##########
 
-Remove-Module -Name Pester
+Remove-Module -Name Pester -ErrorAction SilentlyContinue
 Import-Module -Name Pester -MaximumVersion 4.99
 
 $tests4 = $tests | Where-Object { (Get-Content -Path $_.FullName)[0] -notmatch 'Requires.*Pester.*5' }
@@ -139,7 +126,7 @@ foreach ($test in $tests4) {
     }
     Write-Progress @progressParameter
 
-    Write-Host '==========================================='
+    Write-Host "`n======================================================================================`n"
 
     $result = Invoke-Pester -Script $test.FullName -Show All -PassThru
 
@@ -156,8 +143,10 @@ foreach ($test in $tests4) {
 
     if ($result.FailedCount -gt 0) {
         $test.Name | Add-Content -Path $failedFileName
-        Write-Warning -Message "Failed after $([int]((Get-Date) - $progressStart).TotalMinutes) minutes and $progressCompleted of $progressTotal tests"
-        return
+        if ($stopOnFailure) {
+            Write-Warning -Message "Failed after $([int]((Get-Date) - $progressStart).TotalMinutes) minutes and $progressCompleted of $progressTotal tests"
+            return
+        }
     }
 
     $result = $null
@@ -167,3 +156,39 @@ foreach ($test in $tests4) {
 }
 Write-Progress @progressParameter -Completed
 
+
+Write-Warning -Message "Finished after $([int]((Get-Date) - $start).TotalMinutes) minutes and $($tests.Count) tests"
+
+
+
+break
+
+
+
+# Reporting:
+
+$results = Get-Content -Path C:\GitHub\dbatools\tests\Environment\logs\_results_*.txt | ConvertFrom-Json
+$results | Sort-Object DurationSeconds -Descending | Select-Object -First 15 -Property TestFileName, @{ l = 'Seconds' ; e = { [int]$_.DurationSeconds } }
+
+
+# Run individual Pester 5 tests:
+
+Remove-Module -Name Pester -ErrorAction SilentlyContinue
+Import-Module -Name Pester -MinimumVersion 5.0
+
+$pester5Config = New-PesterConfiguration
+$pester5config.Output.Verbosity = 'Detailed'  # 'None', 'Normal', 'Detailed' or 'Diagnostic'
+
+$pester5Config.Run.Path = 'C:\GitHub\dbatools\tests\Copy-DbaEndpoint.Tests.ps1'
+Invoke-Pester -Configuration $pester5config
+
+Get-DbaEndpoint -SqlInstance client\sqlinstance2 -Type DatabaseMirroring
+
+
+
+# Run individual Pester 4 tests:
+
+Remove-Module -Name Pester -ErrorAction SilentlyContinue
+Import-Module -Name Pester -MaximumVersion 4.99
+
+Invoke-Pester -Script 'C:\GitHub\dbatools\tests\Watch-DbaXESession.Tests.ps1' -Show All

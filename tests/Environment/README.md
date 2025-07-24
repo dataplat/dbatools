@@ -45,3 +45,4 @@ Goals for the future:
 * That way we can move the instances away from the test engine. Like in production: You don't run dbatools on the server. Every test should work against a remote instance.
 * Using two servers in an active directory domain with a failover cluster (without shared storage) to test Availability Groups, Mirroring, database migrations and other related stuff.
 * Test different versions of SQL Server. Currently I use 2022.
+* All BeforeAll and AfterAll must use -EnableException to make sure that the test setup is correct.

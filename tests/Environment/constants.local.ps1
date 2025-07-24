@@ -23,7 +23,7 @@ $securePassword = ConvertTo-SecureString "P#ssw0rd" -AsPlainText -Force
 $config['SqlCred'] = New-Object System.Management.Automation.PSCredential ("sa", $securePassword)
 
 # Default parameter values for the tests
-$config['PSDefaultParameterValues'] = @{
+$config['Defaults'] = [System.Management.Automation.DefaultParameterDictionary]@{
     "*:SqlCredential"            = $config['SqlCred']
     "*:SourceSqlCredential"      = $config['SqlCred']
     "*:DestinationSqlCredential" = $config['SqlCred']
