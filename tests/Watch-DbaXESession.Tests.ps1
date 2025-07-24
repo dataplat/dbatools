@@ -16,15 +16,15 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command functions as expected" {
         BeforeAll {
-            Stop-DbaXESession -SqlInstance $TestConfig.instance1 -Session system_health -EnableException -Confirm:$false
+            Stop-DbaXESession -SqlInstance $TestConfig.instance2 -Session system_health -EnableException -Confirm:$false
         }
         AfterAll {
-            Start-DbaXESession -SqlInstance $TestConfig.instance1 -Session system_health -EnableException -Confirm:$false
+            Start-DbaXESession -SqlInstance $TestConfig.instance2 -Session system_health -EnableException -Confirm:$false
         }
 
         # This command is special and runs infinitely so don't actually try to run it
         It "warns if XE session is not running" {
-            $results = Watch-DbaXESession -SqlInstance $TestConfig.instance1 -Session system_health -WarningAction SilentlyContinue -WarningVariable warn
+            $results = Watch-DbaXESession -SqlInstance $TestConfig.instance2 -Session system_health -WarningAction SilentlyContinue -WarningVariable warn
             $warn | Should -Match 'system_health is not running'
         }
     }
