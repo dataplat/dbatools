@@ -659,7 +659,6 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Invoke-DbatoolsRenameHelper',
         'Measure-DbatoolsImport',
         'Get-DbaDeprecatedFeature',
-        'Test-DbaDeprecatedFeature'
         'Get-DbaDbFeatureUsage',
         'Stop-DbaEndpoint',
         'Start-DbaEndpoint',
