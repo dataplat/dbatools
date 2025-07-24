@@ -5,6 +5,7 @@ function Get-DbaDeprecatedFeature {
 
     .DESCRIPTION
         Displays usage information relating to deprecated features for SQL Server 2005 and above.
+        More information: https://learn.microsoft.com/en-us/sql/relational-databases/performance-monitor/sql-server-deprecated-features-object
 
     .PARAMETER SqlInstance
         The target SQL Server instance
