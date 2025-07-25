@@ -1,10 +1,11 @@
 function Get-DbaDeprecatedFeature {
     <#
     .SYNOPSIS
-        Displays information relating to deprecated features for SQL Server 2005 and above.
+        Displays usage information relating to deprecated features for SQL Server 2005 and above.
 
     .DESCRIPTION
-        Displays information relating to deprecated features for SQL Server 2005 and above.
+        Displays usage information relating to deprecated features for SQL Server 2005 and above.
+        More information: https://learn.microsoft.com/en-us/sql/relational-databases/performance-monitor/sql-server-deprecated-features-object
 
     .PARAMETER SqlInstance
         The target SQL Server instance
@@ -35,12 +36,12 @@ function Get-DbaDeprecatedFeature {
     .EXAMPLE
         PS C:\> Get-DbaDeprecatedFeature -SqlInstance sql2008, sqlserver2012
 
-        Check deprecated features for all databases on the servers sql2008 and sqlserver2012.
+        Get usage information relating to deprecated features on the servers sql2008 and sqlserver2012.
 
     .EXAMPLE
         PS C:\> Get-DbaDeprecatedFeature -SqlInstance sql2008
 
-        Check deprecated features on server sql2008.
+        Get usage information relating to deprecated features on server sql2008.
 
     #>
     [CmdletBinding()]
@@ -51,14 +52,6 @@ function Get-DbaDeprecatedFeature {
         [switch]$EnableException
     )
 
-    begin {
-        $sql = "SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
-        ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
-        SERVERPROPERTY('ServerName') AS SqlInstance, object_name, instance_name as DeprecatedFeature, object_name as ObjectName, instance_name as deprecated_feature, cntr_value as UsageCount
-        FROM sys.dm_os_performance_counters WHERE object_name like '%Deprecated%'
-        and cntr_value > 0 ORDER BY deprecated_feature"
-    }
-
     process {
         foreach ($instance in $SqlInstance) {
             try {
@@ -67,12 +60,16 @@ function Get-DbaDeprecatedFeature {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            try {
-                $server.Query($sql) | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, ObjectName, DeprecatedFeature, UsageCount
-            } catch {
-                Stop-Function -Message "Failure" -ErrorRecord $_ -Target $instance -Continue
+            $usedDeprecatedFeatures = $server.Query("SELECT LTRIM(RTRIM(instance_name)) AS DeprecatedFeature, cntr_value AS UsageCount FROM sys.dm_os_performance_counters WHERE object_name LIKE '%SQL%Deprecated Features%' AND cntr_value > 0")
+            foreach ($feature in $usedDeprecatedFeatures) {
+                [PSCustomObject]@{
+                    ComputerName      = $server.ComputerName
+                    InstanceName      = $server.ServiceName
+                    SqlInstance       = $server.DomainInstanceName
+                    DeprecatedFeature = $feature.DeprecatedFeature
+                    UsageCount        = $feature.UsageCount
+                }
             }
-
         }
     }
 }

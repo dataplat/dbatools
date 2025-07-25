@@ -75,9 +75,9 @@ If ($PSVersionTable.PSEdition -in "Desktop", $null) {
 }
 Write-ImportTime -Text "Checking for .NET"
 
-# Core needs to be at least 7.4.5
-if ($PSVersionTable.PSEdition -eq 'Core' -and $PSVersionTable.PSVersion.Major -lt 7 -and $PSVersionTable.PSVersion.Minor -lt 4 -and $PSVersionTable.PSVersion.Build -lt 5) {
-    throw "dbatools requires at least PowerShell 7.4.5 when running on Core. Please update your PowerShell."
+# Core needs to be at least 7.4.0
+if ($PSVersionTable.PSEdition -eq 'Core' -and $PSVersionTable.PSVersion -lt [version]"7.4.0") {
+    throw "dbatools requires at least PowerShell 7.4.0 when running on Core. Please update your PowerShell."
 }
 
 
@@ -659,7 +659,6 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Invoke-DbatoolsRenameHelper',
         'Measure-DbatoolsImport',
         'Get-DbaDeprecatedFeature',
-        'Test-DbaDeprecatedFeature'
         'Get-DbaDbFeatureUsage',
         'Stop-DbaEndpoint',
         'Start-DbaEndpoint',

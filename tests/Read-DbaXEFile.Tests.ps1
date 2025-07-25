@@ -16,14 +16,13 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Verifying command output" {
-        # THIS WORKS, I SWEAR
         It "returns some results" {
-            $results = Get-DbaXESession -SqlInstance $TestConfig.instance2 | Read-DbaXEFile -Raw -WarningAction SilentlyContinue
-            [System.Linq.Enumerable]::Count($results) -gt 1 | Should Be $true
+            $results = Get-DbaXESession -SqlInstance $TestConfig.instance2 | Read-DbaXEFile -Raw
+            $results | Should -Not -BeNullOrEmpty
         }
         It "returns some results" {
-            $results = Get-DbaXESession -SqlInstance $TestConfig.instance2 | Read-DbaXEFile -WarningAction SilentlyContinue
-            $results.Count -gt 1 | Should Be $true
+            $results = Get-DbaXESession -SqlInstance $TestConfig.instance2 | Read-DbaXEFile
+            $results | Should -Not -BeNullOrEmpty
         }
     }
 }

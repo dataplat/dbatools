@@ -80,7 +80,7 @@ function Watch-DbaXESession {
             $sessionname = $xesession.Name
             Write-Message -Level Verbose -Message "Watching $sessionname on $($server.Name)."
 
-            if (-not $xesession.IsRunning -and -not $xesession.IsRunning) {
+            if (-not $xesession.IsRunning) {
                 Stop-Function -Message "$($xesession.Name) is not running on $($server.Name)" -Continue
             }
 
@@ -103,13 +103,10 @@ function Watch-DbaXESession {
 
             try {
                 if ($raw) {
-                    return (SqlServer.XEvent\Read-SqlXEvent -ConnectionString $server.ConnectionContext.ConnectionString -SessionName $sessionname -ErrorAction Stop)
+                    return (Read-XEvent -ConnectionString $server.ConnectionContext.ConnectionString -SessionName $sessionname -ErrorAction Stop)
                 }
 
-                # use the SqlServer.XEvent\Read-SqlXEvent cmdlet from Microsoft
-                # because the underlying Class uses Tasks
-                # which is hard to handle in PowerShell
-                SqlServer.XEvent\Read-SqlXEvent -ConnectionString $server.ConnectionContext.ConnectionString -SessionName $sessionname -ErrorAction Stop | ForEach-Object -Process {
+                Read-XEvent -ConnectionString $server.ConnectionContext.ConnectionString -SessionName $sessionname -ErrorAction Stop | ForEach-Object -Process {
 
                     $hash = [ordered]@{ }
 
