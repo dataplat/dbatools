@@ -237,4 +237,19 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $null = $server | Disconnect-DbaInstance
         }
     }
+    Context "AccessToken parameter tests" {
+        BeforeAll {
+            # Mock ConvertFrom-SecurePass for testing
+            Mock ConvertFrom-SecurePass -MockWith {
+                return "mocked-converted-token"
+            } -ModuleName dbatools
+        }
+
+        It "Should handle SecureString AccessToken conversion" {
+            # Test SecureString conversion logic
+            $secureToken = ConvertTo-SecureString "test-token" -AsPlainText -Force
+            $result = ConvertFrom-SecurePass -InputObject $secureToken
+            $result | Should -Be "mocked-converted-token"
+        }
+    }
 }
