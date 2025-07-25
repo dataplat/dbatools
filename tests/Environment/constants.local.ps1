@@ -27,7 +27,6 @@ $config['Defaults'] = [System.Management.Automation.DefaultParameterDictionary]@
     "*:SqlCredential"            = $config['SqlCred']
     "*:SourceSqlCredential"      = $config['SqlCred']
     "*:DestinationSqlCredential" = $config['SqlCred']
-    "*:Confirm"                  = $false
 }
 
 # Additional configurations
@@ -42,6 +41,8 @@ $config['instance2_detailed'] = "$($config['host1']),14333\SQLInstance2"  # Adju
 
 # Path to your local AppVeyor lab repository (if applicable)
 $config['appveyorlabrepo'] = "C:\GitHub\appveyor-lab"        # Replace with the correct path
+
+$config['Temp'] = 'C:\Temp'
 
 # SSIS Server instance
 #$config['ssisserver'] = "localhost\SQLInstance2"              # Replace if using a different SSIS server

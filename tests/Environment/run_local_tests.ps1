@@ -10,6 +10,8 @@ Import-Module -Name "$repoBase\dbatools.psm1" -Force
 $null = Set-DbatoolsInsecureConnection
 
 Copy-Item -Path "$repoBase\tests\Environment\constants.local.ps1" -Destination "$repoBase\tests\"
+
+# This is needed until we changed all the test files:
 $TestConfig = Get-TestConfig
 
 $tests = Get-ChildItem -Path "$repoBase\tests\*-Dba*.Tests.ps1"
@@ -44,14 +46,13 @@ $tests = $tests | Where-Object Name -notin $skipTests
 # Pester 5
 ##########
 
+Remove-Module -Name Pester -ErrorAction SilentlyContinue
+Import-Module -Name Pester -MinimumVersion 5.0
+
 $tests5 = $tests | Where-Object { (Get-Content -Path $_.FullName)[0] -match 'Requires.*Pester.*5' }
 
 $resultsFileName = "$repoBase\tests\Environment\logs\_results_5_$([datetime]::Now.ToString('yyyMMdd_HHmmss')).txt"
 $failedFileName = "$repoBase\tests\Environment\logs\_failed_5_$([datetime]::Now.ToString('yyyMMdd_HHmmss')).txt"
-
-$pester5Config = New-PesterConfiguration
-$pester5config.Run.PassThru = $true
-$pester5config.Output.Verbosity = 'Detailed'  # 'None', 'Normal', 'Detailed' or 'Diagnostic'
 
 $progressParameter = @{ Id = Get-Random ; Activity = 'Running tests' }
 $progressTotal = $tests5.Count
@@ -70,8 +71,7 @@ foreach ($test in $tests5) {
 
     Write-Host "`n======================================================================================`n"
 
-    $pester5Config.Run.Path = $test.FullName
-    $result = Invoke-Pester -Configuration $pester5config
+    $result = Invoke-Pester -Path $test.FullName -Output Detailed -PassThru
 
     $resultInfo = [ordered]@{
         TestFileName    = $test.Name
@@ -176,14 +176,7 @@ $results | Sort-Object DurationSeconds -Descending | Select-Object -First 15 -Pr
 Remove-Module -Name Pester -ErrorAction SilentlyContinue
 Import-Module -Name Pester -MinimumVersion 5.0
 
-$pester5Config = New-PesterConfiguration
-$pester5config.Output.Verbosity = 'Detailed'  # 'None', 'Normal', 'Detailed' or 'Diagnostic'
-
-$pester5Config.Run.Path = 'C:\GitHub\dbatools\tests\Copy-DbaEndpoint.Tests.ps1'
-Invoke-Pester -Configuration $pester5config
-
-Get-DbaEndpoint -SqlInstance client\sqlinstance2 -Type DatabaseMirroring
-
+Invoke-Pester -Path 'C:\GitHub\dbatools\tests\Add-DbaAgDatabase.Tests.ps1' -Output Detailed
 
 
 # Run individual Pester 4 tests:
