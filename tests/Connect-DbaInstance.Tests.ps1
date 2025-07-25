@@ -1,127 +1,240 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-. "$PSScriptRoot\constants.ps1"
+$global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "AccessToken Parameter Tests" {
-        BeforeAll {
-            # Mock the ConvertFrom-SecurePass function for testing
-            Mock ConvertFrom-SecurePass -MockWith {
-                param($InputObject)
-                return "mocked-plain-text-token"
-            } -ModuleName dbatools
-
-            # Mock Stop-Function to capture error scenarios
-            Mock Stop-Function -MockWith {
-                param($Target, $Message, $Continue)
-                throw $Message
-            } -ModuleName dbatools
+    Context "Validate parameters" {
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ApplicationIntent', 'AzureUnsupported', 'BatchSeparator', 'ClientName', 'ConnectTimeout', 'EncryptConnection', 'FailoverPartner', 'LockTimeout', 'MaxPoolSize', 'MinPoolSize', 'MinimumVersion', 'MultipleActiveResultSets', 'MultiSubnetFailover', 'NetworkProtocol', 'NonPooledConnection', 'PacketSize', 'PooledConnectionLifetime', 'SqlExecutionModes', 'StatementTimeout', 'TrustServerCertificate', 'WorkstationId', 'AlwaysEncrypted', 'AppendConnectionString', 'SqlConnectionOnly', 'AzureDomain', 'Tenant', 'AccessToken', 'DedicatedAdminConnection', 'DisableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
-
-        It "Should handle plain text AccessToken (backward compatibility)" {
-            # Create a mock AccessToken object that simulates Get-AzAccessToken from Azure PowerShell v13
-            $mockAccessToken = [PSCustomObject]@{
-                Token = "plain-text-token-string"
-                ExpiresOn = (Get-Date).AddHours(1)
-            }
-
-            # Test that the function can process the token without errors
-            # This is a unit test, so we're testing the logic without actual SQL connection
-            {
-                # We can't easily unit test the full Connect-DbaInstance function due to its complexity
-                # Instead, we'll test the AccessToken processing logic directly
-                $testToken = $mockAccessToken.Token
-                if ($testToken -is [System.Security.SecureString]) {
-                    $testToken = ConvertFrom-SecurePass -InputObject $testToken
-                }
-                $testToken | Should -Be "plain-text-token-string"
-            } | Should -Not -Throw
-        }
-
-        It "Should handle SecureString AccessToken from Azure PowerShell v14+" {
-            # Create a SecureString token to simulate Azure PowerShell v14+
-            $secureToken = ConvertTo-SecureString "secure-token-string" -AsPlainText -Force
-
-            # Create a mock AccessToken object that simulates Get-AzAccessToken from Azure PowerShell v14+
-            $mockAccessToken = [PSCustomObject]@{
-                Token = $secureToken
-                ExpiresOn = (Get-Date).AddHours(1)
-            }
-
-            # Test that the function can process the SecureString token
-            {
-                $testToken = $mockAccessToken.Token
-                if ($testToken -is [System.Security.SecureString]) {
-                    $testToken = ConvertFrom-SecurePass -InputObject $testToken
-                }
-                $testToken | Should -Be "mocked-plain-text-token"
-            } | Should -Not -Throw
-        }
-
-        It "Should handle direct SecureString AccessToken input" {
-            # Test direct SecureString input
-            $secureToken = ConvertTo-SecureString "direct-secure-token" -AsPlainText -Force
-
-            {
-                $testToken = $secureToken
-                if ($testToken -is [System.Security.SecureString]) {
-                    $testToken = ConvertFrom-SecurePass -InputObject $testToken
-                }
-                $testToken | Should -Be "mocked-plain-text-token"
-            } | Should -Not -Throw
-        }
-
-        It "Should handle New-DbaAzAccessToken objects" {
-            # Create a mock object that simulates New-DbaAzAccessToken output
-            $mockDbaToken = [PSCustomObject]@{
-                GetAccessToken = { return "dba-token-string" }
-            }
-            $mockDbaToken | Add-Member -MemberType ScriptMethod -Name GetAccessToken -Value { return "dba-token-string" } -Force
-
-            # Test that the function can process New-DbaAzAccessToken objects
-            {
-                $testToken = $mockDbaToken
-                if ($testToken | Get-Member | Where-Object Name -eq GetAccessToken) {
-                    $testToken = $testToken.GetAccessToken()
-                }
-                $testToken | Should -Be "dba-token-string"
-            } | Should -Not -Throw
-        }
-
-        It "Should call ConvertFrom-SecurePass when AccessToken.Token is SecureString" {
-            $secureToken = ConvertTo-SecureString "test-token" -AsPlainText -Force
-            $mockAccessToken = [PSCustomObject]@{
-                Token = $secureToken
-            }
-
-            # Process the token
-            $testToken = $mockAccessToken.Token
-            if ($testToken -is [System.Security.SecureString]) {
-                $result = ConvertFrom-SecurePass -InputObject $testToken
-            }
-
-            # Verify ConvertFrom-SecurePass was called
-            Assert-MockCalled ConvertFrom-SecurePass -Times 1 -ModuleName dbatools
+    }
+    Context "Validate alias" {
+        It "Should contain the alias: cdi" {
+            (Get-Alias cdi) | Should -Not -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
-    Context "AccessToken Integration" {
-        It "Should accept string AccessToken without errors" -Skip:($env:APPVEYOR -or $env:GITHUB_ACTIONS) {
-            # This test would require actual Azure credentials, so we skip it in CI
-            # In a real environment, this would test:
-            # $stringToken = "actual-azure-token-string"
-            # $result = Connect-DbaInstance -SqlInstance "test.database.windows.net" -AccessToken $stringToken -DisableException
-            # $result | Should -Not -BeNullOrEmpty
+Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+    if ($env:azuredbpasswd -eq "failstoooften") {
+        Context "Connect to Azure" {
+            $securePassword = ConvertTo-SecureString $env:azuredbpasswd -AsPlainText -Force
+            $cred = New-Object System.Management.Automation.PSCredential ($TestConfig.azuresqldblogin, $securePassword)
+
+            It "Should login to Azure" {
+                $s = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -SqlCredential $cred -Database test
+                $s.Name | Should -match 'psdbatools.database.windows.net'
+                $s.DatabaseEngineType | Should -Be 'SqlAzureDatabase'
+            }
+
+            It "Should keep the same database context" {
+                $s = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -SqlCredential $cred -Database test
+                $results = Invoke-DbaQuery -SqlInstance $s -Query "select db_name() as dbname"
+                $results.dbname | Should -Be 'test'
+            }
+
+            It "Should keep the same database context again" {
+                $s = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -SqlCredential $cred -Database test
+                $results = Invoke-DbaQuery -SqlInstance $s -Query "select db_name() as dbname"
+                $results.dbname | Should -Be 'test'
+                $results = Invoke-DbaQuery -SqlInstance $s -Query "select db_name() as dbname"
+                $results.dbname | Should -Be 'test'
+            }
+
+            It "Should keep the same database context" {
+                $s = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -SqlCredential $cred -Database test
+                $server = Connect-DbaInstance -SqlInstance $s
+                $server.Query("select db_name() as dbname").dbname | Should -Be 'test'
+            }
+        }
+    }
+
+    Context "connection is properly made using a string" {
+        BeforeAll {
+            $params = @{
+                'BatchSeparator'           = 'GO'
+                'ConnectTimeout'           = 1
+                'Database'                 = 'tempdb'
+                'LockTimeout'              = 1
+                'MaxPoolSize'              = 20
+                'MinPoolSize'              = 1
+                'NetworkProtocol'          = 'TcpIp'
+                'PacketSize'               = 4096
+                'PooledConnectionLifetime' = 600
+                'WorkstationId'            = 'MadeUpServer'
+                'SqlExecutionModes'        = 'ExecuteSql'
+                'StatementTimeout'         = 0
+                'ApplicationIntent'        = 'ReadOnly'
+            }
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1 @params
         }
 
-        It "Should accept SecureString AccessToken without errors" -Skip:($env:APPVEYOR -or $env:GITHUB_ACTIONS) {
-            # This test would require actual Azure credentials, so we skip it in CI
-            # In a real environment, this would test:
-            # $secureToken = ConvertTo-SecureString "actual-azure-token-string" -AsPlainText -Force
-            # $result = Connect-DbaInstance -SqlInstance "test.database.windows.net" -AccessToken $secureToken -DisableException
-            # $result | Should -Not -BeNullOrEmpty
+        It "returns the proper name" {
+            $server.Name | Should -Be $TestConfig.instance1
+        }
+
+        It "sets connectioncontext parameters that are provided" {
+            foreach ($param in $params.GetEnumerator()) {
+                if ($param.Key -eq 'Database') {
+                    $propName = 'DatabaseName'
+                } else {
+                    $propName = $param.Key
+                }
+                $server.ConnectionContext.$propName | Should -Be $param.Value
+            }
+        }
+
+        It "returns more than one database" {
+            $server.Databases.Name.Count | Should -BeGreaterThan 1
+        }
+
+        It "returns the connection with ApplicationIntent of ReadOnly" {
+            $server.ConnectionContext.ConnectionString | Should -Match "Intent=ReadOnly"
+        }
+
+        It "keeps the same database context" {
+            $null = $server.Databases['msdb'].Tables.Count
+            $server.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be 'tempdb'
+        }
+
+        It "sets StatementTimeout to 0" {
+            $server.ConnectionContext.StatementTimeout | Should -Be 0
+        }
+    }
+
+    Context "connection is properly made using a connection string" {
+        BeforeAll {
+            $server = Connect-DbaInstance -SqlInstance "Data Source=$($TestConfig.instance1);Initial Catalog=tempdb;Integrated Security=True"
+        }
+
+        It "returns the proper name" {
+            $server.Name | Should -Be $TestConfig.instance1
+        }
+
+        It "returns more than one database" {
+            $server.Databases.Name.Count | Should -BeGreaterThan 1
+        }
+
+        It "keeps the same database context" {
+            # Before #8962 this changed the context to msdb
+            $null = $server.Databases['msdb'].Tables.Count
+            $server.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be 'tempdb'
+        }
+    }
+
+    if ($TestConfig.instance1 -match 'localhost') {
+        Context "connection is properly made using a dot" {
+            BeforeAll {
+                $newinstance = $TestConfig.instance1.Replace("localhost", ".")
+                $server = Connect-DbaInstance -SqlInstance $newinstance
+            }
+
+            It "returns the proper name" {
+                $server.Name | Should -Be "NP:$newinstance"
+            }
+
+            It "returns more than one database" {
+                $server.Databases.Name.Count | Should -BeGreaterThan 1
+            }
+
+            It "keeps the same database context" {
+                $null = $server.Databases['msdb'].Tables.Count
+                # This currently fails!
+                #$server.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be 'tempdb'
+            }
+        }
+    }
+
+    Context "connection is properly made using a connection object" {
+        BeforeAll {
+            Set-DbatoolsConfig -FullName commands.connect-dbainstance.smo.computername.source -Value 'instance.ComputerName'
+            [Microsoft.Data.SqlClient.SqlConnection]$sqlconnection = "Data Source=$($TestConfig.instance1);Initial Catalog=tempdb;Integrated Security=True;Encrypt=False;Trust Server Certificate=True"
+            $server = Connect-DbaInstance -SqlInstance $sqlconnection
+            Set-DbatoolsConfig -FullName commands.connect-dbainstance.smo.computername.source -Value $null
+        }
+
+        It "returns the proper name" {
+            $server.Name | Should -Be $TestConfig.instance1
+        }
+
+        It "returns more than one database" {
+            $server.Databases.Name.Count | Should -BeGreaterThan 1
+        }
+
+        It "keeps the same database context" {
+            $null = $server.Databases['msdb'].Tables.Count
+            # This currently fails!
+            #$server.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be 'tempdb'
+        }
+    }
+
+    Context "connection is properly cloned from an existing connection" {
+        BeforeAll {
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+        }
+
+        It "clones when using parameter Database" {
+            $serverClone = Connect-DbaInstance -SqlInstance $server -Database tempdb
+            $server.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be 'master'
+            $serverClone.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be 'tempdb'
+        }
+
+        It "clones when using parameter ApplicationIntent" {
+            $serverClone = Connect-DbaInstance -SqlInstance $server -ApplicationIntent ReadOnly
+            $server.ConnectionContext.ApplicationIntent | Should -BeNullOrEmpty
+            $serverClone.ConnectionContext.ApplicationIntent | Should -Be 'ReadOnly'
+        }
+
+        It "clones when using parameter NonPooledConnection" {
+            $serverClone = Connect-DbaInstance -SqlInstance $server -NonPooledConnection
+            $server.ConnectionContext.NonPooledConnection | Should -Be $false
+            $serverClone.ConnectionContext.NonPooledConnection | Should -Be $true
+        }
+
+        It "clones when using parameter StatementTimeout" {
+            $serverClone = Connect-DbaInstance -SqlInstance $server -StatementTimeout 123
+            $server.ConnectionContext.StatementTimeout | Should -Be (Get-DbatoolsConfigValue -FullName 'sql.execution.timeout')
+            $serverClone.ConnectionContext.StatementTimeout | Should -Be 123
+        }
+
+        It "clones when using parameter DedicatedAdminConnection" {
+            $serverClone = Connect-DbaInstance -SqlInstance $server -DedicatedAdminConnection
+            $server.ConnectionContext.ServerInstance | Should -Not -Match '^ADMIN:'
+            $serverClone.ConnectionContext.ServerInstance | Should -Match '^ADMIN:'
+            $serverClone | Disconnect-DbaInstance
+        }
+
+        It "clones when using Backup-DabInstace" {
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1 -Database tempdb
+            $null = Backup-DbaDatabase -SqlInstance $server -Database msdb
+            $null = Backup-DbaDatabase -SqlInstance $server -Database msdb -WarningVariable warn
+            $warn | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "multiple connections are properly made using strings" {
+        It "returns the proper names" {
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1, $TestConfig.instance2
+            $server[0].Name | Should -Be $TestConfig.instance1
+            $server[1].Name | Should -Be $TestConfig.instance2
+        }
+    }
+
+    Context "multiple dedicated admin connections are properly made using strings" {
+        # This might fail if a parallel test uses DAC - how can we ensure that this is the only test that is run?
+        It "opens and closes the connections" {
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -DedicatedAdminConnection
+            $server[0].Name | Should -Be "ADMIN:$($TestConfig.instance1)"
+            $server[1].Name | Should -Be "ADMIN:$($TestConfig.instance2)"
+            $null = $server | Disconnect-DbaInstance
+            # DAC is not reopened in the background
+            Start-Sleep -Seconds 10
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -DedicatedAdminConnection
+            $server.Count | Should -Be 2
+            $null = $server | Disconnect-DbaInstance
         }
     }
 }
