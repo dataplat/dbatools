@@ -1,4 +1,4 @@
 {
-  "version": "2025.7.20",
+  "version": "2025.7.25-preview-sysmgmt-20250725150116",
   "notes": "Version of dbatools.library to use for CI/CD and development"
 }
