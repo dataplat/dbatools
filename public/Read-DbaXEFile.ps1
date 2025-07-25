@@ -94,10 +94,6 @@ function Read-DbaXEFile {
                     Stop-Function -Message "$file cannot be accessed from $($env:COMPUTERNAME)." -Continue
                 }
 
-                # use the SqlServer\Read-SqlXEvent cmdlet from Microsoft
-                # because the underlying Class uses Tasks
-                # which is hard to handle in PowerShell
-
                 if ($Raw) {
                     try {
                         Read-XEvent -FileName $file
