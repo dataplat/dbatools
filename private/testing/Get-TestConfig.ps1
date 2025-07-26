@@ -1,12 +1,16 @@
 function Get-TestConfig {
-    param(
-        [string]$LocalConfigPath = "$script:PSModuleRoot/tests/constants.local.ps1"
-    )
+    # How can this be overwritten? Let's just use a normal variable.
+    #param(
+    #    [string]$LocalConfigPath = "$script:PSModuleRoot/tests/constants.local.ps1"
+    #)
     $config = [ordered]@{}
 
-    if (Test-Path $LocalConfigPath) {
-        Write-Host "Tests will use local constants file: tests\constants.local.ps1." -ForegroundColor Cyan
-        . $LocalConfigPath
+    $localConfigPath = "$script:PSModuleRoot/tests/constants.local.ps1"
+    if (Test-Path $localConfigPath) {
+        # I think the following line is useless output:
+        # Write-Host "Tests will use local constants file: tests\constants.local.ps1." -ForegroundColor Cyan
+        . $localConfigPath
+        # I don't understand the following line:
         # Note: Local constants are sourced but not explicitly added to $config
     } elseif ($env:CODESPACES -or ($env:TERM_PROGRAM -eq 'vscode' -and $env:REMOTE_CONTAINERS)) {
         $null = Set-DbatoolsInsecureConnection
@@ -21,6 +25,8 @@ function Get-TestConfig {
             "*:SourceSqlCredential" = $config['SqlCred']
             "*:DestinationSqlCredential" = $config['SqlCred']
         }
+        # To be able to write everything to a file share we need to configure this.
+        $config['Temp'] = 'C:\Temp'
     } elseif ($env:GITHUB_WORKSPACE) {
         $config['DbaToolsCi_Computer'] = "localhost"
         $config['Instance1'] = "localhost"
@@ -36,6 +42,7 @@ function Get-TestConfig {
         $config['AzureBlobAccount'] = "dbatools"
         $config['AzureServer'] = 'psdbatools.database.windows.net'
         $config['AzureSqlDbLogin'] = "appveyor@clemairegmail.onmicrosoft.com"
+        $config['Temp'] = 'C:\Temp'
     } else {
         $config['DbaToolsCi_Computer'] = "localhost"
         $config['Instance1'] = "localhost\sql2008r2sp2"
@@ -53,6 +60,7 @@ function Get-TestConfig {
         $config['AzureSqlDbLogin'] = "appveyor@clemairegmail.onmicrosoft.com"
         $config['BigDatabaseBackup'] = 'C:\github\StackOverflowMini.bak'
         $config['BigDatabaseBackupSourceUrl'] = 'https://github.com/BrentOzarULTD/Stack-Overflow-Database/releases/download/20230114/StackOverflowMini.bak'
+        $config['Temp'] = 'C:\Temp'
     }
 
     if ($env:appveyor) {
@@ -61,14 +69,21 @@ function Get-TestConfig {
         }
     }
 
+    # The following does not work - at least in the normal test usage. So I removed it.
     # derive the command name from the CALLING script's filename
-    $config['CommandName'] = ($MyInvocation.MyCommand.Name | Split-Path -Leaf).Replace(".Tests.ps1", "")
+    #$config['CommandName'] = ($MyInvocation.MyCommand.Name | Split-Path -Leaf).Replace(".Tests.ps1", "")
 
-    if (-not $config['CommandName']) {
-        $config['CommandName'] = "Unknown"
-    }
+    #if (-not $config['CommandName']) {
+    #    $config['CommandName'] = "Unknown"
+    #}
 
     $config['CommonParameters'] = [System.Management.Automation.PSCmdlet]::CommonParameters
+
+    # We want the tests as readable as possible so we want to set Confirm globally to $false
+    $config['Defaults']['*:Confirm'] = $false
+
+    # We use a global warning variable so that we can always test that the command does not write a warning
+    $config['Defaults']['*:WarningVariable'] = 'WarnVar'
 
     [pscustomobject]$config
 }

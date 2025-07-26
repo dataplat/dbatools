@@ -15,23 +15,17 @@ Describe "$commandname Unit Tests" -Tag "UnitTests" {
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $null = Get-DbaProcess -SqlInstance $TestConfig.instance2 | Where-Object Program -Match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $db1 = "dbatoolsci_mirroring"
 
-        Remove-DbaDbMirror -SqlInstance $TestConfig.instance2 -Database $db1 -Confirm:$false
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $db1 -Confirm:$false
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $db1 | Remove-DbaDatabase -Confirm:$false
-        $null = $server.Query("CREATE DATABASE $db1")
-
-        Get-DbaEndpoint -SqlInstance $TestConfig.instance2 -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
-        New-DbaEndpoint -SqlInstance $TestConfig.instance2 -Name dbatoolsci_MirroringEndpoint -Type DatabaseMirroring -Port 5022 -Owner sa
-        Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
-        New-DbaEndpoint -SqlInstance $TestConfig.instance3 -Name dbatoolsci_MirroringEndpoint -Type DatabaseMirroring -Port 5023 -Owner sa
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $db1 -EnableException
+        $null = New-DbaEndpoint -SqlInstance $TestConfig.instance2 -Name dbatoolsci_MirroringEndpoint -Type DatabaseMirroring -Port 5022 -Owner sa -EnableException
+        $null = New-DbaEndpoint -SqlInstance $TestConfig.instance3 -Name dbatoolsci_MirroringEndpoint -Type DatabaseMirroring -Port 5023 -Owner sa -EnableException
     }
     AfterAll {
         $null = Remove-DbaDbMirror -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $db1 -Confirm:$false
-        $null = Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $db1 -ErrorAction SilentlyContinue
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $db1 -Confirm:$false
+        $null = Remove-DbaEndpoint -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -EndPoint dbatoolsci_MirroringEndpoint -Confirm:$false
     }
 
     It "returns success" {

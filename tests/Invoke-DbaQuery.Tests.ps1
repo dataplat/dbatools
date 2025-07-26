@@ -56,6 +56,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         try {
             $null = $db.Query("DROP PROCEDURE dbo.dbatoolsci_procedure_example")
             $null = $db.Query("DROP PROCEDURE dbo.my_proc")
+            $null = $db.Query("DROP PROCEDURE dbo.usp_Insertsomething")
+            $null = $db.Query("DROP TYPE dbo.dbatools_tabletype")
         } catch {
             $null = 1
         }
@@ -85,7 +87,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
     It "supports pipable databases" {
-        $dbs = Get-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3
+        $dbs = Get-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database tempdb
         $results = $dbs | Invoke-DbaQuery -Query "Select 'hello' as TestColumn, DB_NAME() as dbname"
         foreach ($result in $results) {
             $result.TestColumn | Should -Be 'hello'

@@ -14,8 +14,15 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
 }
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
-    It -Skip "returns success" {
-        $results = Test-DbaEndpoint -SqlInstance $TestConfig.instance3
+    BeforeAll {
+        $null = New-DbaEndpoint -SqlInstance $TestConfig.instance2 -Type DatabaseMirroring -Name dbatoolsci_MirroringEndpoint -EnableException -Confirm:$false | Start-DbaEndpoint -EnableException
+    }
+    AfterAll {
+        $null = Remove-DbaEndpoint -SqlInstance $TestConfig.instance2 -EndPoint dbatoolsci_MirroringEndpoint -Confirm:$false
+    }
+
+    It "returns success" {
+        $results = Test-DbaEndpoint -SqlInstance $TestConfig.instance2
         $results | Select-Object -First 1 -ExpandProperty Connection | Should -Be 'Success'
     }
 } #$TestConfig.instance2 for appveyor

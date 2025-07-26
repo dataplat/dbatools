@@ -17,7 +17,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $logins = "dbatoolsci_thor", "dbatoolsci_thorsmomma"
+        $logins = "thor", "thorsmomma"
         $plaintext = "BigOlPassword!"
         $password = ConvertTo-SecureString $plaintext -AsPlainText -Force
 
@@ -26,33 +26,32 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $null = Invoke-Command2 -ScriptBlock { net user $args[0] $args[1] /add *>&1 } -ArgumentList $login, $plaintext -ComputerName $TestConfig.instance2
         }
 
-        $results = New-DbaCredential -SqlInstance $TestConfig.instance2 -Name dbatoolsci_thorcred -Identity dbatoolsci_thor -Password $password
-        $results = New-DbaCredential -SqlInstance $TestConfig.instance2 -Identity dbatoolsci_thorsmomma -Password $password
+        $null = New-DbaCredential -SqlInstance $TestConfig.instance2 -Name thorcred -Identity thor -Password $password
+        $null = New-DbaCredential -SqlInstance $TestConfig.instance2 -Identity thorsmomma -Password $password
     }
     AfterAll {
         try {
-            (Get-DbaCredential -SqlInstance $TestConfig.instance2 -Identity dbatoolsci_thor, dbatoolsci_thorsmomma -ErrorAction Stop -WarningAction SilentlyContinue).Drop()
+            (Get-DbaCredential -SqlInstance $TestConfig.instance2 -Identity thor, thorsmomma -ErrorAction Stop -WarningAction SilentlyContinue).Drop()
         } catch { }
 
         foreach ($login in $logins) {
-            $null = Invoke-Command2 -ScriptBlock { net user $args /delete *>&1 } -ArgumentList $login -ComputerName $TestConfig.instance2
             $null = Invoke-Command2 -ScriptBlock { net user $args /delete *>&1 } -ArgumentList $login -ComputerName $TestConfig.instance2
         }
     }
 
     Context "Get credentials" {
         It "Should get just one credential with the proper properties when using Identity" {
-            $results = Get-DbaCredential -SqlInstance $TestConfig.instance2 -Identity dbatoolsci_thorsmomma
-            $results.Name | Should Be "dbatoolsci_thorsmomma"
-            $results.Identity | Should Be "dbatoolsci_thorsmomma"
+            $results = Get-DbaCredential -SqlInstance $TestConfig.instance2 -Identity thorsmomma
+            $results.Name | Should Be "thorsmomma"
+            $results.Identity | Should Be "thorsmomma"
         }
         It "Should get just one credential with the proper properties when using Name" {
-            $results = Get-DbaCredential -SqlInstance $TestConfig.instance2 -Name dbatoolsci_thorsmomma
-            $results.Name | Should Be "dbatoolsci_thorsmomma"
-            $results.Identity | Should Be "dbatoolsci_thorsmomma"
+            $results = Get-DbaCredential -SqlInstance $TestConfig.instance2 -Name thorsmomma
+            $results.Name | Should Be "thorsmomma"
+            $results.Identity | Should Be "thorsmomma"
         }
         It "gets more than one credential" {
-            $results = Get-DbaCredential -SqlInstance $TestConfig.instance2 -Identity dbatoolsci_thor, dbatoolsci_thorsmomma
+            $results = Get-DbaCredential -SqlInstance $TestConfig.instance2 -Identity thor, thorsmomma
             $results.count -gt 1
         }
     }

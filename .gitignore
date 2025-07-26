@@ -24,6 +24,10 @@ tests/constants.local.ps1
 # Local coverage file produced by pester5
 coverage.xml
 
+# Local logs from pester runs
+tests/Environment/logs/*
+!tests/Environment/logs/README.md
+
 # For those that want to use Docker images for testing
 # Integration with Docker requires the docker compose file to exist within the project folder
 docker-compose.yml
