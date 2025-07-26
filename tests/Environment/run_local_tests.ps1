@@ -1,6 +1,6 @@
 $ErrorActionPreference = 'Stop'
 
-$stopOnFailure = $false
+$stopOnFailure = $true
 
 $start = Get-Date
 
@@ -86,6 +86,15 @@ foreach ($test in $tests5) {
 
     if ($result.FailedCount -gt 0) {
         $test.Name | Add-Content -Path $failedFileName
+        if ($stopOnFailure) {
+            Write-Warning -Message "Failed after $([int]((Get-Date) - $progressStart).TotalMinutes) minutes and $progressCompleted of $progressTotal tests"
+            return
+        }
+    }
+
+    $result = Invoke-Pester -Path 'C:\GitHub\dbatools\tests\Environment\TestEnvironment.Tests.ps1' -Output None -PassThru
+    if ($result.Result -ne 'Passed') {
+        Invoke-Pester -Path 'C:\GitHub\dbatools\tests\Environment\TestEnvironment.Tests.ps1' -Output Detailed
         if ($stopOnFailure) {
             Write-Warning -Message "Failed after $([int]((Get-Date) - $progressStart).TotalMinutes) minutes and $progressCompleted of $progressTotal tests"
             return

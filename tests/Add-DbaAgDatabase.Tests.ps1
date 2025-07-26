@@ -60,15 +60,20 @@ Describe "Add-DbaAgDatabase IntegrationTests" -Tag "IntegrationTests" {
         $dbName = "addagdb_db"
         $newDbName = "addagdb_db_2"
 
+        # Collect all the created files to be able to remove them ant the end.
+        $filesToRemove = @( )
+
         # Connect to the instance(s) using Connect-DbaInstance only if needed.
         # It is saver to use the instance name from $TestConfig to get a fresh new SMO every time.
         # In the future, we should also test with pre-opened connection.
         # Use dbatools commands whenever possible, so that these are tested here as well.
         $null = New-DbaDatabase -SqlInstance $TestConfig.instance3 -Name $dbName
-        $null = Backup-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName -Path $config.Temp
+        $backup = Backup-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName -Path $TestConfig.Temp
+        $filesToRemove += $backup.Path
 
         $null = New-DbaDatabase -SqlInstance $TestConfig.instance3 -Name $newDbName
-        $null = Backup-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $newDbName -Path $config.Temp
+        $backup = Backup-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $newDbName -Path $TestConfig.Temp
+        $filesToRemove += $backup.Path
 
         $splatNewAg = @{
             Primary      = $TestConfig.instance3
@@ -86,7 +91,9 @@ Describe "Add-DbaAgDatabase IntegrationTests" -Tag "IntegrationTests" {
 
     AfterAll {
         $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agName
+        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint
         $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName, $newDbName
+        Remove-Item -Path $filesToRemove
     }
 
     Context "When adding AG database" {
