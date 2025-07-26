@@ -196,7 +196,6 @@ function New-DbaConnectionString {
         [string]$ClientName = "custom connection",
         [int]$ConnectTimeout,
         [string]$Database,
-        [ValidateSet('Mandatory', 'Optional', 'Strict', 'True', 'False')]
         [switch]$EncryptConnection = (Get-DbatoolsConfigValue -FullName 'sql.connection.encrypt'),
         [string]$FailoverPartner,
         [switch]$IsActiveDirectoryUniversalAuth,
@@ -271,9 +270,6 @@ function New-DbaConnectionString {
                 if (Test-Bound -Not -ParameterName 'ConnectTimeout') {
                     $ConnectTimeout = ([Dataplat.Dbatools.Connection.ConnectionHost]::SqlConnectionTimeout)
                 }
-                if (Test-Bound -Not -ParameterName 'EncryptConnection') {
-                    $EncryptConnection = (Get-DbatoolsConfigValue -FullName 'sql.connection.encrypt')
-                }
                 if (Test-Bound -Not -ParameterName 'NetworkProtocol') {
                     $np = (Get-DbatoolsConfigValue -FullName 'sql.connection.protocol')
                     if ($np) {
@@ -320,7 +316,8 @@ function New-DbaConnectionString {
                         if ($Database) { $connStringBuilder['Initial Catalog'] = $Database }
                         # https://learn.microsoft.com/en-us/dotnet/api/microsoft.data.sqlclient.sqlconnectionstringbuilder.encrypt?view=sqlclient-dotnet-standard-5.0
                         if ($instance -notmatch "localdb") {
-                            if ($EncryptConnection) { $connStringBuilder['Encrypt'] = $EncryptConnection }
+                            if ($EncryptConnection) { $connStringBuilder['Encrypt'] = 'Mandatory' }
+                            if (-not $EncryptConnection -and (Test-Bound -ParameterName 'EncryptConnection')) { $connStringBuilder['Encrypt'] = 'False' }
                         } else {
                             Write-Message -Level Verbose -Message "localdb detected, skipping unsupported keyword 'Encryption'"
                         }
