@@ -33,7 +33,12 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         # Publish with reduced timeout and handle timeout error (258)
         try {
             $connectionString = "Server=localhost;Database=$dbname;User Id=sa;Password=dbatools.I0;Connection Timeout=90;Command Timeout=90;Encrypt=False;"
-            $results = $dacpac | Publish-DbaDacPackage -PublishXml $publishprofile.FileName -Database $dbname  -ConnectionString $connectionString -Confirm:$false
+
+            # Create DacOption with reduced CommandTimeout for the DacServices operation
+            $dacOptions = New-DbaDacOption -Action Publish -Type Dacpac
+            $dacOptions.DeployOptions.CommandTimeout = 90
+
+            $results = $dacpac | Publish-DbaDacPackage -PublishXml $publishprofile.FileName -Database $dbname -ConnectionString $connectionString -DacOption $dacOptions -Confirm:$false
             $results.Result | Should -Match "Update complete|258"
 
             $ids = Invoke-DbaQuery -Database $dbname -Query 'SELECT id FROM dbo.example'
