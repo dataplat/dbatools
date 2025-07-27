@@ -166,3 +166,74 @@ jobs:
           CLIENT_GUID_SECRET: ${{secrets.CLIENT_GUID_SECRET}}
         shell: pwsh
         run: $null = Invoke-Pester .github/scripts/gh-winactions.ps1 -Output Detailed -PassThru
+
+  macos-tests:
+    env:
+        SMODefaultModuleName: dbatools
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout dbatools repo
+        uses: actions/checkout@v3
+
+      - name: Read dbatools.library version
+        id: get-version
+        shell: pwsh
+        run: |
+          $versionConfig = Get-Content '.github/dbatools-library-version.json' | ConvertFrom-Json
+          $version = $versionConfig.version
+          $isPreview = $version -like "*preview*"
+          Write-Output "version=$version" >> $env:GITHUB_OUTPUT
+          Write-Output "is_preview=$isPreview" >> $env:GITHUB_OUTPUT
+          Write-Output "Using dbatools.library version: $version"
+          Write-Output "Is preview version: $isPreview"
+
+      - name: Install and cache PowerShell modules (stable versions)
+        if: steps.get-version.outputs.is_preview == 'False'
+        uses: potatoqualitee/psmodulecache@v6.2.1
+        with:
+          modules-to-cache: dbatools.library:${{ steps.get-version.outputs.version }}
+
+      - name: Install dbatools.library (preview versions)
+        if: steps.get-version.outputs.is_preview == 'True'
+        shell: pwsh
+        run: |
+          Write-Output "Preview version detected, bypassing PSModuleCache and using install script"
+          ./.github/scripts/install-dbatools-library.ps1
+
+      - name: Install SQL Server engine
+        uses: potatoqualitee/mssqlsuite@v1.9
+        with:
+          install: sqlengine
+          sa-password: dbatools.I0
+
+      - name: Ensure sqlpackage is executable
+        run: chmod +x ~/.local/share/powershell/Modules/dbatools.library/core/lib/dac/mac/sqlpackage || true
+
+      - name: Configure dbatools settings
+        shell: pwsh
+        run: |
+          Import-Module ./dbatools.psd1 -Force
+          Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -Register
+          Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -Register
+          Get-DbatoolsConfigValue -FullName sql.connection.encrypt | Write-Warning
+
+      - name: 👥 Clone appveyor repo
+        working-directory: /tmp
+        run: |
+          gh repo clone dataplat/appveyor-lab
+
+      - name: Run macOS tests
+        env:
+          TENANTID: ${{secrets.TENANTID}}
+          CLIENTID: ${{secrets.CLIENTID}}
+          CLIENTSECRET: ${{secrets.CLIENTSECRET}}
+          CLIENT_GUID: ${{secrets.CLIENT_GUID}}
+          CLIENT_GUID_SECRET: ${{secrets.CLIENT_GUID_SECRET}}
+        shell: pwsh
+        run: |
+          Import-Module ./dbatools.psd1 -Force
+          Get-DbatoolsConfigValue -FullName sql.connection.trustcert | Write-Warning
+          Get-DbatoolsConfigValue -FullName sql.connection.encrypt | Write-Warning
+          $null = Invoke-Pester .github/scripts/gh-macactions.ps1 -Output Detailed -PassThru
