@@ -38,7 +38,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             $dacOptions = New-DbaDacOption -Action Publish -Type Dacpac
             $dacOptions.DeployOptions.CommandTimeout = 90
 
-            $results = $dacpac | Publish-DbaDacPackage -PublishXml $publishprofile.FileName -Database $dbname -ConnectionString $connectionString -DacOption $dacOptions -Confirm:$false
+            $results = $dacpac | Publish-DbaDacPackage -PublishXml $publishprofile.FileName -Database $dbname -DacOption $dacOptions -Confirm:$false
             $results.Result | Should -Match "Update complete|258"
 
             $ids = Invoke-DbaQuery -Database $dbname -Query 'SELECT id FROM dbo.example'
