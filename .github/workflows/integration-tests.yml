@@ -208,9 +208,6 @@ jobs:
           install: sqlengine
           sa-password: dbatools.I0
 
-      - name: Ensure sqlpackage is executable
-        run: chmod +x ~/.local/share/powershell/Modules/dbatools.library/core/lib/dac/mac/sqlpackage || true
-
       - name: 👥 Clone appveyor repo
         working-directory: /tmp
         run: |
