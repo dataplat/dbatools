@@ -32,7 +32,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
         # Publish with reduced timeout and handle timeout error (258)
         try {
-            $connectionString = "Server=localhost;Database=$dbname;User Id=sa;Password=dbatools.I0;Connection Timeout=90;Command Timeout=90;"
+            $connectionString = "Server=localhost;Database=$dbname;User Id=sa;Password=dbatools.I0;Connection Timeout=90;Command Timeout=90;Encrypt=False;"
             $results = $dacpac | Publish-DbaDacPackage -PublishXml $publishprofile.FileName -Database $dbname  -ConnectionString $connectionString -Confirm:$false
             $results.Result | Should -Match "Update complete|258"
 

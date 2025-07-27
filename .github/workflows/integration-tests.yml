@@ -211,14 +211,6 @@ jobs:
       - name: Ensure sqlpackage is executable
         run: chmod +x ~/.local/share/powershell/Modules/dbatools.library/core/lib/dac/mac/sqlpackage || true
 
-      - name: Configure dbatools settings
-        shell: pwsh
-        run: |
-          Import-Module ./dbatools.psd1 -Force
-          Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -Register
-          Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -Register
-          Get-DbatoolsConfigValue -FullName sql.connection.encrypt | Write-Warning
-
       - name: 👥 Clone appveyor repo
         working-directory: /tmp
         run: |
@@ -234,6 +226,5 @@ jobs:
         shell: pwsh
         run: |
           Import-Module ./dbatools.psd1 -Force
-          Get-DbatoolsConfigValue -FullName sql.connection.trustcert | Write-Warning
-          Get-DbatoolsConfigValue -FullName sql.connection.encrypt | Write-Warning
+          Set-DbatoolsInsecureConnection
           $null = Invoke-Pester .github/scripts/gh-macactions.ps1 -Output Detailed -PassThru
