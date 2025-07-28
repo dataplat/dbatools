@@ -18,10 +18,6 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
     It "publishes a package" {
         try {
-            # Create DacOption with reduced CommandTimeout for the DacServices operation
-            $dacOptions = New-DbaDacOption -Action Publish -Type Dacpac
-            $dacOptions.DeployOptions.CommandTimeout = 90
-
             $db = New-DbaDatabase
             $dbname = $db.Name
             $null = $db.Query("CREATE TABLE dbo.example (id int, PRIMARY KEY (id));
@@ -37,6 +33,10 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             $dacpac = Export-DbaDacPackage -Database $dbname -DacOption $extractOptions
             $null = Remove-DbaDatabase -Database $db.Name
 
+
+            # Create DacOption with reduced CommandTimeout for the DacServices operation
+            $dacOptions = New-DbaDacOption -Action Publish -Type Dacpac
+            $dacOptions.DeployOptions.CommandTimeout = 90
             $results = $dacpac | Publish-DbaDacPackage -PublishXml $publishprofile.FileName -Database $dbname -DacOption $dacOptions -Confirm:$false
             $results.Result | Should -Match "Update complete|258"
 
