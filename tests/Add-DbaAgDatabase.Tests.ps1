@@ -55,13 +55,6 @@ Describe "Add-DbaAgDatabase IntegrationTests" -Tag "IntegrationTests" {
         # We remove all the calls to Get-DbaProcess and Stop-DbaProcess as they are not needed with correct tests.
         #$null = Get-DbaProcess -SqlInstance $TestConfig.instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
 
-        # Set variables, that we need in the tests.
-        # I don't see the point in prefixing them all with "dbatoolsci",
-        # better give them good names that relate to the command that we test.
-        $agName = "addagdb_group"
-        $dbName = "addagdb_db"
-        $newDbName = "addagdb_db_2"
-
         # Collect all the created files to be able to remove them ant the end.
         $filesToRemove = @( )
 
@@ -69,23 +62,34 @@ Describe "Add-DbaAgDatabase IntegrationTests" -Tag "IntegrationTests" {
         # It is saver to use the instance name from $TestConfig to get a fresh new SMO every time.
         # In the future, we should also test with pre-opened connection.
         # Use dbatools commands whenever possible, so that these are tested here as well.
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instance3 -Name $dbName
-        $backup = Backup-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName -Path $TestConfig.Temp
-        $filesToRemove += $backup.Path
 
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instance3 -Name $newDbName
-        $backup = Backup-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $newDbName -Path $TestConfig.Temp
-        $filesToRemove += $backup.Path
+        # Explain what needs to be set up for the test:
+        # To add a database to an availablity group, we need an availability group and a database that has been backed up.
+        # For negative tests, we need a database without a backup and a non existing database.
 
+        # Set variables that we need in the tests.
+        # I don't see the point in prefixing them all with "dbatoolsci",
+        # better give them good names that relate to the command that we test.
+        $agName = "addagdb_group"
+        $existingDbWithBackup = "dbWithBackup"
+        $existingDbWithoutBackup = "dbWithoutBackup"
+        $nonexistingDb = "dbdoesnotexist"
+
+        # Create the objects
         $splatNewAg = @{
             Primary      = $TestConfig.instance3
             Name         = $agName
             ClusterType  = "None"
             FailoverMode = "Manual"
-            Database     = $dbName
             Certificate  = "dbatoolsci_AGCert"
         }
         $null = New-DbaAvailabilityGroup @splatNewAg
+
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instance3 -Name $existingDbWithBackup
+        $backup = Backup-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $existingDbWithBackup -Path $TestConfig.Temp
+        $filesToRemove += $backup.Path
+
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instance3 -Name $existingDbWithoutBackup
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
@@ -97,7 +101,7 @@ Describe "Add-DbaAgDatabase IntegrationTests" -Tag "IntegrationTests" {
 
         $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agName
         $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName, $newDbName
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $existingDbWithBackup, $existingDbWithoutBackup
         Remove-Item -Path $filesToRemove
 
         # As this is the last block we do not need to rest the $PSDefaultParameterValues.
@@ -110,7 +114,7 @@ Describe "Add-DbaAgDatabase IntegrationTests" -Tag "IntegrationTests" {
             $splatAddAgDb = @{
                 SqlInstance       = $TestConfig.instance3
                 AvailabilityGroup = $agName
-                Database          = $newDbName
+                Database          = $existingDbWithBackup
             }
             $results = Add-DbaAgDatabase @splatAddAgDb
         }
@@ -121,17 +125,17 @@ Describe "Add-DbaAgDatabase IntegrationTests" -Tag "IntegrationTests" {
 
         It "Returns proper results" {
             $results.AvailabilityGroup | Should -Be $agName
-            $results.Name | Should -Be $newDbName
+            $results.Name | Should -Be $existingDbWithBackup
             $results.IsJoined | Should -Be $true
         }
     }
 
-    Context "When adding AG database that does not exists" {
+    Context "When adding AG database that does not have a backup" {
         BeforeAll {
             $splatAddAgDb = @{
                 SqlInstance       = $TestConfig.instance3
                 AvailabilityGroup = $agName
-                Database          = 'DoesNotExists'
+                Database          = $existingDbWithoutBackup
                 # As we don't want an output, we suppress the warning.
                 # But we can still test the warning because WarningVariable is set globally.
                 WarningAction     = 'SilentlyContinue'
@@ -140,7 +144,29 @@ Describe "Add-DbaAgDatabase IntegrationTests" -Tag "IntegrationTests" {
         }
 
         It "Does warn" {
-            $WarnVar | Should -Match 'Database  is not found'
+            $WarnVar | Should -Match "Failed to add database $existingDbWithoutBackup to Availability Group $agName"
+        }
+
+        It "Does not return results" {
+            $results | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "When adding AG database that does not exists" {
+        BeforeAll {
+            $splatAddAgDb = @{
+                SqlInstance       = $TestConfig.instance3
+                AvailabilityGroup = $agName
+                Database          = $nonexistingDb
+                # As we don't want an output, we suppress the warning.
+                # But we can still test the warning because WarningVariable is set globally.
+                WarningAction     = 'SilentlyContinue'
+            }
+            $results = Add-DbaAgDatabase @splatAddAgDb
+        }
+
+        It "Does warn" {
+            $WarnVar | Should -Match "Database \[$nonexistingDb\] is not found"
         }
 
         It "Does not return results" {
