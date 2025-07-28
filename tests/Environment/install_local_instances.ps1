@@ -69,8 +69,7 @@ $null = Set-DbaSpConfigure -SqlInstance $sqlInstance[1, 2] -SqlCredential $TestC
 Invoke-DbaQuery -SqlInstance $sqlInstance[1, 2] -SqlCredential $TestConfig.SqlCred -Query "CREATE CRYPTOGRAPHIC PROVIDER dbatoolsci_AKV FROM FILE = '$($TestConfig.appveyorlabrepo)\keytests\ekm\Microsoft.AzureKeyVaultService.EKM.dll'"
 $null = Enable-DbaAgHadr -SqlInstance $sqlInstance[1, 2] -Force
 
-Invoke-DbaQuery -SqlInstance $sqlInstance[2] -SqlCredential $TestConfig.SqlCred -Query "IF NOT EXISTS (select * from sys.symmetric_keys where name like '%DatabaseMasterKey%') CREATE MASTER KEY ENCRYPTION BY PASSWORD = '<StrongPassword>'"
-Invoke-DbaQuery -SqlInstance $sqlInstance[2] -SqlCredential $TestConfig.SqlCred -Query "IF EXISTS ( SELECT * FROM sys.tcp_endpoints WHERE name = 'End_Mirroring') DROP ENDPOINT endpoint_mirroring"
+Invoke-DbaQuery -SqlInstance $sqlInstance[2] -SqlCredential $TestConfig.SqlCred -Query "CREATE MASTER KEY ENCRYPTION BY PASSWORD = '<StrongPassword>'"
 Invoke-DbaQuery -SqlInstance $sqlInstance[2] -SqlCredential $TestConfig.SqlCred -Query "CREATE CERTIFICATE dbatoolsci_AGCert WITH SUBJECT = 'AG Certificate'"
 
 $null = Set-DbaNetworkConfiguration -SqlInstance $sqlInstance[1] -StaticPortForIPAll 14333 -RestartService

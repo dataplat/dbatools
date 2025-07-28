@@ -92,10 +92,15 @@ Describe "Add-DbaAgDatabase IntegrationTests" -Tag "IntegrationTests" {
     }
 
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
         $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agName
         $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint
         $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName, $newDbName
         Remove-Item -Path $filesToRemove
+
+        # As this is the last block we do not need to rest the $PSDefaultParameterValues.
     }
 
     Context "When adding AG database" {

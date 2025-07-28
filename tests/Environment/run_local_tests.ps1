@@ -1,6 +1,7 @@
 $ErrorActionPreference = 'Stop'
 
-$stopOnFailure = $true
+$stopOnFailure = $false
+$testEnvironment = $false
 
 $start = Get-Date
 
@@ -17,18 +18,12 @@ $TestConfig = Get-TestConfig
 $tests = Get-ChildItem -Path "$repoBase\tests\*-Dba*.Tests.ps1"
 
 $skipTests = @(
-    'Add-DbaAgReplica.Tests.ps1'       # Needs an seconds Hadr-instance
     'Invoke-DbaDbMirroring.Tests.ps1'  # "the partner server name must be distinct"
     'Watch-DbaDbLogin.Tests.ps1'       # Command does not work
     'Get-DbaWindowsLog.Tests.ps1'      # Sometimes failes (gets no data), sometimes takes forever
     'Get-DbaPageFileSetting.Tests.ps1' # Classes Win32_PageFile and Win32_PageFileSetting do not return any information
     'New-DbaSsisCatalog.Tests.ps1'     # needs an SSIS server
     'Get-DbaClientProtocol.Tests.ps1'  # No ComputerManagement Namespace on CLIENT.dom.local
-    #'Copy-DbaDbAssembly.Tests.ps1'     # Sometimes: Error occurred in Describe block: Must declare the scalar variable "@assemblyName".
-    #'New-DbaDbMailAccount.Tests.ps1'   # Sometimes: Context Gets no DbMail when using -ExcludeAccount     [-] Gets no results 106ms      Expected $null, but got [dbatoolsci_test_672856400].      96:             $results | Should Be $null        at <ScriptBlock>, C:\GitHub\dbatools\tests\New-DbaDbMailAccount.Tests.ps1: line 96
-    'New-DbaLogin.Tests.ps1'           # fixed in other pr
-    'Copy-DbaDatabase.Tests.ps1'       # fixed in other pr
-    'Test-DbaDeprecatedFeature.Tests.ps1'  # The command will be deleted
 )
 $tests = $tests | Where-Object Name -notin $skipTests
 
@@ -92,12 +87,14 @@ foreach ($test in $tests5) {
         }
     }
 
-    $result = Invoke-Pester -Path 'C:\GitHub\dbatools\tests\Environment\TestEnvironment.Tests.ps1' -Output None -PassThru
-    if ($result.Result -ne 'Passed') {
-        Invoke-Pester -Path 'C:\GitHub\dbatools\tests\Environment\TestEnvironment.Tests.ps1' -Output Detailed
-        if ($stopOnFailure) {
-            Write-Warning -Message "Failed after $([int]((Get-Date) - $progressStart).TotalMinutes) minutes and $progressCompleted of $progressTotal tests"
-            return
+    if ($testEnvironment) {
+        $result = Invoke-Pester -Path 'C:\GitHub\dbatools\tests\Environment\TestEnvironment.Tests.ps1' -Output None -PassThru
+        if ($result.Result -ne 'Passed') {
+            Invoke-Pester -Path 'C:\GitHub\dbatools\tests\Environment\TestEnvironment.Tests.ps1' -Output Detailed
+            if ($stopOnFailure) {
+                Write-Warning -Message "Failed after $([int]((Get-Date) - $progressStart).TotalMinutes) minutes and $progressCompleted of $progressTotal tests"
+                return
+            }
         }
     }
 
