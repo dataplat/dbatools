@@ -202,12 +202,6 @@ jobs:
           Write-Output "Preview version detected, bypassing PSModuleCache and using install script"
           ./.github/scripts/install-dbatools-library.ps1
 
-      - name: Install SQL Server engine
-        uses: potatoqualitee/mssqlsuite@v1.9
-        with:
-          install: sqlengine
-          sa-password: dbatools.I0
-
       - name: 👥 Clone appveyor repo
         working-directory: /tmp
         run: |
@@ -222,6 +216,6 @@ jobs:
           CLIENT_GUID_SECRET: ${{secrets.CLIENT_GUID_SECRET}}
         shell: pwsh
         run: |
-          Import-Module ./dbatools.psd1 -Force
-          Set-DbatoolsInsecureConnection
+          $null = Import-Module ./dbatools.psd1 -Force
+          $null = Set-DbatoolsInsecureConnection
           $null = Invoke-Pester .github/scripts/gh-macactions.ps1 -Output Detailed -PassThru
