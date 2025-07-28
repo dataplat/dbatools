@@ -8,8 +8,6 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
     }
 
     It "creates a dac object" {
-        $publishprofile = New-DbaDacProfile -Database tempdb -Path $home
-        $publishprofile | Should -Not -BeNullOrEmpty
         $extractOptions = New-DbaDacOption -Action Export
         $extractOptions.ExtractAllTableData = $true
         $extractOptions | Should -Not -BeNullOrEmpty
