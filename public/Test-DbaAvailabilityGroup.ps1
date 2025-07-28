@@ -159,7 +159,7 @@ function Test-DbaAvailabilityGroup {
             }
 
             if (-not $db) {
-                Stop-Function -Message "Database $db is not found on $server." -Continue
+                Stop-Function -Message "Database [$dbName] is not found on $server." -Continue
             }
 
             if ($db.RecoveryModel -ne 'Full') {
