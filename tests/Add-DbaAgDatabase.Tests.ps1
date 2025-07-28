@@ -1,12 +1,14 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
 param(
     # Where do we use $ModuleName?
+    # Probably for mocking - but I'm not sure.
     $ModuleName               = "dbatools",
     # The following does not work:
     #   $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
     # Only $PSDefaultParameterValues is set and available in all parts of the test script.
-    # $TestConfig is not set as global as we need it, so we would need two parameters:
-    $TestConfig               = (Get-TestConfig),
+    # $TestConfig is not set as global as we need it, so we would need two parameters.
+    # But I now vote for setting $TestConfig outside of the testfiles right after importing the module.
+    # But we must set the $PSDefaultParameterValues here so that they are available in every part of the test.
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 

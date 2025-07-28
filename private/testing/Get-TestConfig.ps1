@@ -1,15 +1,13 @@
 function Get-TestConfig {
-    # How can this be overwritten? Let's just use a normal variable.
-    #param(
-    #    [string]$LocalConfigPath = "$script:PSModuleRoot/tests/constants.local.ps1"
-    #)
+    param(
+        [string]$LocalConfigPath = "$script:PSModuleRoot/tests/constants.local.ps1"
+    )
     $config = [ordered]@{}
 
-    $localConfigPath = "$script:PSModuleRoot/tests/constants.local.ps1"
-    if (Test-Path $localConfigPath) {
+    if (Test-Path $LocalConfigPath) {
         # I think the following line is useless output:
         # Write-Host "Tests will use local constants file: tests\constants.local.ps1." -ForegroundColor Cyan
-        . $localConfigPath
+        . $LocalConfigPath
         # I don't understand the following line:
         # Note: Local constants are sourced but not explicitly added to $config
     } elseif ($env:CODESPACES -or ($env:TERM_PROGRAM -eq 'vscode' -and $env:REMOTE_CONTAINERS)) {
