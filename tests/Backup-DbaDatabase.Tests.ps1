@@ -16,7 +16,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Properly restores a database on the local drive using Path" {
-        $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -BackupDirectory C:\temp\backups
+        $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -BackupDirectory "$($TestConfig.Temp)\backups"
         It "Should return a database name, specifically master" {
             ($results.DatabaseName -contains 'master') | Should -Be $true
         }
@@ -26,7 +26,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     BeforeAll {
-        $DestBackupDir = 'C:\Temp\backups'
+        $DestBackupDir = "$($TestConfig.Temp)\backups"
         $random = Get-Random
         $DestDbRandom = "dbatools_ci_backupdbadatabase$random"
         if (-Not(Test-Path $DestBackupDir)) {
@@ -142,10 +142,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
 
     Context "A fully qualified path should override a backupfolder" {
-        $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -BackupDirectory c:\temp -BackupFileName "$DestBackupDir\PesterTest2.bak"
+        $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -BackupDirectory $TestConfig.Temp -BackupFileName "$DestBackupDir\PesterTest2.bak"
         It "Should report backed up to $DestBackupDir" {
             $results.FullName | Should -BeLike "$DestBackupDir\PesterTest2.bak"
-            $results.BackupFolder | Should Not Be 'c:\temp'
+            $results.BackupFolder | Should Not Be $TestConfig.Temp
         }
         It "Should have backuped up to $DestBackupDir\PesterTest2.bak" {
             Test-Path "$DestBackupDir\PesterTest2.bak" | Should -Be $true
