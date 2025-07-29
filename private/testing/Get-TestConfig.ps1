@@ -70,5 +70,11 @@ function Get-TestConfig {
 
     $config['CommonParameters'] = [System.Management.Automation.PSCmdlet]::CommonParameters
 
+    # We want the tests as readable as possible so we want to set Confirm globally to $false
+    $config['Defaults']['*:Confirm'] = $false
+
+    # We use a global warning variable so that we can always test that the command does not write a warning
+    $config['Defaults']['*:WarningVariable'] = 'WarnVar'
+
     [pscustomobject]$config
 }

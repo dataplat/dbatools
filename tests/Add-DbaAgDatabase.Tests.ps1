@@ -52,15 +52,6 @@ Describe "Add-DbaAgDatabase IntegrationTests" -Tag "IntegrationTests" {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
 
-        # We should always use WarningVariable to capture all warnings to be able to test them.
-        # We should always use the same name for that variable in all tests.
-        # We should set this globally in Get-TestConfig as soon as we agree on this.
-        $PSDefaultParameterValues['*:WarningVariable'] = 'WarnVar'
-
-        # We should always set Confirm to $false via $PSDefaultParameterValues to reduce the code for better readability.
-        # We should set this globally in Get-TestConfig as soon as we agree on this.
-        $PSDefaultParameterValues['*:Confirm'] = $false
-
         # We remove all the calls to Get-DbaProcess and Stop-DbaProcess as they are not needed with correct tests.
         #$null = Get-DbaProcess -SqlInstance $TestConfig.instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
 
