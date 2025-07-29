@@ -18,7 +18,7 @@ cache:
   - C:\Program Files\WindowsPowerShell\Modules\dbatools.library -> .github/dbatools-library-version.json
 
 #shallow_clone: true
-clone_depth: 100
+clone_depth: 20
 
 # Set build info
 environment:
