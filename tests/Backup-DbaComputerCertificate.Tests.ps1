@@ -35,7 +35,7 @@ Describe "Backup-DbaComputerCertificate" -Tag "IntegrationTests" {
         BeforeAll {
             $null = Add-DbaComputerCertificate -Path "$($TestConfig.appveyorlabrepo)\certificates\localhost.crt" -Confirm:$false
             $certThumbprint = "29C469578D6C6211076A09CEE5C5797EEA0C2713"
-            $backupPath = "C:\temp"
+            $backupPath = $TestConfig.Temp
         }
 
         It "Returns the proper results" {

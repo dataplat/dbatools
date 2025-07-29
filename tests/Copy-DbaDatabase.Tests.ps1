@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $NetworkPath = "C:\temp"
+        $NetworkPath = $TestConfig.Temp
         $random = Get-Random
         $backuprestoredb = "dbatoolsci_backuprestore$random"
         $backuprestoredb2 = "dbatoolsci_backuprestoreother$random"

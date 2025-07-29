@@ -323,7 +323,7 @@ function Get-DbaDbBackupHistory {
                         $results = $server.ConnectionContext.ExecuteWithResults($forkCheckSql).Tables.Rows
                         if ($results.count -gt 1) {
                             if (-not $LastFull) {
-                                Write-Message -Message "Found backups from multiple recovery forks for $($db.name) on $($server.name), this may affect your results" -Level Warning
+                                Write-Message -Message "Found backups from multiple recovery forks for $($db.name) on $($server.name), this may affect your results" -Level Verbose
                                 foreach ($result in $results) {
                                     Write-Message -Message "Between $($result.MinDate)/$($result.FirstLsn) and $($result.MaxDate)/$($result.FinalLsn) $($result.database_name) was on Recovery Fork GUID $($result.RecFork) ($($result.backupcount) backups)" -Level Warning
                                 }
@@ -409,7 +409,7 @@ function Get-DbaDbBackupHistory {
                         $results = $server.ConnectionContext.ExecuteWithResults($forkCheckSql).Tables.Rows
                         if ($results.count -gt 1) {
                             if (-not $LastFull) {
-                                Write-Message -Message "Found backups from multiple recovery forks for $($db.name) on $($server.name), this may affect your results" -Level Warning
+                                Write-Message -Message "Found backups from multiple recovery forks for $($db.name) on $($server.name), this may affect your results" -Level Verbose
                                 foreach ($result in $results) {
                                     Write-Message -Message "Between $($result.MinDate)/$($result.FirstLsn) and $($result.MaxDate)/$($result.FinalLsn) $($result.database_name) was on Recovery Fork GUID $($result.RecFork) ($($result.backupcount) backups)" -Level Warning
                                 }
