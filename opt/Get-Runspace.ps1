@@ -3,34 +3,24 @@
 
 if (-not (Get-Command -Name Get-Runspace -ErrorAction SilentlyContinue)) {
     function Get-Runspace {
-        $type = [type]'System.Management.Automation.Runspaces.Runspace'
-        if ($type.GetMethod('GetRunspaces')) {
-            $allRunspaces = [System.Management.Automation.Runspaces.Runspace]::GetRunspaces()
-            foreach ($rs in $allRunspaces) {
+        try {
+            $runspaces = [Dataplat.Dbatools.Runspace.RunspaceHost]::Runspaces.Values
+            foreach ($rs in $runspaces) {
+                $availability = switch ($rs.State.ToString()) {
+                    'Running' { 'Available' }
+                    default   { 'NotAvailable' }
+                }
                 [PSCustomObject]@{
-                    Id           = $rs.Id
+                    Id           = $rs.RunspaceGuid
                     Name         = $rs.Name
-                    Type         = $rs.RunspaceType
-                    State        = $rs.RunspaceStateInfo.State
-                    Availability = $rs.Availability
-                    InstanceId   = $rs.InstanceId
+                    Type         = $rs.GetType().Name
+                    State        = $rs.State
+                    Availability = $availability
+                    InstanceId   = $rs.RunspaceGuid
                 }
             }
-        } elseif ($type.GetProperty('DefaultRunspace')) {
-            $rs = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace
-            if ($rs) {
-                [PSCustomObject]@{
-                    Id           = $rs.Id
-                    Name         = $rs.Name
-                    Type         = $rs.RunspaceType
-                    State        = $rs.RunspaceStateInfo.State
-                    Availability = $rs.Availability
-                    InstanceId   = $rs.InstanceId
-                }
-            }
-        } else {
-            Write-Warning "Unable to retrieve runspace information in this environment."
-            return $null
+        } catch {
+            Write-Warning "Unable to enumerate dbatools-managed runspaces: $_"
         }
     }
 }
