@@ -19,8 +19,6 @@ function Get-TestConfig {
             "*:SourceSqlCredential" = $config['SqlCred']
             "*:DestinationSqlCredential" = $config['SqlCred']
         }
-        # To be able to write everything to a file share we need to configure this.
-        $config['Temp'] = 'C:\Temp'
     } elseif ($env:GITHUB_WORKSPACE) {
         $config['DbaToolsCi_Computer'] = "localhost"
         $config['Instance1'] = "localhost"
@@ -36,7 +34,6 @@ function Get-TestConfig {
         $config['AzureBlobAccount'] = "dbatools"
         $config['AzureServer'] = 'psdbatools.database.windows.net'
         $config['AzureSqlDbLogin'] = "appveyor@clemairegmail.onmicrosoft.com"
-        $config['Temp'] = 'C:\Temp'
     } else {
         $config['DbaToolsCi_Computer'] = "localhost"
         $config['Instance1'] = "localhost\sql2008r2sp2"
@@ -54,7 +51,6 @@ function Get-TestConfig {
         $config['AzureSqlDbLogin'] = "appveyor@clemairegmail.onmicrosoft.com"
         $config['BigDatabaseBackup'] = 'C:\github\StackOverflowMini.bak'
         $config['BigDatabaseBackupSourceUrl'] = 'https://github.com/BrentOzarULTD/Stack-Overflow-Database/releases/download/20230114/StackOverflowMini.bak'
-        $config['Temp'] = 'C:\Temp'
     }
 
     if ($env:appveyor) {
