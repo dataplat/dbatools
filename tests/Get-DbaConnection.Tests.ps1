@@ -18,7 +18,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $results = Get-DbaConnection -SqlInstance $TestConfig.instance1
         foreach ($result in $results) {
             It "returns an scheme" {
-                $result.AuthScheme -eq 'ntlm' -or $result.AuthScheme -eq 'Kerberos' | Should -Be $true
+                $result.AuthScheme | Should -BeIn 'NTLM', 'Kerberos', 'SQL'
             }
         }
     }

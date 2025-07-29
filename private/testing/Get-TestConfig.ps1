@@ -5,9 +5,7 @@ function Get-TestConfig {
     $config = [ordered]@{}
 
     if (Test-Path $LocalConfigPath) {
-        Write-Host "Tests will use local constants file: tests\constants.local.ps1." -ForegroundColor Cyan
         . $LocalConfigPath
-        # Note: Local constants are sourced but not explicitly added to $config
     } elseif ($env:CODESPACES -or ($env:TERM_PROGRAM -eq 'vscode' -and $env:REMOTE_CONTAINERS)) {
         $null = Set-DbatoolsInsecureConnection
         $config['Instance1'] = "dbatools1"
@@ -61,13 +59,6 @@ function Get-TestConfig {
         }
     }
 
-    # derive the command name from the CALLING script's filename
-    $config['CommandName'] = ($MyInvocation.MyCommand.Name | Split-Path -Leaf).Replace(".Tests.ps1", "")
-
-    if (-not $config['CommandName']) {
-        $config['CommandName'] = "Unknown"
-    }
-
     $config['CommonParameters'] = [System.Management.Automation.PSCmdlet]::CommonParameters
 
     # We want the tests as readable as possible so we want to set Confirm globally to $false
@@ -75,6 +66,10 @@ function Get-TestConfig {
 
     # We use a global warning variable so that we can always test that the command does not write a warning
     $config['Defaults']['*:WarningVariable'] = 'WarnVar'
+
+    if (-not $config['Temp']) {
+        $config['Temp'] = 'C:\Temp'
+    }
 
     [pscustomobject]$config
 }
