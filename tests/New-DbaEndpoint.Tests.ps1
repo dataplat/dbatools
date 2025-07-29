@@ -14,18 +14,11 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
 }
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
-    BeforeAll {
-        $endpoint = Get-DbaEndpoint -SqlInstance $TestConfig.instance2 | Where-Object EndpointType -eq DatabaseMirroring
-        $create = $endpoint | Export-DbaScript -Passthru
-        Get-DbaEndpoint -SqlInstance $TestConfig.instance2 | Where-Object EndpointType -eq DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
-    }
     AfterAll {
-        Get-DbaEndpoint -SqlInstance $TestConfig.instance2 | Where-Object EndpointType -eq DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
-        if ($create) {
-            Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query "$create"
-        }
+        $null = Remove-DbaEndpoint -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -EndPoint dbatoolsci_MirroringEndpoint -Confirm:$false
     }
-    $results = New-DbaEndpoint -SqlInstance $TestConfig.instance2 -Type DatabaseMirroring -Role Partner -Name Mirroring -Confirm:$false | Start-DbaEndpoint -Confirm:$false
+
+    $results = New-DbaEndpoint -SqlInstance $TestConfig.instance2 -Type DatabaseMirroring -Role Partner -Name dbatoolsci_MirroringEndpoint -Confirm:$false | Start-DbaEndpoint -Confirm:$false
 
     It "creates an endpoint of the db mirroring type" {
         $results.EndpointType | Should -Be 'DatabaseMirroring'
