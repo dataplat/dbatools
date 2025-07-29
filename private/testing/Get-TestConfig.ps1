@@ -70,5 +70,9 @@ function Get-TestConfig {
 
     $config['CommonParameters'] = [System.Management.Automation.PSCmdlet]::CommonParameters
 
+    if (-not $config['Temp']) {
+        $config['Temp'] = 'C:\Temp'
+    }
+
     [pscustomobject]$config
 }
