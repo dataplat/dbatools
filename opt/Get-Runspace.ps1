@@ -1,7 +1,4 @@
-# Provides a compatibility implementation of Get-Runspace for PowerShell v3/v4
-# Loaded automatically by dbatools.psm1 for PSVersion < 5
-
-if (-not (Get-Command -Name Get-Runspace -ErrorAction SilentlyContinue)) {
+if (-not $ExecutionContext.SessionState.InvokeCommand.GetCommand('Get-Runspace','Function,Cmdlet')) {
     function Get-Runspace {
         try {
             $runspaces = [Dataplat.Dbatools.Runspace.RunspaceHost]::Runspaces.Values
