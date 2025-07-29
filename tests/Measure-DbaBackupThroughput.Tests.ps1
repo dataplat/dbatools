@@ -22,7 +22,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $db | Backup-DbaDatabase
         }
         AfterAll {
-            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $db
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $db -Confirm:$false
         }
 
         $results = Measure-DbaBackupThroughput -SqlInstance $TestConfig.instance2 -Database $db
