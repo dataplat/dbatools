@@ -153,11 +153,11 @@ Describe "$ModuleName Tests missing" -Tag 'Tests' {
     Context "Every function should have tests" {
         foreach ($f in $functions) {
             It "$($f.basename) has a tests.ps1 file" {
-                Test-Path "tests\$($f.basename).tests.ps1" | Should Be $true
+                Test-Path "$ModulePath\tests\$($f.basename).tests.ps1" | Should Be $true
             }
-            If (Test-Path "tests\$($f.basename).tests.ps1") {
+            If (Test-Path "$ModulePath\tests\$($f.basename).tests.ps1") {
                 It "$($f.basename) has validate parameters unit test" {
-                    $testFile = Get-Content "tests\$($f.basename).Tests.ps1" -Raw
+                    $testFile = Get-Content "$ModulePath\tests\$($f.basename).Tests.ps1" -Raw
                     $hasValidation = $testFile -match 'Context "Validate parameters"' -or $testFile -match 'Context "Parameter validation"'
                     $hasValidation | Should -Be $true -Because "Test file must have parameter validation"
                 }
