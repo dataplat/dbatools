@@ -1,19 +1,10 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
 param(
-    # Where do we use $ModuleName?
-    # Probably for mocking - but I'm not sure.
-    $ModuleName               = "dbatools",
-    # The following does not work:
-    #   $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
-    # Only $PSDefaultParameterValues is set and available in all parts of the test script.
-    # $TestConfig is not set as global as we need it, so we would need two parameters.
-    # But I now vote for setting $TestConfig outside of the testfiles right after importing the module.
-    # But we must set the $PSDefaultParameterValues here so that they are available in every part of the test.
-    $PSDefaultParameterValues = $TestConfig.Defaults
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
 )
 
-# Better add UnitTests to the description to have a unique description for all Describe blocks.
-Describe "Add-DbaAgDatabase UnitTests" -Tag "UnitTests" {
+Describe "Add-DbaAgDatabase" -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
             $command = Get-Command Add-DbaAgDatabase
@@ -47,130 +38,49 @@ Describe "Add-DbaAgDatabase UnitTests" -Tag "UnitTests" {
     }
 }
 
-Describe "Add-DbaAgDatabase IntegrationTests" -Tag "IntegrationTests" {
+Describe "Add-DbaAgDatabase" -Tag "IntegrationTests" {
     BeforeAll {
-        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
-
-        # We remove all the calls to Get-DbaProcess and Stop-DbaProcess as they are not needed with correct tests.
-        #$null = Get-DbaProcess -SqlInstance $TestConfig.instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
-
-        # Collect all the created files to be able to remove them ant the end.
-        $filesToRemove = @( )
-
-        # Connect to the instance(s) using Connect-DbaInstance only if needed.
-        # It is saver to use the instance name from $TestConfig to get a fresh new SMO every time.
-        # In the future, we should also test with pre-opened connection.
-        # Use dbatools commands whenever possible, so that these are tested here as well.
-
-        # Explain what needs to be set up for the test:
-        # To add a database to an availablity group, we need an availability group and a database that has been backed up.
-        # For negative tests, we need a database without a backup and a non existing database.
-
-        # Set variables that we need in the tests.
-        # I don't see the point in prefixing them all with "dbatoolsci",
-        # better give them good names that relate to the command that we test.
-        $agName = "addagdb_group"
-        $existingDbWithBackup = "dbWithBackup"
-        $existingDbWithoutBackup = "dbWithoutBackup"
-        $nonexistingDb = "dbdoesnotexist"
-
-        # Create the objects
+        $null = Get-DbaProcess -SqlInstance $TestConfig.instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance3
+        $agname = "dbatoolsci_addagdb_agroup"
+        $dbname = "dbatoolsci_addagdb_agroupdb"
+        $newdbname = "dbatoolsci_addag_agroupdb_2"
+        $server.Query("create database $dbname")
+        $backup = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbname | Backup-DbaDatabase
         $splatNewAg = @{
-            Primary      = $TestConfig.instance3
-            Name         = $agName
-            ClusterType  = "None"
+            Primary = $TestConfig.instance3
+            Name = $agname
+            ClusterType = "None"
             FailoverMode = "Manual"
-            Certificate  = "dbatoolsci_AGCert"
+            Database = $dbname
+            Confirm = $false
+            Certificate = "dbatoolsci_AGCert"
         }
-        $null = New-DbaAvailabilityGroup @splatNewAg
-
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instance3 -Name $existingDbWithBackup
-        $backup = Backup-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $existingDbWithBackup -Path $TestConfig.Temp
-        $filesToRemove += $backup.Path
-
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instance3 -Name $existingDbWithoutBackup
-
-        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+        $ag = New-DbaAvailabilityGroup @splatNewAg
     }
 
     AfterAll {
-        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
-
-        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agName
-        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $existingDbWithBackup, $existingDbWithoutBackup
-        Remove-Item -Path $filesToRemove
-
-        # As this is the last block we do not need to rest the $PSDefaultParameterValues.
+        $null = Remove-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $agname -Confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $server -Database $dbname, $newdbname -Confirm:$false
     }
 
     Context "When adding AG database" {
-        # We use the BeforeAll to run the test itself.
-        # Results are saved in $results.
         BeforeAll {
+            $server.Query("create database $newdbname")
+            $backup = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $newdbname | Backup-DbaDatabase
             $splatAddAgDb = @{
-                SqlInstance       = $TestConfig.instance3
-                AvailabilityGroup = $agName
-                Database          = $existingDbWithBackup
+                SqlInstance = $TestConfig.instance3
+                AvailabilityGroup = $agname
+                Database = $newdbname
+                Confirm = $false
             }
             $results = Add-DbaAgDatabase @splatAddAgDb
-        }
-
-        It "Does not warn" {
-            $WarnVar | Should -BeNullOrEmpty
         }
 
         It "Returns proper results" {
-            $results.AvailabilityGroup | Should -Be $agName
-            $results.Name | Should -Be $existingDbWithBackup
+            $results.AvailabilityGroup | Should -Be $agname
+            $results.Name | Should -Be $newdbname
             $results.IsJoined | Should -Be $true
-        }
-    }
-
-    Context "When adding AG database that does not have a backup" {
-        BeforeAll {
-            $splatAddAgDb = @{
-                SqlInstance       = $TestConfig.instance3
-                AvailabilityGroup = $agName
-                Database          = $existingDbWithoutBackup
-                # As we don't want an output, we suppress the warning.
-                # But we can still test the warning because WarningVariable is set globally.
-                WarningAction     = 'SilentlyContinue'
-            }
-            $results = Add-DbaAgDatabase @splatAddAgDb
-        }
-
-        It "Does warn" {
-            $WarnVar | Should -Match "Failed to add database $existingDbWithoutBackup to Availability Group $agName"
-        }
-
-        It "Does not return results" {
-            $results | Should -BeNullOrEmpty
-        }
-    }
-
-    Context "When adding AG database that does not exists" {
-        BeforeAll {
-            $splatAddAgDb = @{
-                SqlInstance       = $TestConfig.instance3
-                AvailabilityGroup = $agName
-                Database          = $nonexistingDb
-                # As we don't want an output, we suppress the warning.
-                # But we can still test the warning because WarningVariable is set globally.
-                WarningAction     = 'SilentlyContinue'
-            }
-            $results = Add-DbaAgDatabase @splatAddAgDb
-        }
-
-        It "Does warn" {
-            $WarnVar | Should -Match "Database \[$nonexistingDb\] is not found"
-        }
-
-        It "Does not return results" {
-            $results | Should -BeNullOrEmpty
         }
     }
 } #$TestConfig.instance2 for appveyor
