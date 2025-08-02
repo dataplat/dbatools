@@ -344,7 +344,8 @@ Describe "Backup-DbaDatabase" -Tag "IntegrationTests" {
 
     Context "Test backup verification" {
         BeforeAll {
-            $null = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name backuptest
+            # "-RecoveryModel Full" only needed on very old versions
+            $null = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name backuptest -RecoveryModel Full
         }
 
         AfterAll {
