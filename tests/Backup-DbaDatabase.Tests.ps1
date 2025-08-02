@@ -323,16 +323,22 @@ Describe "Backup-DbaDatabase" -Tag "IntegrationTests" {
 
     Context "Should Backup to default path if none specified" {
         BeforeAll {
+            $PSDefaultParameterValues.Remove('Backup-DbaDatabase:BackupDirectory')
+            $defaultBackupPath = (Get-DbaDefaultPath -SqlInstance $TestConfig.instance1).Backup
             $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -BackupFileName 'PesterTest.bak'
-            $DefaultPath = (Get-DbaDefaultPath -SqlInstance $TestConfig.instance1).Backup
+        }
+
+        AfterAll {
+            Get-ChildItem -Path $results.Fullname | Remove-Item
+            $PSDefaultParameterValues['Backup-DbaDatabase:BackupDirectory'] = $DestBackupDir
         }
 
         It "Should report it has backed up to the path with the corrrect name" {
-            $results.Fullname | Should -BeLike "$DefaultPath*PesterTest.bak"
+            $results.Fullname | Should -BeLike "$defaultBackupPath*PesterTest.bak"
         }
 
         It "Should have backed up to the path with the corrrect name" {
-            Test-Path "$DefaultPath\PesterTest.bak" | Should -Be $true
+            Test-Path "$defaultBackupPath\PesterTest.bak" | Should -BeTrue
         }
     }
 
@@ -346,7 +352,7 @@ Describe "Backup-DbaDatabase" -Tag "IntegrationTests" {
         }
 
         It "Should perform a full backup and verify it" {
-            $b = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -Type full -Verify
+            $b = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database backuptest -Type full -Verify
             $b.BackupComplete | Should -BeTrue
             $b.Verified | Should -BeTrue
             $b.count | Should -Be 1
@@ -399,7 +405,12 @@ Describe "Backup-DbaDatabase" -Tag "IntegrationTests" {
 
     Context "Should handle NUL as an input path" {
         BeforeAll {
+            $PSDefaultParameterValues.Remove('Backup-DbaDatabase:BackupDirectory')
             $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -BackupFileName NUL
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues['Backup-DbaDatabase:BackupDirectory'] = $DestBackupDir
         }
 
         It "Should return succesful backup" {
