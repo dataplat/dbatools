@@ -128,10 +128,7 @@ function New-DbaSsisCatalog {
             }
 
             try {
-                $legacyconnstring = $server | New-DbaConnectionString -Legacy
-                $sqlconnection = New-Object System.Data.SqlClient.SqlConnection $legacyconnstring
-                $null = $sqlconnection.Open()
-                $ssis = New-Object Microsoft.SqlServer.Management.IntegrationServices.IntegrationServices $sqlconnection
+                $ssis = New-Object Microsoft.SqlServer.Management.IntegrationServices.IntegrationServices $server
             } catch {
                 Stop-Function -Message "Can't load server" -Target $instance -ErrorRecord $_
                 return
