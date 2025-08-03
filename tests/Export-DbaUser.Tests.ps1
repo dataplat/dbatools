@@ -1,6 +1,7 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 $global:TestConfig = Get-TestConfig
+$PSDefaultParameterValues = $TestConfig.Defaults
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -15,10 +16,9 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $AltExportPath = "$env:USERPROFILE\Documents"
-        $outputPath = "$AltExportPath\Dbatoolsci_user_CustomFolder"
-        $outputFile = "$AltExportPath\Dbatoolsci_user_CustomFile.sql"
-        $outputFile2 = "$AltExportPath\Dbatoolsci_user_CustomFile2.sql"
+        $outputPath = "$($TestConfig.Temp)\Dbatoolsci_user_CustomFolder"
+        $outputFile = "$($TestConfig.Temp)\Dbatoolsci_user_CustomFile.sql"
+        $outputFile2 = "$($TestConfig.Temp)\Dbatoolsci_user_CustomFile2.sql"
         try {
             $dbname = "dbatoolsci_exportdbauser"
             $login = "dbatoolsci_exportdbauser_login"
@@ -67,12 +67,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         } catch { } # No idea why appveyor can't handle this
     }
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname -Confirm:$false
-        Remove-DbaLogin -SqlInstance $TestConfig.instance1 -Login $login -Confirm:$false
-        Remove-DbaLogin -SqlInstance $TestConfig.instance1 -Login $login2 -Confirm:$false
-        (Get-ChildItem $outputFile -ErrorAction SilentlyContinue) | Remove-Item -ErrorAction SilentlyContinue
-        (Get-ChildItem $outputFile2 -ErrorAction SilentlyContinue) | Remove-Item -ErrorAction SilentlyContinue
-        Remove-Item -Path $outputPath -Recurse -ErrorAction SilentlyContinue -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname
+        Remove-DbaLogin -SqlInstance $TestConfig.instance1 -Login $login, $login2, $login01, $login02
+        (Get-ChildItem $outputFile -ErrorAction SilentlyContinue) | Remove-Item
+        (Get-ChildItem $outputFile2 -ErrorAction SilentlyContinue) | Remove-Item
+        Remove-Item -Path $outputPath -Recurse
     }
 
     Context "Check if output file was created" {

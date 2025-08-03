@@ -31,20 +31,35 @@ Describe "Backup-DbaComputerCertificate" -Tag "UnitTests" {
 }
 
 Describe "Backup-DbaComputerCertificate" -Tag "IntegrationTests" {
-    Context "Certificate is added and backed up properly" {
-        BeforeAll {
-            $null = Add-DbaComputerCertificate -Path "$($TestConfig.appveyorlabrepo)\certificates\localhost.crt" -Confirm:$false
-            $certThumbprint = "29C469578D6C6211076A09CEE5C5797EEA0C2713"
-            $backupPath = $TestConfig.Temp
-        }
+    BeforeAll {
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
 
-        It "Returns the proper results" {
+        $certThumbprint = "29C469578D6C6211076A09CEE5C5797EEA0C2713"
+        $certPath = "$($TestConfig.appveyorlabrepo)\certificates\localhost.crt"
+        $backupPath = $TestConfig.Temp
+
+        $null = Add-DbaComputerCertificate -Path $certPath
+
+        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+    }
+
+    AfterAll {
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
+        $null = Remove-DbaComputerCertificate -Thumbprint $certThumbprint
+    }
+
+    Context "Certificate is backed up properly" {
+        BeforeAll {
             $result = Get-DbaComputerCertificate -Thumbprint $certThumbprint | Backup-DbaComputerCertificate -Path $backupPath
-            $result.Name | Should -Match "$certThumbprint.cer"
         }
 
         AfterAll {
-            $null = Remove-DbaComputerCertificate -Thumbprint $certThumbprint -Confirm:$false
+            Get-ChildItem -Path $result.FullName | Remove-Item
+        }
+
+        It "Returns the proper results" {
+            $result.Name | Should -Match "$certThumbprint.cer"
         }
     }
 }

@@ -26,7 +26,6 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
     AfterAll {
         Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname -Confirm:$false
-        $results | Remove-Item -Confirm:$false -ErrorAction Ignore
     }
 
     Context "Command works" {
@@ -38,6 +37,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results.FullName | Should -FileContentMatch $dbname
 
             $results.FullName | Should -FileContentMatch FirstName
+
+            $results | Remove-Item -Confirm:$false -ErrorAction Ignore
         }
     }
 }

@@ -22,6 +22,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
     AfterEach {
         $result = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname -Confirm:$false
+        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
     }
     AfterAll {
         $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbname -Confirm:$false
