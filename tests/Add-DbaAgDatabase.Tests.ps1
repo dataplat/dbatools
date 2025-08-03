@@ -1,6 +1,7 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
     $ModuleName               = "dbatools",
+    $CommandName              = [System.IO.Path]::GetFileName($PSCommandPath.Replace('.Tests.ps1', '')),
     # $TestConfig has to be set outside of the tests by running: $TestConfig = Get-TestConfig
     # This will set $TestConfig.Defaults with the parameter defaults, including:
     # * Confirm = $false
@@ -9,7 +10,7 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Describe "Add-DbaAgDatabase UnitTests" -Tag "UnitTests" {
+Describe $CommandName -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
             $command = Get-Command Add-DbaAgDatabase
@@ -43,7 +44,7 @@ Describe "Add-DbaAgDatabase UnitTests" -Tag "UnitTests" {
     }
 }
 
-Describe "Add-DbaAgDatabase IntegrationTests" -Tag "IntegrationTests" {
+Describe $CommandName -Tag "IntegrationTests" {
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
