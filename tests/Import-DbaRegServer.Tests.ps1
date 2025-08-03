@@ -64,6 +64,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "imports a file from Export-DbaRegServer" {
             $results3 = $newServer3 | Export-DbaRegServer -Path C:\temp
             $results4 = Import-DbaRegServer -SqlInstance $TestConfig.instance2 -Path $results3
+            Remove-Item -Path $results3.FullName
             $results4.ServerName | Should -Be @('dbatoolsci-server3')
             $results4.Description | Should -Be @('dbatoolsci-server3desc')
         }

@@ -55,6 +55,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results.Directory.Name | Should -Be temp
             $results.FullName | Should -FileContentMatch $dbname
             $results.FullName | Should -FileContentMatch fname
+
+            Remove-Item -Path $results.FullName
         }
 
         It "Bug 6934: matching IPAddress, Address, and StreetAddress on known names" {
@@ -76,6 +78,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $jsonOutput.Tables.Columns[4].Name | Should -Be "Street"
             $jsonOutput.Tables.Columns[4].MaskingType | Should -Be "Address"
             $jsonOutput.Tables.Columns[4].SubType | Should -Be "StreetAddress"
+
+            Remove-Item -Path $results.FullName
         }
     }
 }

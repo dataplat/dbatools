@@ -51,6 +51,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $null = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database msdb | Select-Object -First 1 | Export-DbaScript -NoPrefix -FilePath C:\temp\msdb.txt -Append
             $linecount3 = (Get-Content C:\temp\msdb.txt).Count
             $linecount1 | Should -Not -Be $linecount3
+            Remove-Item -Path C:\temp\msdb.txt
         }
     }
 }

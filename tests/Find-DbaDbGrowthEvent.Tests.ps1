@@ -21,23 +21,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $databaseName1 = "dbatoolsci1_$random"
             $db1 = New-DbaDatabase -SqlInstance $server -Name $databaseName1
 
-            $sqlGrowthAndShrink =
-            "CREATE TABLE Tab1 (ID INTEGER);
-
-            INSERT INTO Tab1 (ID)
-            SELECT
-                1
-            FROM
-                sys.all_objects a
-            CROSS JOIN
-                sys.all_objects b;
-
-            TRUNCATE TABLE Tab1;
-            DBCC SHRINKFILE ($databaseName1, TRUNCATEONLY);
-            DBCC SHRINKFILE ($($databaseName1)_Log, TRUNCATEONLY);
-            "
-
-            $null = $db1.Query($sqlGrowthAndShrink)
+            $null = $db1.Query("CREATE TABLE justspace (a NCHAR(1000))")
+            $null = $db1.Query("INSERT INTO justspace SELECT TOP 5000 'x' FROM sys.all_objects a, sys.all_objects b")
         }
         AfterAll {
             $db1 | Remove-DbaDatabase -Confirm:$false

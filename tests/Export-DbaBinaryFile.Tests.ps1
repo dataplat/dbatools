@@ -23,7 +23,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     AfterEach {
         try {
             $null = $db.Query("DROP TABLE dbo.BunchOFilezz")
-            $null = Get-ChildItem -Path C:\temp\exports -File | Remove-Item -Confirm:$false -Force
+            Remove-Item -Path C:\temp\exports -Recurse
         } catch {
             $null = 1
         }

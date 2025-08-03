@@ -31,7 +31,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
         $logins = "claudio", "port", "tester", "tester_new"
         $dropTableQuery = "IF EXISTS (SELECT * FROM sys.tables WHERE name = 'tester_table') DROP TABLE tester_table"
-        foreach ($instance in $instances) {
+        foreach ($instance in $TestConfig.instance1, $TestConfig.instance2) {
             foreach ($login in $logins) {
                 Initialize-TestLogin -Instance $instance -Login $login
             }
@@ -56,12 +56,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         # cleanup everything
         $logins = "claudio", "port", "tester", "tester_new"
 
-        foreach ($instance in $instances) {
+        foreach ($instance in $TestConfig.instance1, $TestConfig.instance2) {
             foreach ($login in $logins) {
                 Initialize-TestLogin -Instance $instance -Login $login
             }
             $null = Invoke-DbaQuery -SqlInstance $instance -Database tempdb -Query $dropTableQuery
         }
+
+        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -Login 'claudio', 'port', 'tester'
     }
 
     Context "Copy login with the same properties." {

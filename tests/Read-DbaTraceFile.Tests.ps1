@@ -15,15 +15,8 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $configs = $TestConfig.instance1, $TestConfig.instance2 | Get-DbaSpConfigure -Name DefaultTraceEnabled
-        $configs | Set-DbaSpConfigure -Value $true -WarningAction SilentlyContinue
-    }
-    AfterAll {
-        foreach ($config in $configs) {
-            if (-not $config.DefaultTraceEnabled) {
-                $config | Set-DbaSpConfigure -Value $false -WarningAction SilentlyContinue
-            }
-        }
+        # TODO: Should not be needed as the default trace should always be enabled
+        Set-DbaSpConfigure -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -Name DefaultTraceEnabled -Value $true -WarningAction SilentlyContinue
     }
 
     Context "Verifying command output" {
