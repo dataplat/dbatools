@@ -24,9 +24,12 @@ Describe $CommandName -Tag "UnitTests" {
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "returns the proper transport" {
-        $results = Get-DbaConnection -SqlInstance $TestConfig.instance1
-        foreach ($result in $results) {
-            It "returns an scheme" {
+        BeforeAll {
+            $results = Get-DbaConnection -SqlInstance $TestConfig.instance1
+        }
+
+        It "returns a valid AuthScheme" {
+            foreach ($result in $results) {
                 $result.AuthScheme | Should -BeIn 'NTLM', 'Kerberos', 'SQL'
             }
         }
