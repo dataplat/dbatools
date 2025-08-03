@@ -1,10 +1,11 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
     $ModuleName               = "dbatools",
+    $CommandName              = [System.IO.Path]::GetFileName($PSCommandPath.Replace('.Tests.ps1', '')),
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Describe "Add-DbaAgListener" -Tag "UnitTests" {
+Describe $CommandName -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
             $command = Get-Command Add-DbaAgListener
@@ -38,7 +39,7 @@ Describe "Add-DbaAgListener" -Tag "UnitTests" {
     }
 }
 
-Describe "Add-DbaAgListener" -Tag "IntegrationTests" {
+Describe $CommandName -Tag "IntegrationTests" {
     BeforeAll {
         $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
 

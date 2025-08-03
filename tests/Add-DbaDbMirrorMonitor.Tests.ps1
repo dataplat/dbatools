@@ -1,10 +1,11 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $ModuleName               = "dbatools",
+    $CommandName              = [System.IO.Path]::GetFileName($PSCommandPath.Replace('.Tests.ps1', '')),
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Describe "Add-DbaDbMirrorMonitor" -Tag "UnitTests" {
+Describe $CommandName -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
             $command = Get-Command Add-DbaDbMirrorMonitor
@@ -29,7 +30,7 @@ Describe "Add-DbaDbMirrorMonitor" -Tag "UnitTests" {
     }
 }
 
-Describe "Add-DbaDbMirrorMonitor" -Tag "IntegrationTests" {
+Describe $CommandName -Tag "IntegrationTests" {
     BeforeAll {
         $null = Remove-DbaDbMirrorMonitor -SqlInstance $TestConfig.instance2 -WarningAction SilentlyContinue
     }
