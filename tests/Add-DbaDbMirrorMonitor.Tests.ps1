@@ -31,9 +31,6 @@ Describe $CommandName -Tag "UnitTests" {
 }
 
 Describe $CommandName -Tag "IntegrationTests" {
-    BeforeAll {
-        $null = Remove-DbaDbMirrorMonitor -SqlInstance $TestConfig.instance2 -WarningAction SilentlyContinue
-    }
     AfterAll {
         $null = Remove-DbaDbMirrorMonitor -SqlInstance $TestConfig.instance2 -WarningAction SilentlyContinue
     }

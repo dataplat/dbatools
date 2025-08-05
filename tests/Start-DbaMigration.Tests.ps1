@@ -37,13 +37,17 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         Invoke-DbaQuery -SqlInstance $server -Query "CREATE DATABASE $detachattachdb; ALTER DATABASE $detachattachdb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE"
         Invoke-DbaQuery -SqlInstance $server -Query "CREATE DATABASE $startmigrationrestoredb2; ALTER DATABASE $startmigrationrestoredb2 SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE"
         $null = Set-DbaDbOwner -SqlInstance $TestConfig.instance2 -Database $startmigrationrestoredb, $detachattachdb -TargetLogin sa
+
+        $backupPath = "$($TestConfig.Temp)\$CommandName"
+        $null = New-Item -Path $backupPath -ItemType Directory
     }
     AfterAll {
         Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $startmigrationrestoredb, $detachattachdb, $startmigrationrestoredb2
+        Remove-Item -Path $backupPath -Recurse
     }
 
     Context "Backup restore" {
-        $results = Start-DbaMigration -Force -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -BackupRestore -SharedPath "C:\temp" -Exclude Logins, SpConfigure, SysDbUserObjects, AgentServer, CentralManagementServer, ExtendedEvents, PolicyManagement, ResourceGovernor, Endpoints, ServerAuditSpecifications, Audits, LinkedServers, SystemTriggers, DataCollector, DatabaseMail, BackupDevices, Credentials
+        $results = Start-DbaMigration -Force -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -BackupRestore -SharedPath $backupPath -Exclude Logins, SpConfigure, SysDbUserObjects, AgentServer, CentralManagementServer, ExtendedEvents, PolicyManagement, ResourceGovernor, Endpoints, ServerAuditSpecifications, Audits, LinkedServers, SystemTriggers, DataCollector, DatabaseMail, BackupDevices, Credentials
 
         It "returns at least one result" {
             $results | Should -Not -Be $null
@@ -68,7 +72,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Backup restore" {
-        $quickbackup = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Backup-DbaDatabase -BackupDirectory C:\temp
+        $quickbackup = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Backup-DbaDatabase -BackupDirectory $backupPath
         $results = Start-DbaMigration -Force -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -UseLastBackup -Exclude Logins, SpConfigure, SysDbUserObjects, AgentServer, CentralManagementServer, ExtendedEvents, PolicyManagement, ResourceGovernor, Endpoints, ServerAuditSpecifications, Audits, LinkedServers, SystemTriggers, DataCollector, DatabaseMail, BackupDevices, Credentials, StartupProcedures
 
         It "returns at least one result" {
