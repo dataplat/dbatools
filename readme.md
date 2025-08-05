@@ -35,7 +35,7 @@ Install-Module dbatools -Scope CurrentUser
 Install-Module dbatools
 ```
 
-📦 **[View dbatools on PowerShell Gallery](https://www.powershellgallery.com/packages/dbatools)** - 50+ million downloads and counting!
+📦 **[View dbatools on PowerShell Gallery](https://www.powershellgallery.com/packages/dbatools)** - 7 million downloads and counting!
 
 For older PowerShell versions without Gallery support, download `PowerShellGet` from [Microsoft's site](https://learn.microsoft.com/en-us/powershell/scripting/gallery/installing-psget?view=powershell-7.4).
 
@@ -49,7 +49,7 @@ Starting with v2.5.5, dbatools uses Microsoft Azure Trusted Signing instead of D
   ```
 - **ExecutionPolicy users**: If you use AllSigned/RemoteSigned, you'll need to trust the new certificate after each update.
 
-Most users won't notice any difference, but those with strict execution policies should read the [full migration guide](https://blog.netnerds.net/2025/08/dbatools-azure-trusted-signing/) including automation scripts.
+Most users won't notice any difference, but those with strict execution policies should read the [full migration guide](https://blog.netnerds.net/2025/08/dbatools-azure-trusted-signing/).
 
 ### First Commands
 
