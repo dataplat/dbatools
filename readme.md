@@ -2,7 +2,7 @@
 
 <img align="left" src=bin/dbatools.png alt="dbatools logo"> Migrate SQL Server instances in minutes instead of days. Test hundreds of backups automatically. Find that one database across 50 servers. dbatools is a PowerShell module with nearly 700 commands that replace manual SQL Server administration with powerful and fun automation.
 
-Works everywhere: SQL Server 2000-current, Windows/Linux/macOS, Express through Enterprise.
+Works everywhere on-prem: SQL Server 2000-current, Windows/Linux/macOS, Express-Enterprise. Plus a little bit of Azure.
 
 ## Table of Contents
 - [Quick Start](#quick-start)
