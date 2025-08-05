@@ -1,261 +1,236 @@
-[Open in Visual Studio Code](https://open.vscode.dev/dataplat/dbatools)
+# dbatools
 
-## Getting Started
+<img align="left" src=bin/dbatools.png alt="dbatools logo"> Migrate SQL Server instances in minutes instead of days. Test hundreds of backups automatically. Find that one database across 50 servers. dbatools is a PowerShell module with nearly 700 commands that replace manual SQL Server administration with powerful and fun automation.
 
-<img align="left" src=bin/dbatools.png alt="dbatools logo">  dbatools is PowerShell module that you may think of like a command-line SQL Server Management Studio. The project initially started out as just `Start-SqlMigration.ps1`, but as of our 2.0 version release has grown into a collection of [nearly 700 commands](https://dbatools.io/commands) that help automate SQL Server tasks and encourage best practices.
+Works everywhere: SQL Server 2000-current, Windows/Linux/macOS, Express through Enterprise.
 
-Want to contribute to the project? We'd love to have you! Visit our [contributing.md](CONTRIBUTING.md) for a jump start.
+## Table of Contents
+- [Quick Start](#quick-start)
+  - [Installation](#installation)
+  - [First Commands](#first-commands)
+- [Common Use Cases](#common-use-cases)
+  - [Backups & Restores](#backups--restores)
+  - [Migrations](#migrations)
+  - [Monitoring & Health](#monitoring--health)
+  - [Finding & Discovery](#finding--discovery)
+- [Advanced Usage](#advanced-usage)
+  - [Authentication](#authentication)
+  - [Custom Ports](#custom-ports)
+  - [PowerShell Transcript](#powershell-transcript)
+- [Support & Compatibility](#support--compatibility)
+- [Community & Help](#community--help)
+- [Contributing](#contributing)
 
-Want to say thanks? Click the star at the top of the page 🌟
+## Quick Start
 
-## Key links for reference:
+### Installation
 
-- [dbatools Slack channel](https://sqlcommunity.slack.com/messages/C1M2WEASG/) for general discussion on the module and asking questions
-- [dbatools-dev Slack channel](https://sqlcommunity.slack.com/messages/C3EJ852JD/) for discussion around contributing to the project
-- [dbatools documentation](https://docs.dbatools.io)
-
-_Need an invite to the SQL Community Slack workspace? Check out the [self-invite page](https://dbatools.io/slack/). Drop by if you'd like to chat about dbatools or even [join the team](https://dbatools.io/team)!_
-
-## Installer
-
-dbatools works on Windows, Linux and macOS (M1 and Intel!) 🤩👍 Windows requires PowerShell v3 and above, while those using dbatools on PowerShell Core will need to be running 7.4.0 and above.
-
-Run the following command to install dbatools from the PowerShell Gallery (to install on a server or for all users, remove the `-Scope` parameter and run in an elevated session):
+dbatools works on Windows, Linux and macOS. Windows requires PowerShell v3 and above, while PowerShell Core requires 7.4.0 and above.
 
 ```powershell
+# Install from PowerShell Gallery
 Install-Module dbatools -Scope CurrentUser
+
+# For servers or all users, run elevated without -Scope
+Install-Module dbatools
 ```
 
-If you use an earlier version of PowerShell that does not support the PowerShell Gallery, you can download `PowerShellGet` from [Microsoft's site](https://learn.microsoft.com/en-us/powershell/scripting/gallery/installing-psget?view=powershell-7.4) then run the command again.
+📦 **[View dbatools on PowerShell Gallery](https://www.powershellgallery.com/packages/dbatools)** - 50+ million downloads and counting!
 
-## Usage scenarios
+For older PowerShell versions without Gallery support, download `PowerShellGet` from [Microsoft's site](https://learn.microsoft.com/en-us/powershell/scripting/gallery/installing-psget?view=powershell-7.4).
 
-In addition to the simple things you can do in SSMS (e.g. starting a job, backing up a database), we've also read a whole bunch of docs and came up with commands that do nifty things quickly.
+### ⚠️ Important: Certificate Change (August 2025)
 
-- Lost sysadmin access and need to regain entry to your SQL Server? Use [Reset-DbaAdmin](http://dbatools.io/Reset-DbaAdmin).
-- Need to easily test your backups? Use [Test-DbaLastBackup](http://dbatools.io/Test-DbaLastBackup).
-- SPN management got you down? Use [our suite of SPN commands](http://dbatools.io/schwifty) to find which SPNs are missing and easily add them.
-- Got so many databases you can't keep track? Congrats on your big ol' environment! Use [Find-DbaDatabase](http://dbatools.io/Find-DbaDatabase) to easily find your database.
+Starting with v2.5.5, dbatools uses Microsoft Azure Trusted Signing instead of DigiCert. This means:
+- **Better security**: Microsoft backs our reputation, fewer antivirus false positives
+- **One-time upgrade hiccup**: When upgrading from older versions, use:
+  ```powershell
+  Update-Module dbatools -Force -SkipPublisherCheck
+  ```
+- **ExecutionPolicy users**: If you use AllSigned/RemoteSigned, you'll need to trust the new certificate after each update.
 
-## Usage examples
+Most users won't notice any difference, but those with strict execution policies should read the [full migration guide](https://blog.netnerds.net/2025/08/dbatools-azure-trusted-signing/) including automation scripts.
 
-As previously mentioned, dbatools now offers [over 700 commands](https://dbatools.io/commands)! [Here are some of the ones we highlight at conferences](https://gist.github.com/potatoqualitee/e8932b64aeb6ef404e252d656b6318a2).
-
-PowerShell v3 and above required for Windows PowerShell, PowerShell Core 7.4.0+ required for cross-platform. (See below for important information about alternative logins and specifying SQL Server ports).
+### First Commands
 
 ```powershell
-# Set some vars
-$new = "localhost\sql2016"
-$old = $instance = "localhost"
-$allservers = $old, $new
+# See your databases
+Get-DbaDatabase -SqlInstance localhost
 
-# Alternatively, use Registered Servers
-$allservers = Get-DbaRegServer -SqlInstance $instance
+# Check your backups
+Get-DbaLastBackup -SqlInstance localhost | Format-Table
 
-# Need to restore a database? It can be as simple as this:
-Restore-DbaDatabase -SqlInstance $instance -Path "C:\temp\AdventureWorks2012-Full Database Backup.bak"
+# Test your last backup (yes, really!)
+Test-DbaLastBackup -SqlInstance localhost
+```
 
-# Use Ola Hallengren's backup script? We can restore an *ENTIRE INSTANCE* with just one line
-Get-ChildItem -Directory \\workstation\backups\sql2012 | Restore-DbaDatabase -SqlInstance $new
+## Common Use Cases
 
-# What about if you need to make a backup? And you are logging in with alternative credentials?
-Get-DbaDatabase -SqlInstance $new -SqlCredential sqladmin | Backup-DbaDatabase
+### Backups & Restores
 
-# Testing your backups is crazy easy!
-Start-Process https://dbatools.io/Test-DbaLastBackup
-Test-DbaLastBackup -SqlInstance $old | Out-GridView
+```powershell
+# Backup all databases
+Get-DbaDatabase -SqlInstance sql01 | Backup-DbaDatabase
 
-# But what if you want to test your backups on a different server?
-Test-DbaLastBackup -SqlInstance $old -Destination $new | Out-GridView
+# Simple restore
+Restore-DbaDatabase -SqlInstance sql01 -Path "C:\temp\mydb.bak"
 
-# Nowadays, we don't just backup databases. Now, we're backing up logins
-Export-DbaLogin -SqlInstance $instance -Path C:\temp\logins.sql
-Invoke-Item C:\temp\logins.sql
+# Restore entire instance from Ola Hallengren backups
+Get-ChildItem -Directory \\nas\backups\sql01 | Restore-DbaDatabase -SqlInstance sql02
 
-# And Agent Jobs
-Get-DbaAgentJob -SqlInstance $old | Export-DbaScript -Path C:\temp\jobs.sql
+# Test ALL your backups on a different server
+Test-DbaLastBackup -SqlInstance sql01 -Destination sql02 | Out-GridView
+```
 
-# What if you just want to script out your restore?
-Get-ChildItem -Directory \\workstation\backups\subset\ | Restore-DbaDatabase -SqlInstance $new -OutputScriptOnly -WithReplace | Out-File -Filepath c:\temp\restore.sql
-Invoke-Item c:\temp\restore.sql
+### Migrations
 
-# You've probably heard about how easy migrations can be with dbatools. Here's an example
-$startDbaMigrationSplat = @{
-    Source = $old
-    Destination = $new
+```powershell
+# Migrate entire SQL instance with one command
+$params = @{
+    Source = 'sql01'
+    Destination = 'sql02'
     BackupRestore = $true
-    SharedPath = 'C:\temp'
-    Exclude = 'BackupDevice','SysDbUserObjects','Credentials'
+    SharedPath = '\\nas\temp'
 }
+Start-DbaMigration @params -Force
 
-Start-DbaMigration @startDbaMigrationSplat -Force | Select-Object * | Out-GridView
+# Export/Import logins with passwords
+Export-DbaLogin -SqlInstance sql01 -Path C:\temp\logins.sql
+Invoke-DbaQuery -SqlInstance sql02 -File C:\temp\logins.sql
 
-# Know how snapshots used to be a PITA? Now they're super easy
-New-DbaDbSnapshot -SqlInstance $new -Database db1 -Name db1_snapshot
-Get-DbaDbSnapshot -SqlInstance $new
-Get-DbaProcess -SqlInstance $new -Database db1 | Stop-DbaProcess
-Restore-DbaFromDatabaseSnapshot -SqlInstance $new -Database db1 -Snapshot db1_snapshot
-Remove-DbaDbSnapshot -SqlInstance $new -Snapshot db1_snapshot # or -Database db1
-
-# Have you tested your last good DBCC CHECKDB? We've got a command for that
-$old | Get-DbaLastGoodCheckDb | Out-GridView
-
-# Here's how you can find your integrity jobs and easily start them. Then, you can watch them run, and finally check your newest DBCC CHECKDB results
-$old | Get-DbaAgentJob | Where-Object Name -match integrity | Start-DbaAgentJob
-$old | Get-DbaRunningJob
-$old | Get-DbaLastGoodCheckDb | Out-GridView
-
-# Our new build website is super useful!
-Start-Process https://dbatools.io/builds
-
-# You can use the same JSON the website uses to check the status of your own environment
-$allservers | Get-DbaBuild
-
-# We evaluated 37,545 SQL Server stored procedures on 9 servers in 8.67 seconds!
-$new | Find-DbaStoredProcedure -Pattern dbatools
-
-# Have an employee who is leaving? Find all of their objects.
-$allservers | Find-DbaUserObject -Pattern ad\jdoe | Out-GridView
-
-# Find detached databases, by example
-Detach-DbaDatabase -SqlInstance $instance -Database AdventureWorks2012
-Find-DbaOrphanedFile -SqlInstance $instance | Out-GridView
-
-# Check out how complete our sp_configure command is
-Get-DbaSpConfigure -SqlInstance $new | Out-GridView
-
-# Easily update configuration values
-Set-DbaSpConfigure -SqlInstance $new -ConfigName XPCmdShellEnabled -Value $true
-
-# DB Cloning too!
-Invoke-DbaDbClone -SqlInstance $new -Database db1 -CloneDatabase db1_clone | Out-GridView
-
-# Read and watch XEvents
-Get-DbaXESession -SqlInstance $new -Session system_health | Read-DbaXEFile
-Get-DbaXESession -SqlInstance $new -Session system_health | Read-DbaXEFile | Select-Object -ExpandProperty Fields | Out-GridView
-
-# Reset-DbaAdmin
-Reset-DbaAdmin -SqlInstance $instance -Login sqladmin -Verbose
-Get-DbaDatabase -SqlInstance $instance -SqlCredential sqladmin
-
-# sp_whoisactive
-Install-DbaWhoIsActive -SqlInstance $instance -Database master
-Invoke-DbaWhoIsActive -SqlInstance $instance -ShowOwnSpid -ShowSystemSpids
-
-# Diagnostic query!
-$instance | Invoke-DbaDiagnosticQuery -UseSelectionHelper | Export-DbaDiagnosticQuery -Path $home
-Invoke-Item $home
-
-# Ola, yall
-$instance | Install-DbaMaintenanceSolution -ReplaceExisting -BackupLocation C:\temp -InstallJobs
-
-# Startup parameters
-Get-DbaStartupParameter -SqlInstance $instance
-Set-DbaStartupParameter -SqlInstance $instance -SingleUser -WhatIf
-
-# Database clone
-Invoke-DbaDbClone -SqlInstance $new -Database dbwithsprocs -CloneDatabase dbwithsprocs_clone
-
-# Schema change and Pester tests
-Get-DbaSchemaChangeHistory -SqlInstance $new -Database tempdb
-
-# Get Db Free Space AND write it to table
-Get-DbaDbSpace -SqlInstance $instance | Out-GridView
-Get-DbaDbSpace -SqlInstance $instance -IncludeSystemDB | ConvertTo-DbaDataTable | Write-DbaDataTable -SqlInstance $instance -Database tempdb -Table DiskSpaceExample -AutoCreateTable
-Invoke-DbaQuery -SqlInstance $instance -Database tempdb -Query 'SELECT * FROM dbo.DiskSpaceExample' | Out-GridView
-
-# History
-Get-Command -Module dbatools *history*
-
-# Identity usage
-Test-DbaIdentityUsage -SqlInstance $instance | Out-GridView
-
-# Test/Set SQL max memory
-$allservers | Get-DbaMaxMemory
-$allservers | Test-DbaMaxMemory | Format-Table
-$allservers | Test-DbaMaxMemory | Where-Object { $_.SqlMaxMB -gt $_.TotalMB } | Set-DbaMaxMemory -WhatIf
-Set-DbaMaxMemory -SqlInstance $instance -MaxMb 1023
-
-# Testing sql server linked server connections
-Test-DbaLinkedServerConnection -SqlInstance $instance
-
-# See protocols
-Get-DbaServerProtocol -ComputerName $instance | Out-GridView
-
-# Reads trace files - default trace by default
-Read-DbaTraceFile -SqlInstance $instance | Out-GridView
-
-# don't have remoting access? Explore the filesystem. Uses master.sys.xp_dirtree
-Get-DbaFile -SqlInstance $instance
-
-# Test your SPNs and see what'd happen if you'd set them
-$servers | Test-DbaSpn | Out-GridView
-$servers | Test-DbaSpn | Out-GridView -PassThru | Set-DbaSpn -WhatIf
-
-# Get Virtual Log File information
-Get-DbaDbVirtualLogFile -SqlInstance $new -Database db1
-Get-DbaDbVirtualLogFile -SqlInstance $new -Database db1 | Measure-Object
+# Copy jobs between servers
+Copy-DbaAgentJob -Source sql01 -Destination sql02
 ```
 
-## Important Note
-
-#### Alternative SQL Credentials
-
-By default, all SQL-based commands will login to SQL Server using Trusted/Windows Authentication. To use alternative credentials, including SQL Logins or alternative Windows credentials, use the `-SqlCredential`. This parameter accepts the results of `Get-Credential` which generates a [PSCredential](https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.security/get-credential?view=powershell-5.1) object.
+### Monitoring & Health
 
 ```powershell
-Get-DbaDatabase -SqlInstance sql2017 -SqlCredential sqladmin
+# Find databases without recent backups
+Get-DbaLastBackup -SqlInstance sql01 | Where-Object LastFullBackup -lt (Get-Date).AddDays(-7)
+
+# Check for corruption
+Get-DbaLastGoodCheckDb -SqlInstance sql01 | Out-GridView
+
+# Monitor currently running queries
+Install-DbaWhoIsActive -SqlInstance sql01 -Database master
+Invoke-DbaWhoIsActive -SqlInstance sql01
+
+# Get disk space for all databases
+Get-DbaDbSpace -SqlInstance sql01 | Out-GridView
+```
+
+### Finding & Discovery
+
+```powershell
+# Find databases across multiple servers
+Find-DbaDatabase -SqlInstance sql01, sql02, sql03 -Pattern "Production"
+
+# Find stored procedures containing specific text
+Find-DbaStoredProcedure -SqlInstance sql01 -Pattern "INSERT INTO Audit"
+
+# Find orphaned database files
+Find-DbaOrphanedFile -SqlInstance sql01
+
+# Discover SQL instances on network
+Find-DbaInstance -ComputerName server01, server02
+```
+
+## Advanced Usage
+
+### Authentication
+
+#### SQL Server Authentication
+
+By default, all SQL-based commands use Windows Authentication. To use SQL logins or alternative Windows credentials:
+
+```powershell
+# SQL Login
+$cred = Get-Credential sqladmin
+Get-DbaDatabase -SqlInstance sql01 -SqlCredential $cred
 ```
 
 <a href="https://dbatools.io/wp-content/uploads/2016/05/cred.jpg"><img class="aligncenter size-full wp-image-6897" src="https://dbatools.io/wp-content/uploads/2016/05/cred.jpg" alt="" width="322" height="261" /></a>
 
-A few (or maybe just one - [Restore-DbaDatabase](/Restore-DbaDatabase)), you can also use `-AzureCredential`.
-
 #### Alternative Windows Credentials
 
-For commands that access Windows such as [Get-DbaDiskSpace](/Get-DbaDiskSpace), you will pass the `-Credential` parameter.
+For commands that access Windows (like `Get-DbaDiskSpace`), use the `-Credential` parameter:
 
 ```powershell
 $cred = Get-Credential ad\winadmin
-Get-DbaDiskSpace -ComputerName sql2017 -Credential $cred
+Get-DbaDiskSpace -ComputerName sql01 -Credential $cred
 ```
 
-To store credentials to disk, please read more at [Jaap Brasser's blog](https://www.jaapbrasser.com/quickly-and-securely-storing-your-credentials-powershell/).
+For secure credential storage, see [Jaap Brasser's guide](https://www.jaapbrasser.com/quickly-and-securely-storing-your-credentials-powershell/).
 
-#### Servers with custom ports
-
-If you use non-default ports and SQL Browser is disabled, you can access servers using a colon (functionality we've added) or a comma (the way Microsoft does it).
+### Custom Ports
 
 ```powershell
--SqlInstance sql2017:55559
--SqlInstance 'sql2017,55559'
+# Using colon or comma for non-default ports
+Get-DbaDatabase -SqlInstance 'sql01:55559'
+Get-DbaDatabase -SqlInstance 'sql01,55559'  # Note the quotes required for comma
 ```
 
-Note that PowerShell sees commas as arrays, so you must surround the host name with quotes.
-
-#### Using Start-Transcript
-
-Due to an [issue](https://github.com/dataplat/dbatools/issues/2722) in the way PowerShell 5.1 works you need to use `Import-Module dbatools` before you run `Start-Transcript`. If this isn't done then your transcript will stop when the module is imported:
+### PowerShell Transcript
 
 ```powershell
+# Import module before starting transcript (PS 5.1 requirement)
 Import-Module dbatools
 Start-Transcript
-Get-DbaDatabase -SqlInstance sql2017
+Get-DbaDatabase -SqlInstance sql01
 Stop-Transcript
 ```
 
-## Support
+## Support & Compatibility
 
-dbatools aims to support as many configurations as possible, including
+We support a wide range of SQL Server versions and platforms:
 
-* PowerShell v3 and above (Windows PowerShell) or PowerShell Core 7.4.0+ (cross-platform)
-* Windows, macOS and Linux
-* SQL Server 2000 - Current
-* Express - Datacenter Edition
-* Clustered and stand-alone instances
-* Windows and SQL authentication
-* Default and named instances
-* Multiple instances on one server
-* Auto-populated parameters for command-line completion (think -Database and -Login)
+| Component | Versions |
+|-----------|----------|
+| SQL Server | 2000 - Current |
+| PowerShell (Windows) | v3 and above |
+| PowerShell Core | 7.4.0+ |
+| Operating Systems | Windows, Linux, macOS (Intel & M1) |
+| Editions | Express through Datacenter |
+| Configurations | Clustered, AG, Stand-alone, Named instances |
 
-Read more at our website at [dbatools.io](https://dbatools.io)
+We maintain backward compatibility with older systems still in production use.
+
+## Community & Help
+
+**Documentation:** https://docs.dbatools.io
+**Command Reference:** https://dbatools.io/commands
+**Blog:** https://dbatools.io/blog
+
+**Slack Community:**
+- [#dbatools](https://sqlcommunity.slack.com/messages/C1M2WEASG/) - General discussion
+- [#dbatools-dev](https://sqlcommunity.slack.com/messages/C3EJ852JD/) - Development discussion
+- [Get invite](https://dbatools.io/slack/)
+
+**Getting Help:**
+```powershell
+# Detailed help for any command
+Get-Help Test-DbaLastBackup -Full
+
+# Find commands
+Get-Command -Module dbatools *backup*
+
+# Online help
+Get-Help Test-DbaLastBackup -Online
+```
+
+## Contributing
+
+Want to contribute? We'd love to have you!
+
+- Read our [Contributing Guide](CONTRIBUTING.md)
+- Check out the [dbatools-dev Slack channel](https://sqlcommunity.slack.com/messages/C3EJ852JD/)
+- Visit [dbatools.io/team](https://dbatools.io/team) to learn about joining the team
+- Star this repository if you find it useful ⭐
+
+## License
+
+dbatools is licensed under the [MIT License](LICENSE).
+
+## Special Thanks
+
+Thank you to all our [contributors](https://github.com/dataplat/dbatools/graphs/contributors) and the SQL Server community for making this project possible.
