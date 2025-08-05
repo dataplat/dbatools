@@ -36,8 +36,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $newDbSimpleModel, $newDbFullModel, $newDbBulkLoggedModel, $newDbSimpleModelServer2 | Invoke-DbaQuery -Query "CREATE TABLE dbo.Test (Id INTEGER); CREATE TABLE dbo.Test2 (Id INTEGER)"
 
         # do a full backup so that log backups can be done
-        $backupDbFull = Backup-DbaDatabase -SqlInstance $server -Database $dbnameFullModel
-        $backupDbBulkLogged = Backup-DbaDatabase -SqlInstance $server -Database $dbnameBulkLoggedModel
+        $backupDbFull = Backup-DbaDatabase -SqlInstance $server -Database $dbnameFullModel -FilePath "$($TestConfig.Temp)\$dbnameFullModel.bak"
+        $backupDbBulkLogged = Backup-DbaDatabase -SqlInstance $server -Database $dbnameBulkLoggedModel -FilePath "$($TestConfig.Temp)\$dbnameBulkLoggedModel.bak"
         $logBackupPath = $backupDbFull.BackupFolder
 
         # SQL to populate some data for testing
@@ -55,6 +55,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
     AfterAll {
         $newDbSimpleModel, $newDbFullModel, $newDbBulkLoggedModel, $newDbSimpleModelServer2 | Remove-DbaDatabase -Confirm:$false
+        Remove-Item -Path "$($TestConfig.Temp)\$dbnameFullModel*", "$($TestConfig.Temp)\$dbnameBulkLoggedModel*"
     }
 
     Context "Param validation" {

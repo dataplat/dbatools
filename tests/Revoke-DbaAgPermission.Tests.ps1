@@ -21,6 +21,8 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
     AfterAll {
         $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname -Confirm:$false
+        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
+        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance3 -Login 'claudio', 'port', 'tester' -Confirm:$false
     }
     Context "revokes big perms" {
         It "returns results with proper data" {

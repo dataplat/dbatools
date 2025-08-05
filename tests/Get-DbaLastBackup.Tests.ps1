@@ -19,7 +19,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $dbname = "dbatoolsci_getlastbackup$random"
         $server.Query("CREATE DATABASE $dbname")
         $server.Query("ALTER DATABASE $dbname SET RECOVERY FULL WITH NO_WAIT")
-        $backupdir = Join-Path $server.BackupDirectory $dbname
+        $backupdir = Join-Path $TestConfig.Temp $dbname
         if (-not (Test-Path $backupdir -PathType Container)) {
             $null = New-Item -Path $backupdir -ItemType Container
         }
@@ -62,7 +62,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Get last history for one split database" {
         It "supports multi-file backups" {
-            $null = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname -FileCount 4
+            $null = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname -BackupDirectory $backupdir -FileCount 4
             $results = Get-DbaLastBackup -SqlInstance $TestConfig.instance2 -Database $dbname | Select-Object -First 1
             $results.LastFullBackup.GetType().Name | Should -Be "DbaDateTime"
         }

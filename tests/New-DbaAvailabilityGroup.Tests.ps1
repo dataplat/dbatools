@@ -18,7 +18,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $null = Get-DbaProcess -SqlInstance $TestConfig.instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
         $dbname = "dbatoolsci_addag_agroupdb"
         $agname = "dbatoolsci_addag_agroup"
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbname | Backup-DbaDatabase
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbname | Backup-DbaDatabase -FilePath "$($TestConfig.Temp)\$dbname.bak"
     }
     AfterEach {
         $result = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname -Confirm:$false
@@ -26,6 +26,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
     AfterAll {
         $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbname -Confirm:$false
+        Remove-Item -Path "$($TestConfig.Temp)\$dbname.bak"
     }
     Context "adds an ag" {
         It "returns an ag with a db named" {

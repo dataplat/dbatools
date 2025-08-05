@@ -133,7 +133,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     It "Test with a tables that have circular dependencies" {
         # this causes infinite loop when circular dependencies exist in dependency tree.
-        $results = Get-DbaDbTable -SqlInstance $TestConfig.instance1 -Database $dbname -Table dbo.dbatoolsci_circrefA | Get-DbaDependency
+        $results = Get-DbaDbTable -SqlInstance $TestConfig.instance1 -Database $dbname -Table dbo.dbatoolsci_circrefA | Get-DbaDependency -WarningAction SilentlyContinue
+        # TODO: Test for "Circular Reference detected
         $results.length | Should -Be 2
         $results[0].Dependent   | Should -Be "dbatoolsci_circrefB"
         $results[0].Tier        | Should -Be 1
@@ -143,7 +144,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     It "Test with a tables that have circular dependencies and use -IncludeSelf" {
         # this causes infinite loop when circular dependencies exist in dependency tree.
-        $results = Get-DbaDbTable -SqlInstance $TestConfig.instance1 -Database $dbname -Table dbo.dbatoolsci_circrefA | Get-DbaDependency -IncludeSelf
+        $results = Get-DbaDbTable -SqlInstance $TestConfig.instance1 -Database $dbname -Table dbo.dbatoolsci_circrefA | Get-DbaDependency -IncludeSelf -WarningAction SilentlyContinue
+        # TODO: Test for "Circular Reference detected
         $results.length | Should -Be 3
         $results[0].Dependent   | Should -Be "dbatoolsci_circrefA"
         $results[0].Tier        | Should -Be 0

@@ -15,6 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     AfterAll {
+        # TODO: WARNING: [12:43:16][Invoke-DbaQuery] [CLIENT\SQLInstance2] Failed during execution | Cannot drop the table 'CommaSeparatedWithHeader', because it does not exist or you do not have permission.
         Invoke-DbaQuery -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -Database tempdb -Query "drop table SuperSmall; drop table CommaSeparatedWithHeader"
     }
 
@@ -26,7 +27,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
 
     Context "Works as expected" {
-        $results = $path | Import-DbaCsv -SqlInstance $TestConfig.instance1 -Database tempdb -Delimiter `t -NotifyAfter 50000 -WarningVariable warn
+        $results = $path | Import-DbaCsv -SqlInstance $TestConfig.instance1 -Database tempdb -Delimiter `t -NotifyAfter 50000 -WarningVariable warn -WarningAction SilentlyContinue
+        # TODO: Test for "Table or view SuperSmall does not exist and AutoCreateTable was not specified"
         It "accepts piped input and doesn't add rows if the table does not exist" {
             $results | Should -Be $null
         }
@@ -75,7 +77,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
         It "Catches the scenario where the database param does not match the server object passed into the command" {
             $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
-            $result = Import-DbaCsv -Path $path -SqlInstance $server -Database InvalidDB -Delimiter `t -Table SuperSmall -Truncate -AutoCreateTable
+            $result = Import-DbaCsv -Path $path -SqlInstance $server -Database InvalidDB -Delimiter `t -Table SuperSmall -Truncate -AutoCreateTable -WarningAction SilentlyContinue
+            # TODO: test for Cannot open database "InvalidDB" requested by the login. The login failed.
             $result | Should -BeNullOrEmpty
 
             $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
@@ -86,6 +89,9 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "Catches the scenario where the header is not properly parsed causing param errors" {
+            # TODO: WARNING: [12:43:13][Invoke-DbaQuery] [CLIENT] Failed during execution | Cannot drop the table 'NoHeaderRow', because it does not exist or you do not have permission.
+            # TODO: What line writes the warning? Is this correct?
+
             # create the table using AutoCreate
             $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
             $null = Import-DbaCsv -Path $CommaSeparatedWithHeader -SqlInstance $server -Database tempdb -AutoCreateTable

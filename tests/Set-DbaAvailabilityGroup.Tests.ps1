@@ -20,6 +20,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
     AfterAll {
         Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname -Confirm:$false
+        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
     }
     Context "sets ag properties" {
         It "returns modified results" {
