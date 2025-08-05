@@ -2,6 +2,9 @@
 image: Previous Visual Studio 2015
 configuration: "Debug"
 
+# skip PR builds when there's already a push build
+skip_branch_with_pr: true
+
 build_script:
  - ps: Set-Service wuauserv -StartupType Manual #otherwise, choco command exits with code 1058
 
@@ -15,7 +18,7 @@ cache:
   - C:\Program Files\WindowsPowerShell\Modules\dbatools.library -> .github/dbatools-library-version.json
 
 #shallow_clone: true
-clone_depth: 100
+clone_depth: 20
 
 # Set build info
 environment:

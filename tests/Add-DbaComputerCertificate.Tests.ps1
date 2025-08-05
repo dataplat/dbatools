@@ -1,10 +1,11 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $ModuleName               = "dbatools",
+    $CommandName              = [System.IO.Path]::GetFileName($PSCommandPath.Replace('.Tests.ps1', '')),
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Describe "Add-DbaComputerCertificate" -Tag "UnitTests" {
+Describe $CommandName -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
             $command = Get-Command Add-DbaComputerCertificate
@@ -35,7 +36,7 @@ Describe "Add-DbaComputerCertificate" -Tag "UnitTests" {
     }
 }
 
-Describe "Add-DbaComputerCertificate" -Tag "IntegrationTests" {
+Describe $CommandName -Tag "IntegrationTests" {
     Context "Certificate is added properly" {
         BeforeAll {
             $certPath = "$($TestConfig.appveyorlabrepo)\certificates\localhost.crt"

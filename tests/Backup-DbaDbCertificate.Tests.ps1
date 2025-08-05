@@ -40,58 +40,112 @@ Describe "Backup-DbaDbCertificate" -Tag "UnitTests" {
 
 Describe "Backup-DbaDbCertificate" -Tag "IntegrationTests" {
     BeforeAll {
-        $random = Get-Random
-        $db1Name = "dbatoolscli_$random"
-        $db1 = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $db1Name
-        $pw = ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force
-        if (-not (Get-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database $db1Name)) {
-            $masterkey = New-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database $db1Name -Password $pw -Confirm:$false
-        }
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
 
-        $cert = New-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Database $db1Name -Confirm:$false -Password $pw -Name dbatoolscli_cert1_$random
-        $cert2 = New-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Database $db1Name -Confirm:$false -Password $pw -Name dbatoolscli_cert2_$random
+        $random = Get-Random
+        $db1Name = "dbatoolscli_db1_$random"
+        $db2Name = "dbatoolscli_db2_$random"
+        $pw = ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force
+
+        $db1 = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $db1Name
+        $null = New-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database $db1Name -Password $pw
+
+        $db2 = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $db2Name
+        $null = New-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database $db2Name -Password $pw
+
+        $cert1 = New-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Database $db1Name -Password $pw -Name dbatoolscli_cert1_$random
+        $cert2 = New-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Database $db1Name -Password $pw -Name dbatoolscli_cert2_$random
+        $cert3 = New-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Database $db2Name -Password $pw -Name dbatoolscli_cert3_$random
+
+        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
     }
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $db1Name -Confirm:$false
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $db1Name, $db2Name
     }
 
-    Context "Can create and backup a database certificate" {
-        It "backs up the db cert" {
-            $results = Backup-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Certificate $cert.Name -Database $db1Name -EncryptionPassword $pw -DecryptionPassword $pw
-            $null = Get-ChildItem -Path $results.Path -ErrorAction Ignore | Remove-Item -Confirm:$false -ErrorAction Ignore
-            $results.Certificate | Should -Be $cert.Name
-            $results.Status | Should -Match "Success"
-            $results.DatabaseID | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $db1Name).ID
+    Context "Can backup a database certificate" {
+        BeforeAll {
+            $results = Backup-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Database $db1Name -Certificate $cert1.Name -EncryptionPassword $pw -DecryptionPassword $pw
         }
 
-        It "backs up the db cert with a filename (see #9485)" {
-            $results = Backup-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Certificate $cert.Name -Database $db1Name -EncryptionPassword $pw -DecryptionPassword $pw -FileBaseName "dbatoolscli_cert1_$random"
-            $results.Certificate | Should -Be $cert.Name
+        AfterAll {
+            Remove-Item -Path $results.Path
+            Remove-Item -Path $results.Key
+        }
+
+        It "Returns results with proper data" {
+            $results.Certificate | Should -Be $cert1.Name
             $results.Status | Should -Match "Success"
-            $results.DatabaseID | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $db1Name).ID
+            $results.DatabaseID | Should -Be $db1.ID
+        }
+    }
+
+    Context "Can backup a database certificate with a filename (see #9485)" {
+        BeforeAll {
+            $results = Backup-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Database $db1Name -Certificate $cert1.Name -EncryptionPassword $pw -DecryptionPassword $pw -FileBaseName "dbatoolscli_cert1_$random"
+        }
+
+        AfterAll {
+            Remove-Item -Path $results.Path
+            Remove-Item -Path $results.Key
+        }
+
+        It "Returns results with proper data" {
+            $results.Certificate | Should -Be $cert1.Name
+            $results.Status | Should -Match "Success"
+            $results.DatabaseID | Should -Be $db1.ID
             [IO.Path]::GetFileNameWithoutExtension($results.Path) | Should -Be "dbatoolscli_cert1_$random"
-            $null = Get-ChildItem -Path $results.Path -ErrorAction Ignore | Remove-Item -Confirm:$false -ErrorAction Ignore
         }
+    }
 
-        It "warns the caller if the cert cannot be found" {
+    Context "Warns the caller if the cert cannot be found" {
+        BeforeAll {
             $invalidDBCertName = "dbatoolscli_invalidCertName"
             $invalidDBCertName2 = "dbatoolscli_invalidCertName2"
-            $results = Backup-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Certificate $invalidDBCertName, $invalidDBCertName2, $cert2.Name -Database $db1Name -EncryptionPassword $pw -DecryptionPassword $pw -WarningVariable warnVariable 3> $null
-            $null = Get-ChildItem -Path $results.Path -ErrorAction Ignore | Remove-Item -Confirm:$false -ErrorAction Ignore
-            $warnVariable | Should -BeLike "*Database certificate(s) * not found*"
+            $results = Backup-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Database $db1Name -Certificate $invalidDBCertName, $invalidDBCertName2, $cert2.Name -EncryptionPassword $pw -DecryptionPassword $pw -WarningAction SilentlyContinue
         }
 
-        It "backs up all db certs for a database" -Skip {
+        AfterAll {
+            Remove-Item -Path $results.Path
+            Remove-Item -Path $results.Key
+        }
+
+        It "Does warn" {
+            $WarnVar | Should -BeLike "*Database certificate(s) * not found*"
+        }
+    }
+
+    Context "Backs up all db certs for a database" {
+        BeforeAll {
             $results = Backup-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Database $db1Name -EncryptionPassword $pw -DecryptionPassword $pw
-            $null = Get-ChildItem -Path $results.Path -ErrorAction Ignore | Remove-Item -Confirm:$false -ErrorAction Ignore
-            $results.length | Should -Be 2
-            $results.Certificate | Should -Be $cert.Name, $cert2.Name
         }
 
-        It "backs up all db certs for an instance" -Skip {
-            $results = Backup-DbaDbCertificate -SqlInstance $TestConfig.instance1 -EncryptionPassword $pw
-            $null = Get-ChildItem -Path $results.Path -ErrorAction Ignore | Remove-Item -Confirm:$false -ErrorAction Ignore
+        AfterAll {
+            Remove-Item -Path $results.Path
+            Remove-Item -Path $results.Key
         }
 
+        It "Returns results with proper data" {
+            $results | Should -HaveCount 2
+            $results.Certificate | Should -Be $cert1.Name, $cert2.Name
+        }
+    }
+
+    Context "Backs up all db certs for an instance" {
+        BeforeAll {
+            $results = Backup-DbaDbCertificate -SqlInstance $TestConfig.instance1 -EncryptionPassword $pw -DecryptionPassword $pw
+        }
+
+        AfterAll {
+            Remove-Item -Path $results.Path
+            Remove-Item -Path $results.Key
+        }
+
+        It "Returns results with proper data" {
+            $results | Should -HaveCount 3
+            $results.Certificate | Should -Be $cert1.Name, $cert2.Name, $cert3.Name
+        }
     }
 }

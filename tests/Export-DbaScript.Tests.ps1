@@ -32,13 +32,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
         It "should not accept non-SMO objects" {
             $null = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database msdb | Select-Object -First 1 | Export-DbaScript -Passthru -BatchSeparator "MakeItSo"
-            $null = [pscustomobject]@{ Invalid = $true } | Export-DbaScript -WarningVariable invalid -WarningAction Continue
+            $null = [pscustomobject]@{ Invalid = $true } | Export-DbaScript -WarningVariable invalid -WarningAction SilentlyContinue
             $invalid -match "not a SQL Management Object"
         }
 
         It "should not accept non-SMO objects" {
             $null = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database msdb | Select-Object -First 1 | Export-DbaScript -Passthru -BatchSeparator "MakeItSo"
-            $null = [pscustomobject]@{ Invalid = $true } | Export-DbaScript -WarningVariable invalid -WarningAction Continue
+            $null = [pscustomobject]@{ Invalid = $true } | Export-DbaScript -WarningVariable invalid -WarningAction SilentlyContinue
             $invalid -match "not a SQL Management Object"
         }
         It "should not append when using NoPrefix (#7455)" {
@@ -51,6 +51,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $null = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database msdb | Select-Object -First 1 | Export-DbaScript -NoPrefix -FilePath C:\temp\msdb.txt -Append
             $linecount3 = (Get-Content C:\temp\msdb.txt).Count
             $linecount1 | Should -Not -Be $linecount3
+            Remove-Item -Path C:\temp\msdb.txt
         }
     }
 }

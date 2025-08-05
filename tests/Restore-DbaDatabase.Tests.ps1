@@ -198,6 +198,9 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Should prefix the script with the Execute As statement" {
             $results6 | Should BeLike "EXECUTE AS LOGIN='$RestoreAsUser'*"
         }
+
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database Pestering -Confirm:$false
+        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $RestoreAsUser -Confirm:$false
     }
 
     Get-DbaProcess $TestConfig.instance2 -ExcludeSystemSpids | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
@@ -859,7 +862,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Should backup and restore cleanly" {
             ($results | Where-Object { $_.RestoreComplete -eq $True }).count | Should Be $Results.count
         }
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database StripeTest
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database StripeTest -Confirm:$false
     }
 
     Context "Don't try to create/test folders with OutputScriptOnly (Issue 4046)" {
@@ -881,7 +884,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $securePass = ConvertTo-SecureString "estBackupDir\master\script:instance1).split('\')[1])\Full\master-Full.bak" -AsPlainText -Force
         New-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database Master -SecurePassword $securePass -confirm:$false
         $cert = New-DbaDbCertificate -SqlInstance $TestConfig.instance2 -Database Master -Name RestoreTestCert -Subject RestoreTestCert
-        $encBackupResults = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database EncRestTest -EncryptionAlgorithm AES128 -EncryptionCertificate RestoreTestCert
+        $encBackupResults = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database EncRestTest -EncryptionAlgorithm AES128 -EncryptionCertificate RestoreTestCert -FilePath "$($TestConfig.Temp)\EncRestTest.bak"
         It "Should encrypt the backup" {
             $encBackupResults.EncryptorType | Should Be "CERTIFICATE"
             $encBackupResults.KeyAlgorithm | Should Be "aes_128"
@@ -902,7 +905,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Should have stoped at mark" {
             $sqlOut.ms | Should -Be 9876
         }
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database StopAt2
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database StopAt2 -Confirm:$false
     }
 
     Context "Test restoring with StopAtBefore" {
@@ -912,7 +915,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Should have stoped at mark" {
             $sqlOut.ms | Should -Be 8764
         }
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database StopAt2
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database StopAt2 -Confirm:$false
     }
 
     Context "Test restoring with StopAt and StopAfterDate" {
@@ -922,7 +925,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Should have stoped at mark" {
             $sqlOut.ms | Should -Be 29876
         }
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database StopAt2
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database StopAt2 -Confirm:$false
     }
 
     Context "Warn if OutputScriptOnly and VerifyOnly specified together #6987" {
@@ -930,7 +933,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Should return a warning" {
             $warnvar | Should -BeLike '*The switches OutputScriptOnly and VerifyOnly cannot both be specified at the same time, stopping'
         }
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database StopAt2
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database StopAt2 -Confirm:$false
     }
     if ($env:azurepasswd) {
         Context "Restores From Azure using SAS" {
@@ -1003,5 +1006,6 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             }
         }
     }
-    #>
+
+    Remove-Item -Path C:\temp\* -Recurse -Force
 }

@@ -19,10 +19,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $null = Get-DbaProcess -SqlInstance $TestConfig.instance2 | Where-Object Program -Match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
             $random = Get-Random
             $db = "dbatoolsci_measurethruput$random"
-            $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $db | Backup-DbaDatabase
+            $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $db | Backup-DbaDatabase -FilePath "$($TestConfig.Temp)\$($db.Name).bak"
         }
         AfterAll {
-            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $db
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $db -Confirm:$false
+            Remove-Item -Path "$($TestConfig.Temp)\$($db.Name).bak"
         }
 
         $results = Measure-DbaBackupThroughput -SqlInstance $TestConfig.instance2 -Database $db

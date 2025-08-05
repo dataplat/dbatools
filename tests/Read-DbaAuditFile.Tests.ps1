@@ -43,12 +43,12 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
     Context "Verifying command output" {
         It "returns some results" {
-            $results = Get-DbaInstanceAudit -SqlInstance $TestConfig.instance2 -Audit LoginAudit | Read-DbaAuditFile -Raw -WarningAction SilentlyContinue
-            [System.Linq.Enumerable]::Count($results) -gt 1 | Should Be $true
+            $results = Get-DbaInstanceAudit -SqlInstance $TestConfig.instance2 -Audit LoginAudit | Read-DbaAuditFile -Raw
+            $results | Should -Not -BeNullOrEmpty
         }
         It "returns some results" {
             $results = Get-DbaInstanceAudit -SqlInstance $TestConfig.instance2 -Audit LoginAudit | Read-DbaAuditFile | Select-Object -First 1
-            $results.server_principal_name | Should -Not -Be $null
+            $results.server_principal_name | Should -Not -BeNullOrEmpty
         }
     }
 }

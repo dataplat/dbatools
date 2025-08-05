@@ -1,10 +1,11 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $ModuleName               = "dbatools",
+    $CommandName              = [System.IO.Path]::GetFileName($PSCommandPath.Replace('.Tests.ps1', '')),
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Describe "Add-DbaAgListener" -Tag "UnitTests" {
+Describe $CommandName -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
             $command = Get-Command Add-DbaAgListener
@@ -38,42 +39,55 @@ Describe "Add-DbaAgListener" -Tag "UnitTests" {
     }
 }
 
-Describe "Add-DbaAgListener" -Tag "IntegrationTests" {
+Describe $CommandName -Tag "IntegrationTests" {
     BeforeAll {
-        $agname = "dbatoolsci_ag_newlistener"
-        $listenerName = 'dbatoolsci_listener'
-        $splatNewAg = @{
-            Primary = $TestConfig.instance3
-            Name = $agname
-            ClusterType = "None"
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
+        $filesToRemove = @( )
+
+        # To add a listener to an availablity group, we need an availability group, an ip address and a port.
+        # TODO: Add some negative tests.
+
+        $agName = "addagdb_group"
+        $listenerName = "listener"
+        $listenerIp = "127.0.20.1"
+        $listenerPort = 14330
+
+        $splat = @{
+            Primary      = $TestConfig.instance3
+            Name         = $agName
+            ClusterType  = "None"
             FailoverMode = "Manual"
-            Confirm = $false
-            Certificate = "dbatoolsci_AGCert"
+            Certificate  = "dbatoolsci_AGCert"
         }
-        $ag = New-DbaAvailabilityGroup @splatNewAg
+        $ag = New-DbaAvailabilityGroup @splat
+
+        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
     }
 
     AfterAll {
-        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname -Confirm:$false
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
+        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agName
+        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint
     }
 
     Context "When creating a listener" {
         BeforeAll {
-            $splatAddListener = @{
-                Name = $listenerName
-                IPAddress = "127.0.20.1"
-                Port = 14330
-                Confirm = $false
+            $splat = @{
+                Name      = $listenerName
+                IPAddress = $listenerIp
+                Port      = $listenerPort
             }
-            $results = $ag | Add-DbaAgListener @splatAddListener
+            $results = $ag | Add-DbaAgListener @splat
         }
 
-        AfterAll {
-            $null = Remove-DbaAgListener -SqlInstance $TestConfig.instance3 -Listener $listenerName -AvailabilityGroup $agname -Confirm:$false
+        It "Does not warn" {
+            $WarnVar | Should -BeNullOrEmpty
         }
 
         It "Returns results with proper data" {
-            $results.PortNumber | Should -Be 14330
+            $results.PortNumber | Should -Be $listenerPort
         }
     }
 } #$TestConfig.instance2 for appveyor

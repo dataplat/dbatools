@@ -37,6 +37,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     AfterAll {
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname, $dbnameForked | Remove-DbaDatabase -Confirm:$false
+        Remove-Item -Path $DestBackupDir -Recurse -Confirm:$false
     }
 
     Context "Get last history for single database" {

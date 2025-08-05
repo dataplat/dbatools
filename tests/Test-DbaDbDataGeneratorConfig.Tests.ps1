@@ -41,6 +41,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
     AfterAll {
         Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname -Confirm:$false
+        Remove-Item -Path "C:\temp\datageneration" -Recurse
     }
 
     It "gives no errors with a correct json file" {

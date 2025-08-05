@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $NetworkPath = "C:\temp"
+        $NetworkPath = $TestConfig.Temp
         $random = Get-Random
         $backuprestoredb = "dbatoolsci_backuprestore$random"
         $backuprestoredb2 = "dbatoolsci_backuprestoreother$random"
@@ -120,10 +120,12 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "copies a database successfully using backup history" {
-            $null = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $backuprestoredb -BackupDirectory $NetworkPath
+            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $backuprestoredb -BackupDirectory $NetworkPath
+            $backupFile = $results.FullName
             $results = Copy-DbaDatabase -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -Database $backuprestoredb -BackupRestore -UseLastBackup
             $results.Name | Should -Be $backuprestoredb
             $results.Status | Should -Be "Successful"
+            Remove-Item -Path $backupFile
         }
 
         It "retains its name, recovery model, and status." {
@@ -141,9 +143,17 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             Get-DbaProcess -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
             Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance3 -Database $backuprestoredb
             #Pre-stage the restore
-            $null = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $backuprestoredb -BackupDirectory $NetworkPath | Restore-DbaDatabase -SqlInstance $TestConfig.instance3 -DatabaseName $backuprestoredb -NoRecovery
+            $backupPaths = @( )
+            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $backuprestoredb -BackupDirectory $NetworkPath
+            $backupPaths += $results.FullName
+            $results | Restore-DbaDatabase -SqlInstance $TestConfig.instance3 -DatabaseName $backuprestoredb -NoRecovery
             #Run diff now
-            $null = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $backuprestoredb -BackupDirectory $NetworkPath -Type Diff
+            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $backuprestoredb -BackupDirectory $NetworkPath -Type Diff
+            $backupPaths += $results.FullName
+        }
+
+        AfterAll {
+            $backupPaths | Select-Object -Unique | Remove-Item
         }
 
         It "continues the restore over existing database using backup history" -Skip {
