@@ -1,3 +1,4 @@
+$PSDefaultParameterValues['Import-Module:Verbose'] = $false
 function Update-PesterTest {
     <#
     .SYNOPSIS
@@ -636,8 +637,8 @@ function Invoke-Aider {
         }
 
         if ($ReadFile) {
-            foreach ($file in $ReadFile) {
-                $arguments += "--read", $file
+            foreach ($rf in $ReadFile) {
+                $arguments += "--read", $rf
             }
         }
 
