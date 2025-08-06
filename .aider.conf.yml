@@ -53,7 +53,8 @@ show-repo-map: false
 #aiderignore: .aider/.aiderignore
 
 ## Command to lint PowerShell code using PSScriptAnalyzer
-lint-cmd: "pwsh -Command Invoke-ScriptAnalyzer -Path"
+lint-cmd: pwsh -Command "Invoke-ScriptAnalyzer -Settings PSScriptAnalyzerRules.psd1 -Path"
+
 
 ## Automatically runs tests after code changes using Pester
 auto-test: false

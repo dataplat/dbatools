@@ -32,6 +32,9 @@ function Update-PesterTest {
     .PARAMETER Model
         The AI model to use (e.g., azure/gpt-4o, gpt-4o-mini, claude-3-5-sonnet).
 
+    .PARAMETER AutoTest
+        If specified, automatically runs tests after making changes.
+
     .NOTES
         Tags: Testing, Pester
         Author: dbatools team
@@ -66,6 +69,8 @@ function Update-PesterTest {
         [string[]]$CacheFilePath = @("/workspace/.aider/prompts/conventions.md","/workspace/private/testing/Get-TestConfig.ps1"),
         [int]$MaxFileSize = 500kb,
         [string]$Model
+    ,
+    [switch]$AutoTest
     )
     begin {
         # Full prompt path
@@ -167,6 +172,7 @@ function Update-PesterTest {
                     CachePrompts = $true
                     ReadFile     = $CacheFilePath
                     Model        = $Model
+                    AutoTest     = $AutoTest
                 }
 
                 Write-Verbose "Invoking Aider to update test file"
