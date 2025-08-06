@@ -84,12 +84,13 @@ $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Objec
 ### Parameter & Variable Naming Rules
 - Use direct parameters for 1-2 parameters
 - Use `$splat<Purpose>` for 3+ parameters (never plain `$splat`)
+- Align splat hashtable assignments with consistent spacing for readability
 
 ```powershell
 # Direct parameters
 $ag = Get-DbaLogin -SqlInstance $instance -Login $loginName
 
-# Splat with purpose suffix
+# Splat with purpose suffix - note aligned = signs
 $splatPrimary = @{
     Primary      = $TestConfig.instance3
     Name         = $primaryAgName
