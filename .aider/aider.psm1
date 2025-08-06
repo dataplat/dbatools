@@ -64,7 +64,7 @@ function Update-PesterTest {
         [int]$Skip,
         [string[]]$PromptFilePath = "/workspace/.aider/prompts/template.md",
         [string[]]$CacheFilePath = @("/workspace/.aider/prompts/conventions.md","/workspace/private/testing/Get-TestConfig.ps1"),
-        [int]$MaxFileSize = 7.5kb,
+        [int]$MaxFileSize = 500kb,
         [string]$Model
     )
     begin {
@@ -140,11 +140,12 @@ function Update-PesterTest {
                 continue
             }
 
-            <# Check if it's already been converted #>
+            <# Check if it's already been converted
             if (Select-String -Path $filename -Pattern "HaveParameter") {
                 Write-Warning "Skipping $cmdName because it's already been converted to Pester v5"
                 continue
             }
+            #>
 
             # if file is larger than MaxFileSize, skip
             if ((Get-Item $filename).Length -gt $MaxFileSize) {
