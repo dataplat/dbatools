@@ -8,9 +8,9 @@ param(
 Describe $CommandName -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
-            $command = Get-Command Add-DbaAgReplica
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $_ -notin ('WhatIf', 'Confirm') }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
                 "SqlInstance",
                 "SqlCredential",
                 "Name",
@@ -30,40 +30,39 @@ Describe $CommandName -Tag "UnitTests" {
                 "ConfigureXESession",
                 "SessionTimeout",
                 "InputObject",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
+                "EnableException"
             )
         }
 
-        It "Has parameter: <_>" -ForEach $expected {
-            $command | Should -HaveParameter $PSItem
-        }
-
-        It "Should have exactly the number of expected parameters ($($expected.Count))" {
-            $hasparms = $command.Parameters.Values.Name
-            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
+        It "Should have the expected parameters" {
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
 Describe $CommandName -Tag "IntegrationTests" {
     BeforeAll {
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
         $primaryAgName = "dbatoolsci_agroup"
-        $splatPrimary = @{
+        $splat = @{
             Primary      = $TestConfig.instance3
             Name         = $primaryAgName
             ClusterType  = "None"
             FailoverMode = "Manual"
             Certificate  = "dbatoolsci_AGCert"
-            Confirm      = $false
         }
-        $primaryAg = New-DbaAvailabilityGroup @splatPrimary
+        $primaryAg = New-DbaAvailabilityGroup @splat
         $replicaName = $primaryAg.PrimaryReplica
+
+        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
     }
 
     AfterAll {
-        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $primaryAgName -Confirm:$false
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
+        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $primaryAgName
+        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint
     }
 
     Context "When adding AG replicas" {
@@ -75,9 +74,12 @@ Describe $CommandName -Tag "IntegrationTests" {
                 ClusterType  = "None"
                 FailoverMode = "Manual"
                 Certificate  = "dbatoolsci_AGCert"
-                Confirm      = $false
             }
             $replicaAg = New-DbaAvailabilityGroup @splatRepAg
+        }
+
+        AfterAll {
+            $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $replicaAgName
         }
 
         It "Returns results with proper data" {

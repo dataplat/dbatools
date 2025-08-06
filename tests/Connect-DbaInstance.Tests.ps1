@@ -19,6 +19,11 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+    AfterAll {
+        Get-DbaConnectedInstance | Disconnect-DbaInstance
+        Clear-DbaConnectionPool
+    }
+
     if ($env:azuredbpasswd -eq "failstoooften") {
         Context "Connect to Azure" {
             $securePassword = ConvertTo-SecureString $env:azuredbpasswd -AsPlainText -Force
@@ -174,6 +179,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "connection is properly cloned from an existing connection" {
         BeforeAll {
             $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+        }
+
+        AfterAll {
+            $server | Disconnect-DbaInstance
         }
 
         It "clones when using parameter Database" {

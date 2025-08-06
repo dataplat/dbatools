@@ -1,12 +1,10 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName               = "dbatools",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-BeforeAll {
-    $CommandName = (Get-Item $PSCommandPath).Name.Replace(".Tests.ps1", "")
-    $global:TestConfig = Get-TestConfig
-}
-
-
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "Invoke-DbaQuery" -Tag 'UnitTests' {
     Context "Validate parameters" {
         BeforeAll {
             $command = Get-Command Invoke-DbaQuery
@@ -47,12 +45,18 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+Describe "Invoke-DbaQuery" -Tag "IntegrationTests" {
     BeforeAll {
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
         $db = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database tempdb
         $null = $db.Query("CREATE PROCEDURE dbo.dbatoolsci_procedure_example @p1 [INT] = 0 AS BEGIN SET NOCOUNT OFF; SELECT TestColumn = @p1; END")
+
+        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
     }
     AfterAll {
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
         try {
             $null = $db.Query("DROP PROCEDURE dbo.dbatoolsci_procedure_example")
             $null = $db.Query("DROP PROCEDURE dbo.my_proc")
