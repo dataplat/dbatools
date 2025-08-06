@@ -38,9 +38,20 @@ Describe $CommandName -Tag UnitTests {
 - All cleanup code goes in `AfterAll` or `AfterEach` blocks
 - All test assertions go in `It` blocks
 - No loose code in `Describe` or `Context` blocks
+- Set and remove EnableException in BeforeAll/AfterAll for integration tests
 
 ```powershell
 Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        # Enable exceptions for better error handling in tests
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+    }
+
+    AfterAll {
+        # Clean up the exception setting
+        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+    }
+
     Context "When getting all databases" {
         BeforeAll {
             $results = Get-DbaDatabase
