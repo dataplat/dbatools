@@ -36,6 +36,9 @@ function Update-PesterTest {
     .PARAMETER AutoTest
         If specified, automatically runs tests after making changes.
 
+    .PARAMETER PassCount
+        Sometimes you need multiple passes to get the desired result.
+
     .NOTES
         Tags: Testing, Pester
         Author: dbatools team
@@ -69,9 +72,9 @@ function Update-PesterTest {
         [string[]]$PromptFilePath = "/workspace/.aider/prompts/template.md",
         [string[]]$CacheFilePath = @("/workspace/.aider/prompts/conventions.md","/workspace/private/testing/Get-TestConfig.ps1"),
         [int]$MaxFileSize = 500kb,
-        [string]$Model
-    ,
-    [switch]$AutoTest
+        [string]$Model,
+        [switch]$AutoTest,
+        [int]$PassCount = 1
     )
     begin {
         # Full prompt path
@@ -178,6 +181,13 @@ function Update-PesterTest {
 
                 Write-Verbose "Invoking Aider to update test file"
                 Invoke-Aider @aiderParams
+
+                if ($PassCount -gt 1) {
+                    for ($i = 1; $i -lt $PassCount; $i++) {
+                        Write-Verbose "Retrying update for $cmdName, attempt $($i + 1)"
+                        Invoke-Aider @aiderParams
+                    }
+                }
             }
         }
     }
