@@ -25,6 +25,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         if ($alldbs) {
             $alldbs | Remove-DbaDatabase
         }
+        Remove-Item -Path "C:\temp\*"
     }
 
     Context "Command actually works" {
