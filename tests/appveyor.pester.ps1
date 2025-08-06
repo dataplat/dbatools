@@ -240,6 +240,7 @@ if (-not $Finalize) {
     # Import pester 5
     Import-Module pester -RequiredVersion 5.6.1
     Write-Host -Object "appveyor.pester: Running with Pester Version $((Get-Command Invoke-Pester -ErrorAction SilentlyContinue).Version)" -ForegroundColor DarkGreen
+    $TestConfig = Get-TestConfig
     $Counter = 0
     foreach ($f in $AllTestsWithinScenario) {
         $Counter += 1

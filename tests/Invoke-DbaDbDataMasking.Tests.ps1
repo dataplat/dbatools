@@ -79,6 +79,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $file = New-DbaDbMaskingConfig -SqlInstance $TestConfig.instance2 -SqlCredential $TestConfig.SqlCredential -Database $db -Path C:\temp
 
             [array]$results = $file | Invoke-DbaDbDataMasking -SqlInstance $TestConfig.instance2 -SqlCredential $TestConfig.SqlCredential -Database $db -Confirm:$false
+            Remove-Item -Path $file.FullName
 
             $results[0].Rows | Should -Be 2
             $results[0].Database | Should -Contain $db

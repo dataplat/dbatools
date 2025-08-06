@@ -38,7 +38,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $newServer3 = Add-DbaRegServer -SqlInstance $TestConfig.instance2 -ServerName $srvName3 -Name $regSrvName3 -Description $regSrvDesc3
 
         $random = Get-Random
-        $newDirectory = "C:\temp-$random"
+        $newDirectory = "C:\temp\$random"
     }
     AfterEach {
         Get-DbaRegServer -SqlInstance $TestConfig.instance2 | Where-Object Name -Match dbatoolsci | Remove-DbaRegServer -Confirm:$false
@@ -55,14 +55,14 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     It "should create a specific xml file when using Path" {
-        $results2 = $newGroup2 | Export-DbaRegServer -Path C:\temp
+        $results2 = $newGroup2 | Export-DbaRegServer -Path $newDirectory
         $results2 -is [System.IO.FileInfo] | Should -Be $true
         $results2.FullName | Should -match 'C\:\\temp'
         Get-Content -Path $results2 -Raw | Should -Match $group2
     }
 
     It "creates an importable xml file" {
-        $results3 = $newServer3 | Export-DbaRegServer -Path C:\temp
+        $results3 = $newServer3 | Export-DbaRegServer -Path $newDirectory
         Get-DbaRegServer -SqlInstance $TestConfig.instance2 | Where-Object Name -Match dbatoolsci | Remove-DbaRegServer -Confirm:$false
         Get-DbaRegServerGroup -SqlInstance $TestConfig.instance2 | Where-Object Name -Match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
         $results4 = Import-DbaRegServer -SqlInstance $TestConfig.instance2 -Path $results3
@@ -71,22 +71,23 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     It "Create an xml file using FilePath" {
-        $outputFileName = "C:\temp\dbatoolsci-regsrvr-export-$random.xml"
+        $outputFileName = "$newDirectory\dbatoolsci-regsrvr-export-$random.xml"
         $results = Export-DbaRegServer -SqlInstance $TestConfig.instance2 -FilePath $outputFileName
         $results -is [System.IO.FileInfo] | Should -Be $true
         $results.FullName | Should -Be $outputFileName
     }
 
     It "Create a regsrvr file using the FilePath alias OutFile" {
-        $outputFileName = "C:\temp\dbatoolsci-regsrvr-export-$random.regsrvr"
+        $outputFileName = "$newDirectory\dbatoolsci-regsrvr-export-$random.regsrvr"
         $results = Export-DbaRegServer -SqlInstance $TestConfig.instance2 -OutFile $outputFileName
         $results -is [System.IO.FileInfo] | Should -Be $true
         $results.FullName | Should -Be $outputFileName
     }
 
     It "Try to create an invalid file using FilePath" {
-        $outputFileName = "C:\temp\dbatoolsci-regsrvr-export-$random.txt"
-        $results = Export-DbaRegServer -SqlInstance $TestConfig.instance2 -FilePath $outputFileName
+        $outputFileName = "$newDirectory\dbatoolsci-regsrvr-export-$random.txt"
+        $results = Export-DbaRegServer -SqlInstance $TestConfig.instance2 -FilePath $outputFileName -WarningAction SilentlyContinue
+        # TODO: Test for [Export-DbaRegServer] The FilePath specified must end with either .xml or .regsrvr
         $results.length | Should -Be 0
     }
 
@@ -98,8 +99,9 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     It "Ensure the Overwrite param is working" {
-        $outputFileName = "C:\temp\dbatoolsci-regsrvr-export-$random.xml"
-        $results = Export-DbaRegServer -SqlInstance $TestConfig.instance2 -FilePath $outputFileName
+        $outputFileName = "$newDirectory\dbatoolsci-regsrvr-export-$random.xml"
+        $results = Export-DbaRegServer -SqlInstance $TestConfig.instance2 -FilePath $outputFileName -WarningAction SilentlyContinue
+        # TODO: Test for [Export-DbaRegServer] Use the -Overwrite parameter if the file C:\temp\539615200\dbatoolsci-regsrvr-export-539615200.xml should be overwritten.
         $results -is [System.IO.FileInfo] | Should -Be $true
         $results.FullName | Should -Be $outputFileName
 
@@ -114,7 +116,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     It "Test with the Group param" {
-        $outputFileName = "C:\temp\dbatoolsci-regsrvr-export-$random.xml"
+        $outputFileName = "$newDirectory\dbatoolsci-regsrvr-export-$random.xml"
         $results = Export-DbaRegServer -SqlInstance $TestConfig.instance2 -FilePath $outputFileName -Group $group
         $results -is [System.IO.FileInfo] | Should -Be $true
         $results.FullName | Should -Be $outputFileName
@@ -126,7 +128,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     It "Test with the Group param and multiple group names" {
-        $outputFileName = "C:\temp\dbatoolsci-regsrvr-export-$random.xml"
+        $outputFileName = "$newDirectory\dbatoolsci-regsrvr-export-$random.xml"
         $results = Export-DbaRegServer -SqlInstance $TestConfig.instance2 -FilePath $outputFileName -Group @($group, $group2)
         $results.length | Should -Be 2
 

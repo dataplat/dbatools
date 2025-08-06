@@ -1,10 +1,11 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $ModuleName               = "dbatools",
+    $CommandName              = [System.IO.Path]::GetFileName($PSCommandPath.Replace('.Tests.ps1', '')),
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Describe "Add-DbaAgReplica" -Tag "UnitTests" {
+Describe $CommandName -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
             $command = Get-Command Add-DbaAgReplica
@@ -46,7 +47,7 @@ Describe "Add-DbaAgReplica" -Tag "UnitTests" {
     }
 }
 
-Describe "Add-DbaAgReplica" -Tag "IntegrationTests" {
+Describe $CommandName -Tag "IntegrationTests" {
     BeforeAll {
         $primaryAgName = "dbatoolsci_agroup"
         $splatPrimary = @{

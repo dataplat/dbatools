@@ -20,14 +20,16 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $agname = "dbatoolsci_resumeagdb_agroup"
         $dbname = "dbatoolsci_resumeagdb_agroupdb"
         $server.Query("create database $dbname")
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbname | Backup-DbaDatabase
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbname | Backup-DbaDatabase -Type Log
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbname | Backup-DbaDatabase -FilePath "$($TestConfig.Temp)\$dbname.bak"
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbname | Backup-DbaDatabase -FilePath "$($TestConfig.Temp)\$dbname.trn" -Type Log
         $ag = New-DbaAvailabilityGroup -Primary $TestConfig.instance3 -Name $agname -ClusterType None -FailoverMode Manual -Database $dbname -Confirm:$false -Certificate dbatoolsci_AGCert -UseLastBackup
         $null = Get-DbaAgDatabase -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname | Suspend-DbaAgDbDataMovement -Confirm:$false
     }
     AfterAll {
         $null = Remove-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $agname -Confirm:$false
+        $null = Get-DbaEndpoint -SqlInstance $server -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
         $null = Remove-DbaDatabase -SqlInstance $server -Database $dbname -Confirm:$false
+        Remove-Item -Path "$($TestConfig.Temp)\$dbname.bak", "$($TestConfig.Temp)\$dbname.trn"
     }
     Context "resumes  data movement" {
         It "returns resumed results" {

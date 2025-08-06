@@ -39,6 +39,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $file = New-DbaDbDataGeneratorConfig -SqlInstance $TestConfig.instance2 -Database $db -Path C:\temp -Rows 10
 
             $results = Invoke-DbaDbDataGenerator -SqlInstance $TestConfig.instance2 -Database $db -Confirm:$false -FilePath $file.FullName
+            Remove-Item -Path $file.FullName
 
             foreach ($result in $results) {
                 $result.Rows | Should -Be 10

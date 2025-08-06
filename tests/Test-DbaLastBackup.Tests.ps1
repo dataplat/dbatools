@@ -27,6 +27,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $server.Query("INSERT INTO [$db].[dbo].[Example] values ('sample')")
         }
 
+        $backupPath = "$($TestConfig.Temp)\$CommandName"
+        $null = New-Item -Path $backupPath -ItemType Directory
     }
     AfterAll {
         # these for sure
@@ -36,17 +38,19 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         Get-DbaDatabase -SqlInstance $TestConfig.instance1 | Where-Object Name -like 'dbatools-testrestore-dbatoolsci_*' | Remove-DbaDatabase -Confirm:$false
         # see "Restores using a specific path"
         Get-ChildItem -Path C:\Temp\dbatools-testrestore-dbatoolsci_singlerestore* | Remove-Item
+
+        Remove-Item -Path $backupPath -Recurse
     }
     Context "Setup restores and backups on the local drive for Test-DbaLastBackup" {
-        Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbs | Backup-DbaDatabase -Type Database
+        Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbs | Backup-DbaDatabase -Type Database -Path $backupPath
         Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query "INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample')"
-        Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $testlastbackup | Backup-DbaDatabase -Type Differential
+        Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $testlastbackup | Backup-DbaDatabase -Type Differential -Path $backupPath
         Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query "INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample1')"
-        Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $testlastbackup | Backup-DbaDatabase -Type Differential
+        Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $testlastbackup | Backup-DbaDatabase -Type Differential -Path $backupPath
         Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query "INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample2')"
-        Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $testlastbackup | Backup-DbaDatabase -Type Log
+        Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $testlastbackup | Backup-DbaDatabase -Type Log -Path $backupPath
         Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query "INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample3')"
-        Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $testlastbackup | Backup-DbaDatabase -Type Log
+        Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $testlastbackup | Backup-DbaDatabase -Type Log -Path $backupPath
         Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query "INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample4')"
     }
 
@@ -68,7 +72,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Restores using a specific path" {
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database "dbatoolsci_singlerestore" | Backup-DbaDatabase
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database "dbatoolsci_singlerestore" | Backup-DbaDatabase -Path $backupPath
         $null = Test-DbaLastBackup -SqlInstance $TestConfig.instance1 -Database "dbatoolsci_singlerestore" -DataDirectory C:\Temp -LogDirectory C:\Temp -NoDrop
         $results = Get-DbaDbFile -SqlInstance $TestConfig.instance1 -Database "dbatools-testrestore-dbatoolsci_singlerestore"
         It "Should match C:\Temp" {
@@ -91,11 +95,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Context "Test dbsize skip and cleanup (Issue 3968)" {
         $results1 = Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -Database bigtestrest -Path "$($TestConfig.appveyorlabrepo)\sql2008-backups\db1\FULL" -ReplaceDbNameInFile
-        Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database bigtestrest
+        Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database bigtestrest -Path $backupPath
         $results1 = Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -Database smalltestrest -Path "$($TestConfig.appveyorlabrepo)\sql2008-backups\db2\FULL\SQL2008_db2_FULL_20170518_041738.bak" -ReplaceDbNameInFile
-        Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database smalltestrest
+        Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database smalltestrest -Path $backupPath
 
-        $results = Test-DbaLastBackup -SqlInstance $TestConfig.instance1 -Database bigtestrest, smalltestrest -CopyFile -CopyPath c:\temp -MaxSize 3 -Prefix testlast
+        $results = Test-DbaLastBackup -SqlInstance $TestConfig.instance1 -Database bigtestrest, smalltestrest -CopyFile -CopyPath c:\temp -MaxSize 5 -Prefix testlast
         $fileresult = Get-ChildItem c:\temp | Where-Object { $_.name -like '*bigtestrest' }
         It "Should have skipped bigtestrest and tested smalltestrest" {
             $results[0].RestoreResult | Should -BeLike '*exceeds the specified maximum*'

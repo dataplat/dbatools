@@ -19,7 +19,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
         It "matches self as a login at least once" {
             $matching = $results | Where-Object Login -match $env:username
-            $matching.Length | Should BeGreaterThan 0
+            $matching | Should -Not -BeNullOrEmpty
         }
 
         $results = Get-DbaProcess -SqlInstance $TestConfig.instance1 -Program 'dbatools PowerShell module - dbatools.io'

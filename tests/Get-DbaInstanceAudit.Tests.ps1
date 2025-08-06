@@ -32,6 +32,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 DROP SERVER AUDIT SPECIFICATION TrackAllLogins
                 DROP SERVER AUDIT LoginAudit"
         $server.Query($sql)
+        Remove-Item -Path "C:\temp\LoginAudit*sqlaudit"
     }
     Context "Verifying command output" {
         It "returns some results" {

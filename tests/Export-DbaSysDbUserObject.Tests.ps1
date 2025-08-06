@@ -70,6 +70,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "works as expected with filename" {
         $null = Export-DbaSysDbUserObject -SqlInstance $TestConfig.instance2 -FilePath "C:\Temp\objects_$random.sql"
         $file = get-content "C:\Temp\objects_$random.sql" | Out-String
+        Remove-Item -Path "C:\Temp\objects_$random.sql"
         It "should export text matching table name '$tableName'" {
             $file -match $tableName | Should be $true
         }

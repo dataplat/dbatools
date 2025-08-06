@@ -24,6 +24,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $warn | Should -BeNullorEmpty
             $results.Status | Should -Be 'Removed'
             $results.AvailabilityGroup | Should -Be $agname
+            $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
         }
         It "really removed the ag" {
             $results = Get-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname
