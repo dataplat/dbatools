@@ -43,13 +43,15 @@ Describe $CommandName -Tag UnitTests {
 ```powershell
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        # Enable exceptions for better error handling in tests
         $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $filesToRemove = @()
+        # setup code here
+        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
     }
 
     AfterAll {
-        # Clean up the exception setting
-        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        Remove-Item -Path $filesToRemove -ErrorAction SilentlyContinue
     }
 
     Context "When getting all databases" {
