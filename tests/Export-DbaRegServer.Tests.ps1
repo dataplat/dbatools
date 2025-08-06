@@ -100,13 +100,13 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     It "Ensure the Overwrite param is working" {
         $outputFileName = "$newDirectory\dbatoolsci-regsrvr-export-$random.xml"
-        $results = Export-DbaRegServer -SqlInstance $TestConfig.instance2 -FilePath $outputFileName -WarningAction SilentlyContinue
-        # TODO: Test for [Export-DbaRegServer] Use the -Overwrite parameter if the file C:\temp\539615200\dbatoolsci-regsrvr-export-539615200.xml should be overwritten.
+        $results = Export-DbaRegServer -SqlInstance $TestConfig.instance2 -FilePath $outputFileName
         $results -is [System.IO.FileInfo] | Should -Be $true
         $results.FullName | Should -Be $outputFileName
 
         # test without -Overwrite
-        $invalidResults = Export-DbaRegServer -SqlInstance $TestConfig.instance2 -FilePath $outputFileName
+        $invalidResults = Export-DbaRegServer -SqlInstance $TestConfig.instance2 -FilePath $outputFileName -WarningAction SilentlyContinue
+        # TODO: Test for [Export-DbaRegServer] Use the -Overwrite parameter if the file C:\temp\539615200\dbatoolsci-regsrvr-export-539615200.xml should be overwritten.
         $invalidResults.length | Should -Be 0
 
         # test with -Overwrite

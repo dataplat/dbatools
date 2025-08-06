@@ -8,36 +8,29 @@ param(
 Describe $CommandName -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
-            $command = Get-Command Add-DbaDbMirrorMonitor
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $_ -notin ('WhatIf', 'Confirm') }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
                 "SqlInstance",
                 "SqlCredential",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
+                "EnableException"
             )
         }
 
-        It "Has parameter: <_>" -ForEach $expected {
-            $command | Should -HaveParameter $PSItem
-        }
-
-        It "Should have exactly the number of expected parameters ($($expected.Count))" {
-            $hasparms = $command.Parameters.Values.Name
-            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
+        It "Should have the expected parameters" {
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
 Describe $CommandName -Tag "IntegrationTests" {
-    AfterAll {
-        $null = Remove-DbaDbMirrorMonitor -SqlInstance $TestConfig.instance2 -WarningAction SilentlyContinue
-    }
-
     Context "When adding mirror monitor" {
         BeforeAll {
-            $results = Add-DbaDbMirrorMonitor -SqlInstance $TestConfig.instance2 -WarningAction SilentlyContinue
+            $results = Add-DbaDbMirrorMonitor -SqlInstance $TestConfig.instance2
+        }
+
+        AfterAll {
+            $null = Remove-DbaDbMirrorMonitor -SqlInstance $TestConfig.instance2
         }
 
         It "Adds the mirror monitor" {

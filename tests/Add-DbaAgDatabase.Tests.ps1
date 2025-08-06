@@ -1,7 +1,7 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
     $ModuleName               = "dbatools",
-    $CommandName              = [System.IO.Path]::GetFileName($PSCommandPath.Replace('.Tests.ps1', '')),
+    $CommandName              = "Add-DbaAgDatabase",
     # $TestConfig has to be set outside of the tests by running: $TestConfig = Get-TestConfig
     # This will set $TestConfig.Defaults with the parameter defaults, including:
     # * Confirm = $false
@@ -13,9 +13,9 @@ param(
 Describe $CommandName -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
-            $command = Get-Command Add-DbaAgDatabase
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $_ -notin ('WhatIf', 'Confirm') }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
                 "SqlInstance",
                 "SqlCredential",
                 "AvailabilityGroup",
@@ -27,19 +27,12 @@ Describe $CommandName -Tag "UnitTests" {
                 "SharedPath",
                 "UseLastBackup",
                 "AdvancedBackupParams",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
+                "EnableException"
             )
         }
 
-        It "Has parameter: <_>" -ForEach $expected {
-            $command | Should -HaveParameter $PSItem
-        }
-
-        It "Should have exactly the number of expected parameters ($($expected.Count))" {
-            $hasparms = $command.Parameters.Values.Name
-            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
+        It "Should have the expected parameters" {
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
@@ -49,8 +42,10 @@ Describe $CommandName -Tag "IntegrationTests" {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
 
-        # Collect all the created files to be able to remove them in the AfterAll block.
-        $filesToRemove = @( )
+        # For all the backups that we want to clean up after the test, we create a directory that we can delete at the end.
+        # Other files can be written there as well, maybe we change the name of that variable later. But for now we focus on backups.
+        $backupPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+        $null = New-Item -Path $backupPath -ItemType Directory
 
         # Explain what needs to be set up for the test:
         # To add a database to an availablity group, we need an availability group and a database that has been backed up.
@@ -73,8 +68,7 @@ Describe $CommandName -Tag "IntegrationTests" {
         $null = New-DbaAvailabilityGroup @splat
 
         $null = New-DbaDatabase -SqlInstance $TestConfig.instance3 -Name $existingDbWithBackup
-        $backup = Backup-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $existingDbWithBackup -Path $TestConfig.Temp
-        $filesToRemove += $backup.Path
+        $null = Backup-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $existingDbWithBackup -Path $backupPath
 
         $null = New-DbaDatabase -SqlInstance $TestConfig.instance3 -Name $existingDbWithoutBackup
 
@@ -91,8 +85,8 @@ Describe $CommandName -Tag "IntegrationTests" {
         $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint
         $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $existingDbWithBackup, $existingDbWithoutBackup
 
-        # Remove all created files.
-        Remove-Item -Path $filesToRemove
+        # Remove the backup directory.
+        Remove-Item -Path $backupPath -Recurse
 
         # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
