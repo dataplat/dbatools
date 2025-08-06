@@ -45,8 +45,8 @@ cache-keepalive-pings: 5
 ## Add aider-specific files to .gitignore (default: true)
 gitignore: false
 
-## Automatically lints code after changes using PSScriptAnalyzer (PowerShell linting)
-auto-lint: true
+## No reason to lint if ScriptAnalyzer cant fix it
+auto-lint: false
 
 ## map
 show-repo-map: false
