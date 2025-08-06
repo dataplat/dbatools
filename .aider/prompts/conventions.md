@@ -6,7 +6,7 @@ Transform PowerShell test files to comply with Pester v5 standards for the dbato
 
 ### Required Header
 ```powershell
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
     $ModuleName  = "dbatools",
     $CommandName = "StaticCommandName",  # Always use static command name, never derive from file
