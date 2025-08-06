@@ -8,7 +8,7 @@ Transform PowerShell test files to comply with Pester v5 standards for the dbato
 ```powershell
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
 param(
-    $ModuleName = "dbatools",
+    $ModuleName  = "dbatools",
     $CommandName = "StaticCommandName",  # Always use static command name, never derive from file
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -74,7 +74,7 @@ $array = @(
 Avoid script blocks in Where-Object when possible:
 ```powershell
 # Good - direct property comparison
-$master = $databases | Where-Object Name -eq "master"
+$master    = $databases | Where-Object Name -eq "master"
 $systemDbs = $databases | Where-Object Name -in "master", "model", "msdb", "tempdb"
 
 # Required - script block for Parameters.Keys or filtering
@@ -91,12 +91,12 @@ $ag = Get-DbaLogin -SqlInstance $instance -Login $loginName
 
 # Splat with purpose suffix
 $splatPrimary = @{
-    Primary = $TestConfig.instance3
-    Name = $primaryAgName
-    ClusterType = "None"
+    Primary      = $TestConfig.instance3
+    Name         = $primaryAgName
+    ClusterType  = "None"
     FailoverMode = "Manual"
-    Certificate = "dbatoolsci_AGCert"
-    Confirm = $false
+    Certificate  = "dbatoolsci_AGCert"
+    Confirm      = $false
 }
 $primaryAg = New-DbaAvailabilityGroup @splatPrimary
 ```
@@ -110,7 +110,7 @@ Describe $CommandName -Tag IntegrationTests {
         $primaryAgName = "dbatoolsci_agroup"
         $splatPrimary = @{
             Primary = $TestConfig.instance3
-            Name = $primaryAgName
+            Name    = $primaryAgName
             ...
         }
         $ag = New-DbaAvailabilityGroup @splatPrimary
@@ -121,7 +121,7 @@ Describe $CommandName -Tag IntegrationTests {
             $replicaAgName = "dbatoolsci_add_replicagroup"
             $splatRepAg = @{
                 Primary = $TestConfig.instance3
-                Name = $replicaAgName
+                Name    = $replicaAgName
                 ...
             }
             $replicaAg = New-DbaAvailabilityGroup @splatRepAg
@@ -159,7 +159,6 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "When connecting to SQL Server" {
         BeforeAll {
-            # Test against all instances but without -ForEach
             $allResults = @()
             foreach ($instance in $TestConfig.Instances) {
                 $allResults += Get-DbaDatabase -SqlInstance $instance
@@ -173,7 +172,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Always includes system databases" {
             $systemDbs = $allResults | Where-Object Name -in "master", "model", "msdb", "tempdb"
-            $systemDbs.Count | Should -BeAtLeast 4
+            $systemDbs.Count | Should -BeExactly 4
         }
     }
 }
