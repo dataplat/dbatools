@@ -1,7 +1,4 @@
-You're absolutely right. Let me create a properly revised version that preserves all the essential content while only removing actual repetition:
-
-# Pester v5 Test Standards - Optimized for O1
-
+# Pester v5 Test Standards
 ## Objective
 Transform PowerShell test files to comply with Pester v5 standards for the dbatools module. Maintain all existing functionality while enforcing consistent structure and style.
 
