@@ -246,7 +246,15 @@ function Update-PesterTest {
                 # AutoFix workflow - run PSScriptAnalyzer and fix violations if found
                 if ($AutoFix) {
                     Write-Verbose "Running AutoFix for $cmdName"
-                    Invoke-AutoFix -FilePath $filename -SettingsPath $SettingsPath -AiderParams $aiderParams -MaxRetries $MaxRetries -Model $Model -Verbose:$VerbosePreference
+                    $autoFixParams = @{
+                        FilePath     = $filename
+                        SettingsPath = $SettingsPath
+                        AiderParams  = $aiderParams
+                        MaxRetries   = $MaxRetries
+                        Model        = $Model
+                        Verbose      = $VerbosePreference
+                    }
+                    Invoke-AutoFix @autoFixParams
                 }
             }
         }
@@ -306,7 +314,13 @@ function Invoke-AutoFix {
 
         try {
             # Run PSScriptAnalyzer with the specified settings
-            $analysisResults = Invoke-ScriptAnalyzer -Path $FilePath -Settings $SettingsPath -ErrorAction Stop -Verbose:$false
+            $scriptAnalyzerParams = @{
+                Path        = $FilePath
+                Settings    = $SettingsPath
+                ErrorAction = "Stop"
+                Verbose     = $false
+            }
+            $analysisResults = Invoke-ScriptAnalyzer @scriptAnalyzerParams
 
             if (-not $analysisResults) {
                 Write-Output "No PSScriptAnalyzer violations found for $(Split-Path $FilePath -Leaf)"
@@ -484,7 +498,13 @@ function Repair-SmallThing {
         Write-Verbose "Checking for dbatools.library module"
         if (-not (Get-Module dbatools.library -ListAvailable)) {
             Write-Verbose "dbatools.library not found, installing"
-            Install-Module dbatools.library -Scope CurrentUser -Force -Verbose:$false
+            $installModuleParams = @{
+                Name    = "dbatools.library"
+                Scope   = "CurrentUser"
+                Force   = $true
+                Verbose = $false
+            }
+            Install-Module @installModuleParams
         }
         if (-not (Get-Module dbatools)) {
             Write-Verbose "Importing dbatools module from /workspace/dbatools.psm1"
