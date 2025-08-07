@@ -1,10 +1,10 @@
-# Testing Best Practices
+# Testing Best Practices Directive
 
-## Test Implementation Examples
+## PARAMETER VALIDATION TESTS
 
-### Good Parameter Test
-- Follow these pattenrs and do not deviate
-- The approach shown for parameter validation with filtering out WhatIf/Confirm
+Implement parameter validation tests using this exact pattern without deviation.
+
+Filter out WhatIf/Confirm parameters using the specified approach:
 
 ```powershell
 Describe $CommandName -Tag UnitTests {
@@ -27,7 +27,10 @@ Describe $CommandName -Tag UnitTests {
 }
 ```
 
-### Good Integration Test
+## INTEGRATION TEST STRUCTURE
+
+Implement integration tests following this exact pattern:
+
 ```powershell
 Describe $CommandName -Tag IntegrationTests {
     Context "When connecting to SQL Server" {
@@ -51,10 +54,11 @@ Describe $CommandName -Tag IntegrationTests {
 }
 ```
 
-## Temporary Files and Cleanup
+## TEMPORARY RESOURCE MANAGEMENT
 
-- Create temporary test files/directories with unique names using Get-Random
-- Always clean up temporary resources in AfterAll or AfterEach blocks
+Replace all temporary file/directory creation with unique names using Get-Random pattern.
+
+Add cleanup code with -ErrorAction SilentlyContinue to all AfterAll or AfterEach blocks:
 
 ```powershell
 Describe $CommandName -Tag IntegrationTests {

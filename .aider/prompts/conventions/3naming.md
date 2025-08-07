@@ -1,15 +1,18 @@
-# Parameter & Variable Naming Rules
+# Parameter & Variable Naming Directive
 
-## Parameter Usage Guidelines
-- Use direct parameters for 1-2 parameters
-- Use `$splat<Purpose>` for 3+ parameters (never plain `$splat`)
-- Align splat hashtable assignments with consistent spacing for readability
+## PARAMETER USAGE PATTERNS
+
+Convert 1-2 parameter calls to direct parameter format.
+
+Convert 3+ parameter calls to splatting with `$splat<Purpose>` naming (never plain `$splat`).
+
+Align all splat hashtable assignment operators with consistent spacing:
 
 ```powershell
 # Direct parameters
 $ag = Get-DbaLogin -SqlInstance $instance -Login $loginName
 
-# Splat with purpose suffix - note aligned = signs
+# Splat with purpose suffix - aligned = signs
 $splatPrimary = @{
     Primary      = $TestConfig.instance3
     Name         = $primaryAgName
@@ -21,8 +24,11 @@ $splatPrimary = @{
 $primaryAg = New-DbaAvailabilityGroup @splatPrimary
 ```
 
-## Unique Names Across Scopes
-Use unique, descriptive variable names across scopes to avoid collisions. Pay particular attention to variable names in BeforeAll:
+## VARIABLE SCOPE MANAGEMENT
+
+Replace all generic variable names with unique, descriptive names across all scopes to prevent collisions.
+
+Rename variables in BeforeAll blocks to include scope-specific prefixes or suffixes:
 
 ```powershell
 Describe $CommandName -Tag IntegrationTests {
