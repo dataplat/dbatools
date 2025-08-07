@@ -21,7 +21,7 @@ function Update-PesterTest {
 
     .PARAMETER PromptFilePath
         The path to the template file containing the prompt structure.
-        Defaults to "/workspace/.aider/prompts/template.md".
+        Defaults to "$PSScriptRoot/../.aider/prompts/template.md".
 
     .PARAMETER CacheFilePath
         The path to the file containing cached conventions.
@@ -39,28 +39,40 @@ function Update-PesterTest {
     .PARAMETER PassCount
         Sometimes you need multiple passes to get the desired result.
 
+    .PARAMETER AutoFix
+        If specified, automatically runs PSScriptAnalyzer after Aider modifications and attempts to fix any violations found.
+        This feature runs separately from PassCount iterations and uses targeted fix messages.
+
+    .PARAMETER MaxRetries
+        Maximum number of retry attempts when AutoFix finds PSScriptAnalyzer violations.
+        Only applies when -AutoFix is specified. Defaults to 3.
+
+    .PARAMETER SettingsPath
+        Path to the PSScriptAnalyzer settings file used by AutoFix.
+        Defaults to "$PSScriptRoot/../tests/PSScriptAnalyzerRules.psd1".
+
     .NOTES
         Tags: Testing, Pester
         Author: dbatools team
 
     .EXAMPLE
-        PS C:\> Update-PesterTest
+        PS C:/> Update-PesterTest
         Updates all eligible Pester tests to v5 format using default parameters.
 
     .EXAMPLE
-        PS C:\> Update-PesterTest -First 10 -Skip 5
+        PS C:/> Update-PesterTest -First 10 -Skip 5
         Updates 10 test files starting from the 6th command, skipping the first 5.
 
     .EXAMPLE
-        PS C:\> "C:\tests\Get-DbaDatabase.Tests.ps1", "C:\tests\Get-DbaBackup.Tests.ps1" | Update-PesterTest
+        PS C:/> "C:/tests/Get-DbaDatabase.Tests.ps1", "C:/tests/Get-DbaBackup.Tests.ps1" | Update-PesterTest
         Updates the specified test files to v5 format.
 
     .EXAMPLE
-        PS C:\> Get-Command -Module dbatools -Name "*Database*" | Update-PesterTest
+        PS C:/> Get-Command -Module dbatools -Name "*Database*" | Update-PesterTest
         Updates test files for all commands in dbatools module that match "*Database*".
 
     .EXAMPLE
-        PS C:\> Get-ChildItem ./tests/Add-DbaRegServer.Tests.ps1 | Update-PesterTest -Verbose
+        PS C:/> Get-ChildItem ./tests/Add-DbaRegServer.Tests.ps1 | Update-PesterTest -Verbose
         Updates the specific test file from a Get-ChildItem result.
     #>
     [CmdletBinding(SupportsShouldProcess)]
@@ -69,12 +81,15 @@ function Update-PesterTest {
         [PSObject[]]$InputObject,
         [int]$First = 10000,
         [int]$Skip,
-        [string[]]$PromptFilePath = "/workspace/.aider/prompts/template.md",
-        [string[]]$CacheFilePath = @("/workspace/.aider/prompts/conventions.md","/workspace/private/testing/Get-TestConfig.ps1"),
+        [string[]]$PromptFilePath = "$PSScriptRoot/../.aider/prompts/template.md",
+        [string[]]$CacheFilePath = @("$PSScriptRoot/../.aider/prompts/conventions.md","$PSScriptRoot/../private/testing/Get-TestConfig.ps1"),
         [int]$MaxFileSize = 500kb,
         [string]$Model,
         [switch]$AutoTest,
-        [int]$PassCount = 1
+        [int]$PassCount = 1,
+        [switch]$AutoFix,
+        [int]$MaxRetries = 3,
+        [string]$SettingsPath = "$PSScriptRoot/../tests/PSScriptAnalyzerRules.psd1"
     )
     begin {
         # Full prompt path
@@ -82,7 +97,7 @@ function Update-PesterTest {
             Write-Warning "dbatools.library not found, installing"
             Install-Module dbatools.library -Scope CurrentUser -Force
         }
-        Import-Module /workspace/dbatools.psm1 -Force
+        Import-Module $PSScriptRoot/../dbatools.psm1 -Force
 
         $promptTemplate = Get-Content $PromptFilePath
         $commonParameters = [System.Management.Automation.PSCmdlet]::CommonParameters
@@ -100,7 +115,7 @@ function Update-PesterTest {
                     $path = $item.FullName
                     Write-Verbose "Processing FileInfo path: $path"
                     if (Test-Path $path) {
-                        $cmdName = [System.IO.Path]::GetFileNameWithoutExtension($path) -replace '\.Tests$', ''
+                        $cmdName = [System.IO.Path]::GetFileNameWithoutExtension($path) -replace '/.Tests$', ''
                         Write-Verbose "Extracted command name: $cmdName"
                         $cmd = Get-Command -Name $cmdName -ErrorAction SilentlyContinue
                         if ($cmd) {
@@ -112,7 +127,7 @@ function Update-PesterTest {
                 } elseif ($item -is [string]) {
                     Write-Verbose "Processing string path: $item"
                     if (Test-Path $item) {
-                        $cmdName = [System.IO.Path]::GetFileNameWithoutExtension($item) -replace '\.Tests$', ''
+                        $cmdName = [System.IO.Path]::GetFileNameWithoutExtension($item) -replace '/.Tests$', ''
                         Write-Verbose "Extracted command name: $cmdName"
                         $cmd = Get-Command -Name $cmdName -ErrorAction SilentlyContinue
                         if ($cmd) {
@@ -138,7 +153,7 @@ function Update-PesterTest {
 
         foreach ($command in $commandsToProcess) {
             $cmdName = $command.Name
-            $filename = "/workspace/tests/$cmdName.Tests.ps1"
+            $filename = "$PSScriptRoot/../tests/$cmdName.Tests.ps1"
 
             Write-Verbose "Processing command: $cmdName"
             Write-Verbose "Test file path: $filename"
@@ -188,8 +203,120 @@ function Update-PesterTest {
                         Invoke-Aider @aiderParams
                     }
                 }
+
+                # AutoFix workflow - run PSScriptAnalyzer and fix violations if found
+                if ($AutoFix) {
+                    Write-Verbose "Running AutoFix for $cmdName"
+                    Invoke-AutoFix -FilePath $filename -SettingsPath $SettingsPath -AiderParams $aiderParams -MaxRetries $MaxRetries -Model $Model -Verbose:$VerbosePreference
+                }
             }
         }
+    }
+}
+
+function Invoke-AutoFix {
+    <#
+    .SYNOPSIS
+        Runs PSScriptAnalyzer after Aider modifications and attempts to fix violations.
+
+    .DESCRIPTION
+        This helper function runs PSScriptAnalyzer on a modified file and creates targeted
+        fix requests for any violations found. It uses focused messages containing only
+        the ScriptAnalyzer violations and line numbers, without including conventions.
+
+    .PARAMETER FilePath
+        The path to the file that was modified by Aider.
+
+    .PARAMETER SettingsPath
+        Path to the PSScriptAnalyzer settings file.
+
+    .PARAMETER AiderParams
+        The original Aider parameters hashtable (will be modified for retry calls).
+
+    .PARAMETER MaxRetries
+        Maximum number of retry attempts for fixing violations.
+
+    .PARAMETER Model
+        The AI model to use for fix attempts.
+
+    .NOTES
+        This function modifies the AiderParams hashtable by replacing the Message and
+        removing the ReadFile parameter for focused fix attempts.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$FilePath,
+
+        [Parameter(Mandatory)]
+        [string]$SettingsPath,
+
+        [Parameter(Mandatory)]
+        [hashtable]$AiderParams,
+
+        [Parameter(Mandatory)]
+        [int]$MaxRetries,
+
+        [string]$Model
+    )
+
+    $retryCount = 0
+
+    do {
+        Write-Verbose "Running PSScriptAnalyzer on $FilePath (attempt $($retryCount + 1)/$MaxRetries)"
+
+        try {
+            # Run PSScriptAnalyzer with the specified settings
+            $analysisResults = Invoke-ScriptAnalyzer -Path $FilePath -Settings $SettingsPath -ErrorAction Stop
+
+            if (-not $analysisResults) {
+                Write-Verbose "No PSScriptAnalyzer violations found - AutoFix complete"
+                break
+            }
+
+            Write-Verbose "Found $($analysisResults.Count) PSScriptAnalyzer violation(s)"
+
+            # Format violations into a focused fix message
+            $fixMessage = "Fix the following PSScriptAnalyzer violations in this file:`n`n"
+
+            foreach ($result in $analysisResults) {
+                $fixMessage += "Rule: $($result.RuleName)`n"
+                $fixMessage += "Line: $($result.Line)`n"
+                $fixMessage += "Message: $($result.Message)`n`n"
+            }
+
+            $fixMessage += "Please fix these specific issues without changing other aspects of the code."
+
+            Write-Verbose "Sending focused fix request to Aider"
+
+            # Create modified parameters for the fix attempt
+            $fixParams = $AiderParams.Clone()
+            $fixParams.Message = $fixMessage
+
+            # Remove ReadFile parameter (conventions) for focused fixes
+            if ($fixParams.ContainsKey('ReadFile')) {
+                $fixParams.Remove('ReadFile')
+            }
+
+            # Ensure we have the model parameter
+            if ($Model -and -not $fixParams.ContainsKey('Model')) {
+                $fixParams.Model = $Model
+            }
+
+            # Invoke Aider with the focused fix message
+            Invoke-Aider @fixParams
+
+            $retryCount++
+
+        } catch {
+            Write-Warning "Failed to run PSScriptAnalyzer on $FilePath`: $($_.Exception.Message)"
+            break
+        }
+
+    } while ($retryCount -lt $MaxRetries)
+
+    if ($retryCount -eq $MaxRetries) {
+        Write-Warning "AutoFix reached maximum retry limit ($MaxRetries) for $FilePath"
     }
 }
 
@@ -210,35 +337,35 @@ function Repair-Error {
 
     .PARAMETER PromptFilePath
         The path to the template file containing the prompt structure.
-        Defaults to "/workspace/.aider/prompts/fix-errors.md".
+        Defaults to "./.aider/prompts/fix-errors.md".
 
     .PARAMETER CacheFilePath
         The path to the file containing cached conventions.
-        Defaults to "/workspace/.aider/prompts/conventions.md".
+        Defaults to "./.aider/prompts/conventions.md".
 
     .PARAMETER ErrorFilePath
         The path to the JSON file containing error information.
-        Defaults to "/workspace/.aider/prompts/errors.json".
+        Defaults to "./.aider/prompts/errors.json".
 
     .NOTES
         Tags: Testing, Pester, ErrorHandling
         Author: dbatools team
 
     .EXAMPLE
-        PS C:\> Repair-Error
+        PS C:/> Repair-Error
         Processes and attempts to fix all errors found in the error file using default parameters.
 
     .EXAMPLE
-        PS C:\> Repair-Error -ErrorFilePath "custom-errors.json"
+        PS C:/> Repair-Error -ErrorFilePath "custom-errors.json"
         Processes and repairs errors using a custom error file.
     #>
     [CmdletBinding()]
     param (
         [int]$First = 10000,
         [int]$Skip,
-        [string[]]$PromptFilePath = "/workspace/.aider/prompts/fix-errors.md",
-        [string[]]$CacheFilePath = "/workspace/.aider/prompts/conventions.md",
-        [string]$ErrorFilePath = "/workspace/.aider/prompts/errors.json"
+        [string[]]$PromptFilePath = "$PSScriptRoot/../.aider/prompts/fix-errors.md",
+        [string[]]$CacheFilePath = "$PSScriptRoot/../.aider/prompts/conventions.md",
+        [string]$ErrorFilePath = "$PSScriptRoot/../.aider/prompts/errors.json"
     )
 
     $promptTemplate = Get-Content $PromptFilePath
@@ -246,7 +373,7 @@ function Repair-Error {
     $commands = $testerrors | Select-Object -ExpandProperty Command -Unique | Sort-Object
 
     foreach ($command in $commands) {
-        $filename = "/workspace/tests/$command.Tests.ps1"
+        $filename = "$PSScriptRoot/../tests/$command.Tests.ps1"
         Write-Output "Processing $command"
 
         if (-not (Test-Path $filename)) {
@@ -324,7 +451,7 @@ function Repair-SmallThing {
         }
         if (-not (Get-Module dbatools)) {
             Write-Verbose "Importing dbatools module from /workspace/dbatools.psm1"
-            Import-Module /workspace/dbatools.psm1 -Force -Verbose:$false
+            Import-Module $PSScriptRoot/../dbatools.psm1 -Force -Verbose:$false
         }
 
         if ($PromptFilePath) {
@@ -366,7 +493,7 @@ function Repair-SmallThing {
             switch ($object.GetType().FullName) {
                 'System.IO.FileInfo' {
                     Write-Verbose "Processing FileInfo object: $($object.FullName)"
-                    $cmdName = [System.IO.Path]::GetFileNameWithoutExtension($object.Name) -replace '\.Tests$', ''
+                    $cmdName = [System.IO.Path]::GetFileNameWithoutExtension($object.Name) -replace '/.Tests$', ''
                     $commands += $baseCommands | Where-Object Name -eq $cmdName
                 }
                 'System.Management.Automation.CommandInfo' {
@@ -376,7 +503,7 @@ function Repair-SmallThing {
                 'System.String' {
                     Write-Verbose "Processing string path: $object"
                     if (Test-Path $object) {
-                        $cmdName = [System.IO.Path]::GetFileNameWithoutExtension($object) -replace '\.Tests$', ''
+                        $cmdName = [System.IO.Path]::GetFileNameWithoutExtension($object) -replace '/.Tests$', ''
                         $commands += $baseCommands | Where-Object Name -eq $cmdName
                     } else {
                         Write-Warning "Path not found: $object"
@@ -399,7 +526,7 @@ function Repair-SmallThing {
             $cmdName = $command.Name
             Write-Verbose "Processing command: $cmdName"
 
-            $filename = "/workspace/tests/$cmdName.Tests.ps1"
+            $filename = "$PSScriptRoot/../tests/$cmdName.Tests.ps1"
             Write-Verbose "Using test path: $filename"
 
             if (-not (Test-Path $filename)) {
@@ -681,35 +808,35 @@ function Repair-Error {
 
     .PARAMETER PromptFilePath
         The path to the template file containing the prompt structure.
-        Defaults to "/workspace/.aider/prompts/fix-errors.md".
+        Defaults to "./.aider/prompts/fix-errors.md".
 
     .PARAMETER CacheFilePath
         The path to the file containing cached conventions.
-        Defaults to "/workspace/.aider/prompts/conventions.md".
+        Defaults to "./.aider/prompts/conventions.md".
 
     .PARAMETER ErrorFilePath
         The path to the JSON file containing error information.
-        Defaults to "/workspace/.aider/prompts/errors.json".
+        Defaults to "./.aider/prompts/errors.json".
 
     .NOTES
         Tags: Testing, Pester, ErrorHandling
         Author: dbatools team
 
     .EXAMPLE
-        PS C:\> Repair-Error
+        PS C:/> Repair-Error
         Processes and attempts to fix all errors found in the error file using default parameters.
 
     .EXAMPLE
-        PS C:\> Repair-Error -ErrorFilePath "custom-errors.json"
+        PS C:/> Repair-Error -ErrorFilePath "custom-errors.json"
         Processes and repairs errors using a custom error file.
     #>
     [CmdletBinding()]
     param (
         [int]$First = 10000,
         [int]$Skip,
-        [string[]]$PromptFilePath = "/workspace/.aider/prompts/fix-errors.md",
-        [string[]]$CacheFilePath = "/workspace/.aider/prompts/conventions.md",
-        [string]$ErrorFilePath = "/workspace/.aider/prompts/errors.json"
+        [string[]]$PromptFilePath = "$PSScriptRoot/../.aider/prompts/fix-errors.md",
+        [string[]]$CacheFilePath = "$PSScriptRoot/../.aider/prompts/conventions.md",
+        [string]$ErrorFilePath = "$PSScriptRoot/../.aider/prompts/errors.json"
     )
 
     $promptTemplate = Get-Content $PromptFilePath
@@ -717,7 +844,7 @@ function Repair-Error {
     $commands = $testerrors | Select-Object -ExpandProperty Command -Unique | Sort-Object
 
     foreach ($command in $commands) {
-        $filename = "/workspace/tests/$command.Tests.ps1"
+        $filename = "$PSScriptRoot/../tests/$command.Tests.ps1"
         Write-Output "Processing $command"
 
         if (-not (Test-Path $filename)) {
