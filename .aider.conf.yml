@@ -11,7 +11,7 @@ env-file: .aider/.env
 # editor-model: gpt-4o
 
 ## Suggested number of tokens to use for repo map, use 0 to disable (default: 1024)
-map-tokens: 0
+map-tokens: "0"
 
 ## Control how often the repo map is refreshed. Options: auto, always, files, manual (default: auto)
 map-refresh: manual
@@ -25,7 +25,6 @@ pretty: true
 ## Disable streaming responses; waits for full response before displaying
 ## helps with estimating costs
 stream: false
-no-stream: true
 
 ## Enable caching of prompts to reduce token costs (default: false)
 cache-prompts: true
@@ -40,7 +39,7 @@ auto-commits: false
 no-suggest-shell-commands: true
 
 ## Number of pings to keep the prompt cache alive at 5-minute intervals (default: 0)
-cache-keepalive-pings: 5
+cache-keepalive-pings: "5"
 
 ## Add aider-specific files to .gitignore (default: true)
 gitignore: false
