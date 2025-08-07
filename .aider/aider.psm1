@@ -223,7 +223,7 @@ function Update-PesterTest {
                         }
 
                         Write-Verbose "Invoking Aider to update test file"
-                        #Invoke-Aider @aiderParams
+                        Invoke-Aider @aiderParams
                     }
                 } else {
                     Write-Verbose "CacheFilePath does not contain directories, using as is"

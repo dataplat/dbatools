@@ -24,7 +24,7 @@ pretty: true
 
 ## Disable streaming responses; waits for full response before displaying
 ## helps with estimating costs
-stream: false
+stream: true
 
 ## Enable caching of prompts to reduce token costs (default: false)
 cache-prompts: true
