@@ -1,5 +1,5 @@
 @{
-    Severity     = @('Error')
+    Severity     = @('Error', 'Warning', 'Information')
     IncludeRules = @(
         'PSUseCompatibleSyntax',
         'PSAvoidUsingCmdletAliases',

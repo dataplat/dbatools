@@ -252,7 +252,6 @@ function Update-PesterTest {
                         AiderParams  = $aiderParams
                         MaxRetries   = $MaxRetries
                         Model        = $Model
-                        Verbose      = $VerbosePreference
                     }
                     Invoke-AutoFix @autoFixParams
                 }
@@ -318,8 +317,8 @@ function Invoke-AutoFix {
                 Path        = $FilePath
                 Settings    = $SettingsPath
                 ErrorAction = "Stop"
-                Verbose     = $false
             }
+
             $analysisResults = Invoke-ScriptAnalyzer @scriptAnalyzerParams
 
             if (-not $analysisResults) {
@@ -338,7 +337,7 @@ function Invoke-AutoFix {
                 $fixMessage += "Message: $($result.Message)`n`n"
             }
 
-            $fixMessage += "Please fix these specific issues without changing other aspects of the code."
+            $fixMessage += "Please fix these specific issues ONLY. Do not provide workarounds, provide fixes."
 
             Write-Verbose "Sending focused fix request to Aider"
 
