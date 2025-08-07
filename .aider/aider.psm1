@@ -44,6 +44,10 @@ function Update-PesterTest {
         If specified, automatically runs PSScriptAnalyzer after Aider modifications and attempts to fix any violations found.
         This feature runs separately from PassCount iterations and uses targeted fix messages.
 
+    .PARAMETER AutoFixModel
+        The AI model to use for AutoFix operations. Defaults to the same model as specified in -Model.
+        If not specified, it will use the same model as the main operation.
+
     .PARAMETER MaxRetries
         Maximum number of retry attempts when AutoFix finds PSScriptAnalyzer violations.
         Only applies when -AutoFix is specified. Defaults to 3.
@@ -92,6 +96,7 @@ function Update-PesterTest {
         [switch]$AutoTest,
         [int]$PassCount = 1,
         [switch]$AutoFix,
+        [string]$AutoFixModel = $Model,
         [int]$MaxRetries = 3,
         [string]$SettingsPath = (Resolve-Path "$PSScriptRoot/../tests/PSScriptAnalyzerRules.psd1")
     )
@@ -251,7 +256,7 @@ function Update-PesterTest {
                         SettingsPath = $SettingsPath
                         AiderParams  = $aiderParams
                         MaxRetries   = $MaxRetries
-                        Model        = $Model
+                        Model        = $AutoFixModel
                     }
                     Invoke-AutoFix @autoFixParams
                 }
