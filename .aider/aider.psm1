@@ -116,7 +116,7 @@ function Update-PesterTest {
                 if ($item -is [System.Management.Automation.CommandInfo]) {
                     $commandsToProcess += $item
                 } elseif ($item -is [System.IO.FileInfo]) {
-                    $path = $item.FullName
+                    $path = (Resolve-Path $item.FullName).Path
                     Write-Verbose "Processing FileInfo path: $path"
                     if (Test-Path $path) {
                         $cmdName = [System.IO.Path]::GetFileNameWithoutExtension($path) -replace '/.Tests$', ''
@@ -130,17 +130,22 @@ function Update-PesterTest {
                     }
                 } elseif ($item -is [string]) {
                     Write-Verbose "Processing string path: $item"
-                    if (Test-Path $item) {
-                        $cmdName = [System.IO.Path]::GetFileNameWithoutExtension($item) -replace '/.Tests$', ''
-                        Write-Verbose "Extracted command name: $cmdName"
-                        $cmd = Get-Command -Name $cmdName -ErrorAction SilentlyContinue
-                        if ($cmd) {
-                            $commandsToProcess += $cmd
+                    try {
+                        $resolvedItem = (Resolve-Path $item).Path
+                        if (Test-Path $resolvedItem) {
+                            $cmdName = [System.IO.Path]::GetFileNameWithoutExtension($resolvedItem) -replace '/.Tests$', ''
+                            Write-Verbose "Extracted command name: $cmdName"
+                            $cmd = Get-Command -Name $cmdName -ErrorAction SilentlyContinue
+                            if ($cmd) {
+                                $commandsToProcess += $cmd
+                            } else {
+                                Write-Warning "Could not find command for test file: $resolvedItem"
+                            }
                         } else {
-                            Write-Warning "Could not find command for test file: $item"
+                            Write-Warning "File not found: $resolvedItem"
                         }
-                    } else {
-                        Write-Warning "File not found: $item"
+                    } catch {
+                        Write-Warning "Could not resolve path: $item"
                     }
                 } else {
                     Write-Warning "Unsupported input type: $($item.GetType().FullName)"
@@ -157,7 +162,7 @@ function Update-PesterTest {
 
         foreach ($command in $commandsToProcess) {
             $cmdName = $command.Name
-            $filename = "$PSScriptRoot/../tests/$cmdName.Tests.ps1"
+            $filename = (Resolve-Path "$PSScriptRoot/../tests/$cmdName.Tests.ps1" -ErrorAction SilentlyContinue).Path
 
             Write-Verbose "Processing command: $cmdName"
             Write-Verbose "Test file path: $filename"
@@ -420,7 +425,7 @@ function Repair-Error {
     $commands = $testerrors | Select-Object -ExpandProperty Command -Unique | Sort-Object
 
     foreach ($command in $commands) {
-        $filename = "$PSScriptRoot/../tests/$command.Tests.ps1"
+        $filename = (Resolve-Path "$PSScriptRoot/../tests/$command.Tests.ps1" -ErrorAction SilentlyContinue).Path
         Write-Output "Processing $command"
 
         if (-not (Test-Path $filename)) {
@@ -573,7 +578,7 @@ function Repair-SmallThing {
             $cmdName = $command.Name
             Write-Verbose "Processing command: $cmdName"
 
-            $filename = "$PSScriptRoot/../tests/$cmdName.Tests.ps1"
+            $filename = (Resolve-Path "$PSScriptRoot/../tests/$cmdName.Tests.ps1" -ErrorAction SilentlyContinue).Path
             Write-Verbose "Using test path: $filename"
 
             if (-not (Test-Path $filename)) {
