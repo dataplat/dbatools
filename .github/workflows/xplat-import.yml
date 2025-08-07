@@ -1,5 +1,18 @@
 name: Cross Platform Import
-on: [push]
+on:
+  push:
+    paths-ignore:
+      - '**/*.md'
+      - '**/*.json'
+      - 'docs/**'
+      - '.github/FUNDING.yml'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.github/PULL_REQUEST_TEMPLATE.md'
+      - '.aider/**'
+      - '.devcontainer/**'
+      - '.vscode/**'
+      - 'bin/**'
+      - 'en-us/**'
 
 jobs:
   build:

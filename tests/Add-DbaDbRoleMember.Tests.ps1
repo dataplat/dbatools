@@ -1,40 +1,36 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $ModuleName               = "dbatools",
+    $CommandName              = [System.IO.Path]::GetFileName($PSCommandPath.Replace('.Tests.ps1', '')),
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe "Add-DbaDbRoleMember" -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
-            $command = Get-Command Add-DbaDbRoleMember
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $_ -notin ('WhatIf', 'Confirm') }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
                 "SqlInstance",
                 "SqlCredential",
                 "Database",
                 "Role",
                 "Member",
                 "InputObject",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
+                "EnableException"
             )
         }
 
-        It "Has parameter: <_>" -ForEach $expected {
-            $command | Should -HaveParameter $PSItem
-        }
-
-        It "Should have exactly the number of expected parameters ($($expected.Count))" {
-            $hasparms = $command.Parameters.Values.Name
-            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
+        It "Should have the expected parameters" {
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
 Describe "Add-DbaDbRoleMember" -Tag "IntegrationTests" {
     BeforeAll {
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $user1 = "dbatoolssci_user1_$(Get-Random)"
         $user2 = "dbatoolssci_user2_$(Get-Random)"
@@ -48,19 +44,23 @@ Describe "Add-DbaDbRoleMember" -Tag "IntegrationTests" {
         $null = New-DbaDbUser -SqlInstance $TestConfig.instance2 -Database msdb -Login $user1 -Username $user1 -IncludeSystem
         $null = New-DbaDbUser -SqlInstance $TestConfig.instance2 -Database msdb -Login $user2 -Username $user2 -IncludeSystem
         $null = $server.Query("CREATE ROLE $role", $dbname)
+
+        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
     }
 
     AfterAll {
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $null = $server.Query("DROP USER $user1", 'msdb')
         $null = $server.Query("DROP USER $user2", 'msdb')
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname -Confirm:$false
-        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $user1, $user2 -Confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname
+        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $user1, $user2
     }
 
     Context "When adding a user to a role" {
         BeforeAll {
-            $result = Add-DbaDbRoleMember -SqlInstance $TestConfig.instance2 -Role $role -Member $user1 -Database $dbname -Confirm:$false
+            $result = Add-DbaDbRoleMember -SqlInstance $TestConfig.instance2 -Role $role -Member $user1 -Database $dbname
             $roleDBAfter = Get-DbaDbRoleMember -SqlInstance $server -Database $dbname -Role $role
         }
 
@@ -74,7 +74,7 @@ Describe "Add-DbaDbRoleMember" -Tag "IntegrationTests" {
     Context "When adding a user to multiple roles" {
         BeforeAll {
             $roleDB = Get-DbaDbRoleMember -SqlInstance $server -Database msdb -Role db_datareader, SQLAgentReaderRole
-            $result = Add-DbaDbRoleMember -SqlInstance $TestConfig.instance2 -Role db_datareader, SQLAgentReaderRole -Member $user1 -Database msdb -Confirm:$false
+            $result = Add-DbaDbRoleMember -SqlInstance $TestConfig.instance2 -Role db_datareader, SQLAgentReaderRole -Member $user1 -Database msdb
             $roleDBAfter = Get-DbaDbRoleMember -SqlInstance $server -Database msdb -Role db_datareader, SQLAgentReaderRole
         }
 
@@ -89,7 +89,7 @@ Describe "Add-DbaDbRoleMember" -Tag "IntegrationTests" {
         BeforeAll {
             $roleInput = Get-DbaDbRole -SqlInstance $server -Database msdb -Role db_datareader, SQLAgentReaderRole
             $roleDB = Get-DbaDbRoleMember -SqlInstance $server -Database msdb -Role db_datareader, SQLAgentReaderRole
-            $result = $roleInput | Add-DbaDbRoleMember -User $user2 -Confirm:$false
+            $result = $roleInput | Add-DbaDbRoleMember -User $user2
             $roleDBAfter = Get-DbaDbRoleMember -SqlInstance $server -Database msdb -Role db_datareader, SQLAgentReaderRole
         }
 
@@ -101,7 +101,7 @@ Describe "Add-DbaDbRoleMember" -Tag "IntegrationTests" {
 
     Context "When adding a user to a role they are already a member of" {
         BeforeAll {
-            $messages = Add-DbaDbRoleMember -SqlInstance $TestConfig.instance2 -Role $role -Member $user1 -Database $dbname -Confirm:$false -Verbose 4>&1
+            $messages = Add-DbaDbRoleMember -SqlInstance $TestConfig.instance2 -Role $role -Member $user1 -Database $dbname
         }
 
         It "Skips adding the user and outputs appropriate message" {
@@ -112,7 +112,7 @@ Describe "Add-DbaDbRoleMember" -Tag "IntegrationTests" {
 
     Context "When adding a role to another role" {
         BeforeAll {
-            $result = Add-DbaDbRoleMember -SqlInstance $TestConfig.instance2 -Role db_datawriter -Member $role -Database $dbname -Confirm:$false
+            $result = Add-DbaDbRoleMember -SqlInstance $TestConfig.instance2 -Role db_datawriter -Member $role -Database $dbname
             $roleDBAfter = Get-DbaDbRoleMember -SqlInstance $server -Database $dbname -Role db_datawriter
         }
 
