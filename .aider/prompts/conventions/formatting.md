@@ -13,7 +13,7 @@ $array = @(
 - Skip conditions must evaluate to `$true` or `$false`, not strings
 - Use `$global:` instead of `$script:` for test configuration variables when required for Pester v5 scoping
 - No trailing spaces
-- Use `$results.Status.Count` for accurate counting
+- Use `$results.PropertyX.Count` for accurate counting vs $results.Count
 
 ## Where-Object Usage
 Avoid script blocks in Where-Object when possible:

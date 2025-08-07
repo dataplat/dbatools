@@ -3,6 +3,9 @@
 ## Test Implementation Examples
 
 ### Good Parameter Test
+- Follow these pattenrs and do not deviate
+- The approach shown for parameter validation with filtering out WhatIf/Confirm
+
 ```powershell
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
@@ -63,7 +66,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     AfterAll {
         # Always clean up temp files
-        Remove-Item -Path $backupPath -Recurse
+        Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
     }
 
     Context "When performing backups" {

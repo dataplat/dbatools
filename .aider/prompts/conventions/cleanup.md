@@ -24,9 +24,6 @@ Describe $CommandName -Tag IntegrationTests {
 }
 ```
 
-## Critical Instruction
-ALL comments must be preserved exactly as they appear in the original code, including seemingly unrelated or end-of-file comments. Even comments that appear to be development notes or temporary must be kept. This is especially important for comments related to CI/CD systems like AppVeyor.
-
 ## Resource Management Guidelines
 - Always track resources created during tests
 - Use array variables to collect resources for cleanup

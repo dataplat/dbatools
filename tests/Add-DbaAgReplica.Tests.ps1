@@ -8,9 +8,8 @@ param(
 Describe $CommandName -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
-            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $_ -notin ('WhatIf', 'Confirm') }
-            $expectedParameters = $TestConfig.CommonParameters
-            $expectedParameters += @(
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $_ -notin @('WhatIf', 'Confirm') }
+            $expectedParameters = $TestConfig.CommonParameters + @(
                 "SqlInstance",
                 "SqlCredential",
                 "Name",
