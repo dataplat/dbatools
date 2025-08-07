@@ -88,7 +88,7 @@ function Update-PesterTest {
         [int]$Skip,
         [string[]]$PromptFilePath = @(Resolve-Path "$PSScriptRoot/../.aider/prompts/template.md").Path,
         [string[]]$CacheFilePath = @(
-            (Resolve-Path "$PSScriptRoot/../.aider/prompts/conventions").Path,
+            (Resolve-Path "$PSScriptRoot/../.aider/prompts/conventions.md").Path,
             (Resolve-Path "$PSScriptRoot/../private/testing/Get-TestConfig.ps1").Path
         ),
         [int]$MaxFileSize = 500kb,
@@ -334,7 +334,7 @@ function Invoke-AutoFix {
             Write-Verbose "Found $($analysisResults.Count) PSScriptAnalyzer violation(s)"
 
             # Format violations into a focused fix message
-            $fixMessage = "Fix the following PSScriptAnalyzer violations in this file:`n`n"
+            $fixMessage = "The following are PSScriptAnalyzer violations that need to be fixed:`n`n"
 
             foreach ($result in $analysisResults) {
                 $fixMessage += "Rule: $($result.RuleName)`n"
@@ -342,7 +342,7 @@ function Invoke-AutoFix {
                 $fixMessage += "Message: $($result.Message)`n`n"
             }
 
-            $fixMessage += "Please fix these specific issues ONLY. Do not provide workarounds, provide fixes."
+            $fixMessage += "Delete all unused variable assignments identified above. Remove the entire line for each unused variable. Make no other changes to the code that are not included in this fix list."
 
             Write-Verbose "Sending focused fix request to Aider"
 
