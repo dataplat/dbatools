@@ -501,7 +501,7 @@ function Repair-SmallThing {
                 Name    = "dbatools.library"
                 Scope   = "CurrentUser"
                 Force   = $true
-                Verbose = $false
+                Verbose = "SilentlyContinue"
             }
             Install-Module @installModuleParams
         }
