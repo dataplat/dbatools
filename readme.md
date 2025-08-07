@@ -185,14 +185,9 @@ Import-Module dbatools
 ### ⚠️ Certificate Change Notice (v2.5.5+)
 Starting with v2.5.5, dbatools uses Microsoft Azure Trusted Signing. When upgrading from older versions:
 ```powershell
-Update-Module dbatools -Force -SkipPublisherCheck
+Install-Module dbatools -Force -SkipPublisherCheck
 ```
 [Full migration guide →](https://blog.netnerds.net/2025/08/dbatools-azure-trusted-signing/)
-
-### Updating
-```powershell
-Update-Module dbatools
-```
 
 ## Getting Help
 
