@@ -1,4 +1,5 @@
 $PSDefaultParameterValues['Import-Module:Verbose'] = $false
+
 function Update-PesterTest {
     <#
     .SYNOPSIS
@@ -81,15 +82,18 @@ function Update-PesterTest {
         [PSObject[]]$InputObject,
         [int]$First = 10000,
         [int]$Skip,
-        [string[]]$PromptFilePath = "$PSScriptRoot/../.aider/prompts/template.md",
-        [string[]]$CacheFilePath = @("$PSScriptRoot/../.aider/prompts/conventions.md","$PSScriptRoot/../private/testing/Get-TestConfig.ps1"),
+        [string[]]$PromptFilePath = @(Resolve-Path "$PSScriptRoot/../.aider/prompts/template.md").Path,
+        [string[]]$CacheFilePath = @(
+            (Resolve-Path "$PSScriptRoot/../.aider/prompts/conventions").Path,
+            (Resolve-Path "$PSScriptRoot/../private/testing/Get-TestConfig.ps1").Path
+        ),
         [int]$MaxFileSize = 500kb,
         [string]$Model,
         [switch]$AutoTest,
         [int]$PassCount = 1,
         [switch]$AutoFix,
         [int]$MaxRetries = 3,
-        [string]$SettingsPath = "$PSScriptRoot/../tests/PSScriptAnalyzerRules.psd1"
+        [string]$SettingsPath = (Resolve-Path "$PSScriptRoot/../tests/PSScriptAnalyzerRules.psd1")
     )
     begin {
         # Full prompt path
@@ -183,24 +187,67 @@ function Update-PesterTest {
             $cmdprompt = $cmdPrompt -join "`n"
 
             if ($PSCmdlet.ShouldProcess($filename, "Update Pester test to v5 format and/or style")) {
-                $aiderParams = @{
-                    Message      = $cmdPrompt
-                    File         = $filename
-                    YesAlways    = $true
-                    NoStream     = $true
-                    CachePrompts = $true
-                    ReadFile     = $CacheFilePath
-                    Model        = $Model
-                    AutoTest     = $AutoTest
-                }
+                # if CacheFilePath includes a Directory, expand it to each file then do a foreach
+                # keep any other files in the array while removing the Directory
 
-                Write-Verbose "Invoking Aider to update test file"
-                Invoke-Aider @aiderParams
+                # using a pipe, test to see if any values in CacheFilePath are directories
+                $dirs = Get-ChildItem -Path $CacheFilePath | Where-Object Directory
 
-                if ($PassCount -gt 1) {
-                    for ($i = 1; $i -lt $PassCount; $i++) {
-                        Write-Verbose "Retrying update for $cmdName, attempt $($i + 1)"
+                if ($dirs) {
+                    Write-Verbose "CacheFilePath contains directories, expanding to files"
+                    $expandedFiles = $readfiles = Get-ChildItem -Path $dirs -Recurse -File
+                    $cachefiles = Get-ChildItem -Path (Get-Item $CacheFilePath | Where-Object PSIsContainer -eq $false) -File
+                    Write-Verbose "ORIGINAL CACHE FILEs: $cachefiles"
+
+                    foreach ($efile in $expandedFiles) {
+                        Write-Verbose "Processing file: $($efile.FullName)"
+                        if ($cachefiles) {
+                            $readfiles = $efile.FullName, $cachefiles.FullName
+                        }
+                        Write-Verbose "Using read files: $($readfiles -join ', ')"
+
+                        $aiderParams = @{
+                            Message      = $cmdPrompt
+                            File         = $filename
+                            YesAlways    = $true
+                            NoStream     = $true
+                            CachePrompts = $true
+                            ReadFile     = $readfiles
+                            Model        = $Model
+                            AutoTest     = $AutoTest
+                        }
+
+                        Write-Verbose "Invoking Aider to update test file"
                         Invoke-Aider @aiderParams
+
+                        if ($PassCount -gt 1) {
+                            for ($i = 1; $i -lt $PassCount; $i++) {
+                                Write-Verbose "Retrying update for $cmdName, attempt $($i + 1)"
+                                Invoke-Aider @aiderParams
+                            }
+                        }
+                    }
+                } else {
+                    Write-Verbose "CacheFilePath does not contain directories, using as is"
+                    $aiderParams = @{
+                        Message      = $cmdPrompt
+                        File         = $filename
+                        YesAlways    = $true
+                        NoStream     = $true
+                        CachePrompts = $true
+                        ReadFile     = $CacheFilePath
+                        Model        = $Model
+                        AutoTest     = $AutoTest
+                    }
+
+                    Write-Verbose "Invoking Aider to update test file"
+                    Invoke-Aider @aiderParams
+
+                    if ($PassCount -gt 1) {
+                        for ($i = 1; $i -lt $PassCount; $i++) {
+                            Write-Verbose "Retrying update for $cmdName, attempt $($i + 1)"
+                            Invoke-Aider @aiderParams
+                        }
                     }
                 }
 

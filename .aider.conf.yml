@@ -53,8 +53,7 @@ show-repo-map: false
 #aiderignore: .aider/.aiderignore
 
 ## Command to lint PowerShell code using PSScriptAnalyzer
-lint-cmd: >
-  pwsh -NoProfile -Command "Invoke-ScriptAnalyzer -Settings /workspace/tests/PSScriptAnalyzerRules.psd1 -Path $@"
+# lint-cmd: pwsh -NoProfile -Command "Invoke-ScriptAnalyzer -Settings /workspace/tests/PSScriptAnalyzerRules.psd1 -Path $@"
 
 ## Automatically runs tests after code changes using Pester
 auto-test: false
@@ -102,7 +101,7 @@ git: false
 #code-theme: "monokai"
 
 ## edit the whole file
-edit-format: whole
+edit-format: diff
 
 ## yesss
 yes-always: true
