@@ -167,9 +167,8 @@ function Update-PesterTest {
             Write-Verbose "Processing command: $cmdName"
             Write-Verbose "Test file path: $filename"
 
-            if (-not (Test-Path $filename)) {
-                Write-Warning "No tests found for $cmdName"
-                Write-Warning "$filename not found"
+            if (-not $filename -or -not (Test-Path $filename)) {
+                Write-Warning "No tests found for $cmdName, file not found"
                 continue
             }
 
@@ -220,17 +219,11 @@ function Update-PesterTest {
                             ReadFile     = $readfiles
                             Model        = $Model
                             AutoTest     = $AutoTest
+                            PassCount    = $PassCount
                         }
 
                         Write-Verbose "Invoking Aider to update test file"
-                        Invoke-Aider @aiderParams
-
-                        if ($PassCount -gt 1) {
-                            for ($i = 1; $i -lt $PassCount; $i++) {
-                                Write-Verbose "Retrying update for $cmdName, attempt $($i + 1)"
-                                Invoke-Aider @aiderParams
-                            }
-                        }
+                        #Invoke-Aider @aiderParams
                     }
                 } else {
                     Write-Verbose "CacheFilePath does not contain directories, using as is"
@@ -243,17 +236,11 @@ function Update-PesterTest {
                         ReadFile     = $CacheFilePath
                         Model        = $Model
                         AutoTest     = $AutoTest
+                        PassCount    = $PassCount
                     }
 
                     Write-Verbose "Invoking Aider to update test file"
                     Invoke-Aider @aiderParams
-
-                    if ($PassCount -gt 1) {
-                        for ($i = 1; $i -lt $PassCount; $i++) {
-                            Write-Verbose "Retrying update for $cmdName, attempt $($i + 1)"
-                            Invoke-Aider @aiderParams
-                        }
-                    }
                 }
 
                 # AutoFix workflow - run PSScriptAnalyzer and fix violations if found
@@ -319,11 +306,11 @@ function Invoke-AutoFix {
 
         try {
             # Run PSScriptAnalyzer with the specified settings
-            $analysisResults = Invoke-ScriptAnalyzer -Path $FilePath -Settings $SettingsPath -ErrorAction Stop
+            $analysisResults = Invoke-ScriptAnalyzer -Path $FilePath -Settings $SettingsPath -ErrorAction Stop -Verbose:$false
 
             if (-not $analysisResults) {
-                Write-Verbose "No PSScriptAnalyzer violations found - AutoFix complete"
-                break
+                Write-Output "No PSScriptAnalyzer violations found for $(Split-Path $FilePath -Leaf)"
+                return
             }
 
             Write-Verbose "Found $($analysisResults.Count) PSScriptAnalyzer violation(s)"
@@ -359,7 +346,6 @@ function Invoke-AutoFix {
             Invoke-Aider @fixParams
 
             $retryCount++
-
         } catch {
             Write-Warning "Failed to run PSScriptAnalyzer on $FilePath`: $($_.Exception.Message)"
             break
@@ -429,8 +415,7 @@ function Repair-Error {
         Write-Output "Processing $command"
 
         if (-not (Test-Path $filename)) {
-            Write-Warning "No tests found for $command"
-            Write-Warning "$filename not found"
+            Write-Warning "No tests found for $command, file not found"
             continue
         }
 
@@ -582,8 +567,7 @@ function Repair-SmallThing {
             Write-Verbose "Using test path: $filename"
 
             if (-not (Test-Path $filename)) {
-                Write-Warning "No tests found for $cmdName"
-                Write-Warning "$filename not found"
+                Write-Warning "No tests found for $cmdName, file not found"
                 continue
             }
 
@@ -742,7 +726,8 @@ function Invoke-Aider {
         [string]$MessageFile,
         [string[]]$ReadFile,
         [ValidateSet('utf-8', 'ascii', 'unicode', 'utf-16', 'utf-32', 'utf-7')]
-        [string]$Encoding
+        [string]$Encoding,
+        [int]$PassCount = 1
     )
 
     begin {
@@ -760,86 +745,92 @@ function Invoke-Aider {
     }
 
     end {
-        $arguments = @()
+        for ($i = 0; $i -lt $PassCount; $i++) {
+            $arguments = @()
 
-        # Add files if any were specified or piped in
-        if ($allFiles) {
-            $arguments += $allFiles
-        }
-
-        # Add mandatory message parameter
-        if ($Message) {
-            $arguments += "--message", $Message
-        }
-
-        # Add optional parameters only if they are present
-        if ($Model) {
-            $arguments += "--model", $Model
-        }
-
-        if ($EditorModel) {
-            $arguments += "--editor-model", $EditorModel
-        }
-
-        if ($NoPretty) {
-            $arguments += "--no-pretty"
-        }
-
-        if ($NoStream) {
-            $arguments += "--no-stream"
-        }
-
-        if ($YesAlways) {
-            $arguments += "--yes-always"
-        }
-
-        if ($CachePrompts) {
-            $arguments += "--cache-prompts"
-        }
-
-        if ($PSBoundParameters.ContainsKey('MapTokens')) {
-            $arguments += "--map-tokens", $MapTokens
-        }
-
-        if ($MapRefresh) {
-            $arguments += "--map-refresh", $MapRefresh
-        }
-
-        if ($NoAutoLint) {
-            $arguments += "--no-auto-lint"
-        }
-
-        if ($AutoTest) {
-            $arguments += "--auto-test"
-        }
-
-        if ($ShowPrompts) {
-            $arguments += "--show-prompts"
-        }
-
-        if ($EditFormat) {
-            $arguments += "--edit-format", $EditFormat
-        }
-
-        if ($MessageFile) {
-            $arguments += "--message-file", $MessageFile
-        }
-
-        if ($ReadFile) {
-            foreach ($rf in $ReadFile) {
-                $arguments += "--read", $rf
+            # Add files if any were specified or piped in
+            if ($allFiles) {
+                $arguments += $allFiles
             }
-        }
 
-        if ($Encoding) {
-            $arguments += "--encoding", $Encoding
-        }
+            # Add mandatory message parameter
+            if ($Message) {
+                $arguments += "--message", $Message
+            }
 
-        if ($VerbosePreference -eq 'Continue') {
-            Write-Verbose "Executing: aider $($arguments -join ' ')"
-        }
+            # Add optional parameters only if they are present
+            if ($Model) {
+                $arguments += "--model", $Model
+            }
 
-        aider @arguments
+            if ($EditorModel) {
+                $arguments += "--editor-model", $EditorModel
+            }
+
+            if ($NoPretty) {
+                $arguments += "--no-pretty"
+            }
+
+            if ($NoStream) {
+                $arguments += "--no-stream"
+            }
+
+            if ($YesAlways) {
+                $arguments += "--yes-always"
+            }
+
+            if ($CachePrompts) {
+                $arguments += "--cache-prompts"
+            }
+
+            if ($PSBoundParameters.ContainsKey('MapTokens')) {
+                $arguments += "--map-tokens", $MapTokens
+            }
+
+            if ($MapRefresh) {
+                $arguments += "--map-refresh", $MapRefresh
+            }
+
+            if ($NoAutoLint) {
+                $arguments += "--no-auto-lint"
+            }
+
+            if ($AutoTest) {
+                $arguments += "--auto-test"
+            }
+
+            if ($ShowPrompts) {
+                $arguments += "--show-prompts"
+            }
+
+            if ($EditFormat) {
+                $arguments += "--edit-format", $EditFormat
+            }
+
+            if ($MessageFile) {
+                $arguments += "--message-file", $MessageFile
+            }
+
+            if ($ReadFile) {
+                foreach ($rf in $ReadFile) {
+                    $arguments += "--read", $rf
+                }
+            }
+
+            if ($Encoding) {
+                $arguments += "--encoding", $Encoding
+            }
+
+            if ($VerbosePreference -eq 'Continue') {
+                Write-Verbose "Executing: aider $($arguments -join ' ')"
+            }
+
+            if ($PassCount -gt 1) {
+                Write-Verbose "Invoke-Aider pass $($i + 1) of $PassCount"
+            }
+
+            aider @arguments
+        }
     }
 }
 
@@ -900,8 +891,7 @@ function Repair-Error {
         Write-Output "Processing $command"
 
         if (-not (Test-Path $filename)) {
-            Write-Warning "No tests found for $command"
-            Write-Warning "$filename not found"
+            Write-Warning "No tests found for $command, file not found"
             continue
         }
 
