@@ -352,9 +352,6 @@ function Update-PesterTest {
                     Invoke-AutoFix @autoFixParams
                 }
             }
-
-            # Complete the progress bar
-            Write-Progress -Activity "Updating Pester Tests with $Tool" -Completed
         }
     }
 }
@@ -872,7 +869,6 @@ function Invoke-AutoFix {
             }
 
             Invoke-AutoFixSingleFile @invokeParams
-            return
         }
     }
 
@@ -975,6 +971,8 @@ function Invoke-AutoFix {
 
                     Invoke-AutoFixProcess @invokeParams
 
+                    Write-Progress -Activity "Running AutoFix with $Tool" -Status "Processing $cmdName ($currentCommand/$totalCommands)" -Completed
+
                 }
             }
         }
@@ -1029,7 +1027,7 @@ function Invoke-AutoFixSingleFile {
 
             if (-not $analysisResults) {
                 Write-Output "No PSScriptAnalyzer violations found for $(Split-Path $FilePath -Leaf)"
-                return
+                break
             }
 
             Write-Verbose "Found $($analysisResults.Count) PSScriptAnalyzer violation(s)"
@@ -1135,7 +1133,7 @@ function Invoke-AutoFixProcess {
 
             if (-not $analysisResults) {
                 Write-Output "No PSScriptAnalyzer violations found for $(Split-Path $FilePath -Leaf)"
-                return
+                break
             }
 
             Write-Verbose "Found $($analysisResults.Count) PSScriptAnalyzer violation(s)"
