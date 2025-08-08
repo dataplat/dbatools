@@ -931,6 +931,9 @@ function Invoke-AutoFix {
             $cmdName = $command.Name
             $filename = (Resolve-Path "$PSScriptRoot/../tests/$cmdName.Tests.ps1" -ErrorAction SilentlyContinue).Path
 
+            # Show progress for every file being processed
+            Write-Progress -Activity "Running AutoFix with $Tool" -Status "Scanning $cmdName ($currentCommand/$totalCommands)" -PercentComplete (($currentCommand / $totalCommands) * 100)
+
             Write-Verbose "Processing command: $cmdName"
             Write-Verbose "Test file path: $filename"
 
@@ -951,6 +954,7 @@ function Invoke-AutoFix {
                         Write-Verbose "Pass $pass of $PassCount for $cmdName"
                     }
 
+                    # Update progress to show processing state
                     Write-Progress -Activity "Running AutoFix with $Tool" -Status "Processing $cmdName ($currentCommand/$totalCommands)" -PercentComplete (($currentCommand / $totalCommands) * 100)
 
                     # Run the fix process
@@ -967,9 +971,6 @@ function Invoke-AutoFix {
                     }
 
                     Invoke-AutoFixProcess @invokeParams
-
-                    Write-Progress -Activity "Running AutoFix with $Tool" -Status "Processing $cmdName ($currentCommand/$totalCommands)" -Completed
-
                 }
             }
         }
@@ -1018,6 +1019,7 @@ function Invoke-AutoFixSingleFile {
                 Path        = $FilePath
                 Settings    = $SettingsPath
                 ErrorAction = "Stop"
+                Verbose     = $false
             }
 
             $analysisResults = Invoke-ScriptAnalyzer @scriptAnalyzerParams
