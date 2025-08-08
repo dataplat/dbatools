@@ -960,7 +960,21 @@ function Invoke-AutoFix {
                     Write-Progress -Activity "Running AutoFix with $Tool" -Status "Processing $cmdName ($currentCommand/$totalCommands)" -PercentComplete (($currentCommand / $totalCommands) * 100)
 
                     # Run the fix process
-                    Invoke-AutoFixProcess -FilePath $filename -SettingsPath $SettingsPath -MaxRetries $MaxRetries -Model $Model -Tool $Tool -ReasoningEffort $ReasoningEffort -CacheFilePath $CacheFilePath -AutoTest $AutoTest
+                    $invokeParams = @{
+                        FilePath      = $filename
+                        SettingsPath  = $SettingsPath
+                        MaxRetries    = $MaxRetries
+                        Model         = $Model
+                        Tool          = $Tool
+                        CacheFilePath = $CacheFilePath
+                        AutoTest      = $AutoTest
+                    }
+                    if ($ReasoningEffort) {
+                        $invokeParams.ReasoningEffort = $ReasoningEffort
+                    }
+
+                    Invoke-AutoFixProcess @invokeParams
+
                 }
             }
         }
