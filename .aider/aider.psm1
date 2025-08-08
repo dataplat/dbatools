@@ -32,7 +32,12 @@ function Update-PesterTest {
         Defaults to 7.5kb.
 
     .PARAMETER Model
-        The AI model to use (e.g., azure/gpt-4o, gpt-4o-mini, claude-3-5-sonnet).
+        The AI model to use (e.g., azure/gpt-4o, gpt-4o-mini, claude-3-5-sonnet for Aider; claude-sonnet-4-20250514 for Claude Code).
+
+    .PARAMETER Tool
+        The AI coding tool to use.
+        Valid values: Aider, Claude
+        Default: Claude
 
     .PARAMETER AutoTest
         If specified, automatically runs tests after making changes.
@@ -41,7 +46,7 @@ function Update-PesterTest {
         Sometimes you need multiple passes to get the desired result.
 
     .PARAMETER AutoFix
-        If specified, automatically runs PSScriptAnalyzer after Aider modifications and attempts to fix any violations found.
+        If specified, automatically runs PSScriptAnalyzer after AI modifications and attempts to fix any violations found.
         This feature runs separately from PassCount iterations and uses targeted fix messages.
 
     .PARAMETER AutoFixModel
@@ -56,29 +61,33 @@ function Update-PesterTest {
         Path to the PSScriptAnalyzer settings file used by AutoFix.
         Defaults to "$PSScriptRoot/../tests/PSScriptAnalyzerRules.psd1".
 
+    .PARAMETER ReasoningEffort
+        Controls the reasoning effort level for AI model responses.
+        Valid values are: minimal, medium, high.
+
     .NOTES
         Tags: Testing, Pester
         Author: dbatools team
 
     .EXAMPLE
         PS C:/> Update-PesterTest
-        Updates all eligible Pester tests to v5 format using default parameters.
+        Updates all eligible Pester tests to v5 format using default parameters with Claude Code.
 
     .EXAMPLE
-        PS C:/> Update-PesterTest -First 10 -Skip 5
-        Updates 10 test files starting from the 6th command, skipping the first 5.
+        PS C:/> Update-PesterTest -Tool Aider -First 10 -Skip 5
+        Updates 10 test files starting from the 6th command, skipping the first 5, using Aider.
 
     .EXAMPLE
-        PS C:/> "C:/tests/Get-DbaDatabase.Tests.ps1", "C:/tests/Get-DbaBackup.Tests.ps1" | Update-PesterTest
-        Updates the specified test files to v5 format.
+        PS C:/> "C:/tests/Get-DbaDatabase.Tests.ps1", "C:/tests/Get-DbaBackup.Tests.ps1" | Update-PesterTest -Tool Claude
+        Updates the specified test files to v5 format using Claude Code.
 
     .EXAMPLE
-        PS C:/> Get-Command -Module dbatools -Name "*Database*" | Update-PesterTest
-        Updates test files for all commands in dbatools module that match "*Database*".
+        PS C:/> Get-Command -Module dbatools -Name "*Database*" | Update-PesterTest -Tool Aider
+        Updates test files for all commands in dbatools module that match "*Database*" using Aider.
 
     .EXAMPLE
-        PS C:/> Get-ChildItem ./tests/Add-DbaRegServer.Tests.ps1 | Update-PesterTest -Verbose
-        Updates the specific test file from a Get-ChildItem result.
+        PS C:/> Get-ChildItem ./tests/Add-DbaRegServer.Tests.ps1 | Update-PesterTest -Verbose -Tool Claude
+        Updates the specific test file from a Get-ChildItem result using Claude Code.
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
@@ -93,12 +102,16 @@ function Update-PesterTest {
         ),
         [int]$MaxFileSize = 500kb,
         [string]$Model,
+        [ValidateSet('Aider', 'Claude')]
+        [string]$Tool = 'Claude',
         [switch]$AutoTest,
         [int]$PassCount = 1,
         [switch]$AutoFix,
         [string]$AutoFixModel = $Model,
         [int]$MaxRetries = 3,
-        [string]$SettingsPath = (Resolve-Path "$PSScriptRoot/../tests/PSScriptAnalyzerRules.psd1")
+        [string]$SettingsPath = (Resolve-Path "$PSScriptRoot/../tests/PSScriptAnalyzerRules.psd1"),
+        [ValidateSet('minimal', 'medium', 'high')]
+        [string]$ReasoningEffort
     )
     begin {
         # Full prompt path
@@ -111,6 +124,20 @@ function Update-PesterTest {
         $promptTemplate = Get-Content $PromptFilePath
         $commonParameters = [System.Management.Automation.PSCmdlet]::CommonParameters
         $commandsToProcess = @()
+
+        # Validate tool-specific parameters
+        if ($Tool -eq 'Claude') {
+            # Warn about Aider-only parameters when using Claude
+            if ($PSBoundParameters.ContainsKey('CachePrompts')) {
+                Write-Warning "CachePrompts parameter is Aider-specific and will be ignored when using Claude Code"
+            }
+            if ($PSBoundParameters.ContainsKey('NoStream')) {
+                Write-Warning "NoStream parameter is Aider-specific and will be ignored when using Claude Code"
+            }
+            if ($PSBoundParameters.ContainsKey('YesAlways')) {
+                Write-Warning "YesAlways parameter is Aider-specific and will be ignored when using Claude Code"
+            }
+        }
     }
 
     process {
@@ -177,13 +204,6 @@ function Update-PesterTest {
                 continue
             }
 
-            <# Check if it's already been converted
-            if (Select-String -Path $filename -Pattern "HaveParameter") {
-                Write-Warning "Skipping $cmdName because it's already been converted to Pester v5"
-                continue
-            }
-            #>
-
             # if file is larger than MaxFileSize, skip
             if ((Get-Item $filename).Length -gt $MaxFileSize) {
                 Write-Warning "Skipping $cmdName because it's too large"
@@ -195,57 +215,104 @@ function Update-PesterTest {
             $cmdPrompt = $cmdPrompt -replace "--PARMZ--", ($parameters.Name -join "`n")
             $cmdprompt = $cmdPrompt -join "`n"
 
-            if ($PSCmdlet.ShouldProcess($filename, "Update Pester test to v5 format and/or style")) {
-                # if CacheFilePath includes a Directory, expand it to each file then do a foreach
-                # keep any other files in the array while removing the Directory
+            if ($PSCmdlet.ShouldProcess($filename, "Update Pester test to v5 format and/or style using $Tool")) {
+                # Separate directories from files in CacheFilePath
+                $cacheDirectories = @()
+                $cacheFiles = @()
 
-                # using a pipe, test to see if any values in CacheFilePath are directories
-                $dirs = Get-ChildItem -Path $CacheFilePath | Where-Object Directory
+                foreach ($cachePath in $CacheFilePath) {
+                    Write-Verbose "Examining cache path: $cachePath"
+                    if (Test-Path $cachePath -PathType Container) {
+                        Write-Verbose "Found directory: $cachePath"
+                        $cacheDirectories += $cachePath
+                    } elseif (Test-Path $cachePath -PathType Leaf) {
+                        Write-Verbose "Found file: $cachePath"
+                        $cacheFiles += $cachePath
+                    } else {
+                        Write-Warning "Cache path not found or inaccessible: $cachePath"
+                    }
+                }
 
-                if ($dirs) {
-                    Write-Verbose "CacheFilePath contains directories, expanding to files"
-                    $expandedFiles = $readfiles = Get-ChildItem -Path $dirs -Recurse -File
-                    $cachefiles = Get-ChildItem -Path (Get-Item $CacheFilePath | Where-Object PSIsContainer -eq $false) -File
-                    Write-Verbose "ORIGINAL CACHE FILEs: $cachefiles"
+                if ($cacheDirectories.Count -gt 0) {
+                    Write-Verbose "CacheFilePath contains $($cacheDirectories.Count) directories, expanding to files"
+                    Write-Verbose "Also using $($cacheFiles.Count) direct files: $($cacheFiles -join ', ')"
+
+                    $expandedFiles = Get-ChildItem -Path $cacheDirectories -Recurse -File
+                    Write-Verbose "Found $($expandedFiles.Count) files in directories"
 
                     foreach ($efile in $expandedFiles) {
-                        Write-Verbose "Processing file: $($efile.FullName)"
-                        if ($cachefiles) {
-                            $readfiles = $efile.FullName, $cachefiles.FullName
-                        }
+                        Write-Verbose "Processing expanded file: $($efile.FullName)"
+
+                        # Combine expanded file with direct cache files and remove duplicates
+                        $readfiles = @($efile.FullName) + @($cacheFiles) | Select-Object -Unique
                         Write-Verbose "Using read files: $($readfiles -join ', ')"
 
-                        $aiderParams = @{
-                            Message      = $cmdPrompt
-                            File         = $filename
-                            YesAlways    = $true
-                            NoStream     = $true
-                            CachePrompts = $true
-                            ReadFile     = $readfiles
-                            Model        = $Model
-                            AutoTest     = $AutoTest
-                            PassCount    = $PassCount
+                        $aiParams = @{
+                            Message   = $cmdPrompt
+                            File      = $filename
+                            Model     = $Model
+                            Tool      = $Tool
+                            AutoTest  = $AutoTest
+                            PassCount = $PassCount
                         }
 
-                        Write-Verbose "Invoking Aider to update test file"
-                        Invoke-Aider @aiderParams
+                        if ($ReasoningEffort) {
+                            $aiParams.ReasoningEffort = $ReasoningEffort
+                        } elseif ($Tool -eq 'Aider') {
+                            # Set default for Aider to prevent validation errors
+                            $aiParams.ReasoningEffort = 'medium'
+                        }
+
+                        # Add tool-specific parameters
+                        if ($Tool -eq 'Aider') {
+                            $aiParams.YesAlways = $true
+                            $aiParams.NoStream = $true
+                            $aiParams.CachePrompts = $true
+                            $aiParams.ReadFile = $readfiles
+                        } else {
+                            # For Claude Code, use different approach for context files
+                            $aiParams.ContextFiles = $readfiles
+                        }
+
+                        Write-Verbose "Invoking $Tool to update test file"
+                        Invoke-Aider @aiParams
                     }
                 } else {
-                    Write-Verbose "CacheFilePath does not contain directories, using as is"
-                    $aiderParams = @{
-                        Message      = $cmdPrompt
-                        File         = $filename
-                        YesAlways    = $true
-                        NoStream     = $true
-                        CachePrompts = $true
-                        ReadFile     = $CacheFilePath
-                        Model        = $Model
-                        AutoTest     = $AutoTest
-                        PassCount    = $PassCount
+                    Write-Verbose "CacheFilePath does not contain directories, using files as-is"
+                    Write-Verbose "Using cache files: $($cacheFiles -join ', ')"
+
+                    # Remove duplicates from cache files
+                    $readfiles = $cacheFiles | Select-Object -Unique
+
+                    $aiParams = @{
+                        Message   = $cmdPrompt
+                        File      = $filename
+                        Model     = $Model
+                        Tool      = $Tool
+                        AutoTest  = $AutoTest
+                        PassCount = $PassCount
                     }
 
-                    Write-Verbose "Invoking Aider to update test file"
-                    Invoke-Aider @aiderParams
+                    if ($ReasoningEffort) {
+                        $aiParams.ReasoningEffort = $ReasoningEffort
+                    } elseif ($Tool -eq 'Aider') {
+                        # Set default for Aider to prevent validation errors
+                        $aiParams.ReasoningEffort = 'medium'
+                    }
+
+                    # Add tool-specific parameters
+                    if ($Tool -eq 'Aider') {
+                        $aiParams.YesAlways = $true
+                        $aiParams.NoStream = $true
+                        $aiParams.CachePrompts = $true
+                        $aiParams.ReadFile = $readfiles
+                    } else {
+                        # For Claude Code, use different approach for context files
+                        $aiParams.ContextFiles = $readfiles
+                    }
+
+                    Write-Verbose "Invoking $Tool to update test file"
+                    Invoke-Aider @aiParams
                 }
 
                 # AutoFix workflow - run PSScriptAnalyzer and fix violations if found
@@ -254,11 +321,372 @@ function Update-PesterTest {
                     $autoFixParams = @{
                         FilePath     = $filename
                         SettingsPath = $SettingsPath
-                        AiderParams  = $aiderParams
+                        AiderParams  = $aiParams
                         MaxRetries   = $MaxRetries
                         Model        = $AutoFixModel
+                        Tool         = $Tool
+                    }
+
+                    if ($ReasoningEffort) {
+                        $autoFixParams.ReasoningEffort = $ReasoningEffort
                     }
                     Invoke-AutoFix @autoFixParams
+                }
+            }
+        }
+    }
+}
+function Invoke-Aider {
+    <#
+    .SYNOPSIS
+        Invokes AI coding tools (Aider or Claude Code).
+
+    .DESCRIPTION
+        The Invoke-Aider function provides a PowerShell interface to AI pair programming tools.
+        It supports both Aider and Claude Code with their respective CLI options and can accept files via pipeline from Get-ChildItem.
+
+    .PARAMETER Message
+        The message to send to the AI. This is the primary way to communicate your intent.
+
+    .PARAMETER File
+        The files to edit. Can be piped in from Get-ChildItem.
+
+    .PARAMETER Model
+        The AI model to use (e.g., gpt-4, claude-3-opus-20240229 for Aider; claude-sonnet-4-20250514 for Claude Code).
+
+    .PARAMETER Tool
+        The AI coding tool to use.
+        Valid values: Aider, Claude
+        Default: Claude
+
+    .PARAMETER EditorModel
+        The model to use for editor tasks (Aider only).
+
+    .PARAMETER NoPretty
+        Disable pretty, colorized output (Aider only).
+
+    .PARAMETER NoStream
+        Disable streaming responses (Aider only).
+
+    .PARAMETER YesAlways
+        Always say yes to every confirmation (Aider only).
+
+    .PARAMETER CachePrompts
+        Enable caching of prompts (Aider only).
+
+    .PARAMETER MapTokens
+        Suggested number of tokens to use for repo map (Aider only).
+
+    .PARAMETER MapRefresh
+        Control how often the repo map is refreshed (Aider only).
+
+    .PARAMETER NoAutoLint
+        Disable automatic linting after changes (Aider only).
+
+    .PARAMETER AutoTest
+        Enable automatic testing after changes.
+
+    .PARAMETER ShowPrompts
+        Print the system prompts and exit (Aider only).
+
+    .PARAMETER EditFormat
+        Specify what edit format the LLM should use (Aider only).
+
+    .PARAMETER MessageFile
+        Specify a file containing the message to send (Aider only).
+
+    .PARAMETER ReadFile
+        Specify read-only files (Aider only).
+
+    .PARAMETER ContextFiles
+        Specify context files for Claude Code.
+
+    .PARAMETER Encoding
+        Specify the encoding for input and output (Aider only).
+
+    .PARAMETER ReasoningEffort
+        Controls the reasoning effort level for AI model responses.
+        Valid values are: minimal, medium, high.
+
+    .PARAMETER PassCount
+        Number of passes to run.
+
+    .PARAMETER DangerouslySkipPermissions
+        Skip permission prompts (Claude Code only).
+
+    .PARAMETER OutputFormat
+        Output format for Claude Code (text, json, stream-json).
+
+    .PARAMETER Verbose
+        Enable verbose output for Claude Code.
+
+    .PARAMETER MaxTurns
+        Maximum number of turns for Claude Code.
+
+    .EXAMPLE
+        Invoke-Aider -Message "Fix the bug" -File script.ps1 -Tool Aider
+
+        Asks Aider to fix a bug in script.ps1.
+
+    .EXAMPLE
+        Get-ChildItem *.ps1 | Invoke-Aider -Message "Add error handling" -Tool Claude
+
+        Adds error handling to all PowerShell files in the current directory using Claude Code.
+
+    .EXAMPLE
+        Invoke-Aider -Message "Update API" -Model claude-sonnet-4-20250514 -Tool Claude -DangerouslySkipPermissions
+
+        Uses Claude Code with Sonnet 4 to update API code without permission prompts.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$Message,
+        [Parameter(Position = 0, ValueFromPipeline, ValueFromPipelineByPropertyName)]
+        [Alias('FullName')]
+        [string[]]$File,
+        [string]$Model,
+        [ValidateSet('Aider', 'Claude')]
+        [string]$Tool = 'Claude',
+        [string]$EditorModel,
+        [switch]$NoPretty,
+        [switch]$NoStream,
+        [switch]$YesAlways,
+        [switch]$CachePrompts,
+        [int]$MapTokens,
+        [ValidateSet('auto', 'always', 'files', 'manual')]
+        [string]$MapRefresh,
+        [switch]$NoAutoLint,
+        [switch]$AutoTest,
+        [switch]$ShowPrompts,
+        [string]$EditFormat,
+        [string]$MessageFile,
+        [string[]]$ReadFile,
+        [string[]]$ContextFiles,
+        [ValidateSet('utf-8', 'ascii', 'unicode', 'utf-16', 'utf-32', 'utf-7')]
+        [string]$Encoding,
+        [int]$PassCount = 1,
+        [ValidateSet('minimal', 'medium', 'high')]
+        [string]$ReasoningEffort,
+        [switch]$DangerouslySkipPermissions = $true,  # Default to true to avoid prompts
+        [ValidateSet('text', 'json', 'stream-json')]
+        [string]$OutputFormat,
+        [int]$MaxTurns
+    )
+
+    begin {
+        $allFiles = @()
+
+        # Validate tool availability and parameters
+        if ($Tool -eq 'Aider') {
+            if (-not (Get-Command -Name aider -ErrorAction SilentlyContinue)) {
+                throw "Aider executable not found. Please ensure it is installed and in your PATH."
+            }
+
+            # Warn about Claude-only parameters when using Aider
+            if ($PSBoundParameters.ContainsKey('DangerouslySkipPermissions')) {
+                Write-Warning "DangerouslySkipPermissions parameter is Claude Code-specific and will be ignored when using Aider"
+            }
+            if ($PSBoundParameters.ContainsKey('OutputFormat')) {
+                Write-Warning "OutputFormat parameter is Claude Code-specific and will be ignored when using Aider"
+            }
+            if ($PSBoundParameters.ContainsKey('MaxTurns')) {
+                Write-Warning "MaxTurns parameter is Claude Code-specific and will be ignored when using Aider"
+            }
+            if ($PSBoundParameters.ContainsKey('ContextFiles')) {
+                Write-Warning "ContextFiles parameter is Claude Code-specific and will be ignored when using Aider"
+            }
+        } else {
+            # Claude Code
+            if (-not (Get-Command -Name claude -ErrorAction SilentlyContinue)) {
+                throw "Claude Code executable not found. Please ensure it is installed and in your PATH."
+            }
+
+            # Warn about Aider-only parameters when using Claude Code
+            $aiderOnlyParams = @('EditorModel', 'NoPretty', 'NoStream', 'YesAlways', 'CachePrompts', 'MapTokens', 'MapRefresh', 'NoAutoLint', 'ShowPrompts', 'EditFormat', 'MessageFile', 'ReadFile', 'Encoding')
+            foreach ($param in $aiderOnlyParams) {
+                if ($PSBoundParameters.ContainsKey($param)) {
+                    Write-Warning "$param parameter is Aider-specific and will be ignored when using Claude Code"
+                }
+            }
+        }
+    }
+
+    process {
+        if ($File) {
+            $allFiles += $File
+        }
+    }
+
+    end {
+        for ($i = 0; $i -lt $PassCount; $i++) {
+            if ($Tool -eq 'Aider') {
+                $arguments = @()
+
+                # Add files if any were specified or piped in
+                if ($allFiles) {
+                    $arguments += $allFiles
+                }
+
+                # Add mandatory message parameter
+                if ($Message) {
+                    $arguments += "--message", $Message
+                }
+
+                # Add optional parameters only if they are present
+                if ($Model) {
+                    $arguments += "--model", $Model
+                }
+
+                if ($EditorModel) {
+                    $arguments += "--editor-model", $EditorModel
+                }
+
+                if ($NoPretty) {
+                    $arguments += "--no-pretty"
+                }
+
+                if ($NoStream) {
+                    $arguments += "--no-stream"
+                }
+
+                if ($YesAlways) {
+                    $arguments += "--yes-always"
+                }
+
+                if ($CachePrompts) {
+                    $arguments += "--cache-prompts"
+                }
+
+                if ($PSBoundParameters.ContainsKey('MapTokens')) {
+                    $arguments += "--map-tokens", $MapTokens
+                }
+
+                if ($MapRefresh) {
+                    $arguments += "--map-refresh", $MapRefresh
+                }
+
+                if ($NoAutoLint) {
+                    $arguments += "--no-auto-lint"
+                }
+
+                if ($AutoTest) {
+                    $arguments += "--auto-test"
+                }
+
+                if ($ShowPrompts) {
+                    $arguments += "--show-prompts"
+                }
+
+                if ($EditFormat) {
+                    $arguments += "--edit-format", $EditFormat
+                }
+
+                if ($MessageFile) {
+                    $arguments += "--message-file", $MessageFile
+                }
+
+                if ($ReadFile) {
+                    foreach ($rf in $ReadFile) {
+                        $arguments += "--read", $rf
+                    }
+                }
+
+                if ($Encoding) {
+                    $arguments += "--encoding", $Encoding
+                }
+
+                if ($ReasoningEffort) {
+                    $arguments += "--reasoning-effort", $ReasoningEffort
+                }
+
+                if ($VerbosePreference -eq 'Continue') {
+                    Write-Verbose "Executing: aider $($arguments -join ' ')"
+                }
+
+                if ($PassCount -gt 1) {
+                    Write-Verbose "Aider pass $($i + 1) of $PassCount"
+                }
+
+                aider @arguments
+
+            } else {
+                # Claude Code
+                Write-Verbose "Preparing Claude Code execution"
+
+                # Build the full message with context files
+                $fullMessage = $Message
+
+                # Add context files content to the message
+                if ($ContextFiles) {
+                    Write-Verbose "Processing $($ContextFiles.Count) context files"
+                    foreach ($contextFile in $ContextFiles) {
+                        if (Test-Path $contextFile) {
+                            Write-Verbose "Adding context from: $contextFile"
+                            try {
+                                $contextContent = Get-Content $contextFile -Raw -ErrorAction Stop
+                                if ($contextContent) {
+                                    $fullMessage += "`n`nContext from $($contextFile):`n$contextContent"
+                                }
+                            } catch {
+                                Write-Warning "Could not read context file $contextFile`: $($_.Exception.Message)"
+                            }
+                        } else {
+                            Write-Warning "Context file not found: $contextFile"
+                        }
+                    }
+                }
+
+                # Build arguments array
+                $arguments = @()
+
+                # Add files if any were specified or piped in
+                if ($allFiles) {
+                    Write-Verbose "Adding files to arguments: $($allFiles -join ', ')"
+                    $arguments += $allFiles
+                }
+
+                # Use non-interactive print mode
+                $arguments += "-p", $fullMessage
+
+                # Skip permissions by default to avoid prompts
+                if ($DangerouslySkipPermissions) {
+                    $arguments += "--dangerously-skip-permissions"
+                    Write-Verbose "Using --dangerously-skip-permissions to avoid prompts"
+                }
+
+                # Add optional parameters only if they are present
+                if ($Model) {
+                    $arguments += "--model", $Model
+                    Write-Verbose "Using model: $Model"
+                }
+
+                if ($OutputFormat) {
+                    $arguments += "--output-format", $OutputFormat
+                    Write-Verbose "Using output format: $OutputFormat"
+                }
+
+                if ($MaxTurns) {
+                    $arguments += "--max-turns", $MaxTurns
+                    Write-Verbose "Using max turns: $MaxTurns"
+                }
+
+                if ($VerbosePreference -eq 'Continue') {
+                    $arguments += "--verbose"
+                }
+
+                if ($PassCount -gt 1) {
+                    Write-Verbose "Claude Code pass $($i + 1) of $PassCount"
+                }
+
+                Write-Verbose "Executing: claude $($arguments -join ' ')"
+
+                try {
+                    claude @arguments
+                    Write-Verbose "Claude Code execution completed successfully"
+                } catch {
+                    Write-Error "Claude Code execution failed: $($_.Exception.Message)"
+                    throw
                 }
             }
         }
@@ -268,7 +696,7 @@ function Update-PesterTest {
 function Invoke-AutoFix {
     <#
     .SYNOPSIS
-        Runs PSScriptAnalyzer after Aider modifications and attempts to fix violations.
+        Runs PSScriptAnalyzer after AI modifications and attempts to fix violations.
 
     .DESCRIPTION
         This helper function runs PSScriptAnalyzer on a modified file and creates targeted
@@ -276,13 +704,13 @@ function Invoke-AutoFix {
         the ScriptAnalyzer violations and line numbers, without including conventions.
 
     .PARAMETER FilePath
-        The path to the file that was modified by Aider.
+        The path to the file that was modified by the AI tool.
 
     .PARAMETER SettingsPath
         Path to the PSScriptAnalyzer settings file.
 
     .PARAMETER AiderParams
-        The original Aider parameters hashtable (will be modified for retry calls).
+        The original AI tool parameters hashtable (will be modified for retry calls).
 
     .PARAMETER MaxRetries
         Maximum number of retry attempts for fixing violations.
@@ -290,9 +718,18 @@ function Invoke-AutoFix {
     .PARAMETER Model
         The AI model to use for fix attempts.
 
+    .PARAMETER Tool
+        The AI coding tool to use for fix attempts.
+        Valid values: Aider, Claude
+        Default: Claude
+
+    .PARAMETER ReasoningEffort
+        Controls the reasoning effort level for AI model responses.
+        Valid values are: minimal, medium, high.
+
     .NOTES
         This function modifies the AiderParams hashtable by replacing the Message and
-        removing the ReadFile parameter for focused fix attempts.
+        removing tool-specific context parameters for focused fix attempts.
     #>
     [CmdletBinding()]
     param(
@@ -308,7 +745,13 @@ function Invoke-AutoFix {
         [Parameter(Mandatory)]
         [int]$MaxRetries,
 
-        [string]$Model
+        [string]$Model,
+
+        [ValidateSet('Aider', 'Claude')]
+        [string]$Tool = 'Claude',
+
+        [ValidateSet('minimal', 'medium', 'high')]
+        [string]$ReasoningEffort
     )
 
     $retryCount = 0
@@ -344,15 +787,23 @@ function Invoke-AutoFix {
 
             $fixMessage += "Delete all unused variable assignments identified above. Remove the entire line for each unused variable. Make no other changes to the code that are not included in this fix list."
 
-            Write-Verbose "Sending focused fix request to Aider"
+            Write-Verbose "Sending focused fix request to $Tool"
 
             # Create modified parameters for the fix attempt
             $fixParams = $AiderParams.Clone()
             $fixParams.Message = $fixMessage
+            $fixParams.Tool = $Tool
 
-            # Remove ReadFile parameter (conventions) for focused fixes
-            if ($fixParams.ContainsKey('ReadFile')) {
-                $fixParams.Remove('ReadFile')
+            # Remove tool-specific context parameters for focused fixes
+            if ($Tool -eq 'Aider') {
+                if ($fixParams.ContainsKey('ReadFile')) {
+                    $fixParams.Remove('ReadFile')
+                }
+            } else {
+                # Claude Code
+                if ($fixParams.ContainsKey('ContextFiles')) {
+                    $fixParams.Remove('ContextFiles')
+                }
             }
 
             # Ensure we have the model parameter
@@ -360,7 +811,12 @@ function Invoke-AutoFix {
                 $fixParams.Model = $Model
             }
 
-            # Invoke Aider with the focused fix message
+            # Ensure we have the reasoning effort parameter
+            if ($ReasoningEffort -and -not $fixParams.ContainsKey('ReasoningEffort')) {
+                $fixParams.ReasoningEffort = $ReasoningEffort
+            }
+
+            # Invoke the AI tool with the focused fix message
             Invoke-Aider @fixParams
 
             $retryCount++
@@ -429,7 +885,7 @@ function Repair-Error {
     $commands = $testerrors | Select-Object -ExpandProperty Command -Unique | Sort-Object
 
     foreach ($command in $commands) {
-        $filename = (Resolve-Path "$PSScriptRoot/../tests/$command.Tests.ps1" -ErrorAction SilentlyContinue).Path
+        $filename = "$PSScriptRoot/../tests/$command.Tests.ps1"
         Write-Output "Processing $command"
 
         if (-not (Test-Path $filename)) {
@@ -458,7 +914,242 @@ function Repair-Error {
     }
 }
 
+
+
+
+
+function Repair-Error {
+    <#
+    .SYNOPSISfunction Repair-Error {
+    <#
+    .SYNOPSIS
+        Repairs errors in dbatools Pester test files.
+
+    .DESCRIPTION
+        Processes and repairs errors found in dbatools Pester test files. This function reads error
+        information from a JSON file and attempts to fix the identified issues in the test files.
+
+    .PARAMETER First
+        Specifies the maximum number of commands to process.
+
+    .PARAMETER Skip
+        Specifies the number of commands to skip before processing.
+
+    .PARAMETER PromptFilePath
+        The path to the template file containing the prompt structure.
+        Defaults to "./.aider/prompts/fix-errors.md".
+
+    .PARAMETER CacheFilePath
+        The path to the file containing cached conventions.
+        Defaults to "./.aider/prompts/conventions.md".
+
+    .PARAMETER ErrorFilePath
+        The path to the JSON file containing error information.
+        Defaults to "./.aider/prompts/errors.json".
+
+    .PARAMETER Tool
+        The AI coding tool to use.
+        Valid values: Aider, Claude
+        Default: Claude
+
+    .PARAMETER Model
+        The AI model to use (e.g., gpt-4, claude-3-opus-20240229 for Aider; claude-sonnet-4-20250514 for Claude Code).
+
+    .PARAMETER ReasoningEffort
+        Controls the reasoning effort level for AI model responses.
+        Valid values are: minimal, medium, high.
+
+    .NOTES
+        Tags: Testing, Pester, ErrorHandling
+        Author: dbatools team
+
+    .EXAMPLE
+        PS C:/> Repair-Error
+        Processes and attempts to fix all errors found in the error file using default parameters with Claude Code.
+
+    .EXAMPLE
+        PS C:/> Repair-Error -ErrorFilePath "custom-errors.json" -Tool Aider
+        Processes and repairs errors using a custom error file with Aider.
+
+    .EXAMPLE
+        PS C:/> Repair-Error -Tool Claude -Model claude-sonnet-4-20250514
+        Processes errors using Claude Code with Sonnet 4 model.
+    #>
+    [CmdletBinding()]
+    param (
+        [int]$First = 10000,
+        [int]$Skip,
+        [string[]]$PromptFilePath = "$PSScriptRoot/../.aider/prompts/fix-errors.md",
+        [string[]]$CacheFilePath = "$PSScriptRoot/../.aider/prompts/conventions.md",
+        [string]$ErrorFilePath = "$PSScriptRoot/../.aider/prompts/errors.json",
+        [ValidateSet('Aider', 'Claude')]
+        [string]$Tool = 'Claude',
+        [string]$Model,
+        [ValidateSet('minimal', 'medium', 'high')]
+        [string]$ReasoningEffort
+    )
+
+    begin {
+        # Validate tool-specific parameters
+        if ($Tool -eq 'Claude') {
+            # Warn about Aider-only parameters when using Claude
+            if ($PSBoundParameters.ContainsKey('NoStream')) {
+                Write-Warning "NoStream parameter is Aider-specific and will be ignored when using Claude Code"
+            }
+            if ($PSBoundParameters.ContainsKey('CachePrompts')) {
+                Write-Warning "CachePrompts parameter is Aider-specific and will be ignored when using Claude Code"
+            }
+        }
+    }
+
+    end {
+        $promptTemplate = Get-Content $PromptFilePath
+        $testerrors = Get-Content $ErrorFilePath | ConvertFrom-Json
+        $commands = $testerrors | Select-Object -ExpandProperty Command -Unique | Sort-Object
+
+        foreach ($command in $commands) {
+            $filename = (Resolve-Path "$PSScriptRoot/../tests/$command.Tests.ps1" -ErrorAction SilentlyContinue).Path
+            Write-Output "Processing $command with $Tool"
+
+            if (-not (Test-Path $filename)) {
+                Write-Warning "No tests found for $command, file not found"
+                continue
+            }
+
+            $cmdPrompt = $promptTemplate -replace "--CMDNAME--", $command
+
+            $testerr = $testerrors | Where-Object Command -eq $command
+            foreach ($err in $testerr) {
+                $cmdPrompt += "`n`n"
+                $cmdPrompt += "Error: $($err.ErrorMessage)`n"
+                $cmdPrompt += "Line: $($err.LineNumber)`n"
+            }
+
+            $aiderParams = @{
+                Message = $cmdPrompt
+                File    = $filename
+                Tool    = $Tool
+            }
+
+            # Add tool-specific parameters
+            if ($Tool -eq 'Aider') {
+                $aiderParams.NoStream = $true
+                $aiderParams.CachePrompts = $true
+                $aiderParams.ReadFile = $CacheFilePath
+            } else {
+                # For Claude Code, use different approach for context files
+                $aiderParams.ContextFiles = $CacheFilePath
+            }
+
+            # Add optional parameters if specified
+            if ($Model) {
+                $aiderParams.Model = $Model
+            }
+
+            if ($ReasoningEffort) {
+                $aiderParams.ReasoningEffort = $ReasoningEffort
+            }
+
+            Invoke-Aider @aiderParams
+        }
+    }
+}
+
 function Repair-SmallThing {
+    <#
+    .SYNOPSIS
+        Repairs small issues in dbatools test files using AI coding tools.
+
+    .DESCRIPTION
+        Processes and repairs small issues in dbatools test files. This function can use either
+        predefined prompts for specific issue types or custom prompt templates.
+
+    .PARAMETER InputObject
+        Array of objects that can be either file paths, FileInfo objects, or command objects (from Get-Command).
+
+    .PARAMETER First
+        Specifies the maximum number of commands to process.
+
+    .PARAMETER Skip
+        Specifies the number of commands to skip before processing.
+
+    .PARAMETER Model
+        The AI model to use (e.g., azure/gpt-4o, gpt-4o-mini for Aider; claude-sonnet-4-20250514 for Claude Code).
+
+    .PARAMETER Tool
+        The AI coding tool to use.
+        Valid values: Aider, Claude
+        Default: Claude
+
+    .PARAMETER PromptFilePath
+        The path to the template file containing the prompt structure.
+
+    .PARAMETER Type
+        Predefined prompt type to use.
+        Valid values: ReorgParamTest
+
+    .PARAMETER EditorModel
+        The model to use for editor tasks (Aider only).
+
+    .PARAMETER NoPretty
+        Disable pretty, colorized output (Aider only).
+
+    .PARAMETER NoStream
+        Disable streaming responses (Aider only).
+
+    .PARAMETER YesAlways
+        Always say yes to every confirmation (Aider only).
+
+    .PARAMETER CachePrompts
+        Enable caching of prompts (Aider only).
+
+    .PARAMETER MapTokens
+        Suggested number of tokens to use for repo map (Aider only).
+
+    .PARAMETER MapRefresh
+        Control how often the repo map is refreshed (Aider only).
+
+    .PARAMETER NoAutoLint
+        Disable automatic linting after changes (Aider only).
+
+    .PARAMETER AutoTest
+        Enable automatic testing after changes.
+
+    .PARAMETER ShowPrompts
+        Print the system prompts and exit (Aider only).
+
+    .PARAMETER EditFormat
+        Specify what edit format the LLM should use (Aider only).
+
+    .PARAMETER MessageFile
+        Specify a file containing the message to send (Aider only).
+
+    .PARAMETER ReadFile
+        Specify read-only files (Aider only).
+
+    .PARAMETER Encoding
+        Specify the encoding for input and output (Aider only).
+
+    .PARAMETER ReasoningEffort
+        Controls the reasoning effort level for AI model responses.
+        Valid values are: minimal, medium, high.
+
+    .NOTES
+        Tags: Testing, Pester, Repair
+        Author: dbatools team
+
+    .EXAMPLE
+        PS C:/> Repair-SmallThing -Type ReorgParamTest
+        Repairs parameter organization issues in test files using Claude Code.
+
+    .EXAMPLE
+        PS C:/> Get-ChildItem *.Tests.ps1 | Repair-SmallThing -Tool Aider -Type ReorgParamTest
+        Repairs parameter organization issues in specified test files using Aider.
+
+    .EXAMPLE
+        PS C:/> Repair-SmallThing -PromptFilePath "custom-prompt.md" -Tool Claude
+        Uses a custom prompt template with Claude Code to repair issues.
+    #>
     [cmdletbinding()]
     param (
         [Parameter(Position = 0, ValueFromPipeline, ValueFromPipelineByPropertyName)]
@@ -467,6 +1158,8 @@ function Repair-SmallThing {
         [int]$First = 10000,
         [int]$Skip,
         [string]$Model = "azure/gpt-4o-mini",
+        [ValidateSet('Aider', 'Claude')]
+        [string]$Tool = 'Claude',
         [string[]]$PromptFilePath,
         [ValidateSet("ReorgParamTest")]
         [string]$Type,
@@ -483,12 +1176,25 @@ function Repair-SmallThing {
         [string]$EditFormat,
         [string]$MessageFile,
         [string[]]$ReadFile,
-        [string]$Encoding
+        [string]$Encoding,
+        [ValidateSet('minimal', 'medium', 'high')]
+        [string]$ReasoningEffort
     )
 
     begin {
-        Write-Verbose "Starting Repair-SmallThing"
+        Write-Verbose "Starting Repair-SmallThing with Tool: $Tool"
         $allObjects = @()
+
+        # Validate tool-specific parameters
+        if ($Tool -eq 'Claude') {
+            # Warn about Aider-only parameters when using Claude
+            $aiderOnlyParams = @('EditorModel', 'NoPretty', 'NoStream', 'YesAlways', 'CachePrompts', 'MapTokens', 'MapRefresh', 'NoAutoLint', 'ShowPrompts', 'EditFormat', 'MessageFile', 'ReadFile', 'Encoding')
+            foreach ($param in $aiderOnlyParams) {
+                if ($PSBoundParameters.ContainsKey($param)) {
+                    Write-Warning "$param parameter is Aider-specific and will be ignored when using Claude Code"
+                }
+            }
+        }
 
         $prompts = @{
             ReorgParamTest = "Move the `$expected` parameter list AND the `$TestConfig.CommonParameters` part into the BeforeAll block, placing them after the `$command` assignment. Keep them within the BeforeAll block. Do not move or modify the initial `$command` assignment.
@@ -585,7 +1291,7 @@ function Repair-SmallThing {
 
         foreach ($command in $commands) {
             $cmdName = $command.Name
-            Write-Verbose "Processing command: $cmdName"
+            Write-Verbose "Processing command: $cmdName with $Tool"
 
             $filename = (Resolve-Path "$PSScriptRoot/../tests/$cmdName.Tests.ps1" -ErrorAction SilentlyContinue).Path
             Write-Verbose "Using test path: $filename"
@@ -618,6 +1324,7 @@ function Repair-SmallThing {
             $aiderParams = @{
                 Message = $cmdPrompt
                 File    = $filename
+                Tool    = $Tool
             }
 
             $excludedParams = @(
@@ -626,316 +1333,42 @@ function Repair-SmallThing {
                 'First',
                 'Skip',
                 'PromptFilePath',
-                'Type'
+                'Type',
+                'Tool'
             )
 
+            # Add non-excluded parameters based on tool
             $PSBoundParameters.GetEnumerator() |
                 Where-Object Key -notin $excludedParams |
                 ForEach-Object {
-                    $aiderParams[$PSItem.Key] = $PSItem.Value
+                    $paramName = $PSItem.Key
+                    $paramValue = $PSItem.Value
+
+                    # Filter out tool-specific parameters for the wrong tool
+                    if ($Tool -eq 'Claude') {
+                        $aiderOnlyParams = @('EditorModel', 'NoPretty', 'NoStream', 'YesAlways', 'CachePrompts', 'MapTokens', 'MapRefresh', 'NoAutoLint', 'ShowPrompts', 'EditFormat', 'MessageFile', 'ReadFile', 'Encoding')
+                        if ($paramName -notin $aiderOnlyParams) {
+                            $aiderParams[$paramName] = $paramValue
+                        }
+                    } else {
+                        # Aider - exclude Claude-only params if any exist in the future
+                        $aiderParams[$paramName] = $paramValue
+                    }
                 }
 
             if (-not $PSBoundParameters.Model) {
                 $aiderParams.Model = $Model
             }
 
-            Write-Verbose "Invoking aider for $cmdName"
+            Write-Verbose "Invoking $Tool for $cmdName"
             try {
                 Invoke-Aider @aiderParams
-                Write-Verbose "Aider completed successfully for $cmdName"
+                Write-Verbose "$Tool completed successfully for $cmdName"
             } catch {
-                Write-Error "Error executing aider for $cmdName`: $_"
-                Write-Verbose "Aider failed for $cmdName with error: $_"
+                Write-Error "Error executing $Tool for $cmdName`: $_"
+                Write-Verbose "$Tool failed for $cmdName with error: $_"
             }
         }
         Write-Verbose "Repair-SmallThing completed"
-    }
-}
-
-function Invoke-Aider {
-    <#
-    .SYNOPSIS
-        Invokes the aider AI pair programming tool.
-
-    .DESCRIPTION
-        The Invoke-Aider function provides a PowerShell interface to the aider AI pair programming tool.
-        It supports all aider CLI options and can accept files via pipeline from Get-ChildItem.
-
-    .PARAMETER Message
-        The message to send to the AI. This is the primary way to communicate your intent.
-
-    .PARAMETER File
-        The files to edit. Can be piped in from Get-ChildItem.
-
-    .PARAMETER Model
-        The AI model to use (e.g., gpt-4, claude-3-opus-20240229).
-
-    .PARAMETER EditorModel
-        The model to use for editor tasks.
-
-    .PARAMETER NoPretty
-        Disable pretty, colorized output.
-
-    .PARAMETER NoStream
-        Disable streaming responses.
-
-    .PARAMETER YesAlways
-        Always say yes to every confirmation.
-
-    .PARAMETER CachePrompts
-        Enable caching of prompts.
-
-    .PARAMETER MapTokens
-        Suggested number of tokens to use for repo map.
-
-    .PARAMETER MapRefresh
-        Control how often the repo map is refreshed.
-
-    .PARAMETER NoAutoLint
-        Disable automatic linting after changes.
-
-    .PARAMETER AutoTest
-        Enable automatic testing after changes.
-
-    .PARAMETER ShowPrompts
-        Print the system prompts and exit.
-
-    .PARAMETER EditFormat
-        Specify what edit format the LLM should use.
-
-    .PARAMETER MessageFile
-        Specify a file containing the message to send.
-
-    .PARAMETER ReadFile
-        Specify read-only files.
-
-    .PARAMETER Encoding
-        Specify the encoding for input and output.
-
-    .EXAMPLE
-        Invoke-Aider -Message "Fix the bug" -File script.ps1
-
-        Asks aider to fix a bug in script.ps1.
-
-    .EXAMPLE
-        Get-ChildItem *.ps1 | Invoke-Aider -Message "Add error handling"
-
-        Adds error handling to all PowerShell files in the current directory.
-
-    .EXAMPLE
-        Invoke-Aider -Message "Update API" -Model gpt-4 -NoStream
-
-        Uses GPT-4 to update API code without streaming output.
-    #>
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory)]
-        [string]$Message,
-        [Parameter(Position = 0, ValueFromPipeline, ValueFromPipelineByPropertyName)]
-        [Alias('FullName')]
-        [string[]]$File,
-        [string]$Model,
-        [string]$EditorModel,
-        [switch]$NoPretty,
-        [switch]$NoStream,
-        [switch]$YesAlways,
-        [switch]$CachePrompts,
-        [int]$MapTokens,
-        [ValidateSet('auto', 'always', 'files', 'manual')]
-        [string]$MapRefresh,
-        [switch]$NoAutoLint,
-        [switch]$AutoTest,
-        [switch]$ShowPrompts,
-        [string]$EditFormat,
-        [string]$MessageFile,
-        [string[]]$ReadFile,
-        [ValidateSet('utf-8', 'ascii', 'unicode', 'utf-16', 'utf-32', 'utf-7')]
-        [string]$Encoding,
-        [int]$PassCount = 1
-    )
-
-    begin {
-        $allFiles = @()
-
-        if (-not (Get-Command -Name aider -ErrorAction SilentlyContinue)) {
-            throw "Aider executable not found. Please ensure it is installed and in your PATH."
-        }
-    }
-
-    process {
-        if ($File) {
-            $allFiles += $File
-        }
-    }
-
-    end {
-        for ($i = 0; $i -lt $PassCount; $i++) {
-            $arguments = @()
-
-            # Add files if any were specified or piped in
-            if ($allFiles) {
-                $arguments += $allFiles
-            }
-
-            # Add mandatory message parameter
-            if ($Message) {
-                $arguments += "--message", $Message
-            }
-
-            # Add optional parameters only if they are present
-            if ($Model) {
-                $arguments += "--model", $Model
-            }
-
-            if ($EditorModel) {
-                $arguments += "--editor-model", $EditorModel
-            }
-
-            if ($NoPretty) {
-                $arguments += "--no-pretty"
-            }
-
-            if ($NoStream) {
-                $arguments += "--no-stream"
-            }
-
-            if ($YesAlways) {
-                $arguments += "--yes-always"
-            }
-
-            if ($CachePrompts) {
-                $arguments += "--cache-prompts"
-            }
-
-            if ($PSBoundParameters.ContainsKey('MapTokens')) {
-                $arguments += "--map-tokens", $MapTokens
-            }
-
-            if ($MapRefresh) {
-                $arguments += "--map-refresh", $MapRefresh
-            }
-
-            if ($NoAutoLint) {
-                $arguments += "--no-auto-lint"
-            }
-
-            if ($AutoTest) {
-                $arguments += "--auto-test"
-            }
-
-            if ($ShowPrompts) {
-                $arguments += "--show-prompts"
-            }
-
-            if ($EditFormat) {
-                $arguments += "--edit-format", $EditFormat
-            }
-
-            if ($MessageFile) {
-                $arguments += "--message-file", $MessageFile
-            }
-
-            if ($ReadFile) {
-                foreach ($rf in $ReadFile) {
-                    $arguments += "--read", $rf
-                }
-            }
-
-            if ($Encoding) {
-                $arguments += "--encoding", $Encoding
-            }
-
-            if ($VerbosePreference -eq 'Continue') {
-                Write-Verbose "Executing: aider $($arguments -join ' ')"
-            }
-
-            if ($PassCount -gt 1) {
-                Write-Verbose "Invoke-Aider pass $($i + 1) of $PassCount"
-            }
-
-            aider @arguments
-        }
-    }
-}
-
-function Repair-Error {
-    <#
-    .SYNOPSIS
-        Repairs errors in dbatools Pester test files.
-
-    .DESCRIPTION
-        Processes and repairs errors found in dbatools Pester test files. This function reads error
-        information from a JSON file and attempts to fix the identified issues in the test files.
-
-    .PARAMETER First
-        Specifies the maximum number of commands to process.
-
-    .PARAMETER Skip
-        Specifies the number of commands to skip before processing.
-
-    .PARAMETER PromptFilePath
-        The path to the template file containing the prompt structure.
-        Defaults to "./.aider/prompts/fix-errors.md".
-
-    .PARAMETER CacheFilePath
-        The path to the file containing cached conventions.
-        Defaults to "./.aider/prompts/conventions.md".
-
-    .PARAMETER ErrorFilePath
-        The path to the JSON file containing error information.
-        Defaults to "./.aider/prompts/errors.json".
-
-    .NOTES
-        Tags: Testing, Pester, ErrorHandling
-        Author: dbatools team
-
-    .EXAMPLE
-        PS C:/> Repair-Error
-        Processes and attempts to fix all errors found in the error file using default parameters.
-
-    .EXAMPLE
-        PS C:/> Repair-Error -ErrorFilePath "custom-errors.json"
-        Processes and repairs errors using a custom error file.
-    #>
-    [CmdletBinding()]
-    param (
-        [int]$First = 10000,
-        [int]$Skip,
-        [string[]]$PromptFilePath = "$PSScriptRoot/../.aider/prompts/fix-errors.md",
-        [string[]]$CacheFilePath = "$PSScriptRoot/../.aider/prompts/conventions.md",
-        [string]$ErrorFilePath = "$PSScriptRoot/../.aider/prompts/errors.json"
-    )
-
-    $promptTemplate = Get-Content $PromptFilePath
-    $testerrors = Get-Content $ErrorFilePath | ConvertFrom-Json
-    $commands = $testerrors | Select-Object -ExpandProperty Command -Unique | Sort-Object
-
-    foreach ($command in $commands) {
-        $filename = "$PSScriptRoot/../tests/$command.Tests.ps1"
-        Write-Output "Processing $command"
-
-        if (-not (Test-Path $filename)) {
-            Write-Warning "No tests found for $command, file not found"
-            continue
-        }
-
-        $cmdPrompt = $promptTemplate -replace "--CMDNAME--", $command
-
-        $testerr = $testerrors | Where-Object Command -eq $command
-        foreach ($err in $testerr) {
-            $cmdPrompt += "`n`n"
-            $cmdPrompt += "Error: $($err.ErrorMessage)`n"
-            $cmdPrompt += "Line: $($err.LineNumber)`n"
-        }
-
-        $aiderParams = @{
-            Message      = $cmdPrompt
-            File         = $filename
-            NoStream     = $true
-            CachePrompts = $true
-            ReadFile     = $CacheFilePath
-        }
-
-        Invoke-Aider @aiderParams
     }
 }
