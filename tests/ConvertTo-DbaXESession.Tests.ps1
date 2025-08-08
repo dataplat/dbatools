@@ -1,15 +1,16 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
 param(
-    $ModuleName = "dbatools",
+    $ModuleName  = "dbatools",
+    $CommandName = "ConvertTo-DbaXESession",
     $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
 )
 
-Describe "ConvertTo-DbaXESession" -Tag "UnitTests" {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
-            $command = Get-Command ConvertTo-DbaXESession
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
                 "InputObject",
                 "Name",
                 "OutputScriptOnly",
@@ -17,18 +18,13 @@ Describe "ConvertTo-DbaXESession" -Tag "UnitTests" {
             )
         }
 
-        It "Has parameter: <_>" -ForEach $expected {
-            $command | Should -HaveParameter $PSItem
-        }
-
-        It "Should have exactly the number of expected parameters ($($expected.Count))" {
-            $hasparms = $command.Parameters.Values.Name
-            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
+        It "Should have the expected parameters" {
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "ConvertTo-DbaXESession" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $sql = @"
 -- Create a Queue
@@ -109,21 +105,40 @@ exec sp_trace_setstatus @TraceID, 1
 -- display trace id for future references
 select TraceID=@TraceID
 "@
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $splatConnect = @{
+            SqlInstance = $TestConfig.instance2
+        }
+        $server = Connect-DbaInstance @splatConnect
         $traceid = ($server.Query($sql)).TraceID
         $sessionName = "dbatoolsci-session"
     }
 
     AfterAll {
-        $null = Remove-DbaXESession -SqlInstance $TestConfig.instance2 -Session $sessionName
-        $null = Remove-DbaTrace -SqlInstance $TestConfig.instance2 -Id $traceid
+        $splatRemoveSession = @{
+            SqlInstance = $TestConfig.instance2
+            Session     = $sessionName
+        }
+        $null = Remove-DbaXESession @splatRemoveSession
+        $splatRemoveTrace = @{
+            SqlInstance = $TestConfig.instance2
+            Id          = $traceid
+        }
+        $null = Remove-DbaTrace @splatRemoveTrace
         Remove-Item C:\windows\temp\temptrace.trc -ErrorAction SilentlyContinue
     }
 
     Context "Test Trace Conversion" {
         BeforeAll {
-            $null = Get-DbaTrace -SqlInstance $TestConfig.instance2 -Id $traceid | ConvertTo-DbaXESession -Name $sessionName
-            $results = Start-DbaXESession -SqlInstance $TestConfig.instance2 -Session $sessionName
+            $splatGetTrace = @{
+                SqlInstance = $TestConfig.instance2
+                Id          = $traceid
+            }
+            $null = Get-DbaTrace @splatGetTrace | ConvertTo-DbaXESession -Name $sessionName
+            $splatStartSession = @{
+                SqlInstance = $TestConfig.instance2
+                Session     = $sessionName
+            }
+            $results = Start-DbaXESession @splatStartSession
         }
 
         It "Returns the right results" {

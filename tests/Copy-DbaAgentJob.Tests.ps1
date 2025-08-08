@@ -1,10 +1,11 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
+    $ModuleName  = "dbatools",
+    $CommandName = "Copy-DbaAgentJob",
     $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
 )
 
-Describe "Copy-DbaAgentJob" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_copyjob
         $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_copyjob_disabled
@@ -18,9 +19,10 @@ Describe "Copy-DbaAgentJob" -Tag "IntegrationTests" {
 
     Context "Parameter validation" {
         BeforeAll {
-            $command = Get-Command Copy-DbaAgentJob
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
+            $command = Get-Command $CommandName
+            $hasParameters = $command.Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
                 "Source",
                 "SourceSqlCredential",
                 "Destination",
@@ -31,19 +33,12 @@ Describe "Copy-DbaAgentJob" -Tag "IntegrationTests" {
                 "DisableOnDestination",
                 "Force",
                 "InputObject",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
+                "EnableException"
             )
         }
 
-        It "Has parameter: <_>" -ForEach $expected {
-            $command | Should -HaveParameter $PSItem
-        }
-
-        It "Should have exactly the number of expected parameters ($($expected.Count))" {
-            $hasparms = $command.Parameters.Values.Name
-            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
+        It "Should have the expected parameters" {
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 
@@ -63,12 +58,12 @@ Describe "Copy-DbaAgentJob" -Tag "IntegrationTests" {
 
         It "disables jobs when requested" {
             $splatCopyJob = @{
-                Source = $TestConfig.instance2
-                Destination = $TestConfig.instance3
-                Job = "dbatoolsci_copyjob_disabled"
-                DisableOnSource = $true
+                Source               = $TestConfig.instance2
+                Destination          = $TestConfig.instance3
+                Job                  = "dbatoolsci_copyjob_disabled"
+                DisableOnSource      = $true
                 DisableOnDestination = $true
-                Force = $true
+                Force                = $true
             }
             $results = Copy-DbaAgentJob @splatCopyJob
 

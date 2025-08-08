@@ -150,7 +150,7 @@ Describe "Backup-DbaDatabase" -Tag "IntegrationTests" {
         }
 
         It "Should report it has backed up to the path with the correct name" {
-            $results.Fullname | Should -BeLike "$DestBackupDir*PesterTest.bak"
+            $results.FullName | Should -BeLike "$DestBackupDir*PesterTest.bak"
         }
 
         It "Should have backed up to the path with the correct name" {
@@ -164,7 +164,7 @@ Describe "Backup-DbaDatabase" -Tag "IntegrationTests" {
         }
 
         It "Should report it has backed up to the path with the correct name" {
-            $results.Fullname | Should -BeLike "$DestBackupDir*PesterTest.bak"
+            $results.FullName | Should -BeLike "$DestBackupDir*PesterTest.bak"
         }
 
         It "Should have backed up to the path with the correct name" {
@@ -329,12 +329,12 @@ Describe "Backup-DbaDatabase" -Tag "IntegrationTests" {
         }
 
         AfterAll {
-            Get-ChildItem -Path $results.Fullname | Remove-Item
+            Get-ChildItem -Path $results.FullName | Remove-Item -ErrorAction SilentlyContinue
             $PSDefaultParameterValues['Backup-DbaDatabase:BackupDirectory'] = $DestBackupDir
         }
 
         It "Should report it has backed up to the path with the corrrect name" {
-            $results.Fullname | Should -BeLike "$defaultBackupPath*PesterTest.bak"
+            $results.FullName | Should -BeLike "$defaultBackupPath*PesterTest.bak"
         }
 
         It "Should have backed up to the path with the corrrect name" {
@@ -501,7 +501,7 @@ go
 
     Context "Test Backup templating when db object piped in issue 8100" {
         BeforeAll {
-            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master,msdb | Backup-DbaDatabase -BackupDirectory $DestBackupDir\db2\dbname\instancename\backuptype\  -BackupFileName dbname-backuptype.bak -ReplaceInName -BuildPath
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master, msdb | Backup-DbaDatabase -BackupDirectory $DestBackupDir\db2\dbname\instancename\backuptype\  -BackupFileName dbname-backuptype.bak -ReplaceInName -BuildPath
             $instanceName = ([DbaInstanceParameter]$TestConfig.instance1).InstanceName
         }
 

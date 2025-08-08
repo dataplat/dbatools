@@ -1,14 +1,14 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName               = "dbatools",
-    $CommandName              = [System.IO.Path]::GetFileName($PSCommandPath.Replace('.Tests.ps1', '')),
+    $ModuleName  = "dbatools",
+    $CommandName = "Add-DbaDbMirrorMonitor",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Describe $CommandName -Tag "UnitTests" {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
-            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $_ -notin ('WhatIf', 'Confirm') }
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
                 "SqlInstance",
@@ -23,18 +23,26 @@ Describe $CommandName -Tag "UnitTests" {
     }
 }
 
-Describe $CommandName -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+    }
+
+    AfterAll {
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
     Context "When adding mirror monitor" {
         BeforeAll {
             $results = Add-DbaDbMirrorMonitor -SqlInstance $TestConfig.instance2
         }
 
         AfterAll {
-            $null = Remove-DbaDbMirrorMonitor -SqlInstance $TestConfig.instance2
+            $null = Remove-DbaDbMirrorMonitor -SqlInstance $TestConfig.instance2 -ErrorAction SilentlyContinue
         }
 
         It "Adds the mirror monitor" {
-            $results.MonitorStatus | Should -Be 'Added'
+            $results.MonitorStatus | Should -Be "Added"
         }
     }
 }

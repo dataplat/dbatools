@@ -8,7 +8,7 @@ param(
 Describe $CommandName -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
-            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $_ -notin ('WhatIf', 'Confirm') }
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
                 "SqlInstance",
@@ -34,7 +34,7 @@ Describe $CommandName -Tag "UnitTests" {
 
 Describe $CommandName -Tag "IntegrationTests" {
     BeforeAll {
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $backupPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
         $null = New-Item -Path $backupPath -ItemType Directory
@@ -47,35 +47,34 @@ Describe $CommandName -Tag "IntegrationTests" {
         $listenerIp = "127.0.20.1"
         $listenerPort = 14330
 
-        $splat = @{
+        $splatAg = @{
             Primary      = $TestConfig.instance3
             Name         = $agName
             ClusterType  = "None"
             FailoverMode = "Manual"
             Certificate  = "dbatoolsci_AGCert"
+            Confirm      = $false
         }
-        $ag = New-DbaAvailabilityGroup @splat
-
-        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+        $ag = New-DbaAvailabilityGroup @splatAg
     }
 
     AfterAll {
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
 
-        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agName
-        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint
+        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agName -Confirm:$false
+        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
 
-        Remove-Item -Path $backupPath -Recurse
+        Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
     }
 
     Context "When creating a listener" {
         BeforeAll {
-            $splat = @{
+            $splatListener = @{
                 Name      = $listenerName
                 IPAddress = $listenerIp
                 Port      = $listenerPort
             }
-            $results = $ag | Add-DbaAgListener @splat
+            $results = $ag | Add-DbaAgListener @splatListener
         }
 
         It "Does not warn" {

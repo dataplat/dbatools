@@ -1,14 +1,14 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName               = "dbatools",
-    $CommandName              = [System.IO.Path]::GetFileName($PSCommandPath.Replace('.Tests.ps1', '')),
+    $ModuleName  = "dbatools",
+    $CommandName = "Add-DbaRegServer",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Describe "Add-DbaRegServer" -Tag "UnitTests" {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
-            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $_ -notin ('WhatIf', 'Confirm') }
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
                 "SqlInstance",
@@ -33,7 +33,7 @@ Describe "Add-DbaRegServer" -Tag "UnitTests" {
     }
 }
 
-Describe "Add-DbaRegServer" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $srvName = "dbatoolsci-server1"
         $group = "dbatoolsci-group1"
@@ -67,7 +67,7 @@ Describe "Add-DbaRegServer" -Tag "IntegrationTests" {
 
     Context "When adding a registered server with extended properties" {
         BeforeAll {
-            $splat = @{
+            $splatRegServer = @{
                 SqlInstance = $TestConfig.instance1
                 ServerName  = $regSrvName
                 Name        = $srvName
@@ -75,7 +75,7 @@ Describe "Add-DbaRegServer" -Tag "IntegrationTests" {
                 Description = $regSrvDesc
             }
 
-            $results2 = Add-DbaRegServer @splat
+            $results2 = Add-DbaRegServer @splatRegServer
         }
 
         It "Adds a registered server with correct server name" {

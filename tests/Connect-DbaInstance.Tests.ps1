@@ -88,7 +88,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 } else {
                     $propName = $param.Key
                 }
-                $server.ConnectionContext.$propName | Should -Be $param.Value
+                $server.ConnectionContext.PSObject.Properties[$propName].Value | Should -Be $param.Value
             }
         }
 
@@ -237,14 +237,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "multiple dedicated admin connections are properly made using strings" {
         # This might fail if a parallel test uses DAC - how can we ensure that this is the only test that is run?
         It "opens and closes the connections" {
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -DedicatedAdminConnection
+            $server = @(Connect-DbaInstance -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -DedicatedAdminConnection)
             $server[0].Name | Should -Be "ADMIN:$($TestConfig.instance1)"
             $server[1].Name | Should -Be "ADMIN:$($TestConfig.instance2)"
             $null = $server | Disconnect-DbaInstance
             # DAC is not reopened in the background
             Start-Sleep -Seconds 10
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -DedicatedAdminConnection
-            $server.Count | Should -Be 2
+            $server = @(Connect-DbaInstance -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -DedicatedAdminConnection)
+            $server.Status.Count | Should -Be 2
             $null = $server | Disconnect-DbaInstance
         }
     }

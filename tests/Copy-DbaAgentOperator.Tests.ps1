@@ -1,15 +1,16 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $ModuleName  = "dbatools",
+    $CommandName = "Copy-DbaAgentOperator",
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Describe "Copy-DbaAgentOperator" -Tag "UnitTests" {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
-            $command = Get-Command Copy-DbaAgentOperator
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
                 "Source",
                 "SourceSqlCredential",
                 "Destination",
@@ -17,65 +18,60 @@ Describe "Copy-DbaAgentOperator" -Tag "UnitTests" {
                 "Operator",
                 "ExcludeOperator",
                 "Force",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
+                "EnableException"
             )
         }
 
-        It "Has parameter: <_>" -ForEach $expected {
-            $command | Should -HaveParameter $PSItem
-        }
-
-        It "Should have exactly the number of expected parameters ($($expected.Count))" {
-            $hasparms = $command.Parameters.Values.Name
-            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
+        It "Should have the expected parameters" {
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "Copy-DbaAgentOperator" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $sql = "EXEC msdb.dbo.sp_add_operator @name=N'dbatoolsci_operator', @enabled=1, @pager_days=0"
-        $server.Query($sql)
-        $sql = "EXEC msdb.dbo.sp_add_operator @name=N'dbatoolsci_operator2', @enabled=1, @pager_days=0"
-        $server.Query($sql)
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+        $sourceServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $sqlAddOperator1 = "EXEC msdb.dbo.sp_add_operator @name=N'dbatoolsci_operator', @enabled=1, @pager_days=0"
+        $sourceServer.Query($sqlAddOperator1)
+        $sqlAddOperator2 = "EXEC msdb.dbo.sp_add_operator @name=N'dbatoolsci_operator2', @enabled=1, @pager_days=0"
+        $sourceServer.Query($sqlAddOperator2)
     }
 
     AfterAll {
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $sql = "EXEC msdb.dbo.sp_delete_operator @name=N'dbatoolsci_operator'"
-        $server.Query($sql)
-        $sql = "EXEC msdb.dbo.sp_delete_operator @name=N'dbatoolsci_operator2'"
-        $server.Query($sql)
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        $sourceCleanupServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $sqlDeleteOp1Source = "EXEC msdb.dbo.sp_delete_operator @name=N'dbatoolsci_operator'"
+        $sourceCleanupServer.Query($sqlDeleteOp1Source)
+        $sqlDeleteOp2Source = "EXEC msdb.dbo.sp_delete_operator @name=N'dbatoolsci_operator2'"
+        $sourceCleanupServer.Query($sqlDeleteOp2Source)
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance3
-        $sql = "EXEC msdb.dbo.sp_delete_operator @name=N'dbatoolsci_operator'"
-        $server.Query($sql)
-        $sql = "EXEC msdb.dbo.sp_delete_operator @name=N'dbatoolsci_operator2'"
-        $server.Query($sql)
+        $destCleanupServer = Connect-DbaInstance -SqlInstance $TestConfig.instance3
+        $sqlDeleteOp1Dest = "EXEC msdb.dbo.sp_delete_operator @name=N'dbatoolsci_operator'"
+        $destCleanupServer.Query($sqlDeleteOp1Dest)
+        $sqlDeleteOp2Dest = "EXEC msdb.dbo.sp_delete_operator @name=N'dbatoolsci_operator2'"
+        $destCleanupServer.Query($sqlDeleteOp2Dest)
     }
 
     Context "When copying operators" {
         It "Returns two copied operators" {
-            $splat = @{
+            $splatCopyOperators = @{
                 Source      = $TestConfig.instance2
                 Destination = $TestConfig.instance3
-                Operator    = 'dbatoolsci_operator', 'dbatoolsci_operator2'
+                Operator    = "dbatoolsci_operator", "dbatoolsci_operator2"
             }
-            $results = Copy-DbaAgentOperator @splat
+            $results = Copy-DbaAgentOperator @splatCopyOperators
             $results.Status.Count | Should -Be 2
             $results.Status | Should -Be "Successful", "Successful"
         }
 
         It "Returns one result that's skipped when copying an existing operator" {
-            $splet = @{
+            $splatCopyExisting = @{
                 Source      = $TestConfig.instance2
                 Destination = $TestConfig.instance3
-                Operator    = 'dbatoolsci_operator'
+                Operator    = "dbatoolsci_operator"
             }
-            (Copy-DbaAgentOperator @splet).Status | Should -Be "Skipped"
+            (Copy-DbaAgentOperator @splatCopyExisting).Status | Should -Be "Skipped"
         }
     }
 }

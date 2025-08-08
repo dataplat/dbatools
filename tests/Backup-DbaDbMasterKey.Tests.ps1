@@ -1,15 +1,16 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $ModuleName  = "dbatools",
+    $CommandName = "Backup-DbaDbMasterKey",
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Describe "Backup-DbaDbMasterKey" -Tag "UnitTests" {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
-            $command = Get-Command Backup-DbaDbMasterKey
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
                 "SqlInstance",
                 "SqlCredential",
                 "Credential",
@@ -19,24 +20,17 @@ Describe "Backup-DbaDbMasterKey" -Tag "UnitTests" {
                 "Path",
                 "FileBaseName",
                 "InputObject",
-                "EnableException",
-                "WhatIf",
-                "Confirm"
+                "EnableException"
             )
         }
 
-        It "Has parameter: <_>" -ForEach $expected {
-            $command | Should -HaveParameter $PSItem
-        }
-
-        It "Should have exactly the number of expected parameters ($($expected.Count))" {
-            $hasparms = $command.Parameters.Values.Name
-            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
+        It "Should have the expected parameters" {
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "Backup-DbaDbMasterKey" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     Context "Can backup a database master key" {
         BeforeAll {
             $instance = $TestConfig.instance1
@@ -54,10 +48,10 @@ Describe "Backup-DbaDbMasterKey" -Tag "IntegrationTests" {
 
         It "Backs up the database master key" {
             $splatBackup = @{
-                SqlInstance = $instance
-                Database = $database
+                SqlInstance    = $instance
+                Database       = $database
                 SecurePassword = $password
-                Confirm = $false
+                Confirm        = $false
             }
             $results = Backup-DbaDbMasterKey @splatBackup
             $results | Should -Not -BeNullOrEmpty
@@ -71,11 +65,11 @@ Describe "Backup-DbaDbMasterKey" -Tag "IntegrationTests" {
         It "Backs up the database master key with a specific filename (see #9484)" {
             $random = Get-Random
             $splatBackup = @{
-                SqlInstance = $instance
-                Database = $database
+                SqlInstance    = $instance
+                Database       = $database
                 SecurePassword = $password
-                FileBaseName = "dbatoolscli_dbmasterkey_$random"
-                Confirm = $false
+                FileBaseName   = "dbatoolscli_dbmasterkey_$random"
+                Confirm        = $false
             }
             $results = Backup-DbaDbMasterKey @splatBackup
             $results | Should -Not -BeNullOrEmpty

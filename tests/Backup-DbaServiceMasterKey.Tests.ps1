@@ -1,56 +1,50 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $ModuleName  = "dbatools",
+    $CommandName = "Backup-DbaServiceMasterKey",
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Describe "Backup-DbaServiceMasterKey" -Tag "UnitTests" {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
-            $command = Get-Command Backup-DbaServiceMasterKey
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
                 "SqlInstance",
                 "SqlCredential",
                 "KeyCredential",
                 "SecurePassword",
                 "Path",
                 "FileBaseName",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
+                "EnableException"
             )
         }
 
-        It "Has parameter: <_>" -ForEach $expected {
-            $command | Should -HaveParameter $PSItem
-        }
-
-        It "Should have exactly the number of expected parameters ($($expected.Count))" {
-            $hasparms = $command.Parameters.Values.Name
-            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
+        It "Should have the expected parameters" {
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "Backup-DbaServiceMasterKey" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     Context "Can backup a service master key" {
         BeforeAll {
             $securePassword = ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force
         }
 
         It "backs up the SMK" {
-            $results = Backup-DbaServiceMasterKey -SqlInstance $TestConfig.instance1 -SecurePassword $securePassword -Confirm:$false
-            $results.Status | Should -Be "Success"
-            $null = Remove-Item -Path $results.Path -ErrorAction SilentlyContinue -Confirm:$false
+            $backupResults = Backup-DbaServiceMasterKey -SqlInstance $TestConfig.instance1 -SecurePassword $securePassword -Confirm:$false
+            $backupResults.Status | Should -Be "Success"
+            $null = Remove-Item -Path $backupResults.Path -ErrorAction SilentlyContinue -Confirm:$false
         }
 
         It "backs up the SMK with a specific filename (see #9483)" {
-            $random = Get-Random
-            $results = Backup-DbaServiceMasterKey -SqlInstance $TestConfig.instance1 -SecurePassword $securePassword -FileBaseName "smk($random)" -Confirm:$false
-            [IO.Path]::GetFileNameWithoutExtension($results.Path) | Should -Be "smk($random)"
-            $results.Status | Should -Be "Success"
-            $null = Remove-Item -Path $results.Path -ErrorAction SilentlyContinue -Confirm:$false
+            $randomNum = Get-Random
+            $fileBackupResults = Backup-DbaServiceMasterKey -SqlInstance $TestConfig.instance1 -SecurePassword $securePassword -FileBaseName "smk($randomNum)" -Confirm:$false
+            [IO.Path]::GetFileNameWithoutExtension($fileBackupResults.Path) | Should -Be "smk($randomNum)"
+            $fileBackupResults.Status | Should -Be "Success"
+            $null = Remove-Item -Path $fileBackupResults.Path -ErrorAction SilentlyContinue -Confirm:$false
         }
     }
 }

@@ -67,7 +67,14 @@ Describe "Backup-DbaDbCertificate" -Tag "IntegrationTests" {
 
     Context "Can backup a database certificate" {
         BeforeAll {
-            $results = Backup-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Database $db1Name -Certificate $cert1.Name -EncryptionPassword $pw -DecryptionPassword $pw
+            $splatBackupCert = @{
+                SqlInstance        = $TestConfig.instance1
+                Database           = $db1Name
+                Certificate        = $cert1.Name
+                EncryptionPassword = $pw
+                DecryptionPassword = $pw
+            }
+            $results = Backup-DbaDbCertificate @splatBackupCert
         }
 
         AfterAll {
@@ -84,7 +91,15 @@ Describe "Backup-DbaDbCertificate" -Tag "IntegrationTests" {
 
     Context "Can backup a database certificate with a filename (see #9485)" {
         BeforeAll {
-            $results = Backup-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Database $db1Name -Certificate $cert1.Name -EncryptionPassword $pw -DecryptionPassword $pw -FileBaseName "dbatoolscli_cert1_$random"
+            $splatBackupCertWithName = @{
+                SqlInstance        = $TestConfig.instance1
+                Database           = $db1Name
+                Certificate        = $cert1.Name
+                EncryptionPassword = $pw
+                DecryptionPassword = $pw
+                FileBaseName       = "dbatoolscli_cert1_$random"
+            }
+            $results = Backup-DbaDbCertificate @splatBackupCertWithName
         }
 
         AfterAll {
@@ -102,9 +117,17 @@ Describe "Backup-DbaDbCertificate" -Tag "IntegrationTests" {
 
     Context "Warns the caller if the cert cannot be found" {
         BeforeAll {
-            $invalidDBCertName = "dbatoolscli_invalidCertName"
+            $invalidDBCertName  = "dbatoolscli_invalidCertName"
             $invalidDBCertName2 = "dbatoolscli_invalidCertName2"
-            $results = Backup-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Database $db1Name -Certificate $invalidDBCertName, $invalidDBCertName2, $cert2.Name -EncryptionPassword $pw -DecryptionPassword $pw -WarningAction SilentlyContinue
+            $splatBackupInvalidCert = @{
+                SqlInstance        = $TestConfig.instance1
+                Database           = $db1Name
+                Certificate        = @($invalidDBCertName, $invalidDBCertName2, $cert2.Name)
+                EncryptionPassword = $pw
+                DecryptionPassword = $pw
+                WarningAction      = "SilentlyContinue"
+            }
+            $results = Backup-DbaDbCertificate @splatBackupInvalidCert
         }
 
         AfterAll {
@@ -119,7 +142,13 @@ Describe "Backup-DbaDbCertificate" -Tag "IntegrationTests" {
 
     Context "Backs up all db certs for a database" {
         BeforeAll {
-            $results = Backup-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Database $db1Name -EncryptionPassword $pw -DecryptionPassword $pw
+            $splatBackupDbCerts = @{
+                SqlInstance        = $TestConfig.instance1
+                Database           = $db1Name
+                EncryptionPassword = $pw
+                DecryptionPassword = $pw
+            }
+            $results = Backup-DbaDbCertificate @splatBackupDbCerts
         }
 
         AfterAll {
@@ -135,7 +164,12 @@ Describe "Backup-DbaDbCertificate" -Tag "IntegrationTests" {
 
     Context "Backs up all db certs for an instance" {
         BeforeAll {
-            $results = Backup-DbaDbCertificate -SqlInstance $TestConfig.instance1 -EncryptionPassword $pw -DecryptionPassword $pw
+            $splatBackupAllCerts = @{
+                SqlInstance        = $TestConfig.instance1
+                EncryptionPassword = $pw
+                DecryptionPassword = $pw
+            }
+            $results = Backup-DbaDbCertificate @splatBackupAllCerts
         }
 
         AfterAll {

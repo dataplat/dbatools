@@ -1,13 +1,14 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
 param(
-    $ModuleName = "dbatools",
+    $ModuleName  = "dbatools",
+    $CommandName = "Backup-DbaComputerCertificate",
     $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
 )
 
-Describe "Backup-DbaComputerCertificate" -Tag "UnitTests" {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
-            $command = Get-Command Backup-DbaComputerCertificate
+            $command = Get-Command $CommandName
             $expected = $TestConfig.CommonParameters
             $expected += @(
                 "SecurePassword",
@@ -19,8 +20,10 @@ Describe "Backup-DbaComputerCertificate" -Tag "UnitTests" {
             )
         }
 
-        It "Has parameter: <_>" -ForEach $expected {
-            $command | Should -HaveParameter $PSItem
+        foreach ($param in $expected) {
+            It "Has parameter: $param" {
+                $command | Should -HaveParameter $param
+            }
         }
 
         It "Should have exactly the number of expected parameters ($($expected.Count))" {
@@ -30,9 +33,9 @@ Describe "Backup-DbaComputerCertificate" -Tag "UnitTests" {
     }
 }
 
-Describe "Backup-DbaComputerCertificate" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $certThumbprint = "29C469578D6C6211076A09CEE5C5797EEA0C2713"
         $certPath = "$($TestConfig.appveyorlabrepo)\certificates\localhost.crt"
@@ -40,13 +43,13 @@ Describe "Backup-DbaComputerCertificate" -Tag "IntegrationTests" {
 
         $null = Add-DbaComputerCertificate -Path $certPath
 
-        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaComputerCertificate -Thumbprint $certThumbprint
+        $null = Remove-DbaComputerCertificate -Thumbprint $certThumbprint -ErrorAction SilentlyContinue
     }
 
     Context "Certificate is backed up properly" {
@@ -55,7 +58,7 @@ Describe "Backup-DbaComputerCertificate" -Tag "IntegrationTests" {
         }
 
         AfterAll {
-            Get-ChildItem -Path $result.FullName | Remove-Item
+            Get-ChildItem -Path $result.FullName -ErrorAction SilentlyContinue | Remove-Item -ErrorAction SilentlyContinue
         }
 
         It "Returns the proper results" {
