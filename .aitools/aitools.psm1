@@ -209,7 +209,12 @@ function Update-PesterTest {
             $commandsToProcess = Get-Command -Module dbatools -Type Function, Cmdlet | Select-Object -First $First -Skip $Skip
         }
 
+        # Get total count for progress tracking
+        $totalCommands = $commandsToProcess.Count
+        $currentCommand = 0
+
         foreach ($command in $commandsToProcess) {
+            $currentCommand++
             $cmdName = $command.Name
             $filename = (Resolve-Path "$PSScriptRoot/../tests/$cmdName.Tests.ps1" -ErrorAction SilentlyContinue).Path
 
@@ -292,6 +297,7 @@ function Update-PesterTest {
                         }
 
                         Write-Verbose "Invoking $Tool to update test file"
+                        Write-Progress -Activity "Updating Pester Tests with $Tool" -Status "Processing $cmdName ($currentCommand/$totalCommands)" -PercentComplete (($currentCommand / $totalCommands) * 100)
                         Invoke-AITool @aiParams
                     }
                 } else {
@@ -329,6 +335,7 @@ function Update-PesterTest {
                     }
 
                     Write-Verbose "Invoking $Tool to update test file"
+                    Write-Progress -Activity "Updating Pester Tests with $Tool" -Status "Processing $cmdName ($currentCommand/$totalCommands)" -PercentComplete (($currentCommand / $totalCommands) * 100)
                     Invoke-AITool @aiParams
                 }
 
@@ -350,6 +357,9 @@ function Update-PesterTest {
                     Invoke-AutoFix @autoFixParams
                 }
             }
+
+            # Complete the progress bar
+            Write-Progress -Activity "Updating Pester Tests with $Tool" -Completed
         }
     }
 }
