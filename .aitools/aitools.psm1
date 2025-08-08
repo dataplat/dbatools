@@ -560,97 +560,100 @@ function Invoke-AITool {
     end {
         for ($i = 0; $i -lt $PassCount; $i++) {
             if ($Tool -eq 'Aider') {
-                $arguments = @()
+                foreach ($singlefile in $allfiles) {
+                    $arguments = @()
 
-                # Add files if any were specified or piped in
-                if ($allFiles) {
-                    $arguments += $allFiles
-                }
-
-                # Add mandatory message parameter
-                if ($Message) {
-                    $arguments += "--message", $Message
-                }
-
-                # Add optional parameters only if they are present
-                if ($Model) {
-                    $arguments += "--model", $Model
-                }
-
-                if ($EditorModel) {
-                    $arguments += "--editor-model", $EditorModel
-                }
-
-                if ($NoPretty) {
-                    $arguments += "--no-pretty"
-                }
-
-                if ($NoStream) {
-                    $arguments += "--no-stream"
-                }
-
-                if ($YesAlways) {
-                    $arguments += "--yes-always"
-                }
-
-                if ($CachePrompts) {
-                    $arguments += "--cache-prompts"
-                }
-
-                if ($PSBoundParameters.ContainsKey('MapTokens')) {
-                    $arguments += "--map-tokens", $MapTokens
-                }
-
-                if ($MapRefresh) {
-                    $arguments += "--map-refresh", $MapRefresh
-                }
-
-                if ($NoAutoLint) {
-                    $arguments += "--no-auto-lint"
-                }
-
-                if ($AutoTest) {
-                    $arguments += "--auto-test"
-                }
-
-                if ($ShowPrompts) {
-                    $arguments += "--show-prompts"
-                }
-
-                if ($EditFormat) {
-                    $arguments += "--edit-format", $EditFormat
-                }
-
-                if ($MessageFile) {
-                    $arguments += "--message-file", $MessageFile
-                }
-
-                if ($ReadFile) {
-                    foreach ($rf in $ReadFile) {
-                        $arguments += "--read", $rf
+                    # Add files if any were specified or piped in
+                    if ($allFiles) {
+                        $arguments += $allFiles
                     }
-                }
 
-                if ($Encoding) {
-                    $arguments += "--encoding", $Encoding
-                }
+                    # Add mandatory message parameter
+                    if ($Message) {
+                        $arguments += "--message", $Message
+                    }
 
-                if ($ReasoningEffort) {
-                    $arguments += "--reasoning-effort", $ReasoningEffort
-                }
+                    # Add optional parameters only if they are present
+                    if ($Model) {
+                        $arguments += "--model", $Model
+                    }
 
-                if ($VerbosePreference -eq 'Continue') {
-                    Write-Verbose "Executing: aider $($arguments -join ' ')"
-                }
+                    if ($EditorModel) {
+                        $arguments += "--editor-model", $EditorModel
+                    }
 
-                if ($PassCount -gt 1) {
-                    Write-Verbose "Aider pass $($i + 1) of $PassCount"
-                }
+                    if ($NoPretty) {
+                        $arguments += "--no-pretty"
+                    }
 
-                $results = aider @arguments
+                    if ($NoStream) {
+                        $arguments += "--no-stream"
+                    }
 
-                [pscustomobject]@{
-                    Results = "$results"
+                    if ($YesAlways) {
+                        $arguments += "--yes-always"
+                    }
+
+                    if ($CachePrompts) {
+                        $arguments += "--cache-prompts"
+                    }
+
+                    if ($PSBoundParameters.ContainsKey('MapTokens')) {
+                        $arguments += "--map-tokens", $MapTokens
+                    }
+
+                    if ($MapRefresh) {
+                        $arguments += "--map-refresh", $MapRefresh
+                    }
+
+                    if ($NoAutoLint) {
+                        $arguments += "--no-auto-lint"
+                    }
+
+                    if ($AutoTest) {
+                        $arguments += "--auto-test"
+                    }
+
+                    if ($ShowPrompts) {
+                        $arguments += "--show-prompts"
+                    }
+
+                    if ($EditFormat) {
+                        $arguments += "--edit-format", $EditFormat
+                    }
+
+                    if ($MessageFile) {
+                        $arguments += "--message-file", $MessageFile
+                    }
+
+                    if ($ReadFile) {
+                        foreach ($rf in $ReadFile) {
+                            $arguments += "--read", $rf
+                        }
+                    }
+
+                    if ($Encoding) {
+                        $arguments += "--encoding", $Encoding
+                    }
+
+                    if ($ReasoningEffort) {
+                        $arguments += "--reasoning-effort", $ReasoningEffort
+                    }
+
+                    if ($VerbosePreference -eq 'Continue') {
+                        Write-Verbose "Executing: aider $($arguments -join ' ')"
+                    }
+
+                    if ($PassCount -gt 1) {
+                        Write-Verbose "Aider pass $($i + 1) of $PassCount"
+                    }
+
+                    $results = aider @arguments
+
+                    [pscustomobject]@{
+                        FileName = (Split-Path $singlefile -Leaf)
+                        Results  = "$results"
+                    }
                 }
 
             } else {
@@ -680,64 +683,67 @@ function Invoke-AITool {
                     }
                 }
 
-                # Build arguments array
-                $arguments = @()
+                foreach ($singlefile in $allFiles) {
+                    # Build arguments array
+                    $arguments = @()
 
-                # Add non-interactive print mode FIRST
-                $arguments += "-p", $fullMessage
+                    # Add non-interactive print mode FIRST
+                    $arguments += "-p", $fullMessage
 
-                # Add the dangerous flag early
-                if ($DangerouslySkipPermissions) {
-                    $arguments += "--dangerously-skip-permissions"
-                    Write-Verbose "Adding --dangerously-skip-permissions to avoid prompts"
-                }
-
-                # Add allowed tools
-                $arguments += "--allowedTools", "Read,Write,Edit,Create,Replace"
-
-                # Add optional parameters
-                if ($Model) {
-                    $arguments += "--model", $Model
-                    Write-Verbose "Using model: $Model"
-                }
-
-                if ($OutputFormat) {
-                    $arguments += "--output-format", $OutputFormat
-                    Write-Verbose "Using output format: $OutputFormat"
-                }
-
-                if ($MaxTurns) {
-                    $arguments += "--max-turns", $MaxTurns
-                    Write-Verbose "Using max turns: $MaxTurns"
-                }
-
-                if ($VerbosePreference -eq 'Continue') {
-                    $arguments += "--verbose"
-                }
-
-                # Add files if any were specified or piped in (FILES GO LAST)
-                if ($allFiles) {
-                    Write-Verbose "Adding files to arguments: $($allFiles -join ', ')"
-                    $arguments += $allFiles
-                }
-
-                if ($PassCount -gt 1) {
-                    Write-Verbose "Claude Code pass $($i + 1) of $PassCount"
-                }
-
-                Write-Verbose "Executing: claude $($arguments -join ' ')"
-
-                try {
-                    $results = claude @arguments
-
-                    [pscustomobject]@{
-                        Results = "$results"
+                    # Add the dangerous flag early
+                    if ($DangerouslySkipPermissions) {
+                        $arguments += "--dangerously-skip-permissions"
+                        Write-Verbose "Adding --dangerously-skip-permissions to avoid prompts"
                     }
 
-                    Write-Verbose "Claude Code execution completed successfully"
-                } catch {
-                    Write-Error "Claude Code execution failed: $($_.Exception.Message)"
-                    throw
+                    # Add allowed tools
+                    $arguments += "--allowedTools", "Read,Write,Edit,Create,Replace"
+
+                    # Add optional parameters
+                    if ($Model) {
+                        $arguments += "--model", $Model
+                        Write-Verbose "Using model: $Model"
+                    }
+
+                    if ($OutputFormat) {
+                        $arguments += "--output-format", $OutputFormat
+                        Write-Verbose "Using output format: $OutputFormat"
+                    }
+
+                    if ($MaxTurns) {
+                        $arguments += "--max-turns", $MaxTurns
+                        Write-Verbose "Using max turns: $MaxTurns"
+                    }
+
+                    if ($VerbosePreference -eq 'Continue') {
+                        $arguments += "--verbose"
+                    }
+
+                    # Add files if any were specified or piped in (FILES GO LAST)
+                    if ($allFiles) {
+                        Write-Verbose "Adding file to arguments: $singlefile"
+                        $arguments += $file
+                    }
+
+                    if ($PassCount -gt 1) {
+                        Write-Verbose "Claude Code pass $($i + 1) of $PassCount"
+                    }
+
+                    Write-Verbose "Executing: claude $($arguments -join ' ')"
+
+                    try {
+                        $results = claude @arguments
+
+                        [pscustomobject]@{
+                            FileName = (Split-Path $singlefile -Leaf)
+                            Results  = "$results"
+                        }
+
+                        Write-Verbose "Claude Code execution completed successfully"
+                    } catch {
+                        Write-Error "Claude Code execution failed: $($_.Exception.Message)"
+                        throw
+                    }
                 }
             }
         }
@@ -989,7 +995,7 @@ function Invoke-AutoFix {
             Write-Verbose "Test file path: $filename"
 
             if (-not $filename -or -not (Test-Path $filename)) {
-                Write-Warning "No tests found for $cmdName, file not found"
+                Write-Verbose "No tests found for $cmdName, file not found"
                 continue
             }
 
@@ -1425,7 +1431,7 @@ function Repair-Error {
         Write-Verbose "Processing $command"
 
         if (-not (Test-Path $filename)) {
-            Write-Warning "No tests found for $command, file not found"
+            Write-Verbose "No tests found for $command, file not found"
             continue
         }
 
