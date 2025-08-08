@@ -647,7 +647,11 @@ function Invoke-AITool {
                     Write-Verbose "Aider pass $($i + 1) of $PassCount"
                 }
 
-                aider @arguments
+                $results = aider @arguments
+
+                [pscustomobject]@{
+                    Results = "$results"
+                }
 
             } else {
                 # Claude Code
@@ -724,7 +728,12 @@ function Invoke-AITool {
                 Write-Verbose "Executing: claude $($arguments -join ' ')"
 
                 try {
-                    claude @arguments
+                    $results = claude @arguments
+
+                    [pscustomobject]@{
+                        Results = "$results"
+                    }
+
                     Write-Verbose "Claude Code execution completed successfully"
                 } catch {
                     Write-Error "Claude Code execution failed: $($_.Exception.Message)"
@@ -1005,6 +1014,7 @@ function Invoke-AutoFix {
                         Model         = $Model
                         Tool          = $Tool
                         AutoTest      = $AutoTest
+                        Verbose       = $false
                     }
                     if ($ReasoningEffort) {
                         $invokeParams.ReasoningEffort = $ReasoningEffort
@@ -1088,7 +1098,7 @@ function Invoke-AutoFixSingleFile {
 
             if ($currentViolationCount -eq 0) {
                 Write-Progress -Activity "AutoFix: $([System.IO.Path]::GetFileName($FilePath))" -Status "No violations found - Complete" -PercentComplete 100
-                Write-Output "No PSScriptAnalyzer violations found for $(Split-Path $FilePath -Leaf)"
+                Write-Verbose "No PSScriptAnalyzer violations found for $(Split-Path $FilePath -Leaf)"
                 break
             }
 
@@ -1249,7 +1259,7 @@ function Invoke-AutoFixProcess {
 
             if ($currentViolationCount -eq 0) {
                 Write-Progress -Activity "AutoFixProcess: $([System.IO.Path]::GetFileName($FilePath))" -Status "No violations found - Complete" -PercentComplete 100
-                Write-Output "No PSScriptAnalyzer violations found for $(Split-Path $FilePath -Leaf)"
+                Write-Verbose "No PSScriptAnalyzer violations found for $(Split-Path $FilePath -Leaf)"
                 break
             }
 
@@ -1412,7 +1422,7 @@ function Repair-Error {
 
     foreach ($command in $commands) {
         $filename = (Resolve-Path "$PSScriptRoot/../tests/$command.Tests.ps1" -ErrorAction SilentlyContinue).Path
-        Write-Output "Processing $command"
+        Write-Verbose "Processing $command"
 
         if (-not (Test-Path $filename)) {
             Write-Warning "No tests found for $command, file not found"
@@ -1544,7 +1554,7 @@ function Repair-Error {
 
         foreach ($command in $commands) {
             $filename = (Resolve-Path "$PSScriptRoot/../tests/$command.Tests.ps1" -ErrorAction SilentlyContinue).Path
-            Write-Output "Processing $command with $Tool"
+            Write-Verbose "Processing $command with $Tool"
 
             if (-not (Test-Path $filename)) {
                 Write-Warning "No tests found for $command, file not found"
@@ -1923,5 +1933,3 @@ function Repair-SmallThing {
         Write-Verbose "Repair-SmallThing completed"
     }
 }
-
-Export-ModuleMember -Function Update-PesterTest, Invoke-AITool, Invoke-AutoFix, Repair-Error, Repair-SmallThing
