@@ -353,6 +353,9 @@ function Update-PesterTest {
                 }
             }
         }
+
+        # Clear progress bar when complete
+        Write-Progress -Activity "Updating Pester Tests" -Status "Complete" -Completed
     }
 }
 
@@ -926,9 +929,16 @@ function Invoke-AutoFix {
         $totalCommands = $commandsToProcess.Count
         $currentCommand = 0
 
+        # Initialize progress
+        Write-Progress -Activity "Running AutoFix" -Status "Starting PSScriptAnalyzer fixes..." -PercentComplete 0
+
         foreach ($command in $commandsToProcess) {
             $currentCommand++
             $cmdName = $command.Name
+
+            # Update progress at START of iteration
+            $percentComplete = [math]::Round(($currentCommand / $totalCommands) * 100, 2)
+            Write-Progress -Activity "Running AutoFix" -Status "Fixing $cmdName ($currentCommand of $totalCommands)" -PercentComplete $percentComplete
             $filename = (Resolve-Path "$PSScriptRoot/../tests/$cmdName.Tests.ps1" -ErrorAction SilentlyContinue).Path
 
             # Show progress for every file being processed
@@ -951,11 +961,9 @@ function Invoke-AutoFix {
             if ($PSCmdlet.ShouldProcess($filename, "Run PSScriptAnalyzer fixes using $Tool")) {
                 for ($pass = 1; $pass -le $PassCount; $pass++) {
                     if ($PassCount -gt 1) {
-                        Write-Verbose "Pass $pass of $PassCount for $cmdName"
+                        # Nested progress for multiple passes
+                        Write-Progress -Id 1 -ParentId 0 -Activity "Pass $pass of $PassCount" -Status "Processing $cmdName" -PercentComplete (($pass / $PassCount) * 100)
                     }
-
-                    # Update progress to show processing state
-                    Write-Progress -Activity "Running AutoFix with $Tool" -Status "Processing $cmdName ($currentCommand/$totalCommands)" -PercentComplete (($currentCommand / $totalCommands) * 100)
 
                     # Run the fix process
                     $invokeParams = @{
@@ -972,11 +980,16 @@ function Invoke-AutoFix {
 
                     Invoke-AutoFixProcess @invokeParams
                 }
+
+                # Clear nested progress if used
+                if ($PassCount -gt 1) {
+                    Write-Progress -Id 1 -Activity "Passes Complete" -Completed
+                }
             }
         }
 
-        # Complete the progress bar
-        Write-Progress -Activity "Running AutoFix with $Tool" -Completed
+        # Clear main progress bar
+        Write-Progress -Activity "Running AutoFix" -Status "Complete" -Completed
     }
 }
 
@@ -1010,8 +1023,17 @@ function Invoke-AutoFixSingleFile {
 
     $retryCount = 0
 
+    # Initialize progress
+    Write-Progress -Activity "AutoFix: $([System.IO.Path]::GetFileName($FilePath))" -Status "Starting..." -PercentComplete 0
+
     do {
-        Write-Verbose "Running PSScriptAnalyzer on $FilePath (attempt $($retryCount + 1)/$MaxRetries)"
+        $retryCount++
+
+        # Update progress for each retry attempt
+        $percentComplete = [math]::Round(($retryCount / $MaxRetries) * 100, 2)
+        Write-Progress -Activity "AutoFix: $([System.IO.Path]::GetFileName($FilePath))" -Status "Attempt $retryCount of $MaxRetries - Running PSScriptAnalyzer" -PercentComplete $percentComplete
+
+        Write-Verbose "Running PSScriptAnalyzer on $FilePath (attempt $retryCount/$MaxRetries)"
 
         try {
             # Run PSScriptAnalyzer with the specified settings
@@ -1025,9 +1047,13 @@ function Invoke-AutoFixSingleFile {
             $analysisResults = Invoke-ScriptAnalyzer @scriptAnalyzerParams
 
             if (-not $analysisResults) {
+                Write-Progress -Activity "AutoFix: $([System.IO.Path]::GetFileName($FilePath))" -Status "No violations found - Complete" -PercentComplete 100
                 Write-Output "No PSScriptAnalyzer violations found for $(Split-Path $FilePath -Leaf)"
                 break
             }
+
+            # Update status when sending to AI
+            Write-Progress -Activity "AutoFix: $([System.IO.Path]::GetFileName($FilePath))" -Status "Sending fix request to $Tool (Attempt $retryCount)" -PercentComplete $percentComplete
 
             Write-Verbose "Found $($analysisResults.Count) PSScriptAnalyzer violation(s)"
 
@@ -1073,14 +1099,15 @@ function Invoke-AutoFixSingleFile {
 
             # Invoke the AI tool with the focused fix message
             Invoke-AITool @fixParams
-
-            $retryCount++
         } catch {
             Write-Warning "Failed to run PSScriptAnalyzer on $FilePath`: $($_.Exception.Message)"
             break
         }
 
     } while ($retryCount -lt $MaxRetries)
+
+    # Clear progress
+    Write-Progress -Activity "AutoFix: $([System.IO.Path]::GetFileName($FilePath))" -Status "Complete" -Completed
 
     if ($retryCount -eq $MaxRetries) {
         Write-Warning "AutoFix reached maximum retry limit ($MaxRetries) for $FilePath"
@@ -1116,8 +1143,17 @@ function Invoke-AutoFixProcess {
 
     $retryCount = 0
 
+    # Initialize progress
+    Write-Progress -Activity "AutoFixProcess: $([System.IO.Path]::GetFileName($FilePath))" -Status "Starting..." -PercentComplete 0
+
     do {
-        Write-Verbose "Running PSScriptAnalyzer on $FilePath (attempt $($retryCount + 1)/$MaxRetries)"
+        $retryCount++
+
+        # Update progress for each retry attempt
+        $percentComplete = [math]::Round(($retryCount / $MaxRetries) * 100, 2)
+        Write-Progress -Activity "AutoFixProcess: $([System.IO.Path]::GetFileName($FilePath))" -Status "Attempt $retryCount of $MaxRetries - Running PSScriptAnalyzer" -PercentComplete $percentComplete
+
+        Write-Verbose "Running PSScriptAnalyzer on $FilePath (attempt $retryCount/$MaxRetries)"
 
         try {
             # Run PSScriptAnalyzer with the specified settings
@@ -1130,9 +1166,13 @@ function Invoke-AutoFixProcess {
             $analysisResults = Invoke-ScriptAnalyzer @scriptAnalyzerParams
 
             if (-not $analysisResults) {
+                Write-Progress -Activity "AutoFixProcess: $([System.IO.Path]::GetFileName($FilePath))" -Status "No violations found - Complete" -PercentComplete 100
                 Write-Output "No PSScriptAnalyzer violations found for $(Split-Path $FilePath -Leaf)"
                 break
             }
+
+            # Update status when sending to AI
+            Write-Progress -Activity "AutoFixProcess: $([System.IO.Path]::GetFileName($FilePath))" -Status "Sending fix request to $Tool (Attempt $retryCount)" -PercentComplete $percentComplete
 
             Write-Verbose "Found $($analysisResults.Count) PSScriptAnalyzer violation(s)"
 
@@ -1176,14 +1216,15 @@ function Invoke-AutoFixProcess {
 
             # Invoke the AI tool with the focused fix message
             Invoke-AITool @aiParams
-
-            $retryCount++
         } catch {
             Write-Warning "Failed to run PSScriptAnalyzer on $FilePath`: $($_.Exception.Message)"
             break
         }
 
     } while ($retryCount -lt $MaxRetries)
+
+    # Clear progress
+    Write-Progress -Activity "AutoFixProcess: $([System.IO.Path]::GetFileName($FilePath))" -Status "Complete" -Completed
 
     if ($retryCount -eq $MaxRetries) {
         Write-Warning "AutoFix reached maximum retry limit ($MaxRetries) for $FilePath"
