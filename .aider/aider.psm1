@@ -789,7 +789,7 @@ function Invoke-AutoFix {
                 $fixMessage += "Message: $($result.Message)`n`n"
             }
 
-            $fixMessage += "CONSIDER THIS WITH PESTER CONTEXTS WHEN DECIDING IF SCRIPT ANALYZER IS RIGHT."
+            $fixMessage += "CONSIDER THIS WITH PESTER CONTEXTS AND SCOPES WHEN DECIDING IF SCRIPT ANALYZER IS RIGHT."
 
             Write-Verbose "Sending focused fix request to $Tool"
 
