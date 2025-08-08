@@ -4,12 +4,12 @@ This module provides automation tools for PowerShell development in devcontainer
 
 ## Key Functions
 
-### Invoke-Aider
-Core wrapper for the aider CLI tool. Used by other functions to interact with AI models for code improvements.
+### Invoke-AITool
+Core wrapper for AI coding tools (Aider and Claude Code). Used by other functions to interact with AI models for code improvements.
 
 ```powershell
 # Basic usage
-Invoke-Aider -Message "Fix the bug in parameter validation" -File "tests/Get-Something.Tests.ps1"
+Invoke-AITool -Message "Fix the bug in parameter validation" -File "tests/Get-Something.Tests.ps1"
 
 # Advanced usage with caching and custom model
 $params = @{
@@ -19,7 +19,7 @@ $params = @{
     CachePrompts = $true
     AutoTest = $true
 }
-Invoke-Aider @params
+Invoke-AITool @params
 ```
 
 ### Update-PesterTest
@@ -117,4 +117,4 @@ $params = @{
     ReadFile = ".aider/prompts/conventions.md"
     CachePrompts = $true
 }
-Invoke-Aider @params
+Invoke-AITool @params

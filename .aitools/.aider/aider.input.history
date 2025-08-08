@@ -1,0 +1,2376 @@
+
+# 2025-08-07 19:28:55.568904
++test connection
+
+# 2025-08-07 19:28:55.606900
++test connection
+
+# 2025-08-07 19:31:01.271050
++test connection
+
+# 2025-08-07 19:31:01.295006
++test connection
+
+# 2025-08-07 19:33:53.740478
++test connection
+
+# 2025-08-07 19:33:53.789317
++test connection
+
+# 2025-08-07 19:46:21.479264
++test connection
+
+# 2025-08-07 19:46:21.529937
++test connection
+
+# 2025-08-07 19:46:38.060536
++test connection
+
+# 2025-08-07 19:46:38.079697
++test connection
+
+# 2025-08-07 19:46:53.607139
++test connection
+
+# 2025-08-07 19:46:53.632613
++test connection
+
+# 2025-08-07 20:08:42.665342
++test connection
+
+# 2025-08-07 20:08:42.696650
++test connection
+
+# 2025-08-07 20:09:50.508100
++test connection
+
+# 2025-08-07 20:09:50.655177
++test connection
+
+# 2025-08-07 20:10:03.069286
++test connection
+
+# 2025-08-07 20:10:03.087140
++test connection
+
+# 2025-08-07 20:11:07.957004
++test connection
+
+# 2025-08-07 20:11:07.971085
++test connection
+
+# 2025-08-07 21:01:59.851600
++test connection
+
+# 2025-08-07 21:01:59.866273
++test connection
+
+# 2025-08-07 21:03:25.151610
++test connection
+
+# 2025-08-07 21:03:25.169508
++test connection
+
+# 2025-08-07 21:03:40.550818
++test connection
+
+# 2025-08-07 21:03:40.568920
++test connection
+
+# 2025-08-07 21:04:23.803324
++test connection
+
+# 2025-08-07 21:04:23.829814
++test connection
+
+# 2025-08-07 21:04:36.317516
++test connection
+
+# 2025-08-07 21:04:36.344642
++test connection
+
+# 2025-08-07 21:05:34.386308
++test connection
+
+# 2025-08-07 21:05:34.415322
++test connection
+
+# 2025-08-07 21:06:49.115381
++test connection
+
+# 2025-08-07 21:06:49.137471
++test connection
+
+# 2025-08-07 21:07:44.297441
++test connection
+
+# 2025-08-07 21:07:44.316250
++test connection
+
+# 2025-08-07 21:15:42.003077
++test connection
+
+# 2025-08-07 21:15:42.024055
++test connection
+
+# 2025-08-07 21:15:58.239709
++test connection
+
+# 2025-08-07 21:15:58.257018
++test connection
+
+# 2025-08-07 21:16:53.913714
++test connection
+
+# 2025-08-07 21:16:53.930949
++test connection
+
+# 2025-08-07 21:21:14.437732
++test connection
+
+# 2025-08-07 21:21:14.453273
++test connection
+
+# 2025-08-07 21:21:54.950389
++test connection
+
+# 2025-08-07 21:21:54.984190
++test connection
+
+# 2025-08-07 21:22:09.772594
++test connection
+
+# 2025-08-07 21:22:09.797618
++test connection
+
+# 2025-08-07 21:23:30.049584
++test connection
+
+# 2025-08-07 21:23:30.070137
++test connection
+
+# 2025-08-07 21:24:15.294317
++test connection
+
+# 2025-08-07 21:24:15.312059
++test connection
+
+# 2025-08-07 21:24:45.011688
++test connection
+
+# 2025-08-07 21:24:45.033642
++test connection
+
+# 2025-08-07 21:27:15.538205
++test connection
+
+# 2025-08-07 21:27:15.559544
++test connection
+
+# 2025-08-07 21:27:55.573487
++test connection
+
+# 2025-08-07 21:27:55.593750
++test connection
+
+# 2025-08-07 21:33:22.954991
++test connection
+
+# 2025-08-07 21:33:22.974691
++test connection
+
+# 2025-08-07 21:33:29.604794
++test connection
+
+# 2025-08-07 21:33:29.628354
++test connection
+
+# 2025-08-07 21:34:11.913186
++test connection
+
+# 2025-08-07 21:34:11.934151
++test connection
+
+# 2025-08-07 21:34:18.192700
++test connection
+
+# 2025-08-07 21:34:18.219370
++test connection
+
+# 2025-08-07 21:35:45.663678
++test connection
+
+# 2025-08-07 21:35:45.682412
++test connection
+
+# 2025-08-07 21:39:27.831805
++test connection
+
+# 2025-08-07 21:39:27.850351
++test connection
+
+# 2025-08-07 21:44:03.784410
++test connection
+
+# 2025-08-07 21:44:03.837832
++test connection
+
+# 2025-08-07 23:20:08.801152
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgDatabase.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgDatabase
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Database
++Secondary
++SecondarySqlCredential
++InputObject
++SeedingMode
++SharedPath
++UseLastBackup
++AdvancedBackupParams
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:20:08.824037
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgDatabase.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgDatabase
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Database
++Secondary
++SecondarySqlCredential
++InputObject
++SeedingMode
++SharedPath
++UseLastBackup
++AdvancedBackupParams
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:20:50.088298
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgDatabase.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgDatabase
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Database
++Secondary
++SecondarySqlCredential
++InputObject
++SeedingMode
++SharedPath
++UseLastBackup
++AdvancedBackupParams
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:20:50.119358
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgDatabase.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgDatabase
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Database
++Secondary
++SecondarySqlCredential
++InputObject
++SeedingMode
++SharedPath
++UseLastBackup
++AdvancedBackupParams
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:21:00.729562
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgDatabase.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgDatabase
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Database
++Secondary
++SecondarySqlCredential
++InputObject
++SeedingMode
++SharedPath
++UseLastBackup
++AdvancedBackupParams
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:21:00.754039
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgDatabase.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgDatabase
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Database
++Secondary
++SecondarySqlCredential
++InputObject
++SeedingMode
++SharedPath
++UseLastBackup
++AdvancedBackupParams
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:21:12.812340
++Fix the following PSScriptAnalyzer violations in this file:
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 16
++Message: The variable 'hasParameters' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 58
++Message: The variable 'nonexistingDb' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 103
++Message: The variable 'results' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 128
++Message: The variable 'results' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 148
++Message: The variable 'results' is assigned but never used.
++
++Please fix these specific issues ONLY. Do not provide workarounds, provide fixes.
+
+# 2025-08-07 23:21:12.851615
++Fix the following PSScriptAnalyzer violations in this file:
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 16
++Message: The variable 'hasParameters' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 58
++Message: The variable 'nonexistingDb' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 103
++Message: The variable 'results' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 128
++Message: The variable 'results' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 148
++Message: The variable 'results' is assigned but never used.
++
++Please fix these specific issues ONLY. Do not provide workarounds, provide fixes.
+
+# 2025-08-07 23:21:27.259786
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgListener.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgListener
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Name
++IPAddress
++SubnetIP
++SubnetMask
++Port
++Dhcp
++Passthru
++InputObject
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:21:27.284517
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgListener.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgListener
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Name
++IPAddress
++SubnetIP
++SubnetMask
++Port
++Dhcp
++Passthru
++InputObject
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:21:40.155870
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgListener.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgListener
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Name
++IPAddress
++SubnetIP
++SubnetMask
++Port
++Dhcp
++Passthru
++InputObject
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:21:40.175886
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgListener.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgListener
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Name
++IPAddress
++SubnetIP
++SubnetMask
++Port
++Dhcp
++Passthru
++InputObject
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:21:53.243212
++Fix the following PSScriptAnalyzer violations in this file:
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 11
++Message: The variable 'hasParameters' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 46
++Message: The variable 'listenerName' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 47
++Message: The variable 'listenerIp' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 48
++Message: The variable 'listenerPort' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 57
++Message: The variable 'ag' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 78
++Message: The variable 'results' is assigned but never used.
++
++Please fix these specific issues ONLY. Do not provide workarounds, provide fixes.
+
+# 2025-08-07 23:21:53.275469
++Fix the following PSScriptAnalyzer violations in this file:
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 11
++Message: The variable 'hasParameters' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 46
++Message: The variable 'listenerName' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 47
++Message: The variable 'listenerIp' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 48
++Message: The variable 'listenerPort' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 57
++Message: The variable 'ag' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 78
++Message: The variable 'results' is assigned but never used.
++
++Please fix these specific issues ONLY. Do not provide workarounds, provide fixes.
+
+# 2025-08-07 23:22:05.750543
++Fix the following PSScriptAnalyzer violations in this file:
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 46
++Message: The variable 'splat' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 68
++Message: The variable 'splat' is assigned but never used.
++
++Please fix these specific issues ONLY. Do not provide workarounds, provide fixes.
+
+# 2025-08-07 23:22:05.801269
++Fix the following PSScriptAnalyzer violations in this file:
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 46
++Message: The variable 'splat' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 68
++Message: The variable 'splat' is assigned but never used.
++
++Please fix these specific issues ONLY. Do not provide workarounds, provide fixes.
+
+# 2025-08-07 23:22:15.211719
++Fix the following PSScriptAnalyzer violations in this file:
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 44
++Message: The variable 'agName' is assigned but never used.
++
++Please fix these specific issues ONLY. Do not provide workarounds, provide fixes.
+
+# 2025-08-07 23:22:15.230021
++Fix the following PSScriptAnalyzer violations in this file:
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 44
++Message: The variable 'agName' is assigned but never used.
++
++Please fix these specific issues ONLY. Do not provide workarounds, provide fixes.
+
+# 2025-08-07 23:25:13.925544
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgDatabase.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgDatabase
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Database
++Secondary
++SecondarySqlCredential
++InputObject
++SeedingMode
++SharedPath
++UseLastBackup
++AdvancedBackupParams
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:25:13.959992
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgDatabase.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgDatabase
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Database
++Secondary
++SecondarySqlCredential
++InputObject
++SeedingMode
++SharedPath
++UseLastBackup
++AdvancedBackupParams
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:25:21.105225
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgDatabase.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgDatabase
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Database
++Secondary
++SecondarySqlCredential
++InputObject
++SeedingMode
++SharedPath
++UseLastBackup
++AdvancedBackupParams
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:25:21.126153
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgDatabase.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgDatabase
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Database
++Secondary
++SecondarySqlCredential
++InputObject
++SeedingMode
++SharedPath
++UseLastBackup
++AdvancedBackupParams
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:25:26.923864
++The following are PSScriptAnalyzer violations that need to be fixed:
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 16
++Message: The variable 'hasParameters' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 58
++Message: The variable 'nonexistingDb' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 103
++Message: The variable 'results' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 128
++Message: The variable 'results' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 148
++Message: The variable 'results' is assigned but never used.
++
++Delete all unused variable assignments identified above. Remove the entire line for each unused variable. Make no other changes to the code that are not included in this fix list.
+
+# 2025-08-07 23:25:26.950522
++The following are PSScriptAnalyzer violations that need to be fixed:
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 16
++Message: The variable 'hasParameters' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 58
++Message: The variable 'nonexistingDb' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 103
++Message: The variable 'results' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 128
++Message: The variable 'results' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 148
++Message: The variable 'results' is assigned but never used.
++
++Delete all unused variable assignments identified above. Remove the entire line for each unused variable. Make no other changes to the code that are not included in this fix list.
+
+# 2025-08-07 23:26:18.850107
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgDatabase.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgDatabase
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Database
++Secondary
++SecondarySqlCredential
++InputObject
++SeedingMode
++SharedPath
++UseLastBackup
++AdvancedBackupParams
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:26:18.878134
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgDatabase.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgDatabase
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Database
++Secondary
++SecondarySqlCredential
++InputObject
++SeedingMode
++SharedPath
++UseLastBackup
++AdvancedBackupParams
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:26:49.455818
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgDatabase.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgDatabase
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Database
++Secondary
++SecondarySqlCredential
++InputObject
++SeedingMode
++SharedPath
++UseLastBackup
++AdvancedBackupParams
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:26:49.476611
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgDatabase.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgDatabase
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Database
++Secondary
++SecondarySqlCredential
++InputObject
++SeedingMode
++SharedPath
++UseLastBackup
++AdvancedBackupParams
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:27:43.125101
++The following are PSScriptAnalyzer violations that need to be fixed:
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 22
++Message: The variable 'hasParameters' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 64
++Message: The variable 'nonexistingDb' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 109
++Message: The variable 'results' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 134
++Message: The variable 'results' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 154
++Message: The variable 'results' is assigned but never used.
++
++Rule: PSPlaceCloseBrace
++Line: 13
++Message: Close brace before a branch statement is followed by a new line.
++
++Rule: PSUseConsistentWhitespace
++Line: 15
++Message: Use space before closing brace.
++
++Delete all unused variable assignments identified above. Remove the entire line for each unused variable. Make no other changes to the code that are not included in this fix list.
+
+# 2025-08-07 23:27:43.172685
++The following are PSScriptAnalyzer violations that need to be fixed:
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 22
++Message: The variable 'hasParameters' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 64
++Message: The variable 'nonexistingDb' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 109
++Message: The variable 'results' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 134
++Message: The variable 'results' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 154
++Message: The variable 'results' is assigned but never used.
++
++Rule: PSPlaceCloseBrace
++Line: 13
++Message: Close brace before a branch statement is followed by a new line.
++
++Rule: PSUseConsistentWhitespace
++Line: 15
++Message: Use space before closing brace.
++
++Delete all unused variable assignments identified above. Remove the entire line for each unused variable. Make no other changes to the code that are not included in this fix list.
+
+# 2025-08-07 23:28:30.158885
++The following are PSScriptAnalyzer violations that need to be fixed:
++
++Rule: PSPlaceCloseBrace
++Line: 13
++Message: Close brace before a branch statement is followed by a new line.
++
++Rule: PSUseConsistentWhitespace
++Line: 15
++Message: Use space before closing brace.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 102
++Message: The variable 'splat' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 123
++Message: The variable 'splatAddAgDb' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 144
++Message: The variable 'splatAddAgDb' is assigned but never used.
++
++Delete all unused variable assignments identified above. Remove the entire line for each unused variable. Make no other changes to the code that are not included in this fix list.
+
+# 2025-08-07 23:28:30.177887
++The following are PSScriptAnalyzer violations that need to be fixed:
++
++Rule: PSPlaceCloseBrace
++Line: 13
++Message: Close brace before a branch statement is followed by a new line.
++
++Rule: PSUseConsistentWhitespace
++Line: 15
++Message: Use space before closing brace.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 102
++Message: The variable 'splat' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 123
++Message: The variable 'splatAddAgDb' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 144
++Message: The variable 'splatAddAgDb' is assigned but never used.
++
++Delete all unused variable assignments identified above. Remove the entire line for each unused variable. Make no other changes to the code that are not included in this fix list.
+
+# 2025-08-07 23:29:06.328569
++The following are PSScriptAnalyzer violations that need to be fixed:
++
++Rule: PSPlaceCloseBrace
++Line: 13
++Message: Close brace before a branch statement is followed by a new line.
++
++Rule: PSUseConsistentWhitespace
++Line: 15
++Message: Use space before closing brace.
++
++Delete all unused variable assignments identified above. Remove the entire line for each unused variable. Make no other changes to the code that are not included in this fix list.
+
+# 2025-08-07 23:29:06.365451
++The following are PSScriptAnalyzer violations that need to be fixed:
++
++Rule: PSPlaceCloseBrace
++Line: 13
++Message: Close brace before a branch statement is followed by a new line.
++
++Rule: PSUseConsistentWhitespace
++Line: 15
++Message: Use space before closing brace.
++
++Delete all unused variable assignments identified above. Remove the entire line for each unused variable. Make no other changes to the code that are not included in this fix list.
+
+# 2025-08-07 23:30:34.687493
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgDatabase.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgDatabase
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Database
++Secondary
++SecondarySqlCredential
++InputObject
++SeedingMode
++SharedPath
++UseLastBackup
++AdvancedBackupParams
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:30:34.711811
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgDatabase.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgDatabase
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Database
++Secondary
++SecondarySqlCredential
++InputObject
++SeedingMode
++SharedPath
++UseLastBackup
++AdvancedBackupParams
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:30:41.910679
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgDatabase.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgDatabase
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Database
++Secondary
++SecondarySqlCredential
++InputObject
++SeedingMode
++SharedPath
++UseLastBackup
++AdvancedBackupParams
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:30:41.930539
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgDatabase.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgDatabase
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Database
++Secondary
++SecondarySqlCredential
++InputObject
++SeedingMode
++SharedPath
++UseLastBackup
++AdvancedBackupParams
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:30:56.875158
++The following are PSScriptAnalyzer violations that need to be fixed:
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 16
++Message: The variable 'hasParameters' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 58
++Message: The variable 'nonexistingDb' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 103
++Message: The variable 'results' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 130
++Message: The variable 'results' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 152
++Message: The variable 'results' is assigned but never used.
++
++Delete all unused variable assignments identified above. Remove the entire line for each unused variable. Make no other changes to the code that are not included in this fix list.
+
+# 2025-08-07 23:30:56.892720
++The following are PSScriptAnalyzer violations that need to be fixed:
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 16
++Message: The variable 'hasParameters' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 58
++Message: The variable 'nonexistingDb' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 103
++Message: The variable 'results' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 130
++Message: The variable 'results' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 152
++Message: The variable 'results' is assigned but never used.
++
++Delete all unused variable assignments identified above. Remove the entire line for each unused variable. Make no other changes to the code that are not included in this fix list.
+
+# 2025-08-07 23:31:10.669033
++The following are PSScriptAnalyzer violations that need to be fixed:
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 96
++Message: The variable 'splat' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 121
++Message: The variable 'splatAddAgDb' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 142
++Message: The variable 'splatAddAgDb' is assigned but never used.
++
++Delete all unused variable assignments identified above. Remove the entire line for each unused variable. Make no other changes to the code that are not included in this fix list.
+
+# 2025-08-07 23:31:10.715945
++The following are PSScriptAnalyzer violations that need to be fixed:
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 96
++Message: The variable 'splat' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 121
++Message: The variable 'splatAddAgDb' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 142
++Message: The variable 'splatAddAgDb' is assigned but never used.
++
++Delete all unused variable assignments identified above. Remove the entire line for each unused variable. Make no other changes to the code that are not included in this fix list.
+
+# 2025-08-07 23:31:19.873981
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgListener.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgListener
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Name
++IPAddress
++SubnetIP
++SubnetMask
++Port
++Dhcp
++Passthru
++InputObject
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:31:19.899628
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgListener.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgListener
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Name
++IPAddress
++SubnetIP
++SubnetMask
++Port
++Dhcp
++Passthru
++InputObject
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:31:28.001404
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgListener.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgListener
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Name
++IPAddress
++SubnetIP
++SubnetMask
++Port
++Dhcp
++Passthru
++InputObject
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:31:28.020059
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgListener.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgListener
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Name
++IPAddress
++SubnetIP
++SubnetMask
++Port
++Dhcp
++Passthru
++InputObject
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:38:19.603625
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgDatabase.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgDatabase
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Database
++Secondary
++SecondarySqlCredential
++InputObject
++SeedingMode
++SharedPath
++UseLastBackup
++AdvancedBackupParams
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:38:19.629160
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgDatabase.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgDatabase
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Database
++Secondary
++SecondarySqlCredential
++InputObject
++SeedingMode
++SharedPath
++UseLastBackup
++AdvancedBackupParams
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:45:12.640073
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgDatabase.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgDatabase
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Database
++Secondary
++SecondarySqlCredential
++InputObject
++SeedingMode
++SharedPath
++UseLastBackup
++AdvancedBackupParams
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:45:12.656313
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgDatabase.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgDatabase
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Database
++Secondary
++SecondarySqlCredential
++InputObject
++SeedingMode
++SharedPath
++UseLastBackup
++AdvancedBackupParams
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:45:20.193008
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgDatabase.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgDatabase
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Database
++Secondary
++SecondarySqlCredential
++InputObject
++SeedingMode
++SharedPath
++UseLastBackup
++AdvancedBackupParams
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:45:20.224630
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgDatabase.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgDatabase
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Database
++Secondary
++SecondarySqlCredential
++InputObject
++SeedingMode
++SharedPath
++UseLastBackup
++AdvancedBackupParams
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:45:31.740672
++The following are PSScriptAnalyzer violations that need to be fixed:
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 16
++Message: The variable 'hasParameters' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 63
++Message: The variable 'nonexistingDb' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 108
++Message: The variable 'results' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 133
++Message: The variable 'results' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 153
++Message: The variable 'results' is assigned but never used.
++
++Delete all unused variable assignments identified above. Remove the entire line for each unused variable. Make no other changes to the code that are not included in this fix list.
+
+# 2025-08-07 23:45:31.763804
++The following are PSScriptAnalyzer violations that need to be fixed:
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 16
++Message: The variable 'hasParameters' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 63
++Message: The variable 'nonexistingDb' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 108
++Message: The variable 'results' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 133
++Message: The variable 'results' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 153
++Message: The variable 'results' is assigned but never used.
++
++Delete all unused variable assignments identified above. Remove the entire line for each unused variable. Make no other changes to the code that are not included in this fix list.
+
+# 2025-08-07 23:45:44.266322
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgListener.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgListener
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Name
++IPAddress
++SubnetIP
++SubnetMask
++Port
++Dhcp
++Passthru
++InputObject
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:45:44.291880
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgListener.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgListener
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Name
++IPAddress
++SubnetIP
++SubnetMask
++Port
++Dhcp
++Passthru
++InputObject
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:45:52.222354
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgListener.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgListener
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Name
++IPAddress
++SubnetIP
++SubnetMask
++Port
++Dhcp
++Passthru
++InputObject
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:45:52.236424
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgListener.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgListener
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Name
++IPAddress
++SubnetIP
++SubnetMask
++Port
++Dhcp
++Passthru
++InputObject
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:46:00.510529
++The following are PSScriptAnalyzer violations that need to be fixed:
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 11
++Message: The variable 'hasParameters' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 47
++Message: The variable 'listenerName' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 48
++Message: The variable 'listenerIp' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 49
++Message: The variable 'listenerPort' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 58
++Message: The variable 'ag' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 79
++Message: The variable 'results' is assigned but never used.
++
++Delete all unused variable assignments identified above. Remove the entire line for each unused variable. Make no other changes to the code that are not included in this fix list.
+
+# 2025-08-07 23:46:00.527533
++The following are PSScriptAnalyzer violations that need to be fixed:
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 11
++Message: The variable 'hasParameters' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 47
++Message: The variable 'listenerName' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 48
++Message: The variable 'listenerIp' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 49
++Message: The variable 'listenerPort' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 58
++Message: The variable 'ag' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 79
++Message: The variable 'results' is assigned but never used.
++
++Delete all unused variable assignments identified above. Remove the entire line for each unused variable. Make no other changes to the code that are not included in this fix list.
+
+# 2025-08-07 23:46:08.884518
++The following are PSScriptAnalyzer violations that need to be fixed:
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 45
++Message: The variable 'agName' is assigned but never used.
++
++Delete all unused variable assignments identified above. Remove the entire line for each unused variable. Make no other changes to the code that are not included in this fix list.
+
+# 2025-08-07 23:46:08.899074
++The following are PSScriptAnalyzer violations that need to be fixed:
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 45
++Message: The variable 'agName' is assigned but never used.
++
++Delete all unused variable assignments identified above. Remove the entire line for each unused variable. Make no other changes to the code that are not included in this fix list.
+
+# 2025-08-07 23:49:53.806495
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgDatabase.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgDatabase
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Database
++Secondary
++SecondarySqlCredential
++InputObject
++SeedingMode
++SharedPath
++UseLastBackup
++AdvancedBackupParams
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:49:53.842481
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgDatabase.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgDatabase
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Database
++Secondary
++SecondarySqlCredential
++InputObject
++SeedingMode
++SharedPath
++UseLastBackup
++AdvancedBackupParams
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:50:02.396227
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgDatabase.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgDatabase
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Database
++Secondary
++SecondarySqlCredential
++InputObject
++SeedingMode
++SharedPath
++UseLastBackup
++AdvancedBackupParams
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:50:02.429393
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgDatabase.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgDatabase
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Database
++Secondary
++SecondarySqlCredential
++InputObject
++SeedingMode
++SharedPath
++UseLastBackup
++AdvancedBackupParams
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:50:09.069646
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgListener.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgListener
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Name
++IPAddress
++SubnetIP
++SubnetMask
++Port
++Dhcp
++Passthru
++InputObject
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:50:09.097378
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgListener.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgListener
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Name
++IPAddress
++SubnetIP
++SubnetMask
++Port
++Dhcp
++Passthru
++InputObject
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:50:15.943490
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgListener.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgListener
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Name
++IPAddress
++SubnetIP
++SubnetMask
++Port
++Dhcp
++Passthru
++InputObject
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:50:15.960909
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgListener.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgListener
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Name
++IPAddress
++SubnetIP
++SubnetMask
++Port
++Dhcp
++Passthru
++InputObject
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:53:34.977617
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgDatabase.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgDatabase
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Database
++Secondary
++SecondarySqlCredential
++InputObject
++SeedingMode
++SharedPath
++UseLastBackup
++AdvancedBackupParams
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:53:35.000276
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgDatabase.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgDatabase
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Database
++Secondary
++SecondarySqlCredential
++InputObject
++SeedingMode
++SharedPath
++UseLastBackup
++AdvancedBackupParams
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:56:13.757309
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgDatabase.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgDatabase
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Database
++Secondary
++SecondarySqlCredential
++InputObject
++SeedingMode
++SharedPath
++UseLastBackup
++AdvancedBackupParams
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-07 23:56:13.784516
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgDatabase.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgDatabase
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Database
++Secondary
++SecondarySqlCredential
++InputObject
++SeedingMode
++SharedPath
++UseLastBackup
++AdvancedBackupParams
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-08 00:02:32.287030
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgDatabase.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgDatabase
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Database
++Secondary
++SecondarySqlCredential
++InputObject
++SeedingMode
++SharedPath
++UseLastBackup
++AdvancedBackupParams
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-08 00:02:32.317598
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgDatabase.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgDatabase
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Database
++Secondary
++SecondarySqlCredential
++InputObject
++SeedingMode
++SharedPath
++UseLastBackup
++AdvancedBackupParams
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-08 00:02:41.130079
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgDatabase.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgDatabase
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Database
++Secondary
++SecondarySqlCredential
++InputObject
++SeedingMode
++SharedPath
++UseLastBackup
++AdvancedBackupParams
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-08 00:02:41.156980
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgDatabase.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgDatabase
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Database
++Secondary
++SecondarySqlCredential
++InputObject
++SeedingMode
++SharedPath
++UseLastBackup
++AdvancedBackupParams
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-08 00:02:52.291629
++The following are PSScriptAnalyzer violations that need to be fixed:
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 16
++Message: The variable 'hasParameters' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 61
++Message: The variable 'nonexistingDb' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 106
++Message: The variable 'results' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 134
++Message: The variable 'results' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 154
++Message: The variable 'results' is assigned but never used.
++
++Delete all unused variable assignments identified above. Remove the entire line for each unused variable. Make no other changes to the code that are not included in this fix list.
+
+# 2025-08-08 00:02:52.315581
++The following are PSScriptAnalyzer violations that need to be fixed:
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 16
++Message: The variable 'hasParameters' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 61
++Message: The variable 'nonexistingDb' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 106
++Message: The variable 'results' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 134
++Message: The variable 'results' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 154
++Message: The variable 'results' is assigned but never used.
++
++Delete all unused variable assignments identified above. Remove the entire line for each unused variable. Make no other changes to the code that are not included in this fix list.
+
+# 2025-08-08 00:03:03.489428
++The following are PSScriptAnalyzer violations that need to be fixed:
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 99
++Message: The variable 'splat' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 123
++Message: The variable 'splatAddAgDb' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 144
++Message: The variable 'splatAddAgDb' is assigned but never used.
++
++Delete all unused variable assignments identified above. Remove the entire line for each unused variable. Make no other changes to the code that are not included in this fix list.
+
+# 2025-08-08 00:03:03.531347
++The following are PSScriptAnalyzer violations that need to be fixed:
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 99
++Message: The variable 'splat' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 123
++Message: The variable 'splatAddAgDb' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 144
++Message: The variable 'splatAddAgDb' is assigned but never used.
++
++Delete all unused variable assignments identified above. Remove the entire line for each unused variable. Make no other changes to the code that are not included in this fix list.
+
+# 2025-08-08 00:03:14.575002
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgListener.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgListener
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Name
++IPAddress
++SubnetIP
++SubnetMask
++Port
++Dhcp
++Passthru
++InputObject
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-08 00:03:14.609364
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgListener.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgListener
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Name
++IPAddress
++SubnetIP
++SubnetMask
++Port
++Dhcp
++Passthru
++InputObject
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-08 00:03:28.499260
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgListener.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgListener
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Name
++IPAddress
++SubnetIP
++SubnetMask
++Port
++Dhcp
++Passthru
++InputObject
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-08 00:03:28.560916
++# Pester v4 to v5 Migration
++
++You are an AI assistant created to help migrate Pester tests for the **dbatools PowerShell module** from version 4 to version 5. Analyze and update the file `/workspace/tests/Add-DbaAgListener.Tests.ps1` according to the instructions in conventions.md.
++
++Command name:
++Add-DbaAgListener
++
++Parameters for this command:
++SqlInstance
++SqlCredential
++AvailabilityGroup
++Name
++IPAddress
++SubnetIP
++SubnetMask
++Port
++Dhcp
++Passthru
++InputObject
++EnableException
++WhatIf
++Confirm
++
++Before responding, verify that your answer adheres to the specified coding and migration guidelines.
+
+# 2025-08-08 00:03:37.617956
++The following are PSScriptAnalyzer violations that need to be fixed:
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 11
++Message: The variable 'hasParameters' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 12
++Message: The variable 'expectedParameters' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 50
++Message: The variable 'listenerName' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 51
++Message: The variable 'listenerIp' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 52
++Message: The variable 'listenerPort' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 61
++Message: The variable 'ag' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 82
++Message: The variable 'results' is assigned but never used.
++
++Delete all unused variable assignments identified above. Remove the entire line for each unused variable. Make no other changes to the code that are not included in this fix list.
+
+# 2025-08-08 00:03:37.648485
++The following are PSScriptAnalyzer violations that need to be fixed:
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 11
++Message: The variable 'hasParameters' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 12
++Message: The variable 'expectedParameters' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 50
++Message: The variable 'listenerName' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 51
++Message: The variable 'listenerIp' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 52
++Message: The variable 'listenerPort' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 61
++Message: The variable 'ag' is assigned but never used.
++
++Rule: PSUseDeclaredVarsMoreThanAssignments
++Line: 82
++Message: The variable 'results' is assigned but never used.
++
++Delete all unused variable assignments identified above. Remove the entire line for each unused variable. Make no other changes to the code that are not included in this fix list.

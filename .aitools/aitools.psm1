@@ -1,5 +1,18 @@
 $PSDefaultParameterValues['Import-Module:Verbose'] = $false
 
+# Auto-configure aider environment variables for .aitools directory
+try {
+    $env:AIDER_CONFIG_FILE = (Resolve-Path "$PSScriptRoot/.aider.conf.yml").Path
+    $env:AIDER_ENV_FILE = (Resolve-Path "$PSScriptRoot/.env").Path
+    $env:AIDER_MODEL_SETTINGS_FILE = (Resolve-Path "$PSScriptRoot/.aider.model.settings.yml").Path
+    $env:AIDER_INPUT_HISTORY_FILE = (Resolve-Path "$PSScriptRoot/.aider/aider.input.history").Path
+    $env:AIDER_CHAT_HISTORY_FILE = (Resolve-Path "$PSScriptRoot/.aider/aider.chat.history.md").Path
+    $env:AIDER_LLM_HISTORY_FILE = (Resolve-Path "$PSScriptRoot/.aider/aider.llm.history").Path
+    Write-Verbose "Aider environment configured for .aitools directory"
+} catch {
+    Write-Verbose "Could not configure aider environment: $_"
+}
+
 function Update-PesterTest {
     <#
     .SYNOPSIS
@@ -22,7 +35,7 @@ function Update-PesterTest {
 
     .PARAMETER PromptFilePath
         The path to the template file containing the prompt structure.
-        Defaults to "$PSScriptRoot/../.aider/prompts/template.md".
+        Defaults to "$PSScriptRoot/../aitools/prompts/template.md".
 
     .PARAMETER CacheFilePath
         The path to the file containing cached conventions.
@@ -95,10 +108,10 @@ function Update-PesterTest {
         [PSObject[]]$InputObject,
         [int]$First = 10000,
         [int]$Skip,
-        [string[]]$PromptFilePath = @(Resolve-Path "$PSScriptRoot/../.aider/prompts/template.md").Path,
+        [string[]]$PromptFilePath = @((Resolve-Path "$PSScriptRoot/prompts/template.md" -ErrorAction SilentlyContinue).Path),
         [string[]]$CacheFilePath = @(
-            (Resolve-Path "$PSScriptRoot/../.aider/prompts/conventions.md").Path,
-            (Resolve-Path "$PSScriptRoot/../private/testing/Get-TestConfig.ps1").Path
+            (Resolve-Path "$PSScriptRoot/prompts/conventions.md" -ErrorAction SilentlyContinue).Path,
+            (Resolve-Path "$PSScriptRoot/../private/testing/Get-TestConfig.ps1" -ErrorAction SilentlyContinue).Path
         ),
         [int]$MaxFileSize = 500kb,
         [string]$Model,
@@ -109,7 +122,7 @@ function Update-PesterTest {
         [switch]$AutoFix,
         [string]$AutoFixModel = $Model,
         [int]$MaxRetries = 3,
-        [string]$SettingsPath = (Resolve-Path "$PSScriptRoot/../tests/PSScriptAnalyzerRules.psd1"),
+        [string]$SettingsPath = (Resolve-Path "$PSScriptRoot/../tests/PSScriptAnalyzerRules.psd1" -ErrorAction SilentlyContinue).Path,
         [ValidateSet('minimal', 'medium', 'high')]
         [string]$ReasoningEffort
     )
@@ -121,7 +134,11 @@ function Update-PesterTest {
         }
         Import-Module $PSScriptRoot/../dbatools.psm1 -Force
 
-        $promptTemplate = Get-Content $PromptFilePath
+        $promptTemplate = if ($PromptFilePath[0] -and (Test-Path $PromptFilePath[0])) {
+            Get-Content $PromptFilePath[0]
+        } else {
+            @("Template not found at $($PromptFilePath[0])")
+        }
         $commonParameters = [System.Management.Automation.PSCmdlet]::CommonParameters
         $commandsToProcess = @()
 
@@ -222,10 +239,10 @@ function Update-PesterTest {
 
                 foreach ($cachePath in $CacheFilePath) {
                     Write-Verbose "Examining cache path: $cachePath"
-                    if (Test-Path $cachePath -PathType Container) {
+                    if ($cachePath -and (Test-Path $cachePath -PathType Container)) {
                         Write-Verbose "Found directory: $cachePath"
                         $cacheDirectories += $cachePath
-                    } elseif (Test-Path $cachePath -PathType Leaf) {
+                    } elseif ($cachePath -and (Test-Path $cachePath -PathType Leaf)) {
                         Write-Verbose "Found file: $cachePath"
                         $cacheFiles += $cachePath
                     } else {
@@ -275,7 +292,7 @@ function Update-PesterTest {
                         }
 
                         Write-Verbose "Invoking $Tool to update test file"
-                        Invoke-Aider @aiParams
+                        Invoke-AITool @aiParams
                     }
                 } else {
                     Write-Verbose "CacheFilePath does not contain directories, using files as-is"
@@ -312,7 +329,7 @@ function Update-PesterTest {
                     }
 
                     Write-Verbose "Invoking $Tool to update test file"
-                    Invoke-Aider @aiParams
+                    Invoke-AITool @aiParams
                 }
 
                 # AutoFix workflow - run PSScriptAnalyzer and fix violations if found
@@ -337,13 +354,13 @@ function Update-PesterTest {
     }
 }
 
-function Invoke-Aider {
+function Invoke-AITool {
     <#
     .SYNOPSIS
         Invokes AI coding tools (Aider or Claude Code).
 
     .DESCRIPTION
-        The Invoke-Aider function provides a PowerShell interface to AI pair programming tools.
+        The Invoke-AITool function provides a PowerShell interface to AI pair programming tools.
         It supports both Aider and Claude Code with their respective CLI options and can accept files via pipeline from Get-ChildItem.
 
     .PARAMETER Message
@@ -425,17 +442,17 @@ function Invoke-Aider {
         Maximum number of turns for Claude Code.
 
     .EXAMPLE
-        Invoke-Aider -Message "Fix the bug" -File script.ps1 -Tool Aider
+        Invoke-AITool -Message "Fix the bug" -File script.ps1 -Tool Aider
 
         Asks Aider to fix a bug in script.ps1.
 
     .EXAMPLE
-        Get-ChildItem *.ps1 | Invoke-Aider -Message "Add error handling" -Tool Claude
+        Get-ChildItem *.ps1 | Invoke-AITool -Message "Add error handling" -Tool Claude
 
         Adds error handling to all PowerShell files in the current directory using Claude Code.
 
     .EXAMPLE
-        Invoke-Aider -Message "Update API" -Model claude-sonnet-4-20250514 -Tool Claude -DangerouslySkipPermissions
+        Invoke-AITool -Message "Update API" -Model claude-sonnet-4-20250514 -Tool Claude -DangerouslySkipPermissions
 
         Uses Claude Code with Sonnet 4 to update API code without permission prompts.
     #>
@@ -821,7 +838,7 @@ function Invoke-AutoFix {
             }
 
             # Invoke the AI tool with the focused fix message
-            Invoke-Aider @fixParams
+            Invoke-AITool @fixParams
 
             $retryCount++
         } catch {
@@ -853,15 +870,15 @@ function Repair-Error {
 
     .PARAMETER PromptFilePath
         The path to the template file containing the prompt structure.
-        Defaults to "./.aider/prompts/fix-errors.md".
+        Defaults to "./aitools/prompts/fix-errors.md".
 
     .PARAMETER CacheFilePath
         The path to the file containing cached conventions.
-        Defaults to "./.aider/prompts/conventions.md".
+        Defaults to "./aitools/prompts/conventions.md".
 
     .PARAMETER ErrorFilePath
         The path to the JSON file containing error information.
-        Defaults to "./.aider/prompts/errors.json".
+        Defaults to "./aitools/prompts/errors.json".
 
     .NOTES
         Tags: Testing, Pester, ErrorHandling
@@ -879,17 +896,25 @@ function Repair-Error {
     param (
         [int]$First = 10000,
         [int]$Skip,
-        [string[]]$PromptFilePath = "$PSScriptRoot/../.aider/prompts/fix-errors.md",
-        [string[]]$CacheFilePath = "$PSScriptRoot/../.aider/prompts/conventions.md",
-        [string]$ErrorFilePath = "$PSScriptRoot/../.aider/prompts/errors.json"
+        [string[]]$PromptFilePath = (Resolve-Path "$PSScriptRoot/prompts/fix-errors.md" -ErrorAction SilentlyContinue).Path,
+        [string[]]$CacheFilePath = (Resolve-Path "$PSScriptRoot/prompts/conventions.md" -ErrorAction SilentlyContinue).Path,
+        [string]$ErrorFilePath = (Resolve-Path "$PSScriptRoot/prompts/errors.json" -ErrorAction SilentlyContinue).Path
     )
 
-    $promptTemplate = Get-Content $PromptFilePath
-    $testerrors = Get-Content $ErrorFilePath | ConvertFrom-Json
+    $promptTemplate = if ($PromptFilePath -and (Test-Path $PromptFilePath)) {
+        Get-Content $PromptFilePath
+    } else {
+        @("Error template not found")
+    }
+    $testerrors = if ($ErrorFilePath -and (Test-Path $ErrorFilePath)) {
+        Get-Content $ErrorFilePath | ConvertFrom-Json
+    } else {
+        @()
+    }
     $commands = $testerrors | Select-Object -ExpandProperty Command -Unique | Sort-Object
 
     foreach ($command in $commands) {
-        $filename = "$PSScriptRoot/../tests/$command.Tests.ps1"
+        $filename = (Resolve-Path "$PSScriptRoot/../tests/$command.Tests.ps1" -ErrorAction SilentlyContinue).Path
         Write-Output "Processing $command"
 
         if (-not (Test-Path $filename)) {
@@ -914,7 +939,7 @@ function Repair-Error {
             ReadFile     = $CacheFilePath
         }
 
-        Invoke-Aider @aiderParams
+        Invoke-AITool @aiderParams
     }
 }
 
@@ -923,8 +948,6 @@ function Repair-Error {
 
 
 function Repair-Error {
-    <#
-    .SYNOPSISfunction Repair-Error {
     <#
     .SYNOPSIS
         Repairs errors in dbatools Pester test files.
@@ -941,15 +964,15 @@ function Repair-Error {
 
     .PARAMETER PromptFilePath
         The path to the template file containing the prompt structure.
-        Defaults to "./.aider/prompts/fix-errors.md".
+        Defaults to "./aitools/prompts/fix-errors.md".
 
     .PARAMETER CacheFilePath
         The path to the file containing cached conventions.
-        Defaults to "./.aider/prompts/conventions.md".
+        Defaults to "./aitools/prompts/conventions.md".
 
     .PARAMETER ErrorFilePath
         The path to the JSON file containing error information.
-        Defaults to "./.aider/prompts/errors.json".
+        Defaults to "./aitools/prompts/errors.json".
 
     .PARAMETER Tool
         The AI coding tool to use.
@@ -964,7 +987,7 @@ function Repair-Error {
         Valid values are: minimal, medium, high.
 
     .NOTES
-        Tags: Testing, Pester, ErrorHandling
+        Tags: Testing, Pester, ErrorHandling, AITools
         Author: dbatools team
 
     .EXAMPLE
@@ -983,9 +1006,9 @@ function Repair-Error {
     param (
         [int]$First = 10000,
         [int]$Skip,
-        [string[]]$PromptFilePath = "$PSScriptRoot/../.aider/prompts/fix-errors.md",
-        [string[]]$CacheFilePath = "$PSScriptRoot/../.aider/prompts/conventions.md",
-        [string]$ErrorFilePath = "$PSScriptRoot/../.aider/prompts/errors.json",
+        [string[]]$PromptFilePath = (Resolve-Path "$PSScriptRoot/prompts/fix-errors.md" -ErrorAction SilentlyContinue).Path,
+        [string[]]$CacheFilePath = (Resolve-Path "$PSScriptRoot/prompts/conventions.md" -ErrorAction SilentlyContinue).Path,
+        [string]$ErrorFilePath = (Resolve-Path "$PSScriptRoot/prompts/errors.json" -ErrorAction SilentlyContinue).Path,
         [ValidateSet('Aider', 'Claude')]
         [string]$Tool = 'Claude',
         [string]$Model,
@@ -1007,8 +1030,16 @@ function Repair-Error {
     }
 
     end {
-        $promptTemplate = Get-Content $PromptFilePath
-        $testerrors = Get-Content $ErrorFilePath | ConvertFrom-Json
+        $promptTemplate = if ($PromptFilePath -and (Test-Path $PromptFilePath)) {
+            Get-Content $PromptFilePath
+        } else {
+            @("Error template not found")
+        }
+        $testerrors = if ($ErrorFilePath -and (Test-Path $ErrorFilePath)) {
+            Get-Content $ErrorFilePath | ConvertFrom-Json
+        } else {
+            @()
+        }
         $commands = $testerrors | Select-Object -ExpandProperty Command -Unique | Sort-Object
 
         foreach ($command in $commands) {
@@ -1054,7 +1085,7 @@ function Repair-Error {
                 $aiderParams.ReasoningEffort = $ReasoningEffort
             }
 
-            Invoke-Aider @aiderParams
+            Invoke-AITool @aiderParams
         }
     }
 }
@@ -1366,7 +1397,7 @@ function Repair-SmallThing {
 
             Write-Verbose "Invoking $Tool for $cmdName"
             try {
-                Invoke-Aider @aiderParams
+                Invoke-AITool @aiderParams
                 Write-Verbose "$Tool completed successfully for $cmdName"
             } catch {
                 Write-Error "Error executing $Tool for $cmdName`: $_"
@@ -1376,3 +1407,5 @@ function Repair-SmallThing {
         Write-Verbose "Repair-SmallThing completed"
     }
 }
+
+Export-ModuleMember -Function Update-PesterTest, Invoke-AITool, Invoke-AutoFix, Repair-Error, Repair-SmallThing
