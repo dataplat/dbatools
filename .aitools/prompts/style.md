@@ -32,12 +32,59 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
+        # For all the backups that we want to clean up after the test, we create a directory that we can delete at the end.
+        # Other files can be written there as well, maybe we change the name of that variable later. But for now we focus on backups.
+        $backupPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+        $null = New-Item -Path $backupPath -ItemType Directory
+
+        # Explain what needs to be set up for the test:
+        # To add a database to an availablity group, we need an availability group and a database that has been backed up.
+        # For negative tests, we need a database without a backup and a non existing database.
+
+        # Set variables. They are available in all the It blocks.
+        $agName                  = "addagdb_group"
+        $existingDbWithBackup    = "dbWithBackup"
+        $existingDbWithoutBackup = "dbWithoutBackup"
+        $nonexistingDb           = "dbdoesnotexist"
+
+        # Create the objects.
+        $splat = @{
+            Primary      = $TestConfig.instance3
+            Name         = $agName
+            ClusterType  = "None"
+            FailoverMode = "Manual"
+            Certificate  = "dbatoolsci_AGCert"
+        }
+        $null = New-DbaAvailabilityGroup @splat
+
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instance3 -Name $existingDbWithBackup
+        $null = Backup-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $existingDbWithBackup -Path $backupPath
+
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instance3 -Name $existingDbWithoutBackup
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
     }
 
     AfterAll {
-        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
+        # Cleanup all created object.
+        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agName
+        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $existingDbWithBackup, $existingDbWithoutBackup
+
+        # Remove the backup directory.
+        Remove-Item -Path $backupPath -Recurse
+
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
+
+    # Integration tests here
 }
 ```
 
