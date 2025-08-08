@@ -8,7 +8,7 @@
 - CI/CD system comments (especially AppVeyor)
 - Seemingly unrelated comments
 - Any comment that appears to be a note or reminder
-- Do not delete anything that says #instance2, etc
+- Do not delete anything that says #$TestConfig.instance...
 
 **NO EXCEPTIONS** - Every single comment must remain intact in its original location and format.
 

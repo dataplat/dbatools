@@ -298,7 +298,7 @@ function Update-PesterTest {
                         }
 
                         Write-Verbose "Invoking $Tool to update test file"
-                        Write-Progress -Activity "Updating Pester Tests with $Tool" -Status "Processing $cmdName ($currentCommand/$totalCommands)" -PercentComplete (($currentCommand / $totalCommands) * 100)
+                        Write-Progress -Activity "Updating Pester Tests with $Tool" -Status "Updating and migrating $cmdName ($currentCommand/$totalCommands)" -PercentComplete (($currentCommand / $totalCommands) * 100)
                         Invoke-AITool @aiParams
                     }
                 } else {
