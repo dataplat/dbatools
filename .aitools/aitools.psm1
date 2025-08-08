@@ -728,24 +728,52 @@ function Invoke-AITool {
 function Invoke-AutoFix {
     <#
     .SYNOPSIS
-        Runs PSScriptAnalyzer after AI modifications and attempts to fix violations.
+        Runs PSScriptAnalyzer and attempts to fix violations using AI coding tools.
 
     .DESCRIPTION
-        This helper function runs PSScriptAnalyzer on a modified file and creates targeted
-        fix requests for any violations found. It uses focused messages containing only
-        the ScriptAnalyzer violations and line numbers, without including conventions.
+        This function runs PSScriptAnalyzer on files and creates targeted fix requests
+        for any violations found. It supports batch processing of multiple files and
+        can work with various input types including file paths, FileInfo objects, and
+        command objects from Get-Command.
+
+    .PARAMETER InputObject
+        Array of objects that can be either file paths, FileInfo objects, or command objects (from Get-Command).
+        If not specified, will process commands from the dbatools module.
+
+    .PARAMETER First
+        Specifies the maximum number of files to process.
+
+    .PARAMETER Skip
+        Specifies the number of files to skip before processing.
+
+    .PARAMETER MaxFileSize
+        The maximum size of files to process, in bytes. Files larger than this will be skipped.
+        Defaults to 500kb.
+
+    .PARAMETER PromptFilePath
+        The path to the template file containing custom prompt structure for fixes.
+
+    .PARAMETER CacheFilePath
+        The path to files containing cached conventions and context for better fix quality.
+
+    .PARAMETER PassCount
+        Number of passes to run for each file. Sometimes multiple passes are needed.
+
+    .PARAMETER AutoTest
+        If specified, automatically runs tests after making changes.
 
     .PARAMETER FilePath
-        The path to the file that was modified by the AI tool.
+        The path to a single file that was modified by the AI tool (for backward compatibility).
 
     .PARAMETER SettingsPath
         Path to the PSScriptAnalyzer settings file.
+        Defaults to "tests/PSScriptAnalyzerRules.psd1".
 
     .PARAMETER AiderParams
-        The original AI tool parameters hashtable (will be modified for retry calls).
+        The original AI tool parameters hashtable (for backward compatibility with single file mode).
 
     .PARAMETER MaxRetries
-        Maximum number of retry attempts for fixing violations.
+        Maximum number of retry attempts for fixing violations per file.
 
     .PARAMETER Model
         The AI model to use for fix attempts.
@@ -760,8 +788,185 @@ function Invoke-AutoFix {
         Valid values are: minimal, medium, high.
 
     .NOTES
-        This function modifies the AiderParams hashtable by replacing the Message and
-        removing tool-specific context parameters for focused fix attempts.
+        This function supports both single-file mode (for backward compatibility) and
+        batch processing mode with pipeline support.
+
+    .EXAMPLE
+        PS C:\> Invoke-AutoFix -FilePath "test.ps1" -SettingsPath "rules.psd1" -MaxRetries 3
+        Fixes PSScriptAnalyzer violations in a single file (backward compatibility mode).
+
+    .EXAMPLE
+        PS C:\> Get-ChildItem "tests\*.Tests.ps1" | Invoke-AutoFix -First 10 -Tool Claude
+        Processes the first 10 test files found, fixing PSScriptAnalyzer violations.
+
+    .EXAMPLE
+        PS C:\> Invoke-AutoFix -First 5 -Skip 10 -MaxFileSize 100kb -Tool Aider
+        Processes 5 files starting from the 11th file, skipping files larger than 100kb.
+    #>
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [Parameter(ValueFromPipeline)]
+        [PSObject[]]$InputObject,
+
+        [int]$First = 10000,
+        [int]$Skip = 0,
+        [int]$MaxFileSize = 500kb,
+
+        [string[]]$PromptFilePath,
+        [string[]]$CacheFilePath = @(
+            (Resolve-Path "$PSScriptRoot/prompts/style.md" -ErrorAction SilentlyContinue).Path,
+            (Resolve-Path "$PSScriptRoot/prompts/migration.md" -ErrorAction SilentlyContinue).Path
+        ),
+
+        [int]$PassCount = 1,
+        [switch]$AutoTest,
+
+        # Backward compatibility parameters
+        [string]$FilePath,
+        [string]$SettingsPath = (Resolve-Path "$PSScriptRoot/../tests/PSScriptAnalyzerRules.psd1" -ErrorAction SilentlyContinue).Path,
+        [hashtable]$AiderParams,
+
+        [int]$MaxRetries = 3,
+        [string]$Model,
+
+        [ValidateSet('Aider', 'Claude')]
+        [string]$Tool = 'Claude',
+
+        [ValidateSet('minimal', 'medium', 'high')]
+        [string]$ReasoningEffort
+    )
+
+    begin {
+        # Import required modules
+        if (-not (Get-Module dbatools.library -ListAvailable)) {
+            Write-Warning "dbatools.library not found, installing"
+            Install-Module dbatools.library -Scope CurrentUser -Force
+        }
+        Import-Module $PSScriptRoot/../dbatools.psm1 -Force
+
+        $commonParameters = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $commandsToProcess = @()
+
+        # Validate tool-specific parameters
+        if ($Tool -eq 'Claude') {
+            # Warn about Aider-only parameters when using Claude
+            if ($PSBoundParameters.ContainsKey('CachePrompts')) {
+                Write-Warning "CachePrompts parameter is Aider-specific and will be ignored when using Claude Code"
+            }
+            if ($PSBoundParameters.ContainsKey('NoStream')) {
+                Write-Warning "NoStream parameter is Aider-specific and will be ignored when using Claude Code"
+            }
+            if ($PSBoundParameters.ContainsKey('YesAlways')) {
+                Write-Warning "YesAlways parameter is Aider-specific and will be ignored when using Claude Code"
+            }
+        }
+
+        # Handle backward compatibility - single file mode
+        if ($FilePath -and $AiderParams) {
+            Write-Verbose "Running in backward compatibility mode for single file: $FilePath"
+            Invoke-AutoFixSingleFile -FilePath $FilePath -SettingsPath $SettingsPath -AiderParams $AiderParams -MaxRetries $MaxRetries -Model $Model -Tool $Tool -ReasoningEffort $ReasoningEffort
+            return
+        }
+    }
+
+    process {
+        if ($InputObject) {
+            foreach ($item in $InputObject) {
+                Write-Verbose "Processing input object of type: $($item.GetType().FullName)"
+
+                if ($item -is [System.Management.Automation.CommandInfo]) {
+                    $commandsToProcess += $item
+                } elseif ($item -is [System.IO.FileInfo]) {
+                    $path = (Resolve-Path $item.FullName).Path
+                    Write-Verbose "Processing FileInfo path: $path"
+                    if (Test-Path $path) {
+                        $cmdName = [System.IO.Path]::GetFileNameWithoutExtension($path) -replace '\.Tests$', ''
+                        Write-Verbose "Extracted command name: $cmdName"
+                        $cmd = Get-Command -Name $cmdName -ErrorAction SilentlyContinue
+                        if ($cmd) {
+                            $commandsToProcess += $cmd
+                        } else {
+                            Write-Warning "Could not find command for test file: $path"
+                        }
+                    }
+                } elseif ($item -is [string]) {
+                    Write-Verbose "Processing string path: $item"
+                    try {
+                        $resolvedItem = (Resolve-Path $item).Path
+                        if (Test-Path $resolvedItem) {
+                            $cmdName = [System.IO.Path]::GetFileNameWithoutExtension($resolvedItem) -replace '\.Tests$', ''
+                            Write-Verbose "Extracted command name: $cmdName"
+                            $cmd = Get-Command -Name $cmdName -ErrorAction SilentlyContinue
+                            if ($cmd) {
+                                $commandsToProcess += $cmd
+                            } else {
+                                Write-Warning "Could not find command for test file: $resolvedItem"
+                            }
+                        } else {
+                            Write-Warning "File not found: $resolvedItem"
+                        }
+                    } catch {
+                        Write-Warning "Could not resolve path: $item"
+                    }
+                } else {
+                    Write-Warning "Unsupported input type: $($item.GetType().FullName)"
+                }
+            }
+        }
+    }
+
+    end {
+        if (-not $commandsToProcess) {
+            Write-Verbose "No input objects provided, getting commands from dbatools module"
+            $commandsToProcess = Get-Command -Module dbatools -Type Function, Cmdlet | Select-Object -First $First -Skip $Skip
+        }
+
+        # Get total count for progress tracking
+        $totalCommands = $commandsToProcess.Count
+        $currentCommand = 0
+
+        foreach ($command in $commandsToProcess) {
+            $currentCommand++
+            $cmdName = $command.Name
+            $filename = (Resolve-Path "$PSScriptRoot/../tests/$cmdName.Tests.ps1" -ErrorAction SilentlyContinue).Path
+
+            Write-Verbose "Processing command: $cmdName"
+            Write-Verbose "Test file path: $filename"
+
+            if (-not $filename -or -not (Test-Path $filename)) {
+                Write-Warning "No tests found for $cmdName, file not found"
+                continue
+            }
+
+            # if file is larger than MaxFileSize, skip
+            if ((Get-Item $filename).Length -gt $MaxFileSize) {
+                Write-Warning "Skipping $cmdName because it's too large"
+                continue
+            }
+
+            if ($PSCmdlet.ShouldProcess($filename, "Run PSScriptAnalyzer fixes using $Tool")) {
+                for ($pass = 1; $pass -le $PassCount; $pass++) {
+                    if ($PassCount -gt 1) {
+                        Write-Verbose "Pass $pass of $PassCount for $cmdName"
+                    }
+
+                    Write-Progress -Activity "Running AutoFix with $Tool" -Status "Processing $cmdName ($currentCommand/$totalCommands)" -PercentComplete (($currentCommand / $totalCommands) * 100)
+
+                    # Run the fix process
+                    Invoke-AutoFixProcess -FilePath $filename -SettingsPath $SettingsPath -MaxRetries $MaxRetries -Model $Model -Tool $Tool -ReasoningEffort $ReasoningEffort -CacheFilePath $CacheFilePath -AutoTest $AutoTest
+                }
+            }
+        }
+
+        # Complete the progress bar
+        Write-Progress -Activity "Running AutoFix with $Tool" -Completed
+    }
+}
+
+function Invoke-AutoFixSingleFile {
+    <#
+    .SYNOPSIS
+        Backward compatibility helper for single file AutoFix processing.
     #>
     [CmdletBinding()]
     param(
@@ -850,6 +1055,116 @@ function Invoke-AutoFix {
 
             # Invoke the AI tool with the focused fix message
             Invoke-AITool @fixParams
+
+            $retryCount++
+        } catch {
+            Write-Warning "Failed to run PSScriptAnalyzer on $FilePath`: $($_.Exception.Message)"
+            break
+        }
+
+    } while ($retryCount -lt $MaxRetries)
+
+    if ($retryCount -eq $MaxRetries) {
+        Write-Warning "AutoFix reached maximum retry limit ($MaxRetries) for $FilePath"
+    }
+}
+
+function Invoke-AutoFixProcess {
+    <#
+    .SYNOPSIS
+        Core processing logic for AutoFix operations.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$FilePath,
+
+        [Parameter(Mandatory)]
+        [string]$SettingsPath,
+
+        [Parameter(Mandatory)]
+        [int]$MaxRetries,
+
+        [string]$Model,
+
+        [ValidateSet('Aider', 'Claude')]
+        [string]$Tool = 'Claude',
+
+        [ValidateSet('minimal', 'medium', 'high')]
+        [string]$ReasoningEffort,
+
+        [string[]]$CacheFilePath,
+        [switch]$AutoTest
+    )
+
+    $retryCount = 0
+
+    do {
+        Write-Verbose "Running PSScriptAnalyzer on $FilePath (attempt $($retryCount + 1)/$MaxRetries)"
+
+        try {
+            # Run PSScriptAnalyzer with the specified settings
+            $scriptAnalyzerParams = @{
+                Path        = $FilePath
+                Settings    = $SettingsPath
+                ErrorAction = "Stop"
+            }
+
+            $analysisResults = Invoke-ScriptAnalyzer @scriptAnalyzerParams
+
+            if (-not $analysisResults) {
+                Write-Output "No PSScriptAnalyzer violations found for $(Split-Path $FilePath -Leaf)"
+                return
+            }
+
+            Write-Verbose "Found $($analysisResults.Count) PSScriptAnalyzer violation(s)"
+
+            # Format violations into a focused fix message
+            $fixMessage = "The following are PSScriptAnalyzer violations that need to be fixed:`n`n"
+
+            foreach ($result in $analysisResults) {
+                $fixMessage += "Rule: $($result.RuleName)`n"
+                $fixMessage += "Line: $($result.Line)`n"
+                $fixMessage += "Message: $($result.Message)`n`n"
+            }
+
+            $fixMessage += "CONSIDER THIS WITH PESTER CONTEXTS AND SCOPES WHEN DECIDING IF SCRIPT ANALYZER IS RIGHT."
+
+            Write-Verbose "Sending focused fix request to $Tool"
+
+            # Build AI tool parameters
+            $aiParams = @{
+                Message   = $fixMessage
+                File      = $FilePath
+                Model     = $Model
+                Tool      = $Tool
+                AutoTest  = $AutoTest
+            }
+
+            if ($ReasoningEffort) {
+                $aiParams.ReasoningEffort = $ReasoningEffort
+            } elseif ($Tool -eq 'Aider') {
+                # Set default for Aider to prevent validation errors
+                $aiParams.ReasoningEffort = 'medium'
+            }
+
+            # Add tool-specific parameters
+            if ($Tool -eq 'Aider') {
+                $aiParams.YesAlways = $true
+                $aiParams.NoStream = $true
+                $aiParams.CachePrompts = $true
+                if ($CacheFilePath) {
+                    $aiParams.ReadFile = $CacheFilePath
+                }
+            } else {
+                # For Claude Code, use different approach for context files
+                if ($CacheFilePath) {
+                    $aiParams.ContextFiles = $CacheFilePath
+                }
+            }
+
+            # Invoke the AI tool with the focused fix message
+            Invoke-AITool @aiParams
 
             $retryCount++
         } catch {
