@@ -279,11 +279,8 @@ function Update-PesterTest {
                             PassCount = $PassCount
                         }
 
-                        if ($ReasoningEffort) {
+                        if ($PSBOUndParameters.ContainsKey('ReasoningEffort')) {
                             $aiParams.ReasoningEffort = $ReasoningEffort
-                        } elseif ($Tool -eq 'Aider') {
-                            # Set default for Aider to prevent validation errors
-                            $aiParams.ReasoningEffort = 'medium'
                         }
 
                         # Add tool-specific parameters
@@ -317,11 +314,8 @@ function Update-PesterTest {
                         PassCount = $PassCount
                     }
 
-                    if ($ReasoningEffort) {
+                    if ($PSBOUndParameters.ContainsKey('ReasoningEffort')) {
                         $aiParams.ReasoningEffort = $ReasoningEffort
-                    } elseif ($Tool -eq 'Aider') {
-                        # Set default for Aider to prevent validation errors
-                        $aiParams.ReasoningEffort = 'medium'
                     }
 
                     # Add tool-specific parameters
@@ -352,8 +346,8 @@ function Update-PesterTest {
                         Tool         = $Tool
                     }
 
-                    if ($ReasoningEffort) {
-                        $autoFixParams.ReasoningEffort = $ReasoningEffort
+                    if ($PSBOUndParameters.ContainsKey('ReasoningEffort')) {
+                        $aiParams.ReasoningEffort = $ReasoningEffort
                     }
                     Invoke-AutoFix @autoFixParams
                 }
@@ -864,7 +858,20 @@ function Invoke-AutoFix {
         # Handle backward compatibility - single file mode
         if ($FilePath -and $AiderParams) {
             Write-Verbose "Running in backward compatibility mode for single file: $FilePath"
-            Invoke-AutoFixSingleFile -FilePath $FilePath -SettingsPath $SettingsPath -AiderParams $AiderParams -MaxRetries $MaxRetries -Model $Model -Tool $Tool -ReasoningEffort $ReasoningEffort
+
+            $invokeParams = @{
+                FilePath     = $FilePath
+                SettingsPath = $SettingsPath
+                AiderParams  = $AiderParams
+                MaxRetries   = $MaxRetries
+                Model        = $Model
+                Tool         = $Tool
+            }
+            if ($ReasoningEffort) {
+                $invokeParams.ReasoningEffort = $ReasoningEffort
+            }
+
+            Invoke-AutoFixSingleFile @invokeParams
             return
         }
     }
