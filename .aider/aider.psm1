@@ -336,6 +336,7 @@ function Update-PesterTest {
         }
     }
 }
+
 function Invoke-Aider {
     <#
     .SYNOPSIS
@@ -640,22 +641,19 @@ function Invoke-Aider {
                 # Build arguments array
                 $arguments = @()
 
-                # Add files if any were specified or piped in
-                if ($allFiles) {
-                    Write-Verbose "Adding files to arguments: $($allFiles -join ', ')"
-                    $arguments += $allFiles
-                }
-
-                # Use non-interactive print mode
+                # Add non-interactive print mode FIRST
                 $arguments += "-p", $fullMessage
 
-                # Skip permissions by default to avoid prompts
+                # Add the dangerous flag early
                 if ($DangerouslySkipPermissions) {
                     $arguments += "--dangerously-skip-permissions"
-                    Write-Verbose "Using --dangerously-skip-permissions to avoid prompts"
+                    Write-Verbose "Adding --dangerously-skip-permissions to avoid prompts"
                 }
 
-                # Add optional parameters only if they are present
+                # Add allowed tools
+                $arguments += "--allowedTools", "Read,Write,Edit,Create,Replace"
+
+                # Add optional parameters
                 if ($Model) {
                     $arguments += "--model", $Model
                     Write-Verbose "Using model: $Model"
@@ -673,6 +671,12 @@ function Invoke-Aider {
 
                 if ($VerbosePreference -eq 'Continue') {
                     $arguments += "--verbose"
+                }
+
+                # Add files if any were specified or piped in (FILES GO LAST)
+                if ($allFiles) {
+                    Write-Verbose "Adding files to arguments: $($allFiles -join ', ')"
+                    $arguments += $allFiles
                 }
 
                 if ($PassCount -gt 1) {
