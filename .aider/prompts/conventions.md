@@ -1,22 +1,8 @@
-# Pester v5 Test Standards - Complete Transformation Guide
+# Pester v5 Test Standards - Complete Claude Transformation Guide
 
-## MANDATORY HEADER STRUCTURE
+## CRITICAL COMMENT PRESERVATION REQUIREMENT
 
-Insert this exact header block at the top of every test file:
-```powershell
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
-param(
-    $ModuleName  = "dbatools",
-    $CommandName = "StaticCommandName",
-    $PSDefaultParameterValues = $TestConfig.Defaults
-)
-```
-
-**CRITICAL**: Replace "StaticCommandName" with the actual command name being tested as a static string. Never derive command names dynamically from file paths or directory structures.
-
-## COMMENT PRESERVATION - ABSOLUTE REQUIREMENT
-
-**ALL COMMENTS MUST BE PRESERVED EXACTLY** as they appear in the original code. This includes:
+**ABSOLUTE MANDATE**: ALL COMMENTS MUST BE PRESERVED EXACTLY as they appear in the original code. This includes:
 - Development notes and temporary comments
 - End-of-file comments
 - CI/CD system comments (especially AppVeyor)
@@ -25,43 +11,62 @@ param(
 
 **NO EXCEPTIONS** - Every single comment must remain intact in its original location and format.
 
-## PARAMETER HANDLING
+## TRANSFORMATION OBJECTIVES
 
-- Define all `$CommandName` parameters as static strings in the param block
+<objectives>
+Transform PowerShell test files to comply with Pester v5 standards for the dbatools module. Maintain all existing functionality while enforcing consistent structure and style.
+</objectives>
+
+## MANDATORY HEADER STRUCTURE
+
+<header_requirements>
+Insert this exact header block at the top of every test file:
+
+```powershell
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "StaticCommandName",  # Always use static command name, never derive from file
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
+```
+
+- Replace "StaticCommandName" with the actual command name being tested as a static string
 - Remove all dynamic command name derivation from file paths or directory structures
 - Strip out all knownParameters validation code
-- **Preserve all original parameter names exactly as written** - make no assumptions about parameter naming
+- Preserve all original parameter names exactly as written - make no assumptions about parameter naming
+</header_requirements>
 
-## TEST STRUCTURE TRANSFORMATION
+## TEST STRUCTURE TRANSFORMATIONS
 
+<describe_blocks>
 ### Describe Blocks
-Replace all Describe block names with `$CommandName` variable and add appropriate tags:
+- Replace all Describe block names with `$CommandName` variable
+- Add appropriate tags: `-Tag UnitTests` or `-Tag IntegrationTests`
+- **Never use `-ForEach` parameter on any test blocks**
 
 ```powershell
 Describe $CommandName -Tag UnitTests {
     # tests here
 }
-
-Describe $CommandName -Tag IntegrationTests {
-    # tests here
-}
 ```
+</describe_blocks>
 
-**NEVER use `-ForEach` parameters on any test blocks.**
-
+<context_blocks>
 ### Context Blocks
-Rewrite Context block names to describe specific scenarios or states:
-- "When getting all databases"
-- "When database is offline"
-- "When connecting to SQL Server"
+- Describe specific scenarios or states
+- Use clear, descriptive names that explain the test scenario
+- Example: "When getting all databases", "When database is offline"
+</context_blocks>
 
-### Code Organization Rules
-- **All setup code** → `BeforeAll` or `BeforeEach` blocks
-- **All cleanup code** → `AfterAll` or `AfterEach` blocks
-- **All test assertions** → `It` blocks only
-- **No loose code** in `Describe` or `Context` blocks
+<test_code_placement>
+### Test Code Placement
+- All setup code goes in `BeforeAll` or `BeforeEach` blocks
+- All cleanup code goes in `AfterAll` or `AfterEach` blocks
+- All test assertions go in `It` blocks
+- No loose code in `Describe` or `Context` blocks
+- Set EnableException in BeforeAll and remove in AfterAll for integration tests
 
-### EnableException Pattern for Integration Tests
 ```powershell
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
@@ -72,26 +77,67 @@ Describe $CommandName -Tag IntegrationTests {
 
     AfterAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-        # cleanup code here
+        Remove-Item -Path $filesToRemove -ErrorAction SilentlyContinue
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    Context "When getting all databases" {
+        BeforeAll {
+            $results = Get-DbaDatabase
+        }
+
+        It "Returns results" {
+            $results | Should -Not -BeNullOrEmpty
+        }
     }
 }
 ```
+</test_code_placement>
 
-## PARAMETER & VARIABLE NAMING PATTERNS
+## STYLE GUIDELINES
 
-### Parameter Usage Rules
-- **1-2 parameters**: Use direct parameter format
-- **3+ parameters**: Use splatting with `$splat<Purpose>` naming (never plain `$splat`)
+<formatting_rules>
+### Formatting Rules
+- Use double quotes for strings (we're a SQL Server module)
+- Array declarations should be on multiple lines:
+```powershell
+$array = @(
+    "Item1",
+    "Item2",
+    "Item3"
+)
+```
+- Skip conditions must evaluate to `$true` or `$false`, not strings
+- Use `$global:` instead of `$script:` for test configuration variables when required for Pester v5 scoping
+- No trailing spaces
+- Use `$results.Status.Count` for accurate counting
+- Apply OTBS (One True Brace Style) formatting to all code blocks
+</formatting_rules>
 
-### Hashtable Alignment (3+ Parameters Only)
-Align all splat hashtable assignment operators for readability:
+<where_object_usage>
+### Where-Object Usage
+Avoid script blocks in Where-Object when possible:
+```powershell
+# Good - direct property comparison
+$master    = $databases | Where-Object Name -eq "master"
+$systemDbs = $databases | Where-Object Name -in "master", "model", "msdb", "tempdb"
+
+# Required - script block for Parameters.Keys or filtering
+$hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+```
+</where_object_usage>
+
+<parameter_variable_naming>
+### Parameter & Variable Naming Rules
+- Use direct parameters for 1-2 parameters
+- Use `$splat<Purpose>` for 3+ parameters (never plain `$splat`)
+- Align splat hashtable assignments with consistent spacing for readability
 
 ```powershell
-# Direct parameters (1-2)
+# Direct parameters
 $ag = Get-DbaLogin -SqlInstance $instance -Login $loginName
 
-# Splat with purpose suffix (3+) - aligned = signs
+# Splat with purpose suffix - note aligned = signs
 $splatPrimary = @{
     Primary      = $TestConfig.instance3
     Name         = $primaryAgName
@@ -102,30 +148,43 @@ $splatPrimary = @{
 }
 $primaryAg = New-DbaAvailabilityGroup @splatPrimary
 ```
+</parameter_variable_naming>
 
-### Variable Scope Management
-Use **unique, descriptive names across all scopes** to prevent collisions:
+<unique_names_across_scopes>
+### Unique Names Across Scopes
+Use unique, descriptive variable names across scopes to avoid collisions. Pay particular attention to variable names in BeforeAll:
 
 ```powershell
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $primaryAgName = "dbatoolsci_agroup"
-        $primaryAg = New-DbaAvailabilityGroup @splatPrimary
+        $splatPrimary = @{
+            Primary = $TestConfig.instance3
+            Name    = $primaryAgName
+            ...
+        }
+        $ag = New-DbaAvailabilityGroup @splatPrimary
     }
 
     Context "When adding AG replicas" {
         BeforeAll {
             $replicaAgName = "dbatoolsci_add_replicagroup"
+            $splatRepAg = @{
+                Primary = $TestConfig.instance3
+                Name    = $replicaAgName
+                ...
+            }
             $replicaAg = New-DbaAvailabilityGroup @splatRepAg
         }
     }
 }
 ```
+</unique_names_across_scopes>
 
-## CLEANUP AND RESOURCE MANAGEMENT
-
-### Temporary Resource Pattern
-Create unique temporary files/directories and ensure cleanup:
+<temp_files_cleanup>
+### Temporary Files and Cleanup
+- Create temporary test files/directories with unique names using Get-Random
+- Always clean up temporary resources in AfterAll or AfterEach blocks with `-ErrorAction SilentlyContinue`
 
 ```powershell
 Describe $CommandName -Tag IntegrationTests {
@@ -141,18 +200,15 @@ Describe $CommandName -Tag IntegrationTests {
         Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
         Remove-Item -Path $filesToRemove -ErrorAction SilentlyContinue
     }
+
+    Context "When performing backups" {
+        # test code here
+    }
 }
-```
+```## TEST IMPLEMENTATION EXAMPLES
 
-### Cleanup Requirements
-- Track all resources created during tests
-- Implement cleanup in reverse order of creation when dependencies exist
-- Add `-ErrorAction SilentlyContinue` to cleanup operations
-- Every resource created in BeforeAll/BeforeEach needs corresponding cleanup in AfterAll/AfterEach
-
-## STANDARD TEST PATTERNS
-
-### Parameter Validation Test (Exact Pattern)
+<parameter_validation_test>
+### Good Parameter Test
 ```powershell
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
@@ -173,8 +229,10 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 ```
+</parameter_validation_test>
 
-### Integration Test Pattern
+<integration_test_example>
+### Good Integration Test
 ```powershell
 Describe $CommandName -Tag IntegrationTests {
     Context "When connecting to SQL Server" {
@@ -197,86 +255,128 @@ Describe $CommandName -Tag IntegrationTests {
     }
 }
 ```
+</integration_test_example>
 
 ## POWERSHELL SYNTAX TRANSFORMATIONS
 
+<syntax_requirements>
 ### Variable References
-- Replace all `$_` with `$PSItem` (except where `$_` required for compatibility)
-- **Preserve all original parameter names exactly** - no modifications
-
-### Where-Object Conversion
-Transform to direct property comparisons when possible:
-
-```powershell
-# Good - direct property comparison
-$master    = $databases | Where-Object Name -eq "master"
-$systemDbs = $databases | Where-Object Name -in "master", "model", "msdb", "tempdb"
-
-# Required - script block for Parameters.Keys or complex filtering
-$hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
-```
+- Replace all `$_` with `$PSItem` (except where `$_` is required for compatibility)
+- Preserve all parameter names exactly as written in original tests without modification
 
 ### String and Array Formatting
-- **Convert all single quotes to double quotes** (SQL Server module standard)
-- **Multi-line array formatting**:
-```powershell
-$array = @(
-    "Item1",
-    "Item2",
-    "Item3"
-)
-```
+- Convert all single quotes to double quotes for string literals
+- Add proper quote escaping when needed
 - Replace multi-line concatenated strings with here-strings when appropriate
+- Multi-line array formatting as shown above
 
-### Scoping and Variables
-- **Replace all `$script:` with `$global:`** (Pester v5 scoping requirement)
+### Scope Declarations
+- Replace all `$script:` with `$global:` for test configuration variables (Pester v5 scoping requirement)
 - Add explicit scope declarations when variables cross Pester block boundaries
-- **Skip conditions must evaluate to `$true` or `$false`**, not strings
 
-### Array and Parameter Operations
+### Array Operations
 - Replace `$results.Count` with `$results.Status.Count` for accurate counting
 - Add explicit array initialization: `$array = @()`
-- Wrap result collection: `$results = @(Get-Something)`
-- Remove unnecessary quotes from parameter values:
+- Wrap result collection in array subexpression operator: `$results = @(Get-Something)`
+
+### Parameter Quoting
+Remove unnecessary quotes from parameter values:
 ```powershell
 # Convert this:
 "$CommandName" -Tag "IntegrationTests"
 # To this:
 $CommandName -Tag IntegrationTests
 ```
+</syntax_requirements>
 
-### Code Formatting
-- Apply **OTBS (One True Brace Style)** formatting to all code blocks
-- **Remove all trailing spaces**
 
-## MUST USE / MUST NOT USE
 
+**Resource Tracking Requirements:**
+- Add array variables to collect all resources created during tests
+- Implement cleanup in reverse order of creation when dependencies exist
+- Every resource created in BeforeAll/BeforeEach needs corresponding cleanup in AfterAll/AfterEach
+</temp_files_cleanup>
+
+## ADDITIONAL REQUIREMENTS
+
+<must_use_requirements>
 ### Must Use
 - Static `$CommandName` parameter in param block
-- The specified parameter validation approach with WhatIf/Confirm filtering
-- Unique variable names across scopes
-- Double quotes for strings
-- `$global:` instead of `$script:`
+- The approach shown for parameter validation with filtering out WhatIf/Confirm
+- Unique variable names across scopes to prevent collisions
+- Double quotes for strings (SQL Server module standard)
+- `$global:` instead of `$script:` for test configuration variables
+- Multi-line array formatting as specified
+- `-ErrorAction SilentlyContinue` on cleanup operations
+- OTBS (One True Brace Style) formatting for all code blocks
+</must_use_requirements>
 
+<must_not_use_requirements>
 ### Must Not Use
-- Dynamic command name derivation from file paths
+- Dynamic command name derivation from file paths or directory structures
 - Old knownParameters validation approach
+- Assumed parameter names - match original tests exactly without modification
+- `-ForEach` parameters on any test blocks
 - Generic variable names that cause scope collisions
-- `-ForEach` parameters on test blocks
-- Assumed parameter names (match originals exactly)
+- Single quotes for string literals
+- Trailing spaces anywhere in the code
+- Plain `$splat` without purpose suffix for 3+ parameters
+</must_not_use_requirements>
 
-## TRANSFORMATION CHECKLIST
+<where_object_conversion_rules>
+### Where-Object Conversion Rules
+Transform Where-Object script blocks to direct property comparisons when possible:
 
-For each test file, ensure:
-- [ ] Mandatory header with static command name
-- [ ] All comments preserved exactly
+```powershell
+# Good - direct property comparison
+$master = $databases | Where-Object Name -eq "master"
+$systemDbs = $databases | Where-Object Name -in "master", "model", "msdb", "tempdb"
+
+# Required - script block for Parameters.Keys or complex filtering
+$hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+```
+
+Only use script blocks when direct property comparison is not possible.
+</where_object_conversion_rules>
+
+## TRANSFORMATION VERIFICATION CHECKLIST
+
+<verification_checklist>
+For each test file transformation, verify ALL of the following:
+
+**Header and Structure:**
+- [ ] Mandatory header with static command name inserted
+- [ ] All comments preserved exactly as they appeared in original
 - [ ] All loose code moved to appropriate BeforeAll/AfterAll blocks
-- [ ] Variable names are unique across scopes
-- [ ] Temporary resources have cleanup code
-- [ ] EnableException handling for integration tests
-- [ ] Parameter validation follows exact pattern
-- [ ] All syntax transformations applied
-- [ ] OTBS formatting applied
-- [ ] No trailing spaces
+- [ ] No `-ForEach` parameters on any test blocks
+- [ ] Describe blocks use `$CommandName` variable with appropriate tags
 
-This guide ensures complete compliance with Pester v5 standards while preserving all original functionality and comments.
+**Variable and Naming:**
+- [ ] Variable names are unique across all scopes
+- [ ] Parameter names match original tests exactly
+- [ ] Splat variables use `$splat<Purpose>` format for 3+ parameters
+- [ ] Hashtable assignments aligned for readability
+
+**Cleanup and Resources:**
+- [ ] Temporary resources have cleanup code with `-ErrorAction SilentlyContinue`
+- [ ] EnableException handling correctly placed (BeforeAll to set, AfterAll to remove)
+- [ ] All resources created in BeforeAll/BeforeEach have corresponding cleanup
+
+**Syntax Transformations:**
+- [ ] All `$_` replaced with `$PSItem` (except where compatibility requires `$_`)
+- [ ] All single quotes converted to double quotes
+- [ ] All `$script:` replaced with `$global:`
+- [ ] Unnecessary parameter quotes removed
+- [ ] Where-Object conversions applied where possible
+
+**Formatting:**
+- [ ] OTBS (One True Brace Style) formatting applied
+- [ ] No trailing spaces anywhere
+- [ ] Multi-line arrays formatted correctly
+- [ ] Skip conditions use boolean values, not strings
+
+**Test Patterns:**
+- [ ] Parameter validation follows exact pattern specified
+- [ ] Integration tests follow specified structure
+- [ ] All test assertions properly placed in `It` blocks
+</verification_checklist>
