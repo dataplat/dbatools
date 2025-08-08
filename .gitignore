@@ -53,3 +53,4 @@ allcommands.ps1
 .aider/aider.input.history
 .aider/aider.llm.history
 /.aider/.aider
+/.aitools/.aider
