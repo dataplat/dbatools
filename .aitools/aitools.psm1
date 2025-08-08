@@ -76,9 +76,9 @@ function Update-PesterTest {
     .PARAMETER PassCount
         Sometimes you need multiple passes to get the desired result.
 
-    .PARAMETER AutoFix
-        If specified, automatically runs PSScriptAnalyzer after AI modifications and attempts to fix any violations found.
-        This feature runs separately from PassCount iterations and uses targeted fix messages.
+    .PARAMETER NoAuthFix
+        If specified, disables automatic PSScriptAnalyzer fixes after AI modifications.
+        By default, autofix is enabled and runs separately from PassCount iterations using targeted fix messages.
 
     .PARAMETER AutoFixModel
         The AI model to use for AutoFix operations. Defaults to the same model as specified in -Model.
@@ -138,7 +138,7 @@ function Update-PesterTest {
         [string]$Tool = 'Claude',
         [switch]$AutoTest,
         [int]$PassCount = 1,
-        [switch]$AutoFix,
+        [switch]$NoAuthFix,
         [string]$AutoFixModel = $Model,
         [int]$MaxRetries = 0,
         [string]$SettingsPath = (Resolve-Path "$PSScriptRoot/../tests/PSScriptAnalyzerRules.psd1" -ErrorAction SilentlyContinue).Path,
@@ -369,7 +369,7 @@ function Update-PesterTest {
                 }
 
                 # AutoFix workflow - run PSScriptAnalyzer and fix violations if found
-                if ($AutoFix) {
+                if (-not $NoAuthFix) {
                     Write-Verbose "Running AutoFix for $cmdName"
                     $autoFixParams = @{
                         FilePath     = $filename
