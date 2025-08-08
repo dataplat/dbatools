@@ -1,15 +1,16 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName               = "dbatools",
-    $CommandName              = [System.IO.Path]::GetFileName($PSCommandPath.Replace('.Tests.ps1', '')),
+    $ModuleName = "dbatools",
+    $CommandName = [System.IO.Path]::GetFileName($PSCommandPath.Replace('.Tests.ps1', '')),
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe $CommandName -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
-            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $_ -notin @('WhatIf', 'Confirm') }
-            $expectedParameters = $TestConfig.CommonParameters + @(
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $_ -notin ('WhatIf', 'Confirm') }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
                 "SqlInstance",
                 "SqlCredential",
                 "Name",
