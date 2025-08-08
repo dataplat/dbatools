@@ -744,8 +744,6 @@ function Invoke-AutoFix {
     .PARAMETER PromptFilePath
         The path to the template file containing custom prompt structure for fixes.
 
-    .PARAMETER CacheFilePath
-        The path to files containing cached conventions and context for better fix quality.
 
     .PARAMETER PassCount
         Number of passes to run for each file. Sometimes multiple passes are needed.
@@ -962,7 +960,6 @@ function Invoke-AutoFix {
                         MaxRetries    = $MaxRetries
                         Model         = $Model
                         Tool          = $Tool
-                        CacheFilePath = $CacheFilePath
                         AutoTest      = $AutoTest
                     }
                     if ($ReasoningEffort) {
@@ -1112,7 +1109,6 @@ function Invoke-AutoFixProcess {
         [ValidateSet('minimal', 'medium', 'high')]
         [string]$ReasoningEffort,
 
-        [string[]]$CacheFilePath,
         [switch]$AutoTest
     )
 
@@ -1167,20 +1163,14 @@ function Invoke-AutoFixProcess {
                 $aiParams.ReasoningEffort = 'medium'
             }
 
-            # Add tool-specific parameters
+            # Add tool-specific parameters - no context files for focused AutoFix
             if ($Tool -eq 'Aider') {
                 $aiParams.YesAlways = $true
                 $aiParams.NoStream = $true
                 $aiParams.CachePrompts = $true
-                if ($CacheFilePath) {
-                    $aiParams.ReadFile = $CacheFilePath
-                }
-            } else {
-                # For Claude Code, use different approach for context files
-                if ($CacheFilePath) {
-                    $aiParams.ContextFiles = $CacheFilePath
-                }
+                # Don't add ReadFile for AutoFix - keep it focused
             }
+            # For Claude Code - don't add ContextFiles for AutoFix - keep it focused
 
             # Invoke the AI tool with the focused fix message
             Invoke-AITool @aiParams
