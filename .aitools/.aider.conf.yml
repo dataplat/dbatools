@@ -11,7 +11,7 @@ env-file: .aider/.env
 # editor-model: gpt-4o
 
 ## Suggested number of tokens to use for repo map, use 0 to disable (default: 1024)
-map-tokens: 0
+map-tokens: "0"
 
 ## Control how often the repo map is refreshed. Options: auto, always, files, manual (default: auto)
 map-refresh: manual
@@ -24,8 +24,7 @@ pretty: true
 
 ## Disable streaming responses; waits for full response before displaying
 ## helps with estimating costs
-stream: false
-no-stream: true
+stream: true
 
 ## Enable caching of prompts to reduce token costs (default: false)
 cache-prompts: true
@@ -40,20 +39,20 @@ auto-commits: false
 no-suggest-shell-commands: true
 
 ## Number of pings to keep the prompt cache alive at 5-minute intervals (default: 0)
-cache-keepalive-pings: 5
+cache-keepalive-pings: "5"
 
 ## Add aider-specific files to .gitignore (default: true)
 gitignore: false
 
-## Automatically lints code after changes using PSScriptAnalyzer (PowerShell linting)
-auto-lint: true
+## No reason to lint if ScriptAnalyzer cant fix it
+auto-lint: false
 
 ## map
 show-repo-map: false
 #aiderignore: .aider/.aiderignore
 
 ## Command to lint PowerShell code using PSScriptAnalyzer
-lint-cmd: "pwsh -Command Invoke-ScriptAnalyzer -Path *.ps1"
+# lint-cmd: pwsh -NoProfile -Command "Invoke-ScriptAnalyzer -Settings /workspace/tests/PSScriptAnalyzerRules.psd1 -Path $@"
 
 ## Automatically runs tests after code changes using Pester
 auto-test: false
@@ -101,7 +100,7 @@ git: false
 #code-theme: "monokai"
 
 ## edit the whole file
-edit-format: whole
+edit-format: diff
 
 ## yesss
 yes-always: true
