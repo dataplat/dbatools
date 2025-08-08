@@ -2,12 +2,30 @@ $PSDefaultParameterValues['Import-Module:Verbose'] = $false
 
 # Auto-configure aider environment variables for .aitools directory
 try {
-    $env:AIDER_CONFIG_FILE = (Resolve-Path "$PSScriptRoot/.aider.conf.yml").Path
-    $env:AIDER_ENV_FILE = (Resolve-Path "$PSScriptRoot/.env").Path
-    $env:AIDER_MODEL_SETTINGS_FILE = (Resolve-Path "$PSScriptRoot/.aider.model.settings.yml").Path
-    $env:AIDER_INPUT_HISTORY_FILE = (Resolve-Path "$PSScriptRoot/.aider/aider.input.history").Path
-    $env:AIDER_CHAT_HISTORY_FILE = (Resolve-Path "$PSScriptRoot/.aider/aider.chat.history.md").Path
-    $env:AIDER_LLM_HISTORY_FILE = (Resolve-Path "$PSScriptRoot/.aider/aider.llm.history").Path
+    # Use Join-Path instead of Resolve-Path to avoid "path does not exist" errors
+    $env:AIDER_CONFIG_FILE = Join-Path $PSScriptRoot ".aider.conf.yml"
+    $env:AIDER_ENV_FILE = Join-Path $PSScriptRoot ".env"
+    $env:AIDER_MODEL_SETTINGS_FILE = Join-Path $PSScriptRoot ".aider.model.settings.yml"
+
+    # Ensure .aider directory exists before setting history file paths
+    $aiderDir = Join-Path $PSScriptRoot ".aider"
+    if (-not (Test-Path $aiderDir)) {
+        New-Item -Path $aiderDir -ItemType Directory -Force | Out-Null
+        Write-Verbose "Created .aider directory: $aiderDir"
+    }
+
+    $env:AIDER_INPUT_HISTORY_FILE = Join-Path $aiderDir "aider.input.history"
+    $env:AIDER_CHAT_HISTORY_FILE = Join-Path $aiderDir "aider.chat.history.md"
+    $env:AIDER_LLM_HISTORY_FILE = Join-Path $aiderDir "aider.llm.history"
+
+    # Create empty history files if they don't exist
+    @($env:AIDER_INPUT_HISTORY_FILE, $env:AIDER_CHAT_HISTORY_FILE, $env:AIDER_LLM_HISTORY_FILE) | ForEach-Object {
+        if (-not (Test-Path $_)) {
+            New-Item -Path $_ -ItemType File -Force | Out-Null
+            Write-Verbose "Created aider history file: $_"
+        }
+    }
+
     Write-Verbose "Aider environment configured for .aitools directory"
 } catch {
     Write-Verbose "Could not configure aider environment: $_"
