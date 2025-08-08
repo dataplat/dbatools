@@ -114,6 +114,75 @@ $array = @(
 - Apply OTBS (One True Brace Style) formatting to all code blocks
 </formatting_rules>
 
+<hashtable_alignment>
+### MANDATORY Hashtable Alignment
+**CRITICAL FORMATTING REQUIREMENT**: ALL hashtable assignments must be perfectly aligned using spaces to create clean, readable columns. This is non-negotiable.
+
+**REQUIRED FORMAT:**
+```powershell
+$splatConnection = @{
+    SqlInstance     = $TestConfig.instance2
+    SqlCredential   = $TestConfig.SqlCredential
+    Database        = $dbName
+    EnableException = $true
+    Confirm         = $false
+}
+```
+
+**FORBIDDEN - Misaligned hashtables:**
+```powershell
+# DO NOT DO THIS - misaligned
+$splat = @{
+    SqlInstance = $instance
+    Database = $db
+    EnableException = $true
+}
+```
+
+The equals signs must line up vertically to create clean, professional-looking code.
+</hashtable_alignment>
+
+<parameter_variable_naming>
+### Parameter & Variable Naming Rules
+- Use direct parameters for 1-2 parameters
+- Use `$splat<Purpose>` for 3+ parameters (never plain `$splat`)
+- **CRITICAL**: Align splat hashtable assignments with consistent spacing for readability - this is MANDATORY
+
+**ALIGNMENT REQUIREMENT**: All hashtable assignments MUST be aligned using spaces to create clean, readable columns:
+
+```powershell
+# CORRECT - Aligned = signs (REQUIRED)
+$splatPrimary = @{
+    Primary      = $TestConfig.instance3
+    Name         = $primaryAgName
+    ClusterType  = "None"
+    FailoverMode = "Manual"
+    Certificate  = "dbatoolsci_AGCert"
+    Confirm      = $false
+}
+
+# WRONG - Not aligned (DO NOT DO THIS)
+$splatPrimary = @{
+    Primary = $TestConfig.instance3
+    Name = $primaryAgName
+    ClusterType = "None"
+}
+```
+
+# Direct parameters
+$ag = Get-DbaLogin -SqlInstance $instance -Login $loginName
+
+# Splat with purpose suffix - note aligned = signs
+$splatConnection = @{
+    SqlInstance     = $TestConfig.instance2
+    SqlCredential   = $TestConfig.SqlCredential
+    Database        = $dbName
+    EnableException = $true
+    Confirm         = $false
+}
+$primaryAg = New-DbaAvailabilityGroup @splatConnection
+</parameter_variable_naming>
+
 <where_object_usage>
 ### Where-Object Usage
 Avoid script blocks in Where-Object when possible:
@@ -126,29 +195,6 @@ $systemDbs = $databases | Where-Object Name -in "master", "model", "msdb", "temp
 $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
 ```
 </where_object_usage>
-
-<parameter_variable_naming>
-### Parameter & Variable Naming Rules
-- Use direct parameters for 1-2 parameters
-- Use `$splat<Purpose>` for 3+ parameters (never plain `$splat`)
-- Align splat hashtable assignments with consistent spacing for readability
-
-```powershell
-# Direct parameters
-$ag = Get-DbaLogin -SqlInstance $instance -Login $loginName
-
-# Splat with purpose suffix - note aligned = signs
-$splatPrimary = @{
-    Primary      = $TestConfig.instance3
-    Name         = $primaryAgName
-    ClusterType  = "None"
-    FailoverMode = "Manual"
-    Certificate  = "dbatoolsci_AGCert"
-    Confirm      = $false
-}
-$primaryAg = New-DbaAvailabilityGroup @splatPrimary
-```
-</parameter_variable_naming>
 
 <unique_names_across_scopes>
 ### Unique Names Across Scopes
@@ -205,7 +251,15 @@ Describe $CommandName -Tag IntegrationTests {
         # test code here
     }
 }
-```## TEST IMPLEMENTATION EXAMPLES
+```
+
+**Resource Tracking Requirements:**
+- Add array variables to collect all resources created during tests
+- Implement cleanup in reverse order of creation when dependencies exist
+- Every resource created in BeforeAll/BeforeEach needs corresponding cleanup in AfterAll/AfterEach
+</temp_files_cleanup>
+
+## TEST IMPLEMENTATION EXAMPLES
 
 <parameter_validation_test>
 ### Good Parameter Test
@@ -289,40 +343,6 @@ $CommandName -Tag IntegrationTests
 ```
 </syntax_requirements>
 
-
-
-**Resource Tracking Requirements:**
-- Add array variables to collect all resources created during tests
-- Implement cleanup in reverse order of creation when dependencies exist
-- Every resource created in BeforeAll/BeforeEach needs corresponding cleanup in AfterAll/AfterEach
-</temp_files_cleanup>
-
-## ADDITIONAL REQUIREMENTS
-
-<must_use_requirements>
-### Must Use
-- Static `$CommandName` parameter in param block
-- The approach shown for parameter validation with filtering out WhatIf/Confirm
-- Unique variable names across scopes to prevent collisions
-- Double quotes for strings (SQL Server module standard)
-- `$global:` instead of `$script:` for test configuration variables
-- Multi-line array formatting as specified
-- `-ErrorAction SilentlyContinue` on cleanup operations
-- OTBS (One True Brace Style) formatting for all code blocks
-</must_use_requirements>
-
-<must_not_use_requirements>
-### Must Not Use
-- Dynamic command name derivation from file paths or directory structures
-- Old knownParameters validation approach
-- Assumed parameter names - match original tests exactly without modification
-- `-ForEach` parameters on any test blocks
-- Generic variable names that cause scope collisions
-- Single quotes for string literals
-- Trailing spaces anywhere in the code
-- Plain `$splat` without purpose suffix for 3+ parameters
-</must_not_use_requirements>
-
 <where_object_conversion_rules>
 ### Where-Object Conversion Rules
 Transform Where-Object script blocks to direct property comparisons when possible:
@@ -338,6 +358,34 @@ $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Objec
 
 Only use script blocks when direct property comparison is not possible.
 </where_object_conversion_rules>
+
+## ADDITIONAL REQUIREMENTS
+
+<must_use_requirements>
+### Must Use
+- Static `$CommandName` parameter in param block
+- The approach shown for parameter validation with filtering out WhatIf/Confirm
+- Unique variable names across scopes to prevent collisions
+- Double quotes for strings (SQL Server module standard)
+- `$global:` instead of `$script:` for test configuration variables
+- Multi-line array formatting as specified
+- `-ErrorAction SilentlyContinue` on cleanup operations
+- OTBS (One True Brace Style) formatting for all code blocks
+- **MANDATORY**: Perfectly aligned hashtable assignments using consistent spacing
+</must_use_requirements>
+
+<must_not_use_requirements>
+### Must Not Use
+- Dynamic command name derivation from file paths or directory structures
+- Old knownParameters validation approach
+- Assumed parameter names - match original tests exactly without modification
+- `-ForEach` parameters on any test blocks
+- Generic variable names that cause scope collisions
+- Single quotes for string literals
+- Trailing spaces anywhere in the code
+- Plain `$splat` without purpose suffix for 3+ parameters
+- **FORBIDDEN**: Misaligned hashtable assignments
+</must_not_use_requirements>
 
 ## TRANSFORMATION VERIFICATION CHECKLIST
 
@@ -355,7 +403,7 @@ For each test file transformation, verify ALL of the following:
 - [ ] Variable names are unique across all scopes
 - [ ] Parameter names match original tests exactly
 - [ ] Splat variables use `$splat<Purpose>` format for 3+ parameters
-- [ ] Hashtable assignments aligned for readability
+- [ ] **CRITICAL**: Hashtable assignments are perfectly aligned with consistent spacing (MANDATORY)
 
 **Cleanup and Resources:**
 - [ ] Temporary resources have cleanup code with `-ErrorAction SilentlyContinue`
@@ -374,6 +422,7 @@ For each test file transformation, verify ALL of the following:
 - [ ] No trailing spaces anywhere
 - [ ] Multi-line arrays formatted correctly
 - [ ] Skip conditions use boolean values, not strings
+- [ ] **MANDATORY**: All hashtable assignments perfectly aligned
 
 **Test Patterns:**
 - [ ] Parameter validation follows exact pattern specified
