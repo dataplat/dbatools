@@ -12,7 +12,6 @@
         'PSPossibleIncorrectComparisonWithNull',
         'PSUseApprovedVerbs',
         'PSUseOutputTypeCorrectly',
-        'PSUseDeclaredVarsMoreThanAssignments',
         'PSUseSingularNouns',
         'PSPlaceOpenBrace',
         'PSPlaceCloseBrace',

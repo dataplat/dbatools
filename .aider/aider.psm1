@@ -469,7 +469,7 @@ function Invoke-Aider {
         [int]$PassCount = 1,
         [ValidateSet('minimal', 'medium', 'high')]
         [string]$ReasoningEffort,
-        [switch]$DangerouslySkipPermissions = $true,  # Default to true to avoid prompts
+        [switch]$DangerouslySkipPermissions,
         [ValidateSet('text', 'json', 'stream-json')]
         [string]$OutputFormat,
         [int]$MaxTurns
@@ -789,7 +789,7 @@ function Invoke-AutoFix {
                 $fixMessage += "Message: $($result.Message)`n`n"
             }
 
-            $fixMessage += "Delete all unused variable assignments identified above. Remove the entire line for each unused variable. Make no other changes to the code that are not included in this fix list."
+            $fixMessage += "CONSIDER THIS WITH PESTER CONTEXTS WHEN DECIDING IF SCRIPT ANALYZER IS RIGHT."
 
             Write-Verbose "Sending focused fix request to $Tool"
 
