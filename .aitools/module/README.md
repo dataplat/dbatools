@@ -44,7 +44,7 @@ module/
     ├── Get-TargetPullRequests.ps1              # PR number resolution
     ├── Get-FailedBuilds.ps1           # Failed build detection
     ├── Get-BuildFailures.ps1          # Build failure analysis
-    ├── Get-JobFailures.ps1            # Job failure extraction
+    ├── Get-JobFailure.ps1            # Job failure extraction
     ├── Get-TestArtifacts.ps1          # Test artifact retrieval
     ├── Parse-TestArtifact.ps1         # Artifact parsing
     ├── Format-TestFailures.ps1        # Failure formatting

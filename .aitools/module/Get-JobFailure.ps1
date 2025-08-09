@@ -1,4 +1,4 @@
-function Get-JobFailures {
+function Get-JobFailure {
     <#
     .SYNOPSIS
         Gets test failures from a specific AppVeyor job.

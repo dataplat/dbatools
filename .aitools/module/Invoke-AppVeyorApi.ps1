@@ -1,26 +1,4 @@
 function Invoke-AppVeyorApi {
-    <#
-    .SYNOPSIS
-        Makes API calls to the AppVeyor REST API.
-
-    .DESCRIPTION
-        Provides a standardized way to interact with the AppVeyor API, handling authentication
-        and error handling consistently across all AppVeyor-related functions.
-
-    .PARAMETER Endpoint
-        The API endpoint to call (without the base URL).
-
-    .PARAMETER AccountName
-        The AppVeyor account name. Defaults to 'dataplat'.
-
-    .PARAMETER Method
-        The HTTP method to use. Defaults to 'Get'.
-
-    .NOTES
-        Requires APPVEYOR_API_TOKEN environment variable to be set.
-        Tags: AppVeyor, API, CI
-        Author: dbatools team
-    #>
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]

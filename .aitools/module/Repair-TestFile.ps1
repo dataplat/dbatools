@@ -1,29 +1,4 @@
 function Repair-TestFile {
-    <#
-    .SYNOPSIS
-        Repairs a specific test file using AI tools.
-
-    .DESCRIPTION
-        Takes a test file with known failures and uses AI to fix the issues by comparing
-        with a working version from the development branch.
-
-    .PARAMETER TestFileName
-        Name of the test file to repair.
-
-    .PARAMETER Failures
-        Array of failure objects containing error details.
-
-    .PARAMETER Model
-        AI model to use for repairs.
-
-    .PARAMETER OriginalBranch
-        The original branch to return to after repairs.
-
-    .NOTES
-        Tags: Testing, Pester, Repair, AI
-        Author: dbatools team
-        Requires: git, AI tools (Claude/Aider)
-    #>
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]
@@ -102,38 +77,38 @@ function Repair-TestFile {
 
     # Create the prompt for Claude
     $prompt = "Fix the failing Pester v5 test file. This test was working in the development branch but is failing in the current PR." +
-              "`n`n## IMPORTANT CONTEXT" +
-              "`n- This is a Pester v5 test file that needs to be fixed" +
-              "`n- The test was working in development branch but failing after changes in this PR" +
-              "`n- Focus on fixing the specific failures while maintaining Pester v5 compatibility" +
-              "`n- Common issues include: scope problems, mock issues, parameter validation changes" +
-              "`n`n## FAILURES DETECTED" +
-              "`nThe following failures occurred across different test runners:" +
-              "`n$failureDetailsString" +
-              "`n`n## COMMAND IMPLEMENTATION" +
-              "`nHere is the actual PowerShell command being tested:" +
-              "`n``````powershell" +
-              "`n$commandImplementation" +
-              "`n``````" +
-              "`n`n## WORKING TEST FROM DEVELOPMENT BRANCH" +
-              "`nThis version was working correctly:" +
-              "`n``````powershell" +
-              "`n$workingTest" +
-              "`n``````" +
-              "`n`n## CURRENT FAILING TEST (THIS IS THE FILE TO FIX)" +
-              "`nFix this test file to resolve all the failures:" +
-              "`n``````powershell" +
-              "`n$failingTest" +
-              "`n``````" +
-              "`n`n## INSTRUCTIONS" +
-              "`n1. Analyze the differences between working and failing versions" +
-              "`n2. Identify what's causing the failures based on the error messages" +
-              "`n3. Fix the test while maintaining Pester v5 best practices" +
-              "`n4. Ensure all parameter validations match the command implementation" +
-              "`n5. Keep the same test structure and coverage as the original" +
-              "`n6. Pay special attention to BeforeAll/BeforeEach blocks and variable scoping" +
-              "`n7. Ensure mocks are properly scoped and implemented for Pester v5" +
-              "`n`nPlease fix the test file to resolve all failures."
+    "`n`n## IMPORTANT CONTEXT" +
+    "`n- This is a Pester v5 test file that needs to be fixed" +
+    "`n- The test was working in development branch but failing after changes in this PR" +
+    "`n- Focus on fixing the specific failures while maintaining Pester v5 compatibility" +
+    "`n- Common issues include: scope problems, mock issues, parameter validation changes" +
+    "`n`n## FAILURES DETECTED" +
+    "`nThe following failures occurred across different test runners:" +
+    "`n$failureDetailsString" +
+    "`n`n## COMMAND IMPLEMENTATION" +
+    "`nHere is the actual PowerShell command being tested:" +
+    "`n``````powershell" +
+    "`n$commandImplementation" +
+    "`n``````" +
+    "`n`n## WORKING TEST FROM DEVELOPMENT BRANCH" +
+    "`nThis version was working correctly:" +
+    "`n``````powershell" +
+    "`n$workingTest" +
+    "`n``````" +
+    "`n`n## CURRENT FAILING TEST (THIS IS THE FILE TO FIX)" +
+    "`nFix this test file to resolve all the failures:" +
+    "`n``````powershell" +
+    "`n$failingTest" +
+    "`n``````" +
+    "`n`n## INSTRUCTIONS" +
+    "`n1. Analyze the differences between working and failing versions" +
+    "`n2. Identify what's causing the failures based on the error messages" +
+    "`n3. Fix the test while maintaining Pester v5 best practices" +
+    "`n4. Ensure all parameter validations match the command implementation" +
+    "`n5. Keep the same test structure and coverage as the original" +
+    "`n6. Pay special attention to BeforeAll/BeforeEach blocks and variable scoping" +
+    "`n7. Ensure mocks are properly scoped and implemented for Pester v5" +
+    "`n`nPlease fix the test file to resolve all failures."
 
     # Use Invoke-AITool to fix the test
     Write-Verbose "Sending test to Claude for fixes"

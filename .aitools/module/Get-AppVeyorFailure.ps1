@@ -1,20 +1,4 @@
 function Get-AppVeyorFailure {
-    <#
-    .SYNOPSIS
-        Retrieves test failures from AppVeyor builds for specified pull requests.
-
-    .DESCRIPTION
-        Fetches AppVeyor build information and parses logs to extract test failure details
-        for one or more pull requests.
-
-    .PARAMETER PullRequest
-        Array of pull request numbers to check. If not specified, checks all open PRs.
-
-    .NOTES
-        Tags: AppVeyor, Testing, CI, PullRequest
-        Author: dbatools team
-        Requires: gh CLI, APPVEYOR_API_TOKEN environment variable
-    #>
     [CmdletBinding()]
     param (
         [int[]]$PullRequest
@@ -101,9 +85,9 @@ function Get-AppVeyorFailure {
                         # Much broader pattern matching - this is the key fix
                         if ($line -match '\.Tests\.ps1' -and
                             ($line -match '\[-\]| \bfail | \berror | \bexception | Failed: | Error:' -or
-                             $line -match 'should\s+(?:be | not | contain | match)' -or
-                             $line -match 'Expected.*but.*was' -or
-                             $line -match 'Assertion failed')) {
+                            $line -match 'should\s+(?:be | not | contain | match)' -or
+                            $line -match 'Expected.*but.*was' -or
+                            $line -match 'Assertion failed')) {
 
                             # Extract test file name
                             $testFileMatch = $line | Select-String -Pattern '([^\\\/\s]+\.Tests\.ps1)' | Select-Object -First 1
@@ -140,7 +124,7 @@ function Get-AppVeyorFailure {
                         }
                         # Look for PowerShell errors in test context
                         elseif ($line -match 'At\s+.*\.Tests\.ps1:\d+' -or
-                                ($line -match 'Exception| Error' -and $line -match '\.Tests\.ps1')) {
+                            ($line -match 'Exception| Error' -and $line -match '\.Tests\.ps1')) {
 
                             $testFileMatch = $line | Select-String -Pattern '([^\\\/\s]+\.Tests\.ps1)' | Select-Object -First 1
                             $testFile = if ($testFileMatch) { $testFileMatch.Matches[0].Groups[1].Value } else { "Unknown.Tests.ps1" }

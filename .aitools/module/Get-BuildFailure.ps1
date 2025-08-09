@@ -25,7 +25,7 @@ function Get-BuildFailures {
 
     $failures = @()
     foreach ($job in $failedJobs) {
-        $jobFailures = Get-JobFailures -JobId $job.jobId -JobName $job.name -PRNumber $PRNumber
+        $jobFailures = Get-JobFailure -JobId $job.jobId -JobName $job.name -PRNumber $PRNumber
         $failures += $jobFailures
     }
 
