@@ -75,137 +75,58 @@ function Invoke-DbatoolsFormatter {
         function Test-OnlyInvisibleChanges {
             param(
                 [string]$OriginalContent,
-                [string]$ModifiedContent,
-                [byte[]]$OriginalBytes,
-                [byte[]]$ModifiedBytes
+                [string]$ModifiedContent
             )
 
-            # Check for BOM
-            $originalHasBOM = $OriginalBytes.Length -ge 3 -and
-            $OriginalBytes[0] -eq 0xEF -and
-            $OriginalBytes[1] -eq 0xBB -and
-            $OriginalBytes[2] -eq 0xBF
+            # Normalize line endings to Unix style for comparison
+            $originalNormalized = $OriginalContent -replace '\r\n', "`n" -replace '\r', "`n"
+            $modifiedNormalized = $ModifiedContent -replace '\r\n', "`n" -replace '\r', "`n"
 
-            $modifiedHasBOM = $ModifiedBytes.Length -ge 3 -and
-            $ModifiedBytes[0] -eq 0xEF -and
-            $ModifiedBytes[1] -eq 0xBB -and
-            $ModifiedBytes[2] -eq 0xBF
+            # Split into lines
+            $originalLines = $originalNormalized -split "`n"
+            $modifiedLines = $modifiedNormalized -split "`n"
 
-            # Normalize content for comparison (remove all formatting differences)
-            $originalLines = $OriginalContent -split '\r?\n'
-            $modifiedLines = $ModifiedContent -split '\r?\n'
+            # Normalize each line: trim trailing whitespace and convert tabs to spaces
+            $originalLines = $originalLines | ForEach-Object { $_.TrimEnd().Replace("`t", "    ") }
+            $modifiedLines = $modifiedLines | ForEach-Object { $_.TrimEnd().Replace("`t", "    ") }
 
-            # Strip trailing whitespace and normalize tabs
-            $originalNormalized = $originalLines | ForEach-Object {
-                $_.TrimEnd().Replace("`t", "    ")
+            # Remove trailing empty lines from both
+            while ($originalLines.Count -gt 0 -and $originalLines[-1] -eq '') {
+                $originalLines = $originalLines[0..($originalLines.Count - 2)]
             }
-            $modifiedNormalized = $modifiedLines | ForEach-Object {
-                $_.TrimEnd().Replace("`t", "    ")
+            while ($modifiedLines.Count -gt 0 -and $modifiedLines[-1] -eq '') {
+                $modifiedLines = $modifiedLines[0..($modifiedLines.Count - 2)]
             }
 
-            # Also account for trailing empty lines being removed
-            $originalNormalized = ($originalNormalized -join "`n") -replace '(?s)\n\s*$', ''
-            $modifiedNormalized = ($modifiedNormalized -join "`n") -replace '(?s)\n\s*$', ''
+            # Compare the normalized content
+            if ($originalLines.Count -ne $modifiedLines.Count) {
+                return $false
+            }
 
-            # If normalized content is identical, only invisible changes occurred
-            return ($originalNormalized -eq $modifiedNormalized)
+            for ($i = 0; $i -lt $originalLines.Count; $i++) {
+                if ($originalLines[$i] -ne $modifiedLines[$i]) {
+                    return $false
+                }
+            }
+
+            return $true
         }
-    }
-    process {
-        if (Test-FunctionInterrupt) { return }
-        foreach ($p in $Path) {
-            try {
-                $realPath = (Resolve-Path -Path $p -ErrorAction Stop).Path
-            } catch {
-                Stop-Function -Message "Cannot find or resolve $p" -Continue
-            }
 
-            # If SkipInvisibleOnly is set, check if formatting would only change invisible characters
-            if ($SkipInvisibleOnly) {
-                # Save original state
-                $originalBytes = [System.IO.File]::ReadAllBytes($realPath)
-                $originalContent = [System.IO.File]::ReadAllText($realPath)
+        function Format-ScriptContent {
+            param(
+                [string]$Content,
+                [string]$LineEnding
+            )
 
-                # Create a copy to test formatting
-                $tempContent = $originalContent
-                $tempOSEOL = $OSEOL
+            # Strip ending empty lines
+            $Content = $Content -replace "(?s)$LineEnding\s*$"
 
-                if ($tempOSEOL -eq "`r`n") {
-                    $containsCR = ($tempContent -split "`r").Length -gt 1
-                    if (-not($containsCR)) {
-                        $tempOSEOL = "`n"
-                    }
-                }
-
-                # Apply all formatting transformations
-                $tempContent = $tempContent -replace "(?s)$tempOSEOL\s*$"
-                try {
-                    $tempContent = Invoke-Formatter -ScriptDefinition $tempContent -Settings CodeFormattingOTBS -ErrorAction Stop
-                } catch {
-                    # If formatter fails, continue with original content
-                }
-
-                # Apply CBH fixes
-                $CBH = $CBHRex.Match($tempContent).Value
-                if ($CBH) {
-                    $startSpaces = $CBHStartRex.Match($CBH).Groups['spaces']
-                    if ($startSpaces) {
-                        $newCBH = $CBHEndRex.Replace($CBH, "$startSpaces#>")
-                        if ($newCBH) {
-                            $tempContent = $tempContent.Replace($CBH, $newCBH)
-                        }
-                    }
-                }
-
-                # Apply case corrections and whitespace trimming
-                $correctCase = @('DbaInstanceParameter', 'PSCredential', 'PSCustomObject', 'PSItem')
-                $tempLines = @()
-                foreach ($line in $tempContent.Split("`n")) {
-                    foreach ($item in $correctCase) {
-                        $line = $line -replace $item, $item
-                    }
-                    $tempLines += $line.Replace("`t", "    ").TrimEnd()
-                }
-                $formattedContent = $tempLines -Join "$tempOSEOL"
-
-                # Create bytes as if we were saving (UTF8 no BOM)
-                $Utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $False
-                $modifiedBytes = $Utf8NoBomEncoding.GetBytes($formattedContent)
-
-                # Test if only invisible changes would occur
-                $testParams = @{
-                    OriginalContent = $originalContent
-                    ModifiedContent = $formattedContent
-                    OriginalBytes   = $originalBytes
-                    ModifiedBytes   = $modifiedBytes
-                }
-
-                if (Test-OnlyInvisibleChanges @testParams) {
-                    Write-Verbose "Skipping $realPath - only invisible changes (BOM/line endings/whitespace)"
-                    continue
-                }
-            }
-
-            # Proceed with normal formatting
-            $content = Get-Content -Path $realPath -Raw -Encoding UTF8
-            if ($OSEOL -eq "`r`n") {
-                # See #5830, we are in Windows territory here
-                # Is the file containing at least one `r ?
-                $containsCR = ($content -split "`r").Length -gt 1
-                if (-not($containsCR)) {
-                    # If not, maybe even on Windows the user is using Unix-style endings, which are supported
-                    $OSEOL = "`n"
-                }
-            }
-
-            #strip ending empty lines
-            $content = $content -replace "(?s)$OSEOL\s*$"
             try {
                 # Save original lines before formatting
-                $originalLines = $content -split "`n"
+                $originalLines = $Content -split "`n"
 
                 # Run the formatter
-                $formattedContent = Invoke-Formatter -ScriptDefinition $content -Settings CodeFormattingOTBS -ErrorAction Stop
+                $formattedContent = Invoke-Formatter -ScriptDefinition $Content -Settings CodeFormattingOTBS -ErrorAction Stop
 
                 # Automatically restore spaces before = signs
                 $formattedLines = $formattedContent -split "`n"
@@ -225,40 +146,73 @@ function Invoke-DbatoolsFormatter {
                         }
                     }
                 }
-                $content = $formattedLines -join "`n"
+                $Content = $formattedLines -join "`n"
             } catch {
-                Write-Message -Level Warning "Unable to format $p"
+                Write-Message -Level Warning "Unable to format content"
             }
-            #match the ending indentation of CBH with the starting one, see #4373
-            $CBH = $CBHRex.Match($content).Value
+
+            # Match the ending indentation of CBH with the starting one
+            $CBH = $CBHRex.Match($Content).Value
             if ($CBH) {
-                #get starting spaces
                 $startSpaces = $CBHStartRex.Match($CBH).Groups['spaces']
                 if ($startSpaces) {
-                    #get end
                     $newCBH = $CBHEndRex.Replace($CBH, "$startSpaces#>")
                     if ($newCBH) {
-                        #replace the CBH
-                        $content = $content.Replace($CBH, $newCBH)
+                        $Content = $Content.Replace($CBH, $newCBH)
                     }
                 }
             }
-            $Utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $False
-            $correctCase = @(
-                'DbaInstanceParameter'
-                'PSCredential'
-                'PSCustomObject'
-                'PSItem'
-            )
+
+            # Apply case corrections and clean up lines
+            $correctCase = @('DbaInstanceParameter', 'PSCredential', 'PSCustomObject', 'PSItem')
             $realContent = @()
-            foreach ($line in $content.Split("`n")) {
+            foreach ($line in $Content.Split("`n")) {
                 foreach ($item in $correctCase) {
                     $line = $line -replace $item, $item
                 }
-                #trim whitespace lines
                 $realContent += $line.Replace("`t", "    ").TrimEnd()
             }
-            [System.IO.File]::WriteAllText($realPath, ($realContent -Join "$OSEOL"), $Utf8NoBomEncoding)
+
+            return ($realContent -Join $LineEnding)
+        }
+    }
+    process {
+        if (Test-FunctionInterrupt) { return }
+        foreach ($p in $Path) {
+            try {
+                $realPath = (Resolve-Path -Path $p -ErrorAction Stop).Path
+            } catch {
+                Stop-Function -Message "Cannot find or resolve $p" -Continue
+            }
+
+            # Read file once
+            $originalBytes = [System.IO.File]::ReadAllBytes($realPath)
+            $originalContent = [System.IO.File]::ReadAllText($realPath)
+
+            # Detect line ending style from original file
+            $detectedOSEOL = $OSEOL
+            if ($psVersionTable.Platform -ne 'Unix') {
+                # We're on Windows, check if file uses Unix endings
+                $containsCR = ($originalContent -split "`r").Length -gt 1
+                if (-not($containsCR)) {
+                    $detectedOSEOL = "`n"
+                }
+            }
+
+            # Format the content
+            $formattedContent = Format-ScriptContent -Content $originalContent -LineEnding $detectedOSEOL
+
+            # If SkipInvisibleOnly is set, check if formatting would only change invisible characters
+            if ($SkipInvisibleOnly) {
+                if (Test-OnlyInvisibleChanges -OriginalContent $originalContent -ModifiedContent $formattedContent) {
+                    Write-Verbose "Skipping $realPath - only invisible changes (BOM/line endings/whitespace)"
+                    continue
+                }
+            }
+
+            # Save the formatted content
+            $Utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $False
+            [System.IO.File]::WriteAllText($realPath, $formattedContent, $Utf8NoBomEncoding)
         }
     }
 }
