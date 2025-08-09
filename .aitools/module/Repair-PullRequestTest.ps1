@@ -149,15 +149,26 @@ function Repair-PullRequestTest {
                 $changedTestFiles = @()
                 $changedCommandFiles = @()
 
-                if ($pr.files) {
+                Write-Verbose "PR files object: $($pr.files | ConvertTo-Json -Depth 3)"
+
+                if ($pr.files -and $pr.files.Count -gt 0) {
                     foreach ($file in $pr.files) {
-                        if ($file.filename -like "*Tests.ps1" -or $file.filename -like "tests/*.Tests.ps1") {
-                            $changedTestFiles += [System.IO.Path]::GetFileName($file.filename)
-                        } elseif ($file.filename -like "public/*.ps1") {
-                            $commandName = [System.IO.Path]::GetFileNameWithoutExtension($file.filename)
-                            $changedCommandFiles += "$commandName.Tests.ps1"
+                        Write-Verbose "Processing file: $($file.filename) (path: $($file.path))"
+                        $filename = if ($file.filename) { $file.filename } elseif ($file.path) { $file.path } else { $file }
+
+                        if ($filename -like "*Tests.ps1" -or $filename -like "tests/*.Tests.ps1") {
+                            $testFileName = [System.IO.Path]::GetFileName($filename)
+                            $changedTestFiles += $testFileName
+                            Write-Verbose "Added test file: $testFileName"
+                        } elseif ($filename -like "public/*.ps1") {
+                            $commandName = [System.IO.Path]::GetFileNameWithoutExtension($filename)
+                            $testFileName = "$commandName.Tests.ps1"
+                            $changedCommandFiles += $testFileName
+                            Write-Verbose "Added command test file: $testFileName (from command: $commandName)"
                         }
                     }
+                } else {
+                    Write-Verbose "No files found in PR object or files array is empty"
                 }
 
                 # Combine both directly changed test files and test files for changed commands
@@ -166,7 +177,6 @@ function Repair-PullRequestTest {
                 Write-Verbose "Changed test files in PR #$($pr.number): $($changedTestFiles -join ', ')"
                 Write-Verbose "Test files for changed commands in PR #$($pr.number): $($changedCommandFiles -join ', ')"
                 Write-Verbose "All relevant test files to process: $($relevantTestFiles -join ', ')"
-                Write-Verbose "All files changed in PR: $($pr.files.filename -join ', ')"
 
                 # Before any checkout operations, confirm our starting point
                 $currentBranch = git rev-parse --abbrev-ref HEAD 2>$null
