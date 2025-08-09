@@ -1,14 +1,14 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
     $ModuleName               = "dbatools",
-    $CommandName              = [System.IO.Path]::GetFileName($PSCommandPath.Replace('.Tests.ps1', '')),
+    $CommandName              = "Copy-DbaDbMail",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe $CommandName -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
-            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $_ -notin ('WhatIf', 'Confirm') }
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
                 "Source",
@@ -27,35 +27,35 @@ Describe $CommandName -Tag "UnitTests" {
     }
 }
 
-Describe $CommandName -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
 
         # TODO: Maybe remove "-EnableException:$false -WarningAction SilentlyContinue" when we can rely on the setting beeing 0 when entering the test
-        $null = Set-DbaSpConfigure -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Name 'Database Mail XPs' -Value 1 -EnableException:$false -WarningAction SilentlyContinue
+        $null = Set-DbaSpConfigure -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Name "Database Mail XPs" -Value 1 -EnableException:$false -WarningAction SilentlyContinue
 
         $accountName = "dbatoolsci_test_$(get-random)"
         $profileName = "dbatoolsci_test_$(get-random)"
 
-        $splat1 = @{
+        $splatAccount = @{
             SqlInstance    = $TestConfig.instance2
             Name           = $accountName
-            Description    = 'Mail account for email alerts'
-            EmailAddress   = 'dbatoolssci@dbatools.io'
-            DisplayName    = 'dbatoolsci mail alerts'
-            ReplyToAddress = 'no-reply@dbatools.io'
-            MailServer     = 'smtp.dbatools.io'
+            Description    = "Mail account for email alerts"
+            EmailAddress   = "dbatoolssci@dbatools.io"
+            DisplayName    = "dbatoolsci mail alerts"
+            ReplyToAddress = "no-reply@dbatools.io"
+            MailServer     = "smtp.dbatools.io"
         }
-        $null = New-DbaDbMailAccount @splat1 -Force
+        $null = New-DbaDbMailAccount @splatAccount -Force
 
-        $splat2 = @{
+        $splatProfile = @{
             SqlInstance         = $TestConfig.instance2
             Name                = $profileName
-            Description         = 'Mail profile for email alerts'
+            Description         = "Mail profile for email alerts"
             MailAccountName     = $accountName
             MailAccountPriority = 1
         }
-        $null = New-DbaDbMailProfile @splat2
+        $null = New-DbaDbMailProfile @splatProfile
 
         $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
     }
@@ -66,7 +66,7 @@ Describe $CommandName -Tags "IntegrationTests" {
         Invoke-DbaQuery -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Query "EXEC msdb.dbo.sysmail_delete_account_sp @account_name = '$accountName';"
         Invoke-DbaQuery -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Query "EXEC msdb.dbo.sysmail_delete_profile_sp @profile_name = '$profileName';"
 
-        $null = Set-DbaSpConfigure -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Name 'Database Mail XPs' -Value 0
+        $null = Set-DbaSpConfigure -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Name "Database Mail XPs" -Value 0
     }
 
     Context "When copying DbMail" {
@@ -79,31 +79,31 @@ Describe $CommandName -Tags "IntegrationTests" {
         }
 
         It "Should have copied Mail Configuration from source to destination" {
-            $result = $results | Where-Object Type -eq 'Mail Configuration'
+            $result = $results | Where-Object Type -eq "Mail Configuration"
             $result.SourceServer | Should -Be $TestConfig.instance2
             $result.DestinationServer | Should -Be $TestConfig.instance3
-            $result.Status | Should -Be 'Successful'
+            $result.Status | Should -Be "Successful"
         }
 
         It "Should have copied Mail Account from source to destination" {
-            $result = $results | Where-Object Type -eq 'Mail Account'
+            $result = $results | Where-Object Type -eq "Mail Account"
             $result.SourceServer | Should -Be $TestConfig.instance2
             $result.DestinationServer | Should -Be $TestConfig.instance3
-            $result.Status | Should -Be 'Successful'
+            $result.Status | Should -Be "Successful"
         }
 
         It "Should have copied Mail Profile from source to destination" {
-            $result = $results | Where-Object Type -eq 'Mail Profile'
+            $result = $results | Where-Object Type -eq "Mail Profile"
             $result.SourceServer | Should -Be $TestConfig.instance2
             $result.DestinationServer | Should -Be $TestConfig.instance3
-            $result.Status | Should -Be 'Successful'
+            $result.Status | Should -Be "Successful"
         }
 
         It "Should have copied Mail Server from source to destination" {
-            $result = $results | Where-Object Type -eq 'Mail Server'
+            $result = $results | Where-Object Type -eq "Mail Server"
             $result.SourceServer | Should -Be $TestConfig.instance2
             $result.DestinationServer | Should -Be $TestConfig.instance3
-            $result.Status | Should -Be 'Successful'
+            $result.Status | Should -Be "Successful"
         }
     }
 
@@ -117,25 +117,25 @@ Describe $CommandName -Tags "IntegrationTests" {
         }
 
         It "Should have not reported on Mail Configuration" {
-            $result = $results | Where-Object Type -eq 'Mail Configuration'
+            $result = $results | Where-Object Type -eq "Mail Configuration"
             $result | Should -BeNullOrEmpty
         }
 
         It "Should have not reported on Mail Account" {
-            $result = $results | Where-Object Type -eq 'Mail Account'
+            $result = $results | Where-Object Type -eq "Mail Account"
             $result | Should -BeNullOrEmpty
         }
 
         It "Should have not reported on Mail Profile" {
-            $result = $results | Where-Object Type -eq 'Mail Profile'
+            $result = $results | Where-Object Type -eq "Mail Profile"
             $result | Should -BeNullOrEmpty
         }
 
         It "Should have skipped Mail Server" {
-            $result = $results | Where-Object Type -eq 'Mail Server'
+            $result = $results | Where-Object Type -eq "Mail Server"
             $result.SourceServer | Should -Be $TestConfig.instance2
             $result.DestinationServer | Should -Be $TestConfig.instance3
-            $result.Status | Should -Be 'Skipped'
+            $result.Status | Should -Be "Skipped"
         }
     }
 }
