@@ -217,15 +217,42 @@ function Repair-PullRequestTest {
 
                 # Process only failed tests for files that were changed in this PR
                 # This focuses the autofix on tests related to actual changes made
-                $failedTests = $allFailedTests | Where-Object {
-                    $testFileName = [System.IO.Path]::GetFileName($_.TestFile)
-                    $testFileName -in $relevantTestFiles
+                $filteredOutTests = @()
+                $failedTests = @()
+
+                foreach ($test in $allFailedTests) {
+                    $testFileName = [System.IO.Path]::GetFileName($test.TestFile)
+                    if ($testFileName -in $relevantTestFiles) {
+                        $failedTests += $test
+                    } else {
+                        $filteredOutTests += $test
+                    }
+                }
+
+                # Show what we're filtering out
+                if ($filteredOutTests.Count -gt 0) {
+                    Write-Verbose "FILTERED OUT $($filteredOutTests.Count) test failures (not related to PR changes):"
+                    $filteredOutGroups = $filteredOutTests | Group-Object TestFile
+                    foreach ($group in $filteredOutGroups) {
+                        $testFileName = [System.IO.Path]::GetFileName($group.Name)
+                        Write-Verbose "  - $testFileName ($($group.Count) failures)"
+                        foreach ($test in $group.Group) {
+                            Write-Verbose "    * $($test.TestName)"
+                        }
+                    }
                 }
 
                 if ($allFailedTests.Count -gt 0 -and $failedTests.Count -eq 0) {
                     Write-Verbose "Found $($allFailedTests.Count) total failures, but none are for files changed in this PR"
                     Write-Verbose "Skipping PR #$($pr.number) - no relevant test failures to fix"
                     continue
+                } elseif ($failedTests.Count -gt 0) {
+                    Write-Verbose "PROCESSING $($failedTests.Count) test failures (related to PR changes):"
+                    $includedGroups = $failedTests | Group-Object TestFile
+                    foreach ($group in $includedGroups) {
+                        $testFileName = [System.IO.Path]::GetFileName($group.Name)
+                        Write-Verbose "  + $testFileName ($($group.Count) failures)"
+                    }
                 }
 
                 if (-not $failedTests -or $failedTests.Count -eq 0) {
