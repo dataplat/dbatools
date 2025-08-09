@@ -365,6 +365,12 @@ function Repair-PullRequestTest {
                         $repairMessage += "7. Keep ALL current parameter validation patterns with filtering`n"
                         $repairMessage += "8. ONLY fix the specific errors - make MINIMAL changes to get tests passing`n`n"
 
+                        $repairMessage += "COMMON PESTER v5 SCOPING ISSUES TO CHECK:`n"
+                        $repairMessage += "- Variables defined in BeforeAll may need `$global: to be accessible in It blocks`n"
+                        $repairMessage += "- Variables shared across Context blocks may need explicit scoping`n"
+                        $repairMessage += "- Arrays and objects created in setup blocks may need scope declarations`n"
+                        $repairMessage += "- Test data variables may need `$global: prefix for cross-block access`n`n"
+
                         $repairMessage += "WHAT YOU CAN CHANGE:`n"
                         $repairMessage += "- Fix syntax errors causing the specific failures`n"
                         $repairMessage += "- Correct variable scoping issues (add `$global: if needed for cross-block variables)`n"
