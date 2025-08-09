@@ -5,8 +5,6 @@ function Invoke-DbatoolsFormatter {
 
     .DESCRIPTION
         Uses PSSA's Invoke-Formatter to format the target files and saves it without the BOM.
-        Preserves manually aligned hashtables and assignment operators.
-        Only writes files if formatting changes are detected.
 
     .PARAMETER Path
         The path to the ps1 file that needs to be formatted
@@ -31,6 +29,11 @@ function Invoke-DbatoolsFormatter {
         PS C:\> Invoke-DbatoolsFormatter -Path C:\dbatools\public\Get-DbaDatabase.ps1
 
         Reformats C:\dbatools\public\Get-DbaDatabase.ps1 to dbatools' standards
+
+    .EXAMPLE
+        PS C:\> Get-ChildItem *.ps1 | Invoke-DbatoolsFormatter
+
+        Reformats all .ps1 files in the current directory, showing progress for the batch operation
     #>
     [CmdletBinding()]
     param (
@@ -59,85 +62,49 @@ function Invoke-DbatoolsFormatter {
         $CBHRex = [regex]'(?smi)\s+\<\#[^#]*\#\>'
         $CBHStartRex = [regex]'(?<spaces>[ ]+)\<\#'
         $CBHEndRex = [regex]'(?<spaces>[ ]*)\#\>'
-
-        # Create custom formatter settings that preserve alignment
-        $customSettings = @{
-            IncludeRules = @(
-                'PSPlaceOpenBrace',
-                'PSPlaceCloseBrace',
-                'PSUseConsistentIndentation',
-                'PSUseConsistentWhitespace'
-            )
-            Rules        = @{
-                PSPlaceOpenBrace           = @{
-                    Enable             = $true
-                    OnSameLine         = $true
-                    NewLineAfter       = $true
-                    IgnoreOneLineBlock = $true
-                }
-                PSPlaceCloseBrace          = @{
-                    Enable             = $true
-                    NewLineAfter       = $false
-                    IgnoreOneLineBlock = $true
-                    NoEmptyLineBefore  = $false
-                }
-                PSUseConsistentIndentation = @{
-                    Enable              = $true
-                    Kind                = 'space'
-                    PipelineIndentation = 'IncreaseIndentationForFirstPipeline'
-                    IndentationSize     = 4
-                }
-                PSUseConsistentWhitespace  = @{
-                    Enable                          = $true
-                    CheckInnerBrace                 = $true
-                    CheckOpenBrace                  = $true
-                    CheckOpenParen                  = $true
-                    CheckOperator                   = $false  # This is key - don't mess with operator spacing
-                    CheckPipe                       = $true
-                    CheckPipeForRedundantWhitespace = $false
-                    CheckSeparator                  = $true
-                    CheckParameter                  = $false
-                }
-            }
-        }
-
         $OSEOL = "`n"
         if ($psVersionTable.Platform -ne 'Unix') {
             $OSEOL = "`r`n"
         }
+
+        # Collect all paths for progress tracking
+        $allPaths = @()
     }
     process {
         if (Test-FunctionInterrupt) { return }
-        foreach ($p in $Path) {
+        # Collect all paths from pipeline
+        $allPaths += $Path
+    }
+    end {
+        if (Test-FunctionInterrupt) { return }
+
+        $totalFiles = $allPaths.Count
+        $currentFile = 0
+        $processedFiles = 0
+        $updatedFiles = 0
+
+        foreach ($p in $allPaths) {
+            $currentFile++
+
             try {
                 $realPath = (Resolve-Path -Path $p -ErrorAction Stop).Path
             } catch {
+                Write-Progress -Activity "Formatting PowerShell files" -Status "Error resolving path: $p" -PercentComplete (($currentFile / $totalFiles) * 100) -CurrentOperation "File $currentFile of $totalFiles"
                 Stop-Function -Message "Cannot find or resolve $p" -Continue
+                continue
             }
 
-            # Skip directories and non-PowerShell files
+            # Skip directories
             if (Test-Path -Path $realPath -PathType Container) {
+                Write-Progress -Activity "Formatting PowerShell files" -Status "Skipping directory: $realPath" -PercentComplete (($currentFile / $totalFiles) * 100) -CurrentOperation "File $currentFile of $totalFiles"
                 Write-Message -Level Verbose "Skipping directory: $realPath"
                 continue
             }
 
-            if ($realPath -notmatch '\.ps1$|\.psm1$|\.psd1$') {
-                Write-Message -Level Verbose "Skipping non-PowerShell file: $realPath"
-                continue
-            }
+            $fileName = Split-Path -Leaf $realPath
+            Write-Progress -Activity "Formatting PowerShell files" -Status "Processing: $fileName" -PercentComplete (($currentFile / $totalFiles) * 100) -CurrentOperation "File $currentFile of $totalFiles"
 
-            try {
-                $originalContent = Get-Content -Path $realPath -Raw -Encoding UTF8
-            } catch {
-                Stop-Function -Message "Unable to read file $realPath : $($_.Exception.Message)" -Continue
-            }
-
-            # If Get-Content failed, originalContent might be null or empty
-            if (-not $originalContent) {
-                Write-Message -Level Verbose "Skipping empty or unreadable file: $realPath"
-                continue
-            }
-
+            $originalContent = Get-Content -Path $realPath -Raw -Encoding UTF8
             $content = $originalContent
 
             if ($OSEOL -eq "`r`n") {
@@ -150,55 +117,48 @@ function Invoke-DbatoolsFormatter {
                 }
             }
 
-            # Strip ending empty lines from both original and working content
+            #strip ending empty lines
             $content = $content -replace "(?s)$OSEOL\s*$"
-            $originalStripped = $originalContent -replace "(?s)$OSEOL\s*$"
+
+            # Preserve aligned assignments before formatting
+            # Look for patterns with multiple spaces before OR after the = sign
+            $alignedPatterns = [regex]::Matches($content, '(?m)^\s*(\$\w+|\w+)\s{2,}=\s*.+$|^\s*(\$\w+|\w+)\s*=\s{2,}.+$')
+            $placeholders = @{}
+
+            foreach ($match in $alignedPatterns) {
+                $placeholder = "___ALIGNMENT_PLACEHOLDER_$($placeholders.Count)___"
+                $placeholders[$placeholder] = $match.Value
+                $content = $content.Replace($match.Value, $placeholder)
+            }
 
             try {
-                # Format the content
-                $content = Invoke-Formatter -ScriptDefinition $content -Settings $customSettings -ErrorAction Stop
-                # Also format the original to compare
-                $originalFormatted = Invoke-Formatter -ScriptDefinition $originalStripped -Settings $customSettings -ErrorAction Stop
+                $formattedContent = Invoke-Formatter -ScriptDefinition $content -Settings CodeFormattingOTBS -ErrorAction Stop
+                if ($formattedContent) {
+                    $content = $formattedContent
+                }
             } catch {
-                Write-Message -Level Warning "Unable to format $realPath : $($_.Exception.Message)"
-                continue
+                # Just silently continue - the formatting might still work partially
             }
 
-            # Ensure both contents are strings before processing
-            if (-not $content -or $content -isnot [string]) {
-                Write-Message -Level Warning "Formatter returned unexpected content type for $realPath"
-                continue
+            # Restore the aligned patterns
+            foreach ($key in $placeholders.Keys) {
+                $content = $content.Replace($key, $placeholders[$key])
             }
 
-            if (-not $originalFormatted -or $originalFormatted -isnot [string]) {
-                Write-Message -Level Warning "Formatter returned unexpected content type for original in $realPath"
-                continue
-            }
-
-            # Apply CBH fix to formatted content
+            #match the ending indentation of CBH with the starting one, see #4373
             $CBH = $CBHRex.Match($content).Value
             if ($CBH) {
+                #get starting spaces
                 $startSpaces = $CBHStartRex.Match($CBH).Groups['spaces']
                 if ($startSpaces) {
+                    #get end
                     $newCBH = $CBHEndRex.Replace($CBH, "$startSpaces#>")
                     if ($newCBH) {
+                        #replace the CBH
                         $content = $content.Replace($CBH, $newCBH)
                     }
                 }
             }
-
-            # Apply CBH fix to original formatted content
-            $originalCBH = $CBHRex.Match($originalFormatted).Value
-            if ($originalCBH) {
-                $startSpaces = $CBHStartRex.Match($originalCBH).Groups['spaces']
-                if ($startSpaces) {
-                    $newOriginalCBH = $CBHEndRex.Replace($originalCBH, "$startSpaces#>")
-                    if ($newOriginalCBH) {
-                        $originalFormatted = $originalFormatted.Replace($originalCBH, $newOriginalCBH)
-                    }
-                }
-            }
-
             $Utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $False
             $correctCase = @(
                 'DbaInstanceParameter'
@@ -206,38 +166,38 @@ function Invoke-DbatoolsFormatter {
                 'PSCustomObject'
                 'PSItem'
             )
-
-            # Process the formatted content
             $realContent = @()
             foreach ($line in $content.Split("`n")) {
                 foreach ($item in $correctCase) {
                     $line = $line -replace $item, $item
                 }
+                #trim whitespace lines
                 $realContent += $line.Replace("`t", "    ").TrimEnd()
             }
-            $finalContent = $realContent -Join "$OSEOL"
 
-            # Process the original formatted content the same way
-            $originalProcessed = @()
-            foreach ($line in $originalFormatted.Split("`n")) {
-                foreach ($item in $correctCase) {
-                    $line = $line -replace $item, $item
-                }
-                $originalProcessed += $line.Replace("`t", "    ").TrimEnd()
-            }
-            $originalFinalContent = $originalProcessed -Join "$OSEOL"
+            $newContent = $realContent -Join "$OSEOL"
 
-            # Only write the file if there are actual changes
-            if ($finalContent -ne $originalFinalContent) {
-                try {
-                    Write-Message -Level Verbose "Formatting changes detected in $realPath"
-                    [System.IO.File]::WriteAllText($realPath, $finalContent, $Utf8NoBomEncoding)
-                } catch {
-                    Stop-Function -Message "Unable to write file $realPath : $($_.Exception.Message)" -Continue
-                }
+            # Compare without empty lines to detect real changes
+            $originalNonEmpty = ($originalContent -split "[\r\n]+" | Where-Object { $_.Trim() }) -join ""
+            $newNonEmpty = ($newContent -split "[\r\n]+" | Where-Object { $_.Trim() }) -join ""
+
+            if ($originalNonEmpty -ne $newNonEmpty) {
+                [System.IO.File]::WriteAllText($realPath, $newContent, $Utf8NoBomEncoding)
+                Write-Message -Level Verbose "Updated: $realPath"
+                $updatedFiles++
             } else {
-                Write-Message -Level Verbose "No formatting changes needed for $realPath"
+                Write-Message -Level Verbose "No changes needed: $realPath"
             }
+
+            $processedFiles++
         }
+
+        # Complete the progress bar
+        Write-Progress -Activity "Formatting PowerShell files" -Status "Complete" -PercentComplete 100 -CurrentOperation "Processed $processedFiles files, updated $updatedFiles"
+        Start-Sleep -Milliseconds 500  # Brief pause to show completion
+        Write-Progress -Activity "Formatting PowerShell files" -Completed
+
+        # Summary message
+        Write-Message -Level Verbose "Formatting complete: Processed $processedFiles files, updated $updatedFiles files"
     }
 }
