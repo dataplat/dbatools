@@ -68,7 +68,7 @@ function Invoke-DbatoolsFormatter {
                 'PSUseConsistentIndentation',
                 'PSUseConsistentWhitespace'
             )
-            Rules        = @{
+            Rules       = @{
                 PSPlaceOpenBrace           = @{
                     Enable             = $true
                     OnSameLine         = $true
@@ -115,7 +115,29 @@ function Invoke-DbatoolsFormatter {
                 Stop-Function -Message "Cannot find or resolve $p" -Continue
             }
 
-            $originalContent = Get-Content -Path $realPath -Raw -Encoding UTF8
+            # Skip directories and non-PowerShell files
+            if (Test-Path -Path $realPath -PathType Container) {
+                Write-Message -Level Verbose "Skipping directory: $realPath"
+                continue
+            }
+
+            if ($realPath -notmatch '\.ps1$|\.psm1$|\.psd1$') {
+                Write-Message -Level Verbose "Skipping non-PowerShell file: $realPath"
+                continue
+            }
+
+            try {
+                $originalContent = Get-Content -Path $realPath -Raw -Encoding UTF8
+            } catch {
+                Stop-Function -Message "Unable to read file $realPath : $($_.Exception.Message)" -Continue
+            }
+
+            # If Get-Content failed, originalContent might be null or empty
+            if (-not $originalContent) {
+                Write-Message -Level Verbose "Skipping empty or unreadable file: $realPath"
+                continue
+            }
+
             $content = $originalContent
 
             if ($OSEOL -eq "`r`n") {
@@ -134,8 +156,16 @@ function Invoke-DbatoolsFormatter {
                 # Use custom settings instead of CodeFormattingOTBS
                 $content = Invoke-Formatter -ScriptDefinition $content -Settings $customSettings -ErrorAction Stop
             } catch {
-                Write-Message -Level Warning "Unable to format $p"
+                Write-Message -Level Warning "Unable to format $realPath : $($_.Exception.Message)"
+                continue
             }
+
+            # Ensure $content is a string before processing
+            if (-not $content -or $content -isnot [string]) {
+                Write-Message -Level Warning "Formatter returned unexpected content type for $realPath"
+                continue
+            }
+
             #match the ending indentation of CBH with the starting one, see #4373
             $CBH = $CBHRex.Match($content).Value
             if ($CBH) {
@@ -170,8 +200,12 @@ function Invoke-DbatoolsFormatter {
 
             # Only write the file if there are actual changes
             if ($finalContent -ne $originalContent) {
-                Write-Message -Level Verbose "Formatting changes detected in $realPath"
-                [System.IO.File]::WriteAllText($realPath, $finalContent, $Utf8NoBomEncoding)
+                try {
+                    Write-Message -Level Verbose "Formatting changes detected in $realPath"
+                    [System.IO.File]::WriteAllText($realPath, $finalContent, $Utf8NoBomEncoding)
+                } catch {
+                    Stop-Function -Message "Unable to write file $realPath : $($_.Exception.Message)" -Continue
+                }
             } else {
                 Write-Message -Level Verbose "No formatting changes needed for $realPath"
             }
