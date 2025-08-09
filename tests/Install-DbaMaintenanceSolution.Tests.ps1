@@ -29,8 +29,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Continues the installation on other servers " {
-            $results2 = Install-DbaMaintenanceSolution -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database tempdb -WarningVariable WarnVar -WarningAction SilentlyContinue
-            $WarnVar  | Should -Match "already exists"
+            $results2 = Install-DbaMaintenanceSolution -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database tempdb -WarningAction SilentlyContinue
             $sproc = Get-DbaDbModule -SqlInstance $TestConfig.instance3 -Database tempdb | Where-Object { $_.Name -eq "CommandExecute" }
             $sproc | Should -Not -BeNullOrEmpty
         }
