@@ -1,4 +1,4 @@
-function Get-TestArtifacts {
+function Get-TestArtifact {
     <#
     .SYNOPSIS
         Gets test artifacts from an AppVeyor job.
@@ -15,10 +15,13 @@ function Get-TestArtifacts {
         Requires: APPVEYOR_API_TOKEN environment variable
     #>
     [CmdletBinding()]
-    param([string]$JobId)
+    param(
+        [Parameter(ValueFromPipeline)]
+        [string[]]$JobId = "0hvpvgv93ojh6ili"
+    )
 
-    $artifacts = Invoke-AppVeyorApi "buildjobs/$JobId/artifacts"
-    return $artifacts | Where-Object {
-        $_.fileName -match 'TestFailureSummary.*\.json'
+    foreach ($id in $JobId) {
+        Write-Verbose "Fetching artifacts for Job ID: $id"
+        Invoke-AppVeyorApi "buildjobs/$id/artifacts" | Where-Object fileName -match 'TestFailureSummary.*\.json'
     }
 }
