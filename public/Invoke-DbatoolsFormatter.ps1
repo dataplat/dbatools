@@ -68,7 +68,7 @@ function Invoke-DbatoolsFormatter {
                 'PSUseConsistentIndentation',
                 'PSUseConsistentWhitespace'
             )
-            Rules       = @{
+            Rules        = @{
                 PSPlaceOpenBrace           = @{
                     Enable             = $true
                     OnSameLine         = $true
@@ -150,36 +150,55 @@ function Invoke-DbatoolsFormatter {
                 }
             }
 
-            #strip ending empty lines
+            # Strip ending empty lines from both original and working content
             $content = $content -replace "(?s)$OSEOL\s*$"
+            $originalStripped = $originalContent -replace "(?s)$OSEOL\s*$"
+
             try {
-                # Use custom settings instead of CodeFormattingOTBS
+                # Format the content
                 $content = Invoke-Formatter -ScriptDefinition $content -Settings $customSettings -ErrorAction Stop
+                # Also format the original to compare
+                $originalFormatted = Invoke-Formatter -ScriptDefinition $originalStripped -Settings $customSettings -ErrorAction Stop
             } catch {
                 Write-Message -Level Warning "Unable to format $realPath : $($_.Exception.Message)"
                 continue
             }
 
-            # Ensure $content is a string before processing
+            # Ensure both contents are strings before processing
             if (-not $content -or $content -isnot [string]) {
                 Write-Message -Level Warning "Formatter returned unexpected content type for $realPath"
                 continue
             }
 
-            #match the ending indentation of CBH with the starting one, see #4373
+            if (-not $originalFormatted -or $originalFormatted -isnot [string]) {
+                Write-Message -Level Warning "Formatter returned unexpected content type for original in $realPath"
+                continue
+            }
+
+            # Apply CBH fix to formatted content
             $CBH = $CBHRex.Match($content).Value
             if ($CBH) {
-                #get starting spaces
                 $startSpaces = $CBHStartRex.Match($CBH).Groups['spaces']
                 if ($startSpaces) {
-                    #get end
                     $newCBH = $CBHEndRex.Replace($CBH, "$startSpaces#>")
                     if ($newCBH) {
-                        #replace the CBH
                         $content = $content.Replace($CBH, $newCBH)
                     }
                 }
             }
+
+            # Apply CBH fix to original formatted content
+            $originalCBH = $CBHRex.Match($originalFormatted).Value
+            if ($originalCBH) {
+                $startSpaces = $CBHStartRex.Match($originalCBH).Groups['spaces']
+                if ($startSpaces) {
+                    $newOriginalCBH = $CBHEndRex.Replace($originalCBH, "$startSpaces#>")
+                    if ($newOriginalCBH) {
+                        $originalFormatted = $originalFormatted.Replace($originalCBH, $newOriginalCBH)
+                    }
+                }
+            }
+
             $Utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $False
             $correctCase = @(
                 'DbaInstanceParameter'
@@ -187,19 +206,29 @@ function Invoke-DbatoolsFormatter {
                 'PSCustomObject'
                 'PSItem'
             )
+
+            # Process the formatted content
             $realContent = @()
             foreach ($line in $content.Split("`n")) {
                 foreach ($item in $correctCase) {
                     $line = $line -replace $item, $item
                 }
-                #trim whitespace lines
                 $realContent += $line.Replace("`t", "    ").TrimEnd()
             }
-
             $finalContent = $realContent -Join "$OSEOL"
 
+            # Process the original formatted content the same way
+            $originalProcessed = @()
+            foreach ($line in $originalFormatted.Split("`n")) {
+                foreach ($item in $correctCase) {
+                    $line = $line -replace $item, $item
+                }
+                $originalProcessed += $line.Replace("`t", "    ").TrimEnd()
+            }
+            $originalFinalContent = $originalProcessed -Join "$OSEOL"
+
             # Only write the file if there are actual changes
-            if ($finalContent -ne $originalContent) {
+            if ($finalContent -ne $originalFinalContent) {
                 try {
                     Write-Message -Level Verbose "Formatting changes detected in $realPath"
                     [System.IO.File]::WriteAllText($realPath, $finalContent, $Utf8NoBomEncoding)
