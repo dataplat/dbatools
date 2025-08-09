@@ -82,14 +82,14 @@ function Invoke-DbatoolsFormatter {
 
             # Check for BOM
             $originalHasBOM = $OriginalBytes.Length -ge 3 -and
-                              $OriginalBytes[0] -eq 0xEF -and
-                              $OriginalBytes[1] -eq 0xBB -and
-                              $OriginalBytes[2] -eq 0xBF
+            $OriginalBytes[0] -eq 0xEF -and
+            $OriginalBytes[1] -eq 0xBB -and
+            $OriginalBytes[2] -eq 0xBF
 
             $modifiedHasBOM = $ModifiedBytes.Length -ge 3 -and
-                              $ModifiedBytes[0] -eq 0xEF -and
-                              $ModifiedBytes[1] -eq 0xBB -and
-                              $ModifiedBytes[2] -eq 0xBF
+            $ModifiedBytes[0] -eq 0xEF -and
+            $ModifiedBytes[1] -eq 0xBB -and
+            $ModifiedBytes[2] -eq 0xBF
 
             # Normalize content for comparison (remove all formatting differences)
             $originalLines = $OriginalContent -split '\r?\n'
@@ -176,8 +176,8 @@ function Invoke-DbatoolsFormatter {
                 $testParams = @{
                     OriginalContent = $originalContent
                     ModifiedContent = $formattedContent
-                    OriginalBytes = $originalBytes
-                    ModifiedBytes = $modifiedBytes
+                    OriginalBytes   = $originalBytes
+                    ModifiedBytes   = $modifiedBytes
                 }
 
                 if (Test-OnlyInvisibleChanges @testParams) {
@@ -201,7 +201,31 @@ function Invoke-DbatoolsFormatter {
             #strip ending empty lines
             $content = $content -replace "(?s)$OSEOL\s*$"
             try {
-                $content = Invoke-Formatter -ScriptDefinition $content -Settings CodeFormattingOTBS -ErrorAction Stop
+                # Save original lines before formatting
+                $originalLines = $content -split "`n"
+
+                # Run the formatter
+                $formattedContent = Invoke-Formatter -ScriptDefinition $content -Settings CodeFormattingOTBS -ErrorAction Stop
+
+                # Automatically restore spaces before = signs
+                $formattedLines = $formattedContent -split "`n"
+                for ($i = 0; $i -lt $formattedLines.Count; $i++) {
+                    if ($i -lt $originalLines.Count) {
+                        # Check if original had multiple spaces before =
+                        if ($originalLines[$i] -match '^(\s*)(.+?)(\s{2,})(=)(.*)$') {
+                            $indent = $matches[1]
+                            $beforeEquals = $matches[2]
+                            $spacesBeforeEquals = $matches[3]
+                            $rest = $matches[4] + $matches[5]
+
+                            # Apply the same spacing to the formatted line
+                            if ($formattedLines[$i] -match '^(\s*)(.+?)(\s*)(=)(.*)$') {
+                                $formattedLines[$i] = $matches[1] + $matches[2] + $spacesBeforeEquals + '=' + $matches[5]
+                            }
+                        }
+                    }
+                }
+                $content = $formattedLines -join "`n"
             } catch {
                 Write-Message -Level Warning "Unable to format $p"
             }
