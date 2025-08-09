@@ -2,7 +2,7 @@
 param(
     $ModuleName  = "dbatools",
     $CommandName = "Copy-DbaAgentSchedule",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe $CommandName -Tag UnitTests {
@@ -92,7 +92,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Returns more than one result" {
-            $copyResults.Status.Count | Should -BeGreaterThan 1
+            $copyResults.Count | Should -BeGreaterThan 1
         }
 
         It "Contains at least one successful copy" {

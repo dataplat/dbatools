@@ -2,7 +2,7 @@
 param(
     $ModuleName  = "dbatools",
     $CommandName = "Copy-DbaAgentServer",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe $CommandName -Tag UnitTests {
@@ -44,16 +44,16 @@ Describe $CommandName -Tag IntegrationTests {
         # The source instance should have jobs, schedules, operators, and other agent objects to copy.
 
         # Set variables. They are available in all the It blocks.
-        $sourceInstance      = $TestConfig.instance1
-        $destinationInstance = $TestConfig.instance2
-        $testJobName         = "dbatoolsci_copyjob_$(Get-Random)"
-        $testOperatorName    = "dbatoolsci_copyoperator_$(Get-Random)"
-        $testScheduleName    = "dbatoolsci_copyschedule_$(Get-Random)"
+        $global:sourceInstance      = $TestConfig.instance1
+        $global:destinationInstance = $TestConfig.instance2
+        $global:testJobName         = "dbatoolsci_copyjob_$(Get-Random)"
+        $global:testOperatorName    = "dbatoolsci_copyoperator_$(Get-Random)"
+        $global:testScheduleName    = "dbatoolsci_copyschedule_$(Get-Random)"
 
         # Create test objects on source instance
         $splatNewJob = @{
-            SqlInstance     = $sourceInstance
-            Job             = $testJobName
+            SqlInstance     = $global:sourceInstance
+            Job             = $global:testJobName
             Description     = "Test job for Copy-DbaAgentServer"
             Category        = "Database Maintenance"
             EnableException = $true
@@ -61,16 +61,16 @@ Describe $CommandName -Tag IntegrationTests {
         $null = New-DbaAgentJob @splatNewJob
 
         $splatNewOperator = @{
-            SqlInstance     = $sourceInstance
-            Operator        = $testOperatorName
+            SqlInstance     = $global:sourceInstance
+            Operator        = $global:testOperatorName
             EmailAddress    = "test@dbatools.io"
             EnableException = $true
         }
         $null = New-DbaAgentOperator @splatNewOperator
 
         $splatNewSchedule = @{
-            SqlInstance       = $sourceInstance
-            Schedule          = $testScheduleName
+            SqlInstance       = $global:sourceInstance
+            Schedule          = $global:testScheduleName
             FrequencyType     = "Weekly"
             FrequencyInterval = "Monday"
             StartTime         = "090000"
@@ -87,9 +87,9 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
 
         # Cleanup all created objects on both source and destination
-        $null = Remove-DbaAgentJob -SqlInstance $sourceInstance, $destinationInstance -Job $testJobName -ErrorAction SilentlyContinue
-        $null = Remove-DbaAgentOperator -SqlInstance $sourceInstance, $destinationInstance -Operator $testOperatorName -ErrorAction SilentlyContinue
-        $null = Remove-DbaAgentSchedule -SqlInstance $sourceInstance, $destinationInstance -Schedule $testScheduleName -ErrorAction SilentlyContinue
+        $null = Remove-DbaAgentJob -SqlInstance $global:sourceInstance, $global:destinationInstance -Job $global:testJobName -ErrorAction SilentlyContinue
+        $null = Remove-DbaAgentOperator -SqlInstance $global:sourceInstance, $global:destinationInstance -Operator $global:testOperatorName -ErrorAction SilentlyContinue
+        $null = Remove-DbaAgentSchedule -SqlInstance $global:sourceInstance, $global:destinationInstance -Schedule $global:testScheduleName -ErrorAction SilentlyContinue
 
         # Remove the backup directory.
         Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
@@ -100,39 +100,55 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When copying SQL Agent objects" {
         It "Should copy jobs from source to destination" {
             $splatCopy = @{
-                Source      = $sourceInstance
-                Destination = $destinationInstance
+                Source      = $global:sourceInstance
+                Destination = $global:destinationInstance
                 Force       = $true
             }
             $results = Copy-DbaAgentServer @splatCopy
 
             $results | Should -Not -BeNullOrEmpty
-            $destinationJobs = Get-DbaAgentJob -SqlInstance $destinationInstance -Job $testJobName
+            $destinationJobs = Get-DbaAgentJob -SqlInstance $global:destinationInstance -Job $global:testJobName
             $destinationJobs | Should -Not -BeNullOrEmpty
-            $destinationJobs.Name | Should -Be $testJobName
+            $destinationJobs.Name | Should -Be $global:testJobName
         }
 
         It "Should copy operators from source to destination" {
-            $destinationOperators = Get-DbaAgentOperator -SqlInstance $destinationInstance -Operator $testOperatorName
+            # Ensure the copy operation ran first for operators to exist
+            $splatCopy = @{
+                Source      = $global:sourceInstance
+                Destination = $global:destinationInstance
+                Force       = $true
+            }
+            $null = Copy-DbaAgentServer @splatCopy
+
+            $destinationOperators = Get-DbaAgentOperator -SqlInstance $global:destinationInstance -Operator $global:testOperatorName
             $destinationOperators | Should -Not -BeNullOrEmpty
-            $destinationOperators.Name | Should -Be $testOperatorName
+            $destinationOperators.Name | Should -Be $global:testOperatorName
         }
 
         It "Should copy schedules from source to destination" {
-            $destinationSchedules = Get-DbaAgentSchedule -SqlInstance $destinationInstance -Schedule $testScheduleName
+            # Ensure the copy operation ran first for schedules to exist
+            $splatCopy = @{
+                Source      = $global:sourceInstance
+                Destination = $global:destinationInstance
+                Force       = $true
+            }
+            $null = Copy-DbaAgentServer @splatCopy
+
+            $destinationSchedules = Get-DbaAgentSchedule -SqlInstance $global:destinationInstance -Schedule $global:testScheduleName
             $destinationSchedules | Should -Not -BeNullOrEmpty
-            $destinationSchedules.Name | Should -Be $testScheduleName
+            $destinationSchedules.Name | Should -Be $global:testScheduleName
         }
     }
 
     Context "When using DisableJobsOnDestination parameter" {
         BeforeAll {
-            $disableTestJobName = "dbatoolsci_disablejob_$(Get-Random)"
+            $global:disableTestJobName = "dbatoolsci_disablejob_$(Get-Random)"
 
             # Create a new job for this test
             $splatNewDisableJob = @{
-                SqlInstance     = $sourceInstance
-                Job             = $disableTestJobName
+                SqlInstance     = $global:sourceInstance
+                Job             = $global:disableTestJobName
                 Description     = "Test job for disable functionality"
                 EnableException = $true
             }
@@ -141,19 +157,19 @@ Describe $CommandName -Tag IntegrationTests {
 
         AfterAll {
             # Cleanup the test job
-            $null = Remove-DbaAgentJob -SqlInstance $sourceInstance, $destinationInstance -Job $disableTestJobName -ErrorAction SilentlyContinue
+            $null = Remove-DbaAgentJob -SqlInstance $global:sourceInstance, $global:destinationInstance -Job $global:disableTestJobName -ErrorAction SilentlyContinue
         }
 
         It "Should disable jobs on destination when specified" {
             $splatCopyDisable = @{
-                Source                   = $sourceInstance
-                Destination              = $destinationInstance
+                Source                   = $global:sourceInstance
+                Destination              = $global:destinationInstance
                 DisableJobsOnDestination = $true
                 Force                    = $true
             }
             $results = Copy-DbaAgentServer @splatCopyDisable
 
-            $copiedJob = Get-DbaAgentJob -SqlInstance $destinationInstance -Job $disableTestJobName
+            $copiedJob = Get-DbaAgentJob -SqlInstance $global:destinationInstance -Job $global:disableTestJobName
             $copiedJob | Should -Not -BeNullOrEmpty
             $copiedJob.Enabled | Should -Be $false
         }
@@ -161,12 +177,12 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "When using DisableJobsOnSource parameter" {
         BeforeAll {
-            $sourceDisableJobName = "dbatoolsci_sourcedisablejob_$(Get-Random)"
+            $global:sourceDisableJobName = "dbatoolsci_sourcedisablejob_$(Get-Random)"
 
             # Create a new job for this test
             $splatNewSourceJob = @{
-                SqlInstance     = $sourceInstance
-                Job             = $sourceDisableJobName
+                SqlInstance     = $global:sourceInstance
+                Job             = $global:sourceDisableJobName
                 Description     = "Test job for source disable functionality"
                 EnableException = $true
             }
@@ -175,19 +191,19 @@ Describe $CommandName -Tag IntegrationTests {
 
         AfterAll {
             # Cleanup the test job
-            $null = Remove-DbaAgentJob -SqlInstance $sourceInstance, $destinationInstance -Job $sourceDisableJobName -ErrorAction SilentlyContinue
+            $null = Remove-DbaAgentJob -SqlInstance $global:sourceInstance, $global:destinationInstance -Job $global:sourceDisableJobName -ErrorAction SilentlyContinue
         }
 
         It "Should disable jobs on source when specified" {
             $splatCopySourceDisable = @{
-                Source              = $sourceInstance
-                Destination         = $destinationInstance
+                Source              = $global:sourceInstance
+                Destination         = $global:destinationInstance
                 DisableJobsOnSource = $true
                 Force               = $true
             }
             $results = Copy-DbaAgentServer @splatCopySourceDisable
 
-            $sourceJob = Get-DbaAgentJob -SqlInstance $sourceInstance -Job $sourceDisableJobName
+            $sourceJob = Get-DbaAgentJob -SqlInstance $global:sourceInstance -Job $global:sourceDisableJobName
             $sourceJob | Should -Not -BeNullOrEmpty
             $sourceJob.Enabled | Should -Be $false
         }
@@ -196,8 +212,8 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When using ExcludeServerProperties parameter" {
         It "Should exclude specified server properties" {
             $splatCopyExclude = @{
-                Source                  = $sourceInstance
-                Destination             = $destinationInstance
+                Source                  = $global:sourceInstance
+                Destination             = $global:destinationInstance
                 ExcludeServerProperties = $true
                 Force                   = $true
             }
@@ -214,7 +230,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             # Create a job that shouldn't be copied due to WhatIf
             $splatNewWhatIfJob = @{
-                SqlInstance     = $sourceInstance
+                SqlInstance     = $global:sourceInstance
                 Job             = $whatIfJobName
                 Description     = "Test job for WhatIf"
                 EnableException = $true
@@ -222,19 +238,19 @@ Describe $CommandName -Tag IntegrationTests {
             $null = New-DbaAgentJob @splatNewWhatIfJob
 
             $splatCopyWhatIf = @{
-                Source      = $sourceInstance
-                Destination = $destinationInstance
+                Source      = $global:sourceInstance
+                Destination = $global:destinationInstance
                 Force       = $true
                 WhatIf      = $true
             }
             $results = Copy-DbaAgentServer @splatCopyWhatIf
 
             # Job should not exist on destination due to WhatIf
-            $destinationJob = Get-DbaAgentJob -SqlInstance $destinationInstance -Job $whatIfJobName -ErrorAction SilentlyContinue
+            $destinationJob = Get-DbaAgentJob -SqlInstance $global:destinationInstance -Job $whatIfJobName -ErrorAction SilentlyContinue
             $destinationJob | Should -BeNullOrEmpty
 
             # Cleanup
-            $null = Remove-DbaAgentJob -SqlInstance $sourceInstance -Job $whatIfJobName -ErrorAction SilentlyContinue
+            $null = Remove-DbaAgentJob -SqlInstance $global:sourceInstance -Job $whatIfJobName -ErrorAction SilentlyContinue
         }
     }
 }
