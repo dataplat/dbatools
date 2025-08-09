@@ -15,7 +15,7 @@ Describe $CommandName -Tag UnitTests {
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
                 "SqlInstance",
-                "SqlCredential", 
+                "SqlCredential",
                 "Credential",
                 "Force",
                 "EnableException"
