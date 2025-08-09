@@ -20,17 +20,62 @@ function Get-TestArtifact {
         [string[]]$JobId
     )
 
-    foreach ($id in $JobId) {
-        Write-Verbose "Fetching artifacts for Job ID: $id"
-        $result = Invoke-AppVeyorApi "buildjobs/$id/artifacts" | Where-Object fileName -match TestFailureSummary
+    function Parse-JsonFromContent {
+        param([Parameter(ValueFromPipeline)]$InputObject)
+        process {
+            if ($null -eq $InputObject) { return $null }
 
-        [pscustomobject]@{
-            JobId    = $id
-            Filename = $result.fileName
-            Type     = $result.type
-            Size     = $result.size
-            Created  = $result.created
-            Content  = Invoke-AppVeyorApi "buildjobs/$id/artifacts/$($result.fileName)"
+            # AppVeyor often returns PSCustomObject with .Content (string) and .Created
+            $raw = if ($InputObject -is [string] -or $InputObject -is [byte[]]) {
+                $InputObject
+            } elseif ($InputObject.PSObject.Properties.Name -contains 'Content') {
+                $InputObject.Content
+            } else {
+                [string]$InputObject
+            }
+
+            $s = if ($raw -is [byte[]]) { [Text.Encoding]::UTF8.GetString($raw) } else { [string]$raw }
+            $s = $s.TrimStart([char]0xFEFF)  # strip BOM
+            if ($s -notmatch '^\s*[\{\[]') {
+                throw "Artifact body is not JSON. Starts with: '$($s.Substring(0,1))'."
+            }
+            $s | ConvertFrom-Json -Depth 50
+        }
+    }
+
+    foreach ($id in $JobId) {
+        Write-Verbose ("Fetching artifacts for job {0}" -f $id)
+        $list = Invoke-AppVeyorApi "buildjobs/$id/artifacts"
+        if (-not $list) { Write-Warning ("No artifacts for job {0}" -f $id); continue }
+
+        $targets = $list | Where-Object { $_.fileName -match 'TestFailureSummary.*\.json' }
+        if (-not $targets) {
+            continue
+        }
+
+        foreach ($art in $targets) {
+            $resp = Invoke-AppVeyorApi "buildjobs/$id/artifacts/$($art.fileName)"
+
+            $parsed = $null
+            $rawOut = $null
+            $created = if ($resp.PSObject.Properties.Name -contains 'Created') { $resp.Created } else { $art.created }
+
+            try {
+                $parsed = $resp | Parse-JsonFromContent
+            } catch {
+                $rawOut = if ($resp.PSObject.Properties.Name -contains 'Content') { [string]$resp.Content } else { [string]$resp }
+                Write-Warning ("Failed to parse {0} in job {1}: {2}" -f $art.fileName, $id, $_.Exception.Message)
+            }
+
+            [pscustomobject]@{
+                JobId      = $id
+                FileName   = $art.fileName
+                Type       = $art.type
+                Size       = $art.size
+                Created    = $created
+                Content    = $parsed
+                Raw        = $rawOut
+            }
         }
     }
 }

@@ -5,9 +5,11 @@ function Get-AppVeyorFailure {
     )
 
     if (-not $PullRequest) {
+        Write-Progress -Activity "Get-AppVeyorFailure" -Status "Fetching open pull requests..." -PercentComplete 0
         Write-Verbose "No pull request numbers specified, getting all open PRs..."
         $prsJson = gh pr list --state open --json "number,title,headRefName,state,statusCheckRollup"
         if (-not $prsJson) {
+            Write-Progress -Activity "Get-AppVeyorFailure" -Completed
             Write-Warning "No open pull requests found"
             return
         }
@@ -16,7 +18,13 @@ function Get-AppVeyorFailure {
         Write-Verbose "Found $($PullRequest.Count) open PRs: $($PullRequest -join ',')"
     }
 
+    $totalPRs = $PullRequest.Count
+    $currentPR = 0
+
     foreach ($prNumber in $PullRequest) {
+        $currentPR++
+        $prPercentComplete = [math]::Round(($currentPR / $totalPRs) * 100)
+        Write-Progress -Activity "Getting PR build information" -Status "Processing PR #$prNumber ($currentPR of $totalPRs)" -PercentComplete $prPercentComplete
         Write-Verbose "Fetching AppVeyor build information for PR #$prNumber"
 
         $checksJson = gh pr checks $prNumber --json "name,state,link" 2>$null
@@ -41,6 +49,7 @@ function Get-AppVeyorFailure {
         }
 
         try {
+            Write-Progress -Activity "Getting build details" -Status "Fetching build details for PR #$prNumber" -PercentComplete $prPercentComplete
             Write-Verbose "Fetching build details for build ID: $buildId"
 
             $apiParams = @{
@@ -53,21 +62,27 @@ function Get-AppVeyorFailure {
                 continue
             }
 
-            $failedJobs = $build.build.jobs | Where-Object { $_.status -eq "failed" }
+            $failedJobs = $build.build.jobs | Where-Object Status -eq "failed"
 
             if (-not $failedJobs) {
                 Write-Verbose "No failed jobs found in build $buildId"
                 continue
             }
 
+            $totalJobs = $failedJobs.Count
+            $currentJob = 0
+
             foreach ($job in $failedJobs) {
+                $currentJob++
+                Write-Progress -Activity "Getting job failure information" -Status "Processing job $currentJob of $totalJobs for PR #$prNumber" -PercentComplete $prPercentComplete -CurrentOperation "Job: $($job.name)"
                 Write-Verbose "Processing failed job: $($job.name) (ID: $($job.jobId))"
-                $artifacts = Get-TestArtifact -JobId $job.jobId
-                (($artifacts.Content -replace '^\uFEFF', '') | ConvertFrom-Json).Failures
+                (Get-TestArtifact -JobId $job.jobid).Content.Failures
             }
         } catch {
             Write-Verbose "Failed to fetch AppVeyor build details for build ${buildId}: $_"
             continue
         }
     }
+
+    Write-Progress -Activity "Get-AppVeyorFailure" -Completed
 }
