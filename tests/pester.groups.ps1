@@ -34,6 +34,7 @@ $TestsRunGroups = @{
         'Sync-DbaLoginPermission',
         'Dismount-DbaDatabase',
         # tests that fail locally against SQL Server 2022 instances and fail on AppVeyor
+        'Set-DbaAgentJobStep',   # This outputs the message "[New-DbaAgentJob] Something went wrong creating the job. | Value cannot be null. / Parameter name: newParent" and failes in Describe with "Cannot bind argument to parameter 'SqlInstance' because it is null."
         'Watch-DbaDbLogin',
         # tests that fail because the command does not work
         'Copy-DbaDbCertificate',

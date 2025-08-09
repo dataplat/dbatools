@@ -253,7 +253,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $newJobStep.JobStepFlags | Should -Be None
         }
 
-        It -Skip "set a step with all attributes for Subsystem=CmdExec" {
+        It "set a step with all attributes for Subsystem=CmdExec" {
             $jobStep = @{
                 SqlInstance        = $TestConfig.instance2
                 Job                = $job1Instance2
