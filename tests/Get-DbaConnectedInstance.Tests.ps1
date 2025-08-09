@@ -1,8 +1,14 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaConnectedInstance",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
+
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 $global:TestConfig = Get-TestConfig
 
-Describe "$CommandName Unit Tests" -Tag "UnitTests" {
+Describe $CommandName -Tag UnitTests {
     Context "Validate parameters" {
         # fake tests, no parameters to validate
         It "Should only contain our specific parameters" {
@@ -11,10 +17,11 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
     }
 }
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1
     }
+    
     Context "gets connected objects" {
         It "returns some results" {
             $results = Get-DbaConnectedInstance
