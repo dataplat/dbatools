@@ -13,7 +13,7 @@ function Repair-PullRequestTest {
 
     .PARAMETER Model
         The AI model to use with Claude Code.
-        Default: claude-3-5-sonnet-20241022
+        Default: claude-sonnet-4-20250514
 
     .PARAMETER AutoCommit
         If specified, automatically commits the fixes made by Claude.
@@ -37,7 +37,7 @@ function Repair-PullRequestTest {
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [int]$PRNumber,
-        [string]$Model = "claude-3-5-sonnet-20241022",
+        [string]$Model = "claude-sonnet-4-20250514",
         [switch]$AutoCommit,
         [int]$MaxPRs = 5
     )
@@ -188,9 +188,20 @@ function Repair-PullRequestTest {
 
                         $command = Get-Command $commandName -ErrorAction SilentlyContinue
                         $commandSourcePath = $null
-                        if ($command -and $command.Source) {
-                            $commandSourcePath = $command.Source
-                            Write-Verbose "Found command source: $commandSourcePath"
+                        if ($command -and $command.Source -and $command.Source -ne "dbatools") {
+                            # Try to find the actual .ps1 file
+                            $possiblePaths = @(
+                                "functions/$commandName.ps1",
+                                "public/$commandName.ps1",
+                                "private/$commandName.ps1"
+                            )
+                            foreach ($path in $possiblePaths) {
+                                if (Test-Path $path) {
+                                    $commandSourcePath = (Resolve-Path $path).Path
+                                    Write-Verbose "Found command source: $commandSourcePath"
+                                    break
+                                }
+                            }
                         }
 
                         # Switch back to PR branch
@@ -202,6 +213,28 @@ function Repair-PullRequestTest {
                             Write-Progress -Activity "Fixing Tests in $testFileName" -Status "Fixing failure $($i + 1) of $fileFailureCount - $($failures[$i].TestName)" -PercentComplete $failureProgress -Id 2 -ParentId 1
                         }
 
+                        # Build the repair message with context
+                        $repairMessage = "Fix the following test failures in $testFileName`:`n`n"
+
+                        foreach ($failure in $failures) {
+                            $repairMessage += "FAILURE: $($failure.TestName)`n"
+                            $repairMessage += "ERROR: $($failure.ErrorMessage)`n"
+                            if ($failure.LineNumber) {
+                                $repairMessage += "LINE: $($failure.LineNumber)`n"
+                            }
+                            $repairMessage += "`n"
+                        }
+
+                        $repairMessage += "Please analyze the failing test file and fix the issues. "
+
+                        if (Test-Path $workingTempPath) {
+                            $repairMessage += "Use the working version from the Development branch as reference for comparison. "
+                        }
+
+                        if ($commandSourcePath) {
+                            $repairMessage += "The command source file is also provided for context about the actual implementation."
+                        }
+
                         # Prepare context files for Claude
                         $contextFiles = @()
                         if (Test-Path $workingTempPath) {
@@ -211,14 +244,24 @@ function Repair-PullRequestTest {
                             $contextFiles += $commandSourcePath
                         }
 
-                        $repairParams = @{
-                            TestFileName   = $testFileName
-                            Failures       = $failures
-                            Model          = $Model
-                            OriginalBranch = $originalBranch
-                            ContextFiles   = $contextFiles
+                        # Get the path to the failing test file
+                        $failingTestPath = Resolve-Path "tests/$testFileName" -ErrorAction SilentlyContinue
+                        if (-not $failingTestPath) {
+                            Write-Warning "Could not find failing test file: tests/$testFileName"
+                            continue
                         }
-                        Repair-TestFile @repairParams
+
+                        # Use Invoke-AITool to fix the test
+                        $aiParams = @{
+                            Message      = $repairMessage
+                            File         = $failingTestPath.Path
+                            Model        = $Model
+                            Tool         = 'Claude'
+                            ContextFiles = $contextFiles
+                        }
+
+                        Write-Verbose "Invoking Claude to fix test failures"
+                        Invoke-AITool @aiParams
                     }
 
                     $processedFailures += $fileFailureCount
