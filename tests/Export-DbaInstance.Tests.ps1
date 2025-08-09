@@ -1,52 +1,70 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Export-DbaInstance",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        It "Should only contain our specific parameters" {
-            [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-            [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Credential', 'Path', 'NoRecovery', 'IncludeDbMasterKey', 'Exclude', 'BatchSeparator', 'ScriptingOption', 'NoPrefix', 'ExcludePassword', 'EnableException', 'Force', 'AzureCredential'
-            $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        BeforeAll {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Credential",
+                "Path",
+                "NoRecovery",
+                "AzureCredential",
+                "IncludeDbMasterKey",
+                "Exclude",
+                "BatchSeparator",
+                "ScriptingOption",
+                "NoPrefix",
+                "ExcludePassword",
+                "Force",
+                "EnableException"
+            )
+        }
+
+        It "Should have the expected parameters" {
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    BeforeEach {
-        $results = $null
-    }
 
-    AfterEach {
-        $dirToRemove = $null
-
-        if (($results -ne $null) -and ($results.length -gt 1)) {
-            $dirToRemove = $results[0].Directory.FullName
-        } elseif ($results -ne $null) {
-            $dirToRemove = $results.Directory.FullName
-        }
-
-        if ($dirToRemove -ne $null) {
-            $null = Remove-Item -Path $dirToRemove -Force -Recurse
-        }
-    }
-
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $random = Get-Random
-        $dbName = "dbatoolsci_$random"
-        $exportDir = "C:\temp\dbatools_export_dbainstance"
-        if (-not (Test-Path $exportDir -PathType Container)) {
-            $null = New-Item -Path $exportDir -ItemType Container
-        }
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
+        # For all the backups that we want to clean up after the test, we create a directory that we can delete at the end.
+        # Other files can be written there as well, maybe we change the name of that variable later. But for now we focus on backups.
+        $exportPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+        $null = New-Item -Path $exportPath -ItemType Directory
+
+        # Explain what needs to be set up for the test:
+        # We need to set up various SQL Server objects to test the export functionality
+
+        # Set variables. They are available in all the It blocks.
+        $random                  = Get-Random
+        $dbName                  = "dbatoolsci_$random"
+        $testServer              = $TestConfig.instance2
+        $server                  = Connect-DbaInstance -SqlInstance $testServer
+        $srvName                 = "dbatoolsci-server1"
+        $group                   = "dbatoolsci-group1"
+        $regSrvName              = "dbatoolsci-server12"
+        $regSrvDesc              = "dbatoolsci-server123"
+        $policyConditionId       = $null
+        $objectSetId             = $null
+        $policyId                = $null
+        $backupdir               = Join-Path $server.BackupDirectory $dbName
+        $resultsToCleanup        = @()
+
+        # Create the objects.
 
         # registered server and group
-        $testServer = $TestConfig.instance2
-        $server = Connect-DbaInstance -SqlInstance $testServer
-        $srvName = "dbatoolsci-server1"
-        $group = "dbatoolsci-group1"
-        $regSrvName = "dbatoolsci-server12"
-        $regSrvDesc = "dbatoolsci-server123"
-
         $newGroup = Add-DbaRegServerGroup -SqlInstance $testServer -Name $group
         $newServer = Add-DbaRegServer -SqlInstance $testServer -ServerName $srvName -Name $regSrvName -Description $regSrvDesc
 
@@ -55,11 +73,32 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "EXEC sp_addmessage 250001, 16, N'Sample error message2'"
 
         # credentials
-        New-DbaCredential -SqlInstance $testServer -Name "dbatools1$random" -Identity "dbatools1$random" -SecurePassword (ConvertTo-SecureString -String "dbatools1" -AsPlainText -Force) -Confirm:$false
-        New-DbaCredential -SqlInstance $testServer -Name "dbatools2$random" -Identity "dbatools2$random" -SecurePassword (ConvertTo-SecureString -String "dbatools2" -AsPlainText -Force) -Confirm:$false
+        $splatCred1 = @{
+            SqlInstance     = $testServer
+            Name            = "dbatools1$random"
+            Identity        = "dbatools1$random"
+            SecurePassword  = (ConvertTo-SecureString -String "dbatools1" -AsPlainText -Force)
+            Confirm         = $false
+        }
+        New-DbaCredential @splatCred1
+
+        $splatCred2 = @{
+            SqlInstance     = $testServer
+            Name            = "dbatools2$random"
+            Identity        = "dbatools2$random"
+            SecurePassword  = (ConvertTo-SecureString -String "dbatools2" -AsPlainText -Force)
+            Confirm         = $false
+        }
+        New-DbaCredential @splatCred2
 
         # logins
-        New-DbaLogin -SqlInstance $testServer -Login "dbatools$random" -SecurePassword (ConvertTo-SecureString -String "dbatools1" -AsPlainText -Force) -Confirm:$false
+        $splatLogin = @{
+            SqlInstance     = $testServer
+            Login           = "dbatools$random"
+            SecurePassword  = (ConvertTo-SecureString -String "dbatools1" -AsPlainText -Force)
+            Confirm         = $false
+        }
+        New-DbaLogin @splatLogin
 
         # backup device
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "EXEC sp_addumpdevice 'disk', 'backupdevice$random', 'c:\temp\backupdevice$random.bak'"
@@ -71,7 +110,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "CREATE TRIGGER [create_database_$random] ON ALL SERVER FOR CREATE_DATABASE AS SELECT 1"
 
         # database restore scripts
-        $backupdir = Join-Path $server.BackupDirectory $dbName
         if (-not (Test-Path $backupdir -PathType Container)) {
             $null = New-Item -Path $backupdir -ItemType Container
         }
@@ -87,7 +125,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database $dbName -Query "CREATE DATABASE AUDIT SPECIFICATION [DatabaseAuditSpecification_$random] FOR SERVER AUDIT [Audit_$random] ADD (DELETE ON DATABASE::[$dbName] BY [public])"
 
         # endpoint
-        New-DbaEndpoint -SqlInstance $testServer -Type DatabaseMirroring -Name dbatoolsci_$random
+        New-DbaEndpoint -SqlInstance $testServer -Type DatabaseMirroring -Name "dbatoolsci_$random"
 
         # policies
         $output = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "Declare @condition_id int;
@@ -127,9 +165,17 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
         # add a procedure to the master db for the export of user objects in system databases
         Install-DbaWhoIsActive -SqlInstance $testServer -Database master
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
     }
 
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
+        # Cleanup all created objects.
+
         # registered server and group
         Get-DbaRegServer -SqlInstance $testServer | Where-Object Name -Match dbatoolsci | Remove-DbaRegServer -Confirm:$false
         Get-DbaRegServerGroup -SqlInstance $testServer | Where-Object Name -Match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
@@ -166,7 +212,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "ALTER SERVER AUDIT [Audit_$random] WITH (STATE = OFF); DROP SERVER AUDIT [Audit_$random];"
 
         # endpoint
-        Remove-DbaEndpoint -SqlInstance $testServer -EndPoint dbatoolsci_$random -Confirm:$false
+        Remove-DbaEndpoint -SqlInstance $testServer -EndPoint "dbatoolsci_$random" -Confirm:$false
 
         # policies
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "EXEC msdb.dbo.sp_syspolicy_delete_policy @policy_id=$policyId;
@@ -177,182 +223,853 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         Remove-DbaDatabase -SqlInstance $testServer -Database $dbName -Confirm:$false
 
         # remove export dir
-        Remove-Item -Path $exportDir -Recurse -Force -ErrorAction SilentlyContinue
+        Remove-Item -Path $exportPath -Recurse -Force -ErrorAction SilentlyContinue
+
+        # Remove any test results directories
+        foreach ($dir in $resultsToCleanup) {
+            if ($dir -ne $null) {
+                Remove-Item -Path $dir -Recurse -Force -ErrorAction SilentlyContinue
+            }
+        }
+
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
-    It "Export dir should have the date in the correct format" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
-        $results.length | Should -BeGreaterThan 0
+    Context "Export directory structure" {
+        BeforeEach {
+            $results = $null
+        }
 
-        # parse the exact format of the date
-        $indexOfDateTimeStamp = $results[0].Directory.Name.Split("-").length
-        $dateTimeStampOnFolder = [datetime]::parseexact($results[0].Directory.Name.Split("-")[$indexOfDateTimeStamp - 1], "yyyyMMddHHmmss", $null)
+        AfterEach {
+            $dirToRemove = $null
 
-        $dateTimeStampOnFolder | Should -Not -Be Null
+            if (($results -ne $null) -and ($results.Count -gt 1)) {
+                $dirToRemove = $results[0].Directory.FullName
+            } elseif ($results -ne $null) {
+                $dirToRemove = $results.Directory.FullName
+            }
+
+            if ($dirToRemove -ne $null) {
+                $null = Remove-Item -Path $dirToRemove -Force -Recurse -ErrorAction SilentlyContinue
+            }
+        }
+
+        It "Export dir should have the date in the correct format" {
+            $splatExport = @{
+                SqlInstance = $testServer
+                Path        = $exportPath
+                Exclude     = @(
+                    "AgentServer",
+                    "Audits",
+                    "AvailabilityGroups",
+                    "BackupDevices",
+                    "CentralManagementServer",
+                    "Credentials",
+                    "CustomErrors",
+                    "DatabaseMail",
+                    "Endpoints",
+                    "ExtendedEvents",
+                    "LinkedServers",
+                    "Logins",
+                    "PolicyManagement",
+                    "ReplicationSettings",
+                    "ResourceGovernor",
+                    "ServerAuditSpecifications",
+                    "ServerRoles",
+                    "SpConfigure",
+                    "SysDbUserObjects",
+                    "SystemTriggers",
+                    "OleDbProvider"
+                )
+            }
+            $results = Export-DbaInstance @splatExport
+            $results.Count | Should -BeGreaterThan 0
+
+            # parse the exact format of the date
+            $indexOfDateTimeStamp = $results[0].Directory.Name.Split("-").Count
+            $dateTimeStampOnFolder = [datetime]::parseexact($results[0].Directory.Name.Split("-")[$indexOfDateTimeStamp - 1], "yyyyMMddHHmmss", $null)
+
+            $dateTimeStampOnFolder | Should -Not -Be $null
+        }
+
+        It "Ensure the -Force param replaces existing files" {
+            $splatExportForce = @{
+                SqlInstance = $testServer
+                Path        = $exportPath
+                Exclude     = @(
+                    "Audits",
+                    "AvailabilityGroups",
+                    "BackupDevices",
+                    "CentralManagementServer",
+                    "Credentials",
+                    "CustomErrors",
+                    "DatabaseMail",
+                    "Databases",
+                    "Endpoints",
+                    "ExtendedEvents",
+                    "LinkedServers",
+                    "Logins",
+                    "PolicyManagement",
+                    "ReplicationSettings",
+                    "ResourceGovernor",
+                    "ServerAuditSpecifications",
+                    "ServerRoles",
+                    "SpConfigure",
+                    "SysDbUserObjects",
+                    "SystemTriggers",
+                    "OleDbProvider"
+                )
+                Force       = $true
+            }
+            $results = Export-DbaInstance @splatExportForce
+
+            $results.FullName | Should -Exist
+            $results.Length | Should -BeGreaterThan 0
+
+            $originalLength = $results.Length
+            $originalLastWriteTime = $results.LastWriteTime
+
+            $results = Export-DbaInstance @splatExportForce
+
+            $results.FullName | Should -Exist
+            $results.Length | Should -BeGreaterThan 0
+            $results.Length | Should -Be $originalLength
+            $results.LastWriteTime | Should -BeGreaterThan $originalLastWriteTime
+        }
     }
 
-    It "Ensure the -Force param replaces existing files" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider' -Force
+    Context "Export specific components" {
+        BeforeEach {
+            $results = $null
+        }
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
+        AfterEach {
+            $dirToRemove = $null
 
-        $originalLength = $results.Length
-        $originalLastWriteTime = $results.LastWriteTime
+            if (($results -ne $null) -and ($results.Count -gt 1)) {
+                $dirToRemove = $results[0].Directory.FullName
+            } elseif ($results -ne $null) {
+                $dirToRemove = $results.Directory.FullName
+            }
 
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider' -Force
+            if ($dirToRemove -ne $null) {
+                $null = Remove-Item -Path $dirToRemove -Force -Recurse -ErrorAction SilentlyContinue
+            }
+        }
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-        $results.Length | Should -Be $originalLength
-        $results.LastWriteTime | Should -BeGreaterThan $originalLastWriteTime
-    }
+        It "Export sp_configure values" {
+            $splatExportSpConfigure = @{
+                SqlInstance = $testServer
+                Path        = $exportPath
+                Exclude     = @(
+                    "AgentServer",
+                    "Audits",
+                    "AvailabilityGroups",
+                    "BackupDevices",
+                    "CentralManagementServer",
+                    "Credentials",
+                    "CustomErrors",
+                    "DatabaseMail",
+                    "Databases",
+                    "Endpoints",
+                    "ExtendedEvents",
+                    "LinkedServers",
+                    "Logins",
+                    "PolicyManagement",
+                    "ReplicationSettings",
+                    "ResourceGovernor",
+                    "ServerAuditSpecifications",
+                    "ServerRoles",
+                    "SysDbUserObjects",
+                    "SystemTriggers",
+                    "OleDbProvider"
+                )
+            }
+            $results = Export-DbaInstance @splatExportSpConfigure
 
-    It "Export sp_configure values" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
+            $results.FullName | Should -Exist
+            $results.Length | Should -BeGreaterThan 0
+        }
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-    }
+        It "Export CentralManagementServer" {
+            $splatExportCMS = @{
+                SqlInstance = $testServer
+                Path        = $exportPath
+                Exclude     = @(
+                    "AgentServer",
+                    "Audits",
+                    "AvailabilityGroups",
+                    "BackupDevices",
+                    "Credentials",
+                    "CustomErrors",
+                    "DatabaseMail",
+                    "Databases",
+                    "Endpoints",
+                    "ExtendedEvents",
+                    "LinkedServers",
+                    "Logins",
+                    "PolicyManagement",
+                    "ReplicationSettings",
+                    "ResourceGovernor",
+                    "ServerAuditSpecifications",
+                    "ServerRoles",
+                    "SpConfigure",
+                    "SysDbUserObjects",
+                    "SystemTriggers",
+                    "OleDbProvider"
+                )
+            }
+            $results = Export-DbaInstance @splatExportCMS
 
-    It "Export CentralManagementServer" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
+            $results.FullName | Should -Exist
+            $results.Length | Should -BeGreaterThan 0
+        }
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-    }
+        It "Export custom errors" {
+            $splatExportCustomErrors = @{
+                SqlInstance = $testServer
+                Path        = $exportPath
+                Exclude     = @(
+                    "AgentServer",
+                    "Audits",
+                    "AvailabilityGroups",
+                    "BackupDevices",
+                    "CentralManagementServer",
+                    "Credentials",
+                    "DatabaseMail",
+                    "Databases",
+                    "Endpoints",
+                    "ExtendedEvents",
+                    "LinkedServers",
+                    "Logins",
+                    "PolicyManagement",
+                    "ReplicationSettings",
+                    "ResourceGovernor",
+                    "ServerAuditSpecifications",
+                    "ServerRoles",
+                    "SpConfigure",
+                    "SysDbUserObjects",
+                    "SystemTriggers",
+                    "OleDbProvider"
+                )
+            }
+            $results = Export-DbaInstance @splatExportCustomErrors
 
-    It "Export custom errors" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
+            $results.FullName | Should -Exist
+            $results.Length | Should -BeGreaterThan 0
+        }
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-    }
+        It "Export server roles" {
+            $splatExportServerRoles = @{
+                SqlInstance = $testServer
+                Path        = $exportPath
+                Exclude     = @(
+                    "AgentServer",
+                    "Audits",
+                    "AvailabilityGroups",
+                    "BackupDevices",
+                    "CentralManagementServer",
+                    "Credentials",
+                    "CustomErrors",
+                    "DatabaseMail",
+                    "Databases",
+                    "Endpoints",
+                    "ExtendedEvents",
+                    "LinkedServers",
+                    "Logins",
+                    "PolicyManagement",
+                    "ReplicationSettings",
+                    "ResourceGovernor",
+                    "ServerAuditSpecifications",
+                    "SpConfigure",
+                    "SysDbUserObjects",
+                    "SystemTriggers",
+                    "OleDbProvider"
+                )
+            }
+            $results = Export-DbaInstance @splatExportServerRoles
 
-    It "Export server roles" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
+            $results.FullName | Should -Exist
+            $results.Length | Should -BeGreaterThan 0
+        }
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-    }
+        It "Export credentials" {
+            $splatExportCredentials = @{
+                SqlInstance = $testServer
+                Path        = $exportPath
+                Exclude     = @(
+                    "AgentServer",
+                    "Audits",
+                    "AvailabilityGroups",
+                    "BackupDevices",
+                    "CentralManagementServer",
+                    "CustomErrors",
+                    "DatabaseMail",
+                    "Databases",
+                    "Endpoints",
+                    "ExtendedEvents",
+                    "LinkedServers",
+                    "Logins",
+                    "PolicyManagement",
+                    "ReplicationSettings",
+                    "ResourceGovernor",
+                    "ServerAuditSpecifications",
+                    "ServerRoles",
+                    "SpConfigure",
+                    "SysDbUserObjects",
+                    "SystemTriggers",
+                    "OleDbProvider"
+                )
+            }
+            $results = Export-DbaInstance @splatExportCredentials
 
-    It "Export credentials" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
+            $results.FullName | Should -Exist
+            $results.Length | Should -BeGreaterThan 0
+        }
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-    }
+        It "Export logins" {
+            $splatExportLogins = @{
+                SqlInstance = $testServer
+                Path        = $exportPath
+                Exclude     = @(
+                    "AgentServer",
+                    "Audits",
+                    "AvailabilityGroups",
+                    "BackupDevices",
+                    "CentralManagementServer",
+                    "Credentials",
+                    "CustomErrors",
+                    "DatabaseMail",
+                    "Databases",
+                    "Endpoints",
+                    "ExtendedEvents",
+                    "LinkedServers",
+                    "PolicyManagement",
+                    "ReplicationSettings",
+                    "ResourceGovernor",
+                    "ServerAuditSpecifications",
+                    "ServerRoles",
+                    "SpConfigure",
+                    "SysDbUserObjects",
+                    "SystemTriggers",
+                    "OleDbProvider"
+                )
+            }
+            $results = Export-DbaInstance @splatExportLogins
 
-    It "Export logins" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
+            $results.FullName | Should -Exist
+            $results.Length | Should -BeGreaterThan 0
+        }
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-    }
+        It "Export database mail settings" {
+            $splatExportDbMail = @{
+                SqlInstance = $testServer
+                Path        = $exportPath
+                Exclude     = @(
+                    "AgentServer",
+                    "Audits",
+                    "AvailabilityGroups",
+                    "BackupDevices",
+                    "CentralManagementServer",
+                    "Credentials",
+                    "CustomErrors",
+                    "Databases",
+                    "Endpoints",
+                    "ExtendedEvents",
+                    "LinkedServers",
+                    "Logins",
+                    "PolicyManagement",
+                    "ReplicationSettings",
+                    "ResourceGovernor",
+                    "ServerAuditSpecifications",
+                    "ServerRoles",
+                    "SpConfigure",
+                    "SysDbUserObjects",
+                    "SystemTriggers",
+                    "OleDbProvider"
+                )
+            }
+            $results = Export-DbaInstance @splatExportDbMail
 
-    It "Export database mail settings" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
+            $results.FullName | Should -Exist
+            $results.Length | Should -BeGreaterThan 0
+        }
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-    }
+        It "Export backup devices" {
+            $splatExportBackupDevices = @{
+                SqlInstance = $testServer
+                Path        = $exportPath
+                Exclude     = @(
+                    "AgentServer",
+                    "Audits",
+                    "AvailabilityGroups",
+                    "CentralManagementServer",
+                    "Credentials",
+                    "CustomErrors",
+                    "DatabaseMail",
+                    "Databases",
+                    "Endpoints",
+                    "ExtendedEvents",
+                    "LinkedServers",
+                    "Logins",
+                    "PolicyManagement",
+                    "ReplicationSettings",
+                    "ResourceGovernor",
+                    "ServerAuditSpecifications",
+                    "ServerRoles",
+                    "SpConfigure",
+                    "SysDbUserObjects",
+                    "SystemTriggers",
+                    "OleDbProvider"
+                )
+            }
+            $results = Export-DbaInstance @splatExportBackupDevices
 
-    It "Export backup devices" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
+            $results.FullName | Should -Exist
+            $results.Length | Should -BeGreaterThan 0
+        }
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-    }
+        It "Export linked servers" {
+            $splatExportLinkedServers = @{
+                SqlInstance = $testServer
+                Path        = $exportPath
+                Exclude     = @(
+                    "AgentServer",
+                    "Audits",
+                    "AvailabilityGroups",
+                    "BackupDevices",
+                    "CentralManagementServer",
+                    "Credentials",
+                    "CustomErrors",
+                    "DatabaseMail",
+                    "Databases",
+                    "Endpoints",
+                    "ExtendedEvents",
+                    "Logins",
+                    "PolicyManagement",
+                    "ReplicationSettings",
+                    "ResourceGovernor",
+                    "ServerAuditSpecifications",
+                    "ServerRoles",
+                    "SpConfigure",
+                    "SysDbUserObjects",
+                    "SystemTriggers",
+                    "OleDbProvider"
+                )
+            }
+            $results = Export-DbaInstance @splatExportLinkedServers
 
-    It "Export linked servers" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
+            $results.FullName | Should -Exist
+            $results.Length | Should -BeGreaterThan 0
+        }
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-    }
+        It "Export system triggers" {
+            $splatExportSystemTriggers = @{
+                SqlInstance = $testServer
+                Path        = $exportPath
+                Exclude     = @(
+                    "AgentServer",
+                    "Audits",
+                    "AvailabilityGroups",
+                    "BackupDevices",
+                    "CentralManagementServer",
+                    "Credentials",
+                    "CustomErrors",
+                    "DatabaseMail",
+                    "Databases",
+                    "Endpoints",
+                    "ExtendedEvents",
+                    "LinkedServers",
+                    "Logins",
+                    "PolicyManagement",
+                    "ReplicationSettings",
+                    "ResourceGovernor",
+                    "ServerAuditSpecifications",
+                    "ServerRoles",
+                    "SpConfigure",
+                    "SysDbUserObjects",
+                    "OleDbProvider"
+                )
+            }
+            $results = Export-DbaInstance @splatExportSystemTriggers
 
-    It "Export system triggers" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'OleDbProvider'
+            $results.FullName | Should -Exist
+            $results.Length | Should -BeGreaterThan 0
+        }
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-    }
+        It "Export database restore scripts" {
+            $splatExportDatabases = @{
+                SqlInstance = $testServer
+                Path        = $exportPath
+                Exclude     = @(
+                    "AgentServer",
+                    "Audits",
+                    "AvailabilityGroups",
+                    "BackupDevices",
+                    "CentralManagementServer",
+                    "Credentials",
+                    "CustomErrors",
+                    "DatabaseMail",
+                    "Endpoints",
+                    "ExtendedEvents",
+                    "LinkedServers",
+                    "Logins",
+                    "PolicyManagement",
+                    "ReplicationSettings",
+                    "ResourceGovernor",
+                    "ServerAuditSpecifications",
+                    "ServerRoles",
+                    "SpConfigure",
+                    "SysDbUserObjects",
+                    "SystemTriggers",
+                    "OleDbProvider"
+                )
+            }
+            $results = Export-DbaInstance @splatExportDatabases
 
-    It "Export database restore scripts" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
+            $results.FullName | Should -Exist
+            $results.Length | Should -BeGreaterThan 0
+        }
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-    }
+        It "Export server audits" {
+            $splatExportAudits = @{
+                SqlInstance = $testServer
+                Path        = $exportPath
+                Exclude     = @(
+                    "AgentServer",
+                    "AvailabilityGroups",
+                    "BackupDevices",
+                    "CentralManagementServer",
+                    "Credentials",
+                    "CustomErrors",
+                    "DatabaseMail",
+                    "Databases",
+                    "Endpoints",
+                    "ExtendedEvents",
+                    "LinkedServers",
+                    "Logins",
+                    "PolicyManagement",
+                    "ReplicationSettings",
+                    "ResourceGovernor",
+                    "ServerAuditSpecifications",
+                    "ServerRoles",
+                    "SpConfigure",
+                    "SysDbUserObjects",
+                    "SystemTriggers",
+                    "OleDbProvider"
+                )
+            }
+            $results = Export-DbaInstance @splatExportAudits
 
-    It "Export server audits" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
+            $results.FullName | Should -Exist
+            $results.Length | Should -BeGreaterThan 0
+        }
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-    }
+        It "Export server audit specifications" {
+            $splatExportServerAuditSpecs = @{
+                SqlInstance = $testServer
+                Path        = $exportPath
+                Exclude     = @(
+                    "AgentServer",
+                    "Audits",
+                    "AvailabilityGroups",
+                    "BackupDevices",
+                    "CentralManagementServer",
+                    "Credentials",
+                    "CustomErrors",
+                    "DatabaseMail",
+                    "Databases",
+                    "Endpoints",
+                    "ExtendedEvents",
+                    "LinkedServers",
+                    "Logins",
+                    "PolicyManagement",
+                    "ReplicationSettings",
+                    "ResourceGovernor",
+                    "ServerRoles",
+                    "SpConfigure",
+                    "SysDbUserObjects",
+                    "SystemTriggers",
+                    "OleDbProvider"
+                )
+            }
+            $results = Export-DbaInstance @splatExportServerAuditSpecs
 
-    It "Export server audit specifications" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
+            $results.FullName | Should -Exist
+            $results.Length | Should -BeGreaterThan 0
+        }
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-    }
+        It "Export endpoints" {
+            $splatExportEndpoints = @{
+                SqlInstance = $testServer
+                Path        = $exportPath
+                Exclude     = @(
+                    "AgentServer",
+                    "Audits",
+                    "AvailabilityGroups",
+                    "BackupDevices",
+                    "CentralManagementServer",
+                    "Credentials",
+                    "CustomErrors",
+                    "DatabaseMail",
+                    "Databases",
+                    "ExtendedEvents",
+                    "LinkedServers",
+                    "Logins",
+                    "PolicyManagement",
+                    "ReplicationSettings",
+                    "ResourceGovernor",
+                    "ServerAuditSpecifications",
+                    "ServerRoles",
+                    "SpConfigure",
+                    "SysDbUserObjects",
+                    "SystemTriggers",
+                    "OleDbProvider"
+                )
+            }
+            $results = Export-DbaInstance @splatExportEndpoints
 
-    It "Export endpoints" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
+            $results.FullName | Should -Exist
+            $results.Length | Should -BeGreaterThan 0
+        }
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-    }
+        It "Export policies" {
+            $splatExportPolicies = @{
+                SqlInstance = $testServer
+                Path        = $exportPath
+                Exclude     = @(
+                    "AgentServer",
+                    "Audits",
+                    "AvailabilityGroups",
+                    "BackupDevices",
+                    "CentralManagementServer",
+                    "Credentials",
+                    "CustomErrors",
+                    "DatabaseMail",
+                    "Databases",
+                    "Endpoints",
+                    "ExtendedEvents",
+                    "LinkedServers",
+                    "Logins",
+                    "ReplicationSettings",
+                    "ResourceGovernor",
+                    "ServerAuditSpecifications",
+                    "ServerRoles",
+                    "SpConfigure",
+                    "SysDbUserObjects",
+                    "SystemTriggers",
+                    "OleDbProvider"
+                )
+            }
+            $results = Export-DbaInstance @splatExportPolicies
 
-    It "Export policies" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
+            $results.FullName | Should -Exist
+            $results.Length | Should -BeGreaterThan 0
+        }
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-    }
+        It "Export resource governor settings" {
+            $splatExportResourceGovernor = @{
+                SqlInstance = $testServer
+                Path        = $exportPath
+                Exclude     = @(
+                    "AgentServer",
+                    "Audits",
+                    "AvailabilityGroups",
+                    "BackupDevices",
+                    "CentralManagementServer",
+                    "Credentials",
+                    "CustomErrors",
+                    "DatabaseMail",
+                    "Databases",
+                    "Endpoints",
+                    "ExtendedEvents",
+                    "LinkedServers",
+                    "Logins",
+                    "PolicyManagement",
+                    "ReplicationSettings",
+                    "ServerAuditSpecifications",
+                    "ServerRoles",
+                    "SpConfigure",
+                    "SysDbUserObjects",
+                    "SystemTriggers",
+                    "OleDbProvider"
+                )
+            }
+            $results = Export-DbaInstance @splatExportResourceGovernor
 
-    It "Export resource governor settings" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
+            $results.FullName | Should -Exist
+            $results.Length | Should -BeGreaterThan 0
+        }
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-    }
+        It "Export extended events" {
+            $splatExportExtendedEvents = @{
+                SqlInstance = $testServer
+                Path        = $exportPath
+                Exclude     = @(
+                    "AgentServer",
+                    "Audits",
+                    "AvailabilityGroups",
+                    "BackupDevices",
+                    "CentralManagementServer",
+                    "Credentials",
+                    "CustomErrors",
+                    "DatabaseMail",
+                    "Databases",
+                    "Endpoints",
+                    "LinkedServers",
+                    "Logins",
+                    "PolicyManagement",
+                    "ReplicationSettings",
+                    "ResourceGovernor",
+                    "ServerAuditSpecifications",
+                    "ServerRoles",
+                    "SpConfigure",
+                    "SysDbUserObjects",
+                    "SystemTriggers",
+                    "OleDbProvider"
+                )
+            }
+            $results = Export-DbaInstance @splatExportExtendedEvents
 
-    It "Export extended events" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
+            $results.FullName | Should -Exist
+            $results.Length | Should -BeGreaterThan 0
+        }
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-    }
+        It "Export agent server" {
+            $splatExportAgentServer = @{
+                SqlInstance = $testServer
+                Path        = $exportPath
+                Exclude     = @(
+                    "Audits",
+                    "AvailabilityGroups",
+                    "BackupDevices",
+                    "CentralManagementServer",
+                    "Credentials",
+                    "CustomErrors",
+                    "DatabaseMail",
+                    "Databases",
+                    "Endpoints",
+                    "ExtendedEvents",
+                    "LinkedServers",
+                    "Logins",
+                    "PolicyManagement",
+                    "ReplicationSettings",
+                    "ResourceGovernor",
+                    "ServerAuditSpecifications",
+                    "ServerRoles",
+                    "SpConfigure",
+                    "SysDbUserObjects",
+                    "SystemTriggers",
+                    "OleDbProvider"
+                )
+            }
+            $results = Export-DbaInstance @splatExportAgentServer
 
-    It "Export agent server" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
+            $results.FullName | Should -Exist
+            $results.Length | Should -BeGreaterThan 0
+        }
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-    }
+        It "Export replication settings" {
+            $splatExportReplication = @{
+                SqlInstance = $testServer
+                Path        = $exportPath
+                Exclude     = @(
+                    "AgentServer",
+                    "Audits",
+                    "AvailabilityGroups",
+                    "BackupDevices",
+                    "CentralManagementServer",
+                    "Credentials",
+                    "CustomErrors",
+                    "DatabaseMail",
+                    "Databases",
+                    "Endpoints",
+                    "ExtendedEvents",
+                    "LinkedServers",
+                    "Logins",
+                    "PolicyManagement",
+                    "ResourceGovernor",
+                    "ServerAuditSpecifications",
+                    "ServerRoles",
+                    "SpConfigure",
+                    "SysDbUserObjects",
+                    "SystemTriggers",
+                    "OleDbProvider"
+                )
+            }
+            $results = Export-DbaInstance @splatExportReplication
 
-    It "Export replication settings" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
+            $results.FullName | Should -Exist
+            $results.Length | Should -BeGreaterThan 0
+        }
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-    }
+        It "Export system db user objects" {
+            $splatExportSysDbUserObjects = @{
+                SqlInstance = $testServer
+                Path        = $exportPath
+                Exclude     = @(
+                    "AgentServer",
+                    "Audits",
+                    "AvailabilityGroups",
+                    "BackupDevices",
+                    "CentralManagementServer",
+                    "Credentials",
+                    "CustomErrors",
+                    "DatabaseMail",
+                    "Databases",
+                    "Endpoints",
+                    "ExtendedEvents",
+                    "LinkedServers",
+                    "Logins",
+                    "PolicyManagement",
+                    "ReplicationSettings",
+                    "ResourceGovernor",
+                    "ServerAuditSpecifications",
+                    "ServerRoles",
+                    "SpConfigure",
+                    "SystemTriggers",
+                    "OleDbProvider"
+                )
+            }
+            $results = Export-DbaInstance @splatExportSysDbUserObjects
 
-    It "Export system db user objects" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SystemTriggers', 'OleDbProvider'
+            $results.FullName | Should -Exist
+            $results.Length | Should -BeGreaterThan 0
+        }
 
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
-    }
+        It "Exports oledb providers" {
+            $splatExportOleDbProvider = @{
+                SqlInstance = $testServer
+                Path        = $exportPath
+                Exclude     = @(
+                    "AgentServer",
+                    "Audits",
+                    "AvailabilityGroups",
+                    "BackupDevices",
+                    "CentralManagementServer",
+                    "Credentials",
+                    "CustomErrors",
+                    "DatabaseMail",
+                    "Databases",
+                    "Endpoints",
+                    "ExtendedEvents",
+                    "LinkedServers",
+                    "Logins",
+                    "PolicyManagement",
+                    "ReplicationSettings",
+                    "ResourceGovernor",
+                    "ServerAuditSpecifications",
+                    "ServerRoles",
+                    "SpConfigure",
+                    "SystemTriggers",
+                    "SysDbUserObjects"
+                )
+            }
+            $results = Export-DbaInstance @splatExportOleDbProvider
 
-    It "Exports oledb providers" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SystemTriggers', 'SysDbUserObjects'
-
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
+            $results.FullName | Should -Exist
+            $results.Length | Should -BeGreaterThan 0
+        }
     }
 
     # placeholder for a future test with availability groups
