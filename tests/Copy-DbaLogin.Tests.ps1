@@ -166,12 +166,12 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Supports cloning" {
         It "clones the one tester login" {
             $splatClone = @{
-                Source                = $TestConfig.instance1
-                Login                 = "tester"
-                Destination           = $TestConfig.instance1
-                Force                 = $true
-                LoginRenameHashtable  = @{ tester = "tester_new" }
-                NewSid                = $true
+                Source               = $TestConfig.instance1
+                Login                = "tester"
+                Destination          = $TestConfig.instance1
+                Force                = $true
+                LoginRenameHashtable = @{ tester = "tester_new" }
+                NewSid               = $true
             }
             $results = Copy-DbaLogin @splatClone
             $results.Name | Should -Be "tester_new"

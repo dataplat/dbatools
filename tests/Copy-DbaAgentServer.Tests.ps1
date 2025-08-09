@@ -69,12 +69,12 @@ Describe $CommandName -Tag IntegrationTests {
         $null = New-DbaAgentOperator @splatNewOperator
 
         $splatNewSchedule = @{
-            SqlInstance     = $sourceInstance
-            Schedule        = $testScheduleName
-            FrequencyType   = "Weekly"
+            SqlInstance       = $sourceInstance
+            Schedule          = $testScheduleName
+            FrequencyType     = "Weekly"
             FrequencyInterval = "Monday"
-            StartTime       = "090000"
-            EnableException = $true
+            StartTime         = "090000"
+            EnableException   = $true
         }
         $null = New-DbaAgentSchedule @splatNewSchedule
 
@@ -128,7 +128,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When using DisableJobsOnDestination parameter" {
         BeforeAll {
             $disableTestJobName = "dbatoolsci_disablejob_$(Get-Random)"
-            
+
             # Create a new job for this test
             $splatNewDisableJob = @{
                 SqlInstance     = $sourceInstance
@@ -146,10 +146,10 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should disable jobs on destination when specified" {
             $splatCopyDisable = @{
-                Source                    = $sourceInstance
-                Destination               = $destinationInstance
-                DisableJobsOnDestination  = $true
-                Force                     = $true
+                Source                   = $sourceInstance
+                Destination              = $destinationInstance
+                DisableJobsOnDestination = $true
+                Force                    = $true
             }
             $results = Copy-DbaAgentServer @splatCopyDisable
 
@@ -162,7 +162,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When using DisableJobsOnSource parameter" {
         BeforeAll {
             $sourceDisableJobName = "dbatoolsci_sourcedisablejob_$(Get-Random)"
-            
+
             # Create a new job for this test
             $splatNewSourceJob = @{
                 SqlInstance     = $sourceInstance
@@ -196,10 +196,10 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When using ExcludeServerProperties parameter" {
         It "Should exclude specified server properties" {
             $splatCopyExclude = @{
-                Source                 = $sourceInstance
-                Destination            = $destinationInstance
+                Source                  = $sourceInstance
+                Destination             = $destinationInstance
                 ExcludeServerProperties = $true
-                Force                  = $true
+                Force                   = $true
             }
             $results = Copy-DbaAgentServer @splatCopyExclude
 
@@ -211,7 +211,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When using WhatIf parameter" {
         It "Should not make changes when WhatIf is specified" {
             $whatIfJobName = "dbatoolsci_whatif_$(Get-Random)"
-            
+
             # Create a job that shouldn't be copied due to WhatIf
             $splatNewWhatIfJob = @{
                 SqlInstance     = $sourceInstance

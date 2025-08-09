@@ -115,11 +115,11 @@ Describe $CommandName -Tag IntegrationTests {
 
             if ($cryptoProvider) {
                 $splatCryptoNew = @{
-                    SqlInstance      = $server2
-                    Identity         = "thor_crypto"
-                    Password         = $credPassword
-                    MappedClassType  = "CryptographicProvider"
-                    ProviderName     = $cryptoProvider
+                    SqlInstance     = $server2
+                    Identity        = "thor_crypto"
+                    Password        = $credPassword
+                    MappedClassType = "CryptographicProvider"
+                    ProviderName    = $cryptoProvider
                 }
                 $results = New-DbaCredential @splatCryptoNew
                 $results.Name | Should -Be "thor_crypto"

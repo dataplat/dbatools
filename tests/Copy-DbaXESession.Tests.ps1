@@ -137,10 +137,10 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Excludes specified sessions from copy" {
             $splatCopyExclude = @{
-                Source            = $sourceInstance
-                Destination       = $destinationInstance
-                ExcludeXeSession  = $sessionName3
-                Force             = $true
+                Source           = $sourceInstance
+                Destination      = $destinationInstance
+                ExcludeXeSession = $sessionName3
+                Force            = $true
             }
             $results = Copy-DbaXESession @splatCopyExclude
             $copiedNames = $results | Where-Object Name -in @($sessionName1, $sessionName2, $sessionName3)
@@ -177,7 +177,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Overwrites session when using Force" {
             # Stop the session on destination first
             $null = Stop-DbaXESession -SqlInstance $destinationInstance -Session $sessionName1 -ErrorAction SilentlyContinue
-            
+
             $splatCopyForce = @{
                 Source      = $sourceInstance
                 Destination = $destinationInstance

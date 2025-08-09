@@ -34,8 +34,8 @@ Describe $CommandName -Tag IntegrationTests {
         # TODO: Maybe remove "-EnableException:$false -WarningAction SilentlyContinue" when we can rely on the setting beeing 0 when entering the test
         $null = Set-DbaSpConfigure -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Name "Database Mail XPs" -Value 1 -EnableException:$false -WarningAction SilentlyContinue
 
-        $accountName = "dbatoolsci_test_$(get-random)"
-        $profileName = "dbatoolsci_test_$(get-random)"
+        $accountName = "dbatoolsci_test_$(Get-Random)"
+        $profileName = "dbatoolsci_test_$(Get-Random)"
 
         $splatAccount = @{
             SqlInstance    = $TestConfig.instance2

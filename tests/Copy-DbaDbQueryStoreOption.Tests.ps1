@@ -74,10 +74,10 @@ Describe $CommandName -Tag IntegrationTests {
             $db2QSOptions.DataFlushIntervalInSeconds | Should -Be $originalQSOptionValue
 
             $splatCopyOptions = @{
-                Source               = $server2
-                SourceDatabase       = $db1Name
-                Destination          = $server2
-                DestinationDatabase  = $db2Name
+                Source              = $server2
+                SourceDatabase      = $db1Name
+                Destination         = $server2
+                DestinationDatabase = $db2Name
             }
             $result = Copy-DbaDbQueryStoreOption @splatCopyOptions
 

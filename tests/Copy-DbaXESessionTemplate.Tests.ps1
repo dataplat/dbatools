@@ -28,14 +28,14 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             # Clean up any existing copied templates for a clean test
             $templatePath = "$home\Documents\SQL Server Management Studio\Templates\XEventTemplates"
-            
+
             # Get the source template name for later validation
             $sourceTemplate = (Get-DbaXESessionTemplate | Where-Object Source -ne "Microsoft").Path | Select-Object -First 1
             if ($sourceTemplate) {
                 $global:sourceTemplateName = $sourceTemplate.Name
             }
         }
-        
+
         AfterAll {
             # Clean up test artifacts if needed
             # We don't remove the templates as they might be useful for the user
@@ -44,7 +44,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Successfully copies the template files" {
             $null = Copy-DbaXESessionTemplate *>&1
             $templatePath = "$home\Documents\SQL Server Management Studio\Templates\XEventTemplates"
-            
+
             if ($global:sourceTemplateName) {
                 $copiedTemplate = Get-ChildItem -Path $templatePath | Where-Object Name -eq $global:sourceTemplateName
                 $copiedTemplate | Should -Not -BeNullOrEmpty
