@@ -1,26 +1,45 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Find-DbaDbUnusedIndex",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
+
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 $global:TestConfig = Get-TestConfig
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        It "Should only contain our specific parameters" {
-            [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-            [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'IgnoreUptime', 'InputObject', 'EnableException', 'Seeks', 'Scans', 'Lookups'
-            $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        BeforeAll {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "IgnoreUptime",
+                "Seeks",
+                "Scans",
+                "Lookups",
+                "InputObject",
+                "EnableException"
+            )
+        }
 
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
+        It "Should have the expected parameters" {
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
-<#
+#
     Integration test should appear below and are custom to the command you are writing.
     Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
     for more guidence.
 #>
 
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     Context "Verify basics of the Find-DbaDbUnusedIndex command" {
         BeforeAll {
             Test-DbaConnection -SqlInstance $TestConfig.instance2
@@ -67,7 +86,38 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
 
         It "Should return the expected columns on each test sql instance" {
-            [object[]]$expectedColumnArray = 'CompressionDescription', 'ComputerName', 'Database', 'DatabaseId', 'IndexId', 'IndexName', 'IndexSizeMB', 'InstanceName', 'LastSystemLookup', 'LastSystemScan', 'LastSystemSeek', 'LastSystemUpdate', 'LastUserLookup', 'LastUserScan', 'LastUserSeek', 'LastUserUpdate', 'ObjectId', 'RowCount', 'Schema', 'SqlInstance', 'SystemLookup', 'SystemScans', 'SystemSeeks', 'SystemUpdates', 'Table', 'TypeDesc', 'UserLookups', 'UserScans', 'UserSeeks', 'UserUpdates'
+            $expectedColumnArray = @(
+                "CompressionDescription",
+                "ComputerName",
+                "Database",
+                "DatabaseId",
+                "IndexId",
+                "IndexName",
+                "IndexSizeMB",
+                "InstanceName",
+                "LastSystemLookup",
+                "LastSystemScan",
+                "LastSystemSeek",
+                "LastSystemUpdate",
+                "LastUserLookup",
+                "LastUserScan",
+                "LastUserSeek",
+                "LastUserUpdate",
+                "ObjectId",
+                "RowCount",
+                "Schema",
+                "SqlInstance",
+                "SystemLookup",
+                "SystemScans",
+                "SystemSeeks",
+                "SystemUpdates",
+                "Table",
+                "TypeDesc",
+                "UserLookups",
+                "UserScans",
+                "UserSeeks",
+                "UserUpdates"
+            )
 
             $testSQLinstance = $false
 
@@ -85,7 +135,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 }
 
                 if ($null -ne $row) {
-                    [object[]]$columnNamesReturned = @($row | Get-Member -MemberType Property | Select-Object -Property Name | ForEach-Object { $_.Name })
+                    $columnNamesReturned = @($row | Get-Member -MemberType Property | Select-Object -Property Name | ForEach-Object { $PSItem.Name })
 
                     if ( @(Compare-Object -ReferenceObject $expectedColumnArray -DifferenceObject $columnNamesReturned).Count -eq 0 ) {
                         $testSQLinstance = $true
