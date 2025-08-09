@@ -20,7 +20,7 @@ function Get-TestArtifact {
         [string[]]$JobId
     )
 
-    function Parse-JsonFromContent {
+    function Get-JsonFromContent {
         param([Parameter(ValueFromPipeline)]$InputObject)
         process {
             if ($null -eq $InputObject) { return $null }
@@ -61,7 +61,7 @@ function Get-TestArtifact {
             $created = if ($resp.PSObject.Properties.Name -contains 'Created') { $resp.Created } else { $art.created }
 
             try {
-                $parsed = $resp | Parse-JsonFromContent
+                $parsed = $resp | Get-JsonFromContent
             } catch {
                 $rawOut = if ($resp.PSObject.Properties.Name -contains 'Content') { [string]$resp.Content } else { [string]$resp }
                 Write-Warning ("Failed to parse {0} in job {1}: {2}" -f $art.fileName, $id, $_.Exception.Message)
