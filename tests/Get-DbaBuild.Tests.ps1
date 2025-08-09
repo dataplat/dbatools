@@ -48,28 +48,28 @@ Describe $CommandName -Tag UnitTests {
             $IdxRef | Should -BeOfType System.Object
         }
     }
-    
+
     Context "Validate LastUpdated property" {
         BeforeAll {
             $IdxRef = Get-Content $idxfile -Raw | ConvertFrom-Json
         }
-        
+
         It "Has a proper LastUpdated property" {
             $lastupdate = Get-Date -Date $IdxRef.LastUpdated
             $lastupdate | Should -BeOfType System.DateTime
         }
-        
+
         It "LastUpdated is updated regularly (keeps everybody on their toes)" {
             $lastupdate = Get-Date -Date $IdxRef.LastUpdated
             $lastupdate | Should -BeGreaterThan (Get-Date).AddDays(-45)
         }
-        
+
         It "LastUpdated is not in the future" {
             $lastupdate = Get-Date -Date $IdxRef.LastUpdated
             $lastupdate | Should -BeLessThan (Get-Date)
         }
     }
-    
+
     Context "Validate Data property" {
         BeforeAll {
             $IdxRef = Get-Content $idxfile -Raw | ConvertFrom-Json
@@ -84,17 +84,17 @@ Describe $CommandName -Tag UnitTests {
                 $null = $Groups[$ver].Add($el)
             }
         }
-        
+
         It "Data is a proper array" {
             $IdxRef.Data.Length | Should -BeGreaterThan 100
         }
-        
+
         It "Each Datum has a Version property" {
             $DataLength = $IdxRef.Data.Length
             $DataWithVersion = @($IdxRef.Data.Version | Where-Object { $PSItem }).Count
             $DataLength | Should -Be $DataWithVersion
         }
-        
+
         It "Each version is correctly parsable" {
             $Versions = $IdxRef.Data.Version | Where-Object { $PSItem }
             foreach ($ver in $Versions) {
@@ -115,7 +115,7 @@ Describe $CommandName -Tag UnitTests {
                 }
             }
         }
-        
+
         It "Versions are ordered, the way versions are ordered" {
             $Versions = $IdxRef.Data.Version | Where-Object { $PSItem }
             $Naturalized = $Versions | ForEach-Object {
@@ -125,13 +125,13 @@ Describe $CommandName -Tag UnitTests {
             $SortedVersions = $Naturalized | Sort-Object
             ($SortedVersions -join ",") | Should -Be ($Naturalized -join ",")
         }
-        
+
         It "Names are at least 8" {
             $Names = $IdxRef.Data.Name | Where-Object { $PSItem }
             $Names.Count | Should -BeGreaterThan 7
         }
     }
-    
+
     Context "Params mutual exclusion" {
         It "Doesn't accept 'Build', 'Kb', 'SqlInstance" {
             { Get-DbaBuild -Build "10.0.1600" -Kb "4052908" -SqlInstance "localhost" -EnableException -ErrorAction Stop } | Should -Throw
@@ -161,7 +161,7 @@ Describe $CommandName -Tag UnitTests {
             { Get-DbaBuild -CumulativeUpdate "CU2" -EnableException -ErrorAction Stop } | Should -Throw
         }
     }
-    
+
     Context "Passing just -Update works, see #6823" {
         It "works with -Update" {
             function Get-DbaBuildReferenceIndexOnline { }
@@ -170,7 +170,7 @@ Describe $CommandName -Tag UnitTests {
             $warnings | Should -BeNullOrEmpty
         }
     }
-    
+
     Context "Retired KBs" {
         It "Handles retired KBs" {
             $result = Get-DbaBuild -Build "13.0.5479"
@@ -191,7 +191,7 @@ Describe $CommandName -Tag UnitTests {
             $result2008R2.MatchType | Should -Be "Exact"
         }
     }
-    
+
     # These are groups by major release (aka "Name")
     Context "Properties Check" {
         BeforeAll {
@@ -207,7 +207,7 @@ Describe $CommandName -Tag UnitTests {
                 $null = $Groups[$ver].Add($el)
             }
         }
-        
+
         foreach ($g in $OrderedKeys) {
             $Versions = $Groups[$g]
             Context "Properties Check, for major release $g" {
@@ -257,22 +257,22 @@ Describe $CommandName -Tag IntegrationTests {
             $server1 = Connect-DbaInstance -SqlInstance $TestConfig.instance1
             $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         }
-        
+
         It "works when instances are piped" {
             $res = @($server1, $server2) | Get-DbaBuild
             $res.Count | Should -Be 2
         }
-        
+
         It "doesn't work when passed both piped instances and, e.g., -Kb (params mutual exclusion)" {
             { @($server1, $server2) | Get-DbaBuild -Kb -EnableException } | Should -Throw
         }
     }
-    
+
     Context "Test retrieving version from instances" {
         BeforeAll {
             $results = Get-DbaBuild -SqlInstance $TestConfig.instance1, $TestConfig.instance2
         }
-        
+
         It "Should return an exact match" {
             $results | Should -Not -BeNullOrEmpty
             foreach ($r in $results) {

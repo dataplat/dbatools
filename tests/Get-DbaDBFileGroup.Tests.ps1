@@ -42,7 +42,7 @@ Describe $CommandName -Tag IntegrationTests {
         # Set variables. They are available in all the It blocks.
         $random = Get-Random
         $multifgdb = "dbatoolsci_multifgdb$random"
-        
+
         # Remove any existing database before creating
         Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance2 -Database $multifgdb
 

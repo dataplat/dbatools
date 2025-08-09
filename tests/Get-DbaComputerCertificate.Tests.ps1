@@ -36,12 +36,12 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $null = Add-DbaComputerCertificate -Path "$($TestConfig.appveyorlabrepo)\certificates\localhost.crt" -Confirm:$false
             $thumbprint = "29C469578D6C6211076A09CEE5C5797EEA0C2713"
-            
+
             # Get all certificates once for testing
             $allCertificates = Get-DbaComputerCertificate
             $specificCertificate = Get-DbaComputerCertificate -Thumbprint $thumbprint
         }
-        
+
         AfterAll {
             Remove-DbaComputerCertificate -Thumbprint $thumbprint -Confirm:$false -ErrorAction SilentlyContinue
         }
@@ -53,7 +53,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "returns all certificates and at least one has the specified thumbprint" {
             "$($allCertificates.Thumbprint)" -match $thumbprint | Should -Be $true
         }
-        
+
         It "returns all certificates and at least one has the specified EnhancedKeyUsageList" {
             "$($allCertificates.EnhancedKeyUsageList)" -match "1\.3\.6\.1\.5\.5\.7\.3\.1" | Should -Be $true
         }

@@ -39,17 +39,17 @@ Describe $CommandName -Tag IntegrationTests {
             $random = Get-Random
             $cert = "dbatoolsci_getcert$random"
             $password = ConvertTo-SecureString -String Get-Random -AsPlainText -Force
-            
+
             $splatCertificate = @{
                 SqlInstance = $TestConfig.instance1
                 Name        = $cert
                 Password    = $password
             }
             New-DbaDbCertificate @splatCertificate
-            
+
             $results = Get-DbaDbEncryption -SqlInstance $TestConfig.instance1
         }
-        
+
         AfterAll {
             $splatRemove = @{
                 SqlInstance = $TestConfig.instance1
@@ -58,7 +58,7 @@ Describe $CommandName -Tag IntegrationTests {
             }
             Get-DbaDbCertificate @splatRemove | Remove-DbaDbCertificate -Confirm:$false
         }
-        
+
         It "Should find a certificate named $cert" {
             ($results.Name -match "dbatoolsci").Count -gt 0 | Should -Be $true
         }

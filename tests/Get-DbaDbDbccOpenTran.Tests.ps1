@@ -62,7 +62,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "returns results for a specific database" {
             $result = Get-DbaDbDbccOpenTran -SqlInstance $TestConfig.instance1 -Database tempDB
             $tempDB = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database tempDB
-            
+
             $result | Should -Not -BeNullOrEmpty
             $result.Database | Get-Unique | Should -Be "tempDB"
             $result.DatabaseId | Get-Unique | Should -Be $tempDB.Id

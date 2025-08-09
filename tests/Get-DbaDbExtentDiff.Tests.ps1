@@ -35,7 +35,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Set variables. They are available in all the It blocks.
         $dbname = "dbatoolsci_test_$(Get-Random)"
-        
+
         # Create the objects.
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $server.Query("Create Database [$dbname]")

@@ -42,9 +42,9 @@ Describe $CommandName -Tag IntegrationTests {
             "Value",
             "ValueType"
         )
-        
+
         $memoryStatusResults = Get-DbaDbccMemoryStatus -SqlInstance $TestConfig.instance2
-        
+
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -52,9 +52,9 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-        
+
         # No cleanup needed for this read-only command
-        
+
         # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 

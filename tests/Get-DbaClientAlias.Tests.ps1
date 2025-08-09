@@ -30,7 +30,7 @@ Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $newAlias = New-DbaClientAlias -ServerName sql2016 -Alias dbatoolscialias -Verbose:$false
     }
-    
+
     AfterAll {
         $newAlias | Remove-DbaClientAlias -ErrorAction SilentlyContinue
     }
@@ -39,7 +39,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $results = Get-DbaClientAlias
         }
-        
+
         It "returns accurate information" {
             $results.AliasName -contains "dbatoolscialias" | Should -Be $true
         }
