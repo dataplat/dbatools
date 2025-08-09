@@ -43,7 +43,7 @@ AS
 "@
             $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database "Master" -Query $ServerView
         }
-        
+
         AfterAll {
             $DropView = "DROP VIEW dbo.v_dbatoolsci_sysadmin;"
             $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database "Master" -Query $DropView
@@ -56,13 +56,13 @@ AS
         It "Should find a specific View named v_dbatoolsci_sysadmin" {
             $results.Name | Should -Be "v_dbatoolsci_sysadmin"
         }
-        
+
         It "Should find v_dbatoolsci_sysadmin in Master" {
             $results.Database | Should -Be "Master"
             $results.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database Master).ID
         }
     }
-    
+
     Context "Command finds View in a User Database" {
         BeforeAll {
             $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name "dbatoolsci_viewdb"
@@ -74,7 +74,7 @@ AS
 "@
             $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database "dbatoolsci_viewdb" -Query $DatabaseView
         }
-        
+
         AfterAll {
             $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database "dbatoolsci_viewdb" -Confirm:$false
         }
@@ -83,13 +83,13 @@ AS
             $results = Find-DbaView -SqlInstance $TestConfig.instance2 -Pattern dbatools* -Database "dbatoolsci_viewdb"
             $results.Name | Should -Be "v_dbatoolsci_sysadmin"
         }
-        
+
         It "Should find v_dbatoolsci_sysadmin in dbatoolsci_viewdb Database" {
             $results = Find-DbaView -SqlInstance $TestConfig.instance2 -Pattern dbatools* -Database "dbatoolsci_viewdb"
             $results.Database | Should -Be "dbatoolsci_viewdb"
             $results.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database dbatoolsci_viewdb).ID
         }
-        
+
         It "Should find no results when Excluding dbatoolsci_viewdb" {
             $results = Find-DbaView -SqlInstance $TestConfig.instance2 -Pattern dbatools* -ExcludeDatabase "dbatoolsci_viewdb"
             $results | Should -BeNullOrEmpty

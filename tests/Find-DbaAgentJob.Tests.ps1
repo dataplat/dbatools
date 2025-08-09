@@ -120,7 +120,7 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Should -Not -BeNullOrEmpty
         }
         It "Should work with multiple wildcard passed in (see #9572)" {
-            $results = Find-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job *dbatoolsci*,*dbatoolsregr* -ExcludeJobName dbatoolsci_testjob_disabled
+            $results = Find-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job *dbatoolsci*, *dbatoolsregr* -ExcludeJobName dbatoolsci_testjob_disabled
             @($results).Count | Should -Be 2
         }
     }

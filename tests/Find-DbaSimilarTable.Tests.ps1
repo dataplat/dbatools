@@ -61,7 +61,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "returns at least two rows" {
             # not an exact count because who knows
             $results = Find-DbaSimilarTable -SqlInstance $TestConfig.instance1 -Database tempdb | Where-Object Table -Match dbatoolsci
-            
+
             $results.Status.Count -ge 2 | Should -Be $true
             $results.OriginalDatabaseId | Should -Be $db.ID, $db.ID
             $results.MatchingDatabaseId | Should -Be $db.ID, $db.ID
@@ -69,7 +69,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "matches 100% for the test tables" {
             $results = Find-DbaSimilarTable -SqlInstance $TestConfig.instance1 -Database tempdb | Where-Object Table -Match dbatoolsci
-            
+
             foreach ($result in $results) {
                 $result.MatchPercent -eq 100 | Should -Be $true
             }

@@ -49,7 +49,7 @@ Describe $CommandName -Tag IntegrationTests {
         $server.Query("create database $dbName")
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName | Backup-DbaDatabase -Path $backupPath
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName | Backup-DbaDatabase -Path $backupPath -Type Log
-        
+
         $splatAg = @{
             Primary       = $TestConfig.instance3
             Name          = $agName

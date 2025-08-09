@@ -29,17 +29,17 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
-        
+
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $sql = "EXEC sp_addumpdevice 'tape', 'dbatoolsci_tape', '\\.\tape0';"
         $server.Query($sql)
-        
+
         $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
     }
-    
+
     AfterAll {
         $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
-        
+
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $sql = "EXEC sp_dropdevice 'dbatoolsci_tape';"
         $server.Query($sql)
@@ -49,19 +49,19 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $results = Get-DbaBackupDevice -SqlInstance $TestConfig.instance2
         }
-        
+
         It "Results are not empty" {
             $results | Should -Not -BeNullOrEmpty
         }
-        
+
         It "Should have the name dbatoolsci_tape" {
             $results.Name | Should -Be "dbatoolsci_tape"
         }
-        
+
         It "Should have a BackupDeviceType of Tape" {
             $results.BackupDeviceType | Should -Be "Tape"
         }
-        
+
         It "Should have a PhysicalLocation of \\.\Tape0" {
             $results.PhysicalLocation | Should -Be "\\.\Tape0"
         }

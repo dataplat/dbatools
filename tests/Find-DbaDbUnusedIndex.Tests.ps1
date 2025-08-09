@@ -33,9 +33,9 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 #
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
+Integration test should appear below and are custom to the command you are writing.
+Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
+for more guidence.
 #>
 
 

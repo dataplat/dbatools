@@ -74,7 +74,7 @@ Describe $CommandName -Tag IntegrationTests {
             $History += Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\RestoreTimeClean.xml
             $splatFormat = @{
                 BackupHistory        = $History
-                ReplaceDatabaseName  = @{"ContinuePointTest" = "Spiggy"; "RestoreTimeClean" = "Eldritch"}
+                ReplaceDatabaseName  = @{"ContinuePointTest" = "Spiggy"; "RestoreTimeClean" = "Eldritch" }
             }
             $output = Format-DbaBackupInformation @splatFormat
         }
@@ -108,7 +108,7 @@ Describe $CommandName -Tag IntegrationTests {
             $History += Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\RestoreTimeClean.xml
             $splatRename = @{
                 BackupHistory       = $History
-                ReplaceDatabaseName = @{"ContinuePointTest" = "Alice"}
+                ReplaceDatabaseName = @{"ContinuePointTest" = "Alice" }
             }
             $output = Format-DbaBackupInformation @splatRename
         }

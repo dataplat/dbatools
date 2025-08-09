@@ -45,7 +45,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Set variables. They are available in all the It blocks.
         $sessionName = "Profiler TSQL Duration"
-        
+
         # Clean up any existing session
         $null = Get-DbaXESession -SqlInstance $TestConfig.instance2 -Session $sessionName | Remove-DbaXESession
 

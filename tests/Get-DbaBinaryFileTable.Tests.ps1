@@ -46,11 +46,11 @@ Describe $CommandName -Tag IntegrationTests {
         # Set variables. They are available in all the It blocks.
         $tableName = "BunchOFilez"
         $database  = "tempdb"
-        
+
         # Create the objects.
         $db = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $database
         $null = $db.Query("CREATE TABLE [dbo].[$tableName]([FileName123] [nvarchar](50) NULL, [TheFile123] [image] NULL)")
-        
+
         $splatImport = @{
             SqlInstance = $TestConfig.instance2
             Database    = $database
@@ -58,7 +58,7 @@ Describe $CommandName -Tag IntegrationTests {
             FilePath    = "$($TestConfig.appveyorlabrepo)\azure\adalsql.msi"
         }
         $null = Import-DbaBinaryFile @splatImport
-        
+
         $null = Get-ChildItem "$($TestConfig.appveyorlabrepo)\certificates" | Import-DbaBinaryFile -SqlInstance $TestConfig.instance2 -Database $database -Table $tableName
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.

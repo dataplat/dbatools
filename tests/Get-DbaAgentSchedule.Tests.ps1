@@ -43,7 +43,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = New-DbaAgentSchedule -SqlInstance $TestConfig.instance2 -Schedule dbatoolsci_MonthlyTest -FrequencyType Monthly -FrequencyInterval 10 -FrequencyRecurrenceFactor 1 -Force
         $null = New-DbaAgentSchedule -SqlInstance $TestConfig.instance2 -Schedule dbatoolsci_WeeklyTest -FrequencyType Weekly -FrequencyInterval 2 -FrequencyRecurrenceFactor 1 -StartTime 020000 -Force
         $null = New-DbaAgentSchedule -SqlInstance $TestConfig.instance3 -Schedule dbatoolsci_MonthlyTest -FrequencyType Monthly -FrequencyInterval 10 -FrequencyRecurrenceFactor 1 -Force
-        
+
         $splatScheduleOnce = @{
             SqlInstance               = $TestConfig.instance2
             Schedule                  = "Issue_6636_Once"
