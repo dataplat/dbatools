@@ -1,4 +1,4 @@
-function Get-TargetPRs {
+function Get-TargetPullRequests {
     <#
     .SYNOPSIS
         Gets target pull request numbers for processing.

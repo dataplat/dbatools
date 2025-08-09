@@ -41,7 +41,7 @@ module/
     ├── Invoke-AppVeyorApi.ps1         # AppVeyor API wrapper
     ├── Get-AppVeyorFailure.ps1        # Failure extraction
     ├── Repair-TestFile.ps1            # Individual test repair
-    ├── Get-TargetPRs.ps1              # PR number resolution
+    ├── Get-TargetPullRequests.ps1              # PR number resolution
     ├── Get-FailedBuilds.ps1           # Failed build detection
     ├── Get-BuildFailures.ps1          # Build failure analysis
     ├── Get-JobFailures.ps1            # Job failure extraction

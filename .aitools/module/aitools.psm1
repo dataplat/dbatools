@@ -68,7 +68,7 @@ $functionFiles = @(
     'Invoke-AppVeyorApi.ps1',
     'Get-AppVeyorFailure.ps1',
     'Repair-TestFile.ps1',
-    'Get-TargetPRs.ps1',
+    'Get-TargetPullRequests.ps1',
     'Get-FailedBuilds.ps1',
     'Get-BuildFailures.ps1',
     'Get-JobFailures.ps1',
