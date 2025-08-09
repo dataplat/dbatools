@@ -1,203 +1,394 @@
 function Invoke-AITool {
     <#
     .SYNOPSIS
-        Invokes AI tools (Aider or Claude Code) to modify code files.
+        Invokes AI coding tools (Aider or Claude Code).
 
     .DESCRIPTION
-        This function provides a unified interface for invoking AI coding tools like Aider and Claude Code.
-        It can process single files or multiple files, apply AI-driven modifications, and optionally run tests.
+        The Invoke-AITool function provides a PowerShell interface to AI pair programming tools.
+        It supports both Aider and Claude Code with their respective CLI options and can accept files via pipeline from Get-ChildItem.
 
     .PARAMETER Message
-        The message or prompt to send to the AI tool.
+        The message to send to the AI. This is the primary way to communicate your intent.
 
     .PARAMETER File
-        The file(s) to be processed by the AI tool.
+        The files to edit. Can be piped in from Get-ChildItem.
 
     .PARAMETER Model
-        The AI model to use (e.g., azure/gpt-4o, gpt-4o-mini, claude-3-5-sonnet for Aider; claude-sonnet-4-20250514 for Claude Code).
+        The AI model to use (e.g., gpt-4, claude-3-opus-20240229 for Aider; claude-sonnet-4-20250514 for Claude Code).
 
     .PARAMETER Tool
         The AI coding tool to use.
         Valid values: Aider, Claude
         Default: Claude
 
-    .PARAMETER AutoTest
-        If specified, automatically runs tests after making changes.
+    .PARAMETER EditorModel
+        The model to use for editor tasks (Aider only).
 
-    .PARAMETER PassCount
-        Number of passes to make with the AI tool. Sometimes multiple passes are needed for complex changes.
-
-    .PARAMETER ReadFile
-        Additional files to read for context (Aider-specific).
-
-    .PARAMETER ContextFiles
-        Additional files to provide as context (Claude Code-specific).
-
-    .PARAMETER YesAlways
-        Automatically answer yes to all prompts (Aider-specific).
+    .PARAMETER NoPretty
+        Disable pretty, colorized output (Aider only).
 
     .PARAMETER NoStream
-        Disable streaming output (Aider-specific).
+        Disable streaming responses (Aider only).
+
+    .PARAMETER YesAlways
+        Always say yes to every confirmation (Aider only).
 
     .PARAMETER CachePrompts
-        Enable prompt caching (Aider-specific).
+        Enable caching of prompts (Aider only).
+
+    .PARAMETER MapTokens
+        Suggested number of tokens to use for repo map (Aider only).
+
+    .PARAMETER MapRefresh
+        Control how often the repo map is refreshed (Aider only).
+
+    .PARAMETER NoAutoLint
+        Disable automatic linting after changes (Aider only).
+
+    .PARAMETER AutoTest
+        Enable automatic testing after changes.
+
+    .PARAMETER ShowPrompts
+        Print the system prompts and exit (Aider only).
+
+    .PARAMETER EditFormat
+        Specify what edit format the LLM should use (Aider only).
+
+    .PARAMETER MessageFile
+        Specify a file containing the message to send (Aider only).
+
+    .PARAMETER ReadFile
+        Specify read-only files (Aider only).
+
+    .PARAMETER ContextFiles
+        Specify context files for Claude Code.
+
+    .PARAMETER Encoding
+        Specify the encoding for input and output (Aider only).
 
     .PARAMETER ReasoningEffort
         Controls the reasoning effort level for AI model responses.
         Valid values are: minimal, medium, high.
 
-    .NOTES
-        Tags: AI, Automation, CodeGeneration
-        Author: dbatools team
+    .PARAMETER PassCount
+        Number of passes to run.
+
+    .PARAMETER DangerouslySkipPermissions
+        Skip permission prompts (Claude Code only).
+
+    .PARAMETER OutputFormat
+        Output format for Claude Code (text, json, stream-json).
+
+    .PARAMETER Verbose
+        Enable verbose output for Claude Code.
+
+    .PARAMETER MaxTurns
+        Maximum number of turns for Claude Code.
 
     .EXAMPLE
-        PS C:/> Invoke-AITool -Message "Fix this function" -File "C:/test.ps1" -Tool Claude
-        Uses Claude Code to fix the specified file.
+        Invoke-AITool -Message "Fix the bug" -File script.ps1 -Tool Aider
+
+        Asks Aider to fix a bug in script.ps1.
 
     .EXAMPLE
-        PS C:/> Invoke-AITool -Message "Add error handling" -File "C:/test.ps1" -Tool Aider -Model "gpt-4o"
-        Uses Aider with GPT-4o to add error handling to the file.
+        Get-ChildItem *.ps1 | Invoke-AITool -Message "Add error handling" -Tool Claude
+
+        Adds error handling to all PowerShell files in the current directory using Claude Code.
 
     .EXAMPLE
-        PS C:/> Invoke-AITool -Message "Refactor this code" -File @("file1.ps1", "file2.ps1") -Tool Claude -PassCount 2
-        Uses Claude Code to refactor multiple files with 2 passes.
+        Invoke-AITool -Message "Update API" -Model claude-sonnet-4-20250514 -Tool Claude -DangerouslySkipPermissions
+
+        Uses Claude Code with Sonnet 4 to update API code without permission prompts.
     #>
     [CmdletBinding()]
-    param (
+    param(
         [Parameter(Mandatory)]
         [string]$Message,
-        [Parameter(Mandatory)]
+        [Parameter(Position = 0, ValueFromPipeline, ValueFromPipelineByPropertyName)]
+        [Alias('FullName')]
         [string[]]$File,
         [string]$Model,
         [ValidateSet('Aider', 'Claude')]
         [string]$Tool = 'Claude',
+        [string]$EditorModel,
+        [switch]$NoPretty,
+        [switch]$NoStream,
+        [switch]$YesAlways,
+        [switch]$CachePrompts,
+        [int]$MapTokens,
+        [ValidateSet('auto', 'always', 'files', 'manual')]
+        [string]$MapRefresh,
+        [switch]$NoAutoLint,
         [switch]$AutoTest,
-        [int]$PassCount = 1,
+        [switch]$ShowPrompts,
+        [string]$EditFormat,
+        [string]$MessageFile,
         [string[]]$ReadFile,
         [string[]]$ContextFiles,
-        [switch]$YesAlways,
-        [switch]$NoStream,
-        [switch]$CachePrompts,
+        [ValidateSet('utf-8', 'ascii', 'unicode', 'utf-16', 'utf-32', 'utf-7')]
+        [string]$Encoding,
+        [int]$PassCount = 1,
         [ValidateSet('minimal', 'medium', 'high')]
-        [string]$ReasoningEffort
+        [string]$ReasoningEffort,
+        [switch]$DangerouslySkipPermissions,
+        [ValidateSet('text', 'json', 'stream-json')]
+        [string]$OutputFormat,
+        [int]$MaxTurns
     )
 
-    Write-Verbose "Invoking $Tool with message: $Message"
-    Write-Verbose "Processing files: $($File -join ', ')"
+    begin {
+        $allFiles = @()
 
-    if ($Tool -eq 'Aider') {
-        # Validate Aider is available
-        if (-not (Get-Command aider -ErrorAction SilentlyContinue)) {
-            throw "Aider is not installed or not in PATH. Please install Aider first."
-        }
-
-        # Build Aider command
-        $aiderArgs = @()
-
-        if ($Model) {
-            $aiderArgs += "--model", $Model
-        }
-
-        if ($YesAlways) {
-            $aiderArgs += "--yes-always"
-        }
-
-        if ($NoStream) {
-            $aiderArgs += "--no-stream"
-        }
-
-        if ($CachePrompts) {
-            $aiderArgs += "--cache-prompts"
-        }
-
-        if ($ReadFile) {
-            foreach ($readFile in $ReadFile) {
-                $aiderArgs += "--read", $readFile
+        # Validate tool availability and parameters
+        if ($Tool -eq 'Aider') {
+            if (-not (Get-Command -Name aider -ErrorAction SilentlyContinue)) {
+                throw "Aider executable not found. Please ensure it is installed and in your PATH."
             }
-        }
 
-        # Add files to modify
-        $aiderArgs += $File
+            # Warn about Claude-only parameters when using Aider
+            if ($PSBoundParameters.ContainsKey('DangerouslySkipPermissions')) {
+                Write-Warning "DangerouslySkipPermissions parameter is Claude Code-specific and will be ignored when using Aider"
+            }
+            if ($PSBoundParameters.ContainsKey('OutputFormat')) {
+                Write-Warning "OutputFormat parameter is Claude Code-specific and will be ignored when using Aider"
+            }
+            if ($PSBoundParameters.ContainsKey('MaxTurns')) {
+                Write-Warning "MaxTurns parameter is Claude Code-specific and will be ignored when using Aider"
+            }
+            if ($PSBoundParameters.ContainsKey('ContextFiles')) {
+                Write-Warning "ContextFiles parameter is Claude Code-specific and will be ignored when using Aider"
+            }
+        } else {
+            # Claude Code
+            if (-not (Get-Command -Name claude -ErrorAction SilentlyContinue)) {
+                throw "Claude Code executable not found. Please ensure it is installed and in your PATH."
+            }
 
-        # Add message
-        $aiderArgs += "--message", $Message
-
-        Write-Verbose "Aider command: aider $($aiderArgs -join ' ')"
-
-        for ($pass = 1; $pass -le $PassCount; $pass++) {
-            Write-Verbose "Aider pass $pass of $PassCount"
-
-            try {
-                & aider @aiderArgs
-                if ($LASTEXITCODE -ne 0) {
-                    Write-Warning "Aider exited with code $LASTEXITCODE on pass $pass"
+            # Warn about Aider-only parameters when using Claude Code
+            $aiderOnlyParams = @('EditorModel', 'NoPretty', 'NoStream', 'YesAlways', 'CachePrompts', 'MapTokens', 'MapRefresh', 'NoAutoLint', 'ShowPrompts', 'EditFormat', 'MessageFile', 'ReadFile', 'Encoding')
+            foreach ($param in $aiderOnlyParams) {
+                if ($PSBoundParameters.ContainsKey($param)) {
+                    Write-Warning "$param parameter is Aider-specific and will be ignored when using Claude Code"
                 }
-            } catch {
-                Write-Error "Failed to execute Aider on pass $pass`: $_"
-                throw
-            }
-        }
-
-    } elseif ($Tool -eq 'Claude') {
-        # Claude Code implementation
-        Write-Verbose "Using Claude Code for AI processing"
-
-        # Build Claude Code parameters
-        $claudeParams = @{
-            Message = $Message
-            Files = $File
-        }
-
-        if ($Model) {
-            $claudeParams.Model = $Model
-        }
-
-        if ($ContextFiles) {
-            $claudeParams.ContextFiles = $ContextFiles
-        }
-
-        if ($PSBoundParameters.ContainsKey('ReasoningEffort')) {
-            $claudeParams.ReasoningEffort = $ReasoningEffort
-        }
-
-        for ($pass = 1; $pass -le $PassCount; $pass++) {
-            Write-Verbose "Claude Code pass $pass of $PassCount"
-
-            try {
-                # This would be the actual Claude Code invocation
-                # For now, this is a placeholder for the actual implementation
-                Write-Verbose "Claude Code parameters: $($claudeParams | ConvertTo-Json -Depth 2)"
-
-                # Placeholder for actual Claude Code execution
-                # In a real implementation, this would call the Claude Code API or executable
-                Write-Information "Claude Code would process: $($File -join ', ') with message: $Message" -InformationAction Continue
-
-            } catch {
-                Write-Error "Failed to execute Claude Code on pass $pass`: $_"
-                throw
             }
         }
     }
 
-    # Run tests if requested
-    if ($AutoTest) {
-        Write-Verbose "Running tests after AI modifications"
+    process {
+        if ($File) {
+            $allFiles += $File
+        }
+    }
 
-        foreach ($fileToTest in $File) {
-            $testFile = $fileToTest -replace '\.ps1$', '.Tests.ps1'
+    end {
+        for ($i = 0; $i -lt $PassCount; $i++) {
+            if ($Tool -eq 'Aider') {
+                foreach ($singlefile in $allfiles) {
+                    $arguments = @()
 
-            if (Test-Path $testFile) {
-                Write-Verbose "Running tests for $testFile"
-                try {
-                    Invoke-Pester -Path $testFile -Output Detailed
-                } catch {
-                    Write-Warning "Test execution failed for $testFile`: $_"
+                    # Add files if any were specified or piped in
+                    if ($allFiles) {
+                        $arguments += $allFiles
+                    }
+
+                    # Add mandatory message parameter
+                    if ($Message) {
+                        $arguments += "--message", $Message
+                    }
+
+                    # Add optional parameters only if they are present
+                    if ($Model) {
+                        $arguments += "--model", $Model
+                    }
+
+                    if ($EditorModel) {
+                        $arguments += "--editor-model", $EditorModel
+                    }
+
+                    if ($NoPretty) {
+                        $arguments += "--no-pretty"
+                    }
+
+                    if ($NoStream) {
+                        $arguments += "--no-stream"
+                    }
+
+                    if ($YesAlways) {
+                        $arguments += "--yes-always"
+                    }
+
+                    if ($CachePrompts) {
+                        $arguments += "--cache-prompts"
+                    }
+
+                    if ($PSBoundParameters.ContainsKey('MapTokens')) {
+                        $arguments += "--map-tokens", $MapTokens
+                    }
+
+                    if ($MapRefresh) {
+                        $arguments += "--map-refresh", $MapRefresh
+                    }
+
+                    if ($NoAutoLint) {
+                        $arguments += "--no-auto-lint"
+                    }
+
+                    if ($AutoTest) {
+                        $arguments += "--auto-test"
+                    }
+
+                    if ($ShowPrompts) {
+                        $arguments += "--show-prompts"
+                    }
+
+                    if ($EditFormat) {
+                        $arguments += "--edit-format", $EditFormat
+                    }
+
+                    if ($MessageFile) {
+                        $arguments += "--message-file", $MessageFile
+                    }
+
+                    if ($ReadFile) {
+                        foreach ($rf in $ReadFile) {
+                            $arguments += "--read", $rf
+                        }
+                    }
+
+                    if ($Encoding) {
+                        $arguments += "--encoding", $Encoding
+                    }
+
+                    if ($ReasoningEffort) {
+                        $arguments += "--reasoning-effort", $ReasoningEffort
+                    }
+
+                    if ($VerbosePreference -eq 'Continue') {
+                        Write-Verbose "Executing: aider $($arguments -join ' ')"
+                    }
+
+                    if ($PassCount -gt 1) {
+                        Write-Verbose "Aider pass $($i + 1) of $PassCount"
+                    }
+
+                    $results = aider @arguments
+
+                    [pscustomobject]@{
+                        FileName = (Split-Path $singlefile -Leaf)
+                        Results  = "$results"
+                    }
+
+                    # Run Invoke-DbatoolsFormatter after AI tool execution
+                    if (Test-Path $singlefile) {
+                        Write-Verbose "Running Invoke-DbatoolsFormatter on $singlefile"
+                        try {
+                            Invoke-DbatoolsFormatter -Path $singlefile
+                        } catch {
+                            Write-Warning "Invoke-DbatoolsFormatter failed for $singlefile`: $($_.Exception.Message)"
+                        }
+                    }
                 }
+
             } else {
-                Write-Verbose "No test file found for $fileToTest (looked for $testFile)"
+                # Claude Code
+                Write-Verbose "Preparing Claude Code execution"
+
+                # Build the full message with context files
+                $fullMessage = $Message
+
+                # Add context files content to the message
+                if ($ContextFiles) {
+                    Write-Verbose "Processing $($ContextFiles.Count) context files"
+                    foreach ($contextFile in $ContextFiles) {
+                        if (Test-Path $contextFile) {
+                            Write-Verbose "Adding context from: $contextFile"
+                            try {
+                                $contextContent = Get-Content $contextFile -Raw -ErrorAction Stop
+                                if ($contextContent) {
+                                    $fullMessage += "`n`nContext from $($contextFile):`n$contextContent"
+                                }
+                            } catch {
+                                Write-Warning "Could not read context file $contextFile`: $($_.Exception.Message)"
+                            }
+                        } else {
+                            Write-Warning "Context file not found: $contextFile"
+                        }
+                    }
+                }
+
+                foreach ($singlefile in $allFiles) {
+                    # Build arguments array
+                    $arguments = @()
+
+                    # Add non-interactive print mode FIRST
+                    $arguments += "-p", $fullMessage
+
+                    # Add the dangerous flag early
+                    if ($DangerouslySkipPermissions) {
+                        $arguments += "--dangerously-skip-permissions"
+                        Write-Verbose "Adding --dangerously-skip-permissions to avoid prompts"
+                    }
+
+                    # Add allowed tools
+                    $arguments += "--allowedTools", "Read,Write,Edit,Create,Replace"
+
+                    # Add optional parameters
+                    if ($Model) {
+                        $arguments += "--model", $Model
+                        Write-Verbose "Using model: $Model"
+                    }
+
+                    if ($OutputFormat) {
+                        $arguments += "--output-format", $OutputFormat
+                        Write-Verbose "Using output format: $OutputFormat"
+                    }
+
+                    if ($MaxTurns) {
+                        $arguments += "--max-turns", $MaxTurns
+                        Write-Verbose "Using max turns: $MaxTurns"
+                    }
+
+                    if ($VerbosePreference -eq 'Continue') {
+                        $arguments += "--verbose"
+                    }
+
+                    # Add files if any were specified or piped in (FILES GO LAST)
+                    if ($allFiles) {
+                        Write-Verbose "Adding file to arguments: $singlefile"
+                        $arguments += $file
+                    }
+
+                    if ($PassCount -gt 1) {
+                        Write-Verbose "Claude Code pass $($i + 1) of $PassCount"
+                    }
+
+                    Write-Verbose "Executing: claude $($arguments -join ' ')"
+
+                    try {
+                        $results = claude @arguments
+
+                        [pscustomobject]@{
+                            FileName = (Split-Path $singlefile -Leaf)
+                            Results  = "$results"
+                        }
+
+                        Write-Verbose "Claude Code execution completed successfully"
+
+                        # Run Invoke-DbatoolsFormatter after AI tool execution
+                        if (Test-Path $singlefile) {
+                            Write-Verbose "Running Invoke-DbatoolsFormatter on $singlefile"
+                            try {
+                                Invoke-DbatoolsFormatter -Path $singlefile
+                            } catch {
+                                Write-Warning "Invoke-DbatoolsFormatter failed for $singlefile`: $($_.Exception.Message)"
+                            }
+                        }
+                    } catch {
+                        Write-Error "Claude Code execution failed: $($_.Exception.Message)"
+                        throw
+                    }
+                }
             }
         }
     }
-
-    Write-Verbose "$Tool processing completed for $($File.Count) file(s)"
 }

@@ -2,35 +2,6 @@ function Invoke-AutoFixSingleFile {
     <#
     .SYNOPSIS
         Backward compatibility helper for single file AutoFix processing.
-
-    .DESCRIPTION
-        Provides backward compatibility for the original single-file AutoFix workflow
-        while the main Invoke-AutoFix function supports batch processing.
-
-    .PARAMETER FilePath
-        The path to the file to analyze and fix.
-
-    .PARAMETER SettingsPath
-        Path to the PSScriptAnalyzer settings file.
-
-    .PARAMETER AiderParams
-        Parameters to pass to the AI tool for fixing violations.
-
-    .PARAMETER MaxRetries
-        Maximum number of retry attempts when violations are found.
-
-    .PARAMETER Model
-        The AI model to use for fixing violations.
-
-    .PARAMETER Tool
-        The AI coding tool to use for fixes.
-
-    .PARAMETER ReasoningEffort
-        Controls the reasoning effort level for AI model responses.
-
-    .NOTES
-        Tags: CodeQuality, PSScriptAnalyzer, Automation, Compatibility
-        Author: dbatools team
     #>
     [CmdletBinding()]
     param(

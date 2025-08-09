@@ -15,15 +15,15 @@ function Repair-Error {
 
     .PARAMETER PromptFilePath
         The path to the template file containing the prompt structure.
-        Defaults to "prompts/fix-errors.md" relative to the module directory.
+        Defaults to "./aitools/prompts/fix-errors.md".
 
     .PARAMETER CacheFilePath
         The path to the file containing cached conventions.
-        Defaults to "prompts/style.md" and "prompts/migration.md" relative to the module directory.
+        Defaults to "./aitools/prompts/conventions.md".
 
     .PARAMETER ErrorFilePath
         The path to the JSON file containing error information.
-        Defaults to "prompts/errors.json" relative to the module directory.
+        Defaults to "./aitools/prompts/errors.json".
 
     .PARAMETER Tool
         The AI coding tool to use.
@@ -89,32 +89,15 @@ function Repair-Error {
         } else {
             @("Error template not found")
         }
-
         $testerrors = if ($ErrorFilePath -and (Test-Path $ErrorFilePath)) {
             Get-Content $ErrorFilePath | ConvertFrom-Json
         } else {
             @()
         }
-
-        if (-not $testerrors) {
-            Write-Warning "No errors found in error file: $ErrorFilePath"
-            return
-        }
-
         $commands = $testerrors | Select-Object -ExpandProperty Command -Unique | Sort-Object
 
-        # Apply First and Skip parameters to commands
-        if ($Skip) {
-            $commands = $commands | Select-Object -Skip $Skip
-        }
-        if ($First) {
-            $commands = $commands | Select-Object -First $First
-        }
-
-        Write-Verbose "Processing $($commands.Count) commands with errors"
-
         foreach ($command in $commands) {
-            $filename = (Resolve-Path "$script:ModulePath/tests/$command.Tests.ps1" -ErrorAction SilentlyContinue).Path
+            $filename = (Resolve-Path "$PSScriptRoot/../tests/$command.Tests.ps1" -ErrorAction SilentlyContinue).Path
             Write-Verbose "Processing $command with $Tool"
 
             if (-not (Test-Path $filename)) {
@@ -131,7 +114,7 @@ function Repair-Error {
                 $cmdPrompt += "Line: $($err.LineNumber)`n"
             }
 
-            $aiParams = @{
+            $aiderParams = @{
                 Message = $cmdPrompt
                 File    = $filename
                 Tool    = $Tool
@@ -139,27 +122,24 @@ function Repair-Error {
 
             # Add tool-specific parameters
             if ($Tool -eq 'Aider') {
-                $aiParams.NoStream = $true
-                $aiParams.CachePrompts = $true
-                $aiParams.ReadFile = $CacheFilePath
+                $aiderParams.NoStream = $true
+                $aiderParams.CachePrompts = $true
+                $aiderParams.ReadFile = $CacheFilePath
             } else {
                 # For Claude Code, use different approach for context files
-                $aiParams.ContextFiles = $CacheFilePath
+                $aiderParams.ContextFiles = $CacheFilePath
             }
 
             # Add optional parameters if specified
             if ($Model) {
-                $aiParams.Model = $Model
+                $aiderParams.Model = $Model
             }
 
             if ($ReasoningEffort) {
-                $aiParams.ReasoningEffort = $ReasoningEffort
+                $aiderParams.ReasoningEffort = $ReasoningEffort
             }
 
-            Write-Verbose "Invoking $Tool to repair errors in $command"
-            Invoke-AITool @aiParams
+            Invoke-AITool @aiderParams
         }
-
-        Write-Verbose "Repair-Error completed processing $($commands.Count) commands"
     }
 }

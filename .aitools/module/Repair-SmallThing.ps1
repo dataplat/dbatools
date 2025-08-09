@@ -93,7 +93,7 @@ function Repair-SmallThing {
         PS C:/> Repair-SmallThing -PromptFilePath "custom-prompt.md" -Tool Claude
         Uses a custom prompt template with Claude Code to repair issues.
     #>
-    [CmdletBinding()]
+    [cmdletbinding()]
     param (
         [Parameter(Position = 0, ValueFromPipeline, ValueFromPipelineByPropertyName)]
         [Alias("FullName", "FilePath", "File")]
@@ -142,9 +142,9 @@ function Repair-SmallThing {
         $prompts = @{
             ReorgParamTest = "Move the `$expected` parameter list AND the `$TestConfig.CommonParameters` part into the BeforeAll block, placing them after the `$command` assignment. Keep them within the BeforeAll block. Do not move or modify the initial `$command` assignment.
 
-If you can't find the `$expected` parameter list, do not make any changes.
+            If you can't find the `$expected` parameter list, do not make any changes.
 
-If it's already where it should be, do not make any changes."
+            If it's already where it should be, do not make any changes."
         }
         Write-Verbose "Available prompt types: $($prompts.Keys -join ', ')"
 
@@ -174,7 +174,7 @@ If it's already where it should be, do not make any changes."
             Write-Progress -Activity "Loading dbatools Module" -Status "Finalizing module load..." -PercentComplete 80
             Start-Sleep -Milliseconds 100
             Write-Progress -Activity "Loading dbatools Module" -Status "Importing module..." -PercentComplete 90
-            Import-Module $script:ModulePath/dbatools.psm1 -Force -Verbose:$false
+            Import-Module $PSScriptRoot/../dbatools.psm1 -Force -Verbose:$false
             Write-Progress -Activity "Loading dbatools Module" -Status "Complete" -PercentComplete 100
             Start-Sleep -Milliseconds 100
             Write-Progress -Activity "Loading dbatools Module" -Completed
@@ -219,7 +219,7 @@ If it's already where it should be, do not make any changes."
             switch ($object.GetType().FullName) {
                 'System.IO.FileInfo' {
                     Write-Verbose "Processing FileInfo object: $($object.FullName)"
-                    $cmdName = [System.IO.Path]::GetFileNameWithoutExtension($object.Name) -replace '\.Tests$', ''
+                    $cmdName = [System.IO.Path]::GetFileNameWithoutExtension($object.Name) -replace '/.Tests$', ''
                     $commands += $baseCommands | Where-Object Name -eq $cmdName
                 }
                 'System.Management.Automation.CommandInfo' {
@@ -229,7 +229,7 @@ If it's already where it should be, do not make any changes."
                 'System.String' {
                     Write-Verbose "Processing string path: $object"
                     if (Test-Path $object) {
-                        $cmdName = [System.IO.Path]::GetFileNameWithoutExtension($object) -replace '\.Tests$', ''
+                        $cmdName = [System.IO.Path]::GetFileNameWithoutExtension($object) -replace '/.Tests$', ''
                         $commands += $baseCommands | Where-Object Name -eq $cmdName
                     } else {
                         Write-Warning "Path not found: $object"
@@ -252,7 +252,7 @@ If it's already where it should be, do not make any changes."
             $cmdName = $command.Name
             Write-Verbose "Processing command: $cmdName with $Tool"
 
-            $filename = (Resolve-Path "$script:ModulePath/tests/$cmdName.Tests.ps1" -ErrorAction SilentlyContinue).Path
+            $filename = (Resolve-Path "$PSScriptRoot/../tests/$cmdName.Tests.ps1" -ErrorAction SilentlyContinue).Path
             Write-Verbose "Using test path: $filename"
 
             if (-not (Test-Path $filename)) {
@@ -280,7 +280,7 @@ If it's already where it should be, do not make any changes."
             }
             Write-Verbose "Final prompt: $cmdPrompt"
 
-            $aiParams = @{
+            $aiderParams = @{
                 Message = $cmdPrompt
                 File    = $filename
                 Tool    = $Tool
@@ -307,21 +307,21 @@ If it's already where it should be, do not make any changes."
                     if ($Tool -eq 'Claude') {
                         $aiderOnlyParams = @('EditorModel', 'NoPretty', 'NoStream', 'YesAlways', 'CachePrompts', 'MapTokens', 'MapRefresh', 'NoAutoLint', 'ShowPrompts', 'EditFormat', 'MessageFile', 'ReadFile', 'Encoding')
                         if ($paramName -notin $aiderOnlyParams) {
-                            $aiParams[$paramName] = $paramValue
+                            $aiderParams[$paramName] = $paramValue
                         }
                     } else {
                         # Aider - exclude Claude-only params if any exist in the future
-                        $aiParams[$paramName] = $paramValue
+                        $aiderParams[$paramName] = $paramValue
                     }
                 }
 
             if (-not $PSBoundParameters.Model) {
-                $aiParams.Model = $Model
+                $aiderParams.Model = $Model
             }
 
             Write-Verbose "Invoking $Tool for $cmdName"
             try {
-                Invoke-AITool @aiParams
+                Invoke-AITool @aiderParams
                 Write-Verbose "$Tool completed successfully for $cmdName"
             } catch {
                 Write-Error "Error executing $Tool for $cmdName`: $_"

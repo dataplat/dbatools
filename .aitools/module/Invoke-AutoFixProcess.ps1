@@ -2,35 +2,6 @@ function Invoke-AutoFixProcess {
     <#
     .SYNOPSIS
         Core processing logic for AutoFix operations.
-
-    .DESCRIPTION
-        Handles the core AutoFix workflow including PSScriptAnalyzer execution,
-        violation detection, and AI-powered fixes with retry logic.
-
-    .PARAMETER FilePath
-        The path to the file to analyze and fix.
-
-    .PARAMETER SettingsPath
-        Path to the PSScriptAnalyzer settings file.
-
-    .PARAMETER MaxRetries
-        Maximum number of retry attempts when violations are found.
-
-    .PARAMETER Model
-        The AI model to use for fixing violations.
-
-    .PARAMETER Tool
-        The AI coding tool to use for fixes.
-
-    .PARAMETER ReasoningEffort
-        Controls the reasoning effort level for AI model responses.
-
-    .PARAMETER AutoTest
-        If specified, automatically runs tests after making changes.
-
-    .NOTES
-        Tags: CodeQuality, PSScriptAnalyzer, Automation
-        Author: dbatools team
     #>
     [CmdletBinding()]
     param(
@@ -123,11 +94,11 @@ function Invoke-AutoFixProcess {
 
             # Build AI tool parameters
             $aiParams = @{
-                Message   = $fixMessage
-                File      = $FilePath
-                Model     = $Model
-                Tool      = $Tool
-                AutoTest  = $AutoTest
+                Message  = $fixMessage
+                File     = $FilePath
+                Model    = $Model
+                Tool     = $Tool
+                AutoTest = $AutoTest
             }
 
             if ($ReasoningEffort) {

@@ -20,7 +20,7 @@ function Update-PesterTest {
 
     .PARAMETER PromptFilePath
         The path to the template file containing the prompt structure.
-        Defaults to "$PSScriptRoot/prompts/prompt.md".
+        Defaults to "$PSScriptRoot/../aitools/prompts/template.md".
 
     .PARAMETER CacheFilePath
         The path to the file containing cached conventions.
@@ -57,7 +57,7 @@ function Update-PesterTest {
 
     .PARAMETER SettingsPath
         Path to the PSScriptAnalyzer settings file used by AutoFix.
-        Defaults to "tests/PSScriptAnalyzerRules.psd1" relative to the dbatools root.
+        Defaults to "$PSScriptRoot/../tests/PSScriptAnalyzerRules.psd1".
 
     .PARAMETER ReasoningEffort
         Controls the reasoning effort level for AI model responses.
@@ -94,11 +94,11 @@ function Update-PesterTest {
         [PSObject[]]$InputObject,
         [int]$First = 10000,
         [int]$Skip,
-        [string[]]$PromptFilePath = @((Resolve-Path "$PSScriptRoot/../prompts/prompt.md" -ErrorAction SilentlyContinue).Path),
+        [string[]]$PromptFilePath = @((Resolve-Path "$PSScriptRoot/prompts/prompt.md" -ErrorAction SilentlyContinue).Path),
         [string[]]$CacheFilePath = @(
-            (Resolve-Path "$PSScriptRoot/../prompts/style.md" -ErrorAction SilentlyContinue).Path,
-            (Resolve-Path "$PSScriptRoot/../prompts/migration.md" -ErrorAction SilentlyContinue).Path,
-            (Resolve-Path "$script:ModulePath/private/testing/Get-TestConfig.ps1" -ErrorAction SilentlyContinue).Path
+            (Resolve-Path "$PSScriptRoot/prompts/style.md" -ErrorAction SilentlyContinue).Path,
+            (Resolve-Path "$PSScriptRoot/prompts/migration.md" -ErrorAction SilentlyContinue).Path,
+            (Resolve-Path "$PSScriptRoot/../private/testing/Get-TestConfig.ps1" -ErrorAction SilentlyContinue).Path
         ),
         [int]$MaxFileSize = 500kb,
         [string]$Model,
@@ -109,7 +109,7 @@ function Update-PesterTest {
         [switch]$NoAuthFix,
         [string]$AutoFixModel = $Model,
         [int]$MaxRetries = 0,
-        [string]$SettingsPath = (Resolve-Path "$script:ModulePath/tests/PSScriptAnalyzerRules.psd1" -ErrorAction SilentlyContinue).Path,
+        [string]$SettingsPath = (Resolve-Path "$PSScriptRoot/../tests/PSScriptAnalyzerRules.psd1" -ErrorAction SilentlyContinue).Path,
         [ValidateSet('minimal', 'medium', 'high')]
         [string]$ReasoningEffort
     )
@@ -132,7 +132,7 @@ function Update-PesterTest {
         Write-Progress -Activity "Loading dbatools Module" -Status "Finalizing module load..." -PercentComplete 80
         Start-Sleep -Milliseconds 100
         Write-Progress -Activity "Loading dbatools Module" -Status "Importing module..." -PercentComplete 90
-        Import-Module $script:ModulePath/dbatools.psm1 -Force
+        Import-Module $PSScriptRoot/../dbatools.psm1 -Force
         Write-Progress -Activity "Loading dbatools Module" -Status "Complete" -PercentComplete 100
         Start-Sleep -Milliseconds 100
         Write-Progress -Activity "Loading dbatools Module" -Completed
@@ -230,7 +230,7 @@ function Update-PesterTest {
             } else {
                 # Handle command object input
                 $cmdName = $command.Name
-                $filename = (Resolve-Path "$script:ModulePath/tests/$cmdName.Tests.ps1" -ErrorAction SilentlyContinue).Path
+                $filename = (Resolve-Path "$PSScriptRoot/../tests/$cmdName.Tests.ps1" -ErrorAction SilentlyContinue).Path
             }
 
             Write-Verbose "Processing command: $cmdName"
@@ -293,7 +293,7 @@ function Update-PesterTest {
                             PassCount = $PassCount
                         }
 
-                        if ($PSBoundParameters.ContainsKey('ReasoningEffort')) {
+                        if ($PSBOUndParameters.ContainsKey('ReasoningEffort')) {
                             $aiParams.ReasoningEffort = $ReasoningEffort
                         }
 
@@ -328,7 +328,7 @@ function Update-PesterTest {
                         PassCount = $PassCount
                     }
 
-                    if ($PSBoundParameters.ContainsKey('ReasoningEffort')) {
+                    if ($PSBOUndParameters.ContainsKey('ReasoningEffort')) {
                         $aiParams.ReasoningEffort = $ReasoningEffort
                     }
 
@@ -360,7 +360,7 @@ function Update-PesterTest {
                         Tool         = $Tool
                     }
 
-                    if ($PSBoundParameters.ContainsKey('ReasoningEffort')) {
+                    if ($PSBOUndParameters.ContainsKey('ReasoningEffort')) {
                         $aiParams.ReasoningEffort = $ReasoningEffort
                     }
                     Invoke-AutoFix @autoFixParams
