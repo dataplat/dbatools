@@ -45,7 +45,7 @@
     FunctionsToExport = @(
         'Repair-PullRequestTest',
         'Show-AppVeyorBuildStatus',
-        'Get-AppVeyorFailures',
+        'Get-AppVeyorFailure',
         'Update-PesterTest',
         'Invoke-AITool',
         'Invoke-AutoFix',
@@ -99,7 +99,7 @@
 - AI tool access (Claude API or Aider installation)
 
 ## Installation
-Import-Module ./module/aitools.psd1
+Import-Module ./.aitools/module/aitools.psd1
 '@
 
             # Prerelease string of this module

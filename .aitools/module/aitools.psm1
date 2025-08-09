@@ -21,15 +21,18 @@
 # Set module-wide variables
 $PSDefaultParameterValues['Import-Module:Verbose'] = $false
 
+# Set the module path to the dbatools root directory (two levels up from .aitools/module)
+$script:ModulePath = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
+
 # Auto-configure aider environment variables for .aitools directory
 try {
     # Use Join-Path instead of Resolve-Path to avoid "path does not exist" errors
-    $env:AIDER_CONFIG_FILE = Join-Path $PSScriptRoot "../.aitools/.aider.conf.yml"
-    $env:AIDER_ENV_FILE = Join-Path $PSScriptRoot "../.aitools/.env"
-    $env:AIDER_MODEL_SETTINGS_FILE = Join-Path $PSScriptRoot "../.aitools/.aider.model.settings.yml"
+    $env:AIDER_CONFIG_FILE = Join-Path $PSScriptRoot "../.aider.conf.yml"
+    $env:AIDER_ENV_FILE = Join-Path $PSScriptRoot "../.env"
+    $env:AIDER_MODEL_SETTINGS_FILE = Join-Path $PSScriptRoot "../.aider.model.settings.yml"
 
     # Ensure .aider directory exists before setting history file paths
-    $aiderDir = Join-Path $PSScriptRoot "../.aitools/.aider"
+    $aiderDir = Join-Path $PSScriptRoot "../.aider"
     if (-not (Test-Path $aiderDir)) {
         New-Item -Path $aiderDir -ItemType Directory -Force | Out-Null
         Write-Verbose "Created .aider directory: $aiderDir"
@@ -52,55 +55,17 @@ try {
     Write-Verbose "Could not configure aider environment: $_"
 }
 
-# Import all function files
-$functionFiles = @(
-    # Major commands
-    'Repair-PullRequestTest.ps1',
-    'Show-AppVeyorBuildStatus.ps1',
-    'Get-AppVeyorFailures.ps1',
-    'Update-PesterTest.ps1',
-    'Invoke-AITool.ps1',
-    'Invoke-AutoFix.ps1',
-    'Repair-Error.ps1',
-    'Repair-SmallThing.ps1',
-
-    # Helper functions
-    'Invoke-AppVeyorApi.ps1',
-    'Get-AppVeyorFailure.ps1',
-    'Repair-TestFile.ps1',
-    'Get-TargetPullRequests.ps1',
-    'Get-FailedBuilds.ps1',
-    'Get-BuildFailures.ps1',
-    'Get-JobFailures.ps1',
-    'Get-TestArtifacts.ps1',
-    'Parse-TestArtifact.ps1',
-    'Format-TestFailures.ps1',
-    'Invoke-AutoFixSingleFile.ps1',
-    'Invoke-AutoFixProcess.ps1'
-)
+$functionFiles = Get-ChildItem -Path $PSScriptRoot -Filter '*.ps1' -File
 
 foreach ($file in $functionFiles) {
-    $filePath = Join-Path $PSScriptRoot $file
-    if (Test-Path $filePath) {
+    if (Test-Path $file.FullName) {
         Write-Verbose "Importing function from: $file"
-        . $filePath
+        . $file.FullName
     } else {
         Write-Warning "Function file not found: $filePath"
     }
 }
 
-# Export public functions
-$publicFunctions = @(
-    'Repair-PullRequestTest',
-    'Show-AppVeyorBuildStatus',
-    'Get-AppVeyorFailures',
-    'Update-PesterTest',
-    'Invoke-AITool',
-    'Invoke-AutoFix',
-    'Repair-Error',
-    'Repair-SmallThing'
-)
-
-Export-ModuleMember -Function $publicFunctions
+Export-ModuleMember -Function $functionFiles.BaseName
 
 Write-Verbose "dbatools AI Tools module loaded successfully"

@@ -15,15 +15,15 @@ function Repair-Error {
 
     .PARAMETER PromptFilePath
         The path to the template file containing the prompt structure.
-        Defaults to "./aitools/prompts/fix-errors.md".
+        Defaults to "prompts/fix-errors.md" relative to the module directory.
 
     .PARAMETER CacheFilePath
         The path to the file containing cached conventions.
-        Defaults to "./aitools/prompts/conventions.md".
+        Defaults to "prompts/style.md" and "prompts/migration.md" relative to the module directory.
 
     .PARAMETER ErrorFilePath
         The path to the JSON file containing error information.
-        Defaults to "./aitools/prompts/errors.json".
+        Defaults to "prompts/errors.json" relative to the module directory.
 
     .PARAMETER Tool
         The AI coding tool to use.
@@ -114,7 +114,7 @@ function Repair-Error {
         Write-Verbose "Processing $($commands.Count) commands with errors"
 
         foreach ($command in $commands) {
-            $filename = (Resolve-Path "$PSScriptRoot/../tests/$command.Tests.ps1" -ErrorAction SilentlyContinue).Path
+            $filename = (Resolve-Path "$script:ModulePath/tests/$command.Tests.ps1" -ErrorAction SilentlyContinue).Path
             Write-Verbose "Processing $command with $Tool"
 
             if (-not (Test-Path $filename)) {
