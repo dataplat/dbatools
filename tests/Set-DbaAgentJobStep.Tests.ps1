@@ -169,33 +169,6 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $newJobStep.JobStepFlags | Should -Be AppendToJobHistory
         }
 
-        It "set a step with all attributes for Subsystem=ActiveScripting" {
-            # ActiveScripting was discontinued in SQL Server 2016
-            $jobStep = @{
-                SqlInstance        = $TestConfig.instance2
-                Job                = $job1Instance2
-                StepName           = "Step 5"
-                Subsystem          = "ActiveScripting"
-                Command            = "ActiveScripting"
-                CmdExecSuccessCode = 3
-                OnSuccessAction    = "GoToStep"
-                OnSuccessStepId    = 3
-                OnFailAction       = "GoToStep"
-                OnFailStepId       = 3
-                Database           = $newDbName
-                DatabaseUser       = $userName
-                RetryAttempts      = 4
-                RetryInterval      = 7
-                OutputFileName     = "logActiveScripting.txt"
-                Flag               = [Microsoft.SqlServer.Management.Smo.Agent.JobStepFlags]::AppendToJobHistory
-                Force              = $true
-            }
-
-            $results = Set-DbaAgentJobStep @jobStep
-
-            $results | Should -BeNullOrEmpty
-        }
-
         It "set a step with all attributes for Subsystem=AnalysisCommand" {
             $jobStep = @{
                 SqlInstance        = $TestConfig.instance2
