@@ -1,16 +1,16 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
     $ModuleName  = "dbatools",
     $CommandName = "Copy-DbaAgentAlert",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
-            $command = Get-Command Copy-DbaAgentAlert
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
                 "Source",
                 "SourceSqlCredential",
                 "Destination",
@@ -19,30 +19,28 @@ Describe $CommandName -Tag UnitTests {
                 "ExcludeAlert",
                 "IncludeDefaults",
                 "Force",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
+                "EnableException"
             )
         }
 
-        It "Has parameter: <_>" -TestCases ($expected | ForEach-Object { @{ Parameter = $PSItem } }) {
-            param($Parameter)
-            $command | Should -HaveParameter $Parameter
-        }
-
-        It "Should have exactly the number of expected parameters ($($expected.Count))" {
-            $hasparms = $command.Parameters.Values.Name
-            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
+        It "Should have the expected parameters" {
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $alert1 = "dbatoolsci test alert"
-        $alert2 = "dbatoolsci test alert 2"
-        $operatorName = "Dan the man Levitan"
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
+        # Set variables for test alerts and operator
+        $alert1        = "dbatoolsci test alert"
+        $alert2        = "dbatoolsci test alert 2"
+        $operatorName  = "Dan the man Levitan"
         $operatorEmail = "levitan@dbatools.io"
+
+        # Connect to instance and create test objects
         $serverInstance2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2 -Database master
 
         $serverInstance2.Query("EXEC msdb.dbo.sp_add_alert @name=N'$($alert1)',
@@ -66,12 +64,20 @@ Describe $CommandName -Tag IntegrationTests {
         @name = N'$operatorName',
         @enabled = 1,
         @email_address = N'$operatorEmail' ;")
+        
         $serverInstance2.Query("EXEC msdb.dbo.sp_add_notification   @alert_name = N'$($alert2)',
         @operator_name = N'$operatorName',
         @notification_method = 1 ;")
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
     }
 
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
+        # Clean up test objects
         $serverCleanup2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2 -Database master
         $serverCleanup2.Query("EXEC msdb.dbo.sp_delete_alert @name=N'$($alert1)'")
         $serverCleanup2.Query("EXEC msdb.dbo.sp_delete_alert @name=N'$($alert2)'")
@@ -79,6 +85,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         $serverCleanup3 = Connect-DbaInstance -SqlInstance $TestConfig.instance3 -Database master
         $serverCleanup3.Query("EXEC msdb.dbo.sp_delete_alert @name=N'$($alert1)'")
+        
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
     Context "When copying alerts" {
@@ -102,7 +110,7 @@ Describe $CommandName -Tag IntegrationTests {
                 WarningAction = "SilentlyContinue"
             }
             $results = Copy-DbaAgentAlert @splatCopySkip
-            $results.Status | Should -Be Skipped
+            $results.Status | Should -Be "Skipped"
             $results.Type | Should -Be "Agent Alert"
         }
 

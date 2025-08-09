@@ -29,6 +29,7 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
@@ -80,9 +81,13 @@ Describe $CommandName -Tag IntegrationTests {
         }
         $null = New-DbaDbUser @splatDbUser2Msdb
         $null = $server.Query("CREATE ROLE $role", $dbname)
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
@@ -91,7 +96,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname -Confirm:$false
         $null = Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $user1, $user2 -Confirm:$false
 
-        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
     Context "When adding a user to a role" {

@@ -52,10 +52,10 @@ Describe $CommandName -Tag IntegrationTests {
         # For negative tests, we need a database without a backup and a non existing database.
 
         # Set variables. They are available in all the It blocks.
-        $agName = "addagdb_group"
-        $existingDbWithBackup = "dbWithBackup"
+        $agName                  = "addagdb_group"
+        $existingDbWithBackup    = "dbWithBackup"
         $existingDbWithoutBackup = "dbWithoutBackup"
-        $nonexistingDb = "dbdoesnotexist"
+        $nonexistingDb           = "dbdoesnotexist"
 
         # Create the objects.
         $splatAg = @{

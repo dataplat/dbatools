@@ -36,23 +36,23 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
-    BeforeEach {
-        $null = Get-DbaPfDataCollectorSetTemplate -Template "Long Running Queries" |
-            Import-DbaPfDataCollectorSetTemplate |
-            Get-DbaPfDataCollector |
-            Get-DbaPfDataCollectorCounter -Counter "\LogicalDisk(*)\Avg. Disk Queue Length" |
-            Remove-DbaPfDataCollectorCounter
-
-        $results = Get-DbaPfDataCollectorSet -CollectorSet "Long Running Queries" | Get-DbaPfDataCollector |
-                Add-DbaPfDataCollectorCounter -Counter "\LogicalDisk(*)\Avg. Disk Queue Length"
-    }
-
-    AfterAll {
-        $null = Get-DbaPfDataCollectorSet -CollectorSet "Long Running Queries" |
-                Remove-DbaPfDataCollectorSet -ErrorAction SilentlyContinue
-    }
-
     Context "When adding a counter to a data collector" {
+        BeforeAll {
+            $null = Get-DbaPfDataCollectorSetTemplate -Template "Long Running Queries" |
+                Import-DbaPfDataCollectorSetTemplate |
+                Get-DbaPfDataCollector |
+                Get-DbaPfDataCollectorCounter -Counter "\LogicalDisk(*)\Avg. Disk Queue Length" |
+                Remove-DbaPfDataCollectorCounter
+
+            $results = Get-DbaPfDataCollectorSet -CollectorSet "Long Running Queries" | Get-DbaPfDataCollector |
+                Add-DbaPfDataCollectorCounter -Counter "\LogicalDisk(*)\Avg. Disk Queue Length"
+        }
+
+        AfterAll {
+            $null = Get-DbaPfDataCollectorSet -CollectorSet "Long Running Queries" |
+                Remove-DbaPfDataCollectorSet -ErrorAction SilentlyContinue
+        }
+
         It "Returns the correct DataCollectorSet" {
             $results.DataCollectorSet | Should -Be "Long Running Queries"
         }

@@ -1,7 +1,7 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName               = "dbatools",
-    $CommandName              = "Add-DbaComputerCertificate",
+    $ModuleName  = "dbatools",
+    $CommandName = "Add-DbaComputerCertificate",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
@@ -32,6 +32,9 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+        
+        $certPath       = "$($TestConfig.AppveyorLabRepo)\certificates\localhost.crt"
+        $certThumbprint = "29C469578D6C6211076A09CEE5C5797EEA0C2713"
     }
 
     AfterAll {
@@ -40,8 +43,6 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Certificate is added properly" {
         BeforeAll {
-            $certPath = "$($TestConfig.AppveyorLabRepo)\certificates\localhost.crt"
-            $certThumbprint = "29C469578D6C6211076A09CEE5C5797EEA0C2713"
             $results = Add-DbaComputerCertificate -Path $certPath
         }
 

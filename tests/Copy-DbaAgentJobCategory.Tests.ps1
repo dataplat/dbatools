@@ -2,16 +2,30 @@
 param(
     $ModuleName  = "dbatools",
     $CommandName = "Copy-DbaAgentJobCategory",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Set up test category for the integration tests
         $null = New-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category "dbatoolsci test category"
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Cleanup all created categories
         $null = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category "dbatoolsci test category" -Confirm:$false
         $null = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance3 -Category "dbatoolsci test category" -Confirm:$false
+
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
     Context "Parameter validation" {

@@ -1,8 +1,8 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
     $ModuleName  = "dbatools",
     $CommandName = "ConvertTo-DbaXESession",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe $CommandName -Tag UnitTests {
@@ -26,6 +26,9 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $sql = @"
 -- Create a Queue
 declare @rc int
@@ -111,9 +114,15 @@ select TraceID=@TraceID
         $server = Connect-DbaInstance @splatConnect
         $traceid = ($server.Query($sql)).TraceID
         $sessionName = "dbatoolsci-session"
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $splatRemoveSession = @{
             SqlInstance = $TestConfig.instance2
             Session     = $sessionName
@@ -125,6 +134,8 @@ select TraceID=@TraceID
         }
         $null = Remove-DbaTrace @splatRemoveTrace
         Remove-Item C:\windows\temp\temptrace.trc -ErrorAction SilentlyContinue
+
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
     Context "Test Trace Conversion" {

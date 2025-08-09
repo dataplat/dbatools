@@ -42,9 +42,16 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
+        # Explain what needs to be set up for the test:
+        # To add an availability group replica, we need an availability group to work with.
+
+        # Set variables. They are available in all the It blocks.
         $primaryAgName = "dbatoolsci_agroup"
+        
+        # Create the objects.
         $splatPrimary = @{
             Primary      = $TestConfig.instance3
             Name         = $primaryAgName
@@ -55,16 +62,27 @@ Describe $CommandName -Tag IntegrationTests {
         }
         $primaryAg = New-DbaAvailabilityGroup @splatPrimary
         $replicaName = $primaryAg.PrimaryReplica
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
-        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Cleanup all created objects.
         $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $primaryAgName -Confirm:$false -ErrorAction SilentlyContinue
         $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false -ErrorAction SilentlyContinue
+
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
     Context "When adding AG replicas" {
         BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
             $replicaAgName = "dbatoolsci_add_replicagroup"
             $splatRepAg = @{
                 Primary      = $TestConfig.instance3
@@ -72,11 +90,19 @@ Describe $CommandName -Tag IntegrationTests {
                 ClusterType  = "None"
                 FailoverMode = "Manual"
                 Certificate  = "dbatoolsci_AGCert"
+                Confirm      = $false
             }
             $replicaAg = New-DbaAvailabilityGroup @splatRepAg
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Cleanup all created objects.
             $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $replicaAgName -Confirm:$false -ErrorAction SilentlyContinue
         }
 

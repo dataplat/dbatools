@@ -1,15 +1,16 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
+    $ModuleName  = "dbatools",
+    $CommandName = "Backup-DbaDbCertificate",
     $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
 )
 
-Describe "Backup-DbaDbCertificate" -Tag "UnitTests" {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
-            $command = Get-Command Backup-DbaDbCertificate
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
                 "SqlInstance",
                 "SqlCredential",
                 "Certificate",
@@ -21,26 +22,20 @@ Describe "Backup-DbaDbCertificate" -Tag "UnitTests" {
                 "Suffix",
                 "FileBaseName",
                 "InputObject",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
+                "EnableException"
             )
         }
 
-        It "Has parameter: <_>" -ForEach $expected {
-            $command | Should -HaveParameter $PSItem
-        }
-
-        It "Should have exactly the number of expected parameters ($($expected.Count))" {
-            $hasparms = $command.Parameters.Values.Name
-            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
+        It "Should have the expected parameters" {
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "Backup-DbaDbCertificate" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $random = Get-Random
         $db1Name = "dbatoolscli_db1_$random"
@@ -53,16 +48,20 @@ Describe "Backup-DbaDbCertificate" -Tag "IntegrationTests" {
         $db2 = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $db2Name
         $null = New-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database $db2Name -Password $pw
 
-        $cert1 = New-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Database $db1Name -Password $pw -Name dbatoolscli_cert1_$random
-        $cert2 = New-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Database $db1Name -Password $pw -Name dbatoolscli_cert2_$random
-        $cert3 = New-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Database $db2Name -Password $pw -Name dbatoolscli_cert3_$random
+        $cert1 = New-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Database $db1Name -Password $pw -Name "dbatoolscli_cert1_$random"
+        $cert2 = New-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Database $db1Name -Password $pw -Name "dbatoolscli_cert2_$random"
+        $cert3 = New-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Database $db2Name -Password $pw -Name "dbatoolscli_cert3_$random"
 
-        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     AfterAll {
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $db1Name, $db2Name
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $db1Name, $db2Name -Confirm:$false
+
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
     Context "Can backup a database certificate" {
@@ -78,13 +77,13 @@ Describe "Backup-DbaDbCertificate" -Tag "IntegrationTests" {
         }
 
         AfterAll {
-            Remove-Item -Path $results.Path
-            Remove-Item -Path $results.Key
+            Remove-Item -Path $results.Path -ErrorAction SilentlyContinue
+            Remove-Item -Path $results.Key -ErrorAction SilentlyContinue
         }
 
         It "Returns results with proper data" {
             $results.Certificate | Should -Be $cert1.Name
-            $results.Status | Should -Match "Success"
+            $results.Status | Should -BeExactly "Success"
             $results.DatabaseID | Should -Be $db1.ID
         }
     }
@@ -103,13 +102,13 @@ Describe "Backup-DbaDbCertificate" -Tag "IntegrationTests" {
         }
 
         AfterAll {
-            Remove-Item -Path $results.Path
-            Remove-Item -Path $results.Key
+            Remove-Item -Path $results.Path -ErrorAction SilentlyContinue
+            Remove-Item -Path $results.Key -ErrorAction SilentlyContinue
         }
 
         It "Returns results with proper data" {
             $results.Certificate | Should -Be $cert1.Name
-            $results.Status | Should -Match "Success"
+            $results.Status | Should -BeExactly "Success"
             $results.DatabaseID | Should -Be $db1.ID
             [IO.Path]::GetFileNameWithoutExtension($results.Path) | Should -Be "dbatoolscli_cert1_$random"
         }
@@ -125,18 +124,18 @@ Describe "Backup-DbaDbCertificate" -Tag "IntegrationTests" {
                 Certificate        = @($invalidDBCertName, $invalidDBCertName2, $cert2.Name)
                 EncryptionPassword = $pw
                 DecryptionPassword = $pw
-                WarningAction      = "SilentlyContinue"
+                WarningAction = "SilentlyContinue"
             }
             $results = Backup-DbaDbCertificate @splatBackupInvalidCert
         }
 
         AfterAll {
-            Remove-Item -Path $results.Path
-            Remove-Item -Path $results.Key
+            Remove-Item -Path $results.Path -ErrorAction SilentlyContinue
+            Remove-Item -Path $results.Key -ErrorAction SilentlyContinue
         }
 
         It "Does warn" {
-            $WarnVar | Should -BeLike "*Database certificate(s) * not found*"
+            $WarnVar | Should -Match "Database certificate\(s\) .* not found"
         }
     }
 
@@ -152,8 +151,8 @@ Describe "Backup-DbaDbCertificate" -Tag "IntegrationTests" {
         }
 
         AfterAll {
-            Remove-Item -Path $results.Path
-            Remove-Item -Path $results.Key
+            Remove-Item -Path $results.Path -ErrorAction SilentlyContinue
+            Remove-Item -Path $results.Key -ErrorAction SilentlyContinue
         }
 
         It "Returns results with proper data" {
@@ -173,8 +172,8 @@ Describe "Backup-DbaDbCertificate" -Tag "IntegrationTests" {
         }
 
         AfterAll {
-            Remove-Item -Path $results.Path
-            Remove-Item -Path $results.Key
+            Remove-Item -Path $results.Path -ErrorAction SilentlyContinue
+            Remove-Item -Path $results.Key -ErrorAction SilentlyContinue
         }
 
         It "Returns results with proper data" {

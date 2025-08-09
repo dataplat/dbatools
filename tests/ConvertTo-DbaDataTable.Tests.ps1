@@ -29,7 +29,7 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-Describe "Testing data table output when using a complex object" {
+Describe $CommandName -Tag UnitTests, "DataTableOutput" {
     BeforeAll {
         $obj = New-Object -TypeName psobject -Property @{
             guid             = [system.guid]"32ccd4c4-282a-4c0d-997c-7b5deb97f9e0"
@@ -205,7 +205,7 @@ Describe "Testing data table output when using a complex object" {
     }
 }
 
-Describe "Testing input parameters" {
+Describe $CommandName -Tag UnitTests, "InputParameters" {
     BeforeAll {
         $obj = New-Object -TypeName psobject -Property @{
             timespan = New-TimeSpan -Start 2017-01-01 -End 2017-01-02
