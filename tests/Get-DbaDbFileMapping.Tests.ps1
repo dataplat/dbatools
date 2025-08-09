@@ -1,26 +1,50 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaDbFileMapping",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
+
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 $global:TestConfig = Get-TestConfig
 
-Context "Validate parameters" {
-    [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-    [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'InputObject', 'EnableException'
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        BeforeAll {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "InputObject",
+                "EnableException"
+            )
+        }
 
-    It "Should only contain our specific parameters" {
-        Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
+        It "Should have the expected parameters" {
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     Context "Should return file information" {
-        $results = Get-DbaDbFileMapping -SqlInstance $TestConfig.instance1
+        BeforeAll {
+            $results = Get-DbaDbFileMapping -SqlInstance $TestConfig.instance1
+        }
+
         It "returns information about multiple databases" {
             $results.Database -contains "tempdb" | Should -Be $true
             $results.Database -contains "master" | Should -Be $true
         }
     }
+
     Context "Should return file information for a single database" {
-        $results = Get-DbaDbFileMapping -SqlInstance $TestConfig.instance1 -Database tempdb
+        BeforeAll {
+            $results = Get-DbaDbFileMapping -SqlInstance $TestConfig.instance1 -Database tempdb
+        }
+
         It "returns information about tempdb" {
             $results.Database -contains "tempdb" | Should -Be $true
             $results.Database -contains "master" | Should -Be $false
