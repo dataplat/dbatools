@@ -9,6 +9,10 @@ function Invoke-DbatoolsFormatter {
     .PARAMETER Path
         The path to the ps1 file that needs to be formatted
 
+    .PARAMETER SkipInvisibleOnly
+        Skip files that would only have invisible changes (BOM, line endings, trailing whitespace, tabs).
+        Use this to avoid unnecessary version control noise when only non-visible characters would change.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -31,14 +35,15 @@ function Invoke-DbatoolsFormatter {
         Reformats C:\dbatools\public\Get-DbaDatabase.ps1 to dbatools' standards
 
     .EXAMPLE
-        PS C:\> Get-ChildItem *.ps1 | Invoke-DbatoolsFormatter
+        PS C:\> Invoke-DbatoolsFormatter -Path C:\dbatools\public\*.ps1 -SkipInvisibleOnly
 
-        Reformats all .ps1 files in the current directory, showing progress for the batch operation
+        Reformats all ps1 files but skips those that would only have BOM/line ending changes
     #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [object[]]$Path,
+        [switch]$SkipInvisibleOnly,
         [switch]$EnableException
     )
     begin {
@@ -67,46 +72,122 @@ function Invoke-DbatoolsFormatter {
             $OSEOL = "`r`n"
         }
 
-        # Collect all paths for progress tracking
-        $allPaths = @()
+        function Test-OnlyInvisibleChanges {
+            param(
+                [string]$OriginalContent,
+                [string]$ModifiedContent,
+                [byte[]]$OriginalBytes,
+                [byte[]]$ModifiedBytes
+            )
+
+            # Check for BOM
+            $originalHasBOM = $OriginalBytes.Length -ge 3 -and
+                              $OriginalBytes[0] -eq 0xEF -and
+                              $OriginalBytes[1] -eq 0xBB -and
+                              $OriginalBytes[2] -eq 0xBF
+
+            $modifiedHasBOM = $ModifiedBytes.Length -ge 3 -and
+                              $ModifiedBytes[0] -eq 0xEF -and
+                              $ModifiedBytes[1] -eq 0xBB -and
+                              $ModifiedBytes[2] -eq 0xBF
+
+            # Normalize content for comparison (remove all formatting differences)
+            $originalLines = $OriginalContent -split '\r?\n'
+            $modifiedLines = $ModifiedContent -split '\r?\n'
+
+            # Strip trailing whitespace and normalize tabs
+            $originalNormalized = $originalLines | ForEach-Object {
+                $_.TrimEnd().Replace("`t", "    ")
+            }
+            $modifiedNormalized = $modifiedLines | ForEach-Object {
+                $_.TrimEnd().Replace("`t", "    ")
+            }
+
+            # Also account for trailing empty lines being removed
+            $originalNormalized = ($originalNormalized -join "`n") -replace '(?s)\n\s*$', ''
+            $modifiedNormalized = ($modifiedNormalized -join "`n") -replace '(?s)\n\s*$', ''
+
+            # If normalized content is identical, only invisible changes occurred
+            return ($originalNormalized -eq $modifiedNormalized)
+        }
     }
     process {
         if (Test-FunctionInterrupt) { return }
-        # Collect all paths from pipeline
-        $allPaths += $Path
-    }
-    end {
-        if (Test-FunctionInterrupt) { return }
-
-        $totalFiles = $allPaths.Count
-        $currentFile = 0
-        $processedFiles = 0
-        $updatedFiles = 0
-
-        foreach ($p in $allPaths) {
-            $currentFile++
-
+        foreach ($p in $Path) {
             try {
                 $realPath = (Resolve-Path -Path $p -ErrorAction Stop).Path
             } catch {
-                Write-Progress -Activity "Formatting PowerShell files" -Status "Error resolving path: $p" -PercentComplete (($currentFile / $totalFiles) * 100) -CurrentOperation "File $currentFile of $totalFiles"
                 Stop-Function -Message "Cannot find or resolve $p" -Continue
-                continue
             }
 
-            # Skip directories
-            if (Test-Path -Path $realPath -PathType Container) {
-                Write-Progress -Activity "Formatting PowerShell files" -Status "Skipping directory: $realPath" -PercentComplete (($currentFile / $totalFiles) * 100) -CurrentOperation "File $currentFile of $totalFiles"
-                Write-Message -Level Verbose "Skipping directory: $realPath"
-                continue
+            # If SkipInvisibleOnly is set, check if formatting would only change invisible characters
+            if ($SkipInvisibleOnly) {
+                # Save original state
+                $originalBytes = [System.IO.File]::ReadAllBytes($realPath)
+                $originalContent = [System.IO.File]::ReadAllText($realPath)
+
+                # Create a copy to test formatting
+                $tempContent = $originalContent
+                $tempOSEOL = $OSEOL
+
+                if ($tempOSEOL -eq "`r`n") {
+                    $containsCR = ($tempContent -split "`r").Length -gt 1
+                    if (-not($containsCR)) {
+                        $tempOSEOL = "`n"
+                    }
+                }
+
+                # Apply all formatting transformations
+                $tempContent = $tempContent -replace "(?s)$tempOSEOL\s*$"
+                try {
+                    $tempContent = Invoke-Formatter -ScriptDefinition $tempContent -Settings CodeFormattingOTBS -ErrorAction Stop
+                } catch {
+                    # If formatter fails, continue with original content
+                }
+
+                # Apply CBH fixes
+                $CBH = $CBHRex.Match($tempContent).Value
+                if ($CBH) {
+                    $startSpaces = $CBHStartRex.Match($CBH).Groups['spaces']
+                    if ($startSpaces) {
+                        $newCBH = $CBHEndRex.Replace($CBH, "$startSpaces#>")
+                        if ($newCBH) {
+                            $tempContent = $tempContent.Replace($CBH, $newCBH)
+                        }
+                    }
+                }
+
+                # Apply case corrections and whitespace trimming
+                $correctCase = @('DbaInstanceParameter', 'PSCredential', 'PSCustomObject', 'PSItem')
+                $tempLines = @()
+                foreach ($line in $tempContent.Split("`n")) {
+                    foreach ($item in $correctCase) {
+                        $line = $line -replace $item, $item
+                    }
+                    $tempLines += $line.Replace("`t", "    ").TrimEnd()
+                }
+                $formattedContent = $tempLines -Join "$tempOSEOL"
+
+                # Create bytes as if we were saving (UTF8 no BOM)
+                $Utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $False
+                $modifiedBytes = $Utf8NoBomEncoding.GetBytes($formattedContent)
+
+                # Test if only invisible changes would occur
+                $testParams = @{
+                    OriginalContent = $originalContent
+                    ModifiedContent = $formattedContent
+                    OriginalBytes = $originalBytes
+                    ModifiedBytes = $modifiedBytes
+                }
+
+                if (Test-OnlyInvisibleChanges @testParams) {
+                    Write-Verbose "Skipping $realPath - only invisible changes (BOM/line endings/whitespace)"
+                    continue
+                }
             }
 
-            $fileName = Split-Path -Leaf $realPath
-            Write-Progress -Activity "Formatting PowerShell files" -Status "Processing: $fileName" -PercentComplete (($currentFile / $totalFiles) * 100) -CurrentOperation "File $currentFile of $totalFiles"
-
-            $originalContent = Get-Content -Path $realPath -Raw -Encoding UTF8
-            $content = $originalContent
-
+            # Proceed with normal formatting
+            $content = Get-Content -Path $realPath -Raw -Encoding UTF8
             if ($OSEOL -eq "`r`n") {
                 # See #5830, we are in Windows territory here
                 # Is the file containing at least one `r ?
@@ -119,32 +200,11 @@ function Invoke-DbatoolsFormatter {
 
             #strip ending empty lines
             $content = $content -replace "(?s)$OSEOL\s*$"
-
-            # Preserve aligned assignments before formatting
-            # Look for patterns with multiple spaces before OR after the = sign
-            $alignedPatterns = [regex]::Matches($content, '(?m)^\s*(\$\w+|\w+)\s{2,}=\s*.+$|^\s*(\$\w+|\w+)\s*=\s{2,}.+$')
-            $placeholders = @{}
-
-            foreach ($match in $alignedPatterns) {
-                $placeholder = "___ALIGNMENT_PLACEHOLDER_$($placeholders.Count)___"
-                $placeholders[$placeholder] = $match.Value
-                $content = $content.Replace($match.Value, $placeholder)
-            }
-
             try {
-                $formattedContent = Invoke-Formatter -ScriptDefinition $content -Settings CodeFormattingOTBS -ErrorAction Stop
-                if ($formattedContent) {
-                    $content = $formattedContent
-                }
+                $content = Invoke-Formatter -ScriptDefinition $content -Settings CodeFormattingOTBS -ErrorAction Stop
             } catch {
-                # Just silently continue - the formatting might still work partially
+                Write-Message -Level Warning "Unable to format $p"
             }
-
-            # Restore the aligned patterns
-            foreach ($key in $placeholders.Keys) {
-                $content = $content.Replace($key, $placeholders[$key])
-            }
-
             #match the ending indentation of CBH with the starting one, see #4373
             $CBH = $CBHRex.Match($content).Value
             if ($CBH) {
@@ -174,30 +234,7 @@ function Invoke-DbatoolsFormatter {
                 #trim whitespace lines
                 $realContent += $line.Replace("`t", "    ").TrimEnd()
             }
-
-            $newContent = $realContent -Join "$OSEOL"
-
-            # Compare without empty lines to detect real changes
-            $originalNonEmpty = ($originalContent -split "[\r\n]+" | Where-Object { $_.Trim() }) -join ""
-            $newNonEmpty = ($newContent -split "[\r\n]+" | Where-Object { $_.Trim() }) -join ""
-
-            if ($originalNonEmpty -ne $newNonEmpty) {
-                [System.IO.File]::WriteAllText($realPath, $newContent, $Utf8NoBomEncoding)
-                Write-Message -Level Verbose "Updated: $realPath"
-                $updatedFiles++
-            } else {
-                Write-Message -Level Verbose "No changes needed: $realPath"
-            }
-
-            $processedFiles++
+            [System.IO.File]::WriteAllText($realPath, ($realContent -Join "$OSEOL"), $Utf8NoBomEncoding)
         }
-
-        # Complete the progress bar
-        Write-Progress -Activity "Formatting PowerShell files" -Status "Complete" -PercentComplete 100 -CurrentOperation "Processed $processedFiles files, updated $updatedFiles"
-        Start-Sleep -Milliseconds 500  # Brief pause to show completion
-        Write-Progress -Activity "Formatting PowerShell files" -Completed
-
-        # Summary message
-        Write-Message -Level Verbose "Formatting complete: Processed $processedFiles files, updated $updatedFiles files"
     }
 }
