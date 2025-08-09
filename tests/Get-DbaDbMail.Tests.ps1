@@ -1,7 +1,7 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
     $ModuleName  = "dbatools",
-    $CommandName = "Get-DbaDbMail",  # Static command name for dbatools
+    $CommandName = "Get-DbaDbMail", # Static command name for dbatools
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 

@@ -1,7 +1,7 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
     $ModuleName  = "dbatools",
-    $CommandName = "Get-DbaDbSynonym",  # Static command name for dbatools
+    $CommandName = "Get-DbaDbSynonym", # Static command name for dbatools
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
@@ -41,7 +41,7 @@ Describe $CommandName -Tag IntegrationTests {
         # Set up test databases and synonyms
         $dbname = "dbatoolsscidb_$(Get-Random)"
         $dbname2 = "dbatoolsscidb2_$(Get-Random)"
-        
+
         $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $dbname
         $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $dbname2
         $null = New-DbaDbSchema -SqlInstance $TestConfig.instance2 -Database $dbname2 -Schema sch2

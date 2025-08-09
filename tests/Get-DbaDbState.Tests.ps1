@@ -43,14 +43,14 @@ Describe $CommandName -Tag IntegrationTests {
             $db6 = "dbatoolsci_dbstate_multi"
             $db7 = "dbatoolsci_dbstate_rw"
             $db8 = "dbatoolsci_dbstate_ro"
-            
+
             $splatRemoveDb = @{
                 SqlInstance = $TestConfig.instance2
                 Database    = $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8
                 Confirm     = $false
             }
             Get-DbaDatabase @splatRemoveDb | Remove-DbaDatabase -Confirm $false
-            
+
             $server.Query("CREATE DATABASE $db1")
             $server.Query("CREATE DATABASE $db2; ALTER DATABASE $db2 SET OFFLINE WITH ROLLBACK IMMEDIATE")
             $server.Query("CREATE DATABASE $db3; ALTER DATABASE $db3 SET EMERGENCY WITH ROLLBACK IMMEDIATE")
@@ -59,7 +59,7 @@ Describe $CommandName -Tag IntegrationTests {
             $server.Query("CREATE DATABASE $db6; ALTER DATABASE $db6 SET MULTI_USER WITH ROLLBACK IMMEDIATE")
             $server.Query("CREATE DATABASE $db7; ALTER DATABASE $db7 SET READ_WRITE WITH ROLLBACK IMMEDIATE")
             $server.Query("CREATE DATABASE $db8; ALTER DATABASE $db8 SET READ_ONLY WITH ROLLBACK IMMEDIATE")
-            
+
             $setupright = $true
             $needed_ = $server.Query("select name from sys.databases")
             $needed = $needed_ | Where-Object name -in $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8
@@ -84,7 +84,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Force       = $true
             }
             $null = Set-DbaDbState @splatSetState
-            
+
             $splatRemoveDbCleanup = @{
                 SqlInstance = $TestConfig.instance2
                 Database    = $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8

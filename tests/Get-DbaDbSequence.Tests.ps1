@@ -1,7 +1,7 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
     $ModuleName  = "dbatools",
-    $CommandName = "Get-DbaDbSequence",  # Static command name for dbatools
+    $CommandName = "Get-DbaDbSequence", # Static command name for dbatools
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
@@ -41,7 +41,7 @@ Describe $CommandName -Tag IntegrationTests {
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $newDbName = "dbatoolsci_newdb_$random"
         $newDbName2 = "dbatoolsci_newdb2_$random"
-        
+
         # Create the objects.
         $newDb, $newDb2 = New-DbaDatabase -SqlInstance $server -Name $newDbName, $newDbName2
 
@@ -52,7 +52,7 @@ Describe $CommandName -Tag IntegrationTests {
             Schema      = "Schema_$random"
         }
         $sequence = New-DbaDbSequence @splatSequence1
-        
+
         $splatSequence2 = @{
             SqlInstance = $server
             Database    = $newDbName
@@ -60,7 +60,7 @@ Describe $CommandName -Tag IntegrationTests {
             Schema      = "Schema2_$random"
         }
         $sequence2 = New-DbaDbSequence @splatSequence2
-        
+
         $splatSequence3 = @{
             SqlInstance = $server
             Database    = $newDbName
@@ -68,7 +68,7 @@ Describe $CommandName -Tag IntegrationTests {
             Schema      = "Schema2_$random"
         }
         $sequence3 = New-DbaDbSequence @splatSequence3
-        
+
         $splatSequence4 = @{
             SqlInstance = $server
             Database    = $newDbName
@@ -76,7 +76,7 @@ Describe $CommandName -Tag IntegrationTests {
             Schema      = "Schema_$random"
         }
         $sequence4 = New-DbaDbSequence @splatSequence4
-        
+
         $splatSequence5 = @{
             SqlInstance = $server
             Database    = $newDbName2

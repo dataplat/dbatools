@@ -56,7 +56,7 @@ Describe $CommandName -Tag IntegrationTests {
         # Andreas Jordan: We should try to get a backup working again or even better just a sql script to set this up.
         # This takes a long time but I cannot figure out why every backup of this db is malformed
         $bacpac = "$($TestConfig.appveyorlabrepo)\bacpac\sharepoint_config.bacpac"
-        
+
         if (Test-Path -Path $bacpac) {
             $sqlpackage = (Get-Command sqlpackage -ErrorAction Ignore).Source
             if (-not $sqlpackage) {

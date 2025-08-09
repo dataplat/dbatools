@@ -39,7 +39,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Clean up any existing processes and databases
         $null = Get-DbaProcess -SqlInstance $TestConfig.instance2, $TestConfig.instance3 | Where-Object Program -Match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
-        
+
         Remove-DbaDbMirror -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $db1, $db2 -Confirm:$false
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $db1, $db2 | Remove-DbaDatabase -Confirm:$false
 

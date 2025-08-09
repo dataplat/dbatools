@@ -45,8 +45,7 @@ Describe $CommandName -Tag IntegrationTests {
             $null = $server.Query("DROP SERVICE $servicename", "tempdb")
             $null = $server.Query("DROP QUEUE $queuename", "tempdb")
             $null = $server.Query("DROP PROCEDURE $procname", "tempdb")
-        }
-        catch {
+        } catch {
             # Suppress errors during cleanup
         }
     }
@@ -55,8 +54,8 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $splatServiceBroker = @{
                 SqlInstance          = $TestConfig.instance2
-                Database             = "tempdb"
-                ExcludeSystemService = $true
+                Database          = "tempdb"
+                ExcludeSystemService             = $true
             }
             $results = Get-DbaDbServiceBrokerService @splatServiceBroker
         }

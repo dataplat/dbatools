@@ -36,7 +36,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Set variables. They are available in all the It blocks.
         $mailAccountName = "dbatoolsci_test_$(Get-Random)"
-        
+
         # Create the mail account for testing
         $primaryServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $mailAccountSettings = "EXEC msdb.dbo.sysmail_add_account_sp

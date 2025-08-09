@@ -34,10 +34,10 @@ Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
-        
+
         $random = Get-Random
         $dbname = "dbatoolsci_pageinfo_$random"
-        
+
         # Clean up any existing connections
         $splatStopProcess = @{
             SqlInstance     = $TestConfig.instance2
@@ -46,7 +46,7 @@ Describe $CommandName -Tag IntegrationTests {
             EnableException = $true
         }
         Get-DbaProcess @splatStopProcess | Stop-DbaProcess -WarningAction SilentlyContinue
-        
+
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $server.Query("CREATE DATABASE $dbname;")
         $server.Databases[$dbname].Query("CREATE TABLE [dbo].[TestTable](TestText VARCHAR(MAX) NOT NULL)")
@@ -63,23 +63,23 @@ Describe $CommandName -Tag IntegrationTests {
             $query += ",('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')"
         }
         $server.Databases[$dbname].Query($query)
-        
+
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
     }
     AfterAll {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
-        
+
         Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname -Confirm:$false -ErrorAction SilentlyContinue
-        
+
         # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
     Context "Count Pages" {
         BeforeAll {
             $result = Get-DbaDbPageInfo -SqlInstance $TestConfig.instance2 -Database $dbname
         }
-        
+
         It "returns the proper results" {
             @($result).Count | Should -Be 9
             @($result | Where-Object IsAllocated -eq $false).Count | Should -Be 5
