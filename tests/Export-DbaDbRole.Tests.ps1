@@ -45,7 +45,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         $AltExportPath = "$env:USERPROFILE\Documents"
         $outputFile1 = "$AltExportPath\Dbatoolsci_DbRole_CustomFile1.sql"
-        
+
         $random = Get-Random
         $dbname1 = "dbatoolsci_exportdbadbrole$random"
         $login1 = "dbatoolsci_exportdbadbrole_login1$random"

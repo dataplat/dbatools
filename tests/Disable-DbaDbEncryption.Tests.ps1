@@ -35,7 +35,7 @@ Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-        
+
         $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
 
         # Setup master key if needed
@@ -60,10 +60,10 @@ Describe $CommandName -Tag IntegrationTests {
         $testDb | New-DbaDbCertificate
         $testDb | New-DbaDbEncryptionKey -Force
         $testDb | Enable-DbaDbEncryption -EncryptorName $mastercert.Name -Force
-        
+
         # Store for use in contexts
         $global:mastercert = $mastercert
-        
+
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -71,7 +71,7 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-        
+
         if ($testDb) {
             $testDb | Remove-DbaDatabase -Confirm:$false
         }

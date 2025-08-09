@@ -76,20 +76,20 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "should not accept non-SMO objects" {
             $null = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database msdb | Select-Object -First 1 | Export-DbaScript -Passthru -BatchSeparator "MakeItSo"
-            $null = [pscustomobject]@{ Invalid = $true } | Export-DbaScript -WarningVariable invalid -WarningAction SilentlyContinue
+            $null = [PSCustomObject]@{ Invalid = $true } | Export-DbaScript -WarningVariable invalid -WarningAction SilentlyContinue
             $invalid -match "not a SQL Management Object" | Should -BeTrue
         }
 
         It "should not append when using NoPrefix (#7455)" {
             $testFile = "$backupPath\msdb.txt"
-            
+
             $null = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database msdb | Select-Object -First 1 | Export-DbaScript -NoPrefix -FilePath $testFile
             $linecount1 = (Get-Content $testFile).Count
-            
+
             $null = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database msdb | Select-Object -First 1 | Export-DbaScript -NoPrefix -FilePath $testFile
             $linecount2 = (Get-Content $testFile).Count
             $linecount1 | Should -Be $linecount2
-            
+
             $null = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database msdb | Select-Object -First 1 | Export-DbaScript -NoPrefix -FilePath $testFile -Append
             $linecount3 = (Get-Content $testFile).Count
             $linecount1 | Should -Not -Be $linecount3

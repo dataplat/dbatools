@@ -66,7 +66,7 @@ Describe $CommandName -Tag IntegrationTests {
             # Set up test table and data for each test
             $db = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database tempdb
             $null = $db.Query("CREATE TABLE [dbo].[BunchOFilezz]([FileName123] [nvarchar](50) NULL, [TheFile123] [image] NULL)")
-            
+
             $splatImportMain = @{
                 SqlInstance = $TestConfig.instance2
                 Database    = "tempdb"
@@ -74,7 +74,7 @@ Describe $CommandName -Tag IntegrationTests {
                 FilePath    = "$($TestConfig.appveyorlabrepo)\azure\adalsql.msi"
             }
             $null = Import-DbaBinaryFile @splatImportMain
-            
+
             $null = Get-ChildItem "$($TestConfig.appveyorlabrepo)\certificates" | Import-DbaBinaryFile -SqlInstance $TestConfig.instance2 -Database tempdb -Table BunchOFilezz
 
             # We want to run all commands outside of the BeforeEach block without EnableException to be able to test for specific warnings.
@@ -103,14 +103,14 @@ Describe $CommandName -Tag IntegrationTests {
                 Path        = $exportPath
             }
             $results = Export-DbaBinaryFile @splatExport
-            
+
             $results.Name.Count | Should -BeExactly 3
             $results.Name | Should -Be @("adalsql.msi", "localhost.crt", "localhost.pfx")
         }
 
         It "Exports the table data to file using pipeline from Get-DbaBinaryFileTable" {
             $results = Get-DbaBinaryFileTable -SqlInstance $TestConfig.instance2 -Database tempdb | Export-DbaBinaryFile -Path $exportPath
-            
+
             $results.Name.Count | Should -BeExactly 3
             $results.Name | Should -Be @("adalsql.msi", "localhost.crt", "localhost.pfx")
         }

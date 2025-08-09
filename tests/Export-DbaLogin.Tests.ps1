@@ -1,7 +1,7 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
     $ModuleName  = "dbatools",
-    $CommandName = "Export-DbaLogin",  # Static command name for dbatools
+    $CommandName = "Export-DbaLogin", # Static command name for dbatools
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
@@ -129,7 +129,7 @@ Describe $CommandName -Tag IntegrationTests {
             $file     = Export-DbaLogin -SqlInstance $TestConfig.instance2 -ExcludeDatabase -WarningAction SilentlyContinue
             $results  = Get-Content -Path $file -Raw
             $script:allfiles += $file.FullName
-            $contextFiles    += $file.FullName
+            $contextFiles += $file.FullName
             $results | Should -Match '\nGo\r'
         }
 
@@ -137,7 +137,7 @@ Describe $CommandName -Tag IntegrationTests {
             $file     = Export-DbaLogin -SqlInstance $TestConfig.instance2 -ExcludeJobs -WarningAction SilentlyContinue
             $results  = Get-Content -Path $file -Raw
             $script:allfiles += $file.FullName
-            $contextFiles    += $file.FullName
+            $contextFiles += $file.FullName
             $results | Should -Not -Match 'Job'
         }
 
@@ -145,7 +145,7 @@ Describe $CommandName -Tag IntegrationTests {
             $file     = Export-DbaLogin -SqlInstance $TestConfig.instance2 -BatchSeparator "" -ObjectLevel -WarningAction SilentlyContinue
             $results  = Get-Content -Path $file -Raw
             $script:allfiles += $file.FullName
-            $contextFiles    += $file.FullName
+            $contextFiles += $file.FullName
             $results | Should -Not -Match 'GO'
             $results | Should -Match "GRANT SELECT ON OBJECT::\[sys\]\.\[tables\] TO \[$user2\] WITH GRANT OPTION"
             $results | Should -Match "CREATE USER \[$user2\] FOR LOGIN \[$login2\]"
@@ -157,7 +157,7 @@ Describe $CommandName -Tag IntegrationTests {
             $file     = Export-DbaLogin -SqlInstance $TestConfig.instance2 -ExcludeLogin $login1 -WarningAction SilentlyContinue
             $results  = Get-Content -Path $file -Raw
             $script:allfiles += $file.FullName
-            $contextFiles    += $file.FullName
+            $contextFiles += $file.FullName
             $results | Should -Not -Match "$login1"
         }
 
@@ -165,7 +165,7 @@ Describe $CommandName -Tag IntegrationTests {
             $file     = Export-DbaLogin -SqlInstance $TestConfig.instance2 -ExcludeLogin $login1 -WarningAction SilentlyContinue -ExcludePassword
             $results  = Get-Content -Path $file -Raw
             $script:allfiles += $file.FullName
-            $contextFiles    += $file.FullName
+            $contextFiles += $file.FullName
             $results | Should -Not -Match '(?<=PASSWORD =\s0x)(\w+)'
         }
     }
@@ -187,7 +187,7 @@ Describe $CommandName -Tag IntegrationTests {
             $file     = Export-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login1 -Database $dbname1 -DefaultDatabase master -WarningAction SilentlyContinue
             $results  = Get-Content -Path $file -Raw
             $script:allfiles += $file.FullName
-            $contextFiles2   += $file.FullName
+            $contextFiles2 += $file.FullName
             $results | Should -Not -Match "$login2|$dbname2"
             $results | Should -Match "$login1|$dbname1"
             $results | Should -Match ([regex]::Escape("IF NOT EXISTS (SELECT * FROM sys.database_principals WHERE name = N'$user1')"))
@@ -207,7 +207,7 @@ Describe $CommandName -Tag IntegrationTests {
                 $file     = Export-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login2 -Database $dbname2 -DestinationVersion $version -WarningAction SilentlyContinue
                 $results  = Get-Content -Path $file -Raw
                 $script:allfiles += $file.FullName
-                $contextFiles2   += $file.FullName
+                $contextFiles2 += $file.FullName
                 $results | Should -Match "$login2|$dbname2"
                 $results | Should -Not -Match "$login1|$dbname1"
             }
@@ -217,7 +217,7 @@ Describe $CommandName -Tag IntegrationTests {
             $file     = $db1 | Export-DbaLogin
             $results  = Get-Content -Path $file -Raw
             $script:allfiles += $file.FullName
-            $contextFiles2   += $file.FullName
+            $contextFiles2 += $file.FullName
             $results | Should -Not -Match "$login2|$dbname2|$login3"
             $results | Should -Match "$login1|$dbname1"
             $results | Should -Match ([regex]::Escape("IF NOT EXISTS (SELECT * FROM sys.database_principals WHERE name = N'$user1')"))
@@ -241,7 +241,7 @@ Describe $CommandName -Tag IntegrationTests {
             $file     = Export-DbaLogin -SqlInstance $TestConfig.instance2 -ExcludeDatabase -WarningAction SilentlyContinue
             $results  = $file.DirectoryName
             $script:allfiles += $file.FullName
-            $contextFiles3   += $file.FullName
+            $contextFiles3 += $file.FullName
             $results | Should -Be $DefaultExportPath
         }
 
@@ -249,7 +249,7 @@ Describe $CommandName -Tag IntegrationTests {
             $file     = Export-DbaLogin -SqlInstance $TestConfig.instance2 -Path $AltExportPath -ExcludeDatabase -WarningAction SilentlyContinue
             $results  = $file.DirectoryName
             $script:allfiles += $file.FullName
-            $contextFiles3   += $file.FullName
+            $contextFiles3 += $file.FullName
             $results | Should -Be $AltExportPath
         }
 
@@ -257,14 +257,14 @@ Describe $CommandName -Tag IntegrationTests {
             $file     = Export-DbaLogin -SqlInstance $TestConfig.instance2 -FilePath "$AltExportPath\Dbatoolsci_login_CustomFile.sql" -ExcludeDatabase -WarningAction SilentlyContinue
             $results  = $file.Name
             $script:allfiles += $file.FullName
-            $contextFiles3   += $file.FullName
+            $contextFiles3 += $file.FullName
             $results | Should -Be "Dbatoolsci_login_CustomFile.sql"
         }
 
         It "Should export file to custom file path and Append" {
             $file     = Export-DbaLogin -SqlInstance $TestConfig.instance2 -FilePath "$AltExportPath\Dbatoolsci_login_CustomFile.sql" -Append -ExcludeDatabase -WarningAction SilentlyContinue
             $script:allfiles += $file.FullName
-            $contextFiles3   += $file.FullName
+            $contextFiles3 += $file.FullName
             $file.CreationTimeUtc.Ticks | Should -BeLessThan $file.LastWriteTimeUtc.Ticks
         }
 

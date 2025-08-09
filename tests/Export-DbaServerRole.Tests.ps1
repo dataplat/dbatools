@@ -48,7 +48,7 @@ Describe $CommandName -Tag IntegrationTests {
         # Create a directory for test output files
         $AltExportPath = "$env:USERPROFILE\Documents"
         $outputFile = "$AltExportPath\Dbatoolsci_ServerRole.sql"
-        
+
         # Create test objects
         $random = Get-Random
         $login1 = "dbatoolsci_exportdbaserverrole_login1$random"
