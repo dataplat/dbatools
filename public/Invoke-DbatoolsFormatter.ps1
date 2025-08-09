@@ -29,6 +29,7 @@ function Invoke-DbatoolsFormatter {
         PS C:\> Invoke-DbatoolsFormatter -Path C:\dbatools\public\Get-DbaDatabase.ps1
 
         Reformats C:\dbatools\public\Get-DbaDatabase.ps1 to dbatools' standards
+
     #>
     [CmdletBinding()]
     param (
@@ -61,6 +62,70 @@ function Invoke-DbatoolsFormatter {
         if ($psVersionTable.Platform -ne 'Unix') {
             $OSEOL = "`r`n"
         }
+
+        function Format-ScriptContent {
+            param(
+                [string]$Content,
+                [string]$LineEnding
+            )
+
+            # Strip ending empty lines
+            $Content = $Content -replace "(?s)$LineEnding\s*$"
+
+            try {
+                # Save original lines before formatting
+                $originalLines = $Content -split "`n"
+
+                # Run the formatter
+                $formattedContent = Invoke-Formatter -ScriptDefinition $Content -Settings CodeFormattingOTBS -ErrorAction Stop
+
+                # Automatically restore spaces before = signs
+                $formattedLines = $formattedContent -split "`n"
+                for ($i = 0; $i -lt $formattedLines.Count; $i++) {
+                    if ($i -lt $originalLines.Count) {
+                        # Check if original had multiple spaces before =
+                        if ($originalLines[$i] -match '^(\s*)(.+?)(\s{2,})(=)(.*)$') {
+                            $indent = $matches[1]
+                            $beforeEquals = $matches[2]
+                            $spacesBeforeEquals = $matches[3]
+                            $rest = $matches[4] + $matches[5]
+
+                            # Apply the same spacing to the formatted line
+                            if ($formattedLines[$i] -match '^(\s*)(.+?)(\s*)(=)(.*)$') {
+                                $formattedLines[$i] = $matches[1] + $matches[2] + $spacesBeforeEquals + '=' + $matches[5]
+                            }
+                        }
+                    }
+                }
+                $Content = $formattedLines -join "`n"
+            } catch {
+                Write-Message -Level Warning "Unable to format content"
+            }
+
+            # Match the ending indentation of CBH with the starting one
+            $CBH = $CBHRex.Match($Content).Value
+            if ($CBH) {
+                $startSpaces = $CBHStartRex.Match($CBH).Groups['spaces']
+                if ($startSpaces) {
+                    $newCBH = $CBHEndRex.Replace($CBH, "$startSpaces#>")
+                    if ($newCBH) {
+                        $Content = $Content.Replace($CBH, $newCBH)
+                    }
+                }
+            }
+
+            # Apply case corrections and clean up lines
+            $correctCase = @('DbaInstanceParameter', 'PSCredential', 'PSCustomObject', 'PSItem')
+            $realContent = @()
+            foreach ($line in $Content.Split("`n")) {
+                foreach ($item in $correctCase) {
+                    $line = $line -replace $item, $item
+                }
+                $realContent += $line.Replace("`t", "    ").TrimEnd()
+            }
+
+            return ($realContent -Join $LineEnding)
+        }
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -71,54 +136,26 @@ function Invoke-DbatoolsFormatter {
                 Stop-Function -Message "Cannot find or resolve $p" -Continue
             }
 
-            $content = Get-Content -Path $realPath -Raw -Encoding UTF8
-            if ($OSEOL -eq "`r`n") {
-                # See #5830, we are in Windows territory here
-                # Is the file containing at least one `r ?
-                $containsCR = ($content -split "`r").Length -gt 1
+            # Read file once
+            $originalBytes = [System.IO.File]::ReadAllBytes($realPath)
+            $originalContent = [System.IO.File]::ReadAllText($realPath)
+
+            # Detect line ending style from original file
+            $detectedOSEOL = $OSEOL
+            if ($psVersionTable.Platform -ne 'Unix') {
+                # We're on Windows, check if file uses Unix endings
+                $containsCR = ($originalContent -split "`r").Length -gt 1
                 if (-not($containsCR)) {
-                    # If not, maybe even on Windows the user is using Unix-style endings, which are supported
-                    $OSEOL = "`n"
+                    $detectedOSEOL = "`n"
                 }
             }
 
-            #strip ending empty lines
-            $content = $content -replace "(?s)$OSEOL\s*$"
-            try {
-                $content = Invoke-Formatter -ScriptDefinition $content -Settings CodeFormattingOTBS -ErrorAction Stop
-            } catch {
-                Write-Message -Level Warning "Unable to format $p"
-            }
-            #match the ending indentation of CBH with the starting one, see #4373
-            $CBH = $CBHRex.Match($content).Value
-            if ($CBH) {
-                #get starting spaces
-                $startSpaces = $CBHStartRex.Match($CBH).Groups['spaces']
-                if ($startSpaces) {
-                    #get end
-                    $newCBH = $CBHEndRex.Replace($CBH, "$startSpaces#>")
-                    if ($newCBH) {
-                        #replace the CBH
-                        $content = $content.Replace($CBH, $newCBH)
-                    }
-                }
-            }
+            # Format the content
+            $formattedContent = Format-ScriptContent -Content $originalContent -LineEnding $detectedOSEOL
+
+            # Save the formatted content
             $Utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $False
-            $correctCase = @(
-                'DbaInstanceParameter'
-                'PSCredential'
-                'PSCustomObject'
-                'PSItem'
-            )
-            $realContent = @()
-            foreach ($line in $content.Split("`n")) {
-                foreach ($item in $correctCase) {
-                    $line = $line -replace $item, $item
-                }
-                #trim whitespace lines
-                $realContent += $line.Replace("`t", "    ").TrimEnd()
-            }
-            [System.IO.File]::WriteAllText($realPath, ($realContent -Join "$OSEOL"), $Utf8NoBomEncoding)
+            [System.IO.File]::WriteAllText($realPath, $formattedContent, $Utf8NoBomEncoding)
         }
     }
 }
