@@ -233,9 +233,15 @@ function Repair-PullRequestTest {
 
                 foreach ($test in $allFailedTests) {
                     $testFileName = [System.IO.Path]::GetFileName($test.TestFile)
-                    if ($testFileName -in $relevantTestFiles) {
+                    Write-Verbose "Checking test: $testFileName against relevant files: [$($relevantTestFiles -join ', ')]"
+                    if ($relevantTestFiles.Count -eq 0) {
+                        Write-Verbose "  -> No relevant files defined, filtering out $testFileName"
+                        $filteredOutTests += $test
+                    } elseif ($testFileName -in $relevantTestFiles) {
+                        Write-Verbose "  -> MATCH: Including $testFileName"
                         $failedTests += $test
                     } else {
+                        Write-Verbose "  -> NO MATCH: Filtering out $testFileName"
                         $filteredOutTests += $test
                     }
                 }
