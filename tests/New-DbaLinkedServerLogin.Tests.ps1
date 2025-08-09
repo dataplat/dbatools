@@ -47,7 +47,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Check the validation for a linked server" {
-            $results = New-DbaLinkedServerLogin -SqlInstance $instance2 -LocalLogin $localLogin1Name -WarningVariable warnings
+            $results = New-DbaLinkedServerLogin -SqlInstance $instance2 -LocalLogin $localLogin1Name -WarningVariable warnings -WarningAction SilentlyContinue
             $warnings | Should -BeLike "*LinkedServer is required when SqlInstance is specified*"
             $results | Should -BeNullOrEmpty
         }
@@ -71,7 +71,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Ensure that LocalLogin is passed in" {
-            $results = $linkedServer1 | New-DbaLinkedServerLogin -Impersonate -WarningVariable warnings
+            $results = $linkedServer1 | New-DbaLinkedServerLogin -Impersonate -WarningVariable warnings -WarningAction SilentlyContinue
             $results | Should -BeNullOrEmpty
             $warnings | Should -BeLike "*LocalLogin is required in all scenarios*"
         }

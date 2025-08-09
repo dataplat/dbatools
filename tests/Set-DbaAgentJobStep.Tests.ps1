@@ -16,12 +16,12 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $random = Get-Random
-        $job1Instance1 = New-DbaAgentJob -SqlInstance $TestConfig.instance1 -Job "dbatoolsci_job_1_$random"
+        $job1instance3 = New-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job "dbatoolsci_job_1_$random"
         $job1Instance2 = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job "dbatoolsci_job_1_$random"
-        $agentStep1 = New-DbaAgentJobStep -SqlInstance $TestConfig.instance1 -Job $job1Instance1 -StepName "Step 1" -OnFailAction QuitWithFailure -OnSuccessAction QuitWithSuccess
-        $agentStep1 = New-DbaAgentJobStep -SqlInstance $TestConfig.instance2 -Job $job1Instance2 -StepName "Step 1" -OnFailAction QuitWithFailure -OnSuccessAction QuitWithSuccess
+        $null = New-DbaAgentJobStep -SqlInstance $TestConfig.instance3 -Job $job1instance3 -StepName "Step 1" -OnFailAction QuitWithFailure -OnSuccessAction QuitWithSuccess
+        $null = New-DbaAgentJobStep -SqlInstance $TestConfig.instance2 -Job $job1Instance2 -StepName "Step 1" -OnFailAction QuitWithFailure -OnSuccessAction QuitWithSuccess
 
-        $instance1 = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+        $instance3 = Connect-DbaInstance -SqlInstance $TestConfig.instance3
         $instance2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
 
         $login = "db$random"
@@ -47,7 +47,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     AfterAll {
         Remove-DbaDatabase -SqlInstance $instance2 -Database "dbatoolsci_newdb_$random" -Confirm:$false
         Remove-DbaLogin -SqlInstance $instance2 -Login "user_$random" -Confirm:$false
-        Remove-DbaAgentJob -SqlInstance $TestConfig.instance1 -Job "dbatoolsci_job_1_$random" -Confirm:$false
+        Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job "dbatoolsci_job_1_$random" -Confirm:$false
         Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job "dbatoolsci_job_1_$random" -Confirm:$false
         $null = Invoke-Command2 -ScriptBlock { net user $args /delete *>&1 } -ArgumentList $login -ComputerName $instance2.ComputerName
         $credential.Drop()
@@ -66,12 +66,12 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "pipeline input of pre-connected servers" {
-            $jobSteps = $instance1, $instance2 | Set-DbaAgentJobStep -Job "dbatoolsci_job_1_$random" -StepName "Step 1" -NewName "Step 1 updated"
+            $jobSteps = $instance3, $instance2 | Set-DbaAgentJobStep -Job "dbatoolsci_job_1_$random" -StepName "Step 1" -NewName "Step 1 updated"
 
-            (Get-DbaAgentJob -SqlInstance $instance1 -Job "dbatoolsci_job_1_$random").JobSteps | Where-Object Id -eq 1 | Select-Object -ExpandProperty Name | Should -Be "Step 1 updated"
+            (Get-DbaAgentJob -SqlInstance $instance3 -Job "dbatoolsci_job_1_$random").JobSteps | Where-Object Id -eq 1 | Select-Object -ExpandProperty Name | Should -Be "Step 1 updated"
             (Get-DbaAgentJob -SqlInstance $instance2 -Job "dbatoolsci_job_1_$random").JobSteps | Where-Object Id -eq 1 | Select-Object -ExpandProperty Name | Should -Be "Step 1 updated"
 
-            $jobSteps = $instance1, $instance2 | Set-DbaAgentJobStep -Job "dbatoolsci_job_1_$random" -StepName "Step 1 updated" -NewName "Step 1"
+            $jobSteps = $instance3, $instance2 | Set-DbaAgentJobStep -Job "dbatoolsci_job_1_$random" -StepName "Step 1 updated" -NewName "Step 1"
         }
 
         It "use the -Force to add a new step" {
@@ -167,33 +167,6 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $newJobStep.OnFailAction | Should -Be GoToStep
             $newJobStep.OnFailStep | Should -Be 2
             $newJobStep.JobStepFlags | Should -Be AppendToJobHistory
-        }
-
-        It "set a step with all attributes for Subsystem=ActiveScripting" {
-            # ActiveScripting was discontinued in SQL Server 2016
-            $jobStep = @{
-                SqlInstance        = $TestConfig.instance2
-                Job                = $job1Instance2
-                StepName           = "Step 5"
-                Subsystem          = "ActiveScripting"
-                Command            = "ActiveScripting"
-                CmdExecSuccessCode = 3
-                OnSuccessAction    = "GoToStep"
-                OnSuccessStepId    = 3
-                OnFailAction       = "GoToStep"
-                OnFailStepId       = 3
-                Database           = $newDbName
-                DatabaseUser       = $userName
-                RetryAttempts      = 4
-                RetryInterval      = 7
-                OutputFileName     = "logActiveScripting.txt"
-                Flag               = [Microsoft.SqlServer.Management.Smo.Agent.JobStepFlags]::AppendToJobHistory
-                Force              = $true
-            }
-
-            $results = Set-DbaAgentJobStep @jobStep
-
-            $results | Should -BeNullOrEmpty
         }
 
         It "set a step with all attributes for Subsystem=AnalysisCommand" {

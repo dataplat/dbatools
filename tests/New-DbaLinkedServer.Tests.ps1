@@ -49,13 +49,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Check the validation for duplicate linked servers" {
-            $results = New-DbaLinkedServer -SqlInstance $instance2 -LinkedServer "dbatoolscli_LS1_$random" -WarningVariable warnings
+            $results = New-DbaLinkedServer -SqlInstance $instance2 -LinkedServer "dbatoolscli_LS1_$random" -WarningVariable warnings -WarningAction SilentlyContinue
             $results | Should -BeNullOrEmpty
             $warnings | Should -BeLike "*Linked server dbatoolscli_LS1_$random already exists on *"
         }
 
         It "Check the validation when the linked server param is not provided" {
-            $results = New-DbaLinkedServer -SqlInstance $instance2 -WarningVariable warnings
+            $results = New-DbaLinkedServer -SqlInstance $instance2 -WarningVariable warnings -WarningAction SilentlyContinue
             $results | Should -BeNullOrEmpty
             $warnings | Should -BeLike "*LinkedServer is required*"
         }
@@ -88,11 +88,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results.RemoteUser | Should -BeNullOrEmpty
             $results.Impersonate | Should -Be $true
 
-            $results = New-DbaLinkedServer -SqlInstance $instance2 -LinkedServer "dbatoolscli_LS6_$random" -ServerProduct mssql -Provider sqlncli -DataSource $instance3 -SecurityContext SpecifiedSecurityContext -WarningVariable warnings
+            $results = New-DbaLinkedServer -SqlInstance $instance2 -LinkedServer "dbatoolscli_LS6_$random" -ServerProduct mssql -Provider sqlncli -DataSource $instance3 -SecurityContext SpecifiedSecurityContext -WarningVariable warnings -WarningAction SilentlyContinue
 
             $warnings | Should -BeLike "*SecurityContextRemoteUser is required when SpecifiedSecurityContext is used*"
 
-            $results = New-DbaLinkedServer -SqlInstance $instance2 -LinkedServer "dbatoolscli_LS6_$random" -ServerProduct mssql -Provider sqlncli -DataSource $instance3 -SecurityContext SpecifiedSecurityContext -SecurityContextRemoteUser $loginName -WarningVariable warnings
+            $results = New-DbaLinkedServer -SqlInstance $instance2 -LinkedServer "dbatoolscli_LS6_$random" -ServerProduct mssql -Provider sqlncli -DataSource $instance3 -SecurityContext SpecifiedSecurityContext -SecurityContextRemoteUser $loginName -WarningVariable warnings -WarningAction SilentlyContinue
 
             $warnings | Should -BeLike "*SecurityContextRemoteUserPassword is required when SpecifiedSecurityContext is used*"
 

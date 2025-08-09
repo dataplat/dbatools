@@ -131,7 +131,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 Force                   = $true
             }
             $null = New-DbaRgResourcePool @splatNewResourcePool
-            Remove-DbaRgResourcePool -SqlInstance $TestConfig.instance2 -ResourcePool $resourcePoolName -SkipReconfigure
+            Remove-DbaRgResourcePool -SqlInstance $TestConfig.instance2 -ResourcePool $resourcePoolName -SkipReconfigure -WarningAction SilentlyContinue
             $result = Get-DbaResourceGovernor -SqlInstance $TestConfig.instance2
 
             $result.ReconfigurePending | Should -Be $true

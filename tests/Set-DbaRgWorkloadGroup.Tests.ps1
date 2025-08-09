@@ -175,12 +175,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 Force           = $true
             }
             $splatSetWorkloadGroup = @{
-                SqlInstance     = $TestConfig.instance2
-                WorkloadGroup   = $wklGroupName
-                ResourcePool    = "default"
+                SqlInstance      = $TestConfig.instance2
+                WorkloadGroup    = $wklGroupName
+                ResourcePool     = "default"
                 ResourcePoolType = "Internal"
-                Importance      = "HIGH"
-                SkipReconfigure = $true
+                Importance       = "HIGH"
+                SkipReconfigure  = $true
+                WarningAction    = "SilentlyContinue"
             }
 
             $null = New-DbaRgWorkloadGroup @splatNewWorkloadGroup

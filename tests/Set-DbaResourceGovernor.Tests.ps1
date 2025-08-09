@@ -17,6 +17,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "Command actually works" {
         BeforeAll {
             $classifierFunction = "dbatoolsci_fnRGClassifier"
+            $qualifiedClassifierFunction = "[dbo].[$classifierFunction]"
 
             $createUDFQuery = "CREATE FUNCTION $classifierFunction()
             RETURNS SYSNAME
@@ -39,7 +40,6 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "modifies resource governor classifier function" {
-            $qualifiedClassifierFunction = "[dbo].[$classifierFunction]"
             $results = Set-DbaResourceGovernor -SqlInstance $TestConfig.instance2 -ClassifierFunction $classifierFunction -Confirm:$false
             $results.ClassifierFunction | Should -Be $qualifiedClassifierFunction
         }

@@ -19,7 +19,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     AfterAll {
-        $null = Remove-DbaAgentOperator -SqlInstance $instance2 -Operator 'dbatools dba' -Confirm:$false
+        $null = Remove-DbaAgentOperator -SqlInstance $instance2 -Operator new -Confirm:$false
     }
 
     Context "Set works" {

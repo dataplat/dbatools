@@ -17,11 +17,11 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Verifying command output" {
         It "returns some results" {
-            $results = Get-DbaXESession -SqlInstance $TestConfig.instance2 | Read-DbaXEFile -Raw
+            $results = Get-DbaXESession -SqlInstance $TestConfig.instance2 -Session system_health | Read-DbaXEFile -Raw
             $results | Should -Not -BeNullOrEmpty
         }
         It "returns some results" {
-            $results = Get-DbaXESession -SqlInstance $TestConfig.instance2 | Read-DbaXEFile
+            $results = Get-DbaXESession -SqlInstance $TestConfig.instance2 -Session system_health | Read-DbaXEFile
             $results | Should -Not -BeNullOrEmpty
         }
     }

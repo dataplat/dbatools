@@ -50,18 +50,19 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Removes filegroups" {
             $results = Get-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name, $db3name -FileGroup $fileGroup1Name, $fileGroup3Name
             $results.Length | Should -Be 3
-            Remove-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name, $db3name -FileGroup $fileGroup1Name, $fileGroup3Name -Confirm:$false
+            Remove-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name, $db3name -FileGroup $fileGroup1Name, $fileGroup3Name -Confirm:$false -WarningAction SilentlyContinue -WarningVariable WarnVar
+            $WarnVar | Should -Match "Filegroup FG3 does not exist in the database $db3name"
             $results = Get-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name, $db3name -FileGroup $fileGroup1Name, $fileGroup3Name
             $results | Should -BeNullOrEmpty
         }
 
         It "Tries to remove a non-existent filegroup" {
-            Remove-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name -FileGroup invalidFileGroupName -Confirm:$false -WarningVariable warnings
+            Remove-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name -FileGroup invalidFileGroupName -Confirm:$false -WarningVariable warnings -WarningAction SilentlyContinue
             $warnings | Should -BeLike "*Filegroup invalidFileGroupName does not exist in the database $db1name on $($TestConfig.instance2)"
         }
 
         It "Tries to remove a filegroup that still has files" {
-            Remove-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name -FileGroup $fileGroup2Name -Confirm:$false -WarningVariable warnings
+            Remove-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name -FileGroup $fileGroup2Name -Confirm:$false -WarningVariable warnings -WarningAction SilentlyContinue
             $warnings | Should -BeLike "*Filegroup $fileGroup2Name is not empty. Before the filegroup can be dropped the files must be removed in $fileGroup2Name on $db1name on $($TestConfig.instance2)"
         }
 

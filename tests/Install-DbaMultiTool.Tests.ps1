@@ -17,8 +17,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         BeforeAll {
             $branch = "main"
             $database = "dbatoolsci_multitool_$(Get-Random)"
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-            $server.Query("CREATE DATABASE $database")
+            $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $database
 
             $resultsDownload = Install-DbaMultiTool -SqlInstance $TestConfig.instance2 -Database $database -Branch $branch -Force -Verbose:$false
         }
@@ -48,7 +47,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $folder = Join-Path (Get-DbatoolsConfigValue -FullName Path.DbatoolsData) -Child "dba-multitool-$branch"
             $sqlScript = Get-ChildItem $folder -Filter "sp_*.sql" | Select-Object -First 1
             Add-Content $sqlScript.FullName (New-Guid).ToString()
-            $result = Install-DbaMultiTool -SqlInstance $TestConfig.instance2 -Database $database -Verbose:$false
+            $result = Install-DbaMultiTool -SqlInstance $TestConfig.instance2 -Database $database -Verbose:$false -WarningAction SilentlyContinue
             $result = $result | Where-Object Name -eq $sqlScript.BaseName
             $result.Status -eq "Error" | Should -Be $true
         }
@@ -93,7 +92,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $folder = Join-Path (Get-DbatoolsConfigValue -FullName Path.DbatoolsData) -Child "dba-multitool-$branch"
             $sqlScript = Get-ChildItem $folder -Filter "sp_*.sql" | Select-Object -First 1
             Add-Content $sqlScript.FullName (New-Guid).ToString()
-            $result = Install-DbaMultiTool -SqlInstance $TestConfig.instance3 -Database $database -Verbose:$false
+            $result = Install-DbaMultiTool -SqlInstance $TestConfig.instance3 -Database $database -Verbose:$false -WarningAction SilentlyContinue
             $result = $result | Where-Object Name -eq $sqlScript.BaseName
             $result.Status -eq "Error" | Should -Be $true
         }

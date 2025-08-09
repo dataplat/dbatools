@@ -127,7 +127,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             }
 
             $null = New-DbaRgResourcePool @splatNewResourcePool
-            $null = Set-DbaRgResourcePool -SqlInstance $TestConfig.instance2 -ResourcePool $resourcePoolName -MaximumCpuPercentage 99 -SkipReconfigure
+            $null = Set-DbaRgResourcePool -SqlInstance $TestConfig.instance2 -ResourcePool $resourcePoolName -MaximumCpuPercentage 99 -SkipReconfigure -WarningAction SilentlyContinue
             $result = Get-DbaResourceGovernor -SqlInstance $TestConfig.instance2
 
             $result.ReconfigurePending | Should -Be $true

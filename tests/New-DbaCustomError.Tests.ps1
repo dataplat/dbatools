@@ -56,7 +56,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Language" {
-            $results = New-DbaCustomError -SqlInstance $server -MessageID 70001 -Severity 1 -MessageText "test" -Language "InvalidLanguage"
+            $results = New-DbaCustomError -SqlInstance $server -MessageID 70001 -Severity 1 -MessageText "test" -Language "InvalidLanguage" -WarningAction SilentlyContinue -WarningVariable WarnVar
+            $WarnVar | Should -Match "does not have the InvalidLanguage installed"
             $results | Should -BeNullOrEmpty
 
             $results = New-DbaCustomError -SqlInstance $server -MessageID 70003 -Severity 1 -MessageText "test_70003" -Language "English"

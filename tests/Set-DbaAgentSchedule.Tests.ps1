@@ -152,15 +152,15 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 Remove-DbaAgentSchedule -Confirm:$false -Force
         }
 
-        $schedules = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object {$_.name -like 'dbatools*'}
+        $schedules = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object { $_.name -like 'dbatools*' }
         foreach ($schedule in $schedules) {
             foreach ($frequency in ('Daily', '4', 'Weekly', '8', 'Monthly', '16', 'MonthlyRelative', '32')) {
                 $variables = @{SqlInstance    = $TestConfig.instance2
                     Schedule                  = "$($schedule.name)"
                     Job                       = 'dbatoolsci_setschedule2'
                     FrequencyType             = $frequency
-                    FrequencyRecurrenceFactor = '6'
-                    FrequencyInterval         = '4'
+                    FrequencyRecurrenceFactor = 6
+                    FrequencyInterval         = 4
                     FrequencyRelativeInterval = 'Second'
                     StartDate                 = $altstart
                     StartTime                 = '113300'
@@ -171,7 +171,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 $null = Set-DbaAgentSchedule @variables
             }
         }
-        $results = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object {$_.name -like 'dbatools*'}
+        $results = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 | Where-Object { $_.name -like 'dbatools*' }
 
         It "Should have Results" {
             $results | Should Not BeNullOrEmpty

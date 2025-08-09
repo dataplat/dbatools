@@ -32,15 +32,15 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "commands work as expected" {
 
         It "validates required Database param" {
-            $sequence = New-DbaDbSequence -SqlInstance $server -Name SequenceTest -ErrorVariable error
+            $sequence = New-DbaDbSequence -SqlInstance $server -Name SequenceTest -WarningAction SilentlyContinue -WarningVariable WarnVar
+            $WarnVar | Should -Match "Database is required when SqlInstance is specified"
             $sequence | Should -BeNullOrEmpty
-            $error | Should -Match "Database is required when SqlInstance is specified"
         }
 
         It "validates IncrementBy param cannot be 0" {
-            $sequence = New-DbaDbSequence -SqlInstance $server -Database $newDbName -Name SequenceTest -IncrementBy 0 -ErrorVariable error
+            $sequence = New-DbaDbSequence -SqlInstance $server -Database $newDbName -Name SequenceTest -IncrementBy 0 -WarningAction SilentlyContinue -WarningVariable WarnVar
+            $WarnVar | Should -Match "cannot be zero"
             $sequence | Should -BeNullOrEmpty
-            $error.Exception | Should -Match "cannot be zero"
         }
 
         It "creates a new sequence" {
@@ -51,7 +51,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "tries to create a duplicate sequence" {
-            $sequence = New-DbaDbSequence -SqlInstance $server -Database $newDbName -Name "Sequence1_$random" -Schema "Schema_$random"
+            $sequence = New-DbaDbSequence -SqlInstance $server -Database $newDbName -Name "Sequence1_$random" -Schema "Schema_$random" -WarningAction SilentlyContinue -WarningVariable WarnVar
+            $WarnVar | Should -Match "Sequence Sequence1_$random already exists in the Schema_$random schema in the database dbatoolsci_newdb_$random"
             $sequence | Should -BeNullOrEmpty
         }
 
