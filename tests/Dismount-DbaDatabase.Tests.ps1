@@ -1,40 +1,38 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
+    $ModuleName  = "dbatools",
+    $CommandName = "Dismount-DbaDatabase",
     $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
 )
 
-Describe "Dismount-DbaDatabase" -Tag "UnitTests" {
-    BeforeAll {
-        $command = Get-Command Dismount-DbaDatabase
-        $expected = $TestConfig.CommonParameters
-        $expected += @(
-            "SqlInstance",
-            "SqlCredential",
-            "Database",
-            "InputObject",
-            "UpdateStatistics",
-            "Force",
-            "EnableException",
-            "Confirm",
-            "WhatIf"
-        )
-    }
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        It "Has parameter: <_>" -ForEach $expected {
-            $command | Should -HaveParameter $PSItem
+        BeforeAll {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "InputObject",
+                "UpdateStatistics",
+                "Force",
+                "EnableException"
+            )
         }
 
-        It "Should have exactly the number of expected parameters ($($expected.Count))" {
-            $hasparms = $command.Parameters.Values.Name
-            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
+        It "Should have the expected parameters" {
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "Dismount-DbaDatabase" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        Get-DbaProcess -SqlInstance $TestConfig.instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
+        Get-DbaProcess -SqlInstance $TestConfig.instance3 -Program "dbatools PowerShell module - dbatools.io" | Stop-DbaProcess -WarningAction SilentlyContinue
 
         $dbName = "dbatoolsci_detachattach"
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName | Remove-DbaDatabase -Confirm:$false
@@ -44,11 +42,19 @@ Describe "Dismount-DbaDatabase" -Tag "IntegrationTests" {
         foreach ($file in (Get-DbaDbFile -SqlInstance $TestConfig.instance3 -Database $dbName).PhysicalName) {
             $null = $fileStructure.Add($file)
         }
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
     }
 
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
         $null = Mount-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName -FileStructure $fileStructure
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName | Remove-DbaDatabase -Confirm:$false
+
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
     Context "When detaching a single database" {
@@ -68,7 +74,7 @@ Describe "Dismount-DbaDatabase" -Tag "IntegrationTests" {
 
     Context "When detaching databases with snapshots" {
         BeforeAll {
-            Get-DbaProcess -SqlInstance $TestConfig.instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
+            Get-DbaProcess -SqlInstance $TestConfig.instance3 -Program "dbatools PowerShell module - dbatools.io" | Stop-DbaProcess -WarningAction SilentlyContinue
 
             $server = Connect-DbaInstance -SqlInstance $TestConfig.instance3
             $dbDetached = "dbatoolsci_dbsetstate_detached"
@@ -88,9 +94,9 @@ Describe "Dismount-DbaDatabase" -Tag "IntegrationTests" {
         }
 
         AfterAll {
-            $null = Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance3 -Database $dbWithSnapshot -Force
-            $null = Mount-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbDetached -FileStructure $splatFileStructure
-            $null = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbDetached, $dbWithSnapshot | Remove-DbaDatabase -Confirm:$false
+            $null = Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance3 -Database $dbWithSnapshot -Force -ErrorAction SilentlyContinue
+            $null = Mount-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbDetached -FileStructure $splatFileStructure -ErrorAction SilentlyContinue
+            $null = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbDetached, $dbWithSnapshot | Remove-DbaDatabase -Confirm:$false -ErrorAction SilentlyContinue
         }
 
         It "Should skip detachment if database has snapshots" {
