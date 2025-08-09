@@ -416,8 +416,31 @@ function Repair-PullRequestTest {
                         Write-Verbose "Invoking Claude with parameters: $($aiParams | Out-String)"
                         Write-Verbose "Invoking Claude with Message: $($aiParams.Message)"
                         Write-Verbose "Invoking Claude with ContextFiles: $($contextFiles -join ', ')"
-                        Invoke-AITool @aiParams
-                        Update-PesterTest -InputObject $failingTestPath
+
+                        try {
+                            Invoke-AITool @aiParams
+                        } catch {
+                            Write-Warning "Claude failed with context files, retrying without command source file: $($_.Exception.Message)"
+
+                            # Retry without the command source file - only include working test file
+                            $retryContextFiles = @()
+                            if (Test-Path $workingTempPath) {
+                                $retryContextFiles += $workingTempPath
+                            }
+
+                            $retryParams = @{
+                                Message      = $repairMessage
+                                File         = $failingTestPath.Path
+                                Model        = $Model
+                                Tool         = 'Claude'
+                                ContextFiles = $retryContextFiles
+                            }
+
+                            Write-Verbose "Retrying with reduced context files: $($retryContextFiles -join ', ')"
+                            Invoke-AITool @retryParams
+                        }
+
+                        Update-PesterTest -InputObject $failingTestPath.Path
                     }
 
                     $processedFailures += $fileFailureCount
