@@ -51,8 +51,14 @@ function Repair-PullRequestTest {
 
         Write-Verbose "Working in repository: $gitRoot"
 
+        # Check for uncommitted changes first
+        $statusOutput = git status --porcelain 2>$null
+        if ($statusOutput) {
+            throw "Repository has uncommitted changes. Please commit, stash, or discard them before running this function.`n$($statusOutput -join "`n")"
+        }
+
         # Store current branch to return to it later
-        $originalBranch = git branch --show-current
+        $originalBranch = git branch --show-current 2>$null
         Write-Verbose "Current branch: $originalBranch"
 
         # Ensure gh CLI is available
@@ -65,7 +71,20 @@ function Repair-PullRequestTest {
         if ($LASTEXITCODE -ne 0) {
             throw "Not authenticated with GitHub CLI. Please run 'gh auth login' first."
         }
+
+        # Create temp directory for working test files (cross-platform)
+        $tempDir = if ($IsWindows -or $env:OS -eq "Windows_NT") {
+            Join-Path $env:TEMP "dbatools-repair-$(Get-Random)"
+        } else {
+            Join-Path "/tmp" "dbatools-repair-$(Get-Random)"
+        }
+
+        if (-not (Test-Path $tempDir)) {
+            New-Item -Path $tempDir -ItemType Directory -Force | Out-Null
+            Write-Verbose "Created temp directory: $tempDir"
+        }
     }
+
     process {
         try {
             # Get open PRs
@@ -79,7 +98,7 @@ function Repair-PullRequestTest {
                 }
                 $prs = @($prsJson | ConvertFrom-Json)
             } else {
-                $prsJson = gh pr list --state open --limit $MaxPRs --json "number,title,headRefName,state,statusCheckRollup"
+                $prsJson = gh pr list --state open --limit $MaxPRs --json "number,title,headRefName,state,statusCheckRollup" 2>$null
                 $prs = $prsJson | ConvertFrom-Json
             }
 
@@ -106,11 +125,12 @@ function Repair-PullRequestTest {
                     continue
                 }
 
-                # Checkout PR branch
+                # Fetch and checkout PR branch (suppress output)
                 Write-Progress -Activity "Repairing Pull Request Tests" -Status "Checking out branch: $($pr.headRefName)" -PercentComplete $prProgress -Id 0
                 Write-Verbose "Checking out branch: $($pr.headRefName)"
-                git fetch origin $pr.headRefName
-                git checkout $pr.headRefName
+
+                git fetch origin $pr.headRefName 2>$null | Out-Null
+                git checkout $pr.headRefName 2>$null | Out-Null
 
                 # Get AppVeyor build details
                 Write-Progress -Activity "Repairing Pull Request Tests" -Status "Fetching test failures from AppVeyor..." -PercentComplete $prProgress -Id 0
@@ -146,10 +166,49 @@ function Repair-PullRequestTest {
                     Write-Verbose "  Fixing $testFileName with $fileFailureCount failure(s)"
 
                     if ($PSCmdlet.ShouldProcess($testFileName, "Fix failing tests using Claude")) {
+                        # Get working version from Development branch
+                        Write-Progress -Activity "Fixing Tests in $testFileName" -Status "Getting working version from Development branch" -PercentComplete 10 -Id 2 -ParentId 1
+
+                        # Temporarily switch to Development to get working test file
+                        git checkout development 2>$null | Out-Null
+
+                        $workingTestPath = Resolve-Path "tests/$testFileName" -ErrorAction SilentlyContinue
+                        $workingTempPath = Join-Path $tempDir "working-$testFileName"
+
+                        if ($workingTestPath -and (Test-Path $workingTestPath)) {
+                            Copy-Item $workingTestPath $workingTempPath -Force
+                            Write-Verbose "Copied working test to: $workingTempPath"
+                        } else {
+                            Write-Warning "Could not find working test file in Development branch: tests/$testFileName"
+                        }
+
+                        # Get the command source file path
+                        $commandName = [System.IO.Path]::GetFileNameWithoutExtension($testFileName) -replace '\.Tests$', ''
+                        Write-Progress -Activity "Fixing Tests in $testFileName" -Status "Getting command source for $commandName" -PercentComplete 20 -Id 2 -ParentId 1
+
+                        $command = Get-Command $commandName -ErrorAction SilentlyContinue
+                        $commandSourcePath = $null
+                        if ($command -and $command.Source) {
+                            $commandSourcePath = $command.Source
+                            Write-Verbose "Found command source: $commandSourcePath"
+                        }
+
+                        # Switch back to PR branch
+                        git checkout $pr.headRefName 2>$null | Out-Null
+
                         # Show detailed progress for each failure being fixed
                         for ($i = 0; $i -lt $failures.Count; $i++) {
                             $failureProgress = [math]::Round((($i + 1) / $failures.Count) * 100, 0)
                             Write-Progress -Activity "Fixing Tests in $testFileName" -Status "Fixing failure $($i + 1) of $fileFailureCount - $($failures[$i].TestName)" -PercentComplete $failureProgress -Id 2 -ParentId 1
+                        }
+
+                        # Prepare context files for Claude
+                        $contextFiles = @()
+                        if (Test-Path $workingTempPath) {
+                            $contextFiles += $workingTempPath
+                        }
+                        if ($commandSourcePath -and (Test-Path $commandSourcePath)) {
+                            $contextFiles += $commandSourcePath
                         }
 
                         $repairParams = @{
@@ -157,6 +216,7 @@ function Repair-PullRequestTest {
                             Failures       = $failures
                             Model          = $Model
                             OriginalBranch = $originalBranch
+                            ContextFiles   = $contextFiles
                         }
                         Repair-TestFile @repairParams
                     }
@@ -174,11 +234,11 @@ function Repair-PullRequestTest {
                 # Commit changes if requested
                 if ($AutoCommit) {
                     Write-Progress -Activity "Repairing Pull Request Tests" -Status "Committing fixes for PR #$($pr.number)..." -PercentComplete $prProgress -Id 0
-                    $changedFiles = git diff --name-only
+                    $changedFiles = git diff --name-only 2>$null
                     if ($changedFiles) {
                         Write-Verbose "Committing fixes..."
-                        git add -A
-                        git commit -m "Fix failing Pester tests (automated fix via Claude AI)"
+                        git add -A 2>$null | Out-Null
+                        git commit -m "Fix failing Pester tests (automated fix via Claude AI)" 2>$null | Out-Null
                         Write-Verbose "Changes committed successfully"
                     }
                 }
@@ -194,13 +254,18 @@ function Repair-PullRequestTest {
             Write-Progress -Activity "Fixing Tests" -Completed -Id 1
             Write-Progress -Activity "Individual Test Fix" -Completed -Id 2
 
-            # Return to original branch
+            # Return to original branch (suppress output)
             Write-Verbose "`nReturning to original branch: $originalBranch"
-            git checkout $originalBranch -q
+            git checkout $originalBranch 2>$null | Out-Null
+
+            # Clean up temp directory
+            if (Test-Path $tempDir) {
+                Remove-Item $tempDir -Recurse -Force -ErrorAction SilentlyContinue
+                Write-Verbose "Cleaned up temp directory: $tempDir"
+            }
         }
     }
 }
-
 function Invoke-AppVeyorApi {
     [CmdletBinding()]
     param (
