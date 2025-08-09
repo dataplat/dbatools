@@ -21,7 +21,7 @@ Describe $CommandName -Tag UnitTests {
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
                 "SqlInstance",
-                "SqlCredential", 
+                "SqlCredential",
                 "Property",
                 "Pattern",
                 "Exact",
@@ -44,7 +44,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should return correct properties" {
             $expectedProps = @(
                 "ComputerName",
-                "InstanceName", 
+                "InstanceName",
                 "SqlInstance",
                 "Name",
                 "Id",

@@ -15,7 +15,7 @@ Describe $CommandName -Tag UnitTests {
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
                 "Path",
-                "SqlInstance", 
+                "SqlInstance",
                 "SqlCredential",
                 "DatabaseName",
                 "SourceInstance",
@@ -54,7 +54,7 @@ Describe $CommandName -Tag IntegrationTests {
         } else {
             Remove-Item $DestBackupDir\*
         }
-        
+
         $random = Get-Random
         $dbname = "dbatoolsci_Backuphistory_$random"
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname | Remove-DbaDatabase -Confirm:$false

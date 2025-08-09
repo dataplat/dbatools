@@ -231,7 +231,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should have changed the path separator as instructed" {
-            $result = $outputLinux | Select-Object -ExpandProperty FullName | ForEach-Object { 
+            $result = $outputLinux | Select-Object -ExpandProperty FullName | ForEach-Object {
                 $all = $PSItem.Split("/")
                 $all[0..($all.Length - 2)] -Join "/"
             }

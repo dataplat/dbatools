@@ -55,7 +55,7 @@ Describe $CommandName -Tag IntegrationTests {
             $tmpdir2                = "c:\temp\orphan_$(Get-Random)"
             $tmpdirInner2           = Join-Path $tmpdir2 "inner"
             $tmpBackupPath2         = Join-Path $tmpdirInner2 "backup"
-            
+
             # Create the objects.
             $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
             $db1 = New-DbaDatabase -SqlInstance $server -Name $dbname
@@ -111,7 +111,7 @@ Describe $CommandName -Tag IntegrationTests {
             $results = @(Find-DbaOrphanedFile -SqlInstance $TestConfig.instance2)
             $ExpectedStdProps = @(
                 "ComputerName",
-                "InstanceName", 
+                "InstanceName",
                 "SqlInstance",
                 "Filename",
                 "RemoteFilename"
