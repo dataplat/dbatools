@@ -24,21 +24,18 @@ $TestsRunGroups = @{
     "appveyor_disabled" = @(
         # tests that work locally against SQL Server 2022 instances without problems but fail on AppVeyor
         'ConvertTo-DbaXESession',
+        'Dismount-DbaDatabase',
         'Export-DbaUser',
         'Get-DbaPermission',
         'Get-DbaUserPermission',
         'Install-DbaDarlingData',
         'Invoke-DbaWhoisActive',
         'Remove-DbaAvailabilityGroup',
-        'Remove-DbaDatabaseSafely',
+        'Remove-DbaLinkedServer',
+        'Set-DbaAgentJobStep',   # This outputs the message "[New-DbaAgentJob] Something went wrong creating the job. | Value cannot be null. / Parameter name: newParent" and failes in Describe with "Cannot bind argument to parameter 'SqlInstance' because it is null."
         'Sync-DbaLoginPermission',
-        'Dismount-DbaDatabase',
         # tests that fail locally against SQL Server 2022 instances and fail on AppVeyor
-        'Set-DbaAgentJobStep',
         'Watch-DbaDbLogin',
-        # tests that fail because the command does not work
-        'Copy-DbaDbCertificate',
-        'Export-DbaDacPackage',
         # takes too long
         'Install-DbaSqlWatch',
         'Uninstall-DbaSqlWatch',
@@ -47,9 +44,7 @@ $TestsRunGroups = @{
         'Get-DbaCpuRingBuffer',
         'Get-DbaLatchStatistic',
         # uses a backup that only works on SQL Server 2022
-        'Get-DbaEstimatedCompletionTime',
-        # fix shortly, broke once we moved to Get-TestConfig
-        'Remove-DbaLinkedServer'
+        'Get-DbaEstimatedCompletionTime'
     )
     # do not run everywhere
     "disabled"          = @()
