@@ -302,8 +302,8 @@ function Repair-PullRequestTest {
                             Tool         = 'Claude'
                             ContextFiles = $contextFiles
                         }
-
-                        Write-Verbose "Invoking Claude to fix test failures"
+                        # verbose the parameters
+                        Write-Verbose "Invoking Claude with parameters: $($aiParams | Out-String)"
                         Invoke-AITool @aiParams
                     }
 
