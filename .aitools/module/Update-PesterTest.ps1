@@ -211,9 +211,13 @@ function Update-PesterTest {
     }
 
     end {
-        if (-not $commandsToProcess) {
+        # Only get all commands if no InputObject was provided at all (user called with no params)
+        if (-not $commandsToProcess -and -not $PSBoundParameters.ContainsKey('InputObject')) {
             Write-Verbose "No input objects provided, getting commands from dbatools module"
             $commandsToProcess = Get-Command -Module dbatools -Type Function, Cmdlet | Select-Object -First $First -Skip $Skip
+        } elseif (-not $commandsToProcess) {
+            Write-Warning "No valid commands found to process from provided input"
+            return
         }
 
         # Get total count for progress tracking
