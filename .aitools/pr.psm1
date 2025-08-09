@@ -304,6 +304,7 @@ function Repair-PullRequestTest {
                         }
                         # verbose the parameters
                         Write-Verbose "Invoking Claude with parameters: $($aiParams | Out-String)"
+                        Write-Verbose "Invoking Claude with parameters: $($aiParams.Message)"
                         Invoke-AITool @aiParams
                     }
 
