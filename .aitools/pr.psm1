@@ -303,7 +303,8 @@ function Repair-PullRequestTest {
                         }
                         # verbose the parameters
                         Write-Verbose "Invoking Claude with parameters: $($aiParams | Out-String)"
-                        Write-Verbose "Invoking Claude with parameters: $($aiParams.Message)"
+                        Write-Verbose "Invoking Claude with Message: $($aiParams.Message)"
+                        Write-Verbose "Invoking Claude with ContextFiles: $($contextFiles -join ', ')"
                         Invoke-AITool @aiParams
                         Update-PesterTest -InputObject $failingTestPath
                     }
