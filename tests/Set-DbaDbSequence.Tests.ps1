@@ -30,9 +30,9 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "commands work as expected" {
 
         It "validates required Database param" {
-            $sequence = Set-DbaDbSequence -SqlInstance $server -Sequence "Sequence1_$random" -Schema "Schema_$random" -Confirm:$false -ErrorVariable error
+            $sequence = Set-DbaDbSequence -SqlInstance $server -Sequence "Sequence1_$random" -Schema "Schema_$random" -Confirm:$false -WarningVariable WarnVar -WarningAction SilentlyContinue
             $sequence | Should -BeNullOrEmpty
-            $error | Should -Match "Database is required when SqlInstance is specified"
+            $WarnVar | Should -Match "Database is required when SqlInstance is specified"
         }
 
         It "supports piping databases" {
@@ -112,9 +112,9 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "validates IncrementBy param cannot be 0" {
-            $sequence = Set-DbaDbSequence -SqlInstance $server -Database $newDbName -Sequence "Sequence1_$random" -Schema "Schema_$random" -IncrementBy 0 -Confirm:$false -ErrorVariable error
+            $sequence = Set-DbaDbSequence -SqlInstance $server -Database $newDbName -Sequence "Sequence1_$random" -Schema "Schema_$random" -IncrementBy 0 -Confirm:$false -WarningAction SilentlyContinue -WarningVariable WarnVar
             $sequence | Should -BeNullOrEmpty
-            $error.Exception | Should -Match "cannot be zero"
+            $WarnVar | Should -Match "cannot be zero"
         }
     }
 }
