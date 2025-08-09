@@ -151,7 +151,7 @@ function Repair-PullRequestTest {
 
                 if ($pr.files) {
                     foreach ($file in $pr.files) {
-                        if ($file.filename -like "*.Tests.ps1") {
+                        if ($file.filename -like "*Tests.ps1" -or $file.filename -like "tests/*.Tests.ps1") {
                             $changedTestFiles += [System.IO.Path]::GetFileName($file.filename)
                         } elseif ($file.filename -like "public/*.ps1") {
                             $commandName = [System.IO.Path]::GetFileNameWithoutExtension($file.filename)
@@ -166,6 +166,7 @@ function Repair-PullRequestTest {
                 Write-Verbose "Changed test files in PR #$($pr.number): $($changedTestFiles -join ', ')"
                 Write-Verbose "Test files for changed commands in PR #$($pr.number): $($changedCommandFiles -join ', ')"
                 Write-Verbose "All relevant test files to process: $($relevantTestFiles -join ', ')"
+                Write-Verbose "All files changed in PR: $($pr.files.filename -join ', ')"
 
                 # Before any checkout operations, confirm our starting point
                 $currentBranch = git rev-parse --abbrev-ref HEAD 2>$null
