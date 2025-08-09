@@ -55,7 +55,7 @@ try {
     Write-Verbose "Could not configure aider environment: $_"
 }
 
-$functionFiles = Get-ChildItem -Path $PSScriptRoot -Filter '*.ps1' -File
+$functionFiles = Get-ChildItem -Path $PSScriptRoot -Filter '*.ps1' -File -Recurse
 
 foreach ($file in $functionFiles) {
     if (Test-Path $file.FullName) {

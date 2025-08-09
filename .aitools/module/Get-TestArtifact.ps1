@@ -22,13 +22,15 @@ function Get-TestArtifact {
 
     foreach ($id in $JobId) {
         Write-Verbose "Fetching artifacts for Job ID: $id"
-        $result = Invoke-AppVeyorApi "buildjobs/$id/artifacts"
+        $result = Invoke-AppVeyorApi "buildjobs/$id/artifacts" | Where-Object fileName -match TestFailureSummary
+
         [pscustomobject]@{
             JobId    = $id
             Filename = $result.fileName
             Type     = $result.type
             Size     = $result.size
             Created  = $result.created
+            Content  = Invoke-AppVeyorApi "buildjobs/$id/artifacts/$($result.fileName)"
         }
     }
 }

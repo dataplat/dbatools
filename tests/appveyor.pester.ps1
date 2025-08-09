@@ -195,12 +195,35 @@ function Export-TestFailureSummary {
     } else {
         # Pester 5 format
         $failedTests = $PesterRun.Tests | Where-Object { $_.Passed -eq $false } | ForEach-Object {
+            # Enhanced error extraction for Pester 5 assertion failures
+            $errorMessage = ""
+            $stackTrace = ""
+
+            if ($_.ErrorRecord -and $_.ErrorRecord.Count -gt 0) {
+                $errorMessage = $_.ErrorRecord[0].Exception.Message
+                $stackTrace = $_.ErrorRecord[0].ScriptStackTrace
+            } elseif ($_.FailureMessage) {
+                $errorMessage = $_.FailureMessage
+                $stackTrace = if ($_.StackTrace) { $_.StackTrace } else { "Stack trace not available" }
+            } elseif ($_.Result -eq 'Failed') {
+                # For assertion failures, create a meaningful error message
+                $errorMessage = "Pester assertion failed: $($_.Name)"
+                if ($_.Path -and $_.Path.Count -gt 0) {
+                    $pathString = $_.Path -join " > "
+                    $errorMessage = "Pester assertion failed in '$pathString > $($_.Name)'"
+                }
+                $stackTrace = "Assertion failure - no stack trace available"
+            } else {
+                $errorMessage = "Unknown test failure"
+                $stackTrace = "No stack trace available"
+            }
+
             @{
                 Name         = $_.Name
                 Describe     = if ($_.Path.Count -gt 0) { $_.Path[0] } else { "" }
                 Context      = if ($_.Path.Count -gt 1) { $_.Path[1] } else { "" }
-                ErrorMessage = if ($_.ErrorRecord) { $_.ErrorRecord[0].Exception.Message } else { "" }
-                StackTrace   = if ($_.ErrorRecord) { $_.ErrorRecord[0].ScriptStackTrace } else { "" }
+                ErrorMessage = $errorMessage
+                StackTrace   = $stackTrace
                 Parameters   = $_.Data
                 TestFile     = $TestFile.Name
             }

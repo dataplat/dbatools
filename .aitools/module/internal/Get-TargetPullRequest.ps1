@@ -1,4 +1,4 @@
-function Get-TargetPullRequests {
+function Get-TargetPullRequest {
     <#
     .SYNOPSIS
         Gets target pull request numbers for processing.
@@ -16,10 +16,14 @@ function Get-TargetPullRequests {
         Requires: gh CLI
     #>
     [CmdletBinding()]
-    param([int[]]$PullRequest)
+    param(
+        [int[]]$PullRequest
+    )
 
-    if ($PullRequest) { return $PullRequest }
-
-    $openPRs = gh pr list --state open --json "number" | ConvertFrom-Json
-    return $openPRs.number
+    $results = gh pr list --state open --json "number" | ConvertFrom-Json
+    if ($PullRequest) {
+        $results | Where-Object { $_.number -in $PullRequest }
+    } else {
+        $results
+    }
 }
