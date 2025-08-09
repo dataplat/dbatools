@@ -76,9 +76,9 @@ function Update-PesterTest {
     .PARAMETER PassCount
         Sometimes you need multiple passes to get the desired result.
 
-    .PARAMETER AutoFix
-        If specified, automatically runs PSScriptAnalyzer after AI modifications and attempts to fix any violations found.
-        This feature runs separately from PassCount iterations and uses targeted fix messages.
+    .PARAMETER NoAuthFix
+        If specified, disables automatic PSScriptAnalyzer fixes after AI modifications.
+        By default, autofix is enabled and runs separately from PassCount iterations using targeted fix messages.
 
     .PARAMETER AutoFixModel
         The AI model to use for AutoFix operations. Defaults to the same model as specified in -Model.
@@ -138,7 +138,7 @@ function Update-PesterTest {
         [string]$Tool = 'Claude',
         [switch]$AutoTest,
         [int]$PassCount = 1,
-        [switch]$AutoFix,
+        [switch]$NoAuthFix,
         [string]$AutoFixModel = $Model,
         [int]$MaxRetries = 0,
         [string]$SettingsPath = (Resolve-Path "$PSScriptRoot/../tests/PSScriptAnalyzerRules.psd1" -ErrorAction SilentlyContinue).Path,
@@ -369,7 +369,7 @@ function Update-PesterTest {
                 }
 
                 # AutoFix workflow - run PSScriptAnalyzer and fix violations if found
-                if ($AutoFix) {
+                if (-not $NoAuthFix) {
                     Write-Verbose "Running AutoFix for $cmdName"
                     $autoFixParams = @{
                         FilePath     = $filename
@@ -672,6 +672,16 @@ function Invoke-AITool {
                         FileName = (Split-Path $singlefile -Leaf)
                         Results  = "$results"
                     }
+
+                    # Run Invoke-DbatoolsFormatter after AI tool execution
+                    if (Test-Path $singlefile) {
+                        Write-Verbose "Running Invoke-DbatoolsFormatter on $singlefile"
+                        try {
+                            Invoke-DbatoolsFormatter -Path $singlefile
+                        } catch {
+                            Write-Warning "Invoke-DbatoolsFormatter failed for $singlefile`: $($_.Exception.Message)"
+                        }
+                    }
                 }
 
             } else {
@@ -758,6 +768,16 @@ function Invoke-AITool {
                         }
 
                         Write-Verbose "Claude Code execution completed successfully"
+
+                        # Run Invoke-DbatoolsFormatter after AI tool execution
+                        if (Test-Path $singlefile) {
+                            Write-Verbose "Running Invoke-DbatoolsFormatter on $singlefile"
+                            try {
+                                Invoke-DbatoolsFormatter -Path $singlefile
+                            } catch {
+                                Write-Warning "Invoke-DbatoolsFormatter failed for $singlefile`: $($_.Exception.Message)"
+                            }
+                        }
                     } catch {
                         Write-Error "Claude Code execution failed: $($_.Exception.Message)"
                         throw
@@ -1185,6 +1205,16 @@ function Invoke-AutoFixSingleFile {
             # Invoke the AI tool with the focused fix message
             Invoke-AITool @fixParams
 
+            # Run Invoke-DbatoolsFormatter after AI tool execution in AutoFix
+            if (Test-Path $FilePath) {
+                Write-Verbose "Running Invoke-DbatoolsFormatter on $FilePath in AutoFix"
+                try {
+                    Invoke-DbatoolsFormatter -Path $FilePath
+                } catch {
+                    Write-Warning "Invoke-DbatoolsFormatter failed for $FilePath in AutoFix: $($_.Exception.Message)"
+                }
+            }
+
             # Add explicit file sync delay to ensure disk writes complete
             Start-Sleep -Milliseconds 500
 
@@ -1343,6 +1373,16 @@ function Invoke-AutoFixProcess {
 
             # Invoke the AI tool with the focused fix message
             Invoke-AITool @aiParams
+
+            # Run Invoke-DbatoolsFormatter after AI tool execution in AutoFix
+            if (Test-Path $FilePath) {
+                Write-Verbose "Running Invoke-DbatoolsFormatter on $FilePath in AutoFix"
+                try {
+                    Invoke-DbatoolsFormatter -Path $FilePath
+                } catch {
+                    Write-Warning "Invoke-DbatoolsFormatter failed for $FilePath in AutoFix: $($_.Exception.Message)"
+                }
+            }
 
             # Add explicit file sync delay to ensure disk writes complete
             Start-Sleep -Milliseconds 500
