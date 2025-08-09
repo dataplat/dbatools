@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Create",
+      "Edit",
+      "Read",
+      "Replace",
+      "Write"
+    ],
+    "deny": []
+  }
+}
