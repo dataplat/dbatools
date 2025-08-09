@@ -102,7 +102,7 @@ function Repair-PullRequestTest {
             Write-Progress -Activity "Repairing Pull Request Tests" -Status "Fetching open PRs..." -PercentComplete 0
 
             if ($PRNumber) {
-                $prsJson = gh pr view $PRNumber --json "number,title,headRefName,state,statusCheckRollup" 2>$null
+                $prsJson = gh pr view $PRNumber --json "number,title,headRefName,state,statusCheckRollup,files" 2>$null
                 if (-not $prsJson) {
                     throw "Could not fetch PR #$PRNumber"
                 }
@@ -110,7 +110,7 @@ function Repair-PullRequestTest {
             } else {
                 # Try to find PR for current branch first
                 Write-Verbose "No PR number specified, checking for PR associated with current branch '$originalBranch'"
-                $currentBranchPR = gh pr view --json "number,title,headRefName,state,statusCheckRollup" 2>$null
+                $currentBranchPR = gh pr view --json "number,title,headRefName,state,statusCheckRollup,files" 2>$null
 
                 if ($currentBranchPR) {
                     Write-Verbose "Found PR for current branch: $originalBranch"
@@ -119,6 +119,16 @@ function Repair-PullRequestTest {
                     Write-Verbose "No PR found for current branch, fetching all open PRs"
                     $prsJson = gh pr list --state open --limit $MaxPRs --json "number,title,headRefName,state,statusCheckRollup" 2>$null
                     $prs = $prsJson | ConvertFrom-Json
+
+                    # For each PR, get the files changed (since pr list doesn't include files)
+                    $prsWithFiles = @()
+                    foreach ($pr in $prs) {
+                        $prWithFiles = gh pr view $pr.number --json "number,title,headRefName,state,statusCheckRollup,files" 2>$null
+                        if ($prWithFiles) {
+                            $prsWithFiles += ($prWithFiles | ConvertFrom-Json)
+                        }
+                    }
+                    $prs = $prsWithFiles
                 }
             }
 
@@ -134,6 +144,23 @@ function Repair-PullRequestTest {
 
                 Write-Progress -Activity "Repairing Pull Request Tests" -Status "Processing PR #$($pr.number): $($pr.title)" -PercentComplete $prProgress -Id 0
                 Write-Verbose "`nProcessing PR #$($pr.number): $($pr.title)"
+
+                # Get the list of files changed in this PR
+                $changedFiles = @()
+                if ($pr.files) {
+                    $changedFiles = $pr.files | ForEach-Object {
+                        if ($_.filename -like "*.Tests.ps1") {
+                            [System.IO.Path]::GetFileName($_.filename)
+                        }
+                    } | Where-Object { $_ }
+                }
+
+                if (-not $changedFiles) {
+                    Write-Verbose "No test files changed in PR #$($pr.number)"
+                    continue
+                }
+
+                Write-Verbose "Changed test files in PR #$($pr.number): $($changedFiles -join ', ')"
 
                 # Before any checkout operations, confirm our starting point
                 $currentBranch = git rev-parse --abbrev-ref HEAD 2>$null
@@ -176,12 +203,25 @@ function Repair-PullRequestTest {
                 $getFailureParams = @{
                     PullRequest = $pr.number
                 }
-                $failedTests = Get-AppVeyorFailure @getFailureParams
+                $allFailedTests = Get-AppVeyorFailure @getFailureParams
 
-                if (-not $failedTests) {
+                if (-not $allFailedTests) {
                     Write-Verbose "Could not retrieve test failures from AppVeyor"
                     continue
                 }
+
+                # CRITICAL FIX: Filter failures to only include files changed in this PR
+                $failedTests = $allFailedTests | Where-Object {
+                    $_.TestFile -in $changedFiles
+                }
+
+                if (-not $failedTests) {
+                    Write-Verbose "No test failures found in files changed by PR #$($pr.number)"
+                    Write-Verbose "All AppVeyor failures were in files not changed by this PR"
+                    continue
+                }
+
+                Write-Verbose "Filtered to $($failedTests.Count) failures in changed files (from $($allFailedTests.Count) total failures)"
 
                 # Group failures by test file
                 $testGroups = $failedTests | Group-Object TestFile
@@ -531,13 +571,23 @@ function Get-AppVeyorFailure {
                         # Much broader pattern matching - this is the key fix
                         if ($line -match '\.Tests\.ps1' -and
                             ($line -match '\[-\]|\bfail|\berror|\bexception|Failed:|Error:' -or
-                             $line -match 'should\s+(?:be|not|contain|match)' -or
-                             $line -match 'Expected.*but.*was' -or
-                             $line -match 'Assertion failed')) {
+                            $line -match 'should\s+(?:be|not|contain|match)' -or
+                            $line -match 'Expected.*but.*was' -or
+                            $line -match 'Assertion failed')) {
 
-                            # Extract test file name
+                            # Extract test file name (just the filename, not full path)
                             $testFileMatch = $line | Select-String -Pattern '([^\\\/\s]+\.Tests\.ps1)' | Select-Object -First 1
                             $testFile = if ($testFileMatch) { $testFileMatch.Matches[0].Groups[1].Value } else { "Unknown.Tests.ps1" }
+
+                            # Extract test name from common Pester patterns
+                            $testName = "Unknown Test"
+                            if ($line -match 'Context\s+"([^"]+)"' -or $line -match 'Describe\s+"([^"]+)"') {
+                                $testName = $Matches[1]
+                            } elseif ($line -match 'It\s+"([^"]+)"') {
+                                $testName = $Matches[1]
+                            } elseif ($line -match '\[-\]\s+(.+?)(?:\s+\d+ms|\s*$)') {
+                                $testName = $Matches[1].Trim()
+                            }
 
                             # Extract line number if present
                             $lineNumber = if ($line -match ':(\d+)' -or $line -match 'line\s+(\d+)' -or $line -match '\((\d+)\)') {
@@ -548,6 +598,7 @@ function Get-AppVeyorFailure {
 
                             [PSCustomObject]@{
                                 TestFile     = $testFile
+                                TestName     = $testName
                                 Command      = $testFile -replace '\.Tests\.ps1$', ''
                                 LineNumber   = $lineNumber
                                 Runner       = $job.name
@@ -558,8 +609,16 @@ function Get-AppVeyorFailure {
                         }
                         # Look for general Pester test failures
                         elseif ($line -match '\[-\]\s+' -and $line -notmatch '^\s*\[-\]\s*$') {
+                            # Extract test name from failure line
+                            $testName = if ($line -match '\[-\]\s+(.+?)(?:\s+\d+ms|\s*$)') {
+                                $Matches[1].Trim()
+                            } else {
+                                "Unknown Test"
+                            }
+
                             [PSCustomObject]@{
                                 TestFile     = "Unknown.Tests.ps1"
+                                TestName     = $testName
                                 Command      = "Unknown"
                                 LineNumber   = "Unknown"
                                 Runner       = $job.name
@@ -570,7 +629,7 @@ function Get-AppVeyorFailure {
                         }
                         # Look for PowerShell errors in test context
                         elseif ($line -match 'At\s+.*\.Tests\.ps1:\d+' -or
-                                ($line -match 'Exception|Error' -and $line -match '\.Tests\.ps1')) {
+                            ($line -match 'Exception|Error' -and $line -match '\.Tests\.ps1')) {
 
                             $testFileMatch = $line | Select-String -Pattern '([^\\\/\s]+\.Tests\.ps1)' | Select-Object -First 1
                             $testFile = if ($testFileMatch) { $testFileMatch.Matches[0].Groups[1].Value } else { "Unknown.Tests.ps1" }
@@ -583,6 +642,7 @@ function Get-AppVeyorFailure {
 
                             [PSCustomObject]@{
                                 TestFile     = $testFile
+                                TestName     = "PowerShell Error"
                                 Command      = $testFile -replace '\.Tests\.ps1$', ''
                                 LineNumber   = $lineNumber
                                 Runner       = $job.name
