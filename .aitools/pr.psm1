@@ -127,7 +127,7 @@ function Repair-PullRequestTest {
 
                 # Before any checkout operations, confirm our starting point
                 $currentBranch = git rev-parse --abbrev-ref HEAD 2>$null
-                Write-Verbose "About to process PR, currently on branch: '$currentBranch'" -ForegroundColor Yellow
+                Write-Verbose "About to process PR, currently on branch: '$currentBranch'"
 
                 if ($currentBranch -ne $originalBranch) {
                     Write-Warning "Branch changed unexpectedly! Expected '$originalBranch', but on '$currentBranch'. Returning to original branch."
@@ -147,7 +147,7 @@ function Repair-PullRequestTest {
                 # Fetch and checkout PR branch (suppress output)
                 Write-Progress -Activity "Repairing Pull Request Tests" -Status "Checking out branch: $($pr.headRefName)" -PercentComplete $prProgress -Id 0
                 Write-Verbose "Checking out branch: $($pr.headRefName)"
-                Write-Verbose "Switching from '$originalBranch' to '$($pr.headRefName)'" -ForegroundColor Yellow
+                Write-Verbose "Switching from '$originalBranch' to '$($pr.headRefName)'"
 
                 git fetch origin $pr.headRefName 2>$null | Out-Null
                 git checkout $pr.headRefName 2>$null | Out-Null
@@ -199,11 +199,11 @@ function Repair-PullRequestTest {
                         Write-Progress -Activity "Fixing Tests in $testFileName" -Status "Getting working version from Development branch" -PercentComplete 10 -Id 2 -ParentId 1
 
                         # Temporarily switch to Development to get working test file
-                        Write-Verbose "Temporarily switching to 'development' branch" -ForegroundColor Yellow
+                        Write-Verbose "Temporarily switching to 'development' branch"
                         git checkout development 2>$null | Out-Null
 
                         $afterDevCheckout = git rev-parse --abbrev-ref HEAD 2>$null
-                        Write-Verbose "After development checkout, now on: '$afterDevCheckout'" -ForegroundColor Yellow
+                        Write-Verbose "After development checkout, now on: '$afterDevCheckout'"
 
                         $workingTestPath = Resolve-Path "tests/$testFileName" -ErrorAction SilentlyContinue
                         $workingTempPath = Join-Path $tempDir "working-$testFileName"
@@ -234,11 +234,11 @@ function Repair-PullRequestTest {
                         }
 
                         # Switch back to PR branch
-                        Write-Verbose "Switching back to PR branch '$($pr.headRefName)'" -ForegroundColor Yellow
+                        Write-Verbose "Switching back to PR branch '$($pr.headRefName)'"
                         git checkout $pr.headRefName 2>$null | Out-Null
 
                         $afterPRReturn = git rev-parse --abbrev-ref HEAD 2>$null
-                        Write-Verbose "After returning to PR, now on: '$afterPRReturn'" -ForegroundColor Yellow
+                        Write-Verbose "After returning to PR, now on: '$afterPRReturn'"
 
                         # Show detailed progress for each failure being fixed
                         for ($i = 0; $i -lt $failures.Count; $i++) {
@@ -324,7 +324,7 @@ function Repair-PullRequestTest {
                 git checkout $originalBranch 2>$null | Out-Null
 
                 $afterPRComplete = git rev-parse --abbrev-ref HEAD 2>$null
-                Write-Verbose "After PR completion, now on: '$afterPRComplete'" -ForegroundColor Yellow
+                Write-Verbose "After PR completion, now on: '$afterPRComplete'"
             }
 
             # Complete the overall progress
@@ -347,15 +347,15 @@ function Repair-PullRequestTest {
 
                 # Verify the final checkout worked
                 $verifyFinal = git rev-parse --abbrev-ref HEAD 2>$null
-                Write-Verbose "After final checkout, now on: '$verifyFinal'" -ForegroundColor Yellow
+                Write-Verbose "After final checkout, now on: '$verifyFinal'"
 
                 if ($verifyFinal -ne $originalBranch) {
                     Write-Error "FAILED to return to original branch '$originalBranch'. Currently on '$verifyFinal'."
                 } else {
-                    Write-Verbose "Successfully returned to original branch '$originalBranch'" -ForegroundColor Green
+                    Write-Verbose "Successfully returned to original branch '$originalBranch'"
                 }
             } else {
-                Write-Verbose "Already on correct branch '$originalBranch'" -ForegroundColor Green
+                Write-Verbose "Already on correct branch '$originalBranch'"
             }
 
             # Clean up temp directory
