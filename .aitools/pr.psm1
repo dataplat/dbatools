@@ -73,13 +73,13 @@ function Repair-PullRequestTest {
             Write-Verbose "Fetching open pull requests..."
 
             if ($PRNumber) {
-                $prsJson = gh pr view $PRNumber --json number,title,headRefName,state,statusCheckRollup 2>$null
+                $prsJson = gh pr view $PRNumber --json "number,title,headRefName,state,statusCheckRollup" 2>$null
                 if (-not $prsJson) {
                     throw "Could not fetch PR #$PRNumber"
                 }
                 $prs = @($prsJson | ConvertFrom-Json)
             } else {
-                $prsJson = gh pr list --state open --limit $MaxPRs --json number,title,headRefName,state,statusCheckRollup
+                $prsJson = gh pr list --state open --limit $MaxPRs --json "number,title,headRefName,state,statusCheckRollup"
                 $prs = $prsJson | ConvertFrom-Json
             }
 
@@ -90,7 +90,7 @@ function Repair-PullRequestTest {
 
                 # Check for AppVeyor failures
                 $appveyorChecks = $pr.statusCheckRollup | Where-Object {
-                    $_.context -like "*appveyor*" -and $_.state -eq "FAILURE"
+                    $_.context -like "*appveyor*" -and $_.state -match "PENDING|FAILURE"
                 }
 
                 if (-not $appveyorChecks) {
@@ -104,7 +104,7 @@ function Repair-PullRequestTest {
                 git checkout $pr.headRefName
 
                 # Get AppVeyor build details
-                $failedTests = Get-AppVeyorFailure -PRNumber $pr.number
+                $failedTests = Get-AppVeyorFailure -PullRequest $pr.number
 
                 if (-not $failedTests) {
                     Write-Verbose "Could not retrieve test failures from AppVeyor"
@@ -148,84 +148,115 @@ function Repair-PullRequestTest {
 }
 
 function Get-AppVeyorFailure {
+    <#
+    .SYNOPSIS
+        Gets the AppVeyor failure for specific pull request(s) or all open ones
+
+    .DESCRIPTION
+        Gets the AppVeyor failure for specific pull request(s) or all open ones if none specified
+
+    .PARAMETER PullRequest
+        The pull request number(s) to get the AppVeyor failure for. If not specified, gets all open PRs
+
+    .EXAMPLE
+        PS C:\> Get-AppVeyorFailure -PullRequest 1234
+
+        Gets the AppVeyor failure for pull request 1234
+
+    .EXAMPLE
+        PS C:\> Get-AppVeyorFailure -PullRequest 1234, 5678
+
+        Gets the AppVeyor failure for pull requests 1234 and 5678
+
+    .EXAMPLE
+        PS C:\> Get-AppVeyorFailure
+
+        Gets the AppVeyor failure for all open pull requests
+    #>
     param (
-        [Parameter(Mandatory)]
-        [int]$PRNumber
+        [int[]]$PullRequest
     )
 
-    Write-Verbose "Fetching AppVeyor build information for PR #$PRNumber"
-
-    # Get PR checks from GitHub
-    $checksJson = gh pr checks $PRNumber --json "name,status,conclusion,detailsUrl" 2>$null
-    if (-not $checksJson) {
-        Write-Warning "Could not fetch checks for PR #$PRNumber"
-        return $null
+    # If no PullRequest numbers specified, get all open PRs
+    if (-not $PullRequest) {
+        Write-Verbose "No pull request numbers specified, getting all open PRs..."
+        $prsJson = gh pr list --state open --json "number,title,headRefName,state,statusCheckRollup"
+        if (-not $prsJson) {
+            Write-Warning "No open pull requests found"
+            return $null
+        }
+        $openPRs = $prsJson | ConvertFrom-Json
+        $PullRequest = $openPRs | ForEach-Object { $_.number }
+        Write-Verbose "Found $($PullRequest.Count) open PRs: $($PullRequest -join ', ')"
     }
 
-    $checks = $checksJson | ConvertFrom-Json
-    $appveyorCheck = $checks | Where-Object { $_.name -like "*AppVeyor*" -and $_.conclusion -eq "failure" }
+    $allResults = @()
 
-    if (-not $appveyorCheck) {
-        Write-Verbose "No failing AppVeyor builds found"
-        return $null
-    }
+    # Loop through each PR number
+    $prCount = 0
+    foreach ($prNumber in $PullRequest) {
+        $prCount++
+        Write-Progress -Activity "Processing Pull Requests" -Status "PR #$prNumber ($prCount of $($PullRequest.Count))" -PercentComplete (($prCount / $PullRequest.Count) * 100)
+        Write-Verbose "`nFetching AppVeyor build information for PR #$prNumber"
 
-    # Parse AppVeyor build URL to get build ID
-    if ($appveyorCheck.detailsUrl -match '/project/[^/]+/[^/]+/builds/(\d+)') {
-        $buildId = $Matches[1]
-    } else {
-        Write-Warning "Could not parse AppVeyor build ID from URL: $($appveyorCheck.detailsUrl)"
-        return $null
-    }
-
-    # Fetch build details from AppVeyor API
-    $apiUrl = "https://ci.appveyor.com/api/projects/sqlcollaborative/dbatools/builds/$buildId"
-
-    try {
-        $build = Invoke-RestMethod -Uri $apiUrl -Method Get
-    } catch {
-        Write-Warning "Failed to fetch AppVeyor build details: $_"
-        return $null
-    }
-
-    # Process each job (runner) in the build
-    foreach ($job in $build.build.jobs) {
-        if ($job.status -ne "failed") {
+        # Get PR checks from GitHub
+        $checksJson = gh pr checks $prNumber --json "name,state,link" 2>$null
+        if (-not $checksJson) {
+            Write-Warning "Could not fetch checks for PR #$prNumber"
             continue
         }
 
-        Write-Verbose "Processing failed job: $($job.name)"
+        $checks = $checksJson | ConvertFrom-Json
+        $appveyorCheck = $checks | Where-Object { $_.name -like "*AppVeyor*" -and $_.state -match "PENDING|FAILURE" }
 
-        # Get job details including test results
-        $jobApiUrl = "https://ci.appveyor.com/api/projects/sqlcollaborative/dbatools/builds/$buildId/jobs/$($job.jobId)"
+        if (-not $appveyorCheck) {
+            Write-Verbose "No failing or pending AppVeyor builds found for PR #$prNumber"
+            continue
+        }
+
+        # Parse AppVeyor build URL to get build ID
+        if ($appveyorCheck.link -match '/project/[^/]+/[^/]+/builds/(\d+)') {
+            $buildId = $Matches[1]
+        } else {
+            Write-Warning "Could not parse AppVeyor build ID from URL: $($appveyorCheck.link)"
+            continue
+        }
+
+        # Fetch build details from AppVeyor API
+        $apiUrl = "https://ci.appveyor.com/api/projects/sqlcollaborative/dbatools/builds/$buildId"
 
         try {
-            $jobDetails = Invoke-RestMethod -Uri $jobApiUrl -Method Get
+            $build = Invoke-RestMethod -Uri $apiUrl -Method Get
         } catch {
-            Write-Warning "Failed to fetch job details for $($job.jobId): $_"
+            Write-Warning "Failed to fetch AppVeyor build details: $_"
             continue
         }
 
-        # Parse test results from messages
-        foreach ($message in $jobDetails.messages) {
-            if ($message.message -match 'Failed: (.+?)\.Tests\.ps1:(\d+)') {
-                $testName = $Matches[1]
-                $lineNumber = $Matches[2]
-
-                [PSCustomObject]@{
-                    TestFile     = "$testName.Tests.ps1"
-                    Command      = $testName
-                    LineNumber   = $lineNumber
-                    Runner       = $job.name
-                    ErrorMessage = $message.message
-                    JobId        = $job.jobId
-                }
+        # Process each job (runner) in the build
+        $jobCount = 0
+        $failedJobs = $build.build.jobs | Where-Object { $_.status -eq "failed" }
+        foreach ($job in $build.build.jobs) {
+            if ($job.status -ne "failed") {
+                continue
             }
-            # Alternative pattern for Pester output
-            elseif ($message.message -match '\[-\] (.+?) \d+ms \((\d+)ms\|(\d+)ms\)' -and
-                $message.level -eq 'Error') {
-                # Extract test name from context
-                if ($message.message -match 'in (.+?)\.Tests\.ps1:(\d+)') {
+
+            $jobCount++
+            Write-Progress -Activity "Processing Pull Requests" -Status "PR #$prNumber ($prCount of $($PullRequest.Count))" -PercentComplete (($prCount / $PullRequest.Count) * 100) -CurrentOperation "Processing job $jobCount of $($failedJobs.Count): $($job.name)"
+            Write-Verbose "Processing failed job: $($job.name)"
+
+            # Get job details including test results
+            $jobApiUrl = "https://ci.appveyor.com/api/projects/sqlcollaborative/dbatools/builds/$buildId/jobs/$($job.jobId)"
+
+            try {
+                $jobDetails = Invoke-RestMethod -Uri $jobApiUrl -Method Get
+            } catch {
+                Write-Warning "Failed to fetch job details for $($job.jobId): $_"
+                continue
+            }
+
+            # Parse test results from messages
+            foreach ($message in $jobDetails.messages) {
+                if ($message.message -match 'Failed: (.+?)\.Tests\.ps1:(\d+)') {
                     $testName = $Matches[1]
                     $lineNumber = $Matches[2]
 
@@ -236,11 +267,34 @@ function Get-AppVeyorFailure {
                         Runner       = $job.name
                         ErrorMessage = $message.message
                         JobId        = $job.jobId
+                        PRNumber     = $prNumber
+                    }
+                }
+                # Alternative pattern for Pester output
+                elseif ($message.message -match '\[-\] (.+?) \d+ms \((\d+)ms\|(\d+)ms\)' -and
+                    $message.level -eq 'Error') {
+                    # Extract test name from context
+                    if ($message.message -match 'in (.+?)\.Tests\.ps1:(\d+)') {
+                        $testName = $Matches[1]
+                        $lineNumber = $Matches[2]
+
+                        [PSCustomObject]@{
+                            TestFile     = "$testName.Tests.ps1"
+                            Command      = $testName
+                            LineNumber   = $lineNumber
+                            Runner       = $job.name
+                            ErrorMessage = $message.message
+                            JobId        = $job.jobId
+                            PRNumber     = $prNumber
+                        }
                     }
                 }
             }
         }
     }
+
+    # Complete the progress
+    Write-Progress -Activity "Processing Pull Requests" -Completed
 }
 
 function Repair-TestFile {
