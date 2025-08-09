@@ -5,6 +5,8 @@ function Invoke-DbatoolsFormatter {
 
     .DESCRIPTION
         Uses PSSA's Invoke-Formatter to format the target files and saves it without the BOM.
+        Preserves manually aligned hashtables and assignment operators.
+        Only writes files if formatting changes are detected.
 
     .PARAMETER Path
         The path to the ps1 file that needs to be formatted
@@ -57,6 +59,48 @@ function Invoke-DbatoolsFormatter {
         $CBHRex = [regex]'(?smi)\s+\<\#[^#]*\#\>'
         $CBHStartRex = [regex]'(?<spaces>[ ]+)\<\#'
         $CBHEndRex = [regex]'(?<spaces>[ ]*)\#\>'
+
+        # Create custom formatter settings that preserve alignment
+        $customSettings = @{
+            IncludeRules = @(
+                'PSPlaceOpenBrace',
+                'PSPlaceCloseBrace',
+                'PSUseConsistentIndentation',
+                'PSUseConsistentWhitespace'
+            )
+            Rules        = @{
+                PSPlaceOpenBrace           = @{
+                    Enable             = $true
+                    OnSameLine         = $true
+                    NewLineAfter       = $true
+                    IgnoreOneLineBlock = $true
+                }
+                PSPlaceCloseBrace          = @{
+                    Enable             = $true
+                    NewLineAfter       = $false
+                    IgnoreOneLineBlock = $true
+                    NoEmptyLineBefore  = $false
+                }
+                PSUseConsistentIndentation = @{
+                    Enable              = $true
+                    Kind                = 'space'
+                    PipelineIndentation = 'IncreaseIndentationForFirstPipeline'
+                    IndentationSize     = 4
+                }
+                PSUseConsistentWhitespace  = @{
+                    Enable                          = $true
+                    CheckInnerBrace                 = $true
+                    CheckOpenBrace                  = $true
+                    CheckOpenParen                  = $true
+                    CheckOperator                   = $false  # This is key - don't mess with operator spacing
+                    CheckPipe                       = $true
+                    CheckPipeForRedundantWhitespace = $false
+                    CheckSeparator                  = $true
+                    CheckParameter                  = $false
+                }
+            }
+        }
+
         $OSEOL = "`n"
         if ($psVersionTable.Platform -ne 'Unix') {
             $OSEOL = "`r`n"
@@ -71,7 +115,9 @@ function Invoke-DbatoolsFormatter {
                 Stop-Function -Message "Cannot find or resolve $p" -Continue
             }
 
-            $content = Get-Content -Path $realPath -Raw -Encoding UTF8
+            $originalContent = Get-Content -Path $realPath -Raw -Encoding UTF8
+            $content = $originalContent
+
             if ($OSEOL -eq "`r`n") {
                 # See #5830, we are in Windows territory here
                 # Is the file containing at least one `r ?
@@ -85,7 +131,8 @@ function Invoke-DbatoolsFormatter {
             #strip ending empty lines
             $content = $content -replace "(?s)$OSEOL\s*$"
             try {
-                $content = Invoke-Formatter -ScriptDefinition $content -Settings CodeFormattingOTBS -ErrorAction Stop
+                # Use custom settings instead of CodeFormattingOTBS
+                $content = Invoke-Formatter -ScriptDefinition $content -Settings $customSettings -ErrorAction Stop
             } catch {
                 Write-Message -Level Warning "Unable to format $p"
             }
@@ -118,7 +165,16 @@ function Invoke-DbatoolsFormatter {
                 #trim whitespace lines
                 $realContent += $line.Replace("`t", "    ").TrimEnd()
             }
-            [System.IO.File]::WriteAllText($realPath, ($realContent -Join "$OSEOL"), $Utf8NoBomEncoding)
+
+            $finalContent = $realContent -Join "$OSEOL"
+
+            # Only write the file if there are actual changes
+            if ($finalContent -ne $originalContent) {
+                Write-Message -Level Verbose "Formatting changes detected in $realPath"
+                [System.IO.File]::WriteAllText($realPath, $finalContent, $Utf8NoBomEncoding)
+            } else {
+                Write-Message -Level Verbose "No formatting changes needed for $realPath"
+            }
         }
     }
 }
