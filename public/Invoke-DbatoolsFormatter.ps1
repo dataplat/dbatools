@@ -9,10 +9,6 @@ function Invoke-DbatoolsFormatter {
     .PARAMETER Path
         The path to the ps1 file that needs to be formatted
 
-    .PARAMETER SkipInvisibleOnly
-        Skip files that would only have invisible changes (BOM, line endings, trailing whitespace, tabs).
-        Use this to avoid unnecessary version control noise when only non-visible characters would change.
-
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -34,16 +30,11 @@ function Invoke-DbatoolsFormatter {
 
         Reformats C:\dbatools\public\Get-DbaDatabase.ps1 to dbatools' standards
 
-    .EXAMPLE
-        PS C:\> Invoke-DbatoolsFormatter -Path C:\dbatools\public\*.ps1 -SkipInvisibleOnly
-
-        Reformats all ps1 files but skips those that would only have BOM/line ending changes
     #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [object[]]$Path,
-        [switch]$SkipInvisibleOnly,
         [switch]$EnableException
     )
     begin {
@@ -70,46 +61,6 @@ function Invoke-DbatoolsFormatter {
         $OSEOL = "`n"
         if ($psVersionTable.Platform -ne 'Unix') {
             $OSEOL = "`r`n"
-        }
-
-        function Test-OnlyInvisibleChanges {
-            param(
-                [string]$OriginalContent,
-                [string]$ModifiedContent
-            )
-
-            # Normalize line endings to Unix style for comparison
-            $originalNormalized = $OriginalContent -replace '\r\n', "`n" -replace '\r', "`n"
-            $modifiedNormalized = $ModifiedContent -replace '\r\n', "`n" -replace '\r', "`n"
-
-            # Split into lines
-            $originalLines = $originalNormalized -split "`n"
-            $modifiedLines = $modifiedNormalized -split "`n"
-
-            # Normalize each line: trim trailing whitespace and convert tabs to spaces
-            $originalLines = $originalLines | ForEach-Object { $_.TrimEnd().Replace("`t", "    ") }
-            $modifiedLines = $modifiedLines | ForEach-Object { $_.TrimEnd().Replace("`t", "    ") }
-
-            # Remove trailing empty lines from both
-            while ($originalLines.Count -gt 0 -and $originalLines[-1] -eq '') {
-                $originalLines = $originalLines[0..($originalLines.Count - 2)]
-            }
-            while ($modifiedLines.Count -gt 0 -and $modifiedLines[-1] -eq '') {
-                $modifiedLines = $modifiedLines[0..($modifiedLines.Count - 2)]
-            }
-
-            # Compare the normalized content
-            if ($originalLines.Count -ne $modifiedLines.Count) {
-                return $false
-            }
-
-            for ($i = 0; $i -lt $originalLines.Count; $i++) {
-                if ($originalLines[$i] -ne $modifiedLines[$i]) {
-                    return $false
-                }
-            }
-
-            return $true
         }
 
         function Format-ScriptContent {
@@ -201,14 +152,6 @@ function Invoke-DbatoolsFormatter {
 
             # Format the content
             $formattedContent = Format-ScriptContent -Content $originalContent -LineEnding $detectedOSEOL
-
-            # If SkipInvisibleOnly is set, check if formatting would only change invisible characters
-            if ($SkipInvisibleOnly) {
-                if (Test-OnlyInvisibleChanges -OriginalContent $originalContent -ModifiedContent $formattedContent) {
-                    Write-Verbose "Skipping $realPath - only invisible changes (BOM/line endings/whitespace)"
-                    continue
-                }
-            }
 
             # Save the formatted content
             $Utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $False
