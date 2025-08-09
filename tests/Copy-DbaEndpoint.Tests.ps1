@@ -1,15 +1,16 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
     $ModuleName = "dbatools",
+    $CommandName = "Copy-DbaEndpoint",
     $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
 )
 
-Describe "Copy-DbaEndpoint" -Tag "UnitTests" {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
-            $command = Get-Command Copy-DbaEndpoint
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
                 "Source",
                 "SourceSqlCredential",
                 "Destination",
@@ -17,39 +18,65 @@ Describe "Copy-DbaEndpoint" -Tag "UnitTests" {
                 "Endpoint",
                 "ExcludeEndpoint",
                 "Force",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
+                "EnableException"
             )
         }
 
-        It "Has parameter: <_>" -ForEach $expected {
-            $command | Should -HaveParameter $PSItem
-        }
-
-        It "Should have exactly the number of expected parameters ($($expected.Count))" {
-            $hasparms = $command.Parameters.Values.Name
-            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
+        It "Should have the expected parameters" {
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "Copy-DbaEndpoint" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        New-DbaEndpoint -SqlInstance $TestConfig.instance2 -Name dbatoolsci_MirroringEndpoint -Type DatabaseMirroring -Port 5022 -Owner sa -EnableException
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
+        # Explain what needs to be set up for the test:
+        # To test copying endpoints, we need to create a test endpoint on the source instance.
+
+        # Set variables. They are available in all the It blocks.
+        $endpointName = "dbatoolsci_MirroringEndpoint"
+        $endpointPort = 5022
+
+        # Create the objects.
+        $splatEndpoint = @{
+            SqlInstance     = $TestConfig.instance2
+            Name            = $endpointName
+            Type            = "DatabaseMirroring"
+            Port            = $endpointPort
+            Owner           = "sa"
+            EnableException = $true
+        }
+        $null = New-DbaEndpoint @splatEndpoint
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
     }
 
     AfterAll {
-        Get-DbaEndpoint -SqlInstance $TestConfig.instance2 -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
-        Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
+        # Cleanup all created objects.
+        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance2 -Type DatabaseMirroring | Remove-DbaEndpoint
+        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint
+
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
     Context "When copying endpoints between instances" {
         It "Successfully copies a mirroring endpoint" {
-            $results = Copy-DbaEndpoint -Source $TestConfig.instance2 -Destination $TestConfig.instance3 -Endpoint dbatoolsci_MirroringEndpoint
+            $splatCopy = @{
+                Source      = $TestConfig.instance2
+                Destination = $TestConfig.instance3
+                Endpoint    = $endpointName
+            }
+            $results = Copy-DbaEndpoint @splatCopy
             $results.DestinationServer | Should -Be $TestConfig.instance3
             $results.Status | Should -Be "Successful"
-            $results.Name | Should -Be "dbatoolsci_MirroringEndpoint"
+            $results.Name | Should -Be $endpointName
         }
     }
 }
