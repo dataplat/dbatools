@@ -94,10 +94,10 @@ function Update-PesterTest {
         [PSObject[]]$InputObject,
         [int]$First = 10000,
         [int]$Skip,
-        [string[]]$PromptFilePath = @((Resolve-Path "$PSScriptRoot/prompts/prompt.md" -ErrorAction SilentlyContinue).Path),
+        [string[]]$PromptFilePath = @((Resolve-Path "$PSScriptRoot/../prompts/prompt.md" -ErrorAction SilentlyContinue).Path),
         [string[]]$CacheFilePath = @(
-            (Resolve-Path "$PSScriptRoot/prompts/style.md" -ErrorAction SilentlyContinue).Path,
-            (Resolve-Path "$PSScriptRoot/prompts/migration.md" -ErrorAction SilentlyContinue).Path,
+            (Resolve-Path "$PSScriptRoot/../prompts/style.md" -ErrorAction SilentlyContinue).Path,
+            (Resolve-Path "$PSScriptRoot/../prompts/migration.md" -ErrorAction SilentlyContinue).Path,
             (Resolve-Path "$script:ModulePath/private/testing/Get-TestConfig.ps1" -ErrorAction SilentlyContinue).Path
         ),
         [int]$MaxFileSize = 500kb,
