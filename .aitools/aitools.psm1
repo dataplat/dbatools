@@ -201,39 +201,43 @@ function Update-PesterTest {
                 if ($item -is [System.Management.Automation.CommandInfo]) {
                     $commandsToProcess += $item
                 } elseif ($item -is [System.IO.FileInfo]) {
-                    $path = (Resolve-Path $item.FullName).Path
+                    # For FileInfo objects, use the file directly if it's a test file
+                    $path = $item.FullName
                     Write-Verbose "Processing FileInfo path: $path"
-                    if (Test-Path $path) {
-                        $cmdName = [System.IO.Path]::GetFileNameWithoutExtension($path) -replace '/.Tests$', ''
-                        Write-Verbose "Extracted command name: $cmdName"
-                        $cmd = Get-Command -Name $cmdName -ErrorAction SilentlyContinue
-                        if ($cmd) {
-                            $commandsToProcess += $cmd
-                        } else {
-                            Write-Warning "Could not find command for test file: $path"
+                    if ($path -like "*.Tests.ps1" -and (Test-Path $path)) {
+                        # Create a mock command object for the test file
+                        $testFileCommand = [PSCustomObject]@{
+                            Name = [System.IO.Path]::GetFileNameWithoutExtension($path) -replace '\.Tests$', ''
+                            TestFilePath = $path
+                            IsTestFile = $true
                         }
+                        $commandsToProcess += $testFileCommand
+                    } else {
+                        Write-Warning "FileInfo object is not a valid test file: $path"
+                        return # Stop processing on invalid input
                     }
                 } elseif ($item -is [string]) {
                     Write-Verbose "Processing string path: $item"
                     try {
-                        $resolvedItem = (Resolve-Path $item).Path
-                        if (Test-Path $resolvedItem) {
-                            $cmdName = [System.IO.Path]::GetFileNameWithoutExtension($resolvedItem) -replace '/.Tests$', ''
-                            Write-Verbose "Extracted command name: $cmdName"
-                            $cmd = Get-Command -Name $cmdName -ErrorAction SilentlyContinue
-                            if ($cmd) {
-                                $commandsToProcess += $cmd
-                            } else {
-                                Write-Warning "Could not find command for test file: $resolvedItem"
+                        $resolvedItem = (Resolve-Path $item -ErrorAction Stop).Path
+                        if ($resolvedItem -like "*.Tests.ps1" -and (Test-Path $resolvedItem)) {
+                            $testFileCommand = [PSCustomObject]@{
+                                Name = [System.IO.Path]::GetFileNameWithoutExtension($resolvedItem) -replace '\.Tests$', ''
+                                TestFilePath = $resolvedItem
+                                IsTestFile = $true
                             }
+                            $commandsToProcess += $testFileCommand
                         } else {
-                            Write-Warning "File not found: $resolvedItem"
+                            Write-Warning "String path is not a valid test file: $resolvedItem"
+                            return # Stop processing on invalid input
                         }
                     } catch {
                         Write-Warning "Could not resolve path: $item"
+                        return # Stop processing on failed resolution
                     }
                 } else {
                     Write-Warning "Unsupported input type: $($item.GetType().FullName)"
+                    return # Stop processing on unsupported type
                 }
             }
         }
@@ -251,8 +255,16 @@ function Update-PesterTest {
 
         foreach ($command in $commandsToProcess) {
             $currentCommand++
-            $cmdName = $command.Name
-            $filename = (Resolve-Path "$PSScriptRoot/../tests/$cmdName.Tests.ps1" -ErrorAction SilentlyContinue).Path
+
+            if ($command.IsTestFile) {
+                # Handle direct test file input
+                $cmdName = $command.Name
+                $filename = $command.TestFilePath
+            } else {
+                # Handle command object input
+                $cmdName = $command.Name
+                $filename = (Resolve-Path "$PSScriptRoot/../tests/$cmdName.Tests.ps1" -ErrorAction SilentlyContinue).Path
+            }
 
             Write-Verbose "Processing command: $cmdName"
             Write-Verbose "Test file path: $filename"
