@@ -123,6 +123,7 @@ function Update-PesterTest {
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [Parameter(ValueFromPipeline)]
+        [Alias('FullName', 'Path')]
         [PSObject[]]$InputObject,
         [int]$First = 10000,
         [int]$Skip,

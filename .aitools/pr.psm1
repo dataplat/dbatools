@@ -277,7 +277,6 @@ function Repair-PullRequestTest {
                         if ($commandSourcePath) {
                             $repairMessage += "The command source file is also provided for context about the actual implementation."
                         }
-
                         # Prepare context files for Claude
                         $contextFiles = @()
                         if (Test-Path $workingTempPath) {
