@@ -63,7 +63,7 @@ function Repair-PullRequestTest {
             $originalBranch = git branch --show-current 2>$null
         }
 
-        Write-Verbose "Original branch detected as: '$originalBranch'" -ForegroundColor Yellow
+        Write-Verbose "Original branch detected as: '$originalBranch'"
         Write-Verbose "Current branch: $originalBranch"
 
         # Validate we got a branch name
@@ -154,7 +154,7 @@ function Repair-PullRequestTest {
 
                 # Verify the checkout worked
                 $afterCheckout = git rev-parse --abbrev-ref HEAD 2>$null
-                Write-Verbose "After checkout, now on branch: '$afterCheckout'" -ForegroundColor Yellow
+                Write-Verbose "After checkout, now on branch: '$afterCheckout'"
 
                 if ($afterCheckout -ne $pr.headRefName) {
                     Write-Warning "Failed to checkout PR branch '$($pr.headRefName)'. Currently on '$afterCheckout'. Skipping this PR."
@@ -320,7 +320,7 @@ function Repair-PullRequestTest {
                 }
 
                 # After processing this PR, explicitly return to original branch
-                Write-Verbose "Finished processing PR #$($pr.number), returning to original branch '$originalBranch'" -ForegroundColor Yellow
+                Write-Verbose "Finished processing PR #$($pr.number), returning to original branch '$originalBranch'"
                 git checkout $originalBranch 2>$null | Out-Null
 
                 $afterPRComplete = git rev-parse --abbrev-ref HEAD 2>$null
@@ -339,7 +339,7 @@ function Repair-PullRequestTest {
 
             # Return to original branch with extra verification
             $finalCurrentBranch = git rev-parse --abbrev-ref HEAD 2>$null
-            Write-Verbose "In finally block, currently on: '$finalCurrentBranch', should return to: '$originalBranch'" -ForegroundColor Yellow
+            Write-Verbose "In finally block, currently on: '$finalCurrentBranch', should return to: '$originalBranch'"
 
             if ($finalCurrentBranch -ne $originalBranch) {
                 Write-Verbose "Returning to original branch: $originalBranch"
