@@ -501,7 +501,7 @@ if (-not $Finalize) {
         $faileditems = $results | Select-Object -ExpandProperty TestResult | Where-Object { $_.Passed -notlike $True }
         if ($faileditems) {
             Write-Warning "Failed tests summary (pester 4):"
-            $faileditems | ForEach-Object {
+            $detailedFailures = $faileditems | ForEach-Object {
                 $name = $_.Name
                 [pscustomobject]@{
                     Describe = $_.Describe
@@ -510,7 +510,30 @@ if (-not $Finalize) {
                     Result   = $_.Result
                     Message  = $_.FailureMessage
                 }
-            } | Sort-Object Describe, Context, Name, Result, Message | Format-List
+            } | Sort-Object Describe, Context, Name, Result, Message
+
+            $detailedFailures | Format-List
+
+            # Save detailed failure information as artifact
+            $detailedFailureSummary = @{
+                PesterVersion = "4"
+                TotalFailedTests = $faileditems.Count
+                DetailedFailures = $detailedFailures | ForEach-Object {
+                    @{
+                        Describe = $_.Describe
+                        Context = $_.Context
+                        TestName = $_.Name
+                        Result = $_.Result
+                        ErrorMessage = $_.Message
+                        FullContext = "$($_.Describe) > $($_.Context) > $($_.Name)"
+                    }
+                }
+            }
+
+            $detailedFailureFile = "$ModuleBase\DetailedTestFailures_Pester4.json"
+            $detailedFailureSummary | ConvertTo-Json -Depth 10 | Out-File $detailedFailureFile -Encoding UTF8
+            Push-AppveyorArtifact $detailedFailureFile -FileName "DetailedTestFailures_Pester4.json"
+
             throw "$failedcount tests failed."
         }
     }
@@ -521,7 +544,7 @@ if (-not $Finalize) {
     $faileditems = $results5 | Select-Object -ExpandProperty Tests | Where-Object { $_.Passed -notlike $True }
     if ($faileditems) {
         Write-Warning "Failed tests summary (pester 5):"
-        $faileditems | ForEach-Object {
+        $detailedFailures = $faileditems | ForEach-Object {
             $name = $_.Name
             [pscustomobject]@{
                 Path    = $_.Path -Join '/'
@@ -529,7 +552,29 @@ if (-not $Finalize) {
                 Result  = $_.Result
                 Message = $_.ErrorRecord -Join ""
             }
-        } | Sort-Object Path, Name, Result, Message | Format-List
+        } | Sort-Object Path, Name, Result, Message
+
+        $detailedFailures | Format-List
+
+        # Save detailed failure information as artifact
+        $detailedFailureSummary = @{
+            PesterVersion = "5"
+            TotalFailedTests = $faileditems.Count
+            DetailedFailures = $detailedFailures | ForEach-Object {
+                @{
+                    TestPath = $_.Path
+                    TestName = $_.Name
+                    Result = $_.Result
+                    ErrorMessage = $_.Message
+                    FullContext = "$($_.Path) > $($_.Name)"
+                }
+            }
+        }
+
+        $detailedFailureFile = "$ModuleBase\DetailedTestFailures_Pester5.json"
+        $detailedFailureSummary | ConvertTo-Json -Depth 10 | Out-File $detailedFailureFile -Encoding UTF8
+        Push-AppveyorArtifact $detailedFailureFile -FileName "DetailedTestFailures_Pester5.json"
+
         throw "$failedcount tests failed."
     }
 
