@@ -145,7 +145,7 @@ function Repair-PullRequestTest {
                 Write-Progress -Activity "Repairing Pull Request Tests" -Status "Processing PR #$($pr.number): $($pr.title)" -PercentComplete $prProgress -Id 0
                 Write-Verbose "`nProcessing PR #$($pr.number): $($pr.title)"
 
-                # Get the list of files changed in this PR for reference
+                # Get the list of files changed in this PR for reference only
                 $changedFiles = @()
                 if ($pr.files) {
                     $changedFiles = $pr.files | ForEach-Object {
@@ -201,7 +201,7 @@ function Repair-PullRequestTest {
                 $allFailedTests = Get-AppVeyorFailure @getFailureParams
 
                 if (-not $allFailedTests) {
-                    Write-Verbose "Could not retrieve test failures from AppVeyor"
+                    Write-Verbose "Could not retrieve test failures from AppVeyor for PR #$($pr.number)"
                     continue
                 }
 
@@ -209,7 +209,7 @@ function Repair-PullRequestTest {
                 # This allows fixing tests that may be failing due to dependencies or integration issues
                 $failedTests = $allFailedTests
 
-                if (-not $failedTests) {
+                if (-not $failedTests -or $failedTests.Count -eq 0) {
                     Write-Verbose "No test failures found in PR #$($pr.number)"
                     continue
                 }
