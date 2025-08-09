@@ -181,12 +181,19 @@ function Export-TestFailureSummary {
 
     if ($PesterVersion -eq '4') {
         $failedTests = $PesterRun.TestResult | Where-Object { $_.Passed -eq $false } | ForEach-Object {
+            # Extract line number from stack trace for Pester 4
+            $lineNumber = $null
+            if ($_.StackTrace -match 'line (\d+)') {
+                $lineNumber = [int]$Matches[1]
+            }
+
             @{
                 Name                   = $_.Name
                 Describe               = $_.Describe
                 Context                = $_.Context
                 ErrorMessage           = $_.FailureMessage
                 StackTrace             = $_.StackTrace
+                LineNumber             = $lineNumber
                 Parameters             = $_.Parameters
                 ParameterizedSuiteName = $_.ParameterizedSuiteName
                 TestFile               = $TestFile.Name
@@ -198,13 +205,24 @@ function Export-TestFailureSummary {
             # Enhanced error extraction for Pester 5 assertion failures
             $errorMessage = ""
             $stackTrace = ""
+            $lineNumber = $null
 
             if ($_.ErrorRecord -and $_.ErrorRecord.Count -gt 0) {
                 $errorMessage = $_.ErrorRecord[0].Exception.Message
                 $stackTrace = $_.ErrorRecord[0].ScriptStackTrace
+
+                # Extract line number from ScriptStackTrace
+                if ($stackTrace -match 'line (\d+)') {
+                    $lineNumber = [int]$Matches[1]
+                }
             } elseif ($_.FailureMessage) {
                 $errorMessage = $_.FailureMessage
                 $stackTrace = if ($_.StackTrace) { $_.StackTrace } else { "Stack trace not available" }
+
+                # Extract line number from StackTrace if available
+                if ($stackTrace -match 'line (\d+)') {
+                    $lineNumber = [int]$Matches[1]
+                }
             } elseif ($_.Result -eq 'Failed') {
                 # For assertion failures, create a meaningful error message
                 $errorMessage = "Pester assertion failed: $($_.Name)"
@@ -224,6 +242,7 @@ function Export-TestFailureSummary {
                 Context      = if ($_.Path.Count -gt 1) { $_.Path[1] } else { "" }
                 ErrorMessage = $errorMessage
                 StackTrace   = $stackTrace
+                LineNumber   = $lineNumber
                 Parameters   = $_.Data
                 TestFile     = $TestFile.Name
             }

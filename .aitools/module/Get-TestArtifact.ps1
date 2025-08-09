@@ -17,7 +17,7 @@ function Get-TestArtifact {
     [CmdletBinding()]
     param(
         [Parameter(ValueFromPipeline)]
-        [string[]]$JobId = "u2vte5xhhhtqput0"
+        [string[]]$JobId
     )
 
     foreach ($id in $JobId) {
