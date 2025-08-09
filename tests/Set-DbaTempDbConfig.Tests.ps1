@@ -36,12 +36,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Command actually works" {
 
         It "test with an invalid data dir" {
-            $result = Set-DbaTempDbConfig -SqlInstance $TestConfig.instance1 -DataFileSize 1024 -DataPath "$tempdbDataFilePath\invalidDir_$random" -OutputScriptOnly
+            $result = Set-DbaTempDbConfig -SqlInstance $TestConfig.instance1 -DataFileSize 1024 -DataPath "$tempdbDataFilePath\invalidDir_$random" -OutputScriptOnly -WarningAction SilentlyContinue -WarningVariable WarnVar
+            $WarnVar | Should -Match "does not exist"
             $result | Should -BeNullOrEmpty
         }
 
         It "valid sql is produced with nearly all options set and a single data directory" {
-            $result = Set-DbaTempDbConfig -SqlInstance $TestConfig.instance1 -DataFileCount 8 -DataFileSize 2048 -LogFileSize 512 -DataFileGrowth 1024 -LogFileGrowth 512 -DataPath "$tempdbDataFilePath\DataDir0_$random" -LogPath "$tempdbDataFilePath\Log_$random" -OutputScriptOnly
+            $result = Set-DbaTempDbConfig -SqlInstance $TestConfig.instance1 -DataFileCount 8 -DataFileSize 2048 -LogFileSize 512 -DataFileGrowth 1024 -LogFileGrowth 512 -DataPath "$tempdbDataFilePath\DataDir0_$random" -LogPath "$tempdbDataFilePath\Log_$random" -OutputScriptOnly -WarningAction SilentlyContinue
             $sqlStatements = $result -Split ";" | Where-Object { $_ -ne "" }
 
             $sqlStatements.Count | Should -Be 9
@@ -50,7 +51,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "valid sql is produced with -DisableGrowth" {
-            $result = Set-DbaTempDbConfig -SqlInstance $TestConfig.instance1 -DataFileCount 8 -DataFileSize 1024 -LogFileSize 512 -DisableGrowth -DataPath $tempdbDataFilePath -LogPath $tempdbDataFilePath -OutputScriptOnly
+            $result = Set-DbaTempDbConfig -SqlInstance $TestConfig.instance1 -DataFileCount 8 -DataFileSize 1024 -LogFileSize 512 -DisableGrowth -DataPath $tempdbDataFilePath -LogPath $tempdbDataFilePath -OutputScriptOnly -WarningAction SilentlyContinue
             $sqlStatements = $result -Split ";" | Where-Object { $_ -ne "" }
 
             $sqlStatements.Count | Should -Be 9
@@ -60,7 +61,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
         It "multiple data directories are supported" {
             $dataDirLocations = "$tempdbDataFilePath\DataDir0_$random", "$tempdbDataFilePath\DataDir1_$random", "$tempdbDataFilePath\DataDir2_$random"
-            $result = Set-DbaTempDbConfig -SqlInstance $TestConfig.instance1 -DataFileCount 8 -DataFileSize 1024 -DataPath $dataDirLocations -OutputScriptOnly
+            $result = Set-DbaTempDbConfig -SqlInstance $TestConfig.instance1 -DataFileCount 8 -DataFileSize 1024 -DataPath $dataDirLocations -OutputScriptOnly -WarningAction SilentlyContinue
             $sqlStatements = $result -Split ";" | Where-Object { $_ -ne "" }
 
             # check the round robin assignment of files to data dir locations
