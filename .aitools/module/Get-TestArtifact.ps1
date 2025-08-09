@@ -17,11 +17,18 @@ function Get-TestArtifact {
     [CmdletBinding()]
     param(
         [Parameter(ValueFromPipeline)]
-        [string[]]$JobId = "0hvpvgv93ojh6ili"
+        [string[]]$JobId = "u2vte5xhhhtqput0"
     )
 
     foreach ($id in $JobId) {
         Write-Verbose "Fetching artifacts for Job ID: $id"
-        Invoke-AppVeyorApi "buildjobs/$id/artifacts" | Where-Object fileName -match 'TestFailureSummary.*\.json'
+        $result = Invoke-AppVeyorApi "buildjobs/$id/artifacts"
+        [pscustomobject]@{
+            JobId    = $id
+            Filename = $result.fileName
+            Type     = $result.type
+            Size     = $result.size
+            Created  = $result.created
+        }
     }
 }
