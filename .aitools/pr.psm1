@@ -57,9 +57,19 @@ function Repair-PullRequestTest {
             throw "Repository has uncommitted changes. Please commit, stash, or discard them before running this function.`n$($statusOutput -join "`n")"
         }
 
-        # Store current branch to return to it later
-        $originalBranch = git branch --show-current 2>$null
+        # Store current branch to return to it later - be more explicit
+        $originalBranch = git rev-parse --abbrev-ref HEAD 2>$null
+        if (-not $originalBranch) {
+            $originalBranch = git branch --show-current 2>$null
+        }
+
+        Write-Verbose "Original branch detected as: '$originalBranch'" -ForegroundColor Yellow
         Write-Verbose "Current branch: $originalBranch"
+
+        # Validate we got a branch name
+        if (-not $originalBranch -or $originalBranch -eq "HEAD") {
+            throw "Could not determine current branch name. Are you in a detached HEAD state?"
+        }
 
         # Ensure gh CLI is available
         if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
@@ -115,6 +125,15 @@ function Repair-PullRequestTest {
                 Write-Progress -Activity "Repairing Pull Request Tests" -Status "Processing PR #$($pr.number): $($pr.title)" -PercentComplete $prProgress -Id 0
                 Write-Verbose "`nProcessing PR #$($pr.number): $($pr.title)"
 
+                # Before any checkout operations, confirm our starting point
+                $currentBranch = git rev-parse --abbrev-ref HEAD 2>$null
+                Write-Verbose "About to process PR, currently on branch: '$currentBranch'" -ForegroundColor Yellow
+
+                if ($currentBranch -ne $originalBranch) {
+                    Write-Warning "Branch changed unexpectedly! Expected '$originalBranch', but on '$currentBranch'. Returning to original branch."
+                    git checkout $originalBranch 2>$null | Out-Null
+                }
+
                 # Check for AppVeyor failures
                 $appveyorChecks = $pr.statusCheckRollup | Where-Object {
                     $_.context -like "*appveyor*" -and $_.state -match "PENDING|FAILURE"
@@ -128,9 +147,19 @@ function Repair-PullRequestTest {
                 # Fetch and checkout PR branch (suppress output)
                 Write-Progress -Activity "Repairing Pull Request Tests" -Status "Checking out branch: $($pr.headRefName)" -PercentComplete $prProgress -Id 0
                 Write-Verbose "Checking out branch: $($pr.headRefName)"
+                Write-Verbose "Switching from '$originalBranch' to '$($pr.headRefName)'" -ForegroundColor Yellow
 
                 git fetch origin $pr.headRefName 2>$null | Out-Null
                 git checkout $pr.headRefName 2>$null | Out-Null
+
+                # Verify the checkout worked
+                $afterCheckout = git rev-parse --abbrev-ref HEAD 2>$null
+                Write-Verbose "After checkout, now on branch: '$afterCheckout'" -ForegroundColor Yellow
+
+                if ($afterCheckout -ne $pr.headRefName) {
+                    Write-Warning "Failed to checkout PR branch '$($pr.headRefName)'. Currently on '$afterCheckout'. Skipping this PR."
+                    continue
+                }
 
                 # Get AppVeyor build details
                 Write-Progress -Activity "Repairing Pull Request Tests" -Status "Fetching test failures from AppVeyor..." -PercentComplete $prProgress -Id 0
@@ -170,7 +199,11 @@ function Repair-PullRequestTest {
                         Write-Progress -Activity "Fixing Tests in $testFileName" -Status "Getting working version from Development branch" -PercentComplete 10 -Id 2 -ParentId 1
 
                         # Temporarily switch to Development to get working test file
+                        Write-Verbose "Temporarily switching to 'development' branch" -ForegroundColor Yellow
                         git checkout development 2>$null | Out-Null
+
+                        $afterDevCheckout = git rev-parse --abbrev-ref HEAD 2>$null
+                        Write-Verbose "After development checkout, now on: '$afterDevCheckout'" -ForegroundColor Yellow
 
                         $workingTestPath = Resolve-Path "tests/$testFileName" -ErrorAction SilentlyContinue
                         $workingTempPath = Join-Path $tempDir "working-$testFileName"
@@ -182,30 +215,30 @@ function Repair-PullRequestTest {
                             Write-Warning "Could not find working test file in Development branch: tests/$testFileName"
                         }
 
-                        # Get the command source file path
+                        # Get the command source file path (while on development)
                         $commandName = [System.IO.Path]::GetFileNameWithoutExtension($testFileName) -replace '\.Tests$', ''
                         Write-Progress -Activity "Fixing Tests in $testFileName" -Status "Getting command source for $commandName" -PercentComplete 20 -Id 2 -ParentId 1
 
-                        $command = Get-Command $commandName -ErrorAction SilentlyContinue
                         $commandSourcePath = $null
-                        if ($command -and $command.Source -and $command.Source -ne "dbatools") {
-                            # Try to find the actual .ps1 file
-                            $possiblePaths = @(
-                                "functions/$commandName.ps1",
-                                "public/$commandName.ps1",
-                                "private/$commandName.ps1"
-                            )
-                            foreach ($path in $possiblePaths) {
-                                if (Test-Path $path) {
-                                    $commandSourcePath = (Resolve-Path $path).Path
-                                    Write-Verbose "Found command source: $commandSourcePath"
-                                    break
-                                }
+                        $possiblePaths = @(
+                            "functions/$commandName.ps1",
+                            "public/$commandName.ps1",
+                            "private/$commandName.ps1"
+                        )
+                        foreach ($path in $possiblePaths) {
+                            if (Test-Path $path) {
+                                $commandSourcePath = (Resolve-Path $path).Path
+                                Write-Verbose "Found command source: $commandSourcePath"
+                                break
                             }
                         }
 
                         # Switch back to PR branch
+                        Write-Verbose "Switching back to PR branch '$($pr.headRefName)'" -ForegroundColor Yellow
                         git checkout $pr.headRefName 2>$null | Out-Null
+
+                        $afterPRReturn = git rev-parse --abbrev-ref HEAD 2>$null
+                        Write-Verbose "After returning to PR, now on: '$afterPRReturn'" -ForegroundColor Yellow
 
                         # Show detailed progress for each failure being fixed
                         for ($i = 0; $i -lt $failures.Count; $i++) {
@@ -285,6 +318,13 @@ function Repair-PullRequestTest {
                         Write-Verbose "Changes committed successfully"
                     }
                 }
+
+                # After processing this PR, explicitly return to original branch
+                Write-Verbose "Finished processing PR #$($pr.number), returning to original branch '$originalBranch'" -ForegroundColor Yellow
+                git checkout $originalBranch 2>$null | Out-Null
+
+                $afterPRComplete = git rev-parse --abbrev-ref HEAD 2>$null
+                Write-Verbose "After PR completion, now on: '$afterPRComplete'" -ForegroundColor Yellow
             }
 
             # Complete the overall progress
@@ -297,9 +337,26 @@ function Repair-PullRequestTest {
             Write-Progress -Activity "Fixing Tests" -Completed -Id 1
             Write-Progress -Activity "Individual Test Fix" -Completed -Id 2
 
-            # Return to original branch (suppress output)
-            Write-Verbose "`nReturning to original branch: $originalBranch"
-            git checkout $originalBranch 2>$null | Out-Null
+            # Return to original branch with extra verification
+            $finalCurrentBranch = git rev-parse --abbrev-ref HEAD 2>$null
+            Write-Verbose "In finally block, currently on: '$finalCurrentBranch', should return to: '$originalBranch'" -ForegroundColor Yellow
+
+            if ($finalCurrentBranch -ne $originalBranch) {
+                Write-Verbose "Returning to original branch: $originalBranch"
+                git checkout $originalBranch 2>$null | Out-Null
+
+                # Verify the final checkout worked
+                $verifyFinal = git rev-parse --abbrev-ref HEAD 2>$null
+                Write-Verbose "After final checkout, now on: '$verifyFinal'" -ForegroundColor Yellow
+
+                if ($verifyFinal -ne $originalBranch) {
+                    Write-Error "FAILED to return to original branch '$originalBranch'. Currently on '$verifyFinal'."
+                } else {
+                    Write-Verbose "Successfully returned to original branch '$originalBranch'" -ForegroundColor Green
+                }
+            } else {
+                Write-Verbose "Already on correct branch '$originalBranch'" -ForegroundColor Green
+            }
 
             # Clean up temp directory
             if (Test-Path $tempDir) {
