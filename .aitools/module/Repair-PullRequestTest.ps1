@@ -145,17 +145,27 @@ function Repair-PullRequestTest {
                 Write-Progress -Activity "Repairing Pull Request Tests" -Status "Processing PR #$($pr.number): $($pr.title)" -PercentComplete $prProgress -Id 0
                 Write-Verbose "`nProcessing PR #$($pr.number): $($pr.title)"
 
-                # Get the list of files changed in this PR for reference only
-                $changedFiles = @()
+                # Get the list of files changed in this PR to filter which tests to fix
+                $changedTestFiles = @()
+                $changedCommandFiles = @()
+
                 if ($pr.files) {
-                    $changedFiles = $pr.files | ForEach-Object {
-                        if ($_.filename -like "*.Tests.ps1") {
-                            [System.IO.Path]::GetFileName($_.filename)
+                    foreach ($file in $pr.files) {
+                        if ($file.filename -like "*.Tests.ps1") {
+                            $changedTestFiles += [System.IO.Path]::GetFileName($file.filename)
+                        } elseif ($file.filename -like "public/*.ps1") {
+                            $commandName = [System.IO.Path]::GetFileNameWithoutExtension($file.filename)
+                            $changedCommandFiles += "$commandName.Tests.ps1"
                         }
-                    } | Where-Object { $_ }
+                    }
                 }
 
-                Write-Verbose "Changed test files in PR #$($pr.number): $($changedFiles -join ', ')"
+                # Combine both directly changed test files and test files for changed commands
+                $relevantTestFiles = ($changedTestFiles + $changedCommandFiles) | Sort-Object -Unique
+
+                Write-Verbose "Changed test files in PR #$($pr.number): $($changedTestFiles -join ', ')"
+                Write-Verbose "Test files for changed commands in PR #$($pr.number): $($changedCommandFiles -join ', ')"
+                Write-Verbose "All relevant test files to process: $($relevantTestFiles -join ', ')"
 
                 # Before any checkout operations, confirm our starting point
                 $currentBranch = git rev-parse --abbrev-ref HEAD 2>$null
@@ -205,9 +215,18 @@ function Repair-PullRequestTest {
                     continue
                 }
 
-                # Process all failed tests, not just ones in changed files
-                # This allows fixing tests that may be failing due to dependencies or integration issues
-                $failedTests = $allFailedTests
+                # Process only failed tests for files that were changed in this PR
+                # This focuses the autofix on tests related to actual changes made
+                $failedTests = $allFailedTests | Where-Object {
+                    $testFileName = [System.IO.Path]::GetFileName($_.TestFile)
+                    $testFileName -in $relevantTestFiles
+                }
+
+                if ($allFailedTests.Count -gt 0 -and $failedTests.Count -eq 0) {
+                    Write-Verbose "Found $($allFailedTests.Count) total failures, but none are for files changed in this PR"
+                    Write-Verbose "Skipping PR #$($pr.number) - no relevant test failures to fix"
+                    continue
+                }
 
                 if (-not $failedTests -or $failedTests.Count -eq 0) {
                     Write-Verbose "No test failures found in PR #$($pr.number)"
