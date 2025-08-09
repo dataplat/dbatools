@@ -145,7 +145,7 @@ function Repair-PullRequestTest {
                 Write-Progress -Activity "Repairing Pull Request Tests" -Status "Processing PR #$($pr.number): $($pr.title)" -PercentComplete $prProgress -Id 0
                 Write-Verbose "`nProcessing PR #$($pr.number): $($pr.title)"
 
-                # Get the list of files changed in this PR
+                # Get the list of files changed in this PR for reference
                 $changedFiles = @()
                 if ($pr.files) {
                     $changedFiles = $pr.files | ForEach-Object {
@@ -153,11 +153,6 @@ function Repair-PullRequestTest {
                             [System.IO.Path]::GetFileName($_.filename)
                         }
                     } | Where-Object { $_ }
-                }
-
-                if (-not $changedFiles) {
-                    Write-Verbose "No test files changed in PR #$($pr.number)"
-                    continue
                 }
 
                 Write-Verbose "Changed test files in PR #$($pr.number): $($changedFiles -join ', ')"
@@ -210,18 +205,16 @@ function Repair-PullRequestTest {
                     continue
                 }
 
-                # CRITICAL FIX: Filter failures to only include files changed in this PR
-                $failedTests = $allFailedTests | Where-Object {
-                    $_.TestFile -in $changedFiles
-                }
+                # Process all failed tests, not just ones in changed files
+                # This allows fixing tests that may be failing due to dependencies or integration issues
+                $failedTests = $allFailedTests
 
                 if (-not $failedTests) {
-                    Write-Verbose "No test failures found in files changed by PR #$($pr.number)"
-                    Write-Verbose "All AppVeyor failures were in files not changed by this PR"
+                    Write-Verbose "No test failures found in PR #$($pr.number)"
                     continue
                 }
 
-                Write-Verbose "Filtered to $($failedTests.Count) failures in changed files (from $($allFailedTests.Count) total failures)"
+                Write-Verbose "Processing $($failedTests.Count) test failures in PR #$($pr.number)"
 
                 # Group failures by test file
                 $testGroups = $failedTests | Group-Object TestFile
