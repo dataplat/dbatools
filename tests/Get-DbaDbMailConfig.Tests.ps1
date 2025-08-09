@@ -15,7 +15,7 @@ Describe $CommandName -Tag UnitTests {
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
                 "SqlInstance",
-                "SqlCredential", 
+                "SqlCredential",
                 "Name",
                 "InputObject",
                 "EnableException"
@@ -56,7 +56,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
 
         # No specific cleanup needed for DbMail config tests
-        
+
         # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
