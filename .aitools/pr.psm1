@@ -108,8 +108,18 @@ function Repair-PullRequestTest {
                 }
                 $prs = @($prsJson | ConvertFrom-Json)
             } else {
-                $prsJson = gh pr list --state open --limit $MaxPRs --json "number,title,headRefName,state,statusCheckRollup" 2>$null
-                $prs = $prsJson | ConvertFrom-Json
+                # Try to find PR for current branch first
+                Write-Verbose "No PR number specified, checking for PR associated with current branch '$originalBranch'"
+                $currentBranchPR = gh pr view --json "number,title,headRefName,state,statusCheckRollup" 2>$null
+
+                if ($currentBranchPR) {
+                    Write-Verbose "Found PR for current branch: $originalBranch"
+                    $prs = @($currentBranchPR | ConvertFrom-Json)
+                } else {
+                    Write-Verbose "No PR found for current branch, fetching all open PRs"
+                    $prsJson = gh pr list --state open --limit $MaxPRs --json "number,title,headRefName,state,statusCheckRollup" 2>$null
+                    $prs = $prsJson | ConvertFrom-Json
+                }
             }
 
             Write-Verbose "Found $($prs.Count) open PR(s)"
