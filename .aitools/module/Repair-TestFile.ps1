@@ -14,7 +14,7 @@ function Repair-TestFile {
         [string]$OriginalBranch
     )
 
-    $testPath = Join-Path (Get-Location) "tests" $TestFileName
+    $testPath = Join-Path $script:ModulePath "tests" $TestFileName
     if (-not (Test-Path $testPath)) {
         Write-Warning "Test file not found: $testPath"
         return
@@ -25,7 +25,7 @@ function Repair-TestFile {
 
     # Find the command implementation
     $publicParams = @{
-        Path    = (Join-Path (Get-Location) "public")
+        Path    = (Join-Path $script:ModulePath "public")
         Filter  = "$commandName.ps1"
         Recurse = $true
     }
@@ -33,7 +33,7 @@ function Repair-TestFile {
 
     if (-not $commandPath) {
         $privateParams = @{
-            Path    = (Join-Path (Get-Location) "private")
+            Path    = (Join-Path $script:ModulePath "private")
             Filter  = "$commandName.ps1"
             Recurse = $true
         }

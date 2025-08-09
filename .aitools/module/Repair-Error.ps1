@@ -97,7 +97,7 @@ function Repair-Error {
         $commands = $testerrors | Select-Object -ExpandProperty Command -Unique | Sort-Object
 
         foreach ($command in $commands) {
-            $filename = (Resolve-Path "$PSScriptRoot/../tests/$command.Tests.ps1" -ErrorAction SilentlyContinue).Path
+            $filename = (Resolve-Path "$script:ModulePath/tests/$command.Tests.ps1" -ErrorAction SilentlyContinue).Path
             Write-Verbose "Processing $command with $Tool"
 
             if (-not (Test-Path $filename)) {

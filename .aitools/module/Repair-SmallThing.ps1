@@ -174,7 +174,7 @@ function Repair-SmallThing {
             Write-Progress -Activity "Loading dbatools Module" -Status "Finalizing module load..." -PercentComplete 80
             Start-Sleep -Milliseconds 100
             Write-Progress -Activity "Loading dbatools Module" -Status "Importing module..." -PercentComplete 90
-            Import-Module $PSScriptRoot/../dbatools.psm1 -Force -Verbose:$false
+            Import-Module $script:ModulePath/dbatools.psm1 -Force -Verbose:$false
             Write-Progress -Activity "Loading dbatools Module" -Status "Complete" -PercentComplete 100
             Start-Sleep -Milliseconds 100
             Write-Progress -Activity "Loading dbatools Module" -Completed
@@ -252,7 +252,7 @@ function Repair-SmallThing {
             $cmdName = $command.Name
             Write-Verbose "Processing command: $cmdName with $Tool"
 
-            $filename = (Resolve-Path "$PSScriptRoot/../tests/$cmdName.Tests.ps1" -ErrorAction SilentlyContinue).Path
+            $filename = (Resolve-Path "$script:ModulePath/tests/$cmdName.Tests.ps1" -ErrorAction SilentlyContinue).Path
             Write-Verbose "Using test path: $filename"
 
             if (-not (Test-Path $filename)) {

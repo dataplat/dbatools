@@ -94,7 +94,7 @@ function Invoke-AutoFix {
 
         # Backward compatibility parameters
         [string]$FilePath,
-        [string]$SettingsPath = (Resolve-Path "$PSScriptRoot/../tests/PSScriptAnalyzerRules.psd1" -ErrorAction SilentlyContinue).Path,
+        [string]$SettingsPath = (Resolve-Path "$script:ModulePath/tests/PSScriptAnalyzerRules.psd1" -ErrorAction SilentlyContinue).Path,
         [hashtable]$AiderParams,
 
         [int]$MaxRetries = 0,
@@ -126,7 +126,7 @@ function Invoke-AutoFix {
         Write-Progress -Activity "Loading dbatools Module" -Status "Finalizing module load..." -PercentComplete 80
         Start-Sleep -Milliseconds 100
         Write-Progress -Activity "Loading dbatools Module" -Status "Importing module..." -PercentComplete 90
-        Import-Module $PSScriptRoot/../dbatools.psm1 -Force
+        Import-Module $script:ModulePath/dbatools.psm1 -Force
         Write-Progress -Activity "Loading dbatools Module" -Status "Complete" -PercentComplete 100
         Start-Sleep -Milliseconds 100
         Write-Progress -Activity "Loading dbatools Module" -Completed
@@ -234,7 +234,7 @@ function Invoke-AutoFix {
             # Update progress at START of iteration
             $percentComplete = [math]::Round(($currentCommand / $totalCommands) * 100, 2)
             Write-Progress -Activity "Running AutoFix" -Status "Fixing $cmdName ($currentCommand of $totalCommands)" -PercentComplete $percentComplete
-            $filename = (Resolve-Path "$PSScriptRoot/../tests/$cmdName.Tests.ps1" -ErrorAction SilentlyContinue).Path
+            $filename = (Resolve-Path "$script:ModulePath/tests/$cmdName.Tests.ps1" -ErrorAction SilentlyContinue).Path
 
             # Show progress for every file being processed
             Write-Progress -Activity "Running AutoFix with $Tool" -Status "Scanning $cmdName ($currentCommand/$totalCommands)" -PercentComplete (($currentCommand / $totalCommands) * 100)

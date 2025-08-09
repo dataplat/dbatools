@@ -2,7 +2,7 @@
 
 <#
 .SYNOPSIS
-    dbatools AI Tools Module
+    AI Tools Module
 
 .DESCRIPTION
     This module provides AI-powered tools for dbatools development, including:
