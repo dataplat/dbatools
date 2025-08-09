@@ -29,6 +29,11 @@ function Invoke-DbatoolsFormatter {
         PS C:\> Invoke-DbatoolsFormatter -Path C:\dbatools\public\Get-DbaDatabase.ps1
 
         Reformats C:\dbatools\public\Get-DbaDatabase.ps1 to dbatools' standards
+
+    .EXAMPLE
+        PS C:\> Get-ChildItem *.ps1 | Invoke-DbatoolsFormatter
+
+        Reformats all .ps1 files in the current directory, showing progress for the batch operation
     #>
     [CmdletBinding()]
     param (
@@ -61,21 +66,43 @@ function Invoke-DbatoolsFormatter {
         if ($psVersionTable.Platform -ne 'Unix') {
             $OSEOL = "`r`n"
         }
+
+        # Collect all paths for progress tracking
+        $allPaths = @()
     }
     process {
         if (Test-FunctionInterrupt) { return }
-        foreach ($p in $Path) {
+        # Collect all paths from pipeline
+        $allPaths += $Path
+    }
+    end {
+        if (Test-FunctionInterrupt) { return }
+
+        $totalFiles = $allPaths.Count
+        $currentFile = 0
+        $processedFiles = 0
+        $updatedFiles = 0
+
+        foreach ($p in $allPaths) {
+            $currentFile++
+
             try {
                 $realPath = (Resolve-Path -Path $p -ErrorAction Stop).Path
             } catch {
+                Write-Progress -Activity "Formatting PowerShell files" -Status "Error resolving path: $p" -PercentComplete (($currentFile / $totalFiles) * 100) -CurrentOperation "File $currentFile of $totalFiles"
                 Stop-Function -Message "Cannot find or resolve $p" -Continue
+                continue
             }
 
             # Skip directories
             if (Test-Path -Path $realPath -PathType Container) {
+                Write-Progress -Activity "Formatting PowerShell files" -Status "Skipping directory: $realPath" -PercentComplete (($currentFile / $totalFiles) * 100) -CurrentOperation "File $currentFile of $totalFiles"
                 Write-Message -Level Verbose "Skipping directory: $realPath"
                 continue
             }
+
+            $fileName = Split-Path -Leaf $realPath
+            Write-Progress -Activity "Formatting PowerShell files" -Status "Processing: $fileName" -PercentComplete (($currentFile / $totalFiles) * 100) -CurrentOperation "File $currentFile of $totalFiles"
 
             $originalContent = Get-Content -Path $realPath -Raw -Encoding UTF8
             $content = $originalContent
@@ -157,9 +184,20 @@ function Invoke-DbatoolsFormatter {
             if ($originalNonEmpty -ne $newNonEmpty) {
                 [System.IO.File]::WriteAllText($realPath, $newContent, $Utf8NoBomEncoding)
                 Write-Message -Level Verbose "Updated: $realPath"
+                $updatedFiles++
             } else {
                 Write-Message -Level Verbose "No changes needed: $realPath"
             }
+
+            $processedFiles++
         }
+
+        # Complete the progress bar
+        Write-Progress -Activity "Formatting PowerShell files" -Status "Complete" -PercentComplete 100 -CurrentOperation "Processed $processedFiles files, updated $updatedFiles"
+        Start-Sleep -Milliseconds 500  # Brief pause to show completion
+        Write-Progress -Activity "Formatting PowerShell files" -Completed
+
+        # Summary message
+        Write-Message -Level Verbose "Formatting complete: Processed $processedFiles files, updated $updatedFiles files"
     }
 }
