@@ -672,6 +672,16 @@ function Invoke-AITool {
                         FileName = (Split-Path $singlefile -Leaf)
                         Results  = "$results"
                     }
+
+                    # Run Invoke-DbatoolsFormatter after AI tool execution
+                    if (Test-Path $singlefile) {
+                        Write-Verbose "Running Invoke-DbatoolsFormatter on $singlefile"
+                        try {
+                            Invoke-DbatoolsFormatter -Path $singlefile
+                        } catch {
+                            Write-Warning "Invoke-DbatoolsFormatter failed for $singlefile`: $($_.Exception.Message)"
+                        }
+                    }
                 }
 
             } else {
@@ -758,6 +768,16 @@ function Invoke-AITool {
                         }
 
                         Write-Verbose "Claude Code execution completed successfully"
+
+                        # Run Invoke-DbatoolsFormatter after AI tool execution
+                        if (Test-Path $singlefile) {
+                            Write-Verbose "Running Invoke-DbatoolsFormatter on $singlefile"
+                            try {
+                                Invoke-DbatoolsFormatter -Path $singlefile
+                            } catch {
+                                Write-Warning "Invoke-DbatoolsFormatter failed for $singlefile`: $($_.Exception.Message)"
+                            }
+                        }
                     } catch {
                         Write-Error "Claude Code execution failed: $($_.Exception.Message)"
                         throw
@@ -1185,6 +1205,16 @@ function Invoke-AutoFixSingleFile {
             # Invoke the AI tool with the focused fix message
             Invoke-AITool @fixParams
 
+            # Run Invoke-DbatoolsFormatter after AI tool execution in AutoFix
+            if (Test-Path $FilePath) {
+                Write-Verbose "Running Invoke-DbatoolsFormatter on $FilePath in AutoFix"
+                try {
+                    Invoke-DbatoolsFormatter -Path $FilePath
+                } catch {
+                    Write-Warning "Invoke-DbatoolsFormatter failed for $FilePath in AutoFix: $($_.Exception.Message)"
+                }
+            }
+
             # Add explicit file sync delay to ensure disk writes complete
             Start-Sleep -Milliseconds 500
 
@@ -1343,6 +1373,16 @@ function Invoke-AutoFixProcess {
 
             # Invoke the AI tool with the focused fix message
             Invoke-AITool @aiParams
+
+            # Run Invoke-DbatoolsFormatter after AI tool execution in AutoFix
+            if (Test-Path $FilePath) {
+                Write-Verbose "Running Invoke-DbatoolsFormatter on $FilePath in AutoFix"
+                try {
+                    Invoke-DbatoolsFormatter -Path $FilePath
+                } catch {
+                    Write-Warning "Invoke-DbatoolsFormatter failed for $FilePath in AutoFix: $($_.Exception.Message)"
+                }
+            }
 
             # Add explicit file sync delay to ensure disk writes complete
             Start-Sleep -Milliseconds 500
