@@ -257,26 +257,41 @@ function Repair-PullRequestTest {
                         }
 
                         # Build the repair message with context
-                        $repairMessage = "Fix the following test failures in $testFileName`:`n`n"
+                        $repairMessage = "You are fixing ONLY the specific test failures in $testFileName. This test has already been migrated to Pester v5 and styled according to dbatools conventions.`n`n"
+
+                        $repairMessage += "CRITICAL RULES - DO NOT CHANGE THESE:`n"
+                        $repairMessage += "1. PRESERVE ALL COMMENTS EXACTLY - Every single comment must remain intact`n"
+                        $repairMessage += "2. Keep ALL Pester v5 structure (BeforeAll/BeforeEach blocks, #Requires header, static CommandName)`n"
+                        $repairMessage += "3. Keep ALL hashtable alignment - equals signs must stay perfectly aligned`n"
+                        $repairMessage += "4. Keep ALL variable naming (unique scoped names, `$splat<Purpose> format)`n"
+                        $repairMessage += "5. Keep ALL double quotes for strings`n"
+                        $repairMessage += "6. Keep ALL existing `$PSDefaultParameterValues handling for EnableException`n"
+                        $repairMessage += "7. Keep ALL current parameter validation patterns with filtering`n"
+                        $repairMessage += "8. ONLY fix the specific errors - make MINIMAL changes to get tests passing`n`n"
+
+                        $repairMessage += "WHAT YOU CAN CHANGE:`n"
+                        $repairMessage += "- Fix syntax errors causing the specific failures`n"
+                        $repairMessage += "- Correct variable scoping issues (add `$global: if needed for cross-block variables)`n"
+                        $repairMessage += "- Fix array operations (`$results.Count → `$results.Status.Count if needed)`n"
+                        $repairMessage += "- Correct boolean skip conditions`n"
+                        $repairMessage += "- Fix Where-Object syntax if causing errors`n"
+                        $repairMessage += "- Adjust assertion syntax if failing`n`n"
+
+                        $repairMessage += "FAILURES TO FIX:`n"
 
                         foreach ($failure in $failures) {
-                            $repairMessage += "FAILURE: $($failure.TestName)`n"
+                            $repairMessage += "`nFAILURE: $($failure.TestName)`n"
                             $repairMessage += "ERROR: $($failure.ErrorMessage)`n"
                             if ($failure.LineNumber) {
                                 $repairMessage += "LINE: $($failure.LineNumber)`n"
                             }
-                            $repairMessage += "`n"
                         }
 
-                        $repairMessage += "Please analyze the failing test file and fix the issues. "
+                        $repairMessage += "`n`nREFERENCE (DEVELOPMENT BRANCH):`n"
+                        $repairMessage += "The working version is provided for comparison of test logic only. Do NOT copy its structure - it may be older Pester v4 format without our current styling. Use it only to understand what the test SHOULD accomplish.`n`n"
 
-                        if (Test-Path $workingTempPath) {
-                            $repairMessage += "Use the working version from the Development branch as reference for comparison. "
-                        }
+                        $repairMessage += "TASK: Make the minimal code changes necessary to fix only the specific failures above while preserving all existing Pester v5 migration work and dbatools styling conventions."
 
-                        if ($commandSourcePath) {
-                            $repairMessage += "The command source file is also provided for context about the actual implementation."
-                        }
                         # Prepare context files for Claude
                         $contextFiles = @()
                         if (Test-Path $workingTempPath) {
