@@ -64,7 +64,7 @@ Describe $CommandName -Tag IntegrationTests {
         @name = N'$operatorName',
         @enabled = 1,
         @email_address = N'$operatorEmail' ;")
-        
+
         $serverInstance2.Query("EXEC msdb.dbo.sp_add_notification   @alert_name = N'$($alert2)',
         @operator_name = N'$operatorName',
         @notification_method = 1 ;")
@@ -85,7 +85,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         $serverCleanup3 = Connect-DbaInstance -SqlInstance $TestConfig.instance3 -Database master
         $serverCleanup3.Query("EXEC msdb.dbo.sp_delete_alert @name=N'$($alert1)'")
-        
+
         # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 

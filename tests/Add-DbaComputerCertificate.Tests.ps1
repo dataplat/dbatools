@@ -32,7 +32,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-        
+
         $certPath       = "$($TestConfig.AppveyorLabRepo)\certificates\localhost.crt"
         $certThumbprint = "29C469578D6C6211076A09CEE5C5797EEA0C2713"
     }

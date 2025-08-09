@@ -50,7 +50,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Set variables. They are available in all the It blocks.
         $primaryAgName = "dbatoolsci_agroup"
-        
+
         # Create the objects.
         $splatPrimary = @{
             Primary      = $TestConfig.instance3

@@ -35,14 +35,14 @@ Describe $CommandName -Tag IntegrationTests {
         # Create unique database name for this test run
         $random = Get-Random
         $newDbName = "dbatoolsci_newdb_$random"
-        
+
         # Connect to instance and clean up any existing connections
         $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $null = Get-DbaProcess -SqlInstance $server2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
-        
+
         # Create test database
         $db = New-DbaDatabase -SqlInstance $server2 -Name $newDbName
-        
+
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
     }
@@ -50,10 +50,10 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
-        
+
         # Cleanup the test database
         $null = $db | Remove-DbaDatabase -Confirm:$false
-        
+
         # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 

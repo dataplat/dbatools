@@ -33,29 +33,29 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
             $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name "dbatoolsci_userObject" -Owner "sa"
             $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
-            
+
             $results = Find-DbaUserObject -SqlInstance $TestConfig.instance2 -Pattern "sa"
         }
-        
+
         AfterAll {
             $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
             $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database "dbatoolsci_userObject" -Confirm:$false
         }
 
         It "Should find a specific Database Owned by sa" {
-            $results.Where( {$PSItem.name -eq "dbatoolsci_userobject"}).Type | Should -Be "Database"
+            $results.Where( { $PSItem.name -eq "dbatoolsci_userobject" }).Type | Should -Be "Database"
         }
-        
+
         It "Should find more than 10 objects Owned by sa" {
             $results.Count | Should -BeGreaterThan 10
         }
     }
-    
+
     Context "Command finds User Objects" {
         BeforeAll {
             $results = Find-DbaUserObject -SqlInstance $TestConfig.instance2
         }
-        
+
         It "Should find results" {
             $results | Should -Not -BeNull
         }

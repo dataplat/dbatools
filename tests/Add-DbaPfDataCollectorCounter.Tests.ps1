@@ -45,20 +45,20 @@ Describe $CommandName -Tag IntegrationTests {
                 Remove-DbaPfDataCollectorCounter
 
             $results = Get-DbaPfDataCollectorSet -CollectorSet "Long Running Queries" | Get-DbaPfDataCollector |
-                Add-DbaPfDataCollectorCounter -Counter "\LogicalDisk(*)\Avg. Disk Queue Length"
-        }
-
-        AfterAll {
-            $null = Get-DbaPfDataCollectorSet -CollectorSet "Long Running Queries" |
-                Remove-DbaPfDataCollectorSet -ErrorAction SilentlyContinue
-        }
-
-        It "Returns the correct DataCollectorSet" {
-            $results.DataCollectorSet | Should -Be "Long Running Queries"
-        }
-
-        It "Returns the correct counter name" {
-            $results.Name | Should -Be "\LogicalDisk(*)\Avg. Disk Queue Length"
-        }
+            Add-DbaPfDataCollectorCounter -Counter "\LogicalDisk(*)\Avg. Disk Queue Length"
     }
+
+    AfterAll {
+        $null = Get-DbaPfDataCollectorSet -CollectorSet "Long Running Queries" |
+            Remove-DbaPfDataCollectorSet -ErrorAction SilentlyContinue
+    }
+
+    It "Returns the correct DataCollectorSet" {
+        $results.DataCollectorSet | Should -Be "Long Running Queries"
+    }
+
+    It "Returns the correct counter name" {
+        $results.Name | Should -Be "\LogicalDisk(*)\Avg. Disk Queue Length"
+    }
+}
 }

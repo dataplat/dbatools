@@ -34,10 +34,10 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-        
+
         # Clean up any remaining mirror monitors
         $null = Remove-DbaDbMirrorMonitor -SqlInstance $TestConfig.instance2 -ErrorAction SilentlyContinue
-        
+
         # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
@@ -45,7 +45,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-            
+
             # Set variables. They are available in all the It blocks.
             $mirrorMonitorInstance = $TestConfig.instance2
         }
@@ -53,7 +53,7 @@ Describe $CommandName -Tag IntegrationTests {
         AfterAll {
             # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            
+
             # Clean up the mirror monitor created during the test
             $null = Remove-DbaDbMirrorMonitor -SqlInstance $mirrorMonitorInstance -ErrorAction SilentlyContinue
         }

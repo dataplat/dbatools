@@ -124,7 +124,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Certificate        = @($invalidDBCertName, $invalidDBCertName2, $cert2.Name)
                 EncryptionPassword = $pw
                 DecryptionPassword = $pw
-                WarningAction = "SilentlyContinue"
+                WarningAction      = "SilentlyContinue"
             }
             $results = Backup-DbaDbCertificate @splatBackupInvalidCert
         }

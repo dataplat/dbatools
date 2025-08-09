@@ -43,7 +43,7 @@ Describe $CommandName -Tag UnitTests, "DataTableOutput" {
             UInt64           = [System.UInt64]123456
             dbadatetime      = [dbadatetime[]]$(Get-Date -Year 2024 -Month 05 -Day 19 -Hour 5 -Minute 52 -Second 0 -Millisecond 0)
             dbadatetimeArray = [dbadatetime[]]($(Get-Date -Year 2024 -Month 05 -Day 19 -Hour 5 -Minute 52 -Second 0 -Millisecond 0), $(Get-Date -Year 2024 -Month 05 -Day 19 -Hour 5 -Minute 52 -Second 0 -Millisecond 0).AddHours(1))
-            inlining         = [pscustomobject]@{Mission = "Keep Hank alive" }
+            inlining         = [PSCustomObject]@{Mission = "Keep Hank alive" }
             inlining2        = [psobject]@{Mission = "Keep Hank alive" }
         }
 
