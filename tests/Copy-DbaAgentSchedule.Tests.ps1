@@ -68,11 +68,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
         $sourceServer = Connect-DbaInstance @splatRemoveSource
         $sqlDeleteSource = "EXEC msdb.dbo.sp_delete_schedule @schedule_name = '$scheduleName'"
-        try {
-            $sourceServer.Query($sqlDeleteSource)
-        } catch {
-            # Schedule may not exist, continue cleanup
-        }
+        $sourceServer.Query($sqlDeleteSource)
 
         # Remove schedule from destination instance
         $splatRemoveDest = @{
@@ -81,11 +77,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
         $destServer = Connect-DbaInstance @splatRemoveDest
         $sqlDeleteDest = "EXEC msdb.dbo.sp_delete_schedule @schedule_name = '$scheduleName'"
-        try {
-            $destServer.Query($sqlDeleteDest)
-        } catch {
-            # Schedule may not exist, continue cleanup
-        }
+        $destServer.Query($sqlDeleteDest)
 
         # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
@@ -100,11 +92,11 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Returns more than one result" {
-            $global:copyResults.Count | Should -BeGreaterThan 0
+            $copyResults.Count | Should -BeGreaterThan 1
         }
 
         It "Contains at least one successful copy" {
-            $global:copyResults | Where-Object Status -eq "Successful" | Should -Not -BeNullOrEmpty
+            $copyResults | Where-Object Status -eq "Successful" | Should -Not -BeNullOrEmpty
         }
 
         It "Creates schedule with correct start time" {
