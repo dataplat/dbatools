@@ -342,13 +342,24 @@ function Repair-PullRequestTest {
                     $repairMessage += "- Arrays and objects created in setup blocks may need scope declarations`n"
                     $repairMessage += "- Test data variables may need `$global: prefix for cross-block access`n`n"
 
+                    $repairMessage += "PESTER v5 STRUCTURAL PROBLEMS TO CONSIDER:`n"
+                    $repairMessage += "If you only see generic failure messages like 'Test failed but no error message could be extracted' or 'Result: Failed' with no ErrorRecord/StackTrace, this indicates Pester v5 architectural issues:`n"
+                    $repairMessage += "- Mocks defined at script level instead of in BeforeAll{} blocks`n"
+                    $repairMessage += "- [Parameter()] attributes on test parameters (remove these)`n"
+                    $repairMessage += "- Variables/functions not accessible during Run phase due to discovery/run separation`n"
+                    $repairMessage += "- Should -Throw assertions with square brackets or special characters that break pattern matching`n"
+                    $repairMessage += "- Mock scope issues where mocks aren't available to the functions being tested`n`n"
+
                     $repairMessage += "WHAT YOU CAN CHANGE:`n"
                     $repairMessage += "- Fix syntax errors causing the specific failures`n"
                     $repairMessage += "- Correct variable scoping issues (add `$global: if needed for cross-block variables)`n"
+                    $repairMessage += "- Move mock definitions from script level into BeforeAll{} blocks`n"
+                    $repairMessage += "- Remove [Parameter()] attributes from test parameters`n"
                     $repairMessage += "- Fix array operations (`$results.Count → `$results.Status.Count if needed)`n"
                     $repairMessage += "- Correct boolean skip conditions`n"
                     $repairMessage += "- Fix Where-Object syntax if causing errors`n"
-                    $repairMessage += "- Adjust assertion syntax if failing`n`n"
+                    $repairMessage += "- Adjust assertion syntax if failing`n"
+                    $repairMessage += "- Escape special characters in Should -Throw patterns or use wildcards`n`n"
 
                     $repairMessage += "ALL FAILURES TO FIX IN THIS FILE:`n"
 
@@ -364,7 +375,6 @@ function Repair-PullRequestTest {
                     $repairMessage += "The working version is provided for comparison of test logic only. Do NOT copy its structure - it may be older Pester v4 format without our current styling. Use it only to understand what the test SHOULD accomplish.`n`n"
 
                     $repairMessage += "TASK - Make the minimal code changes necessary to fix ALL the failures above while preserving all existing Pester v5 migration work and dbatools styling conventions."
-
                     # Prepare context files for Claude
                     $contextFiles = @()
                     if (Test-Path $workingTempPath) {
