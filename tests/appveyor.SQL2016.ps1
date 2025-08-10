@@ -14,14 +14,13 @@ Write-Host -Object "$indent SQLAgent`$$instance StartType: $((Get-Service -Name 
 
 Write-Host -Object "$indent Setting up and starting $sqlinstance" -ForegroundColor DarkGreen
 
-Start-Service -Name SQLBrowser
+# We need to configure the port first to be able to start the instances in any order.
+$null = Set-DbaNetworkConfiguration -SqlInstance $sqlinstance -StaticPortForIPAll $port -EnableException -Confirm:$false -WarningAction SilentlyContinue
 
-# We need to configure the port first to be able to start the instances in any order. This will also start the instance.
-$null = Set-DbaNetworkConfiguration -SqlInstance $sqlinstance -StaticPortForIPAll $port -RestartService -EnableException -Confirm:$false
-
-# Agent Service is "Disabled", so we need to change the StartupType before starting
+# Agent Service on SQL2016 is "Disabled", so we need to change the StartupType before starting.
 Set-Service -Name "SQLAgent`$$instance" -StartupType Automatic
-Start-Service -Name "SQLAgent`$$instance"
+
+Start-DbaService -SqlInstance $sqlinstance -Type Browser, Engine, Agent -EnableException -Confirm:$false
 
 
 Write-Host -Object "$indent Configuring $sqlinstance" -ForegroundColor DarkGreen

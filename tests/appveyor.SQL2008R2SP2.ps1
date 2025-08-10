@@ -13,16 +13,11 @@ Write-Host -Object "$indent MSSQL`$$instance StartType: $((Get-Service -Name "MS
 
 Write-Host -Object "$indent Setting up and starting $sqlinstance" -ForegroundColor DarkGreen
 
-Start-Service -Name SQLBrowser
+# We need to configure the port first to be able to start the instances in any order.
+$null = Set-DbaNetworkConfiguration -SqlInstance $sqlinstance -StaticPortForIPAll $port -EnableException -Confirm:$false -WarningAction SilentlyContinue
 
-# We need to configure the port first to be able to start the instances in any order. This will not start the instance on SQL2008R2SP2.
-$null = Set-DbaNetworkConfiguration -SqlInstance $sqlinstance -StaticPortForIPAll $port -RestartService -EnableException -Confirm:$false
-
-Write-Host -Object "$indent SQLBrowser StartType: $((Get-Service -Name SQLBrowser).StartType) / Status: $((Get-Service -Name SQLBrowser).Status)" -ForegroundColor DarkGreen
-Write-Host -Object "$indent MSSQL`$$instance StartType: $((Get-Service -Name "MSSQL`$$instance").StartType) / Status: $((Get-Service -Name "MSSQL`$$instance").Status)" -ForegroundColor DarkGreen
-
-# We have to start the instance?
-Start-DbaService -SqlInstance $sqlinstance -Type Engine -EnableException -Confirm:$false
+# SQL2008R2SP2 is an Express Edition and has no Agent to be configured or started.
+Start-DbaService -SqlInstance $sqlinstance -Type Browser, Engine -EnableException -Confirm:$false
 
 
 Write-Host -Object "$indent Configuring $sqlinstance" -ForegroundColor DarkGreen
