@@ -182,51 +182,11 @@ function Get-PesterTestVersion($testFilePath) {
     return '4'
 }
 
-function Invoke-PesterWithStreamCapture {
-    param(
-        [string]$TestPath,
-        [object]$Configuration
-    )
-
-    $outputFile = "$ModuleBase\PesterOutput_$(Get-Date -Format 'yyyyMMdd_HHmmss')_$([System.IO.Path]::GetFileNameWithoutExtension($TestPath)).log"
-
-    try {
-        # Capture all streams (1-6) to file and return result
-        $result = Invoke-Pester -Configuration $Configuration *> $outputFile
-
-        # Parse captured output for error details if test failed
-        $capturedErrors = @()
-        if ($result.FailedCount -gt 0) {
-            $capturedContent = Get-Content $outputFile -ErrorAction SilentlyContinue
-            $capturedErrors = $capturedContent | Where-Object {
-                $_ -match '(FAIL|ERROR|Exception|at\s+line\s+\d+|Should\s+.+but\s+was|Expected.+but\s+got)'
-            }
-        }
-
-        return @{
-            Result = $result
-            CapturedOutput = if (Test-Path $outputFile) { Get-Content $outputFile -Raw } else { "" }
-            ParsedErrors = $capturedErrors
-            OutputFile = $outputFile
-        }
-    }
-    catch {
-        return @{
-            Result = $null
-            CapturedOutput = "Error during test execution: $($_.Exception.Message)"
-            ParsedErrors = @("Execution failed: $($_.Exception.Message)")
-            OutputFile = $outputFile
-        }
-    }
-}
-
 function Get-ComprehensiveErrorMessage {
     param(
         $TestResult,
         $PesterVersion,
-        [switch]$DebugMode,
-        [string]$CapturedOutput = "",
-        [array]$ParsedErrors = @()
+        [switch]$DebugMode
     )
 
     $errorMessages = @()
@@ -360,20 +320,6 @@ function Get-ComprehensiveErrorMessage {
             if ($TestResult.StandardError) {
                 $errorMessages += "StdErr: $($TestResult.StandardError)"
             }
-
-            # NEW: Check Block.ErrorRecord for container-level errors
-            if ($TestResult.Block -and $TestResult.Block.ErrorRecord) {
-                foreach ($blockError in $TestResult.Block.ErrorRecord) {
-                    if ($blockError.Exception) {
-                        $errorMessages += "Block Error: $($blockError.Exception.Message)"
-                    }
-                }
-            }
-        }
-
-        # NEW: Use captured output from stream redirection
-        if ($ParsedErrors -and $ParsedErrors.Count -gt 0) {
-            $errorMessages += "Captured: $($ParsedErrors -join ' | ')"
         }
 
         # Fallback: try to extract from any property that might contain error info
@@ -410,16 +356,6 @@ function Get-ComprehensiveErrorMessage {
             $errorMessages += "Test Name: $($TestResult.Name)"
         }
 
-        # NEW: Try to extract useful info from captured output as last resort
-        if ($CapturedOutput) {
-            $relevantLines = $CapturedOutput -split "`n" | Where-Object {
-                $_ -match '(Should|Expected|but|was|Exception|Error|Fail)'
-            } | Select-Object -First 3
-            if ($relevantLines) {
-                $errorMessages += "From Output: $($relevantLines -join ' | ')"
-            }
-        }
-
         # Debug mode: try one last desperate attempt
         if ($DebugMode) {
             $errorMessages += "=== DESPERATE DEBUG ATTEMPT ==="
@@ -427,11 +363,6 @@ function Get-ComprehensiveErrorMessage {
                 $errorMessages += "TestResult JSON: $($TestResult | ConvertTo-Json -Depth 2 -Compress)"
             } catch {
                 $errorMessages += "Could not serialize TestResult to JSON: $($_.Exception.Message)"
-            }
-
-            if ($CapturedOutput) {
-                $errorMessages += "=== FULL CAPTURED OUTPUT ==="
-                $errorMessages += $CapturedOutput.Substring(0, [Math]::Min(500, $CapturedOutput.Length))
             }
         }
     }
@@ -454,9 +385,7 @@ function Export-TestFailureSummary {
         $PesterRun,
         $Counter,
         $ModuleBase,
-        $PesterVersion,
-        $CapturedOutput = "",
-        $ParsedErrors = @()
+        $PesterVersion
     )
 
     $failedTests = @()
@@ -470,7 +399,7 @@ function Export-TestFailureSummary {
             }
 
             # Get comprehensive error message with fallbacks
-            $errorInfo = Get-ComprehensiveErrorMessage -TestResult $_ -PesterVersion '4' -DebugMode:$DebugErrorExtraction -CapturedOutput $CapturedOutput -ParsedErrors $ParsedErrors
+            $errorInfo = Get-ComprehensiveErrorMessage -TestResult $_ -PesterVersion '4' -DebugMode:$DebugErrorExtraction
 
             @{
                 Name                   = $_.Name
@@ -500,7 +429,7 @@ function Export-TestFailureSummary {
             }
 
             # Get comprehensive error message with fallbacks
-            $errorInfo = Get-ComprehensiveErrorMessage -TestResult $_ -PesterVersion '5' -DebugMode:$DebugErrorExtraction -CapturedOutput $CapturedOutput -ParsedErrors $ParsedErrors
+            $errorInfo = Get-ComprehensiveErrorMessage -TestResult $_ -PesterVersion '5' -DebugMode:$DebugErrorExtraction
 
             @{
                 Name         = $_.Name
@@ -662,22 +591,7 @@ if (-not $Finalize) {
         $pester5Config = New-PesterConfiguration
         $pester5Config.Run.Path = $f.FullName
         $pester5config.Run.PassThru = $true
-
-        # Enhanced Pester 5 configuration for better error capture
-        if ($DebugErrorExtraction) {
-            $pester5config.Output.Verbosity = "Diagnostic"
-            $pester5config.Output.StackTraceVerbosity = "Full"
-            $pester5config.Debug.WriteDebugMessages = $true
-            $pester5config.Debug.WriteDebugMessagesFrom = @('Discovery', 'Run', 'Mock')
-            $pester5config.Debug.ShowFullErrors = $true
-        } else {
-            $pester5config.Output.Verbosity = "Detailed"
-            $pester5config.Output.StackTraceVerbosity = "Filtered"
-        }
-
-        # Error handling configuration
-        $pester5config.Should.ErrorAction = 'Continue'
-        $pester5config.TestResult.Enabled = $true
+        $pester5config.Output.Verbosity = "None"
 
         #opt-in
         if ($IncludeCoverage) {
@@ -697,16 +611,12 @@ if (-not $Finalize) {
             }
             Write-Host -Object "Running $($f.FullName) ..." -ForegroundColor Cyan -NoNewLine
             Add-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome Running
-
-            # Use enhanced stream capture for Pester 5
-            $testExecution = Invoke-PesterWithStreamCapture -TestPath $f.FullName -Configuration $pester5config
-            $PesterRun = $testExecution.Result
-
+            $PesterRun = Invoke-Pester -Configuration $pester5config
             Write-Host -Object "`rCompleted $($f.FullName) in $([int]$PesterRun.Duration.TotalMilliseconds)ms" -ForegroundColor Cyan
             $PesterRun | Export-Clixml -Path "$ModuleBase\Pester5Results$PSVersion$Counter.xml"
 
-            # Export failure summary with captured output
-            Export-TestFailureSummary -TestFile $f -PesterRun $PesterRun -Counter $Counter -ModuleBase $ModuleBase -PesterVersion '5' -CapturedOutput $testExecution.CapturedOutput -ParsedErrors $testExecution.ParsedErrors
+            # Export failure summary for easier retrieval
+            Export-TestFailureSummary -TestFile $f -PesterRun $PesterRun -Counter $Counter -ModuleBase $ModuleBase -PesterVersion '5'
 
             if ($PesterRun.FailedCount -gt 0) {
                 $trialno += 1
@@ -714,7 +624,7 @@ if (-not $Finalize) {
                 # Create detailed error message for AppVeyor with comprehensive extraction
                 $failedTestsList = $PesterRun.Tests | Where-Object { $_.Passed -eq $false } | ForEach-Object {
                     $path = $_.Path -join " > "
-                    $errorInfo = Get-ComprehensiveErrorMessage -TestResult $_ -PesterVersion '5' -DebugMode:$DebugErrorExtraction -CapturedOutput $testExecution.CapturedOutput -ParsedErrors $testExecution.ParsedErrors
+                    $errorInfo = Get-ComprehensiveErrorMessage -TestResult $_ -PesterVersion '5' -DebugMode:$DebugErrorExtraction
                     "$path > $($_.Name): $($errorInfo.ErrorMessage)"
                 }
                 $errorMessageDetail = $failedTestsList -join " | "
@@ -730,13 +640,6 @@ if (-not $Finalize) {
                     Duration      = $PesterRun.Duration.TotalMilliseconds
                     PesterVersion = '5'
                 }
-
-                # Save captured output for debugging
-                if ($testExecution.CapturedOutput -and $DebugErrorExtraction) {
-                    $debugFile = "$ModuleBase\Debug_$($f.Name)_attempt_$trialNo.log"
-                    $testExecution.CapturedOutput | Out-File $debugFile -Encoding UTF8
-                    Push-AppveyorArtifact $debugFile
-                }
             } else {
                 Update-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome "Passed" -Duration $PesterRun.Duration.TotalMilliseconds
 
@@ -749,11 +652,6 @@ if (-not $Finalize) {
                     PesterVersion = '5'
                 }
                 break
-            }
-
-            # Clean up output file
-            if (Test-Path $testExecution.OutputFile) {
-                Remove-Item $testExecution.OutputFile -ErrorAction SilentlyContinue
             }
         }
     }
