@@ -66,6 +66,7 @@ Write-Host -Object "$indent Starting $instance" -ForegroundColor DarkGreen
 Restart-Service "MSSQL`$$instance" -WarningAction SilentlyContinue -Force
 Restart-Service "SQLAgent`$$instance" -WarningAction SilentlyContinue -Force
 
+<#
 do {
     Start-Sleep 1
     $null = (& sqlcmd -S "$sqlinstance" -b -Q "select 1" -d master)
@@ -78,10 +79,8 @@ do {
     Start-Sleep 1
 }
 while ((Get-Service "SQLAgent`$$instance").Status -ne 'Running' -and $z++ -lt 10)
-
 # Whatever, just sleep an extra 5
 Start-Sleep 5
-<#
 
 # this needs to be moved out. Tests that require these things need to run this in a BeforeAll stanza and remove the cruft in an AfterAll one
 # so everybody can run tests without needing this too (which should be used strictly as appveyor-setup-related activities)
