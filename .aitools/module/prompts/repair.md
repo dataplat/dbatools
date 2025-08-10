@@ -9,6 +9,7 @@ CRITICAL RULES - DO NOT CHANGE THESE:
 6. Keep ALL existing $PSDefaultParameterValues handling for EnableException
 7. Keep ALL current parameter validation patterns with filtering
 8. ONLY fix the specific errors - make MINIMAL changes to get tests passing
+9. DO NOT CHANGE PSDefaultParameterValues, THIS IS THE NEW WAY $PSDefaultParameterValues = $TestConfig.Defaults
 
 COMMON PESTER v5 SCOPING ISSUES TO CHECK:
 - Variables defined in BeforeAll may need $global: to be accessible in It blocks
