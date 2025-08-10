@@ -113,7 +113,7 @@ function Get-CoverageIndications($Path, $ModuleBase) {
         # exclude always used functions ?!
         if ($f -in ('Connect-DbaInstance', 'Select-DefaultView', 'Stop-Function', 'Write-Message')) { continue }
         # can I find a correspondence to a physical file (again, on the convenience of having Get-DbaFoo.ps1 actually defining Get-DbaFoo)?
-        $res = $allfiles | Where-Object { $_.Name.Replace('.ps1', '') -eq $f }
+        $res = $allfiles | Where-Object { $PSItem.Name.Replace('.ps1', '') -eq $f }
         if ($res.count -gt 0) {
             $testpaths += $res.FullName
         }
@@ -133,23 +133,23 @@ function Get-CodecovReport($Results, $ModuleBase) {
     $hits = $results.CodeCoverage | Select-Object -ExpandProperty HitCommands | Sort-Object -Property File, Line -Unique
     $LineCount = @{ }
     $hits | ForEach-Object {
-        $filename = $_.File.Replace("$ModuleBase\", '').Replace('\', '/')
+        $filename = $PSItem.File.Replace("$ModuleBase\", '').Replace('\', '/')
         if ($filename -notin $report['coverage'].Keys) {
             $report['coverage'][$filename] = @{ }
-            $LineCount[$filename] = (Get-Content $_.File -Raw | Measure-Object -Line).Lines
+            $LineCount[$filename] = (Get-Content $PSItem.File -Raw | Measure-Object -Line).Lines
         }
-        $report['coverage'][$filename][$_.Line] = 1
+        $report['coverage'][$filename][$PSItem.Line] = 1
     }
 
     $missed | ForEach-Object {
-        $filename = $_.File.Replace("$ModuleBase\", '').Replace('\', '/')
+        $filename = $PSItem.File.Replace("$ModuleBase\", '').Replace('\', '/')
         if ($filename -notin $report['coverage'].Keys) {
             $report['coverage'][$filename] = @{ }
-            $LineCount[$filename] = (Get-Content $_.File | Measure-Object -Line).Lines
+            $LineCount[$filename] = (Get-Content $PSItem.File | Measure-Object -Line).Lines
         }
-        if ($_.Line -notin $report['coverage'][$filename].Keys) {
+        if ($PSItem.Line -notin $report['coverage'][$filename].Keys) {
             #miss only if not already covered
-            $report['coverage'][$filename][$_.Line] = 0
+            $report['coverage'][$filename][$PSItem.Line] = 0
         }
     }
 
@@ -320,13 +320,29 @@ function Get-ComprehensiveErrorMessage {
             if ($TestResult.StandardError) {
                 $errorMessages += "StdErr: $($TestResult.StandardError)"
             }
+
+            # Add after the existing StandardError check in Pester 5 section:
+
+            # Check Block.ErrorRecord for container-level errors (common in Pester 5)
+            if ($TestResult.Block -and $TestResult.Block.ErrorRecord) {
+                foreach ($blockError in $TestResult.Block.ErrorRecord) {
+                    if ($blockError.Exception) {
+                        $errorMessages += "Block Error: $($blockError.Exception.Message)"
+                    }
+                }
+            }
+
+            # Check for Should assertion details in Data property
+            if ($TestResult.Data -and $TestResult.Data.Count -gt 0) {
+                $errorMessages += "Test Data: $($TestResult.Data | ConvertTo-Json -Compress)"
+            }
         }
 
         # Fallback: try to extract from any property that might contain error info
         $TestResult.PSObject.Properties | ForEach-Object {
-            if ($_.Name -match '(?i)(error|exception|failure|message)' -and $_.Value -and $_.Value -ne '') {
-                if ($_.Value -notin $errorMessages) {
-                    $errorMessages += "$($_.Name): $($_.Value)"
+            if ($PSItem.Name -match '(?i)(error|exception|failure|message)' -and $PSItem.Value -and $PSItem.Value -ne '') {
+                if ($PSItem.Value -notin $errorMessages) {
+                    $errorMessages += "$($PSItem.Name): $($PSItem.Value)"
                 }
             }
         }
@@ -336,17 +352,17 @@ function Get-ComprehensiveErrorMessage {
             $debugInfo += "=== ALL TEST RESULT PROPERTIES ==="
             $TestResult.PSObject.Properties | ForEach-Object {
                 try {
-                    $value = if ($_.Value -eq $null) { "NULL" } elseif ($_.Value -eq "") { "EMPTY" } else { $_.Value.ToString() }
+                    $value = if ($null -eq $PSItem.Value) { "NULL" } elseif ($PSItem.Value -eq "") { "EMPTY" } else { $PSItem.Value.ToString() }
                     if ($value.Length -gt 200) { $value = $value.Substring(0, 200) + "..." }
-                    $debugInfo += "$($_.Name): $value"
+                    $debugInfo += "$($PSItem.Name): $value"
                 } catch {
-                    $debugInfo += "$($_.Name): [Error getting value: $($_.Exception.Message)]"
+                    $debugInfo += "$($PSItem.Name): [Error getting value: $($PSItem.Exception.Message)]"
                 }
             }
         }
 
     } catch {
-        $errorMessages += "Error during error extraction: $($_.Exception.Message)"
+        $errorMessages += "Error during error extraction: $($PSItem.Exception.Message)"
     }
 
     # Final fallback
@@ -362,7 +378,7 @@ function Get-ComprehensiveErrorMessage {
             try {
                 $errorMessages += "TestResult JSON: $($TestResult | ConvertTo-Json -Depth 2 -Compress)"
             } catch {
-                $errorMessages += "Could not serialize TestResult to JSON: $($_.Exception.Message)"
+                $errorMessages += "Could not serialize TestResult to JSON: $($PSItem.Exception.Message)"
             }
         }
     }
@@ -374,8 +390,8 @@ function Get-ComprehensiveErrorMessage {
     }
 
     return @{
-        ErrorMessage = ($errorMessages | Where-Object { $_ } | Select-Object -Unique) -join " | "
-        StackTrace = ($stackTraces | Where-Object { $_ } | Select-Object -Unique) -join "`n---`n"
+        ErrorMessage = ($errorMessages | Where-Object { $PSItem } | Select-Object -Unique) -join " | "
+        StackTrace = ($stackTraces | Where-Object { $PSItem } | Select-Object -Unique) -join "`n---`n"
     }
 }
 
@@ -391,56 +407,56 @@ function Export-TestFailureSummary {
     $failedTests = @()
 
     if ($PesterVersion -eq '4') {
-        $failedTests = $PesterRun.TestResult | Where-Object { $_.Passed -eq $false } | ForEach-Object {
+        $failedTests = $PesterRun.TestResult | Where-Object { $PSItem.Passed -eq $false } | ForEach-Object {
             # Extract line number from stack trace for Pester 4
             $lineNumber = $null
-            if ($_.StackTrace -match 'line (\d+)') {
+            if ($PSItem.StackTrace -match 'line (\d+)') {
                 $lineNumber = [int]$Matches[1]
             }
 
             # Get comprehensive error message with fallbacks
-            $errorInfo = Get-ComprehensiveErrorMessage -TestResult $_ -PesterVersion '4' -DebugMode:$DebugErrorExtraction
+            $errorInfo = Get-ComprehensiveErrorMessage -TestResult $PSItem -PesterVersion '4' -DebugMode:$DebugErrorExtraction
 
             @{
-                Name                   = $_.Name
-                Describe               = $_.Describe
-                Context                = $_.Context
+                Name                   = $PSItem.Name
+                Describe               = $PSItem.Describe
+                Context                = $PSItem.Context
                 ErrorMessage           = $errorInfo.ErrorMessage
-                StackTrace             = if ($errorInfo.StackTrace) { $errorInfo.StackTrace } else { $_.StackTrace }
+                StackTrace             = if ($errorInfo.StackTrace) { $errorInfo.StackTrace } else { $PSItem.StackTrace }
                 LineNumber             = $lineNumber
-                Parameters             = $_.Parameters
-                ParameterizedSuiteName = $_.ParameterizedSuiteName
+                Parameters             = $PSItem.Parameters
+                ParameterizedSuiteName = $PSItem.ParameterizedSuiteName
                 TestFile               = $TestFile.Name
-                RawTestResult          = $_ | ConvertTo-Json -Depth 3 -Compress
+                RawTestResult          = $PSItem | ConvertTo-Json -Depth 3 -Compress
             }
         }
     } else {
         # Pester 5 format
-        $failedTests = $PesterRun.Tests | Where-Object { $_.Passed -eq $false } | ForEach-Object {
+        $failedTests = $PesterRun.Tests | Where-Object { $PSItem.Passed -eq $false } | ForEach-Object {
             # Extract line number from stack trace for Pester 5
             $lineNumber = $null
             $stackTrace = ""
 
-            if ($_.ErrorRecord -and $_.ErrorRecord.Count -gt 0 -and $_.ErrorRecord[0].ScriptStackTrace) {
-                $stackTrace = $_.ErrorRecord[0].ScriptStackTrace
+            if ($PSItem.ErrorRecord -and $PSItem.ErrorRecord.Count -gt 0 -and $PSItem.ErrorRecord[0].ScriptStackTrace) {
+                $stackTrace = $PSItem.ErrorRecord[0].ScriptStackTrace
                 if ($stackTrace -match 'line (\d+)') {
                     $lineNumber = [int]$Matches[1]
                 }
             }
 
             # Get comprehensive error message with fallbacks
-            $errorInfo = Get-ComprehensiveErrorMessage -TestResult $_ -PesterVersion '5' -DebugMode:$DebugErrorExtraction
+            $errorInfo = Get-ComprehensiveErrorMessage -TestResult $PSItem -PesterVersion '5' -DebugMode:$DebugErrorExtraction
 
             @{
-                Name         = $_.Name
-                Describe     = if ($_.Path.Count -gt 0) { $_.Path[0] } else { "" }
-                Context      = if ($_.Path.Count -gt 1) { $_.Path[1] } else { "" }
+                Name         = $PSItem.Name
+                Describe     = if ($PSItem.Path.Count -gt 0) { $PSItem.Path[0] } else { "" }
+                Context      = if ($PSItem.Path.Count -gt 1) { $PSItem.Path[1] } else { "" }
                 ErrorMessage = $errorInfo.ErrorMessage
                 StackTrace   = if ($errorInfo.StackTrace) { $errorInfo.StackTrace } else { $stackTrace }
                 LineNumber   = $lineNumber
-                Parameters   = $_.Data
+                Parameters   = $PSItem.Data
                 TestFile     = $TestFile.Name
-                RawTestResult = $_ | ConvertTo-Json -Depth 3 -Compress
+                RawTestResult = $PSItem | ConvertTo-Json -Depth 3 -Compress
             }
         }
     }
@@ -537,9 +553,9 @@ if (-not $Finalize) {
                 $trialno += 1
 
                 # Create detailed error message for AppVeyor with comprehensive extraction
-                $failedTestsList = $PesterRun.TestResult | Where-Object { $_.Passed -eq $false } | ForEach-Object {
-                    $errorInfo = Get-ComprehensiveErrorMessage -TestResult $_ -PesterVersion '4' -DebugMode:$DebugErrorExtraction
-                    "$($_.Describe) > $($_.Context) > $($_.Name): $($errorInfo.ErrorMessage)"
+                $failedTestsList = $PesterRun.TestResult | Where-Object { $PSItem.Passed -eq $false } | ForEach-Object {
+                    $errorInfo = Get-ComprehensiveErrorMessage -TestResult $PSItem -PesterVersion '4' -DebugMode:$DebugErrorExtraction
+                    "$($PSItem.Describe) > $($PSItem.Context) > $($PSItem.Name): $($errorInfo.ErrorMessage)"
                 }
                 $errorMessageDetail = $failedTestsList -join " | "
 
@@ -622,10 +638,10 @@ if (-not $Finalize) {
                 $trialno += 1
 
                 # Create detailed error message for AppVeyor with comprehensive extraction
-                $failedTestsList = $PesterRun.Tests | Where-Object { $_.Passed -eq $false } | ForEach-Object {
-                    $path = $_.Path -join " > "
-                    $errorInfo = Get-ComprehensiveErrorMessage -TestResult $_ -PesterVersion '5' -DebugMode:$DebugErrorExtraction
-                    "$path > $($_.Name): $($errorInfo.ErrorMessage)"
+                $failedTestsList = $PesterRun.Tests | Where-Object { $PSItem.Passed -eq $false } | ForEach-Object {
+                    $path = $PSItem.Path -join " > "
+                    $errorInfo = Get-ComprehensiveErrorMessage -TestResult $PSItem -PesterVersion '5' -DebugMode:$DebugErrorExtraction
+                    "$path > $($PSItem.Name): $($errorInfo.ErrorMessage)"
                 }
                 $errorMessageDetail = $failedTestsList -join " | "
 
@@ -682,7 +698,7 @@ if (-not $Finalize) {
         Remove-Item $msgFile
         Remove-Item $errorFile
     } catch {
-        Write-Host -ForegroundColor Red "Message collection failed: $($_.Exception.Message)"
+        Write-Host -ForegroundColor Red "Message collection failed: $($PSItem.Exception.Message)"
     }
 } else {
     # Unsure why we're uploading so I removed it for now
@@ -694,7 +710,7 @@ if (-not $Finalize) {
     #Upload results for test page
     Get-ChildItem -Path "$ModuleBase\TestResultsPS*.xml" | Foreach-Object {
         $Address = "https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)"
-        $Source = $_.FullName
+        $Source = $PSItem.FullName
         Write-Output "Uploading files: $Address $Source"
         (New-Object System.Net.WebClient).UploadFile($Address, $Source)
         Write-Output "You can download it from https://ci.appveyor.com/api/buildjobs/$($env:APPVEYOR_JOB_ID)/tests"
@@ -706,7 +722,7 @@ if (-not $Finalize) {
 
     #Publish the support package regardless of the outcome
     if (Test-Path $ModuleBase\dbatools_messages_and_errors.xml.zip) {
-        Get-ChildItem $ModuleBase\dbatools_messages_and_errors.xml.zip | ForEach-Object { Push-AppveyorArtifact $_.FullName -FileName $_.Name }
+        Get-ChildItem $ModuleBase\dbatools_messages_and_errors.xml.zip | ForEach-Object { Push-AppveyorArtifact $PSItem.FullName -FileName $PSItem.Name }
     }
 
     #$totalcount = $results | Select-Object -ExpandProperty TotalCount | Measure-Object -Sum | Select-Object -ExpandProperty Sum
@@ -714,23 +730,23 @@ if (-not $Finalize) {
     $failedcount += $results | Select-Object -ExpandProperty FailedCount | Measure-Object -Sum | Select-Object -ExpandProperty Sum
     if ($failedcount -gt 0) {
         # pester 4 output
-        $faileditems = $results | Select-Object -ExpandProperty TestResult | Where-Object { $_.Passed -notlike $True }
+        $faileditems = $results | Select-Object -ExpandProperty TestResult | Where-Object { $PSItem.Passed -notlike $True }
         if ($faileditems) {
             Write-Warning "Failed tests summary (pester 4):"
             $detailedFailures = $faileditems | ForEach-Object {
-                $name = $_.Name
+                $name = $PSItem.Name
 
                 # Use comprehensive error extraction for finalization too
-                $errorInfo = Get-ComprehensiveErrorMessage -TestResult $_ -PesterVersion '4' -DebugMode:$DebugErrorExtraction
+                $errorInfo = Get-ComprehensiveErrorMessage -TestResult $PSItem -PesterVersion '4' -DebugMode:$DebugErrorExtraction
 
                 [pscustomobject]@{
-                    Describe = $_.Describe
-                    Context  = $_.Context
+                    Describe = $PSItem.Describe
+                    Context  = $PSItem.Context
                     Name     = "It $name"
-                    Result   = $_.Result
+                    Result   = $PSItem.Result
                     Message  = $errorInfo.ErrorMessage
                     StackTrace = $errorInfo.StackTrace
-                    RawFailureMessage = $_.FailureMessage
+                    RawFailureMessage = $PSItem.FailureMessage
                 }
             } | Sort-Object Describe, Context, Name, Result, Message
 
@@ -742,14 +758,14 @@ if (-not $Finalize) {
                 TotalFailedTests = $faileditems.Count
                 DetailedFailures = $detailedFailures | ForEach-Object {
                     @{
-                        Describe = $_.Describe
-                        Context = $_.Context
-                        TestName = $_.Name
-                        Result = $_.Result
-                        ErrorMessage = $_.Message
-                        StackTrace = $_.StackTrace
-                        RawFailureMessage = $_.RawFailureMessage
-                        FullContext = "$($_.Describe) > $($_.Context) > $($_.Name)"
+                        Describe = $PSItem.Describe
+                        Context = $PSItem.Context
+                        TestName = $PSItem.Name
+                        Result = $PSItem.Result
+                        ErrorMessage = $PSItem.Message
+                        StackTrace = $PSItem.StackTrace
+                        RawFailureMessage = $PSItem.RawFailureMessage
+                        FullContext = "$($PSItem.Describe) > $($PSItem.Context) > $($PSItem.Name)"
                     }
                 }
             }
@@ -765,22 +781,22 @@ if (-not $Finalize) {
     $results5 = @(Get-ChildItem -Path "$ModuleBase\Pester5Results*.xml" | Import-Clixml)
     $failedcount += $results5 | Select-Object -ExpandProperty FailedCount | Measure-Object -Sum | Select-Object -ExpandProperty Sum
     # pester 5 output
-    $faileditems = $results5 | Select-Object -ExpandProperty Tests | Where-Object { $_.Passed -notlike $True }
+    $faileditems = $results5 | Select-Object -ExpandProperty Tests | Where-Object { $PSItem.Passed -notlike $True }
     if ($faileditems) {
         Write-Warning "Failed tests summary (pester 5):"
         $detailedFailures = $faileditems | ForEach-Object {
-            $name = $_.Name
+            $name = $PSItem.Name
 
             # Use comprehensive error extraction for finalization too
-            $errorInfo = Get-ComprehensiveErrorMessage -TestResult $_ -PesterVersion '5' -DebugMode:$DebugErrorExtraction
+            $errorInfo = Get-ComprehensiveErrorMessage -TestResult $PSItem -PesterVersion '5' -DebugMode:$DebugErrorExtraction
 
             [pscustomobject]@{
-                Path    = $_.Path -Join '/'
+                Path    = $PSItem.Path -Join '/'
                 Name    = "It $name"
-                Result  = $_.Result
+                Result  = $PSItem.Result
                 Message = $errorInfo.ErrorMessage
                 StackTrace = $errorInfo.StackTrace
-                RawErrorRecord = if ($_.ErrorRecord) { $_.ErrorRecord -Join " | " } else { "No ErrorRecord" }
+                RawErrorRecord = if ($PSItem.ErrorRecord) { $PSItem.ErrorRecord -Join " | " } else { "No ErrorRecord" }
             }
         } | Sort-Object Path, Name, Result, Message
 
@@ -792,13 +808,13 @@ if (-not $Finalize) {
             TotalFailedTests = $faileditems.Count
             DetailedFailures = $detailedFailures | ForEach-Object {
                 @{
-                    TestPath = $_.Path
-                    TestName = $_.Name
-                    Result = $_.Result
-                    ErrorMessage = $_.Message
-                    StackTrace = $_.StackTrace
-                    RawErrorRecord = $_.RawErrorRecord
-                    FullContext = "$($_.Path) > $($_.Name)"
+                    TestPath = $PSItem.Path
+                    TestName = $PSItem.Name
+                    Result = $PSItem.Result
+                    ErrorMessage = $PSItem.Message
+                    StackTrace = $PSItem.StackTrace
+                    RawErrorRecord = $PSItem.RawErrorRecord
+                    FullContext = "$($PSItem.Path) > $($PSItem.Name)"
                 }
             }
         }
