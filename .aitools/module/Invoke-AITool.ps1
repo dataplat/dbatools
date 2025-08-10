@@ -181,6 +181,7 @@ function Invoke-AITool {
     }
 
     end {
+         ($Message -join ' ') | Write-Warning
         for ($i = 0; $i -lt $PassCount; $i++) {
             if ($Tool -eq 'Aider') {
                 foreach ($singlefile in $allfiles) {
