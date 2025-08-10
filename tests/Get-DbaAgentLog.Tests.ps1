@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Get-DbaAgentLog",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -28,35 +28,31 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
-    BeforeAll {
-        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
-
-        # Get the agent log for testing
-        $agentLogResults = Get-DbaAgentLog -SqlInstance $TestConfig.instance2
-        $currentLogResults = Get-DbaAgentLog -SqlInstance $TestConfig.instance2 -LogNumber 0
-
-        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
-    }
-
     Context "Command gets agent log" {
+        BeforeAll {
+            $results = Get-DbaAgentLog -SqlInstance $TestConfig.instance2
+        }
+
         It "Results are not empty" {
-            $agentLogResults | Should -Not -BeNullOrEmpty
+            $results | Should -Not -BeNullOrEmpty
         }
 
         It "Results contain SQLServerAgent version" {
-            $agentLogResults.text -like "`[100`] Microsoft SQLServerAgent version*" | Should -Be $true
+            $results.text -like "`[100`] Microsoft SQLServerAgent version*" | Should -Be $true
         }
 
         It "LogDate is a DateTime type" {
-            $agentLogResults[0].LogDate | Should -BeOfType DateTime
+            $($results | Select-Object -First 1).LogDate | Should -BeOfType DateTime
         }
     }
 
     Context "Command gets current agent log using LogNumber parameter" {
+        BeforeAll {
+            $results = Get-DbaAgentLog -SqlInstance $TestConfig.instance2 -LogNumber 0
+        }
+
         It "Results are not empty" {
-            $currentLogResults | Should -Not -BeNullOrEmpty
+            $results | Should -Not -BeNullOrEmpty
         }
     }
 }

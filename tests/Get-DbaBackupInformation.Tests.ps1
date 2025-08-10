@@ -1,15 +1,12 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Get-DbaBackupInformation",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
-    Context "Parameter validation" {
+    Context "Validate parameters" {
         BeforeAll {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
@@ -20,7 +17,6 @@ Describe $CommandName -Tag UnitTests {
                 "DatabaseName",
                 "SourceInstance",
                 "NoXpDirTree",
-                "NoXpDirRecurse",
                 "DirectoryRecurse",
                 "EnableException",
                 "MaintenanceSolution",
@@ -31,7 +27,8 @@ Describe $CommandName -Tag UnitTests {
                 "Import",
                 "Anonymise",
                 "NoClobber",
-                "PassThru"
+                "PassThru",
+                "NoXpDirRecurse"
             )
         }
 
@@ -46,23 +43,20 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
 
-        # For all the backups that we want to clean up after the test, we create a directory that we can delete at the end.
-        # Other files can be written there as well, maybe we change the name of that variable later. But for now we focus on backups.
         $DestBackupDir = "C:\Temp\GetBackups"
         if (-Not(Test-Path $DestBackupDir)) {
             $null = New-Item -Type Container -Path $DestBackupDir
         } else {
             Remove-Item $DestBackupDir\*
         }
-
         $random = Get-Random
         $dbname = "dbatoolsci_Backuphistory_$random"
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname | Remove-DbaDatabase -Confirm:$false
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname | Remove-DbaDatabase
         $splatRestore1 = @{
-            SqlInstance            = $TestConfig.instance1
-            Path                   = "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak"
-            DatabaseName           = $dbname
-            DestinationFilePrefix  = $dbname
+            SqlInstance           = $TestConfig.instance1
+            Path                  = "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak"
+            DatabaseName          = $dbname
+            DestinationFilePrefix = $dbname
         }
         $null = Restore-DbaDatabase @splatRestore1
         $db = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname
@@ -71,12 +65,12 @@ Describe $CommandName -Tag IntegrationTests {
         $db | Backup-DbaDatabase -Type Log -BackupDirectory $DestBackupDir
 
         $dbname2 = "dbatoolsci_Backuphistory2_$random"
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname2 | Remove-DbaDatabase -Confirm:$false
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname2 | Remove-DbaDatabase
         $splatRestore2 = @{
-            SqlInstance            = $TestConfig.instance1
-            Path                   = "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak"
-            DatabaseName           = $dbname2
-            DestinationFilePrefix  = $dbname2
+            SqlInstance           = $TestConfig.instance1
+            Path                  = "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak"
+            DatabaseName          = $dbname2
+            DestinationFilePrefix = $dbname2
         }
         $null = Restore-DbaDatabase @splatRestore2
         $db2 = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname2
@@ -97,12 +91,12 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         $dbname3 = "dbatoolsci_BackuphistoryOla_$random"
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname3 | Remove-DbaDatabase -Confirm:$false
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname3 | Remove-DbaDatabase
         $splatRestore3 = @{
-            SqlInstance            = $TestConfig.instance1
-            Path                   = "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak"
-            DatabaseName           = $dbname3
-            DestinationFilePrefix  = $dbname3
+            SqlInstance           = $TestConfig.instance1
+            Path                  = "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak"
+            DatabaseName          = $dbname3
+            DestinationFilePrefix = $dbname3
         }
         $null = Restore-DbaDatabase @splatRestore3
         $db3 = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname3
@@ -118,108 +112,162 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
 
-        # Cleanup all created object.
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname, $dbname2, $dbname3 | Remove-DbaDatabase -Confirm:$false
-        Remove-Item -Path $DestBackupDir, $DestBackupDirOla -Recurse -Confirm:$false -ErrorAction SilentlyContinue
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname, $dbname2, $dbname3 | Remove-DbaDatabase
+        Remove-Item -Path $DestBackupDir, $DestBackupDirOla -Recurse -ErrorAction SilentlyContinue
 
         # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
     Context "Get history for all database" {
         BeforeAll {
-            $allDbResults = Get-DbaBackupInformation -SqlInstance $TestConfig.instance1 -Path $DestBackupDir
+            $splatAllBackups = @{
+                SqlInstance = $TestConfig.instance1
+                Path        = $DestBackupDir
+            }
+            $results = Get-DbaBackupInformation @splatAllBackups
         }
 
         It "Should be 6 backups returned" {
-            $allDbResults.Status.Count | Should -BeExactly 6
+            $results.Count | Should -BeExactly 6
         }
 
         It "Should return 2 full backups" {
-            ($allDbResults | Where-Object Type -eq "Database").Status.Count | Should -BeExactly 2
+            ($results | Where-Object Type -eq "Database").Count | Should -BeExactly 2
         }
 
         It "Should return 2 log backups" {
-            ($allDbResults | Where-Object Type -eq "Transaction Log").Status.Count | Should -BeExactly 2
+            ($results | Where-Object Type -eq "Transaction Log").Count | Should -BeExactly 2
         }
     }
 
     Context "Get history for one database" {
         BeforeAll {
-            $singleDbResults = Get-DbaBackupInformation -SqlInstance $TestConfig.instance1 -Path $DestBackupDir -DatabaseName $dbname2
+            $splatOneDatabase = @{
+                SqlInstance  = $TestConfig.instance1
+                Path         = $DestBackupDir
+                DatabaseName = $dbname2
+            }
+            $results = Get-DbaBackupInformation @splatOneDatabase
         }
 
         It "Should be 3 backups returned" {
-            $singleDbResults.Status.Count | Should -BeExactly 3
+            $results.Count | Should -BeExactly 3
         }
 
         It "Should Be 1 full backup" {
-            ($singleDbResults | Where-Object Type -eq "Database").Status.Count | Should -BeExactly 1
+            ($results | Where-Object Type -eq "Database").Count | Should -BeExactly 1
         }
 
         It "Should be 1 log backups" {
-            ($singleDbResults | Where-Object Type -eq "Transaction Log").Status.Count | Should -BeExactly 1
+            ($results | Where-Object Type -eq "Transaction Log").Count | Should -BeExactly 1
         }
 
         It "Should only be backups of $dbname2" {
-            ($singleDbResults | Where-Object Database -ne $dbname2).Status.Count | Should -BeExactly 0
+            ($results | Where-Object Database -ne $dbname2).Count | Should -BeExactly 0
         }
     }
 
     Context "Check the export/import of backup history" {
         BeforeAll {
             # This one used to cause all sorts of red
-            $exportResults = Get-DbaBackupInformation -SqlInstance $TestConfig.instance1 -Path $DestBackupDir -DatabaseName $dbname2 -ExportPath "$DestBackupDir\history.xml"
+            $splatExport = @{
+                SqlInstance  = $TestConfig.instance1
+                Path         = $DestBackupDir
+                DatabaseName = $dbname2
+                ExportPath   = "$DestBackupDir\history.xml"
+            }
+            $results = Get-DbaBackupInformation @splatExport
 
             # the command below returns just a warning
             # Get-DbaBackupInformation -Import -Path "$DestBackupDir\history.xml" | Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -DestinationFilePrefix hist -RestoredDatabaseNamePrefix hist -TrustDbBackupHistory
         }
 
         It "Should restore cleanly" {
-            ($exportResults | Where-Object RestoreComplete -eq $false).Status.Count | Should -BeExactly 0
+            ($results | Where-Object RestoreComplete -eq $false).Count | Should -BeExactly 0
         }
     }
 
     Context "Test Maintenance solution options" {
         BeforeAll {
-            $olaResults = Get-DbaBackupInformation -SqlInstance $TestConfig.instance1 -Path $DestBackupDirOla -MaintenanceSolution
-            $olaResultsSanLog = Get-DbaBackupInformation -SqlInstance $TestConfig.instance1 -Path $DestBackupDirOla -MaintenanceSolution -IgnoreLogBackup
-            $olaResultsWarnTest = Get-DbaBackupInformation -SqlInstance $TestConfig.instance1 -Path $DestBackupDirOla -IgnoreLogBackup -WarningVariable warnvar -WarningAction SilentlyContinue 3> $null
+            $splatMaintenance = @{
+                SqlInstance         = $TestConfig.instance1
+                Path                = $DestBackupDirOla
+                MaintenanceSolution = $true
+            }
+            $results = Get-DbaBackupInformation @splatMaintenance
         }
 
         It "Should be 3 backups returned" {
-            $olaResults.Status.Count | Should -BeExactly 3
+            $results.Count | Should -BeExactly 3
         }
 
         It "Should Be 1 full backup" {
-            ($olaResults | Where-Object Type -eq "Database").Status.Count | Should -BeExactly 1
+            ($results | Where-Object Type -eq "Database").Count | Should -BeExactly 1
         }
 
         It "Should be 1 log backups" {
-            ($olaResults | Where-Object Type -eq "Transaction Log").Status.Count | Should -BeExactly 1
+            ($results | Where-Object Type -eq "Transaction Log").Count | Should -BeExactly 1
         }
 
         It "Should only be backups of $dbname3" {
-            ($olaResults | Where-Object Database -ne $dbname3).Status.Count | Should -BeExactly 0
+            ($results | Where-Object Database -ne $dbname3).Count | Should -BeExactly 0
         }
 
-        It "Should be 2 backups returned" {
-            $olaResultsSanLog.Status.Count | Should -BeExactly 2
+        It "Should be 2 backups returned when ignoring log backups" {
+            $splatMaintenanceNoLog = @{
+                SqlInstance         = $TestConfig.instance1
+                Path                = $DestBackupDirOla
+                MaintenanceSolution = $true
+                IgnoreLogBackup     = $true
+            }
+            $ResultsSanLog = Get-DbaBackupInformation @splatMaintenanceNoLog
+            $ResultsSanLog.Count | Should -BeExactly 2
         }
 
-        It "Should Be 1 full backup" {
-            ($olaResultsSanLog | Where-Object Type -eq "Database").Status.Count | Should -BeExactly 1
+        It "Should Be 1 full backup when ignoring log backups" {
+            $splatMaintenanceNoLog = @{
+                SqlInstance         = $TestConfig.instance1
+                Path                = $DestBackupDirOla
+                MaintenanceSolution = $true
+                IgnoreLogBackup     = $true
+            }
+            $ResultsSanLog = Get-DbaBackupInformation @splatMaintenanceNoLog
+            ($ResultsSanLog | Where-Object Type -eq "Database").Count | Should -BeExactly 1
         }
 
-        It "Should be 0 log backups" {
-            ($olaResultsSanLog | Where-Object Type -eq "Transaction Log").Status.Count | Should -BeExactly 0
+        It "Should be 0 log backups when ignoring log backups" {
+            $splatMaintenanceNoLog = @{
+                SqlInstance         = $TestConfig.instance1
+                Path                = $DestBackupDirOla
+                MaintenanceSolution = $true
+                IgnoreLogBackup     = $true
+            }
+            $resultsSanLog = Get-DbaBackupInformation @splatMaintenanceNoLog
+            ($resultsSanLog | Where-Object Type -eq "Transaction Log").Count | Should -BeExactly 0
         }
 
         It "Should Warn if IgnoreLogBackup without MaintenanceSolution" {
+            $splatNoMaintenanceWithIgnore = @{
+                SqlInstance     = $TestConfig.instance1
+                Path            = $DestBackupDirOla
+                IgnoreLogBackup = $true
+                WarningVariable = "warnvar"
+                WarningAction   = "SilentlyContinue"
+            }
+            $ResultsSanLog = Get-DbaBackupInformation @splatNoMaintenanceWithIgnore 3> $null
             $warnVar | Should -Match "IgnoreLogBackup can only by used with MaintenanceSolution. Will not be used"
         }
 
         It "Should ignore IgnoreLogBackup and return 3 backups" {
-            $olaResultsWarnTest.Status.Count | Should -BeExactly 3
+            $splatNoMaintenanceWithIgnore = @{
+                SqlInstance     = $TestConfig.instance1
+                Path            = $DestBackupDirOla
+                IgnoreLogBackup = $true
+                WarningVariable = "warnvar"
+                WarningAction   = "SilentlyContinue"
+            }
+            $resultsSanLog = Get-DbaBackupInformation @splatNoMaintenanceWithIgnore 3> $null
+            $resultsSanLog.Count | Should -BeExactly 3
         }
     }
 }

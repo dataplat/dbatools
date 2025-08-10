@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Get-DbaAgentServer",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -9,7 +9,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
-    Context "Validate parameters" {
+    Context "Parameter validation" {
         BeforeAll {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
@@ -20,20 +20,20 @@ Describe $CommandName -Tag UnitTests {
             )
         }
 
-        It "Should only contain our specific parameters" {
+        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
 Describe $CommandName -Tag IntegrationTests {
-    Context "Command gets server agent" {
+    Context "When getting server agent" {
         BeforeAll {
-            $results = @(Get-DbaAgentServer -SqlInstance $TestConfig.instance2)
+            $agentResults = Get-DbaAgentServer -SqlInstance $TestConfig.instance2
         }
 
         It "Should get 1 agent server" {
-            $results.Status.Count | Should -BeExactly 1
+            $agentResults.Count | Should -BeExactly 1
         }
     }
 }

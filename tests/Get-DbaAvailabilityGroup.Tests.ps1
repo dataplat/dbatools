@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Get-DbaAvailabilityGroup",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -32,6 +32,9 @@ Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
+        # Explain what needs to be set up for the test:
+        # We need to create an availability group to test the Get-DbaAvailabilityGroup command.
 
         # Set variables. They are available in all the It blocks.
         $agName = "dbatoolsci_agroup"
@@ -68,7 +71,7 @@ Describe $CommandName -Tag IntegrationTests {
             $results.AvailabilityGroup | Should -Contain $agName
         }
 
-        It "Returns a single result for specific AG" {
+        It "Returns a single result" {
             $results = Get-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agName
             $results.AvailabilityGroup | Should -Be $agName
         }

@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Get-DbaAgentJobHistory",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -35,9 +35,9 @@ Describe $CommandName -Tag UnitTests {
 }
 
 
-Describe "$CommandName Unittests" -Tag UnitTests {
+Describe $CommandName -Tag UnitTests {
     BeforeAll {
-        InModuleScope "dbatools" {
+        InModuleScope dbatools {
             Mock Connect-DbaInstance -MockWith {
                 # Thanks @Fred
                 $obj = [PSCustomObject]@{
@@ -51,7 +51,7 @@ Describe "$CommandName Unittests" -Tag UnitTests {
                     JobServer            = New-Object PSObject
                     ConnectionContext    = New-Object PSObject
                 }
-                Add-Member -InputObject $obj.ConnectionContext -Name ConnectionString  -MemberType NoteProperty -Value "put=an=equal=in=it"
+                Add-Member -InputObject $obj.ConnectionContext -Name ConnectionString -MemberType NoteProperty -Value "put=an=equal=in=it"
                 Add-Member -InputObject $obj.JobServer -Name EnumJobHistory -MemberType ScriptMethod -Value {
                     param ($filter)
                     return @(
@@ -120,7 +120,7 @@ Describe "$CommandName Unittests" -Tag UnitTests {
 
     Context "Return values" {
         BeforeAll {
-            InModuleScope "dbatools" {
+            InModuleScope dbatools {
                 Mock Get-DbaAgentJobOutputFile -MockWith {
                     @(
                         @{
@@ -144,29 +144,29 @@ Describe "$CommandName Unittests" -Tag UnitTests {
         }
 
         It "Throws when ExcludeJobSteps and WithOutputFile" {
-            InModuleScope "dbatools" {
+            InModuleScope dbatools {
                 { Get-DbaAgentJobHistory -SqlInstance "SQLServerName" -ExcludeJobSteps -WithOutputFile -EnableException } | Should -Throw
             }
         }
 
         It "Returns full history by default" {
-            InModuleScope "dbatools" {
+            InModuleScope dbatools {
                 $Results = @()
                 $Results += Get-DbaAgentJobHistory -SqlInstance "SQLServerName"
-                $Results.Count | Should -BeExactly 6
+                $Results.Status.Count | Should -Be 6
             }
         }
 
         It "Returns only runs with no steps with ExcludeJobSteps" {
-            InModuleScope "dbatools" {
+            InModuleScope dbatools {
                 $Results = @()
                 $Results += Get-DbaAgentJobHistory -SqlInstance "SQLServerName" -ExcludeJobSteps
-                $Results.Count | Should -BeExactly 2
+                $Results.Status.Count | Should -Be 2
             }
         }
 
         It "Returns our own 'augmented' properties, too" {
-            InModuleScope "dbatools" {
+            InModuleScope dbatools {
                 $Results = @()
                 $Results += Get-DbaAgentJobHistory -SqlInstance "SQLServerName" -ExcludeJobSteps
                 $Results[0].psobject.properties.Name | Should -Contain "StartDate"
@@ -176,25 +176,25 @@ Describe "$CommandName Unittests" -Tag UnitTests {
         }
 
         It "Returns 'augmented' properties that are correct" {
-            InModuleScope "dbatools" {
+            InModuleScope dbatools {
                 $Results = @()
                 $Results += Get-DbaAgentJobHistory -SqlInstance "SQLServerName" -ExcludeJobSteps
                 $Results[0].StartDate | Should -Be $Results[0].RunDate
-                $Results[0].RunDuration | Should -BeExactly 112
-                $Results[0].Duration.TotalSeconds | Should -BeExactly 72
+                $Results[0].RunDuration | Should -Be 112
+                $Results[0].Duration.TotalSeconds | Should -Be 72
                 $Results[0].EndDate | Should -Be ($Results[0].StartDate.AddSeconds($Results[0].Duration.TotalSeconds))
             }
         }
 
         It "Figures out plain outputfiles" {
-            InModuleScope "dbatools" {
+            InModuleScope dbatools {
                 $Results = @()
                 $Results += Get-DbaAgentJobHistory -SqlInstance "SQLServerName" -WithOutputFile
                 # no output for outcomes
-                ($Results | Where-Object StepID -eq 0).Count | Should -BeExactly 2
+                ($Results | Where-Object StepID -eq 0).Status.Count | Should -Be 2
                 ($Results | Where-Object StepID -eq 0).OutputFileName -Join "" | Should -Be ""
                 # correct output for job1
-                ($Results | Where-Object StepID -ne 0 | Where-Object JobName -eq "Job1").OutputFileName | Should -Match "Job1Output[12]"
+                ($Results | Where-Object { $PSItem.StepID -ne 0 } | Where-Object JobName -eq "Job1").OutputFileName | Should -Match "Job1Output[12]"
                 # correct output for job2
                 ($Results | Where-Object StepID -eq 2 | Where-Object JobName -eq "Job2").OutputFileName | Should -Match "Job2Output1"
                 ($Results | Where-Object StepID -eq 1 | Where-Object JobName -eq "Job2").OutputFileName | Should -Be ""
@@ -204,7 +204,7 @@ Describe "$CommandName Unittests" -Tag UnitTests {
 
     Context "SQL Agent Tokens" {
         It "Handles INST" {
-            InModuleScope "dbatools" {
+            InModuleScope dbatools {
                 Mock Get-DbaAgentJobOutputFile -MockWith {
                     @(
                         @{
@@ -222,7 +222,7 @@ Describe "$CommandName Unittests" -Tag UnitTests {
         }
 
         It "Handles MACH" {
-            InModuleScope "dbatools" {
+            InModuleScope dbatools {
                 Mock Get-DbaAgentJobOutputFile -MockWith {
                     @(
                         @{
@@ -240,7 +240,7 @@ Describe "$CommandName Unittests" -Tag UnitTests {
         }
 
         It "Handles SQLDIR" {
-            InModuleScope "dbatools" {
+            InModuleScope dbatools {
                 Mock Get-DbaAgentJobOutputFile -MockWith {
                     @(
                         @{
@@ -258,7 +258,7 @@ Describe "$CommandName Unittests" -Tag UnitTests {
         }
 
         It "Handles SQLLOGDIR" {
-            InModuleScope "dbatools" {
+            InModuleScope dbatools {
                 Mock Get-DbaAgentJobOutputFile -MockWith {
                     @(
                         @{
@@ -276,7 +276,7 @@ Describe "$CommandName Unittests" -Tag UnitTests {
         }
 
         It "Handles SRVR" {
-            InModuleScope "dbatools" {
+            InModuleScope dbatools {
                 Mock Get-DbaAgentJobOutputFile -MockWith {
                     @(
                         @{
@@ -294,7 +294,7 @@ Describe "$CommandName Unittests" -Tag UnitTests {
         }
 
         It "Handles STEPID" {
-            InModuleScope "dbatools" {
+            InModuleScope dbatools {
                 Mock Get-DbaAgentJobOutputFile -MockWith {
                     @(
                         @{
@@ -311,7 +311,7 @@ Describe "$CommandName Unittests" -Tag UnitTests {
         }
 
         It "Handles JOBID" {
-            InModuleScope "dbatools" {
+            InModuleScope dbatools {
                 Mock Get-DbaAgentJobOutputFile -MockWith {
                     @(
                         @{
@@ -329,7 +329,7 @@ Describe "$CommandName Unittests" -Tag UnitTests {
         }
 
         It "Handles STRTDT" {
-            InModuleScope "dbatools" {
+            InModuleScope dbatools {
                 Mock Get-DbaAgentJobOutputFile -MockWith {
                     @(
                         @{
@@ -346,7 +346,7 @@ Describe "$CommandName Unittests" -Tag UnitTests {
         }
 
         It "Handles STRTTM" {
-            InModuleScope "dbatools" {
+            InModuleScope dbatools {
                 Mock Get-DbaAgentJobOutputFile -MockWith {
                     @(
                         @{
@@ -363,7 +363,7 @@ Describe "$CommandName Unittests" -Tag UnitTests {
         }
 
         It "Handles DATE" {
-            InModuleScope "dbatools" {
+            InModuleScope dbatools {
                 Mock Get-DbaAgentJobOutputFile -MockWith {
                     @(
                         @{
@@ -380,7 +380,7 @@ Describe "$CommandName Unittests" -Tag UnitTests {
         }
 
         It "Handles TIME" {
-            InModuleScope "dbatools" {
+            InModuleScope dbatools {
                 Mock Get-DbaAgentJobOutputFile -MockWith {
                     @(
                         @{
@@ -399,7 +399,7 @@ Describe "$CommandName Unittests" -Tag UnitTests {
 
     Context "SQL Agent escape sequences" {
         It "Handles ESCAPE_NONE" {
-            InModuleScope "dbatools" {
+            InModuleScope dbatools {
                 Mock Get-DbaAgentJobOutputFile -MockWith {
                     @(
                         @{
@@ -417,7 +417,7 @@ Describe "$CommandName Unittests" -Tag UnitTests {
         }
 
         It "Handles ESCAPE_SQUOTE" {
-            InModuleScope "dbatools" {
+            InModuleScope dbatools {
                 Mock Get-DbaAgentJobOutputFile -MockWith {
                     @(
                         @{
@@ -430,12 +430,12 @@ Describe "$CommandName Unittests" -Tag UnitTests {
                 $Results = @()
                 $Results += Get-DbaAgentJobHistory -SqlInstance "SQLServerName" -WithOutputFile
 
-                ($Results | Where-Object StepID -eq 1 | Where-Object JobName -eq "Job1").OutputFileName | Should -Be "BASEErrorLog_''''_""_]_Path__Job1Output1"
+                ($Results | Where-Object StepID -eq 1 | Where-Object JobName -eq "Job1").OutputFileName | Should -Be "BASEErrorLog_''_""_]_Path__Job1Output1"
             }
         }
 
         It "Handles ESCAPE_DQUOTE" {
-            InModuleScope "dbatools" {
+            InModuleScope dbatools {
                 Mock Get-DbaAgentJobOutputFile -MockWith {
                     @(
                         @{
@@ -453,7 +453,7 @@ Describe "$CommandName Unittests" -Tag UnitTests {
         }
 
         It "Handles ESCAPE_RBRACKET" {
-            InModuleScope "dbatools" {
+            InModuleScope dbatools {
                 Mock Get-DbaAgentJobOutputFile -MockWith {
                     @(
                         @{
