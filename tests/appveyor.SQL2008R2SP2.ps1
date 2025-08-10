@@ -42,7 +42,7 @@ Function Install-ADAuthenticationLibraryforSQLServer {
     }
 }
 
-$null = Install-ADAuthenticationLibraryforSQLServer
+#$null = Install-ADAuthenticationLibraryforSQLServer
 
 $indent = '...'
 Write-Host -Object "$indent Running $PSCommandpath" -ForegroundColor DarkGreen
