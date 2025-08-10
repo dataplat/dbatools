@@ -56,7 +56,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Language" {
-            $results = Remove-DbaCustomError -SqlInstance $server -MessageID 70003 -Language "InvalidLanguage"
+            $results = Remove-DbaCustomError -SqlInstance $server -MessageID 70003 -Language "InvalidLanguage" -WarningAction SilentlyContinue
             $results | Should -BeNullOrEmpty
 
             $results = Remove-DbaCustomError -SqlInstance $server -MessageID 70003 -Language "French"

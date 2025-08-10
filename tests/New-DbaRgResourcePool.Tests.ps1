@@ -99,6 +99,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 CapCpuPercent           = 100
                 Force                   = $true
                 SkipReconfigure         = $true
+                WarningAction           = "SilentlyContinue"
             }
 
             $null = New-DbaRgResourcePool @splatNewResourcePool

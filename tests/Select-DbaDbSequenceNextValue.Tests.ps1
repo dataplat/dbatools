@@ -30,7 +30,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "commands work as expected" {
 
         It "validates required Database param" {
-            $sequenceValue = Select-DbaDbSequenceNextValue -SqlInstance $server -Sequence SequenceTest -ErrorVariable error
+            $sequenceValue = Select-DbaDbSequenceNextValue -SqlInstance $server -Sequence SequenceTest -ErrorVariable error -WarningAction SilentlyContinue
             $sequenceValue | Should -BeNullOrEmpty
             $error | Should -Match "Database is required when SqlInstance is specified"
         }
