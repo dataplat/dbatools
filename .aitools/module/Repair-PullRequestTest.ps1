@@ -300,7 +300,7 @@ function Repair-PullRequestTest {
             $needsStash = $false
             if ((git status --porcelain 2>$null)) {
                 Write-Verbose "Stashing uncommitted changes"
-                git stash
+                git stash --quiet | Out-Null
                 $needsStash = $true
             } else {
                 Write-Verbose "No uncommitted changes to stash"
@@ -309,7 +309,7 @@ function Repair-PullRequestTest {
             # Batch copy all working test files from development branch
             Write-Progress -Activity "Repairing Pull Request Tests" -Status "Getting working test files from development branch..." -PercentComplete 25 -Id 0
             Write-Verbose "Switching to development branch to copy all working test files"
-            git checkout development 2>$null | Out-Null
+            git checkout development --quiet 2>$null | Out-Null
 
             $copiedFiles = @()
             foreach ($fileName in $fileErrorMap.Keys) {
@@ -343,13 +343,13 @@ function Repair-PullRequestTest {
                 Write-Verbose "Successfully checked out branch '$($selectedPR.headRefName)'"
             } else {
                 Write-Verbose "Switching back to original branch '$originalBranch'"
-                git checkout $originalBranch 2>$null | Out-Null
+                git checkout $originalBranch --quiet 2>$null | Out-Null
             }
 
             # Unstash if we stashed earlier
             if ($needsStash) {
                 Write-Verbose "Restoring stashed changes"
-                git stash pop 2>$null | Out-Null
+                git stash pop --quiet 2>$null | Out-Null
             }
 
             # Now process each unique file once with ALL its errors

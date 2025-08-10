@@ -322,7 +322,7 @@ function Invoke-AITool {
                     $arguments = @()
 
                     # Add non-interactive print mode FIRST
-                    $arguments += "-p", $fullMessage
+                    $arguments += "-p", ($fullMessage -join ' ')
 
                     # Add the dangerous flag early
                     if ($DangerouslySkipPermissions) {
@@ -366,11 +366,28 @@ function Invoke-AITool {
                     Write-Verbose "Executing: claude $($arguments -join ' ')"
 
                     try {
-                        $results = claude @arguments
+                        # Workaround for StandardOutputEncoding issue:
+                        # Explicitly capture process output by invoking via PowerShell's call operator
+                        # and redirecting stdout/stderr, which allows encoding to be handled correctly
+                        $psi = @{
+                            FilePath     = "claude"
+                            ArgumentList = $arguments
+                            RedirectStandardOutput = $true
+                            RedirectStandardError  = $true
+                            PassThru     = $true
+                        }
+                        $proc = Start-Process @psi
+                        $stdout = $proc.StandardOutput.ReadToEnd()
+                        $stderr = $proc.StandardError.ReadToEnd()
+                        $proc.WaitForExit()
+
+                        if ($proc.ExitCode -ne 0) {
+                            throw "Claude execution failed with exit code $($proc.ExitCode): $stderr"
+                        }
 
                         [pscustomobject]@{
                             FileName = (Split-Path $singlefile -Leaf)
-                            Results  = "$results"
+                            Results  = "$stdout"
                         }
 
                         Write-Verbose "Claude Code execution completed successfully"
