@@ -53,12 +53,12 @@ Describe $CommandName -Tag IntegrationTests {
                 $l.Drop()
             }
             $dropUserQuery = "IF EXISTS (SELECT * FROM sys.database_principals WHERE name = '{0}') DROP USER [{0}]" -f $Login
-            $null = Invoke-DbaQuery -SqlInstance $Instance -Database tempdb -Query $dropUserQuery
+            $null = Invoke-DbaQuery -SqlInstance $instance -Database tempdb -Query $dropUserQuery
         }
-        $logins = @("claudio", "port", "tester", "tester_new")
+        $loginsToInit = "claudio", "port", "tester", "tester_new"
         $dropTableQuery = "IF EXISTS (SELECT * FROM sys.tables WHERE name = 'tester_table') DROP TABLE tester_table"
         foreach ($instance in $TestConfig.instance1, $TestConfig.instance2) {
-            foreach ($login in $logins) {
+            foreach ($login in $loginsToInit) {
                 Initialize-TestLogin -Instance $instance -Login $login
             }
             $null = Invoke-DbaQuery -SqlInstance $instance -Database tempdb -Query $dropTableQuery
@@ -80,22 +80,17 @@ Describe $CommandName -Tag IntegrationTests {
         Initialize-TestLogin -Instance $TestConfig.instance1 -Login tester_new
     }
     AfterAll {
-        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
-
         # cleanup everything
-        $logins = @("claudio", "port", "tester", "tester_new")
+        $logins = "claudio", "port", "tester", "tester_new"
 
         foreach ($instance in $TestConfig.instance1, $TestConfig.instance2) {
             foreach ($login in $logins) {
                 Initialize-TestLogin -Instance $instance -Login $login
             }
-            $null = Invoke-DbaQuery -SqlInstance $instance -Database tempdb -Query $dropTableQuery -ErrorAction SilentlyContinue
+            $null = Invoke-DbaQuery -SqlInstance $instance -Database tempdb -Query $dropTableQuery
         }
 
-        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -Login "claudio", "port", "tester" -ErrorAction SilentlyContinue
-
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -Login 'claudio', 'port', 'tester'
     }
 
     Context "Copy login with the same properties." {
@@ -133,25 +128,24 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -InputFile "$($TestConfig.appveyorlabrepo)\sql2008-scripts\logins.sql"
         }
-
+        $results = Copy-DbaLogin -Source $TestConfig.instance1 -Destination $TestConfig.instance2 -Login tester
         It "Should say skipped" {
-            $results = Copy-DbaLogin -Source $TestConfig.instance1 -Destination $TestConfig.instance2 -Login tester
             $results.Status | Should -Be "Skipped"
             $results.Notes | Should -Be "Already exists on destination"
         }
     }
 
     Context "ExcludeSystemLogins Parameter" {
+        $results = Copy-DbaLogin -Source $TestConfig.instance1 -Destination $TestConfig.instance2 -ExcludeSystemLogins
         It "Should say skipped" {
-            $results = Copy-DbaLogin -Source $TestConfig.instance1 -Destination $TestConfig.instance2 -ExcludeSystemLogins
-            $results.Status.Contains("Skipped") | Should -Be $true
-            $results.Notes.Contains("System login") | Should -Be $true
+            $results.Status.Contains('Skipped') | Should -Be $true
+            $results.Notes.Contains('System login') | Should -Be $true
         }
     }
 
     Context "Supports pipe" {
+        $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login tester | Copy-DbaLogin -Destination $TestConfig.instance2 -Force
         It "migrates the one tester login" {
-            $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login tester | Copy-DbaLogin -Destination $TestConfig.instance2 -Force
             $results.Name | Should -Be "tester"
             $results.Status | Should -Be "Successful"
         }
@@ -159,39 +153,25 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Supports cloning" {
         It "clones the one tester login" {
-            $splatClone = @{
-                Source               = $TestConfig.instance1
-                Login                = "tester"
-                Destination          = $TestConfig.instance1
-                Force                = $true
-                LoginRenameHashtable = @{ tester = "tester_new" }
-                NewSid               = $true
-            }
-            $results = Copy-DbaLogin @splatClone
+            $results = Copy-DbaLogin -Source $TestConfig.instance1 -Login tester -Destination $TestConfig.instance1 -Force -LoginRenameHashtable @{ tester = 'tester_new' } -NewSid
             $results.Name | Should -Be "tester_new"
             $results.Status | Should -Be "Successful"
             Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login tester_new | Should -Not -BeNullOrEmpty
         }
         It "clones the one tester login using pipe" {
-            $splatClonePipe = @{
-                Destination          = $TestConfig.instance1
-                Force                = $true
-                LoginRenameHashtable = @{ tester = "tester_new" }
-                NewSid               = $true
-            }
-            $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login tester | Copy-DbaLogin @splatClonePipe
+            $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login tester | Copy-DbaLogin -Destination $TestConfig.instance1 -Force -LoginRenameHashtable @{ tester = 'tester_new' } -NewSid
             $results.Name | Should -Be "tester_new"
             $results.Status | Should -Be "Successful"
             Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login tester_new | Should -Not -BeNullOrEmpty
         }
         It "clones the one tester login to a different server with a new name" {
-            @("tester", "tester_new") | ForEach-Object {
-                Initialize-TestLogin -Instance $TestConfig.instance2 -Login $PSItem
+            'tester', 'tester_new' | ForEach-Object {
+                Initialize-TestLogin -Instance $TestConfig.instance2 -Login $_
             }
-            $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login tester | Copy-DbaLogin -Destination $TestConfig.instance2 -LoginRenameHashtable @{ tester = "tester_new" }
+            $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login tester | Copy-DbaLogin -Destination $TestConfig.instance2 -LoginRenameHashtable @{ tester = 'tester_new' }
             $results.Name | Should -Be "tester_new"
             $results.Status | Should -Be "Successful"
-            $login = (Connect-DbaInstance -SqlInstance $TestConfig.instance2).Logins["tester_new"]
+            $login = (Connect-DbaInstance -SqlInstance $TestConfig.instance2).Logins['tester_new']
             $login | Should -Not -BeNullOrEmpty
             $login | Remove-DbaLogin -Force
         }
@@ -202,61 +182,42 @@ Describe $CommandName -Tag IntegrationTests {
             $tempExportFile = [System.IO.Path]::GetTempFileName()
         }
         BeforeEach {
-            @("tester", "tester_new") | ForEach-Object {
-                Initialize-TestLogin -Instance $TestConfig.instance2 -Login $PSItem
+            'tester', 'tester_new' | ForEach-Object {
+                Initialize-TestLogin -Instance $TestConfig.instance2 -Login $_
             }
         }
         AfterAll {
-            Remove-Item -Path $tempExportFile -Force -ErrorAction SilentlyContinue
+            Remove-Item -Path $tempExportFile -Force
         }
         It "clones the one tester login with sysadmin permissions" {
-            $splatSysadmin = @{
-                Source               = $TestConfig.instance1
-                Login                = "tester"
-                Destination          = $TestConfig.instance2
-                LoginRenameHashtable = @{ tester = "tester_new" }
-            }
-            $results = Copy-DbaLogin @splatSysadmin
+            $results = Copy-DbaLogin -Source $TestConfig.instance1 -Login tester -Destination $TestConfig.instance2 -LoginRenameHashtable @{ tester = 'tester_new' }
             $results.Name | Should -Be "tester_new"
             $results.Status | Should -Be "Successful"
             $i2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-            $login = $i2.Logins["tester_new"]
+            $login = $i2.Logins['tester_new']
             $login | Should -Not -BeNullOrEmpty
-            $role = $i2.Roles["sysadmin"]
+            $role = $i2.Roles['sysadmin']
             $role.EnumMemberNames() | Should -Contain $results.Name
         }
         It "clones the one tester login with object permissions" {
-            $splatObjectLevel = @{
-                Source               = $TestConfig.instance1
-                Login                = "tester"
-                Destination          = $TestConfig.instance2
-                LoginRenameHashtable = @{ tester = "tester_new" }
-                ObjectLevel          = $true
-            }
-            $results = Copy-DbaLogin @splatObjectLevel
+            $results = Copy-DbaLogin -Source $TestConfig.instance1 -Login tester -Destination $TestConfig.instance2 -LoginRenameHashtable @{ tester = 'tester_new' } -ObjectLevel
             $results.Name | Should -Be "tester_new"
             $results.Status | Should -Be "Successful"
             $i2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-            $login = $i2.Logins["tester_new"]
+            $login = $i2.Logins['tester_new']
             $login | Should -Not -BeNullOrEmpty
             $permissions = Export-DbaUser -SqlInstance $TestConfig.instance2 -Database tempdb -User tester_new -Passthru
-            $permissions | Should -BeLike "*GRANT INSERT ON OBJECT::`[dbo`].`[tester_table`] TO `[tester_new`]*"
+            $permissions | Should -BeLike '*GRANT INSERT ON OBJECT::`[dbo`].`[tester_table`] TO `[tester_new`]*'
         }
         It "scripts out two tester login with object permissions" {
-            $splatScript = @{
-                Source      = $TestConfig.instance1
-                Login       = @("tester", "port")
-                OutFile     = $tempExportFile
-                ObjectLevel = $true
-            }
-            $results = Copy-DbaLogin @splatScript
+            $results = Copy-DbaLogin -Source $TestConfig.instance1 -Login tester, port -OutFile $tempExportFile -ObjectLevel
             $results | Should -Be $tempExportFile
             $permissions = Get-Content $tempExportFile -Raw
-            $permissions | Should -BeLike "*CREATE LOGIN `[tester`]*"
+            $permissions | Should -BeLike '*CREATE LOGIN `[tester`]*'
             $permissions | Should -Match "(ALTER SERVER ROLE \[sysadmin\] ADD MEMBER \[tester\]|EXEC sys.sp_addsrvrolemember @rolename=N'sysadmin', @loginame=N'tester')"
-            $permissions | Should -BeLike "*GRANT INSERT ON OBJECT::`[dbo`].`[tester_table`] TO `[tester`]*"
-            $permissions | Should -BeLike "*CREATE LOGIN `[port`]*"
-            $permissions | Should -BeLike "*GRANT CONNECT SQL TO `[port`]*"
+            $permissions | Should -BeLike '*GRANT INSERT ON OBJECT::`[dbo`].`[tester_table`] TO `[tester`]*'
+            $permissions | Should -BeLike '*CREATE LOGIN `[port`]*'
+            $permissions | Should -BeLike '*GRANT CONNECT SQL TO `[port`]*'
         }
     }
 }
