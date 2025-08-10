@@ -1,10 +1,11 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $ModuleName  = "dbatools",
+    $CommandName = "Copy-DbaXESession",
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Describe "Copy-DbaXESession" -Tag "UnitTests" {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
             $command = Get-Command Copy-DbaXESession
