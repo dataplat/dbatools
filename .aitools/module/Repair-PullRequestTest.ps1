@@ -501,6 +501,9 @@ function Repair-PullRequestTest {
             Write-Verbose "All $($updateJobs.Count) Update-PesterTest parallel jobs completed"
             Write-Progress -Activity "Running Update-PesterTest (Parallel)" -Completed -Id 1
 
+            # Collect successfully processed files and run formatter
+            Get-ChildItem $jobInfo.FileName | Invoke-DbatoolsFormatter
+
             # Commit changes if requested
             if ($AutoCommit) {
                 Write-Progress -Activity "Repairing Pull Request Tests" -Status "Committing fixes..." -PercentComplete 90 -Id 0
