@@ -1,14 +1,13 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
 param(
-    $ModuleName  = "dbatools",
-    $CommandName = "Disable-DbaDbEncryption",
+    $ModuleName = "dbatools",
     $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
 )
 
-Describe $CommandName -Tag UnitTests {
+Describe "Disable-DbaDbEncryption" -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
-            $command = Get-Command $CommandName
+            $command = Get-Command Disable-DbaDbEncryption
             $expected = $TestConfig.CommonParameters
             $expected += @(
                 "SqlInstance",
@@ -20,22 +19,20 @@ Describe $CommandName -Tag UnitTests {
             )
         }
 
-        It "Has parameter: <PSItem>" -TestCases ($expected | ForEach-Object { @{ PSItem = $PSItem } }) {
+        It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }
 
         It "Should have exactly the number of expected parameters ($($expected.Count))" {
-            $hasParameters = $command.Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
-            Compare-Object -ReferenceObject $expected -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+            $hasparms = $command.Parameters.Values.Name | Where-Object { $PSItem -notin "WhatIf", "Confirm" }
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe $CommandName -Tag IntegrationTests {
+Describe "Disable-DbaDbEncryption" -Tag "IntegrationTests" {
     BeforeAll {
-        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
+        $PSDefaultParameterValues["*:Confirm"] = $false
         $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
 
         # Setup master key if needed
@@ -60,37 +57,28 @@ Describe $CommandName -Tag IntegrationTests {
         $testDb | New-DbaDbCertificate
         $testDb | New-DbaDbEncryptionKey -Force
         $testDb | Enable-DbaDbEncryption -EncryptorName $mastercert.Name -Force
-
-        # Store for use in contexts
-        $global:mastercert = $mastercert
-
-        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
-        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
         if ($testDb) {
-            $testDb | Remove-DbaDatabase -Confirm:$false
+            $testDb | Remove-DbaDatabase
         }
         if ($delmastercert) {
-            $mastercert | Remove-DbaDbCertificate -Confirm:$false
+            $mastercert | Remove-DbaDbCertificate
         }
         if ($delmasterkey) {
-            $masterkey | Remove-DbaDbMasterKey -Confirm:$false
+            $masterkey | Remove-DbaDbMasterKey
         }
     }
 
     Context "When disabling encryption via pipeline" {
         BeforeAll {
             Start-Sleep -Seconds 10 # Allow encryption to complete
-            $results = $testDb | Disable-DbaDbEncryption -NoEncryptionKeyDrop -WarningVariable WarnVar 3> $null
+            $results = $testDb | Disable-DbaDbEncryption -NoEncryptionKeyDrop -WarningVariable warn 3> $null
         }
 
         It "Should complete without warnings" {
-            $WarnVar | Where-Object { $PSItem -NotLike "*Connect-DbaInstance*" } | Should -BeNullOrEmpty
+            $warn | Where-Object { $_ -NotLike '*Connect-DbaInstance*'} | Should -BeNullOrEmpty
         }
 
         It "Should disable encryption" {
@@ -105,13 +93,13 @@ Describe $CommandName -Tag IntegrationTests {
 
             $splatDisable = @{
                 SqlInstance = $TestConfig.instance2
-                Database    = $testDb.Name
+                Database = $testDb.Name
             }
-            $results = Disable-DbaDbEncryption @splatDisable -WarningVariable WarnVar 3> $null
+            $results = Disable-DbaDbEncryption @splatDisable -WarningVariable warn 3> $null
         }
 
         It "Should complete without warnings" {
-            $WarnVar | Where-Object { $PSItem -NotLike "*Connect-DbaInstance*" } | Should -BeNullOrEmpty
+            $warn | Where-Object { $_ -NotLike '*Connect-DbaInstance*'} | Should -BeNullOrEmpty
         }
 
         It "Should disable encryption" {
