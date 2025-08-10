@@ -51,16 +51,7 @@ function Repair-PullRequestTest {
     )
 
     begin {
-        # Ensure we're in the dbatools repository
-        $gitRoot = git rev-parse --show-toplevel 2>$null
-        if (-not $gitRoot -or -not (Test-Path "$gitRoot/dbatools.psm1")) {
-            throw "This command must be run from within the dbatools repository"
-        } else {
-            Write-Progress -Activity "Repairing Pull Request Tests" -Status "Importing dbatools" -PercentComplete 0
-            Import-Module "$gitRoot/dbatools.psm1" -Force -ErrorAction Stop
-        }
-
-        Write-Verbose "Working in repository: $gitRoot"
+        # Removed dbatools and dbatools.library import logic, no longer required.
 
         # Store current branch to return to it later - be more explicit
         $originalBranch = git rev-parse --abbrev-ref HEAD 2>$null
@@ -166,7 +157,7 @@ function Repair-PullRequestTest {
                 if (-not $selectedPR -and -not $PRNumber) {
                     # No PR context, stay on current branch
                     $selectedPR = @{
-                        number = "current"
+                        number      = "current"
                         headRefName = $originalBranch
                     }
                 }
@@ -385,10 +376,19 @@ function Repair-PullRequestTest {
             # Now run Update-PesterTest in parallel with Start-Job (simplified approach)
             Write-Verbose "Starting parallel Update-PesterTest jobs for $($fileErrorMap.Keys.Count) files"
 
+            # Ensure git root path and clean environment variables
+            $gitRoot = (git rev-parse --show-toplevel).Trim()
+            if (-not $gitRoot) {
+                throw "Unable to determine Git repository root path."
+            }
+            $cleanEnvVars = @{}
+            Get-ChildItem env: | ForEach-Object { $cleanEnvVars[$_.Name] = $_.Value }
+
             $updateJobs = @()
             foreach ($fileName in $fileErrorMap.Keys) {
                 # Skip if already processed
                 if ($processedFiles.ContainsKey($fileName)) {
+                    Write-Verbose "Skipping $fileName - already processed"
                     continue
                 }
 
@@ -399,24 +399,6 @@ function Repair-PullRequestTest {
                 }
 
                 Write-Verbose "Starting parallel job for Update-PesterTest on: $fileName"
-
-                # Prepare environment variables for the job
-                $envVars = @{
-                    'SYSTEM_ACCESSTOKEN' = $env:SYSTEM_ACCESSTOKEN
-                    'BUILD_SOURCESDIRECTORY' = $env:BUILD_SOURCESDIRECTORY
-                    'APPVEYOR_BUILD_FOLDER' = $env:APPVEYOR_BUILD_FOLDER
-                    'CI' = $env:CI
-                    'APPVEYOR' = $env:APPVEYOR
-                    'SYSTEM_DEFAULTWORKINGDIRECTORY' = $env:SYSTEM_DEFAULTWORKINGDIRECTORY
-                }
-
-                # Remove null environment variables
-                $cleanEnvVars = @{}
-                foreach ($key in $envVars.Keys) {
-                    if ($envVars[$key] -ne $null) {
-                        $cleanEnvVars[$key] = $envVars[$key]
-                    }
-                }
 
                 $job = Start-Job -ScriptBlock {
                     param($TestPath, $GitRoot, $EnvVars)
@@ -429,21 +411,28 @@ function Repair-PullRequestTest {
                         Set-Item -Path "env:$key" -Value $EnvVars[$key]
                     }
 
-                    # Import dbatools module first (with correct path)
-                    $dbaToolsModule = Join-Path $GitRoot "dbatools.psm1"
-                    if (Test-Path $dbaToolsModule) {
-                        Import-Module $dbaToolsModule -Force -ErrorAction SilentlyContinue
+                    # Import all AI tool modules safely
+                    $modulePath = Join-Path $GitRoot ".aitools/module"
+                    if (Test-Path $modulePath) {
+                        Get-ChildItem (Join-Path $modulePath "*.ps1") | ForEach-Object { . $_.FullName }
+                    } else {
+                        throw "Module path not found: $modulePath"
                     }
 
-                    # Import all AI tool modules
-                    Get-ChildItem "$GitRoot/.aitools/module/*.ps1" | ForEach-Object { . $_.FullName }
+                    # Just import from installed dbatools module
+                    try {
+                        # Removed Import-Module dbatools, no longer required
+                        Write-Verbose "Skipped importing dbatools module"
+                    } catch {
+                        Write-Warning "Failed to import installed dbatools module - $($_.Exception.Message)"
+                    }
 
                     # Prepare paths for Update-PesterTest
-                    $promptFilePath = "$GitRoot/.aitools/module/prompts/prompt.md"
+                    $promptFilePath = Join-Path $modulePath "prompts/prompt.md"
                     $cacheFilePaths = @(
-                        "$GitRoot/.aitools/module/prompts/style.md",
-                        "$GitRoot/.aitools/module/prompts/migration.md",
-                        "$GitRoot/private/testing/Get-TestConfig.ps1"
+                        (Join-Path $modulePath "prompts/style.md"),
+                        (Join-Path $modulePath "prompts/migration.md"),
+                        (Join-Path $GitRoot "private/testing/Get-TestConfig.ps1")
                     )
 
                     try {
@@ -465,7 +454,7 @@ function Repair-PullRequestTest {
                 } -ArgumentList $testPath.Path, $gitRoot, $cleanEnvVars
 
                 $updateJobs += @{
-                    Job = $job
+                    Job      = $job
                     FileName = $fileName
                     TestPath = $testPath.Path
                 }
@@ -473,12 +462,16 @@ function Repair-PullRequestTest {
 
             # Wait for all jobs to complete and collect results
             Write-Verbose "Started $($updateJobs.Count) parallel Update-PesterTest jobs, waiting for completion..."
-            $completedJobs = 0
 
+            # Wait for ALL jobs to complete in parallel first
+            $null = $updateJobs.Job | Wait-Job
+
+            # Then process all results without additional waiting
+            $completedCount = 0
             foreach ($jobInfo in $updateJobs) {
                 try {
-                    $result = Receive-Job -Job $jobInfo.Job -Wait
-                    $completedJobs++
+                    $result = Receive-Job -Job $jobInfo.Job  # No -Wait since jobs are already complete
+                    $completedCount++
 
                     if ($result.Success) {
                         Write-Verbose "Update-PesterTest completed successfully for: $($jobInfo.FileName)"
@@ -488,8 +481,8 @@ function Repair-PullRequestTest {
                     }
 
                     # Update progress
-                    $progress = [math]::Round(($completedJobs / $updateJobs.Count) * 100, 0)
-                    Write-Progress -Activity "Running Update-PesterTest (Parallel)" -Status "Completed $($jobInfo.FileName) ($completedJobs/$($updateJobs.Count))" -PercentComplete $progress -Id 1
+                    $progress = [math]::Round(($completedCount / $updateJobs.Count) * 100, 0)
+                    Write-Progress -Activity "Running Update-PesterTest (Parallel)" -Status "Processed $($jobInfo.FileName) ($completedCount/$($updateJobs.Count))" -PercentComplete $progress -Id 1
 
                 } catch {
                     Write-Warning "Error processing Update-PesterTest job for $($jobInfo.FileName): $($_.Exception.Message)"
@@ -502,7 +495,7 @@ function Repair-PullRequestTest {
             Write-Progress -Activity "Running Update-PesterTest (Parallel)" -Completed -Id 1
 
             # Collect successfully processed files and run formatter
-            Get-ChildItem $jobInfo.FileName | Invoke-DbatoolsFormatter
+            Get-ChildItem $jobInfo.TestPath | Invoke-DbatoolsFormatter
 
             # Commit changes if requested
             if ($AutoCommit) {
@@ -551,6 +544,18 @@ function Repair-PullRequestTest {
             if (Test-Path $tempDir) {
                 Remove-Item $tempDir -Recurse -Force -ErrorAction SilentlyContinue
                 Write-Verbose "Cleaned up temp directory - $tempDir"
+            }
+            # Kill any remaining jobs related to Update-PesterTest to ensure cleanup
+            try {
+                Get-Job | Where-Object {
+                    $_.Command -like "*Update-PesterTest*"
+                } | ForEach-Object {
+                    Write-Verbose "Stopping lingering job: $($_.Id) - $($_.Name)"
+                    Stop-Job -Job $_ -Force -ErrorAction SilentlyContinue
+                    Remove-Job -Job $_ -Force -ErrorAction SilentlyContinue
+                }
+            } catch {
+                Write-Warning "Error while attempting to clean up jobs: $($_.Exception.Message)"
             }
         }
     }

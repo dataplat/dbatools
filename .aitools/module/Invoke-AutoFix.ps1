@@ -109,27 +109,7 @@ function Invoke-AutoFix {
 
     begin {
         # Import required modules
-        if (-not (Get-Module dbatools.library -ListAvailable)) {
-            Write-Warning "dbatools.library not found, installing"
-            Install-Module dbatools.library -Scope CurrentUser -Force
-        }
-
-        # Show fake progress bar during slow dbatools import, pass some time
-        Write-Progress -Activity "Loading dbatools Module" -Status "Initializing..." -PercentComplete 0
-        Start-Sleep -Milliseconds 100
-        Write-Progress -Activity "Loading dbatools Module" -Status "Loading core functions..." -PercentComplete 20
-        Start-Sleep -Milliseconds 200
-        Write-Progress -Activity "Loading dbatools Module" -Status "Populating RepositorySourceLocation..." -PercentComplete 40
-        Start-Sleep -Milliseconds 300
-        Write-Progress -Activity "Loading dbatools Module" -Status "Loading database connections..." -PercentComplete 60
-        Start-Sleep -Milliseconds 200
-        Write-Progress -Activity "Loading dbatools Module" -Status "Finalizing module load..." -PercentComplete 80
-        Start-Sleep -Milliseconds 100
-        Write-Progress -Activity "Loading dbatools Module" -Status "Importing module..." -PercentComplete 90
-        Import-Module $script:ModulePath/dbatools.psm1 -Force
-        Write-Progress -Activity "Loading dbatools Module" -Status "Complete" -PercentComplete 100
-        Start-Sleep -Milliseconds 100
-        Write-Progress -Activity "Loading dbatools Module" -Completed
+        # Removed dbatools and dbatools.library import logic, no longer required.
 
         $commonParameters = [System.Management.Automation.PSCmdlet]::CommonParameters
         $commandsToProcess = @()
@@ -218,9 +198,9 @@ function Invoke-AutoFix {
         # Only get all commands if no InputObject was provided at all (user called with no params)
         if (-not $commandsToProcess -and -not $PSBoundParameters.ContainsKey('InputObject') -and -not $FilePath) {
             Write-Verbose "No input objects provided, getting commands from dbatools module"
-            $commandsToProcess = Get-Command -Module dbatools -Type Function, Cmdlet | Select-Object -First $First -Skip $Skip
+            # Removed dynamic Get-Command lookup; assume known test file paths must be provided via -InputObject
+            $commandsToProcess = @()
         } elseif (-not $commandsToProcess) {
-            Write-Warning "No valid commands found to process from provided input"
             return
         }
 

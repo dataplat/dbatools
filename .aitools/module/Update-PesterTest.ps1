@@ -114,45 +114,7 @@ function Update-PesterTest {
         [string]$ReasoningEffort
     )
     begin {
-        # Full prompt path
-        if (-not (Get-Module dbatools.library -ListAvailable)) {
-            Write-Warning "dbatools.library not found, installing"
-            Install-Module dbatools.library -Scope CurrentUser -Force
-        }
-
-        # Skip dbatools import if already loaded (e.g., from Repair-PullRequestTest)
-        if (-not $env:SKIP_DBATOOLS_IMPORT) {
-            # Show fake progress bar during slow dbatools import, pass some time
-            Write-Progress -Activity "Loading dbatools Module" -Status "Initializing..." -PercentComplete 0
-            Start-Sleep -Milliseconds 100
-            Write-Progress -Activity "Loading dbatools Module" -Status "Loading core functions..." -PercentComplete 20
-            Start-Sleep -Milliseconds 200
-            Write-Progress -Activity "Loading dbatools Module" -Status "Populating RepositorySourceLocation..." -PercentComplete 40
-            Start-Sleep -Milliseconds 300
-            Write-Progress -Activity "Loading dbatools Module" -Status "Loading database connections..." -PercentComplete 60
-            Start-Sleep -Milliseconds 200
-            Write-Progress -Activity "Loading dbatools Module" -Status "Finalizing module load..." -PercentComplete 80
-            Start-Sleep -Milliseconds 100
-            Write-Progress -Activity "Loading dbatools Module" -Status "Importing module..." -PercentComplete 90
-            try {
-                $moduleFilePath = Join-Path -Path (Split-Path -Path $PSScriptRoot -Parent -Parent) -ChildPath "dbatools.psm1"
-                $resolvedModulePath = Resolve-Path $moduleFilePath -ErrorAction Stop
-                Import-Module $resolvedModulePath -Force
-            } catch {
-                Write-Warning "Primary module path resolution via two-level parent failed: $($_.Exception.Message)"
-                $foundModule = Get-ChildItem -Path (Split-Path -Path $PSScriptRoot -Parent -Parent) -Recurse -Filter "dbatools.psm1" -ErrorAction SilentlyContinue | Select-Object -First 1
-                if ($foundModule) {
-                    Import-Module $foundModule.FullName -Force
-                } else {
-                    throw "dbatools.psm1 module file not found in fallback search."
-                }
-            }
-            Write-Progress -Activity "Loading dbatools Module" -Status "Complete" -PercentComplete 100
-            Start-Sleep -Milliseconds 100
-            Write-Progress -Activity "Loading dbatools Module" -Completed
-        } else {
-            Write-Verbose "Skipping dbatools import - already loaded by calling function"
-        }
+        # Removed dbatools and dbatools.library import logic, no longer required.
 
         $promptTemplate = if ($PromptFilePath[0] -and (Test-Path $PromptFilePath[0])) {
             Get-Content $PromptFilePath[0]
@@ -231,9 +193,9 @@ function Update-PesterTest {
         # Only get all commands if no InputObject was provided at all (user called with no params)
         if (-not $commandsToProcess -and -not $PSBoundParameters.ContainsKey('InputObject')) {
             Write-Verbose "No input objects provided, getting commands from dbatools module"
-            $commandsToProcess = Get-Command -Module dbatools -Type Function, Cmdlet | Select-Object -First $First -Skip $Skip
+            # Removed dynamic Get-Command lookup; assume known test file paths must be provided via -InputObject
+            $commandsToProcess = @()
         } elseif (-not $commandsToProcess) {
-            Write-Warning "No valid commands found to process from provided input"
             return
         }
 
