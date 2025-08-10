@@ -547,13 +547,8 @@ function Repair-PullRequestTest {
             }
             # Kill any remaining jobs related to Update-PesterTest to ensure cleanup
             try {
-                Get-Job | Where-Object {
-                    $_.Command -like "*Update-PesterTest*"
-                } | ForEach-Object {
-                    Write-Verbose "Stopping lingering job: $($_.Id) - $($_.Name)"
-                    Stop-Job -Job $_ -Force -ErrorAction SilentlyContinue
-                    Remove-Job -Job $_ -Force -ErrorAction SilentlyContinue
-                }
+                Get-Job | Where-Object Command -like "*Update-PesterTest*" | Stop-Job -ErrorAction SilentlyContinue
+                Get-Job | Where-Object Command -like "*Update-PesterTest*" | Remove-Job -Force -ErrorAction SilentlyContinue
             } catch {
                 Write-Warning "Error while attempting to clean up jobs: $($_.Exception.Message)"
             }
