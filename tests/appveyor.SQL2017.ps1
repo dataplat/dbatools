@@ -17,8 +17,8 @@ Write-Host -Object "$indent Setting up and starting $sqlinstance" -ForegroundCol
 Set-Service -Name SQLBrowser -StartupType Automatic
 Start-Service -Name SQLBrowser
 
-Set-Service -Name "SQLAgent`$$instance" -StartupType Automatic
-Start-Service -Name "SQLAgent`$$instance"
+Set-Service -Name "MSSQL`$$instance" -StartupType Automatic
+Start-Service -Name "MSSQL`$$instance"
 
 Set-Service -Name "SQLAgent`$$instance" -StartupType Automatic
 Start-Service -Name "SQLAgent`$$instance"
