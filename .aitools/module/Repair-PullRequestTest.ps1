@@ -26,6 +26,10 @@ function Repair-PullRequestTest {
        from the development branch to the current branch, without running Update-PesterTest
        or committing any changes.
 
+   .PARAMETER Pattern
+       Pattern to filter test files. Only files matching this pattern will be processed.
+       Supports wildcards (e.g., "*Login*" to match files containing "Login").
+
    .NOTES
        Tags: Testing, Pester, PullRequest, CI
        Author: dbatools team
@@ -53,7 +57,8 @@ function Repair-PullRequestTest {
         [switch]$AutoCommit,
         [int]$MaxPRs = 5,
         [int]$BuildNumber,
-        [switch]$CopyOnly
+        [switch]$CopyOnly,
+        [string]$Pattern
     )
 
     begin {
@@ -269,7 +274,14 @@ function Repair-PullRequestTest {
             $fileErrorPath = @()
             $testdirectory = Join-Path $script:ModulePath "tests"
 
-            foreach ($test in $allFailedTestsAcrossPRs) {
+            # Apply Pattern filter first if specified
+            $filteredTests = if ($Pattern) {
+                $allFailedTestsAcrossPRs | Where-Object { [System.IO.Path]::GetFileName($_.TestFile) -match $Pattern }
+            } else {
+                $allFailedTestsAcrossPRs
+            }
+
+            foreach ($test in $filteredTests) {
                 $fileName = [System.IO.Path]::GetFileName($test.TestFile)
                 # ONLY include files that are actually in the PR changes
                 if ($allRelevantTestFiles.Count -eq 0 -or $fileName -in $allRelevantTestFiles) {
@@ -284,7 +296,11 @@ function Repair-PullRequestTest {
                 }
             }
             $fileErrorPath = $fileErrorPath | Sort-Object -Unique
-            Write-Verbose "Found failures in $($fileErrorMap.Keys.Count) unique test files (filtered to PR changes only)"
+            $filterMessage = "filtered to PR changes only"
+            if ($Pattern) {
+                $filterMessage += " and pattern '$Pattern'"
+            }
+            Write-Verbose "Found failures in $($fileErrorMap.Keys.Count) unique test files ($filterMessage)"
             foreach ($fileName in $fileErrorMap.Keys) {
                 Write-Verbose "  ${fileName} - $($fileErrorMap[$fileName].Count) failures"
                 Write-Verbose "    Paths: $fileErrorPath"
