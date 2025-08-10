@@ -327,10 +327,10 @@ function Invoke-AITool {
                     if ($DangerouslySkipPermissions) {
                         $arguments += "--dangerously-skip-permissions"
                         Write-Verbose "Adding --dangerously-skip-permissions to avoid prompts"
+                    } else {
+                        # Add allowed tools
+                        $arguments += "--allowedTools", "Read,Write,Edit,Create,Replace"
                     }
-
-                    # Add allowed tools
-                    $arguments += "--allowedTools", "Read,Write,Edit,Create,Replace"
 
                     # Add optional parameters
                     if ($Model) {
