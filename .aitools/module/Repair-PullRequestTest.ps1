@@ -303,9 +303,27 @@ function Repair-PullRequestTest {
                 $workingTempPath = Join-Path $tempDir "working-$fileName"
 
                 if ($workingTestPath -and (Test-Path $workingTestPath)) {
-                    Copy-Item $workingTestPath $workingTempPath -Force
-                    $copiedFiles += $fileName
-                    Write-Verbose "Copied working test: $fileName"
+                    $maxAttempts = 2
+                    $attempt = 0
+                    $copied = $false
+                    while (-not $copied -and $attempt -lt $maxAttempts) {
+                        try {
+                            $attempt++
+                            Copy-Item -Path $workingTestPath -Destination $workingTempPath -Force -ErrorAction Stop
+                            $copiedFiles += $fileName
+                            Write-Verbose "Copied working test: $fileName (attempt $attempt)"
+                            $copied = $true
+                        } catch {
+                            Write-Warning ("Attempt {0}: Failed to copy working test file for {1} from development branch: {2}" -f $attempt, $fileName, $_.Exception.Message)
+                            if ($attempt -lt $maxAttempts) {
+                                Start-Sleep -Seconds 1
+                            }
+                        }
+                    }
+                    if (-not $copied) {
+                        Write-Error "Unable to copy working test file for $fileName after $maxAttempts attempts. Aborting repair process for this file."
+                        break
+                    }
                 } else {
                     Write-Warning "Could not find working test file in Development branch: tests/$fileName"
                 }
