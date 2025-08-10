@@ -106,10 +106,10 @@ before_test:
 
 test_script:
    # Test with native PS version
-  - ps: .\Tests\appveyor.pester.ps1 -IncludeCoverage
+  - ps: .\Tests\appveyor.pester.ps1
 
   # Collecting results
-  - ps: .\Tests\appveyor.pester.ps1 -Finalize -IncludeCoverage
+  - ps: .\Tests\appveyor.pester.ps1 -Finalize
 
 after_test:
   - ps: .\Tests\appveyor.post.ps1

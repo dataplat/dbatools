@@ -1,20 +1,33 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName = "dbatools",
+    $CommandName = "Invoke-DbatoolsFormatter",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
+
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 $global:TestConfig = Get-TestConfig
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'Path', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        BeforeAll {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "Path",
+                "EnableException"
+            )
+        }
+
+        It "Should have the expected parameters" {
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName IntegrationTests" -Tag "IntegrationTests" {
-    $content = @'
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        $content = @'
 function Get-DbaStub {
         <#
         .SYNOPSIS
@@ -29,9 +42,9 @@ process {
 
 
 '@
-    #ensure empty lines also at the end
-    $content = $content + "`r`n    `r`n"
-    $wantedContent = @'
+        #ensure empty lines also at the end
+        $content = $content + "`r`n    `r`n"
+        $wantedContent = @'
 function Get-DbaStub {
     <#
         .SYNOPSIS
@@ -45,23 +58,27 @@ function Get-DbaStub {
     }
 }
 '@
+    }
 
     Context "formatting actually works" {
-        $temppath = Join-Path $TestDrive 'somefile.ps1'
-        $temppathUnix = Join-Path $TestDrive 'somefileUnixeol.ps1'
-        ## Set-Content adds a newline...WriteAllText() doesn't
-        #Set-Content -Value $content -Path $temppath
-        [System.IO.File]::WriteAllText($temppath, $content)
-        [System.IO.File]::WriteAllText($temppathUnix, $content.Replace("`r", ""))
-        Invoke-DbatoolsFormatter -Path $temppath
-        Invoke-DbatoolsFormatter -Path $temppathUnix
-        $newcontent = [System.IO.File]::ReadAllText($temppath)
-        $newcontentUnix = [System.IO.File]::ReadAllText($temppathUnix)
-        <#
-        write-host -fore cyan "w $($wantedContent | convertto-json)"
-        write-host -fore cyan "n $($newcontent | convertto-json)"
-        write-host -fore cyan "t $($newcontent -eq $wantedContent)"
-        #>
+        BeforeAll {
+            $temppath = Join-Path $TestDrive "somefile.ps1"
+            $temppathUnix = Join-Path $TestDrive "somefileUnixeol.ps1"
+            ## Set-Content adds a newline...WriteAllText() doesn't
+            #Set-Content -Value $content -Path $temppath
+            [System.IO.File]::WriteAllText($temppath, $content)
+            [System.IO.File]::WriteAllText($temppathUnix, $content.Replace("`r", ""))
+            Invoke-DbatoolsFormatter -Path $temppath
+            Invoke-DbatoolsFormatter -Path $temppathUnix
+            $newcontent = [System.IO.File]::ReadAllText($temppath)
+            $newcontentUnix = [System.IO.File]::ReadAllText($temppathUnix)
+            <#
+            write-host -fore cyan "w $($wantedContent | convertto-json)"
+            write-host -fore cyan "n $($newcontent | convertto-json)"
+            write-host -fore cyan "t $($newcontent -eq $wantedContent)"
+            #>
+        }
+
         It "should format things according to dbatools standards" {
             $newcontent | Should -Be $wantedContent
         }
@@ -70,4 +87,8 @@ function Get-DbaStub {
         }
     }
 
+    AfterAll {
+        # TestDrive is automatically cleaned up by Pester, but adding explicit cleanup for consistency
+        # No additional cleanup needed as TestDrive handles temporary file cleanup
+    }
 }
