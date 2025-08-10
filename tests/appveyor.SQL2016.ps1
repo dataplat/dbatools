@@ -14,19 +14,18 @@ Write-Host -Object "$indent SQLAgent`$$instance StartType: $((Get-Service -Name 
 
 Write-Host -Object "$indent Setting up and starting $sqlinstance" -ForegroundColor DarkGreen
 
-Set-Service -Name SQLBrowser -StartupType Automatic
 Start-Service -Name SQLBrowser
 
-Set-Service -Name "MSSQL`$$instance" -StartupType Automatic
-Start-Service -Name "MSSQL`$$instance"
+# We need to configure the port first to be able to start the instances in any order. This will also start the instance.
+$null = Set-DbaNetworkConfiguration -SqlInstance $sqlinstance -StaticPortForIPAll $port -RestartService -EnableException -Confirm:$false
 
+# Agent Service is "Disabled", so we need to change the StartupType before starting
 Set-Service -Name "SQLAgent`$$instance" -StartupType Automatic
 Start-Service -Name "SQLAgent`$$instance"
 
 
 Write-Host -Object "$indent Configuring $sqlinstance" -ForegroundColor DarkGreen
 
-$null = Set-DbaNetworkConfiguration -SqlInstance $sqlinstance -StaticPortForIPAll $port -RestartService -EnableException -Confirm:$false
 $null = Set-DbaSpConfigure -SqlInstance $sqlinstance -Name RemoteDacConnectionsEnabled -Value $true -EnableException
 $null = Set-DbaSpConfigure -SqlInstance $sqlinstance -Name ExtensibleKeyManagementEnabled -Value $true -EnableException
 Invoke-DbaQuery -SqlInstance $sqlinstance -Query "CREATE CRYPTOGRAPHIC PROVIDER dbatoolsci_AKV FROM FILE = 'C:\github\appveyor-lab\keytests\ekm\Microsoft.AzureKeyVaultService.EKM.dll'" -EnableException

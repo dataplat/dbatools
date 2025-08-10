@@ -13,16 +13,14 @@ Write-Host -Object "$indent MSSQL`$$instance StartType: $((Get-Service -Name "MS
 
 Write-Host -Object "$indent Setting up and starting $sqlinstance" -ForegroundColor DarkGreen
 
-Set-Service -Name SQLBrowser -StartupType Automatic
 Start-Service -Name SQLBrowser
 
-Set-Service -Name "MSSQL`$$instance" -StartupType Automatic
-Start-Service -Name "MSSQL`$$instance"
+# We need to configure the port first to be able to start the instances in any order. This will also start the instance.
+$null = Set-DbaNetworkConfiguration -SqlInstance $sqlinstance -StaticPortForIPAll $port -RestartService -EnableException -Confirm:$false
 
 
 Write-Host -Object "$indent Configuring $sqlinstance" -ForegroundColor DarkGreen
 
-$null = Set-DbaNetworkConfiguration -SqlInstance $sqlinstance -StaticPortForIPAll $port -RestartService -EnableException -Confirm:$false
 $null = Set-DbaNetworkConfiguration -SqlInstance $sqlinstance -EnableProtocol NamedPipes -RestartService -EnableException -Confirm:$false
 $null = Set-DbaSpConfigure -SqlInstance $sqlinstance -Name RemoteDacConnectionsEnabled -Value $true -EnableException
 # To conserve resources, SQL Server Express doesn't listen on the DAC port unless started with a trace flag 7806.
