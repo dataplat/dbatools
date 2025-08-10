@@ -9,7 +9,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
-    Context "Parameter validation" {
+    Context "Validate parameters" {
         BeforeAll {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
@@ -38,11 +38,11 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Results contain SQLServerAgent version" {
-            $results.text -like "`[100`] Microsoft SQLServerAgent version*" | Should -Be $true
+            ($results.text -like "`[100`] Microsoft SQLServerAgent version*") | Should -BeTrue
         }
 
         It "LogDate is a DateTime type" {
-            $($results | Select-Object -First 1).LogDate | Should -BeOfType DateTime
+            ($results | Select-Object -First 1).LogDate | Should -BeOfType DateTime
         }
     }
 

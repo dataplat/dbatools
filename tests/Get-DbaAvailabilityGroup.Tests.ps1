@@ -5,7 +5,7 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
@@ -33,9 +33,6 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
 
-        # Explain what needs to be set up for the test:
-        # We need to create an availability group to test the Get-DbaAvailabilityGroup command.
-
         # Set variables. They are available in all the It blocks.
         $agName = "dbatoolsci_agroup"
 
@@ -59,19 +56,19 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
 
         # Cleanup all created objects.
-        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agName -Confirm $false
-        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm $false
+        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agName
+        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint
 
         # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
-    Context "When getting availability groups" {
+    Context "When retrieving availability groups" {
         It "Returns results with proper data" {
             $results = Get-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3
             $results.AvailabilityGroup | Should -Contain $agName
         }
 
-        It "Returns a single result" {
+        It "Returns a single result when specifying availability group name" {
             $results = Get-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agName
             $results.AvailabilityGroup | Should -Be $agName
         }

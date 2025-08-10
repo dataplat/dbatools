@@ -5,9 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Validate parameters" {
         BeforeAll {
@@ -37,7 +34,6 @@ Describe $CommandName -Tag IntegrationTests {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
             $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
 
-            # Set up test databases
             $dbname = "dbatoolsci_orphanedfile_$(Get-Random)"
             $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
             $db1 = New-DbaDatabase -SqlInstance $server -Name $dbname
@@ -45,38 +41,35 @@ Describe $CommandName -Tag IntegrationTests {
             $dbname2 = "dbatoolsci_orphanedfile_$(Get-Random)"
             $db2 = New-DbaDatabase -SqlInstance $server -Name $dbname2
 
-            # Create test directories
             $tmpdir = "c:\temp\orphan_$(Get-Random)"
             if (-not(Test-Path $tmpdir)) {
-                $null = New-Item -Path $tmpdir -Type Container
+                $null = New-Item -Path $tmpdir -ItemType Directory
             }
             $tmpdirInner = Join-Path $tmpdir "inner"
-            $null = New-Item -Path $tmpdirInner -Type Container
+            $null = New-Item -Path $tmpdirInner -ItemType Directory
             $tmpBackupPath = Join-Path $tmpdirInner "backup"
-            $null = New-Item -Path $tmpBackupPath -Type Container
+            $null = New-Item -Path $tmpBackupPath -ItemType Directory
 
             $tmpdir2 = "c:\temp\orphan_$(Get-Random)"
             if (-not(Test-Path $tmpdir2)) {
-                $null = New-Item -Path $tmpdir2 -Type Container
+                $null = New-Item -Path $tmpdir2 -ItemType Directory
             }
             $tmpdirInner2 = Join-Path $tmpdir2 "inner"
-            $null = New-Item -Path $tmpdirInner2 -Type Container
+            $null = New-Item -Path $tmpdirInner2 -ItemType Directory
             $tmpBackupPath2 = Join-Path $tmpdirInner2 "backup"
-            $null = New-Item -Path $tmpBackupPath2 -Type Container
+            $null = New-Item -Path $tmpBackupPath2 -ItemType Directory
 
-            # Verify setup
             $result = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname
             if ($result.Count -eq 0) {
-                throw "Test setup failed - database not created"
+                throw "Setup failed: database not created"
             }
 
-            # Create backups
             $backupFile = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname -Path $tmpBackupPath -Type Full
             $backupFile2 = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname2 -Path $tmpBackupPath2 -Type Full
             Copy-Item -Path $backupFile.BackupPath -Destination "C:\" -Confirm:$false
 
             $tmpBackupPath3 = Join-Path (Get-SqlDefaultPaths $server data) "dbatoolsci_$(Get-Random)"
-            $null = New-Item -Path $tmpBackupPath3 -Type Container
+            $null = New-Item -Path $tmpBackupPath3 -ItemType Directory
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
@@ -84,8 +77,6 @@ Describe $CommandName -Tag IntegrationTests {
         AfterAll {
             # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
             $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
-
-            # Cleanup all created objects
             Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname, $dbname2 | Remove-DbaDatabase -Confirm:$false
             Remove-Item $tmpdir -Recurse -Force -ErrorAction SilentlyContinue
             Remove-Item $tmpdir2 -Recurse -Force -ErrorAction SilentlyContinue
@@ -106,24 +97,24 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Finds two files" {
             $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.instance2
-            @($results.Filename).Count | Should -Be 2
+            $results.Filename.Count | Should -Be 2
         }
 
         It "Finds zero files after cleaning up" {
             $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.instance2
             $results.FileName | Remove-Item
             $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.instance2
-            @($results.Filename).Count | Should -Be 0
+            $results.Filename.Count | Should -Be 0
         }
         It "works with -Recurse" {
             "a" | Out-File (Join-Path $tmpdir "out.mdf")
             $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.instance2 -Path $tmpdir
-            @($results.Filename).Count | Should -Be 1
+            $results.Filename.Count | Should -Be 1
             Move-Item "$tmpdir\out.mdf" -Destination $tmpdirInner
             $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.instance2 -Path $tmpdir
-            @($results.Filename).Count | Should -Be 0
+            $results.Filename.Count | Should -Be 0
             $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.instance2 -Path $tmpdir -Recurse
-            @($results.Filename).Count | Should -Be 1
+            $results.Filename.Count | Should -Be 1
 
             Copy-Item -Path "$tmpdirInner\out.mdf" -Destination $tmpBackupPath3 -Confirm:$false
 
@@ -132,7 +123,7 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Filename | Should -Contain $backupFile2.BackupPath
             $results.Filename | Should -Contain "$tmpdirInner\out.mdf"
             $results.Filename | Should -Contain "$tmpBackupPath3\out.mdf"
-            @($results).Count | Should -Be 4
+            $results.Count | Should -Be 4
 
             $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.instance2 -Recurse
             $results.Filename | Should -Be "$tmpBackupPath3\out.mdf"

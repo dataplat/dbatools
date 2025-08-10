@@ -1,11 +1,11 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Get-DbaAgentJob",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
@@ -20,11 +20,11 @@ Describe $CommandName -Tag UnitTests {
                 "ExcludeJob",
                 "Database",
                 "Category",
-                "ExcludeCategory",
                 "ExcludeDisabledJobs",
+                "EnableException",
+                "ExcludeCategory",
                 "IncludeExecution",
-                "Type",
-                "EnableException"
+                "Type"
             )
         }
 
@@ -46,7 +46,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should get 2 dbatoolsci jobs" {
-            $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 | Where-Object Name -match "dbatoolsci_testjob"
+            $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 | Where-Object { $PSItem.Name -match "dbatoolsci_testjob" }
             $results.Count | Should -Be 2
         }
 
@@ -67,7 +67,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should return only enabled jobs" {
-            $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -ExcludeDisabledJobs | Where-Object Name -match "dbatoolsci_testjob"
+            $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -ExcludeDisabledJobs | Where-Object { $PSItem.Name -match "dbatoolsci_testjob" }
             $results.Enabled -contains $false | Should -Be $false
         }
     }
@@ -83,7 +83,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should not return excluded job" {
-            $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -ExcludeJob dbatoolsci_testjob | Where-Object Name -match "dbatoolsci_testjob"
+            $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -ExcludeJob dbatoolsci_testjob | Where-Object { $PSItem.Name -match "dbatoolsci_testjob" }
             $results.Name -contains "dbatoolsci_testjob" | Should -Be $false
         }
     }
@@ -104,7 +104,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should not return excluded job" {
-            $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -ExcludeCategory "Cat2" | Where-Object Name -match "dbatoolsci_testjob"
+            $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -ExcludeCategory "Cat2" | Where-Object { $PSItem.Name -match "dbatoolsci_testjob" }
             $results.Name -contains "dbatoolsci_testjob_cat2" | Should -Be $false
         }
     }
