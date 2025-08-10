@@ -265,7 +265,10 @@ function Repair-PullRequestTest {
             Write-Verbose "All relevant test files across PRs - $($allRelevantTestFiles -join ', ')"
 
             # Create hash table to group ALL errors by unique file name
-            $fileErrorMap = @{}
+            $fileErrorMap     = @{}
+            $fileErrorPath = @()
+            $testdirectory = Join-Path $script:ModulePath "tests"
+
             foreach ($test in $allFailedTestsAcrossPRs) {
                 $fileName = [System.IO.Path]::GetFileName($test.TestFile)
                 # ONLY include files that are actually in the PR changes
@@ -274,12 +277,17 @@ function Repair-PullRequestTest {
                         $fileErrorMap[$fileName] = @()
                     }
                     $fileErrorMap[$fileName] += $test
+
+                    if ($test.TestFile) {
+                        $fileErrorPath += (Join-Path $testdirectory $test.TestFile)
+                    }
                 }
             }
-
+            $fileErrorPath = $fileErrorPath | Sort-Object -Unique
             Write-Verbose "Found failures in $($fileErrorMap.Keys.Count) unique test files (filtered to PR changes only)"
             foreach ($fileName in $fileErrorMap.Keys) {
                 Write-Verbose "  ${fileName} - $($fileErrorMap[$fileName].Count) failures"
+                Write-Verbose "    Paths: $fileErrorPath"
             }
 
             # If no relevant failures after filtering, exit
@@ -524,9 +532,6 @@ function Repair-PullRequestTest {
             Write-Verbose "All $($updateJobs.Count) Update-PesterTest parallel jobs completed"
             Write-Progress -Activity "Running Update-PesterTest (Parallel)" -Completed -Id 1
 
-            # Collect successfully processed files and run formatter
-            Get-ChildItem $jobInfo.TestPath | Invoke-DbatoolsFormatter
-
             # Commit changes if requested
             if ($AutoCommit) {
                 Write-Progress -Activity "Repairing Pull Request Tests" -Status "Committing fixes..." -PercentComplete 90 -Id 0
@@ -537,6 +542,11 @@ function Repair-PullRequestTest {
                     git commit -m "Fix failing Pester tests across multiple files (replaced with working versions + Update-PesterTest)" 2>$null | Out-Null
                     Write-Verbose "Changes committed successfully"
                 }
+            }
+
+            # Collect successfully processed files and run formatter
+            if ($fileErrorPath) {
+                $null = Get-ChildItem $fileErrorPath -File | Invoke-DbatoolsFormatter
             }
 
             # Complete the overall progress
