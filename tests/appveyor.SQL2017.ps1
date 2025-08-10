@@ -7,30 +7,21 @@ $sqlinstance = "localhost\SQL2017"
 $instance = "SQL2017"
 $port = "14334"
 
-Write-Host -Object "$indent SQLBrowser StartType: $((Get-Service -Name SQLBrowser).StartType) / Status: $((Get-Service -Name SQLBrowser).Status)" -ForegroundColor DarkGreen
-Write-Host -Object "$indent MSSQL`$$instance StartType: $((Get-Service -Name "MSSQL`$$instance").StartType) / Status: $((Get-Service -Name "MSSQL`$$instance").Status)" -ForegroundColor DarkGreen
-Write-Host -Object "$indent SQLAgent`$$instance StartType: $((Get-Service -Name "SQLAgent`$$instance").StartType) / Status: $((Get-Service -Name "SQLAgent`$$instance").Status)" -ForegroundColor DarkGreen
+Write-Host -Object "$indent Setting up AppVeyor Services" -ForegroundColor DarkGreen
+Set-Service -Name SQLBrowser -StartupType Automatic
+Set-Service -Name "SQLAgent`$$instance" -StartupType Automatic
+Start-Service -Name SQLBrowser -ErrorAction SilentlyContinue
 
-
-Write-Host -Object "$indent Setting up and starting $sqlinstance" -ForegroundColor DarkGreen
-
-# We need to configure the port first to be able to start the instances in any order.
+Write-Host -Object "$indent Changing the port on $instance to $port" -ForegroundColor DarkGreen
 $null = Set-DbaNetworkConfiguration -SqlInstance $sqlinstance -StaticPortForIPAll $port -EnableException -Confirm:$false -WarningAction SilentlyContinue
 
-Set-Service -Name "SQLBrowser" -StartupType Automatic
-Set-Service -Name "MSSQL`$$instance" -StartupType Automatic
-Set-Service -Name "SQLAgent`$$instance" -StartupType Automatic
-# Start-DbaService can not start service because Get-DbaService does not get the service - we have to fix this bug and then change this script
-Start-Service -Name SQLBrowser
-Start-DbaService -SqlInstance $sqlinstance -Type Engine, Agent -EnableException -Confirm:$false
+Write-Host -Object "$indent Starting $instance" -ForegroundColor DarkGreen
+Restart-Service "MSSQL`$$instance" -Force
+Restart-Service "SQLAgent`$$instance" -Force
 
-
-Write-Host -Object "$indent Configuring $sqlinstance" -ForegroundColor DarkGreen
-
+Write-Host -Object "$indent Configuring $instance" -ForegroundColor DarkGreen
 $null = Set-DbaSpConfigure -SqlInstance $sqlinstance -Name ExtensibleKeyManagementEnabled -Value $true -EnableException
 Invoke-DbaQuery -SqlInstance $sqlinstance -Query "CREATE CRYPTOGRAPHIC PROVIDER dbatoolsci_AKV FROM FILE = 'C:\github\appveyor-lab\keytests\ekm\Microsoft.AzureKeyVaultService.EKM.dll'" -EnableException
 $null = Enable-DbaAgHadr -SqlInstance $sqlinstance -Force -EnableException -Confirm:$false
 Invoke-DbaQuery -SqlInstance $sqlinstance -Query "CREATE MASTER KEY ENCRYPTION BY PASSWORD = '<StrongPassword>'" -EnableException
 Invoke-DbaQuery -SqlInstance $sqlinstance -Query "CREATE CERTIFICATE dbatoolsci_AGCert WITH SUBJECT = 'AG Certificate'" -EnableException
-
-$null = Restart-DbaService -SqlInstance $sqlinstance -Type Engine -Force -EnableException -Confirm:$false
