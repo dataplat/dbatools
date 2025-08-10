@@ -326,7 +326,9 @@ function Repair-PullRequestTest {
             if ($selectedPR.number -ne "current") {
                 Write-Verbose "Switching to PR #$($selectedPR.number) branch '$($selectedPR.headRefName)'"
                 git fetch origin $selectedPR.headRefName 2>$null | Out-Null
-                git checkout $selectedPR.headRefName 2>$null | Out-Null
+
+                # Force checkout to handle any file conflicts (like .aider files)
+                git checkout $selectedPR.headRefName --force 2>$null | Out-Null
 
                 # Verify the checkout worked
                 $afterCheckout = git rev-parse --abbrev-ref HEAD 2>$null
@@ -338,7 +340,7 @@ function Repair-PullRequestTest {
                 Write-Verbose "Successfully checked out branch '$($selectedPR.headRefName)'"
             } else {
                 Write-Verbose "Switching back to original branch '$originalBranch'"
-                git checkout $originalBranch --quiet 2>$null | Out-Null
+                git checkout $originalBranch --force --quiet 2>$null | Out-Null
             }
 
             # Unstash if we stashed earlier
@@ -347,79 +349,157 @@ function Repair-PullRequestTest {
                 git stash pop --quiet 2>$null | Out-Null
             }
 
-            # Now process each unique file once - replace with working version and run Update-PesterTest
+            # Now process each unique file - replace with working version and run Update-PesterTest in parallel (simplified)
             Write-Progress -Activity "Repairing Pull Request Tests" -Status "Identified $($fileErrorMap.Keys.Count) files needing repairs - replacing with working versions..." -PercentComplete 50 -Id 0
 
-            $totalUniqueFiles = $fileErrorMap.Keys.Count
-            $processedFileCount = 0
-
+            # First, replace all files with working versions (sequential, fast)
             foreach ($fileName in $fileErrorMap.Keys) {
-                $processedFileCount++
-
                 # Skip if already processed
                 if ($processedFiles.ContainsKey($fileName)) {
                     Write-Verbose "Skipping $fileName - already processed"
                     continue
                 }
 
-                $allFailuresForFile = $fileErrorMap[$fileName]
-                $fileProgress = [math]::Round(($processedFileCount / $totalUniqueFiles) * 100, 0)
+                # Get the pre-copied working test file
+                $workingTempPath = Join-Path $tempDir "working-$fileName"
+                if (-not (Test-Path $workingTempPath)) {
+                    Write-Warning "Working test file not found in temp directory: $workingTempPath"
+                    continue
+                }
 
-                Write-Progress -Activity "Fixing Unique Test Files" -Status "Processing $fileName" -PercentComplete $fileProgress -Id 1
-                Write-Verbose "Processing $fileName - re-running Update-PesterTest to create newly migrated test file"
+                # Get the path to the failing test file
+                $failingTestPath = Resolve-Path "tests/$fileName" -ErrorAction SilentlyContinue
+                if (-not $failingTestPath) {
+                    Write-Warning "Could not find failing test file - tests/$fileName"
+                    continue
+                }
 
-                if ($PSCmdlet.ShouldProcess($fileName, "Replace with working version and run Update-PesterTest")) {
-                    # Get the pre-copied working test file
-                    $workingTempPath = Join-Path $tempDir "working-$fileName"
-                    if (-not (Test-Path $workingTempPath)) {
-                        Write-Warning "Working test file not found in temp directory: $workingTempPath"
-                        continue
-                    }
-
-                    # Get the path to the failing test file
-                    $failingTestPath = Resolve-Path "tests/$fileName" -ErrorAction SilentlyContinue
-                    if (-not $failingTestPath) {
-                        Write-Warning "Could not find failing test file - tests/$fileName"
-                        continue
-                    }
-
-                    Write-Progress -Activity "Fixing $fileName" -Status "Replacing with working version from development" -PercentComplete 30 -Id 2 -ParentId 1
-                    Write-Verbose "Replacing failing test $fileName with working version from development"
-
-                    # Replace the failing test with the working copy from development
-                    try {
-                        Copy-Item $workingTempPath $failingTestPath.Path -Force
-                        Write-Verbose "Successfully replaced $fileName with working version"
-                    } catch {
-                        Write-Warning "Failed to replace $fileName with working version - $($_.Exception.Message)"
-                        continue
-                    }
-
-                    Write-Progress -Activity "Fixing $fileName" -Status "Running Update-PesterTest..." -PercentComplete 70 -Id 2 -ParentId 1
-                    Write-Verbose "Running Update-PesterTest on $fileName"
-
-                    # Run Update-PesterTest against the working copy to migrate it properly
-                    try {
-                        # Skip the module import since we've already imported it
-                        $env:SKIP_DBATOOLS_IMPORT = $true
-                        Update-PesterTest -InputObject (Get-Item $failingTestPath.Path) -ErrorAction Stop
-                        Remove-Item env:SKIP_DBATOOLS_IMPORT -ErrorAction SilentlyContinue
-                        Write-Verbose "Successfully ran Update-PesterTest on $fileName"
-
-                        # Mark this file as processed
-                        $processedFiles[$fileName] = $true
-                        Write-Verbose "Successfully processed $fileName"
-                    } catch {
-                        Write-Warning "Update-PesterTest failed for $fileName - $($_.Exception.Message)"
-                    }
-
-                    # Clear the detailed progress for this file
-                    Write-Progress -Activity "Fixing $fileName" -Completed -Id 2
+                try {
+                    Copy-Item $workingTempPath $failingTestPath.Path -Force
+                    Write-Verbose "Replaced $fileName with working version from development branch"
+                } catch {
+                    Write-Warning "Failed to replace $fileName with working version - $($_.Exception.Message)"
                 }
             }
 
-            # Clear the file-level progress
-            Write-Progress -Activity "Fixing Unique Test Files" -Completed -Id 1
+            # Now run Update-PesterTest in parallel with Start-Job (simplified approach)
+            Write-Verbose "Starting parallel Update-PesterTest jobs for $($fileErrorMap.Keys.Count) files"
+
+            $updateJobs = @()
+            foreach ($fileName in $fileErrorMap.Keys) {
+                # Skip if already processed
+                if ($processedFiles.ContainsKey($fileName)) {
+                    continue
+                }
+
+                $testPath = Resolve-Path "tests/$fileName" -ErrorAction SilentlyContinue
+                if (-not $testPath) {
+                    Write-Warning "Could not find test file: tests/$fileName"
+                    continue
+                }
+
+                Write-Verbose "Starting parallel job for Update-PesterTest on: $fileName"
+
+                # Prepare environment variables for the job
+                $envVars = @{
+                    'SYSTEM_ACCESSTOKEN' = $env:SYSTEM_ACCESSTOKEN
+                    'BUILD_SOURCESDIRECTORY' = $env:BUILD_SOURCESDIRECTORY
+                    'APPVEYOR_BUILD_FOLDER' = $env:APPVEYOR_BUILD_FOLDER
+                    'CI' = $env:CI
+                    'APPVEYOR' = $env:APPVEYOR
+                    'SYSTEM_DEFAULTWORKINGDIRECTORY' = $env:SYSTEM_DEFAULTWORKINGDIRECTORY
+                }
+
+                # Remove null environment variables
+                $cleanEnvVars = @{}
+                foreach ($key in $envVars.Keys) {
+                    if ($envVars[$key] -ne $null) {
+                        $cleanEnvVars[$key] = $envVars[$key]
+                    }
+                }
+
+                $job = Start-Job -ScriptBlock {
+                    param($TestPath, $GitRoot, $EnvVars)
+
+                    # Set working directory
+                    Set-Location $GitRoot
+
+                    # Set environment variables
+                    foreach ($key in $EnvVars.Keys) {
+                        Set-Item -Path "env:$key" -Value $EnvVars[$key]
+                    }
+
+                    # Import dbatools module first (with correct path)
+                    $dbaToolsModule = Join-Path $GitRoot "dbatools.psm1"
+                    if (Test-Path $dbaToolsModule) {
+                        Import-Module $dbaToolsModule -Force -ErrorAction SilentlyContinue
+                    }
+
+                    # Import all AI tool modules
+                    Get-ChildItem "$GitRoot/.aitools/module/*.ps1" | ForEach-Object { . $_.FullName }
+
+                    # Prepare paths for Update-PesterTest
+                    $promptFilePath = "$GitRoot/.aitools/module/prompts/prompt.md"
+                    $cacheFilePaths = @(
+                        "$GitRoot/.aitools/module/prompts/style.md",
+                        "$GitRoot/.aitools/module/prompts/migration.md",
+                        "$GitRoot/private/testing/Get-TestConfig.ps1"
+                    )
+
+                    try {
+                        # Set environment flag to skip dbatools import in Update-PesterTest
+                        $env:SKIP_DBATOOLS_IMPORT = $true
+
+                        # Call Update-PesterTest with correct parameters
+                        Update-PesterTest -InputObject (Get-Item $TestPath) -PromptFilePath $promptFilePath -CacheFilePath $cacheFilePaths
+
+                        # Clean up environment flag
+                        Remove-Item env:SKIP_DBATOOLS_IMPORT -ErrorAction SilentlyContinue
+
+                        return @{ Success = $true; Error = $null; TestPath = $TestPath }
+                    } catch {
+                        # Clean up environment flag on error too
+                        Remove-Item env:SKIP_DBATOOLS_IMPORT -ErrorAction SilentlyContinue
+                        return @{ Success = $false; Error = $_.Exception.Message; TestPath = $TestPath }
+                    }
+                } -ArgumentList $testPath.Path, $gitRoot, $cleanEnvVars
+
+                $updateJobs += @{
+                    Job = $job
+                    FileName = $fileName
+                    TestPath = $testPath.Path
+                }
+            }
+
+            # Wait for all jobs to complete and collect results
+            Write-Verbose "Started $($updateJobs.Count) parallel Update-PesterTest jobs, waiting for completion..."
+            $completedJobs = 0
+
+            foreach ($jobInfo in $updateJobs) {
+                try {
+                    $result = Receive-Job -Job $jobInfo.Job -Wait
+                    $completedJobs++
+
+                    if ($result.Success) {
+                        Write-Verbose "Update-PesterTest completed successfully for: $($jobInfo.FileName)"
+                        $processedFiles[$jobInfo.FileName] = $true
+                    } else {
+                        Write-Warning "Update-PesterTest failed for $($jobInfo.FileName): $($result.Error)"
+                    }
+
+                    # Update progress
+                    $progress = [math]::Round(($completedJobs / $updateJobs.Count) * 100, 0)
+                    Write-Progress -Activity "Running Update-PesterTest (Parallel)" -Status "Completed $($jobInfo.FileName) ($completedJobs/$($updateJobs.Count))" -PercentComplete $progress -Id 1
+
+                } catch {
+                    Write-Warning "Error processing Update-PesterTest job for $($jobInfo.FileName): $($_.Exception.Message)"
+                } finally {
+                    Remove-Job -Job $jobInfo.Job -Force -ErrorAction SilentlyContinue
+                }
+            }
+
+            Write-Verbose "All $($updateJobs.Count) Update-PesterTest parallel jobs completed"
+            Write-Progress -Activity "Running Update-PesterTest (Parallel)" -Completed -Id 1
 
             # Commit changes if requested
             if ($AutoCommit) {
@@ -449,7 +529,7 @@ function Repair-PullRequestTest {
 
             if ($finalCurrentBranch -ne $originalBranch) {
                 Write-Verbose "Returning to original branch - $originalBranch"
-                git checkout $originalBranch 2>$null | Out-Null
+                git checkout $originalBranch --force 2>$null | Out-Null
 
                 # Verify the final checkout worked
                 $verifyFinal = git rev-parse --abbrev-ref HEAD 2>$null
