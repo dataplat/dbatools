@@ -37,10 +37,10 @@ $null = Restart-DbaService -SqlInstance $sqlinstance -Type Engine -Force -Enable
 
 $indent = '...'
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor DarkGreen
-$dbatools_serialimport = $true
-Import-Module C:\github\dbatools\dbatools.psd1
-Start-Sleep 5
-$null = Set-DbatoolsInsecureConnection
+#$dbatools_serialimport = $true
+#Import-Module C:\github\dbatools\dbatools.psd1
+#Start-Sleep 5
+#$null = Set-DbatoolsInsecureConnection
 # This script spins up the 2016 instance and the relative setup
 
 $sqlinstance = "localhost\SQL2016"
