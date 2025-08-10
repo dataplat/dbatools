@@ -21,6 +21,11 @@ function Repair-PullRequestTest {
        Specific AppVeyor build number to target instead of automatically detecting from PR checks.
        When specified, uses this build number directly rather than finding the latest build for the PR.
 
+   .PARAMETER CopyOnly
+       If specified, stops the repair process right after copying working test files
+       from the development branch to the current branch, without running Update-PesterTest
+       or committing any changes.
+
    .NOTES
        Tags: Testing, Pester, PullRequest, CI
        Author: dbatools team
@@ -47,7 +52,8 @@ function Repair-PullRequestTest {
         [int]$PRNumber,
         [switch]$AutoCommit,
         [int]$MaxPRs = 5,
-        [int]$BuildNumber
+        [int]$BuildNumber,
+        [switch]$CopyOnly
     )
 
     begin {
@@ -389,6 +395,12 @@ function Repair-PullRequestTest {
                 } catch {
                     Write-Warning "Failed to replace $fileName with working version - $($_.Exception.Message)"
                 }
+            }
+
+            # If CopyOnly is specified, return immediately after copying
+            if ($CopyOnly) {
+                Write-Verbose "CopyOnly flag set - stopping after copying working tests to current branch"
+                return
             }
 
             # Now run Update-PesterTest in parallel with Start-Job (simplified approach)
