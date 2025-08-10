@@ -1,22 +1,18 @@
 function Repair-PullRequestTest {
     <#
    .SYNOPSIS
-       Fixes failing Pester tests in open pull requests using Claude AI.
+       Fixes failing Pester tests in open pull requests by replacing with working versions and running Update-PesterTest.
 
    .DESCRIPTION
        This function checks open PRs for AppVeyor failures, extracts failing test information,
-       compares with working tests from the Development branch, and uses Claude to fix the issues.
-       It handles Pester v5 migration issues by providing context from both working and failing versions.
+       and replaces failing tests with working versions from the Development branch, then runs
+       Update-PesterTest to migrate them properly.
 
    .PARAMETER PRNumber
        Specific PR number to process. If not specified, processes all open PRs with failures.
 
-   .PARAMETER Model
-       The AI model to use with Claude Code.
-       Default: claude-sonnet-4-20250514
-
    .PARAMETER AutoCommit
-       If specified, automatically commits the fixes made by Claude.
+       If specified, automatically commits the fixes made by the repair process.
 
    .PARAMETER MaxPRs
        Maximum number of PRs to process. Default: 5
@@ -49,7 +45,6 @@ function Repair-PullRequestTest {
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [int]$PRNumber,
-        [string]$Model = "claude-sonnet-4-20250514",
         [switch]$AutoCommit,
         [int]$MaxPRs = 5,
         [int]$BuildNumber
@@ -352,8 +347,8 @@ function Repair-PullRequestTest {
                 git stash pop --quiet 2>$null | Out-Null
             }
 
-            # Now process each unique file once with ALL its errors
-            Write-Progress -Activity "Repairing Pull Request Tests" -Status "Identified $($fileErrorMap.Keys.Count) files needing repairs - starting AI fixes..." -PercentComplete 50 -Id 0
+            # Now process each unique file once - replace with working version and run Update-PesterTest
+            Write-Progress -Activity "Repairing Pull Request Tests" -Status "Identified $($fileErrorMap.Keys.Count) files needing repairs - replacing with working versions..." -PercentComplete 50 -Id 0
 
             $totalUniqueFiles = $fileErrorMap.Keys.Count
             $processedFileCount = 0
@@ -370,108 +365,16 @@ function Repair-PullRequestTest {
                 $allFailuresForFile = $fileErrorMap[$fileName]
                 $fileProgress = [math]::Round(($processedFileCount / $totalUniqueFiles) * 100, 0)
 
-                Write-Progress -Activity "Fixing Unique Test Files" -Status "Processing $fileName ($($allFailuresForFile.Count) failures)" -PercentComplete $fileProgress -Id 1
-                Write-Verbose "Processing $fileName with $($allFailuresForFile.Count) total failure(s)"
+                Write-Progress -Activity "Fixing Unique Test Files" -Status "Processing $fileName" -PercentComplete $fileProgress -Id 1
+                Write-Verbose "Processing $fileName - re-running Update-PesterTest to create newly migrated test file"
 
-                if ($PSCmdlet.ShouldProcess($fileName, "Fix failing tests using Claude")) {
+                if ($PSCmdlet.ShouldProcess($fileName, "Replace with working version and run Update-PesterTest")) {
                     # Get the pre-copied working test file
                     $workingTempPath = Join-Path $tempDir "working-$fileName"
                     if (-not (Test-Path $workingTempPath)) {
                         Write-Warning "Working test file not found in temp directory: $workingTempPath"
+                        continue
                     }
-
-                    # Get the command source file path (from current branch)
-                    $commandName = [System.IO.Path]::GetFileNameWithoutExtension($fileName) -replace '\.Tests$', ''
-                    Write-Progress -Activity "Fixing $fileName" -Status "Getting command source for $commandName" -PercentComplete 20 -Id 2 -ParentId 1
-
-                    $commandSourcePath = $null
-                    $possiblePaths = @(
-                        "functions/$commandName.ps1",
-                        "public/$commandName.ps1",
-                        "private/$commandName.ps1"
-                    )
-                    foreach ($path in $possiblePaths) {
-                        if (Test-Path $path) {
-                            $commandSourcePath = (Resolve-Path $path).Path
-                            Write-Verbose "Found command source: $commandSourcePath"
-                            break
-                        }
-                    }
-
-                    # Build the repair message with ALL failures for this file
-                    # Start the repair message with workingTempPath content if available
-                    $repairMessage = "You are fixing ALL the test failures in $fileName. This test has already been migrated to Pester v5 and styled according to dbatools conventions.`n`n"
-
-                    # Then continue with the original repair instructions
-                    $repairMessage += "CRITICAL RULES - DO NOT CHANGE THESE:`n"
-                    $repairMessage += "1. PRESERVE ALL COMMENTS EXACTLY - Every single comment must remain intact`n"
-                    $repairMessage += "2. Keep ALL Pester v5 structure (BeforeAll/BeforeEach blocks, #Requires header, static CommandName)`n"
-                    $repairMessage += "3. Keep ALL hashtable alignment - equals signs must stay perfectly aligned`n"
-                    $repairMessage += "4. Keep ALL variable naming (unique scoped names, `$splat<Purpose> format)`n"
-                    $repairMessage += "5. Keep ALL double quotes for strings`n"
-                    $repairMessage += "6. Keep ALL existing `$PSDefaultParameterValues handling for EnableException`n"
-                    $repairMessage += "7. Keep ALL current parameter validation patterns with filtering`n"
-                    $repairMessage += "8. ONLY fix the specific errors - make MINIMAL changes to get tests passing`n`n"
-
-                    $repairMessage += "COMMON PESTER v5 SCOPING ISSUES TO CHECK:`n"
-                    $repairMessage += "- Variables defined in BeforeAll may need `$global: to be accessible in It blocks`n"
-                    $repairMessage += "- Variables shared across Context blocks may need explicit scoping`n"
-                    $repairMessage += "- Arrays and objects created in setup blocks may need scope declarations`n"
-                    $repairMessage += "- Test data variables may need `$global: prefix for cross-block access`n`n"
-
-                    $repairMessage += "PESTER v5 STRUCTURAL PROBLEMS TO CONSIDER:`n"
-                    $repairMessage += "If you only see generic failure messages like 'Test failed but no error message could be extracted' or 'Result: Failed' with no ErrorRecord/StackTrace, this indicates Pester v5 architectural issues:`n"
-                    $repairMessage += "- Mocks defined at script level instead of in BeforeAll{} blocks`n"
-                    $repairMessage += "- [Parameter()] attributes on test parameters (remove these)`n"
-                    $repairMessage += "- Variables/functions not accessible during Run phase due to discovery/run separation`n"
-                    $repairMessage += "- Should -Throw assertions with square brackets or special characters that break pattern matching`n"
-                    $repairMessage += "- Mock scope issues where mocks aren't available to the functions being tested`n`n"
-
-                    $repairMessage += "WHAT YOU CAN CHANGE:`n"
-                    $repairMessage += "- Fix syntax errors causing the specific failures`n"
-                    $repairMessage += "- Correct variable scoping issues (add `$global: if needed for cross-block variables)`n"
-                    $repairMessage += "- Move mock definitions from script level into BeforeAll{} blocks`n"
-                    $repairMessage += "- Remove [Parameter()] attributes from test parameters`n"
-                    $repairMessage += "- Fix array operations (`$results.Count → `$results.Status.Count if needed)`n"
-                    $repairMessage += "- Correct boolean skip conditions`n"
-                    $repairMessage += "- Fix Where-Object syntax if causing errors`n"
-                    $repairMessage += "- Adjust assertion syntax if failing`n"
-                    $repairMessage += "- Escape special characters in Should -Throw patterns or use wildcards`n`n"
-
-                    $repairMessage += "ALL FAILURES TO FIX IN THIS FILE:`n"
-
-                    foreach ($failure in $allFailuresForFile) {
-                        $repairMessage += "`nFAILURE - $($failure.TestName)`n"
-                        $repairMessage += "ERROR - $($failure.ErrorMessage)`n"
-                        if ($failure.LineNumber) {
-                            $repairMessage += "LINE - $($failure.LineNumber)`n"
-                        }
-                    }
-
-                    # Next, include the command scriptblock content if available
-                    if ($commandSourcePath -and (Test-Path $commandSourcePath)) {
-                        $commandContent = Get-Content -Path $commandSourcePath
-                        $bindingIndex = ($commandContent | Select-String -Pattern '^\s*\[CmdletBinding' | Select-Object -First 1).LineNumber
-                        if ($bindingIndex) {
-                            $commandCode = $commandContent | Select-Object -Skip $bindingIndex
-                        } else {
-                            $commandCode = $commandContent
-                        }
-                        $repairMessage += "COMMAND CODE FOR REFERENCE:`n"
-                        $repairMessage += ($commandCode -join "`n")
-                        $repairMessage += "`n`n"
-                    }
-
-                    if (Test-Path $workingTempPath) {
-                        $repairMessage += "WORKING TEST FILE CONTENT (for reference only, may be older Pester v4 #format):`n"
-                        $repairMessage += (Get-Content -Path $workingTempPath -Raw)
-                        $repairMessage += "`n`n"
-                    }
-
-                    $repairMessage += "`n`nREFERENCE (DEVELOPMENT BRANCH):`n"
-                    $repairMessage += "The working version is provided for comparison of test logic only. Do NOT copy its structure - it may be older Pester v4 format without our current styling. Use it only to understand what the test SHOULD accomplish.`n`n"
-
-                    $repairMessage += "TASK - Make the minimal code changes necessary to fix ALL the failures above while preserving all existing Pester v5 migration work and dbatools styling conventions."
 
                     # Get the path to the failing test file
                     $failingTestPath = Resolve-Path "tests/$fileName" -ErrorAction SilentlyContinue
@@ -480,52 +383,35 @@ function Repair-PullRequestTest {
                         continue
                     }
 
-                    # Use Invoke-AITool to fix the test
-                    $aiParams = @{
-                        Message      = $repairMessage
-                        File         = $failingTestPath.Path
-                        Model        = $Model
-                        Tool         = 'Claude'
-                        ContextFiles = (Resolve-Path "$PSScriptRoot/prompts/style.md" -ErrorAction SilentlyContinue).Path,
-                        (Resolve-Path "$PSScriptRoot/prompts/migration.md" -ErrorAction SilentlyContinue).Path
+                    Write-Progress -Activity "Fixing $fileName" -Status "Replacing with working version from development" -PercentComplete 30 -Id 2 -ParentId 1
+                    Write-Verbose "Replacing failing test $fileName with working version from development"
+
+                    # Replace the failing test with the working copy from development
+                    try {
+                        Copy-Item $workingTempPath $failingTestPath.Path -Force
+                        Write-Verbose "Successfully replaced $fileName with working version"
+                    } catch {
+                        Write-Warning "Failed to replace $fileName with working version - $($_.Exception.Message)"
+                        continue
                     }
 
-                    Write-Verbose "Invoking Claude for $fileName with $($allFailuresForFile.Count) failures"
+                    Write-Progress -Activity "Fixing $fileName" -Status "Running Update-PesterTest..." -PercentComplete 70 -Id 2 -ParentId 1
+                    Write-Verbose "Running Update-PesterTest on $fileName"
 
-                    Write-Progress -Activity "Fixing $fileName" -Status "Running Claude AI to fix $($allFailuresForFile.Count) failures..." -PercentComplete 50 -Id 2 -ParentId 1
-
+                    # Run Update-PesterTest against the working copy to migrate it properly
                     try {
-                        Invoke-AITool @aiParams -ErrorAction Stop
+                        # Skip the module import since we've already imported it
+                        $env:SKIP_DBATOOLS_IMPORT = $true
+                        Update-PesterTest -InputObject (Get-Item $failingTestPath.Path) -ErrorAction Stop
+                        Remove-Item env:SKIP_DBATOOLS_IMPORT -ErrorAction SilentlyContinue
+                        Write-Verbose "Successfully ran Update-PesterTest on $fileName"
+
                         # Mark this file as processed
                         $processedFiles[$fileName] = $true
                         Write-Verbose "Successfully processed $fileName"
-
                     } catch {
-                        Write-Warning "Claude failed with context files for ${fileName}, retrying without command source file - $($_.Exception.Message)"
-
-                        $retryParams = @{
-                            Message      = ($repairMessage -split 'COMMAND CODE FOR REFERENCE' | Select-Object -First 1).Trim()
-                            File         = $failingTestPath.Path
-                            Model        = $Model
-                            Tool         = 'Claude'
-                            ContextFiles = (Resolve-Path "$PSScriptRoot/prompts/style.md" -ErrorAction SilentlyContinue).Path, (Resolve-Path "$PSScriptRoot/prompts/migration.md" -ErrorAction SilentlyContinue).Path
-                        }
-
-                        Write-Verbose "Retrying $fileName with reduced context files"
-                        try {
-                            Invoke-AITool @retryParams
-                            $processedFiles[$fileName] = $true
-                            Write-Verbose "Successfully processed $fileName on retry"
-                        } catch {
-                            Write-Warning "Failed to process $fileName even on retry - $($_.Exception.Message)"
-                        }
+                        Write-Warning "Update-PesterTest failed for $fileName - $($_.Exception.Message)"
                     }
-
-
-                    Write-Progress -Activity "Fixing $fileName" -Status "Reformatting" -PercentComplete 90 -Id 2 -ParentId 1
-
-                    # Update-PesterTest -InputObject $failingTestPath.Path
-                    $null = Get-ChildItem $failingTestPath.Path | Invoke-DbatoolsFormatter
 
                     # Clear the detailed progress for this file
                     Write-Progress -Activity "Fixing $fileName" -Completed -Id 2
@@ -542,7 +428,7 @@ function Repair-PullRequestTest {
                 if ($changedFiles) {
                     Write-Verbose "Committing fixes for all processed files..."
                     git add -A 2>$null | Out-Null
-                    git commit -m "Fix failing Pester tests across multiple files (automated fix via Claude AI)" 2>$null | Out-Null
+                    git commit -m "Fix failing Pester tests across multiple files (replaced with working versions + Update-PesterTest)" 2>$null | Out-Null
                     Write-Verbose "Changes committed successfully"
                 }
             }

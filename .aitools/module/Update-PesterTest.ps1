@@ -120,22 +120,27 @@ function Update-PesterTest {
             Install-Module dbatools.library -Scope CurrentUser -Force
         }
 
-        # Show fake progress bar during slow dbatools import, pass some time
-        Write-Progress -Activity "Loading dbatools Module" -Status "Initializing..." -PercentComplete 0
-        Start-Sleep -Milliseconds 100
-        Write-Progress -Activity "Loading dbatools Module" -Status "Loading core functions..." -PercentComplete 20
-        Start-Sleep -Milliseconds 200
-        Write-Progress -Activity "Loading dbatools Module" -Status "Populating RepositorySourceLocation..." -PercentComplete 40
-        Start-Sleep -Milliseconds 300
-        Write-Progress -Activity "Loading dbatools Module" -Status "Loading database connections..." -PercentComplete 60
-        Start-Sleep -Milliseconds 200
-        Write-Progress -Activity "Loading dbatools Module" -Status "Finalizing module load..." -PercentComplete 80
-        Start-Sleep -Milliseconds 100
-        Write-Progress -Activity "Loading dbatools Module" -Status "Importing module..." -PercentComplete 90
-        Import-Module $script:ModulePath/dbatools.psm1 -Force
-        Write-Progress -Activity "Loading dbatools Module" -Status "Complete" -PercentComplete 100
-        Start-Sleep -Milliseconds 100
-        Write-Progress -Activity "Loading dbatools Module" -Completed
+        # Skip dbatools import if already loaded (e.g., from Repair-PullRequestTest)
+        if (-not $env:SKIP_DBATOOLS_IMPORT) {
+            # Show fake progress bar during slow dbatools import, pass some time
+            Write-Progress -Activity "Loading dbatools Module" -Status "Initializing..." -PercentComplete 0
+            Start-Sleep -Milliseconds 100
+            Write-Progress -Activity "Loading dbatools Module" -Status "Loading core functions..." -PercentComplete 20
+            Start-Sleep -Milliseconds 200
+            Write-Progress -Activity "Loading dbatools Module" -Status "Populating RepositorySourceLocation..." -PercentComplete 40
+            Start-Sleep -Milliseconds 300
+            Write-Progress -Activity "Loading dbatools Module" -Status "Loading database connections..." -PercentComplete 60
+            Start-Sleep -Milliseconds 200
+            Write-Progress -Activity "Loading dbatools Module" -Status "Finalizing module load..." -PercentComplete 80
+            Start-Sleep -Milliseconds 100
+            Write-Progress -Activity "Loading dbatools Module" -Status "Importing module..." -PercentComplete 90
+            Import-Module $script:ModulePath/dbatools.psm1 -Force
+            Write-Progress -Activity "Loading dbatools Module" -Status "Complete" -PercentComplete 100
+            Start-Sleep -Milliseconds 100
+            Write-Progress -Activity "Loading dbatools Module" -Completed
+        } else {
+            Write-Verbose "Skipping dbatools import - already loaded by calling function"
+        }
 
         $promptTemplate = if ($PromptFilePath[0] -and (Test-Path $PromptFilePath[0])) {
             Get-Content $PromptFilePath[0]
