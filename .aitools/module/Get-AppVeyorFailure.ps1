@@ -1,9 +1,93 @@
 function Get-AppVeyorFailure {
+    <#
+    .SYNOPSIS
+        Retrieves test failure information from AppVeyor builds.
+
+    .DESCRIPTION
+        This function fetches test failure details from AppVeyor builds, either by specifying
+        pull request numbers or a specific build number. It extracts failed test information
+        from build artifacts and returns detailed failure data for analysis.
+
+    .PARAMETER PullRequest
+        Array of pull request numbers to process. If not specified and no BuildNumber is provided,
+        processes all open pull requests with AppVeyor failures.
+
+    .PARAMETER BuildNumber
+        Specific AppVeyor build number to target instead of automatically detecting from PR checks.
+        When specified, retrieves failures directly from this build number, ignoring PR-based detection.
+
+    .NOTES
+        Tags: Testing, AppVeyor, CI, PullRequest
+        Author: dbatools team
+        Requires: AppVeyor API access, gh CLI
+
+    .EXAMPLE
+        PS C:\> Get-AppVeyorFailure
+        Retrieves test failures from all open pull requests with AppVeyor failures.
+
+    .EXAMPLE
+        PS C:\> Get-AppVeyorFailure -PullRequest 9234
+        Retrieves test failures from AppVeyor builds associated with PR #9234.
+
+    .EXAMPLE
+        PS C:\> Get-AppVeyorFailure -PullRequest 9234, 9235
+        Retrieves test failures from AppVeyor builds associated with PRs #9234 and #9235.
+
+    .EXAMPLE
+        PS C:\> Get-AppVeyorFailure -BuildNumber 12345
+        Retrieves test failures directly from AppVeyor build #12345, bypassing PR detection.
+    #>
     [CmdletBinding()]
     param (
-        [int[]]$PullRequest
+        [int[]]$PullRequest,
+
+        [int]$BuildNumber
     )
 
+    # If BuildNumber is specified, use it directly instead of looking up PR checks
+    if ($BuildNumber) {
+        Write-Progress -Activity "Get-AppVeyorFailure" -Status "Fetching build details for build #$BuildNumber..." -PercentComplete 0
+        Write-Verbose "Using specified build number: $BuildNumber"
+
+        try {
+            $apiParams = @{
+                Endpoint = "projects/dataplat/dbatools/builds/$BuildNumber"
+            }
+            $build = Invoke-AppVeyorApi @apiParams
+
+            if (-not $build -or -not $build.build -or -not $build.build.jobs) {
+                Write-Verbose "No build data or jobs found for build $BuildNumber"
+                Write-Progress -Activity "Get-AppVeyorFailure" -Completed
+                return
+            }
+
+            $failedJobs = $build.build.jobs | Where-Object Status -eq "failed"
+
+            if (-not $failedJobs) {
+                Write-Verbose "No failed jobs found in build $BuildNumber"
+                Write-Progress -Activity "Get-AppVeyorFailure" -Completed
+                return
+            }
+
+            $totalJobs = $failedJobs.Count
+            $currentJob = 0
+
+            foreach ($job in $failedJobs) {
+                $currentJob++
+                $jobProgress = [math]::Round(($currentJob / $totalJobs) * 100)
+                Write-Progress -Activity "Getting job failure information" -Status "Processing failed job $currentJob of $totalJobs for build #$BuildNumber" -PercentComplete $jobProgress -CurrentOperation "Job: $($job.name)"
+                Write-Verbose "Processing failed job: $($job.name) (ID: $($job.jobId))"
+                (Get-TestArtifact -JobId $job.jobid).Content.Failures
+            }
+        } catch {
+            Write-Verbose "Failed to fetch AppVeyor build details for build ${BuildNumber}: $_"
+        }
+
+        Write-Progress -Activity "Get-AppVeyorFailure" -Completed
+        return
+    }
+
+    # Original logic for PR-based build detection
     if (-not $PullRequest) {
         Write-Progress -Activity "Get-AppVeyorFailure" -Status "Fetching open pull requests..." -PercentComplete 0
         Write-Verbose "No pull request numbers specified, getting all open PRs..."

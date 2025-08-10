@@ -21,6 +21,10 @@ function Repair-PullRequestTest {
    .PARAMETER MaxPRs
        Maximum number of PRs to process. Default: 5
 
+   .PARAMETER BuildNumber
+       Specific AppVeyor build number to target instead of automatically detecting from PR checks.
+       When specified, uses this build number directly rather than finding the latest build for the PR.
+
    .NOTES
        Tags: Testing, Pester, PullRequest, CI
        Author: dbatools team
@@ -33,13 +37,22 @@ function Repair-PullRequestTest {
    .EXAMPLE
        PS C:\> Repair-PullRequestTest -PRNumber 9234 -AutoCommit
        Fixes failing tests in PR #9234 and automatically commits the changes.
+
+   .EXAMPLE
+       PS C:\> Repair-PullRequestTest -PRNumber 9234 -BuildNumber 12345
+       Fixes failing tests in PR #9234 using AppVeyor build #12345 instead of the latest build.
+
+   .EXAMPLE
+       PS C:\> Repair-PullRequestTest -BuildNumber 12345
+       Fixes failing tests from AppVeyor build #12345 across all relevant PRs.
    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [int]$PRNumber,
         [string]$Model = "claude-sonnet-4-20250514",
         [switch]$AutoCommit,
-        [int]$MaxPRs = 5
+        [int]$MaxPRs = 5,
+        [int]$BuildNumber
     )
 
     begin {
@@ -208,6 +221,9 @@ function Repair-PullRequestTest {
                 Write-Progress -Activity "Repairing Pull Request Tests" -Status "Fetching test failures from AppVeyor for PR #$($pr.number)..." -PercentComplete $prProgress -Id 0
                 $getFailureParams = @{
                     PullRequest = $pr.number
+                }
+                if ($BuildNumber) {
+                    $getFailureParams.BuildNumber = $BuildNumber
                 }
                 $prFailedTests = Get-AppVeyorFailure @getFailureParams
 
