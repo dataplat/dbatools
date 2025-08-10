@@ -47,6 +47,9 @@ function Repair-PullRequestTest {
         $gitRoot = git rev-parse --show-toplevel 2>$null
         if (-not $gitRoot -or -not (Test-Path "$gitRoot/dbatools.psm1")) {
             throw "This command must be run from within the dbatools repository"
+        } else {
+            Write-Progress -Activity "Repairing Pull Request Tests" -Status "Importing dbatools" -PercentComplete 0
+            Import-Module "$gitRoot/dbatools.psm1" -Force -ErrorAction Stop
         }
 
         Write-Verbose "Working in repository: $gitRoot"
