@@ -46,8 +46,8 @@ Function Install-ADAuthenticationLibraryforSQLServer {
 
 $indent = '...'
 Write-Host -Object "$indent Running $PSCommandpath" -ForegroundColor DarkGreen
-Import-Module C:\github\dbatools\dbatools.psm1 -Force
-$null = Set-DbatoolsInsecureConnection
+#Import-Module C:\github\dbatools\dbatools.psm1 -Force
+#$null = Set-DbatoolsInsecureConnection
 
 # This script spins up the 2008R2SP2 instance and the relative setup
 
@@ -98,4 +98,4 @@ while ($lastexitcode -ne 0 -and $t++ -lt 10)
 #    Invoke-DbaQuery -SqlInstance $sqlinstance -InputFile $file
 #}
 
-Import-Module C:\github\dbatools\dbatools.psm1 -Force
+#Import-Module C:\github\dbatools\dbatools.psm1 -Force
