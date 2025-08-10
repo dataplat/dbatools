@@ -39,7 +39,7 @@ Describe $CommandName -Tag IntegrationTests {
         # that can be copied to the destination instance.
 
         # Set variables. They are available in all the It blocks.
-        $scheduleName = "dbatoolsci_DailySchedule"
+        $global:scheduleName = "dbatoolsci_DailySchedule"
 
         # Create the test schedule on source instance
         $splatAddSchedule = @{
@@ -88,7 +88,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Source      = $TestConfig.instance2
                 Destination = $TestConfig.instance3
             }
-            $copyResults = Copy-DbaAgentSchedule @splatCopySchedule
+            $global:copyResults = Copy-DbaAgentSchedule @splatCopySchedule
         }
 
         It "Returns more than one result" {
@@ -102,7 +102,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Creates schedule with correct start time" {
             $splatGetSchedule = @{
                 SqlInstance = $TestConfig.instance3
-                Schedule    = "dbatoolsci_DailySchedule"
+                Schedule    = $global:scheduleName
             }
             $copiedSchedule = Get-DbaAgentSchedule @splatGetSchedule
             $copiedSchedule.ActiveStartTimeOfDay | Should -Be "01:00:00"
