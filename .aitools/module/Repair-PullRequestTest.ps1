@@ -153,90 +153,118 @@ function Repair-PullRequestTest {
 
             Write-Verbose "Found $($prs.Count) open PR(s)"
 
-            # Collect ALL failed tests from ALL PRs first, then deduplicate
-            $allFailedTestsAcrossPRs = @()
-            $allRelevantTestFiles = @()
-            $selectedPR = $null  # We'll use the first PR with failures for branch operations
+            # Handle specific build number scenario differently
+            if ($BuildNumber) {
+                Write-Verbose "Using specific build number: $BuildNumber, bypassing PR-based detection"
+                Write-Progress -Activity "Repairing Pull Request Tests" -Status "Fetching test failures from AppVeyor build #$BuildNumber..." -PercentComplete 50 -Id 0
 
-            # Initialize overall progress tracking
-            $prCount = 0
-            $totalPRs = $prs.Count
-
-            foreach ($pr in $prs) {
-                $prCount++
-                $prProgress = [math]::Round(($prCount / $totalPRs) * 100, 0)
-
-                Write-Progress -Activity "Repairing Pull Request Tests" -Status "Collecting failures from PR #$($pr.number) - $($pr.title)" -PercentComplete $prProgress -Id 0
-                Write-Verbose "`nCollecting failures from PR #$($pr.number) - $($pr.title)"
-
-                # Get the list of files changed in this PR to filter which tests to fix
-                $changedTestFiles = @()
-                $changedCommandFiles = @()
-
-                Write-Verbose "PR files object: $($pr.files | ConvertTo-Json -Depth 3)"
-
-                if ($pr.files -and $pr.files.Count -gt 0) {
-                    foreach ($file in $pr.files) {
-                        Write-Verbose "Processing file: $($file.filename) (path: $($file.path))"
-                        $filename = if ($file.filename) { $file.filename } elseif ($file.path) { $file.path } else { $file }
-
-                        if ($filename -like "*Tests.ps1" -or $filename -like "tests/*.Tests.ps1") {
-                            $testFileName = [System.IO.Path]::GetFileName($filename)
-                            $changedTestFiles += $testFileName
-                            Write-Verbose "Added test file: $testFileName"
-                        } elseif ($filename -like "public/*.ps1") {
-                            $commandName = [System.IO.Path]::GetFileNameWithoutExtension($filename)
-                            $testFileName = "$commandName.Tests.ps1"
-                            $changedCommandFiles += $testFileName
-                            Write-Verbose "Added command test file: $testFileName (from command - $commandName)"
-                        }
-                    }
-                } else {
-                    Write-Verbose "No files found in PR object or files array is empty"
-                }
-
-                # Combine both directly changed test files and test files for changed commands
-                $relevantTestFiles = ($changedTestFiles + $changedCommandFiles) | Sort-Object -Unique
-                $allRelevantTestFiles += $relevantTestFiles
-
-                Write-Verbose "Relevant test files for PR #$($pr.number) - $($relevantTestFiles -join ', ')"
-
-                # Check for AppVeyor failures
-                $appveyorChecks = $pr.statusCheckRollup | Where-Object {
-                    $_.context -like "*appveyor*" -and $_.state -match "PENDING|FAILURE"
-                }
-
-                if (-not $appveyorChecks) {
-                    Write-Verbose "No AppVeyor failures found in PR #$($pr.number)"
-                    continue
-                }
-
-                # Store the first PR with failures to use for branch operations
-                if (-not $selectedPR) {
-                    $selectedPR = $pr
-                    Write-Verbose "Selected PR #$($pr.number) '$($pr.headRefName)' as target branch for fixes"
-                }
-
-                # Get AppVeyor build details
-                Write-Progress -Activity "Repairing Pull Request Tests" -Status "Fetching test failures from AppVeyor for PR #$($pr.number)..." -PercentComplete $prProgress -Id 0
+                # Get failures directly from the specified build
                 $getFailureParams = @{
-                    PullRequest = $pr.number
+                    BuildNumber = $BuildNumber
                 }
-                if ($BuildNumber) {
-                    $getFailureParams.BuildNumber = $BuildNumber
-                }
-                $prFailedTests = Get-AppVeyorFailure @getFailureParams
+                $allFailedTestsAcrossPRs = @(Get-AppVeyorFailure @getFailureParams)
 
-                if (-not $prFailedTests) {
-                    Write-Verbose "Could not retrieve test failures from AppVeyor for PR #$($pr.number)"
-                    continue
+                if (-not $allFailedTestsAcrossPRs) {
+                    Write-Verbose "Could not retrieve test failures from AppVeyor build #$BuildNumber"
+                    return
                 }
 
-                # Filter tests for this PR and add to collection
-                foreach ($test in $prFailedTests) {
-                    $testFileName = [System.IO.Path]::GetFileName($test.TestFile)
-                    if ($relevantTestFiles.Count -eq 0 -or $testFileName -in $relevantTestFiles) {
-                        $allFailedTestsAcrossPRs += $test
+                # For build-specific mode, we don't filter by PR files - process all failures
+                $allRelevantTestFiles = @()
+
+                # Use the first PR for branch operations (or current branch if no PR specified)
+                $selectedPR = $prs | Select-Object -First 1
+                if (-not $selectedPR -and -not $PRNumber) {
+                    # No PR context, stay on current branch
+                    $selectedPR = @{
+                        number = "current"
+                        headRefName = $originalBranch
+                    }
+                }
+            } else {
+                # Original PR-based logic
+                # Collect ALL failed tests from ALL PRs first, then deduplicate
+                $allFailedTestsAcrossPRs = @()
+                $allRelevantTestFiles = @()
+                $selectedPR = $null  # We'll use the first PR with failures for branch operations
+
+                # Initialize overall progress tracking
+                $prCount = 0
+                $totalPRs = $prs.Count
+
+                foreach ($pr in $prs) {
+                    $prCount++
+                    $prProgress = [math]::Round(($prCount / $totalPRs) * 100, 0)
+
+                    Write-Progress -Activity "Repairing Pull Request Tests" -Status "Collecting failures from PR #$($pr.number) - $($pr.title)" -PercentComplete $prProgress -Id 0
+                    Write-Verbose "`nCollecting failures from PR #$($pr.number) - $($pr.title)"
+
+                    # Get the list of files changed in this PR to filter which tests to fix
+                    $changedTestFiles = @()
+                    $changedCommandFiles = @()
+
+                    Write-Verbose "PR files object: $($pr.files | ConvertTo-Json -Depth 3)"
+
+                    if ($pr.files -and $pr.files.Count -gt 0) {
+                        foreach ($file in $pr.files) {
+                            Write-Verbose "Processing file: $($file.filename) (path: $($file.path))"
+                            $filename = if ($file.filename) { $file.filename } elseif ($file.path) { $file.path } else { $file }
+
+                            if ($filename -like "*Tests.ps1" -or $filename -like "tests/*.Tests.ps1") {
+                                $testFileName = [System.IO.Path]::GetFileName($filename)
+                                $changedTestFiles += $testFileName
+                                Write-Verbose "Added test file: $testFileName"
+                            } elseif ($filename -like "public/*.ps1") {
+                                $commandName = [System.IO.Path]::GetFileNameWithoutExtension($filename)
+                                $testFileName = "$commandName.Tests.ps1"
+                                $changedCommandFiles += $testFileName
+                                Write-Verbose "Added command test file: $testFileName (from command - $commandName)"
+                            }
+                        }
+                    } else {
+                        Write-Verbose "No files found in PR object or files array is empty"
+                    }
+
+                    # Combine both directly changed test files and test files for changed commands
+                    $relevantTestFiles = ($changedTestFiles + $changedCommandFiles) | Sort-Object -Unique
+                    $allRelevantTestFiles += $relevantTestFiles
+
+                    Write-Verbose "Relevant test files for PR #$($pr.number) - $($relevantTestFiles -join ', ')"
+
+                    # Check for AppVeyor failures
+                    $appveyorChecks = $pr.statusCheckRollup | Where-Object {
+                        $_.context -like "*appveyor*" -and $_.state -match "PENDING|FAILURE"
+                    }
+
+                    if (-not $appveyorChecks) {
+                        Write-Verbose "No AppVeyor failures found in PR #$($pr.number)"
+                        continue
+                    }
+
+                    # Store the first PR with failures to use for branch operations
+                    if (-not $selectedPR) {
+                        $selectedPR = $pr
+                        Write-Verbose "Selected PR #$($pr.number) '$($pr.headRefName)' as target branch for fixes"
+                    }
+
+                    # Get AppVeyor build details
+                    Write-Progress -Activity "Repairing Pull Request Tests" -Status "Fetching test failures from AppVeyor for PR #$($pr.number)..." -PercentComplete $prProgress -Id 0
+                    $getFailureParams = @{
+                        PullRequest = $pr.number
+                    }
+                    $prFailedTests = Get-AppVeyorFailure @getFailureParams
+
+                    if (-not $prFailedTests) {
+                        Write-Verbose "Could not retrieve test failures from AppVeyor for PR #$($pr.number)"
+                        continue
+                    }
+
+                    # Filter tests for this PR and add to collection
+                    foreach ($test in $prFailedTests) {
+                        $testFileName = [System.IO.Path]::GetFileName($test.TestFile)
+                        if ($relevantTestFiles.Count -eq 0 -or $testFileName -in $relevantTestFiles) {
+                            $allFailedTestsAcrossPRs += $test
+                        }
                     }
                 }
             }
@@ -266,19 +294,23 @@ function Repair-PullRequestTest {
                 Write-Verbose "  ${fileName} - $($fileErrorMap[$fileName].Count) failures"
             }
 
-            # Checkout the selected PR branch for all operations
-            Write-Verbose "Using PR #$($selectedPR.number) branch '$($selectedPR.headRefName)' for all fixes"
-            git fetch origin $selectedPR.headRefName 2>$null | Out-Null
-            git checkout $selectedPR.headRefName 2>$null | Out-Null
+            # Checkout the selected PR branch for all operations (unless using current branch)
+            if ($selectedPR.number -ne "current") {
+                Write-Verbose "Using PR #$($selectedPR.number) branch '$($selectedPR.headRefName)' for all fixes"
+                git fetch origin $selectedPR.headRefName 2>$null | Out-Null
+                git checkout $selectedPR.headRefName 2>$null | Out-Null
 
-            # Verify the checkout worked
-            $afterCheckout = git rev-parse --abbrev-ref HEAD 2>$null
-            if ($afterCheckout -ne $selectedPR.headRefName) {
-                Write-Error "Failed to checkout selected PR branch '$($selectedPR.headRefName)'. Currently on '$afterCheckout'."
-                return
+                # Verify the checkout worked
+                $afterCheckout = git rev-parse --abbrev-ref HEAD 2>$null
+                if ($afterCheckout -ne $selectedPR.headRefName) {
+                    Write-Error "Failed to checkout selected PR branch '$($selectedPR.headRefName)'. Currently on '$afterCheckout'."
+                    return
+                }
+
+                Write-Verbose "Successfully checked out branch '$($selectedPR.headRefName)'"
+            } else {
+                Write-Verbose "Using current branch '$originalBranch' for build-specific fixes"
             }
-
-            Write-Verbose "Successfully checked out branch '$($selectedPR.headRefName)'"
 
             # Now process each unique file once with ALL its errors
             $totalUniqueFiles = $fileErrorMap.Keys.Count
