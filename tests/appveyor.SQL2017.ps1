@@ -1,9 +1,6 @@
 $indent = '...'
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor DarkGreen
-#$dbatools_serialimport = $true
-#Import-Module C:\github\dbatools\dbatools.psd1
-#Start-Sleep 5
-#$null = Set-DbatoolsInsecureConnection
+Write-Host -Object "$indent Running $PSCommandpath" -ForegroundColor DarkGreen
+
 # This script spins up the 2016 instance and the relative setup
 
 $sqlinstance = "localhost\SQL2017"
@@ -11,19 +8,31 @@ $instance = "SQL2017"
 $port = "14334"
 
 Write-Host -Object "$indent Setting up AppVeyor Services" -ForegroundColor DarkGreen
+
+Write-Host -Object "$indent SQLBrowser StartType: $((Get-Service -Name SQLBrowser).StartType) / Status: $((Get-Service -Name SQLBrowser).Status)" -ForegroundColor DarkGreen
+Write-Host -Object "$indent MSSQL`$$instance StartType: $((Get-Service -Name "MSSQL`$$instance").StartType) / Status: $((Get-Service -Name "MSSQL`$$instance").Status)" -ForegroundColor DarkGreen
+Write-Host -Object "$indent SQLAgent`$$instance StartType: $((Get-Service -Name "SQLAgent`$$instance").StartType) / Status: $((Get-Service -Name "SQLAgent`$$instance").Status)" -ForegroundColor DarkGreen
+
+
 Set-Service -Name SQLBrowser -StartupType Automatic -WarningAction SilentlyContinue
-Set-Service -Name "SQLAgent`$$instance" -StartupType Automatic -WarningAction SilentlyContinue
 Start-Service SQLBrowser -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
+Set-Service -Name "SQLAgent`$$instance" -StartupType Automatic -WarningAction SilentlyContinue
 
 Write-Host -Object "$indent Changing the port on $instance to $port" -ForegroundColor DarkGreen
 $wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer
-$uri = "ManagedComputer[@Name='$env:COMPUTERNAME']/ ServerInstance[@Name='$instance']/ServerProtocol[@Name='Tcp']"
+$uri = "ManagedComputer[@Name='$env:COMPUTERNAME']/ServerInstance[@Name='$instance']/ServerProtocol[@Name='Tcp']"
 $Tcp = $wmi.GetSmoObject($uri)
 foreach ($ipAddress in $Tcp.IPAddresses) {
     $ipAddress.IPAddressProperties["TcpDynamicPorts"].Value = ""
     $ipAddress.IPAddressProperties["TcpPort"].Value = $port
 }
 $Tcp.Alter()
+
+
+
+
+
+
 Write-Host -Object "$indent Starting $instance" -ForegroundColor DarkGreen
 #Restart-Service "MSSQL`$$instance" -WarningAction SilentlyContinue -Force
 #Restart-Service "SQLAgent`$$instance" -WarningAction SilentlyContinue -Force
