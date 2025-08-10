@@ -26,6 +26,10 @@ function Repair-PullRequestTest {
        from the development branch to the current branch, without running Update-PesterTest
        or committing any changes.
 
+   .PARAMETER Pattern
+       Pattern to filter test files. Only files matching this pattern will be processed.
+       Supports wildcards (e.g., "*Login*" to match files containing "Login").
+
    .NOTES
        Tags: Testing, Pester, PullRequest, CI
        Author: dbatools team
@@ -53,7 +57,8 @@ function Repair-PullRequestTest {
         [switch]$AutoCommit,
         [int]$MaxPRs = 5,
         [int]$BuildNumber,
-        [switch]$CopyOnly
+        [switch]$CopyOnly,
+        [string]$Pattern
     )
 
     begin {
@@ -269,7 +274,14 @@ function Repair-PullRequestTest {
             $fileErrorPath = @()
             $testdirectory = Join-Path $script:ModulePath "tests"
 
-            foreach ($test in $allFailedTestsAcrossPRs) {
+            # Apply Pattern filter first if specified
+            $filteredTests = if ($Pattern) {
+                $allFailedTestsAcrossPRs | Where-Object { [System.IO.Path]::GetFileName($_.TestFile) -match $Pattern }
+            } else {
+                $allFailedTestsAcrossPRs
+            }
+
+            foreach ($test in $filteredTests) {
                 $fileName = [System.IO.Path]::GetFileName($test.TestFile)
                 # ONLY include files that are actually in the PR changes
                 if ($allRelevantTestFiles.Count -eq 0 -or $fileName -in $allRelevantTestFiles) {
@@ -284,7 +296,11 @@ function Repair-PullRequestTest {
                 }
             }
             $fileErrorPath = $fileErrorPath | Sort-Object -Unique
-            Write-Verbose "Found failures in $($fileErrorMap.Keys.Count) unique test files (filtered to PR changes only)"
+            $filterMessage = "filtered to PR changes only"
+            if ($Pattern) {
+                $filterMessage += " and pattern '$Pattern'"
+            }
+            Write-Verbose "Found failures in $($fileErrorMap.Keys.Count) unique test files ($filterMessage)"
             foreach ($fileName in $fileErrorMap.Keys) {
                 Write-Verbose "  ${fileName} - $($fileErrorMap[$fileName].Count) failures"
                 Write-Verbose "    Paths: $fileErrorPath"
@@ -498,35 +514,60 @@ function Repair-PullRequestTest {
                 }
             }
 
-            # Wait for all jobs to complete and collect results
-            Write-Verbose "Started $($updateJobs.Count) parallel Update-PesterTest jobs, waiting for completion..."
+            # Poll for job completion with progress updates
+            Write-Verbose "Started $($updateJobs.Count) parallel Update-PesterTest jobs, polling for completion..."
 
-            # Wait for ALL jobs to complete in parallel first
-            $null = $updateJobs.Job | Wait-Job
+            $totalJobs = $updateJobs.Count
+            $completedJobs = 0
+            $processedJobIds = @()
 
-            # Then process all results without additional waiting
-            $completedCount = 0
-            foreach ($jobInfo in $updateJobs) {
-                try {
-                    $result = Receive-Job -Job $jobInfo.Job  # No -Wait since jobs are already complete
-                    $completedCount++
+            while ($completedJobs -lt $totalJobs) {
+                Start-Sleep -Seconds 5
 
-                    if ($result.Success) {
-                        Write-Verbose "Update-PesterTest completed successfully for: $($jobInfo.FileName)"
-                        $processedFiles[$jobInfo.FileName] = $true
-                    } else {
-                        Write-Warning "Update-PesterTest failed for $($jobInfo.FileName): $($result.Error)"
+                # Check for completed jobs that haven't been processed yet
+                foreach ($jobInfo in $updateJobs) {
+                    if ($jobInfo.Job.Id -in $processedJobIds) {
+                        continue  # Skip already processed jobs
                     }
 
-                    # Update progress
-                    $progress = [math]::Round(($completedCount / $updateJobs.Count) * 100, 0)
-                    Write-Progress -Activity "Running Update-PesterTest (Parallel)" -Status "Processed $($jobInfo.FileName) ($completedCount/$($updateJobs.Count))" -PercentComplete $progress -Id 1
+                    if ($jobInfo.Job.State -eq 'Completed' -and $jobInfo.Job.HasMoreData) {
+                        try {
+                            $result = Receive-Job -Job $jobInfo.Job
+                            $completedJobs++
+                            $processedJobIds += $jobInfo.Job.Id
 
-                } catch {
-                    Write-Warning "Error processing Update-PesterTest job for $($jobInfo.FileName): $($_.Exception.Message)"
-                } finally {
-                    Remove-Job -Job $jobInfo.Job -Force -ErrorAction SilentlyContinue
+                            if ($result.Success) {
+                                Write-Verbose "Update-PesterTest completed successfully for: $($jobInfo.FileName)"
+                                $processedFiles[$jobInfo.FileName] = $true
+                            } else {
+                                Write-Warning "Update-PesterTest failed for $($jobInfo.FileName): $($result.Error)"
+                            }
+
+                            # Update progress
+                            $progress = [math]::Round(($completedJobs / $totalJobs) * 100, 0)
+                            Write-Progress -Activity "Running Update-PesterTest (Parallel)" -Status "Completed $($jobInfo.FileName) ($completedJobs/$totalJobs)" -PercentComplete $progress -Id 1
+
+                        } catch {
+                            Write-Warning "Error processing Update-PesterTest job for $($jobInfo.FileName): $($_.Exception.Message)"
+                            $completedJobs++
+                            $processedJobIds += $jobInfo.Job.Id
+                        }
+                    }
+                    elseif ($jobInfo.Job.State -eq 'Failed') {
+                        Write-Warning "Update-PesterTest job failed for $($jobInfo.FileName)"
+                        $completedJobs++
+                        $processedJobIds += $jobInfo.Job.Id
+
+                        # Update progress
+                        $progress = [math]::Round(($completedJobs / $totalJobs) * 100, 0)
+                        Write-Progress -Activity "Running Update-PesterTest (Parallel)" -Status "Failed $($jobInfo.FileName) ($completedJobs/$totalJobs)" -PercentComplete $progress -Id 1
+                    }
                 }
+            }
+
+            # Clean up all jobs
+            foreach ($jobInfo in $updateJobs) {
+                Remove-Job -Job $jobInfo.Job -Force -ErrorAction SilentlyContinue
             }
 
             Write-Verbose "All $($updateJobs.Count) Update-PesterTest parallel jobs completed"
