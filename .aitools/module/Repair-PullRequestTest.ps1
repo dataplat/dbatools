@@ -207,7 +207,6 @@ function Repair-PullRequestTest {
 
                     if ($pr.files -and $pr.files.Count -gt 0) {
                         foreach ($file in $pr.files) {
-                            Write-Verbose "Processing file: $($file.filename) (path: $($file.path))"
                             $filename = if ($file.filename) { $file.filename } elseif ($file.path) { $file.path } else { $file }
 
                             if ($filename -like "*Tests.ps1" -or $filename -like "tests/*.Tests.ps1") {
@@ -229,7 +228,7 @@ function Repair-PullRequestTest {
                     $relevantTestFiles = ($changedTestFiles + $changedCommandFiles) | Sort-Object -Unique
                     $allRelevantTestFiles += $relevantTestFiles
 
-                    Write-Verbose "Relevant test files for PR #$($pr.number) - $($relevantTestFiles -join ', ')"
+                    Write-Verbose "Relevant test files for PR #$($pr.number) - $($relevantTestFiles -join '`n ')"
 
                     # Check for AppVeyor failures
                     $appveyorChecks = $pr.statusCheckRollup | Where-Object {
