@@ -92,10 +92,10 @@ do {
 }
 while ($lastexitcode -ne 0 -and $t++ -lt 10)
 
-Write-Host -Object "$indent Executing startup scripts for SQL Server 2008" -ForegroundColor DarkGreen
+#Write-Host -Object "$indent Executing startup scripts for SQL Server 2008" -ForegroundColor DarkGreen
 # Add some jobs to the sql2008r2sp2 instance (1433 = default)
-foreach ($file in (Get-ChildItem C:\github\appveyor-lab\sql2008-startup\*.sql -Recurse -ErrorAction SilentlyContinue)) {
-    Invoke-DbaQuery -SqlInstance $sqlinstance -InputFile $file
-}
+#foreach ($file in (Get-ChildItem C:\github\appveyor-lab\sql2008-startup\*.sql -Recurse -ErrorAction SilentlyContinue)) {
+#    Invoke-DbaQuery -SqlInstance $sqlinstance -InputFile $file
+#}
 
 Import-Module C:\github\dbatools\dbatools.psm1 -Force
