@@ -400,20 +400,6 @@ function Repair-PullRequestTest {
                     # Start the repair message with workingTempPath content if available
                     $repairMessage = "You are fixing ALL the test failures in $fileName. This test has already been migrated to Pester v5 and styled according to dbatools conventions.`n`n"
 
-                    # Next, include the command scriptblock content if available
-                    if ($commandSourcePath -and (Test-Path $commandSourcePath)) {
-                        $commandContent = Get-Content -Path $commandSourcePath
-                        $bindingIndex = ($commandContent | Select-String -Pattern '^\s*\[CmdletBinding' | Select-Object -First 1).LineNumber
-                        if ($bindingIndex) {
-                            $commandCode = $commandContent | Select-Object -Skip $bindingIndex
-                        } else {
-                            $commandCode = $commandContent
-                        }
-                        $repairMessage += "COMMAND CODE FOR REFERENCE:`n"
-                        $repairMessage += ($commandCode -join "`n")
-                        $repairMessage += "`n`n"
-                    }
-
                     # Then continue with the original repair instructions
                     $repairMessage += "CRITICAL RULES - DO NOT CHANGE THESE:`n"
                     $repairMessage += "1. PRESERVE ALL COMMENTS EXACTLY - Every single comment must remain intact`n"
@@ -460,6 +446,26 @@ function Repair-PullRequestTest {
                         }
                     }
 
+                    # Next, include the command scriptblock content if available
+                    if ($commandSourcePath -and (Test-Path $commandSourcePath)) {
+                        $commandContent = Get-Content -Path $commandSourcePath
+                        $bindingIndex = ($commandContent | Select-String -Pattern '^\s*\[CmdletBinding' | Select-Object -First 1).LineNumber
+                        if ($bindingIndex) {
+                            $commandCode = $commandContent | Select-Object -Skip $bindingIndex
+                        } else {
+                            $commandCode = $commandContent
+                        }
+                        $repairMessage += "COMMAND CODE FOR REFERENCE:`n"
+                        $repairMessage += ($commandCode -join "`n")
+                        $repairMessage += "`n`n"
+                    }
+
+                    if (Test-Path $workingTempPath) {
+                        $repairMessage += "WORKING TEST FILE CONTENT (for reference only, may be older Pester v4 #format):`n"
+                        $repairMessage += (Get-Content -Path $workingTempPath -Raw)
+                        $repairMessage += "`n`n"
+                    }
+
                     $repairMessage += "`n`nREFERENCE (DEVELOPMENT BRANCH):`n"
                     $repairMessage += "The working version is provided for comparison of test logic only. Do NOT copy its structure - it may be older Pester v4 format without our current styling. Use it only to understand what the test SHOULD accomplish.`n`n"
 
@@ -479,8 +485,7 @@ function Repair-PullRequestTest {
                         Model        = $Model
                         Tool         = 'Claude'
                         ContextFiles = (Resolve-Path "$PSScriptRoot/prompts/style.md" -ErrorAction SilentlyContinue).Path,
-                        (Resolve-Path "$PSScriptRoot/prompts/migration.md" -ErrorAction SilentlyContinue).Path,
-                        (Resolve-Path "$script:ModulePath/private/testing/Get-TestConfig.ps1" -ErrorAction SilentlyContinue).Path
+                        (Resolve-Path "$PSScriptRoot/prompts/migration.md" -ErrorAction SilentlyContinue).Path
                     }
 
                     Write-Verbose "Invoking Claude for $fileName with $($allFailuresForFile.Count) failures"
