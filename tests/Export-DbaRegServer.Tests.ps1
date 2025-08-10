@@ -1,20 +1,42 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName = "dbatools",
+    $CommandName = "Export-DbaRegServer",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
+
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 $global:TestConfig = Get-TestConfig
 
-Describe "$CommandName Unit Tests" -Tags "UnitTests" {
-    Context "Validate parameters" {
-        It "Should only contain our specific parameters" {
-            [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-            [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'InputObject', 'Path', 'FilePath', 'CredentialPersistenceType', 'EnableException', 'Group', 'ExcludeGroup', 'Overwrite'
-            $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        BeforeAll {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "InputObject",
+                "Path",
+                "FilePath",
+                "CredentialPersistenceType",
+                "EnableException",
+                "Group",
+                "ExcludeGroup",
+                "Overwrite"
+            )
+        }
+
+        It "Should have the expected parameters" {
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeEach {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $srvName = "dbatoolsci-server1"
         $group = "dbatoolsci-group1"
         $regSrvName = "dbatoolsci-server12"
@@ -38,26 +60,31 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $newServer3 = Add-DbaRegServer -SqlInstance $TestConfig.instance2 -ServerName $srvName3 -Name $regSrvName3 -Description $regSrvDesc3
 
         $random = Get-Random
-        $newDirectory = "C:\temp\$random"
+        $newDirectory = "$($TestConfig.Temp)\$CommandName-$random"
+        $null = New-Item -Path $newDirectory -ItemType Directory -Force
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     AfterEach {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         Get-DbaRegServer -SqlInstance $TestConfig.instance2 | Where-Object Name -Match dbatoolsci | Remove-DbaRegServer -Confirm:$false
         Get-DbaRegServerGroup -SqlInstance $TestConfig.instance2 | Where-Object Name -Match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
-        $results, $results2, $results3 | Remove-Item -ErrorAction Ignore
+        $results, $results2, $results3 | Remove-Item -ErrorAction SilentlyContinue
 
-        Remove-Item $newDirectory -ErrorAction Ignore -Recurse -Force
+        Remove-Item $newDirectory -ErrorAction SilentlyContinue -Recurse -Force
     }
 
     It "should create an xml file" {
         $results = $newServer | Export-DbaRegServer
         $results -is [System.IO.FileInfo] | Should -Be $true
-        $results.Extension -eq '.xml' | Should -Be $true
+        $results.Extension -eq ".xml" | Should -Be $true
     }
 
     It "should create a specific xml file when using Path" {
         $results2 = $newGroup2 | Export-DbaRegServer -Path $newDirectory
         $results2 -is [System.IO.FileInfo] | Should -Be $true
-        $results2.FullName | Should -match 'C\:\\temp'
+        $results2.FullName | Should -Match "C:\\temp"
         Get-Content -Path $results2 -Raw | Should -Match $group2
     }
 

@@ -35,7 +35,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
     Context "Test error handling" {
         It "Tries to create the user with an invalid default schema" {
-            $results = New-DbaDbUser -SqlInstance $TestConfig.instance2 -Database $dbname -Login $userName -DefaultSchema invalidSchemaName -WarningVariable warningMessage
+            $results = New-DbaDbUser -SqlInstance $TestConfig.instance2 -Database $dbname -Login $userName -DefaultSchema invalidSchemaName -WarningVariable warningMessage -WarningAction SilentlyContinue
             $results | Should -BeNullOrEmpty
             $warningMessage | Should -BeLike "*Schema * does not exist in database*"
         }

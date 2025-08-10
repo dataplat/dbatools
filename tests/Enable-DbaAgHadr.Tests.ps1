@@ -1,43 +1,54 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
 param(
-    $ModuleName = "dbatools",
+    $ModuleName  = "dbatools",
+    $CommandName = "Enable-DbaAgHadr",
     $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
 )
 
-Describe "Enable-DbaAgHadr" -Tag "UnitTests" {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
-            $command = Get-Command Enable-DbaAgHadr
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
                 "SqlInstance",
                 "Credential",
                 "Force",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
+                "EnableException"
             )
         }
 
-        It "Has parameter: <_>" -ForEach $expected {
-            $command | Should -HaveParameter $PSItem
-        }
-
-        It "Should have exactly the number of expected parameters ($($expected.Count))" {
-            $hasparms = $command.Parameters.Values.Name
-            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
+        It "Should have the expected parameters" {
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "Enable-DbaAgHadr" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        Disable-DbaAgHadr -SqlInstance $TestConfig.instance3 -Confirm:$false -Force
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
+        # Disable HADR to ensure clean state for testing
+        Disable-DbaAgHadr -SqlInstance $TestConfig.instance3 -Force
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+    }
+
+    AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
+        # Disable HADR after test to restore original state
+        Disable-DbaAgHadr -SqlInstance $TestConfig.instance3 -Force -ErrorAction SilentlyContinue
+
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
     Context "When enabling HADR" {
         BeforeAll {
-            $results = Enable-DbaAgHadr -SqlInstance $TestConfig.instance3 -Confirm:$false -Force
+            $results = Enable-DbaAgHadr -SqlInstance $TestConfig.instance3 -Force
         }
 
         It "Successfully enables HADR" {

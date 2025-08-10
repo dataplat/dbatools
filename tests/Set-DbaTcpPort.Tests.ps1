@@ -18,7 +18,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $newPort = $oldPort + 1000
         $instance = [DbaInstance]$TestConfig.instance2
         It "Should change the port" {
-            $result = Set-DbaTcpPort -SqlInstance $TestConfig.instance2 -Port $newPort -Confirm:$false
+            $result = Set-DbaTcpPort -SqlInstance $TestConfig.instance2 -Port $newPort -Confirm:$false -WarningAction SilentlyContinue
             $result.Changes | Should -Match 'Changed TcpPort'
             $result.RestartNeeded | Should -Be $true
             $result.Restarted | Should -Be $false
@@ -30,7 +30,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Should change the port back to the old value" {
-            $result = Set-DbaTcpPort -SqlInstance $TestConfig.instance2 -Port $oldPort -Confirm:$false
+            $result = Set-DbaTcpPort -SqlInstance $TestConfig.instance2 -Port $oldPort -Confirm:$false -WarningAction SilentlyContinue
             $result.Changes | Should -Match 'Changed TcpPort'
             $result.RestartNeeded | Should -Be $true
             $result.Restarted | Should -Be $false

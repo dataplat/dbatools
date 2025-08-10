@@ -38,6 +38,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $splatNewWorkloadGroup = @{
                 SqlInstance   = $TestConfig.instance2
                 WorkloadGroup = $wklGroupName
+                WarningAction = "SilentlyContinue"
             }
             $result1 = New-DbaRgWorkloadGroup @splatNewWorkloadGroup
             $result2 = New-DbaRgWorkloadGroup @splatNewWorkloadGroup
@@ -105,6 +106,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 WorkloadGroup   = $wklGroupName
                 SkipReconfigure = $true
                 Force           = $true
+                WarningAction   = "SilentlyContinue"
             }
 
             $null = New-DbaRgWorkloadGroup @splatNewWorkloadGroup

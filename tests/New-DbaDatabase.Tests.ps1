@@ -18,7 +18,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $random = Get-Random
         $instance2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $instance3 = Connect-DbaInstance -SqlInstance $TestConfig.instance3
-        $null = Get-DbaProcess -SqlInstance $instance2, $instance3 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false
+        $null = Get-DbaProcess -SqlInstance $instance2, $instance3 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
         $randomDb = New-DbaDatabase -SqlInstance $instance2
         $newDbName = "dbatoolsci_newdb_$random"
         $newDb1Name = "dbatoolsci_newdb1_$random"
@@ -108,7 +108,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "collation is validated" {
-            $collationDb = New-DbaDatabase -SqlInstance $instance2 -Name $collationDbName -Collation "invalid_collation"
+            $collationDb = New-DbaDatabase -SqlInstance $instance2 -Name $collationDbName -Collation "invalid_collation" -WarningAction SilentlyContinue
             $collationDb | Should -BeNull
 
             $collationDb = New-DbaDatabase -SqlInstance $instance2 -Name $collationDbName -Collation $instance2.Databases["model"].Collation

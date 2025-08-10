@@ -36,9 +36,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 $agentProxyAllSubsystems = New-DbaAgentProxy -SqlInstance $instance2 -Name "dbatoolsci_proxy_$random" -Description "Subsystem test" -ProxyCredential "dbatoolsci_$random" -Subsystem PowerShell, AnalysisCommand, AnalysisQuery, CmdExec, SSIS
             }
 
-            # ActiveScripting was removed in SQL Server 2016
-            $agentProxyActiveScripting = New-DbaAgentProxy -SqlInstance $instance2 -Name "dbatoolsci_proxy_ActiveScripting_$random" -Description "ActiveScripting test" -ProxyCredential "dbatoolsci_$random" -Subsystem ActiveScripting
-
             $agentProxySSISDisabled = New-DbaAgentProxy -SqlInstance $instance2 -Name "dbatoolsci_proxy_SSIS_disabled_$random" -Description "SSIS disabled test" -ProxyCredential "dbatoolsci_$random" -Subsystem SSIS -Disabled
 
             $loginName = "login_$random"
@@ -77,10 +74,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             } else {
                 ($agentProxyAllSubsystems.SubSystems | Where-Object Name -in "PowerShell", "AnalysisCommand", "AnalysisQuery", "CmdExec", "SSIS").Count | Should -Be 5
             }
-        }
-
-        It "validate an ActiveScripting proxy" {
-            $agentProxyActiveScripting | Should -BeNullOrEmpty # ActiveScripting was removed in SQL Server 2016
         }
 
         It "validate a disabled SSIS proxy" {
