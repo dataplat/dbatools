@@ -135,15 +135,16 @@ function Update-PesterTest {
             Start-Sleep -Milliseconds 100
             Write-Progress -Activity "Loading dbatools Module" -Status "Importing module..." -PercentComplete 90
             try {
-                $modulePath = Join-Path $PSScriptRoot "../../dbatools.psm1" | Resolve-Path -ErrorAction Stop
-                Import-Module $modulePath -Force
+                $moduleFilePath = Join-Path -Path (Split-Path -Path $PSScriptRoot -Parent -Parent) -ChildPath "dbatools.psm1"
+                $resolvedModulePath = Resolve-Path $moduleFilePath -ErrorAction Stop
+                Import-Module $resolvedModulePath -Force
             } catch {
-                Write-Warning "Primary module path resolution failed: $($_.Exception.Message)"
-                $foundModule = Get-ChildItem -Path (Join-Path $PSScriptRoot "../..") -Recurse -Filter "dbatools.psm1" -ErrorAction SilentlyContinue | Select-Object -First 1
+                Write-Warning "Primary module path resolution via two-level parent failed: $($_.Exception.Message)"
+                $foundModule = Get-ChildItem -Path (Split-Path -Path $PSScriptRoot -Parent -Parent) -Recurse -Filter "dbatools.psm1" -ErrorAction SilentlyContinue | Select-Object -First 1
                 if ($foundModule) {
                     Import-Module $foundModule.FullName -Force
                 } else {
-                    throw "dbatools.psm1 module file not found."
+                    throw "dbatools.psm1 module file not found in fallback search."
                 }
             }
             Write-Progress -Activity "Loading dbatools Module" -Status "Complete" -PercentComplete 100
