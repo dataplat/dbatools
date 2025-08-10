@@ -54,6 +54,8 @@ Start-Service SQLBrowser -ErrorAction SilentlyContinue -WarningAction SilentlyCo
 
 
 Write-Host -Object "$indent Changing the port on $instance to $port" -ForegroundColor DarkGreen
+$null = Set-DbaNetworkConfiguration -SqlInstance $sqlinstance -StaticPortForIPAll $port -EnableException -Confirm:$false #-WarningAction SilentlyContinue
+<#
 $wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer
 $uri = "ManagedComputer[@Name='$env:COMPUTERNAME']/ ServerInstance[@Name='$instance']/ServerProtocol[@Name='Tcp']"
 $Tcp = $wmi.GetSmoObject($uri)
@@ -62,6 +64,7 @@ foreach ($ipAddress in $Tcp.IPAddresses) {
     $ipAddress.IPAddressProperties["TcpPort"].Value = $port
 }
 $Tcp.Alter()
+#>
 Write-Host -Object "$indent Starting $instance" -ForegroundColor DarkGreen
 Restart-Service "MSSQL`$$instance" -WarningAction SilentlyContinue -Force
 Restart-Service "SQLAgent`$$instance" -WarningAction SilentlyContinue -Force
