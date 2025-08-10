@@ -5,9 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Validate parameters" {
         BeforeAll {
@@ -39,14 +36,74 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+}
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "Count system databases on localhost" {
+        BeforeAll {
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -ExcludeUser
+        }
+
+        It "reports the right number of databases" {
+            $results.Count | Should -BeExactly 4
+        }
+    }
+
+    Context "Check that tempdb database is in Simple recovery mode" {
+        BeforeAll {
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database tempdb
+        }
+
+        It "tempdb's recovery mode is Simple" {
+            $results.RecoveryModel | Should -Be "Simple"
+        }
+    }
+
+    Context "Check that master database is accessible" {
+        BeforeAll {
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master
+        }
+
+        It "master is accessible" {
+            $results.IsAccessible | Should -Be $true
+        }
+    }
+
+    Context "Results return if no backup" {
+        BeforeAll {
+            $random = Get-Random
+            $dbname1 = "dbatoolsci_Backup_$random"
+            $dbname2 = "dbatoolsci_NoBackup_$random"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbname1, $dbname2
+            $null = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Type Full -FilePath nul -Database $dbname1
+        }
+
+        AfterAll {
+            $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname1, $dbname2 | Remove-DbaDatabase -Confirm:$false
+        }
+
+        It "Should not report as database has full backup" {
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname1 -NoFullBackup
+            $results.Count | Should -BeExactly 0
+        }
+
+        It "Should report 1 database with no full backup" {
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname2 -NoFullBackup
+            $results.Count | Should -BeExactly 1
+        }
+    }
+}
+
+Describe $CommandName -Tag UnitTests {
+    BeforeAll {
+        ## Ensure it is the module that is being coded that is in the session when running just this Pester test
+        #  Remove-Module dbatools -Force -ErrorAction SilentlyContinue
+        #  $Base = Split-Path -parent $PSCommandPath
+        #  Import-Module $Base\..\dbatools.psd1
+    }
 
     Context "Input validation" {
         BeforeAll {
-            ## Ensure it is the module that is being coded that is in the session when running just this Pester test
-            #  Remove-Module dbatools -Force -ErrorAction SilentlyContinue
-            #  $Base = Split-Path -parent $PSCommandPath
-            #  Import-Module $Base\..\dbatools.psd1
-
             Mock Stop-Function { } -ModuleName dbatools
             Mock Test-FunctionInterrupt { } -ModuleName dbatools
             Mock Connect-DbaInstance -MockWith {
@@ -78,7 +135,7 @@ Describe $CommandName -Tag UnitTests {
         }
 
         It "Should Call Stop-Function if NoUserDbs and NoSystemDbs are specified" {
-            Get-DbaDatabase -SqlInstance Dummy -ExcludeSystem -ExcludeUser -ErrorAction SilentlyContinue | Should -Be $null
+            Get-DbaDatabase -SqlInstance Dummy -ExcludeSystem -ExcludeUser -ErrorAction SilentlyContinue | Should -BeNullOrEmpty
         }
 
         It "Validates that Stop Function Mock has been called" {
@@ -166,67 +223,6 @@ Describe $CommandName -Tag UnitTests {
                 Module      = "dbatools"
             }
             Assert-MockCalled @assertMockParams
-        }
-    }
-}
-
-Describe $CommandName -Tag IntegrationTests {
-    Context "Count system databases on localhost" {
-        BeforeAll {
-            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -ExcludeUser
-        }
-
-        It "reports the right number of databases" {
-            $results.Status.Count | Should -BeExactly 4
-        }
-    }
-
-    Context "Check that tempdb database is in Simple recovery mode" {
-        BeforeAll {
-            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database tempdb
-        }
-
-        It "tempdb's recovery mode is Simple" {
-            $results.RecoveryModel | Should -Be "Simple"
-        }
-    }
-
-    Context "Check that master database is accessible" {
-        BeforeAll {
-            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master
-        }
-
-        It "master is accessible" {
-            $results.IsAccessible | Should -Be $true
-        }
-    }
-}
-
-Describe $CommandName -Tag IntegrationTests {
-    BeforeAll {
-        $random = Get-Random
-        $dbname1 = "dbatoolsci_Backup_$random"
-        $dbname2 = "dbatoolsci_NoBackup_$random"
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbname1, $dbname2
-        $null = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Type Full -FilePath nul -Database $dbname1
-    }
-
-    AfterAll {
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname1, $dbname2 | Remove-DbaDatabase -Confirm:$false
-    }
-
-    Context "Results return if no backup" {
-        BeforeAll {
-            $resultsWithBackup = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname1 -NoFullBackup
-            $resultsNoBackup = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname2 -NoFullBackup
-        }
-
-        It "Should not report as database has full backup" {
-            $resultsWithBackup.Status.Count | Should -BeExactly 0
-        }
-
-        It "Should report 1 database with no full backup" {
-            $resultsNoBackup.Status.Count | Should -BeExactly 1
         }
     }
 }
