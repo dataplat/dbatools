@@ -19,6 +19,9 @@ Write-Host -Object "$indent Starting $instance" -ForegroundColor DarkGreen
 Restart-Service "MSSQL`$$instance" -Force
 Restart-Service "SQLAgent`$$instance" -Force
 
+# Sometimes enabling ExtensibleKeyManagement failes, so try this:
+Start-Sleep -Seconds 5
+
 Write-Host -Object "$indent Configuring $instance" -ForegroundColor DarkGreen
 $null = Set-DbaSpConfigure -SqlInstance $sqlinstance -Name ExtensibleKeyManagementEnabled -Value $true -EnableException
 Invoke-DbaQuery -SqlInstance $sqlinstance -Query "CREATE CRYPTOGRAPHIC PROVIDER dbatoolsci_AKV FROM FILE = 'C:\github\appveyor-lab\keytests\ekm\Microsoft.AzureKeyVaultService.EKM.dll'" -EnableException
