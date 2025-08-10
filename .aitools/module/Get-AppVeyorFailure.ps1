@@ -74,7 +74,7 @@ function Get-AppVeyorFailure {
 
             foreach ($job in $failedJobs) {
                 $currentJob++
-                Write-Progress -Activity "Getting job failure information" -Status "Processing job $currentJob of $totalJobs for PR #$prNumber" -PercentComplete $prPercentComplete -CurrentOperation "Job: $($job.name)"
+                Write-Progress -Activity "Getting job failure information" -Status "Processing failed job $currentJob of $totalJobs for PR #$prNumber" -PercentComplete $prPercentComplete -CurrentOperation "Job: $($job.name)"
                 Write-Verbose "Processing failed job: $($job.name) (ID: $($job.jobId))"
                 (Get-TestArtifact -JobId $job.jobid).Content.Failures
             }
