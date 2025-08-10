@@ -98,7 +98,7 @@ function Update-PesterTest {
         [string[]]$CacheFilePath = @(
             (Resolve-Path "$PSScriptRoot/prompts/style.md" -ErrorAction SilentlyContinue).Path,
             (Resolve-Path "$PSScriptRoot/prompts/migration.md" -ErrorAction SilentlyContinue).Path,
-            (Resolve-Path "$script:ModulePath/private/testing/Get-TestConfig.ps1" -ErrorAction SilentlyContinue).Path
+            (Resolve-Path "$PSScriptRoot/../../private/testing/Get-TestConfig.ps1" -ErrorAction SilentlyContinue).Path
         ),
         [int]$MaxFileSize = 500kb,
         [string]$Model,
@@ -109,7 +109,7 @@ function Update-PesterTest {
         [switch]$NoAuthFix,
         [string]$AutoFixModel = $Model,
         [int]$MaxRetries = 0,
-        [string]$SettingsPath = (Resolve-Path "$script:ModulePath/tests/PSScriptAnalyzerRules.psd1" -ErrorAction SilentlyContinue).Path,
+        [string]$SettingsPath = (Resolve-Path "$PSScriptRoot/../../tests/PSScriptAnalyzerRules.psd1" -ErrorAction SilentlyContinue).Path,
         [ValidateSet('minimal', 'medium', 'high')]
         [string]$ReasoningEffort
     )
@@ -134,7 +134,18 @@ function Update-PesterTest {
             Write-Progress -Activity "Loading dbatools Module" -Status "Finalizing module load..." -PercentComplete 80
             Start-Sleep -Milliseconds 100
             Write-Progress -Activity "Loading dbatools Module" -Status "Importing module..." -PercentComplete 90
-            Import-Module $script:ModulePath/dbatools.psm1 -Force
+            try {
+                $modulePath = Join-Path $PSScriptRoot "../../dbatools.psm1" | Resolve-Path -ErrorAction Stop
+                Import-Module $modulePath -Force
+            } catch {
+                Write-Warning "Primary module path resolution failed: $($_.Exception.Message)"
+                $foundModule = Get-ChildItem -Path (Join-Path $PSScriptRoot "../..") -Recurse -Filter "dbatools.psm1" -ErrorAction SilentlyContinue | Select-Object -First 1
+                if ($foundModule) {
+                    Import-Module $foundModule.FullName -Force
+                } else {
+                    throw "dbatools.psm1 module file not found."
+                }
+            }
             Write-Progress -Activity "Loading dbatools Module" -Status "Complete" -PercentComplete 100
             Start-Sleep -Milliseconds 100
             Write-Progress -Activity "Loading dbatools Module" -Completed
@@ -239,7 +250,7 @@ function Update-PesterTest {
             } else {
                 # Handle command object input
                 $cmdName = $command.Name
-                $filename = (Resolve-Path "$script:ModulePath/tests/$cmdName.Tests.ps1" -ErrorAction SilentlyContinue).Path
+                $filename = (Resolve-Path "$PSScriptRoot/../../tests/$cmdName.Tests.ps1" -ErrorAction SilentlyContinue).Path
             }
 
             Write-Verbose "Processing command: $cmdName"
