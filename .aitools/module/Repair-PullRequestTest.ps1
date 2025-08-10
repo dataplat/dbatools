@@ -21,6 +21,11 @@ function Repair-PullRequestTest {
        Specific AppVeyor build number to target instead of automatically detecting from PR checks.
        When specified, uses this build number directly rather than finding the latest build for the PR.
 
+   .PARAMETER CopyOnly
+       If specified, stops the repair process right after copying working test files
+       from the development branch to the current branch, without running Update-PesterTest
+       or committing any changes.
+
    .NOTES
        Tags: Testing, Pester, PullRequest, CI
        Author: dbatools team
@@ -47,7 +52,8 @@ function Repair-PullRequestTest {
         [int]$PRNumber,
         [switch]$AutoCommit,
         [int]$MaxPRs = 5,
-        [int]$BuildNumber
+        [int]$BuildNumber,
+        [switch]$CopyOnly
     )
 
     begin {
@@ -303,9 +309,27 @@ function Repair-PullRequestTest {
                 $workingTempPath = Join-Path $tempDir "working-$fileName"
 
                 if ($workingTestPath -and (Test-Path $workingTestPath)) {
-                    Copy-Item $workingTestPath $workingTempPath -Force
-                    $copiedFiles += $fileName
-                    Write-Verbose "Copied working test: $fileName"
+                    $maxAttempts = 2
+                    $attempt = 0
+                    $copied = $false
+                    while (-not $copied -and $attempt -lt $maxAttempts) {
+                        try {
+                            $attempt++
+                            Copy-Item -Path $workingTestPath -Destination $workingTempPath -Force -ErrorAction Stop
+                            $copiedFiles += $fileName
+                            Write-Verbose "Copied working test: $fileName (attempt $attempt)"
+                            $copied = $true
+                        } catch {
+                            Write-Warning ("Attempt {0}: Failed to copy working test file for {1} from development branch: {2}" -f $attempt, $fileName, $_.Exception.Message)
+                            if ($attempt -lt $maxAttempts) {
+                                Start-Sleep -Seconds 1
+                            }
+                        }
+                    }
+                    if (-not $copied) {
+                        Write-Error "Unable to copy working test file for $fileName after $maxAttempts attempts. Aborting repair process for this file."
+                        break
+                    }
                 } else {
                     Write-Warning "Could not find working test file in Development branch: tests/$fileName"
                 }
@@ -371,6 +395,12 @@ function Repair-PullRequestTest {
                 } catch {
                     Write-Warning "Failed to replace $fileName with working version - $($_.Exception.Message)"
                 }
+            }
+
+            # If CopyOnly is specified, return immediately after copying
+            if ($CopyOnly) {
+                Write-Verbose "CopyOnly flag set - stopping after copying working tests to current branch"
+                return
             }
 
             # Now run Update-PesterTest in parallel with Start-Job (simplified approach)
