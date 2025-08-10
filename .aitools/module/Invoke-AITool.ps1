@@ -366,31 +366,38 @@ function Invoke-AITool {
                     Write-Verbose "Executing: claude $($arguments -join ' ')"
 
                     try {
-                        # Workaround for StandardOutputEncoding issue:
-                        # Explicitly capture process output by invoking via PowerShell's call operator
-                        # and redirecting stdout/stderr, which allows encoding to be handled correctly
-                        $psi = @{
-                            FilePath     = "claude"
-                            ArgumentList = $arguments
-                            RedirectStandardOutput = $true
-                            RedirectStandardError  = $true
-                            PassThru     = $true
-                        }
-                        $proc = Start-Process @psi
-                        $stdout = $proc.StandardOutput.ReadToEnd()
-                        $stderr = $proc.StandardError.ReadToEnd()
-                        $proc.WaitForExit()
+                        # Use PowerShell's call operator instead of Start-Process to avoid StandardOutputEncoding issues
+                        Write-Verbose "Executing: claude $($arguments -join ' ')"
 
-                        if ($proc.ExitCode -ne 0) {
-                            throw "Claude execution failed with exit code $($proc.ExitCode): $stderr"
-                        }
+                        # Capture both stdout and stderr using call operator with redirection
+                        $tempErrorFile = [System.IO.Path]::GetTempFileName()
+                        try {
+                            # Execute claude with error redirection to temp file
+                            $stdout = & claude @arguments 2>$tempErrorFile
+                            $exitCode = $LASTEXITCODE
 
-                        [pscustomobject]@{
-                            FileName = (Split-Path $singlefile -Leaf)
-                            Results  = "$stdout"
-                        }
+                            # Read stderr from temp file if it exists
+                            $stderr = ""
+                            if (Test-Path $tempErrorFile) {
+                                $stderr = Get-Content $tempErrorFile -Raw -ErrorAction SilentlyContinue
+                            }
 
-                        Write-Verbose "Claude Code execution completed successfully"
+                            if ($exitCode -ne 0) {
+                                throw "Claude execution failed with exit code $exitCode`: $stderr"
+                            }
+
+                            [pscustomobject]@{
+                                FileName = (Split-Path $singlefile -Leaf)
+                                Results  = "$stdout"
+                            }
+
+                            Write-Verbose "Claude Code execution completed successfully"
+                        } finally {
+                            # Clean up temp file
+                            if (Test-Path $tempErrorFile) {
+                                Remove-Item $tempErrorFile -Force -ErrorAction SilentlyContinue
+                            }
+                        }
 
                         # Run Invoke-DbatoolsFormatter after AI tool execution
                         if (Test-Path $singlefile) {

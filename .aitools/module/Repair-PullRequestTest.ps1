@@ -454,9 +454,37 @@ function Repair-PullRequestTest {
                     $contextFiles = @()
                     if (Test-Path $workingTempPath) {
                         $contextFiles += $workingTempPath
+                    } elseif ($commandSourcePath) {
+                        try {
+                            $cmdDef = Get-Command -Name $commandName -ErrorAction Stop
+                            if ($cmdDef.ScriptBlock) {
+                                $codeOnly = $cmdDef.ScriptBlock.ToString().Trim()
+                                # Ensure function declaration is reattached
+                                $repairMessage += "`n`nCOMMAND CODE FOR REFERENCE:`n"
+                                $repairMessage += "function $commandName {`n"
+                                $repairMessage += $codeOnly
+                                if (-not $codeOnly.TrimEnd().EndsWith("}")) {
+                                    $repairMessage += "`n}"
+                                }
+                            }
+                        } catch {
+                            Write-Warning "Unable to get command definition for $commandName - $($_.Exception.Message)"
+                        }
                     }
                     if ($commandSourcePath -and (Test-Path $commandSourcePath)) {
-                        $contextFiles += $commandSourcePath
+                        # Instead of attaching the file, read its content after [CmdletBinding()] and include inline
+                        if ($commandSourcePath -and (Test-Path $commandSourcePath)) {
+                            $commandContent = Get-Content -Path $commandSourcePath
+                            $bindingIndex = ($commandContent | Select-String -Pattern '^\s*\[CmdletBinding' | Select-Object -First 1).LineNumber
+                            if ($bindingIndex) {
+                                $commandCode = $commandContent | Select-Object -Skip $bindingIndex
+                            } else {
+                                $commandCode = $commandContent
+                            }
+                            $repairMessage += "`n`nCOMMAND CODE FOR REFERENCE:`n"
+                            $repairMessage += ($commandCode -join "`n")
+                            $repairMessage += "`n`nPREMIGRATION WORKING TEST FOR REFERENCE:`n"
+                        }
                     }
 
                     # Get the path to the failing test file
