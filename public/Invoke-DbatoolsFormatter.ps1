@@ -123,7 +123,7 @@ function Invoke-DbatoolsFormatter {
             # Preserve aligned assignments before formatting
             # Look for patterns with multiple spaces before OR after the = sign
             $alignedPatterns = [regex]::Matches($content, '(?m)^\s*(\$\w+|\w+)\s{2,}=\s*.+$|^\s*(\$\w+|\w+)\s*=\s{2,}.+$')
-            $placeholders = @{}
+            $placeholders = @{ }
 
             foreach ($match in $alignedPatterns) {
                 $placeholder = "___ALIGNMENT_PLACEHOLDER_$($placeholders.Count)___"

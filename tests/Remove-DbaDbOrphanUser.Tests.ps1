@@ -27,22 +27,22 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $null = New-DbaDatabase -SqlInstance $server -Name $dbname -Owner sa
 
         $loginWindows = "db$random"
-
+        $computerName = ([DbaInstanceParameter]$TestConfig.instance2).ComputerName
         $null = Invoke-Command2 -ScriptBlock { net user $args[0] $args[1] /add *>&1 } -ArgumentList $loginWindows, $plaintext -ComputerName $TestConfig.instance2
     }
     BeforeEach {
         $null = New-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login1 -Password $securePassword -Force
         $null = New-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login2 -Password $securePassword -Force
-        $null = New-DbaLogin -SqlInstance $TestConfig.instance2 -Login "$($TestConfig.instance2)\$loginWindows" -Force
+        $null = New-DbaLogin -SqlInstance $TestConfig.instance2 -Login "$computerName\$loginWindows" -Force
 
         $null = New-DbaDbUser -SqlInstance $TestConfig.instance2 -Database $dbname -Login $login1 -Username $login1
         $null = New-DbaDbUser -SqlInstance $TestConfig.instance2 -Database $dbname -Login $login2 -Username $login2
-        $null = New-DbaDbUser -SqlInstance $TestConfig.instance2 -Database $dbname -Login "$($TestConfig.instance2)\$loginWindows" -Username "$($TestConfig.instance2)\$loginWindows"
+        $null = New-DbaDbUser -SqlInstance $TestConfig.instance2 -Database $dbname -Login "$computerName\$loginWindows" -Username "$computerName\$loginWindows" -Force
         $null = New-DbaDbUser -SqlInstance $TestConfig.instance2 -Database msdb -Login $login1 -Username $login1 -IncludeSystem
         $null = New-DbaDbUser -SqlInstance $TestConfig.instance2 -Database msdb -Login $login2 -Username $login2 -IncludeSystem
         $null = Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login1 -Confirm:$false
         $null = Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login2 -Confirm:$false
-        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login "$($TestConfig.instance2)\$loginWindows" -Confirm:$false
+        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login "$computerName\$loginWindows" -Confirm:$false
     }
     AfterEach {
         $users = Get-DbaDbUser -SqlInstance $TestConfig.instance2 -Database $dbname, msdb
@@ -108,7 +108,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $null = New-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login2 -Password $securePassword -Force
 
         $null = Remove-DbaDbOrphanUser -SqlInstance $TestConfig.instance2 -User $login1 -Force
-        $null = Remove-DbaDbOrphanUser -SqlInstance $TestConfig.instance2 -User $login2
+        $null = Remove-DbaDbOrphanUser -SqlInstance $TestConfig.instance2 -User $login2 -WarningAction SilentlyContinue
         $results1 = Get-DbaDbUser -SqlInstance $TestConfig.instance2 -Database $dbname, msdb
 
         $results1.Name -contains $login1 | Should Be $false
@@ -123,7 +123,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $sql = "CREATE SCHEMA $schema AUTHORIZATION $login2"
         $server.Query($sql, $dbname)
 
-        $null = Remove-DbaDbOrphanUser -SqlInstance $TestConfig.instance2 -Database $dbname, msdb -User $login1, $login2 -Force
+        $null = Remove-DbaDbOrphanUser -SqlInstance $TestConfig.instance2 -Database $dbname, msdb -User $login1, $login2 -Force -WarningAction SilentlyContinue
         $results1 = Get-DbaDbUser -SqlInstance $TestConfig.instance2 -Database $dbname, msdb
 
         $results1.Name -contains $login1 | Should Be $false
@@ -143,7 +143,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $sql = "CREATE TABLE [$login2].test2(Id int NULL)"
         $server.Query($sql, $dbname)
 
-        $null = Remove-DbaDbOrphanUser -SqlInstance $TestConfig.instance2 -Database $dbname -User $login1
+        $null = Remove-DbaDbOrphanUser -SqlInstance $TestConfig.instance2 -Database $dbname -User $login1 -WarningAction SilentlyContinue
         $null = Remove-DbaDbOrphanUser -SqlInstance $TestConfig.instance2 -Database $dbname -User $login2 -Force
         $results1 = Get-DbaDbUser -SqlInstance $TestConfig.instance2 -Database $dbname
 

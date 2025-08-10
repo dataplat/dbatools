@@ -51,7 +51,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Check the validation for duplicate filegroup names" {
-            $results = New-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name -FileGroup "filegroup_$random"
+            $results = New-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name -FileGroup "filegroup_$random" -WarningAction SilentlyContinue
             $results | Should -BeNullOrEmpty
         }
 
