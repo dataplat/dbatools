@@ -17,9 +17,9 @@ Write-Host -Object "$indent Setting up and starting $sqlinstance" -ForegroundCol
 # We need to configure the port first to be able to start the instances in any order.
 $null = Set-DbaNetworkConfiguration -SqlInstance $sqlinstance -StaticPortForIPAll $port -EnableException -Confirm:$false -WarningAction SilentlyContinue
 
-# Agent Service on SQL2017 is "Manual". Do we need to set it to Automatic? We try leaving it on Manual...
-# Set-Service -Name "SQLAgent`$$instance" -StartupType Automatic
-
+Set-Service -Name "SQLBrowser" -StartupType Automatic
+Set-Service -Name "MSSQL`$$instance" -StartupType Automatic
+Set-Service -Name "SQLAgent`$$instance" -StartupType Automatic
 Start-DbaService -SqlInstance $sqlinstance -Type Browser, Engine, Agent -EnableException -Confirm:$false
 
 
