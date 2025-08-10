@@ -9,10 +9,6 @@ function Invoke-DbatoolsFormatter {
     .PARAMETER Path
         The path to the ps1 file that needs to be formatted
 
-    .PARAMETER SkipInvisibleOnly
-        Skip files that would only have invisible changes (BOM, line endings, trailing whitespace, tabs).
-        Use this to avoid unnecessary version control noise when only non-visible characters would change.
-
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -35,15 +31,14 @@ function Invoke-DbatoolsFormatter {
         Reformats C:\dbatools\public\Get-DbaDatabase.ps1 to dbatools' standards
 
     .EXAMPLE
-        PS C:\> Invoke-DbatoolsFormatter -Path C:\dbatools\public\*.ps1 -SkipInvisibleOnly
+        PS C:\> Get-ChildItem *.ps1 | Invoke-DbatoolsFormatter
 
-        Reformats all ps1 files but skips those that would only have BOM/line ending changes
+        Reformats all .ps1 files in the current directory, showing progress for the batch operation
     #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [object[]]$Path,
-        [switch]$SkipInvisibleOnly,
         [switch]$EnableException
     )
     begin {
@@ -72,109 +67,8 @@ function Invoke-DbatoolsFormatter {
             $OSEOL = "`r`n"
         }
 
-        function Test-OnlyInvisibleChanges {
-            param(
-                [string]$OriginalContent,
-                [string]$ModifiedContent
-            )
-
-            # Normalize line endings to Unix style for comparison
-            $originalNormalized = $OriginalContent -replace '\r\n', "`n" -replace '\r', "`n"
-            $modifiedNormalized = $ModifiedContent -replace '\r\n', "`n" -replace '\r', "`n"
-
-            # Split into lines
-            $originalLines = $originalNormalized -split "`n"
-            $modifiedLines = $modifiedNormalized -split "`n"
-
-            # Normalize each line: trim trailing whitespace and convert tabs to spaces
-            $originalLines = $originalLines | ForEach-Object { $_.TrimEnd().Replace("`t", "    ") }
-            $modifiedLines = $modifiedLines | ForEach-Object { $_.TrimEnd().Replace("`t", "    ") }
-
-            # Remove trailing empty lines from both
-            while ($originalLines.Count -gt 0 -and $originalLines[-1] -eq '') {
-                $originalLines = $originalLines[0..($originalLines.Count - 2)]
-            }
-            while ($modifiedLines.Count -gt 0 -and $modifiedLines[-1] -eq '') {
-                $modifiedLines = $modifiedLines[0..($modifiedLines.Count - 2)]
-            }
-
-            # Compare the normalized content
-            if ($originalLines.Count -ne $modifiedLines.Count) {
-                return $false
-            }
-
-            for ($i = 0; $i -lt $originalLines.Count; $i++) {
-                if ($originalLines[$i] -ne $modifiedLines[$i]) {
-                    return $false
-                }
-            }
-
-            return $true
-        }
-
-        function Format-ScriptContent {
-            param(
-                [string]$Content,
-                [string]$LineEnding
-            )
-
-            # Strip ending empty lines
-            $Content = $Content -replace "(?s)$LineEnding\s*$"
-
-            try {
-                # Save original lines before formatting
-                $originalLines = $Content -split "`n"
-
-                # Run the formatter
-                $formattedContent = Invoke-Formatter -ScriptDefinition $Content -Settings CodeFormattingOTBS -ErrorAction Stop
-
-                # Automatically restore spaces before = signs
-                $formattedLines = $formattedContent -split "`n"
-                for ($i = 0; $i -lt $formattedLines.Count; $i++) {
-                    if ($i -lt $originalLines.Count) {
-                        # Check if original had multiple spaces before =
-                        if ($originalLines[$i] -match '^(\s*)(.+?)(\s{2,})(=)(.*)$') {
-                            $indent = $matches[1]
-                            $beforeEquals = $matches[2]
-                            $spacesBeforeEquals = $matches[3]
-                            $rest = $matches[4] + $matches[5]
-
-                            # Apply the same spacing to the formatted line
-                            if ($formattedLines[$i] -match '^(\s*)(.+?)(\s*)(=)(.*)$') {
-                                $formattedLines[$i] = $matches[1] + $matches[2] + $spacesBeforeEquals + '=' + $matches[5]
-                            }
-                        }
-                    }
-                }
-                $Content = $formattedLines -join "`n"
-            } catch {
-                Write-Message -Level Warning "Unable to format content"
-            }
-
-            # Match the ending indentation of CBH with the starting one
-            $CBH = $CBHRex.Match($Content).Value
-            if ($CBH) {
-                $startSpaces = $CBHStartRex.Match($CBH).Groups['spaces']
-                if ($startSpaces) {
-                    $newCBH = $CBHEndRex.Replace($CBH, "$startSpaces#>")
-                    if ($newCBH) {
-                        $Content = $Content.Replace($CBH, $newCBH)
-                    }
-                }
-            }
-
-            # Apply case corrections and clean up lines
-            $correctCase = @('DbaInstanceParameter', 'PSCredential', 'PSCustomObject', 'PSItem')
-            $realContent = @()
-            foreach ($line in $Content.Split("`n")) {
-                foreach ($item in $correctCase) {
-                    $line = $line -replace $item, $item
-                }
-                $realContent += $line.Replace("`t", "    ").TrimEnd()
-            }
-
-            return ($realContent -Join $LineEnding)
-        }
+        # Collect all paths for progress tracking
+        $allPaths = @()
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -200,34 +94,110 @@ function Invoke-DbatoolsFormatter {
                 continue
             }
 
-            # Read file once
-            $originalBytes = [System.IO.File]::ReadAllBytes($realPath)
-            $originalContent = [System.IO.File]::ReadAllText($realPath)
+            # Skip directories
+            if (Test-Path -Path $realPath -PathType Container) {
+                Write-Progress -Activity "Formatting PowerShell files" -Status "Skipping directory: $realPath" -PercentComplete (($currentFile / $totalFiles) * 100) -CurrentOperation "File $currentFile of $totalFiles"
+                Write-Message -Level Verbose "Skipping directory: $realPath"
+                continue
+            }
 
-            # Detect line ending style from original file
-            $detectedOSEOL = $OSEOL
-            if ($psVersionTable.Platform -ne 'Unix') {
-                # We're on Windows, check if file uses Unix endings
-                $containsCR = ($originalContent -split "`r").Length -gt 1
+            $fileName = Split-Path -Leaf $realPath
+            Write-Progress -Activity "Formatting PowerShell files" -Status "Processing: $fileName" -PercentComplete (($currentFile / $totalFiles) * 100) -CurrentOperation "File $currentFile of $totalFiles"
+
+            $originalContent = Get-Content -Path $realPath -Raw -Encoding UTF8
+            $content = $originalContent
+
+            if ($OSEOL -eq "`r`n") {
+                # See #5830, we are in Windows territory here
+                # Is the file containing at least one `r ?
+                $containsCR = ($content -split "`r").Length -gt 1
                 if (-not($containsCR)) {
-                    $detectedOSEOL = "`n"
+                    # If not, maybe even on Windows the user is using Unix-style endings, which are supported
+                    $OSEOL = "`n"
                 }
             }
 
-            # Format the content
-            $formattedContent = Format-ScriptContent -Content $originalContent -LineEnding $detectedOSEOL
+            #strip ending empty lines
+            $content = $content -replace "(?s)$OSEOL\s*$"
 
-            # If SkipInvisibleOnly is set, check if formatting would only change invisible characters
-            if ($SkipInvisibleOnly) {
-                if (Test-OnlyInvisibleChanges -OriginalContent $originalContent -ModifiedContent $formattedContent) {
-                    Write-Verbose "Skipping $realPath - only invisible changes (BOM/line endings/whitespace)"
-                    continue
-                }
+            # Preserve aligned assignments before formatting
+            # Look for patterns with multiple spaces before OR after the = sign
+            $alignedPatterns = [regex]::Matches($content, '(?m)^\s*(\$\w+|\w+)\s{2,}=\s*.+$|^\s*(\$\w+|\w+)\s*=\s{2,}.+$')
+            $placeholders = @{}
+
+            foreach ($match in $alignedPatterns) {
+                $placeholder = "___ALIGNMENT_PLACEHOLDER_$($placeholders.Count)___"
+                $placeholders[$placeholder] = $match.Value
+                $content = $content.Replace($match.Value, $placeholder)
             }
 
-            # Save the formatted content
+            try {
+                $formattedContent = Invoke-Formatter -ScriptDefinition $content -Settings CodeFormattingOTBS -ErrorAction Stop
+                if ($formattedContent) {
+                    $content = $formattedContent
+                }
+            } catch {
+                # Just silently continue - the formatting might still work partially
+            }
+
+            # Restore the aligned patterns
+            foreach ($key in $placeholders.Keys) {
+                $content = $content.Replace($key, $placeholders[$key])
+            }
+
+            #match the ending indentation of CBH with the starting one, see #4373
+            $CBH = $CBHRex.Match($content).Value
+            if ($CBH) {
+                #get starting spaces
+                $startSpaces = $CBHStartRex.Match($CBH).Groups['spaces']
+                if ($startSpaces) {
+                    #get end
+                    $newCBH = $CBHEndRex.Replace($CBH, "$startSpaces#>")
+                    if ($newCBH) {
+                        #replace the CBH
+                        $content = $content.Replace($CBH, $newCBH)
+                    }
+                }
+            }
             $Utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $False
-            [System.IO.File]::WriteAllText($realPath, $formattedContent, $Utf8NoBomEncoding)
+            $correctCase = @(
+                'DbaInstanceParameter'
+                'PSCredential'
+                'PSCustomObject'
+                'PSItem'
+            )
+            $realContent = @()
+            foreach ($line in $content.Split("`n")) {
+                foreach ($item in $correctCase) {
+                    $line = $line -replace $item, $item
+                }
+                #trim whitespace lines
+                $realContent += $line.Replace("`t", "    ").TrimEnd()
+            }
+
+            $newContent = $realContent -Join "$OSEOL"
+
+            # Compare without empty lines to detect real changes
+            $originalNonEmpty = ($originalContent -split "[\r\n]+" | Where-Object { $_.Trim() }) -join ""
+            $newNonEmpty = ($newContent -split "[\r\n]+" | Where-Object { $_.Trim() }) -join ""
+
+            if ($originalNonEmpty -ne $newNonEmpty) {
+                [System.IO.File]::WriteAllText($realPath, $newContent, $Utf8NoBomEncoding)
+                Write-Message -Level Verbose "Updated: $realPath"
+                $updatedFiles++
+            } else {
+                Write-Message -Level Verbose "No changes needed: $realPath"
+            }
+
+            $processedFiles++
         }
+
+        # Complete the progress bar
+        Write-Progress -Activity "Formatting PowerShell files" -Status "Complete" -PercentComplete 100 -CurrentOperation "Processed $processedFiles files, updated $updatedFiles"
+        Start-Sleep -Milliseconds 500  # Brief pause to show completion
+        Write-Progress -Activity "Formatting PowerShell files" -Completed
+
+        # Summary message
+        Write-Message -Level Verbose "Formatting complete: Processed $processedFiles files, updated $updatedFiles files"
     }
 }
