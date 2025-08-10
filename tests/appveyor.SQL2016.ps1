@@ -87,6 +87,7 @@ Start-Sleep 5
 # when this fails for resource contention, the whole build stops for no reason. At most, it should fail only tests that are in the need of the reqs
 Write-Host -Object "$indent Executing startup scripts for SQL Server 2016" -ForegroundColor DarkGreen
 $sql2016Startup = 0
+<#
 foreach ($file in (Get-ChildItem C:\github\appveyor-lab\sql2016-startup\*.sql -Recurse -ErrorAction SilentlyContinue)) {
     try {
         Invoke-DbaQuery -SqlInstance $sqlinstance -InputFile $file -ErrorAction Stop
@@ -94,6 +95,7 @@ foreach ($file in (Get-ChildItem C:\github\appveyor-lab\sql2016-startup\*.sql -R
         $sql2016Startup = 1
     }
 }
+#>
 try {
 
     $null = Set-DbaSpConfigure -SqlInstance $sqlinstance -Name ExtensibleKeyManagementEnabled -Value $true
