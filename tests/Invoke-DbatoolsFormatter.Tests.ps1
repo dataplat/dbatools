@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Invoke-DbatoolsFormatter",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -15,7 +15,6 @@ Describe $CommandName -Tag UnitTests {
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
                 "Path",
-                "SkipInvisibleOnly",
                 "EnableException"
             )
         }
@@ -86,5 +85,10 @@ function Get-DbaStub {
         It "should keep the unix EOLs (see #5830)" {
             $newcontentUnix | Should -Be $wantedContent.Replace("`r", "")
         }
+    }
+
+    AfterAll {
+        # TestDrive is automatically cleaned up by Pester, but adding explicit cleanup for consistency
+        # No additional cleanup needed as TestDrive handles temporary file cleanup
     }
 }
