@@ -353,8 +353,6 @@ function Repair-PullRequestTest {
             }
 
             # Now process each unique file once with ALL its errors
-
-            # Now process each unique file once with ALL its errors
             $totalUniqueFiles = $fileErrorMap.Keys.Count
             $processedFileCount = 0
 
@@ -399,8 +397,24 @@ function Repair-PullRequestTest {
                     }
 
                     # Build the repair message with ALL failures for this file
+                    # Start the repair message with workingTempPath content if available
                     $repairMessage = "You are fixing ALL the test failures in $fileName. This test has already been migrated to Pester v5 and styled according to dbatools conventions.`n`n"
 
+                    # Next, include the command scriptblock content if available
+                    if ($commandSourcePath -and (Test-Path $commandSourcePath)) {
+                        $commandContent = Get-Content -Path $commandSourcePath
+                        $bindingIndex = ($commandContent | Select-String -Pattern '^\s*\[CmdletBinding' | Select-Object -First 1).LineNumber
+                        if ($bindingIndex) {
+                            $commandCode = $commandContent | Select-Object -Skip $bindingIndex
+                        } else {
+                            $commandCode = $commandContent
+                        }
+                        $repairMessage += "COMMAND CODE FOR REFERENCE:`n"
+                        $repairMessage += ($commandCode -join "`n")
+                        $repairMessage += "`n`n"
+                    }
+
+                    # Then continue with the original repair instructions
                     $repairMessage += "CRITICAL RULES - DO NOT CHANGE THESE:`n"
                     $repairMessage += "1. PRESERVE ALL COMMENTS EXACTLY - Every single comment must remain intact`n"
                     $repairMessage += "2. Keep ALL Pester v5 structure (BeforeAll/BeforeEach blocks, #Requires header, static CommandName)`n"
@@ -450,42 +464,6 @@ function Repair-PullRequestTest {
                     $repairMessage += "The working version is provided for comparison of test logic only. Do NOT copy its structure - it may be older Pester v4 format without our current styling. Use it only to understand what the test SHOULD accomplish.`n`n"
 
                     $repairMessage += "TASK - Make the minimal code changes necessary to fix ALL the failures above while preserving all existing Pester v5 migration work and dbatools styling conventions."
-                    # Prepare context files for Claude
-                    $contextFiles = @()
-                    if (Test-Path $workingTempPath) {
-                        $contextFiles += $workingTempPath
-                    } elseif ($commandSourcePath) {
-                        try {
-                            $cmdDef = Get-Command -Name $commandName -ErrorAction Stop
-                            if ($cmdDef.ScriptBlock) {
-                                $codeOnly = $cmdDef.ScriptBlock.ToString().Trim()
-                                # Ensure function declaration is reattached
-                                $repairMessage += "`n`nCOMMAND CODE FOR REFERENCE:`n"
-                                $repairMessage += "function $commandName {`n"
-                                $repairMessage += $codeOnly
-                                if (-not $codeOnly.TrimEnd().EndsWith("}")) {
-                                    $repairMessage += "`n}"
-                                }
-                            }
-                        } catch {
-                            Write-Warning "Unable to get command definition for $commandName - $($_.Exception.Message)"
-                        }
-                    }
-                    if ($commandSourcePath -and (Test-Path $commandSourcePath)) {
-                        # Instead of attaching the file, read its content after [CmdletBinding()] and include inline
-                        if ($commandSourcePath -and (Test-Path $commandSourcePath)) {
-                            $commandContent = Get-Content -Path $commandSourcePath
-                            $bindingIndex = ($commandContent | Select-String -Pattern '^\s*\[CmdletBinding' | Select-Object -First 1).LineNumber
-                            if ($bindingIndex) {
-                                $commandCode = $commandContent | Select-Object -Skip $bindingIndex
-                            } else {
-                                $commandCode = $commandContent
-                            }
-                            $repairMessage += "`n`nCOMMAND CODE FOR REFERENCE:`n"
-                            $repairMessage += ($commandCode -join "`n")
-                            $repairMessage += "`n`nPREMIGRATION WORKING TEST FOR REFERENCE:`n"
-                        }
-                    }
 
                     # Get the path to the failing test file
                     $failingTestPath = Resolve-Path "tests/$fileName" -ErrorAction SilentlyContinue
@@ -500,7 +478,9 @@ function Repair-PullRequestTest {
                         File         = $failingTestPath.Path
                         Model        = $Model
                         Tool         = 'Claude'
-                        ContextFiles = $contextFiles
+                        ContextFiles = (Resolve-Path "$PSScriptRoot/prompts/style.md" -ErrorAction SilentlyContinue).Path,
+                        (Resolve-Path "$PSScriptRoot/prompts/migration.md" -ErrorAction SilentlyContinue).Path,
+                        (Resolve-Path "$script:ModulePath/private/testing/Get-TestConfig.ps1" -ErrorAction SilentlyContinue).Path
                     }
 
                     Write-Verbose "Invoking Claude for $fileName with $($allFailuresForFile.Count) failures"
@@ -509,7 +489,6 @@ function Repair-PullRequestTest {
 
                     try {
                         Invoke-AITool @aiParams
-
                         # Mark this file as processed
                         $processedFiles[$fileName] = $true
                         Write-Verbose "Successfully processed $fileName"

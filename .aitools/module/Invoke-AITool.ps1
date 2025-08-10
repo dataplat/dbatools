@@ -181,7 +181,6 @@ function Invoke-AITool {
     }
 
     end {
-         ($Message -join ' ') | Write-Warning
         for ($i = 0; $i -lt $PassCount; $i++) {
             if ($Tool -eq 'Aider') {
                 foreach ($singlefile in $allfiles) {
@@ -367,7 +366,6 @@ function Invoke-AITool {
 
                     try {
                         # Use PowerShell's call operator instead of Start-Process to avoid StandardOutputEncoding issues
-                        Write-Verbose "Executing: claude $($arguments -join ' ')"
 
                         # Capture both stdout and stderr using call operator with redirection
                         $tempErrorFile = [System.IO.Path]::GetTempFileName()
