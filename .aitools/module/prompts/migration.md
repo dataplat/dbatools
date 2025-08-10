@@ -140,3 +140,6 @@ Only use script blocks when direct property comparison is not possible.
 - [ ] Added proper cleanup code with error suppression
 - [ ] Created unique temporary resources using `Get-Random`
 - [ ] Ensured all created resources have corresponding cleanup
+
+**Migration Policy:**
+- [ ] Do not invent new integration tests - if they don't exist, there's a reason

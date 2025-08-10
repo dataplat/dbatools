@@ -37,7 +37,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Validating Database Input" {
-        Invoke-DbaDbCorruption -SqlInstance $TestConfig.instance2 -Database "master" -WarningAction SilentlyContinue -WarningVariable systemwarn
+        # The command does not respect -WarningAction SilentlyContinue inside of this pester test - still don't know why, retest with pester 5
+        Invoke-DbaDbCorruption -SqlInstance $TestConfig.instance2 -Database "master"  -WarningVariable systemwarn 3> $null
         It "Should not allow you to corrupt system databases." {
             $systemwarn -match 'may not corrupt system databases' | Should Be $true
         }
