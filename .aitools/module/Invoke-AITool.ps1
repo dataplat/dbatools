@@ -103,7 +103,7 @@ function Invoke-AITool {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
-        [string]$Message,
+        [string[]]$Message,
         [Parameter(Position = 0, ValueFromPipeline, ValueFromPipelineByPropertyName)]
         [Alias('FullName')]
         [string[]]$File,
@@ -193,7 +193,7 @@ function Invoke-AITool {
 
                     # Add mandatory message parameter
                     if ($Message) {
-                        $arguments += "--message", $Message
+                        $arguments += "--message", ($Message -join ' ')
                     }
 
                     # Add optional parameters only if they are present
