@@ -324,57 +324,16 @@ function Repair-PullRequestTest {
                     git checkout $selectedPR.headRefName 2>$null | Out-Null
 
                     # Build the repair message with ALL failures for this file
-                    $repairMessage = "You are fixing ALL the test failures in $fileName. This test has already been migrated to Pester v5 and styled according to dbatools conventions.`n`n"
-
-                    $repairMessage += "CRITICAL RULES - DO NOT CHANGE THESE:`n"
-                    $repairMessage += "1. PRESERVE ALL COMMENTS EXACTLY - Every single comment must remain intact`n"
-                    $repairMessage += "2. Keep ALL Pester v5 structure (BeforeAll/BeforeEach blocks, #Requires header, static CommandName)`n"
-                    $repairMessage += "3. Keep ALL hashtable alignment - equals signs must stay perfectly aligned`n"
-                    $repairMessage += "4. Keep ALL variable naming (unique scoped names, `$splat<Purpose> format)`n"
-                    $repairMessage += "5. Keep ALL double quotes for strings`n"
-                    $repairMessage += "6. Keep ALL existing `$PSDefaultParameterValues handling for EnableException`n"
-                    $repairMessage += "7. Keep ALL current parameter validation patterns with filtering`n"
-                    $repairMessage += "8. ONLY fix the specific errors - make MINIMAL changes to get tests passing`n`n"
-
-                    $repairMessage += "COMMON PESTER v5 SCOPING ISSUES TO CHECK:`n"
-                    $repairMessage += "- Variables defined in BeforeAll may need `$global: to be accessible in It blocks`n"
-                    $repairMessage += "- Variables shared across Context blocks may need explicit scoping`n"
-                    $repairMessage += "- Arrays and objects created in setup blocks may need scope declarations`n"
-                    $repairMessage += "- Test data variables may need `$global: prefix for cross-block access`n`n"
-
-                    $repairMessage += "PESTER v5 STRUCTURAL PROBLEMS TO CONSIDER:`n"
-                    $repairMessage += "If you only see generic failure messages like 'Test failed but no error message could be extracted' or 'Result: Failed' with no ErrorRecord/StackTrace, this indicates Pester v5 architectural issues:`n"
-                    $repairMessage += "- Mocks defined at script level instead of in BeforeAll{} blocks`n"
-                    $repairMessage += "- [Parameter()] attributes on test parameters (remove these)`n"
-                    $repairMessage += "- Variables/functions not accessible during Run phase due to discovery/run separation`n"
-                    $repairMessage += "- Should -Throw assertions with square brackets or special characters that break pattern matching`n"
-                    $repairMessage += "- Mock scope issues where mocks aren't available to the functions being tested`n`n"
-
-                    $repairMessage += "WHAT YOU CAN CHANGE:`n"
-                    $repairMessage += "- Fix syntax errors causing the specific failures`n"
-                    $repairMessage += "- Correct variable scoping issues (add `$global: if needed for cross-block variables)`n"
-                    $repairMessage += "- Move mock definitions from script level into BeforeAll{} blocks`n"
-                    $repairMessage += "- Remove [Parameter()] attributes from test parameters`n"
-                    $repairMessage += "- Fix array operations (`$results.Count → `$results.Status.Count if needed)`n"
-                    $repairMessage += "- Correct boolean skip conditions`n"
-                    $repairMessage += "- Fix Where-Object syntax if causing errors`n"
-                    $repairMessage += "- Adjust assertion syntax if failing`n"
-                    $repairMessage += "- Escape special characters in Should -Throw patterns or use wildcards`n`n"
-
-                    $repairMessage += "ALL FAILURES TO FIX IN THIS FILE:`n"
+                    $repairMessage = Get-Content "$gitRoot/.aitools/module/prompt/repair.md"
 
                     foreach ($failure in $allFailuresForFile) {
-                        $repairMessage += "`nFAILURE - $($failure.TestName)`n"
-                        $repairMessage += "ERROR - $($failure.ErrorMessage)`n"
+                        $repairMessage += "`nFAILURE - $($failure.TestName)"
+                        $repairMessage += "ERROR - $($failure.ErrorMessage)"
                         if ($failure.LineNumber) {
-                            $repairMessage += "LINE - $($failure.LineNumber)`n"
+                            $repairMessage += "LINE - $($failure.LineNumber)"
                         }
                     }
 
-                    $repairMessage += "`n`nREFERENCE (DEVELOPMENT BRANCH):`n"
-                    $repairMessage += "The working version is provided for comparison of test logic only. Do NOT copy its structure - it may be older Pester v4 format without our current styling. Use it only to understand what the test SHOULD accomplish.`n`n"
-
-                    $repairMessage += "TASK - Make the minimal code changes necessary to fix ALL the failures above while preserving all existing Pester v5 migration work and dbatools styling conventions."
                     # Prepare context files for Claude
                     $contextFiles = @()
                     if (Test-Path $workingTempPath) {
