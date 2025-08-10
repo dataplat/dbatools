@@ -324,7 +324,7 @@ function Repair-PullRequestTest {
                     git checkout $selectedPR.headRefName 2>$null | Out-Null
 
                     # Build the repair message with ALL failures for this file
-                    $repairMessage = Get-Content "$gitRoot/.aitools/module/prompt/repair.md"
+                    $repairMessage = Get-Content "$gitRoot/.aitools/module/prompts/repair.md"
 
                     foreach ($failure in $allFailuresForFile) {
                         $repairMessage += "`nFAILURE - $($failure.TestName)"
