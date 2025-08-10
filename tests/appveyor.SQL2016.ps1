@@ -20,7 +20,9 @@ $null = Set-DbaNetworkConfiguration -SqlInstance $sqlinstance -StaticPortForIPAl
 Set-Service -Name "SQLBrowser" -StartupType Automatic
 Set-Service -Name "MSSQL`$$instance" -StartupType Automatic
 Set-Service -Name "SQLAgent`$$instance" -StartupType Automatic
-Start-DbaService -SqlInstance $sqlinstance -Type Browser, Engine, Agent -EnableException -Confirm:$false
+# Start-DbaService can not start service because Get-DbaService does not get the service - we have to fix this bug and then change this script
+Start-Service -Name SQLBrowser
+Start-DbaService -SqlInstance $sqlinstance -Type Engine, Agent -EnableException -Confirm:$false
 
 
 Write-Host -Object "$indent Configuring $sqlinstance" -ForegroundColor DarkGreen

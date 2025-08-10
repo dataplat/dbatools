@@ -17,9 +17,11 @@ Write-Host -Object "$indent Setting up and starting $sqlinstance" -ForegroundCol
 $null = Set-DbaNetworkConfiguration -SqlInstance $sqlinstance -StaticPortForIPAll $port -EnableException -Confirm:$false -WarningAction SilentlyContinue
 
 # SQL2008R2SP2 is an Express Edition and has no Agent to be started.
-Set-Service -Name "SQLBrowser" -StartupType Automatic
+Set-Service -Name SQLBrowser -StartupType Automatic
 Set-Service -Name "MSSQL`$$instance" -StartupType Automatic
-Start-DbaService -SqlInstance $sqlinstance -Type Browser, Engine -EnableException -Confirm:$false
+# Start-DbaService can not start service because Get-DbaService does not get the service - we have to fix this bug and then change this script
+Start-Service -Name SQLBrowser
+Start-DbaService -SqlInstance $sqlinstance -Type Engine -EnableException -Confirm:$false
 
 
 Write-Host -Object "$indent Configuring $sqlinstance" -ForegroundColor DarkGreen
