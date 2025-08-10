@@ -493,7 +493,7 @@ function Repair-PullRequestTest {
                     Write-Progress -Activity "Fixing $fileName" -Status "Running Claude AI to fix $($allFailuresForFile.Count) failures..." -PercentComplete 50 -Id 2 -ParentId 1
 
                     try {
-                        Invoke-AITool @aiParams
+                        Invoke-AITool @aiParams -ErrorAction Stop
                         # Mark this file as processed
                         $processedFiles[$fileName] = $true
                         Write-Verbose "Successfully processed $fileName"
@@ -501,18 +501,12 @@ function Repair-PullRequestTest {
                     } catch {
                         Write-Warning "Claude failed with context files for ${fileName}, retrying without command source file - $($_.Exception.Message)"
 
-                        # Retry without the command source file - only include working test file
-                        $retryContextFiles = @()
-                        if (Test-Path $workingTempPath) {
-                            $retryContextFiles += $workingTempPath
-                        }
-
                         $retryParams = @{
-                            Message      = $repairMessage
+                            Message      = ($repairMessage -split 'COMMAND CODE FOR REFERENCE' | Select-Object -First 1).Trim()
                             File         = $failingTestPath.Path
                             Model        = $Model
                             Tool         = 'Claude'
-                            ContextFiles = $retryContextFiles
+                            ContextFiles = (Resolve-Path "$PSScriptRoot/prompts/style.md" -ErrorAction SilentlyContinue).Path, (Resolve-Path "$PSScriptRoot/prompts/migration.md" -ErrorAction SilentlyContinue).Path
                         }
 
                         Write-Verbose "Retrying $fileName with reduced context files"
