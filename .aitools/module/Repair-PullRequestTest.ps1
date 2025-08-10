@@ -67,12 +67,6 @@ function Repair-PullRequestTest {
 
         Write-Verbose "Working in repository: $gitRoot"
 
-        # Check for uncommitted changes first
-        $statusOutput = git status --porcelain 2>$null
-        if ($statusOutput) {
-            throw "Repository has uncommitted changes. Please commit, stash, or discard them before running this function.`n$($statusOutput -join "`n")"
-        }
-
         # Store current branch to return to it later - be more explicit
         $originalBranch = git rev-parse --abbrev-ref HEAD 2>$null
         if (-not $originalBranch) {
@@ -93,7 +87,7 @@ function Repair-PullRequestTest {
         }
 
         # Check gh auth status
-        $ghAuthStatus = gh auth status 2>&1
+        $null = gh auth status 2>&1
         if ($LASTEXITCODE -ne 0) {
             throw "Not authenticated with GitHub CLI. Please run 'gh auth login' first."
         }
@@ -282,20 +276,60 @@ function Repair-PullRequestTest {
             $fileErrorMap = @{}
             foreach ($test in $allFailedTestsAcrossPRs) {
                 $fileName = [System.IO.Path]::GetFileName($test.TestFile)
-                if (-not $fileErrorMap.ContainsKey($fileName)) {
-                    $fileErrorMap[$fileName] = @()
+                # ONLY include files that are actually in the PR changes
+                if ($allRelevantTestFiles.Count -eq 0 -or $fileName -in $allRelevantTestFiles) {
+                    if (-not $fileErrorMap.ContainsKey($fileName)) {
+                        $fileErrorMap[$fileName] = @()
+                    }
+                    $fileErrorMap[$fileName] += $test
                 }
-                $fileErrorMap[$fileName] += $test
             }
 
-            Write-Verbose "Found failures in $($fileErrorMap.Keys.Count) unique test files"
+            Write-Verbose "Found failures in $($fileErrorMap.Keys.Count) unique test files (filtered to PR changes only)"
             foreach ($fileName in $fileErrorMap.Keys) {
                 Write-Verbose "  ${fileName} - $($fileErrorMap[$fileName].Count) failures"
             }
 
-            # Checkout the selected PR branch for all operations (unless using current branch)
+            # If no relevant failures after filtering, exit
+            if ($fileErrorMap.Keys.Count -eq 0) {
+                Write-Verbose "No test failures found in files that were changed in the PR(s)"
+                return
+            }
+
+            # Check if we need to stash uncommitted changes
+            $needsStash = $false
+            if ((git status --porcelain 2>$null)) {
+                Write-Verbose "Stashing uncommitted changes"
+                git stash
+                $needsStash = $true
+            } else {
+                Write-Verbose "No uncommitted changes to stash"
+            }
+
+            # Batch copy all working test files from development branch
+            Write-Progress -Activity "Repairing Pull Request Tests" -Status "Getting working test files from development branch..." -PercentComplete 25 -Id 0
+            Write-Verbose "Switching to development branch to copy all working test files"
+            git checkout development 2>$null | Out-Null
+
+            $copiedFiles = @()
+            foreach ($fileName in $fileErrorMap.Keys) {
+                $workingTestPath = Resolve-Path "tests/$fileName" -ErrorAction SilentlyContinue
+                $workingTempPath = Join-Path $tempDir "working-$fileName"
+
+                if ($workingTestPath -and (Test-Path $workingTestPath)) {
+                    Copy-Item $workingTestPath $workingTempPath -Force
+                    $copiedFiles += $fileName
+                    Write-Verbose "Copied working test: $fileName"
+                } else {
+                    Write-Warning "Could not find working test file in Development branch: tests/$fileName"
+                }
+            }
+
+            Write-Verbose "Copied $($copiedFiles.Count) working test files from development branch"
+
+            # Switch to the selected PR branch for all operations (unless using current branch)
             if ($selectedPR.number -ne "current") {
-                Write-Verbose "Using PR #$($selectedPR.number) branch '$($selectedPR.headRefName)' for all fixes"
+                Write-Verbose "Switching to PR #$($selectedPR.number) branch '$($selectedPR.headRefName)'"
                 git fetch origin $selectedPR.headRefName 2>$null | Out-Null
                 git checkout $selectedPR.headRefName 2>$null | Out-Null
 
@@ -308,8 +342,17 @@ function Repair-PullRequestTest {
 
                 Write-Verbose "Successfully checked out branch '$($selectedPR.headRefName)'"
             } else {
-                Write-Verbose "Using current branch '$originalBranch' for build-specific fixes"
+                Write-Verbose "Switching back to original branch '$originalBranch'"
+                git checkout $originalBranch 2>$null | Out-Null
             }
+
+            # Unstash if we stashed earlier
+            if ($needsStash) {
+                Write-Verbose "Restoring stashed changes"
+                git stash pop 2>$null | Out-Null
+            }
+
+            # Now process each unique file once with ALL its errors
 
             # Now process each unique file once with ALL its errors
             $totalUniqueFiles = $fileErrorMap.Keys.Count
@@ -331,24 +374,13 @@ function Repair-PullRequestTest {
                 Write-Verbose "Processing $fileName with $($allFailuresForFile.Count) total failure(s)"
 
                 if ($PSCmdlet.ShouldProcess($fileName, "Fix failing tests using Claude")) {
-                    # Get working version from Development branch
-                    Write-Progress -Activity "Fixing $fileName" -Status "Getting working version from Development branch" -PercentComplete 10 -Id 2 -ParentId 1
-
-                    # Temporarily switch to Development to get working test file
-                    Write-Verbose "Temporarily switching to 'development' branch"
-                    git checkout development 2>$null | Out-Null
-
-                    $workingTestPath = Resolve-Path "tests/$fileName" -ErrorAction SilentlyContinue
+                    # Get the pre-copied working test file
                     $workingTempPath = Join-Path $tempDir "working-$fileName"
-
-                    if ($workingTestPath -and (Test-Path $workingTestPath)) {
-                        Copy-Item $workingTestPath $workingTempPath -Force
-                        Write-Verbose "Copied working test to - $workingTempPath"
-                    } else {
-                        Write-Warning "Could not find working test file in Development branch - tests/$fileName"
+                    if (-not (Test-Path $workingTempPath)) {
+                        Write-Warning "Working test file not found in temp directory: $workingTempPath"
                     }
 
-                    # Get the command source file path (while on development)
+                    # Get the command source file path (from current branch)
                     $commandName = [System.IO.Path]::GetFileNameWithoutExtension($fileName) -replace '\.Tests$', ''
                     Write-Progress -Activity "Fixing $fileName" -Status "Getting command source for $commandName" -PercentComplete 20 -Id 2 -ParentId 1
 
@@ -361,14 +393,10 @@ function Repair-PullRequestTest {
                     foreach ($path in $possiblePaths) {
                         if (Test-Path $path) {
                             $commandSourcePath = (Resolve-Path $path).Path
-                            Write-Verbose "Found command source - $commandSourcePath"
+                            Write-Verbose "Found command source: $commandSourcePath"
                             break
                         }
                     }
-
-                    # Switch back to selected PR branch
-                    Write-Verbose "Switching back to PR branch '$($selectedPR.headRefName)'"
-                    git checkout $selectedPR.headRefName 2>$null | Out-Null
 
                     # Build the repair message with ALL failures for this file
                     $repairMessage = "You are fixing ALL the test failures in $fileName. This test has already been migrated to Pester v5 and styled according to dbatools conventions.`n`n"
