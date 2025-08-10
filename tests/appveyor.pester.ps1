@@ -23,6 +23,11 @@ The location of the module
 .PARAMETER IncludeCoverage
 Calculates coverage and sends it to codecov.io
 
+.PARAMETER DebugErrorExtraction
+Enables ultra-verbose error message extraction with comprehensive debugging information.
+This will extract ALL properties from test results and provide detailed exception information.
+Use this when you need to "try hard as hell to get the error message" with maximum fallbacks.
+
 .EXAMPLE
 .\appveyor.pester.ps1
 Executes the test
@@ -30,6 +35,14 @@ Executes the test
 .EXAMPLE
 .\appveyor.pester.ps1 -Finalize
 Finalizes the tests
+
+.EXAMPLE
+.\appveyor.pester.ps1 -DebugErrorExtraction
+Executes tests with ultra-verbose error extraction for maximum error message capture
+
+.EXAMPLE
+.\appveyor.pester.ps1 -Finalize -DebugErrorExtraction
+Finalizes tests with comprehensive error message extraction and debugging
 #>
 param (
     [switch]$Finalize,
@@ -37,7 +50,8 @@ param (
     $TestFile = "TestResultsPS$PSVersion.xml",
     $ProjectRoot = $env:APPVEYOR_BUILD_FOLDER,
     $ModuleBase = $ProjectRoot,
-    [switch]$IncludeCoverage
+    [switch]$IncludeCoverage,
+    [switch]$DebugErrorExtraction
 )
 
 # Move to the project root
@@ -168,6 +182,203 @@ function Get-PesterTestVersion($testFilePath) {
     return '4'
 }
 
+function Get-ComprehensiveErrorMessage {
+    param(
+        $TestResult,
+        $PesterVersion,
+        [switch]$DebugMode
+    )
+
+    $errorMessages = @()
+    $stackTraces = @()
+    $debugInfo = @()
+
+    try {
+        if ($PesterVersion -eq '4') {
+            # Pester 4 error extraction with multiple fallbacks
+            if ($TestResult.FailureMessage) {
+                $errorMessages += $TestResult.FailureMessage
+            }
+
+            if ($TestResult.ErrorRecord) {
+                if ($TestResult.ErrorRecord.Exception) {
+                    $errorMessages += $TestResult.ErrorRecord.Exception.Message
+                    if ($TestResult.ErrorRecord.Exception.InnerException) {
+                        $errorMessages += "Inner: $($TestResult.ErrorRecord.Exception.InnerException.Message)"
+                    }
+
+                    # Debug mode: extract more exception details
+                    if ($DebugMode) {
+                        if ($TestResult.ErrorRecord.Exception.GetType) {
+                            $debugInfo += "ExceptionType: $($TestResult.ErrorRecord.Exception.GetType().FullName)"
+                        }
+                        if ($TestResult.ErrorRecord.Exception.HResult) {
+                            $debugInfo += "HResult: $($TestResult.ErrorRecord.Exception.HResult)"
+                        }
+                        if ($TestResult.ErrorRecord.Exception.Source) {
+                            $debugInfo += "Source: $($TestResult.ErrorRecord.Exception.Source)"
+                        }
+                    }
+                }
+                if ($TestResult.ErrorRecord.ScriptStackTrace) {
+                    $stackTraces += $TestResult.ErrorRecord.ScriptStackTrace
+                }
+                if ($TestResult.ErrorRecord.StackTrace) {
+                    $stackTraces += $TestResult.ErrorRecord.StackTrace
+                }
+
+                # Debug mode: extract more ErrorRecord details
+                if ($DebugMode) {
+                    if ($TestResult.ErrorRecord.CategoryInfo) {
+                        $debugInfo += "Category: $($TestResult.ErrorRecord.CategoryInfo.Category)"
+                        $debugInfo += "Activity: $($TestResult.ErrorRecord.CategoryInfo.Activity)"
+                        $debugInfo += "Reason: $($TestResult.ErrorRecord.CategoryInfo.Reason)"
+                        $debugInfo += "TargetName: $($TestResult.ErrorRecord.CategoryInfo.TargetName)"
+                    }
+                    if ($TestResult.ErrorRecord.FullyQualifiedErrorId) {
+                        $debugInfo += "ErrorId: $($TestResult.ErrorRecord.FullyQualifiedErrorId)"
+                    }
+                    if ($TestResult.ErrorRecord.InvocationInfo) {
+                        $debugInfo += "ScriptName: $($TestResult.ErrorRecord.InvocationInfo.ScriptName)"
+                        $debugInfo += "Line: $($TestResult.ErrorRecord.InvocationInfo.ScriptLineNumber)"
+                        $debugInfo += "Command: $($TestResult.ErrorRecord.InvocationInfo.MyCommand)"
+                    }
+                }
+            }
+
+            if ($TestResult.StackTrace) {
+                $stackTraces += $TestResult.StackTrace
+            }
+
+            # Try to extract from Result property if it's an object
+            if ($TestResult.Result -and $TestResult.Result -ne 'Failed') {
+                $errorMessages += "Result: $($TestResult.Result)"
+            }
+
+        } else {
+            # Pester 5 error extraction with multiple fallbacks
+            if ($TestResult.ErrorRecord -and $TestResult.ErrorRecord.Count -gt 0) {
+                foreach ($errorRec in $TestResult.ErrorRecord) {
+                    if ($errorRec.Exception) {
+                        $errorMessages += $errorRec.Exception.Message
+                        if ($errorRec.Exception.InnerException) {
+                            $errorMessages += "Inner: $($errorRec.Exception.InnerException.Message)"
+                        }
+
+                        # Debug mode: extract more exception details
+                        if ($DebugMode) {
+                            if ($errorRec.Exception.GetType) {
+                                $debugInfo += "ExceptionType: $($errorRec.Exception.GetType().FullName)"
+                            }
+                            if ($errorRec.Exception.HResult) {
+                                $debugInfo += "HResult: $($errorRec.Exception.HResult)"
+                            }
+                            if ($errorRec.Exception.Source) {
+                                $debugInfo += "Source: $($errorRec.Exception.Source)"
+                            }
+                        }
+                    }
+                    if ($errorRec.ScriptStackTrace) {
+                        $stackTraces += $errorRec.ScriptStackTrace
+                    }
+                    if ($errorRec.StackTrace) {
+                        $stackTraces += $errorRec.StackTrace
+                    }
+                    if ($errorRec.FullyQualifiedErrorId) {
+                        $errorMessages += "ErrorId: $($errorRec.FullyQualifiedErrorId)"
+                    }
+
+                    # Debug mode: extract more ErrorRecord details
+                    if ($DebugMode) {
+                        if ($errorRec.CategoryInfo) {
+                            $debugInfo += "Category: $($errorRec.CategoryInfo.Category)"
+                            $debugInfo += "Activity: $($errorRec.CategoryInfo.Activity)"
+                            $debugInfo += "Reason: $($errorRec.CategoryInfo.Reason)"
+                            $debugInfo += "TargetName: $($errorRec.CategoryInfo.TargetName)"
+                        }
+                        if ($errorRec.InvocationInfo) {
+                            $debugInfo += "ScriptName: $($errorRec.InvocationInfo.ScriptName)"
+                            $debugInfo += "Line: $($errorRec.InvocationInfo.ScriptLineNumber)"
+                            $debugInfo += "Command: $($errorRec.InvocationInfo.MyCommand)"
+                        }
+                    }
+                }
+            }
+
+            if ($TestResult.FailureMessage) {
+                $errorMessages += $TestResult.FailureMessage
+            }
+
+            if ($TestResult.StackTrace) {
+                $stackTraces += $TestResult.StackTrace
+            }
+
+            # Try StandardOutput and StandardError if available
+            if ($TestResult.StandardOutput) {
+                $errorMessages += "StdOut: $($TestResult.StandardOutput)"
+            }
+            if ($TestResult.StandardError) {
+                $errorMessages += "StdErr: $($TestResult.StandardError)"
+            }
+        }
+
+        # Fallback: try to extract from any property that might contain error info
+        $TestResult.PSObject.Properties | ForEach-Object {
+            if ($_.Name -match '(?i)(error|exception|failure|message)' -and $_.Value -and $_.Value -ne '') {
+                if ($_.Value -notin $errorMessages) {
+                    $errorMessages += "$($_.Name): $($_.Value)"
+                }
+            }
+        }
+
+        # Debug mode: extract ALL properties for ultra-verbose debugging
+        if ($DebugMode) {
+            $debugInfo += "=== ALL TEST RESULT PROPERTIES ==="
+            $TestResult.PSObject.Properties | ForEach-Object {
+                try {
+                    $value = if ($_.Value -eq $null) { "NULL" } elseif ($_.Value -eq "") { "EMPTY" } else { $_.Value.ToString() }
+                    if ($value.Length -gt 200) { $value = $value.Substring(0, 200) + "..." }
+                    $debugInfo += "$($_.Name): $value"
+                } catch {
+                    $debugInfo += "$($_.Name): [Error getting value: $($_.Exception.Message)]"
+                }
+            }
+        }
+
+    } catch {
+        $errorMessages += "Error during error extraction: $($_.Exception.Message)"
+    }
+
+    # Final fallback
+    if ($errorMessages.Count -eq 0) {
+        $errorMessages += "Test failed but no error message could be extracted. Result: $($TestResult.Result)"
+        if ($TestResult.Name) {
+            $errorMessages += "Test Name: $($TestResult.Name)"
+        }
+
+        # Debug mode: try one last desperate attempt
+        if ($DebugMode) {
+            $errorMessages += "=== DESPERATE DEBUG ATTEMPT ==="
+            try {
+                $errorMessages += "TestResult JSON: $($TestResult | ConvertTo-Json -Depth 2 -Compress)"
+            } catch {
+                $errorMessages += "Could not serialize TestResult to JSON: $($_.Exception.Message)"
+            }
+        }
+    }
+
+    # Combine debug info if in debug mode
+    if ($DebugMode -and $debugInfo.Count -gt 0) {
+        $errorMessages += "=== DEBUG INFO ==="
+        $errorMessages += $debugInfo
+    }
+
+    return @{
+        ErrorMessage = ($errorMessages | Where-Object { $_ } | Select-Object -Unique) -join " | "
+        StackTrace = ($stackTraces | Where-Object { $_ } | Select-Object -Unique) -join "`n---`n"
+    }
+}
+
 function Export-TestFailureSummary {
     param(
         $TestFile,
@@ -187,64 +398,49 @@ function Export-TestFailureSummary {
                 $lineNumber = [int]$Matches[1]
             }
 
+            # Get comprehensive error message with fallbacks
+            $errorInfo = Get-ComprehensiveErrorMessage -TestResult $_ -PesterVersion '4' -DebugMode:$DebugErrorExtraction
+
             @{
                 Name                   = $_.Name
                 Describe               = $_.Describe
                 Context                = $_.Context
-                ErrorMessage           = $_.FailureMessage
-                StackTrace             = $_.StackTrace
+                ErrorMessage           = $errorInfo.ErrorMessage
+                StackTrace             = if ($errorInfo.StackTrace) { $errorInfo.StackTrace } else { $_.StackTrace }
                 LineNumber             = $lineNumber
                 Parameters             = $_.Parameters
                 ParameterizedSuiteName = $_.ParameterizedSuiteName
                 TestFile               = $TestFile.Name
+                RawTestResult          = $_ | ConvertTo-Json -Depth 3 -Compress
             }
         }
     } else {
         # Pester 5 format
         $failedTests = $PesterRun.Tests | Where-Object { $_.Passed -eq $false } | ForEach-Object {
-            # Enhanced error extraction for Pester 5 assertion failures
-            $errorMessage = ""
-            $stackTrace = ""
+            # Extract line number from stack trace for Pester 5
             $lineNumber = $null
+            $stackTrace = ""
 
-            if ($_.ErrorRecord -and $_.ErrorRecord.Count -gt 0) {
-                $errorMessage = $_.ErrorRecord[0].Exception.Message
+            if ($_.ErrorRecord -and $_.ErrorRecord.Count -gt 0 -and $_.ErrorRecord[0].ScriptStackTrace) {
                 $stackTrace = $_.ErrorRecord[0].ScriptStackTrace
-
-                # Extract line number from ScriptStackTrace
                 if ($stackTrace -match 'line (\d+)') {
                     $lineNumber = [int]$Matches[1]
                 }
-            } elseif ($_.FailureMessage) {
-                $errorMessage = $_.FailureMessage
-                $stackTrace = if ($_.StackTrace) { $_.StackTrace } else { "Stack trace not available" }
-
-                # Extract line number from StackTrace if available
-                if ($stackTrace -match 'line (\d+)') {
-                    $lineNumber = [int]$Matches[1]
-                }
-            } elseif ($_.Result -eq 'Failed') {
-                # For assertion failures, create a meaningful error message
-                $errorMessage = "Pester assertion failed: $($_.Name)"
-                if ($_.Path -and $_.Path.Count -gt 0) {
-                    $pathString = $_.Path -join " > "
-                    $errorMessage = "Pester assertion failed in '$pathString > $($_.Name)'"
-                }
-                $stackTrace = "Assertion failure - no stack trace available"
-            } else {
-                $errorMessage = "Unknown test failure"
-                $stackTrace = "No stack trace available"
             }
+
+            # Get comprehensive error message with fallbacks
+            $errorInfo = Get-ComprehensiveErrorMessage -TestResult $_ -PesterVersion '5' -DebugMode:$DebugErrorExtraction
 
             @{
                 Name         = $_.Name
                 Describe     = if ($_.Path.Count -gt 0) { $_.Path[0] } else { "" }
                 Context      = if ($_.Path.Count -gt 1) { $_.Path[1] } else { "" }
-                ErrorMessage = $errorMessage
-                StackTrace   = $stackTrace
+                ErrorMessage = $errorInfo.ErrorMessage
+                StackTrace   = if ($errorInfo.StackTrace) { $errorInfo.StackTrace } else { $stackTrace }
                 LineNumber   = $lineNumber
                 Parameters   = $_.Data
                 TestFile     = $TestFile.Name
+                RawTestResult = $_ | ConvertTo-Json -Depth 3 -Compress
             }
         }
     }
@@ -340,9 +536,10 @@ if (-not $Finalize) {
             if ($PesterRun.FailedCount -gt 0) {
                 $trialno += 1
 
-                # Create detailed error message for AppVeyor
+                # Create detailed error message for AppVeyor with comprehensive extraction
                 $failedTestsList = $PesterRun.TestResult | Where-Object { $_.Passed -eq $false } | ForEach-Object {
-                    "$($_.Describe) > $($_.Context) > $($_.Name): $($_.FailureMessage)"
+                    $errorInfo = Get-ComprehensiveErrorMessage -TestResult $_ -PesterVersion '4' -DebugMode:$DebugErrorExtraction
+                    "$($_.Describe) > $($_.Context) > $($_.Name): $($errorInfo.ErrorMessage)"
                 }
                 $errorMessageDetail = $failedTestsList -join " | "
 
@@ -424,11 +621,11 @@ if (-not $Finalize) {
             if ($PesterRun.FailedCount -gt 0) {
                 $trialno += 1
 
-                # Create detailed error message for AppVeyor
+                # Create detailed error message for AppVeyor with comprehensive extraction
                 $failedTestsList = $PesterRun.Tests | Where-Object { $_.Passed -eq $false } | ForEach-Object {
                     $path = $_.Path -join " > "
-                    $errorMsg = if ($_.ErrorRecord) { $_.ErrorRecord[0].Exception.Message } else { "Unknown error" }
-                    "$path > $($_.Name): $errorMsg"
+                    $errorInfo = Get-ComprehensiveErrorMessage -TestResult $_ -PesterVersion '5' -DebugMode:$DebugErrorExtraction
+                    "$path > $($_.Name): $($errorInfo.ErrorMessage)"
                 }
                 $errorMessageDetail = $failedTestsList -join " | "
 
@@ -522,12 +719,18 @@ if (-not $Finalize) {
             Write-Warning "Failed tests summary (pester 4):"
             $detailedFailures = $faileditems | ForEach-Object {
                 $name = $_.Name
+
+                # Use comprehensive error extraction for finalization too
+                $errorInfo = Get-ComprehensiveErrorMessage -TestResult $_ -PesterVersion '4' -DebugMode:$DebugErrorExtraction
+
                 [pscustomobject]@{
                     Describe = $_.Describe
                     Context  = $_.Context
                     Name     = "It $name"
                     Result   = $_.Result
-                    Message  = $_.FailureMessage
+                    Message  = $errorInfo.ErrorMessage
+                    StackTrace = $errorInfo.StackTrace
+                    RawFailureMessage = $_.FailureMessage
                 }
             } | Sort-Object Describe, Context, Name, Result, Message
 
@@ -544,6 +747,8 @@ if (-not $Finalize) {
                         TestName = $_.Name
                         Result = $_.Result
                         ErrorMessage = $_.Message
+                        StackTrace = $_.StackTrace
+                        RawFailureMessage = $_.RawFailureMessage
                         FullContext = "$($_.Describe) > $($_.Context) > $($_.Name)"
                     }
                 }
@@ -565,11 +770,17 @@ if (-not $Finalize) {
         Write-Warning "Failed tests summary (pester 5):"
         $detailedFailures = $faileditems | ForEach-Object {
             $name = $_.Name
+
+            # Use comprehensive error extraction for finalization too
+            $errorInfo = Get-ComprehensiveErrorMessage -TestResult $_ -PesterVersion '5' -DebugMode:$DebugErrorExtraction
+
             [pscustomobject]@{
                 Path    = $_.Path -Join '/'
                 Name    = "It $name"
                 Result  = $_.Result
-                Message = $_.ErrorRecord -Join ""
+                Message = $errorInfo.ErrorMessage
+                StackTrace = $errorInfo.StackTrace
+                RawErrorRecord = if ($_.ErrorRecord) { $_.ErrorRecord -Join " | " } else { "No ErrorRecord" }
             }
         } | Sort-Object Path, Name, Result, Message
 
@@ -585,6 +796,8 @@ if (-not $Finalize) {
                     TestName = $_.Name
                     Result = $_.Result
                     ErrorMessage = $_.Message
+                    StackTrace = $_.StackTrace
+                    RawErrorRecord = $_.RawErrorRecord
                     FullContext = "$($_.Path) > $($_.Name)"
                 }
             }
