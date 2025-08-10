@@ -353,6 +353,8 @@ function Repair-PullRequestTest {
             }
 
             # Now process each unique file once with ALL its errors
+            Write-Progress -Activity "Repairing Pull Request Tests" -Status "Identified $($fileErrorMap.Keys.Count) files needing repairs - starting AI fixes..." -PercentComplete 50 -Id 0
+
             $totalUniqueFiles = $fileErrorMap.Keys.Count
             $processedFileCount = 0
 
