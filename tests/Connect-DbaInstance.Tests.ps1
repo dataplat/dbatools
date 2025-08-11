@@ -220,7 +220,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1 -Database tempdb
             $results = Backup-DbaDatabase -SqlInstance $server -Database msdb
             Remove-Item -Path $results.FullName
-            $results = Backup-DbaDatabase -SqlInstance $server -Database msdb -WarningVariable warn -IgnoreFileChecks
+            $results = Backup-DbaDatabase -SqlInstance $server -Database msdb -WarningVariable warn
             $warn | Should -BeNullOrEmpty
             Remove-Item -Path $results.FullName
         }
