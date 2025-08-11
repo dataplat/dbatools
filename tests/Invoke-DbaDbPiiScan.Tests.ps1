@@ -1,20 +1,43 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Invoke-DbaDbPiiScan",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
+
 $global:TestConfig = Get-TestConfig
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        #$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Table', 'Column', 'Country', 'CountryCode', 'ExcludeTable', 'ExcludeColumn', 'SampleCount', 'KnownNameFilePath', 'PatternFilePath', 'ExcludeDefaultKnownName', 'ExcludeDefaultPattern', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        BeforeAll {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "Table",
+                "Column",
+                "Country",
+                "CountryCode",
+                "ExcludeTable",
+                "ExcludeColumn",
+                "SampleCount",
+                "KnownNameFilePath",
+                "PatternFilePath",
+                "ExcludeDefaultKnownName",
+                "ExcludeDefaultPattern",
+                "EnableException"
+            )
+        }
+
+        It "Should have the expected parameters" {
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $db = "dbatoolsci_piiscan"
         $sql = "CREATE TABLE [dbo].[Customer](
@@ -77,18 +100,27 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 INSERT INTO dbo.TestTable2 VALUES (2, 'Firstname2')
                 "
 
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $db
         Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database $db -Query $sql
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $db -Confirm:$false
     }
 
     Context "Command works" {
         It "starts with the right data" {
-            Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database $db -Query "SELECT * FROM Customer WHERE FirstName = 'Delores'" | Should -Not -Be $null
-            Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database $db -Query "SELECT * FROM Customer WHERE RandomText = '6011295760226704'" | Should -Not -Be $null
+            Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database $db -Query "SELECT * FROM Customer WHERE FirstName = \"Delores\"" | Should -Not -Be $null
+            Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database $db -Query "SELECT * FROM Customer WHERE RandomText = \"6011295760226704\"" | Should -Not -Be $null
         }
 
         It "returns the proper output" {
@@ -102,8 +134,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "ExcludeColumn param" {
             $results = Invoke-DbaDbPiiScan -SqlInstance $TestConfig.instance1 -Database $db -ExcludeColumn @('CustomerID', 'Firstname', 'Lastname', 'FullName', 'Address', 'Zip', 'City', 'Randomtext')
             $results.Count | Should -Be 2
-            $results."PII-Name" | Should -Contain 'IPv4 Address'
-            $results."PII-Name" | Should -Contain 'IPv6 Address'
+            $results."PII-Name" | Should -Contain "IPv4 Address"
+            $results."PII-Name" | Should -Contain "IPv6 Address"
         }
 
         It "Table param" {
@@ -120,56 +152,56 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Column param" {
             $results = Invoke-DbaDbPiiScan -SqlInstance $TestConfig.instance1 -Database $db -Table Customer -Column UnknownColumn
             $results.Count | Should -Be 2
-            $results."PII-Name" | Should -Contain 'IPv4 Address'
-            $results."PII-Name" | Should -Contain 'IPv6 Address'
+            $results."PII-Name" | Should -Contain "IPv4 Address"
+            $results."PII-Name" | Should -Contain "IPv6 Address"
 
             $results = Invoke-DbaDbPiiScan -SqlInstance $TestConfig.instance1 -Database $db -Table Customer -Column UnknownColumn, Firstname
             $results.Count | Should -Be 3
-            $results."PII-Name" | Should -Contain 'IPv4 Address'
-            $results."PII-Name" | Should -Contain 'IPv6 Address'
-            $results."PII-Name" | Should -Contain 'First name'
+            $results."PII-Name" | Should -Contain "IPv4 Address"
+            $results."PII-Name" | Should -Contain "IPv6 Address"
+            $results."PII-Name" | Should -Contain "First name"
 
             $results = Invoke-DbaDbPiiScan -SqlInstance $TestConfig.instance1 -Database $db -Table Customer, TestTable -Column UnknownColumn, Firstname
             $results.Count | Should -Be 4
-            $results."PII-Name" | Should -Contain 'IPv4 Address'
-            $results."PII-Name" | Should -Contain 'IPv6 Address'
-            ($results | Where-Object { $_."PII-Name" -eq "First name" }).Count | Should -Be 2
+            $results."PII-Name" | Should -Contain "IPv4 Address"
+            $results."PII-Name" | Should -Contain "IPv6 Address"
+            ($results | Where-Object "PII-Name" -eq "First name").Count | Should -Be 2
         }
 
         It "Country param" {
             $results = Invoke-DbaDbPiiScan -SqlInstance $TestConfig.instance1 -Database $db -Table Customer -Country Austria
             $results.Count | Should -Be 9
-            (($results | Where-Object { $_.Country -eq "Austria" })."PII-Name" -eq "National ID") | Should -Be $true
+            (($results | Where-Object Country -eq "Austria")."PII-Name" -eq "National ID") | Should -Be $true
 
             $results = Invoke-DbaDbPiiScan -SqlInstance $TestConfig.instance1 -Database $db -Table Customer -Country Austria, Slovakia
             $results.Count | Should -Be 10
-            (($results | Where-Object { $_.Country -eq "Austria" })."PII-Name" -eq "National ID") | Should -Be $true
-            (($results | Where-Object { $_.Country -eq "Slovakia" })."PII-Name" -eq "National ID") | Should -Be $true
+            (($results | Where-Object Country -eq "Austria")."PII-Name" -eq "National ID") | Should -Be $true
+            (($results | Where-Object Country -eq "Slovakia")."PII-Name" -eq "National ID") | Should -Be $true
         }
 
         It "CountryCode param" {
             $results = Invoke-DbaDbPiiScan -SqlInstance $TestConfig.instance1 -Database $db -Table Customer -CountryCode SK
             $results.Count | Should -Be 9
-            (($results | Where-Object { $_.CountryCode -eq "SK" })."PII-Name" -eq "National ID") | Should -Be $true
+            (($results | Where-Object CountryCode -eq "SK")."PII-Name" -eq "National ID") | Should -Be $true
 
             $results = Invoke-DbaDbPiiScan -SqlInstance $TestConfig.instance1 -Database $db -Table Customer -CountryCode AT, SK
             $results.Count | Should -Be 10
-            (($results | Where-Object { $_.CountryCode -eq "SK" })."PII-Name" -eq "National ID") | Should -Be $true
-            (($results | Where-Object { $_.CountryCode -eq "AT" })."PII-Name" -eq "National ID") | Should -Be $true
+            (($results | Where-Object CountryCode -eq "SK")."PII-Name" -eq "National ID") | Should -Be $true
+            (($results | Where-Object CountryCode -eq "AT")."PII-Name" -eq "National ID") | Should -Be $true
         }
 
         It "Custom scan definitions" {
             $results = Invoke-DbaDbPiiScan -SqlInstance $TestConfig.instance1 -Database $db -KnownNameFilePath "$PSScriptRoot\ObjectDefinitions\Invoke-DbaDbPiiScan\custom-pii-knownnames.json" -PatternFilePath "$PSScriptRoot\ObjectDefinitions\Invoke-DbaDbPiiScan\custom-pii-patterns.json" -ExcludeDefaultKnownName -ExcludeDefaultPattern
             $results.Count | Should -Be 6
-            ($results | Where-Object { $_."PII-Name" -eq "First name" }).Count | Should -Be 3
-            ($results | Where-Object { $_."PII-Name" -eq "IPv4 Address" }).Count | Should -Be 2
-            ($results | Where-Object { $_."PII-Name" -eq "IPv6 Address" }).Column | Should -Be UnknownColumn
+            ($results | Where-Object "PII-Name" -eq "First name").Count | Should -Be 3
+            ($results | Where-Object "PII-Name" -eq "IPv4 Address").Count | Should -Be 2
+            ($results | Where-Object "PII-Name" -eq "IPv6 Address").Column | Should -Be UnknownColumn
         }
 
         It "ExcludeColumn and ExcludeTable params" {
             $results = Invoke-DbaDbPiiScan -SqlInstance $TestConfig.instance1 -Database $db -ExcludeTable Customer
             $results.Count | Should -Be 2
-            ($results | Where-Object { $_."PII-Name" -eq "First name" }).Count | Should -Be 2
+            ($results | Where-Object "PII-Name" -eq "First name").Count | Should -Be 2
 
             $results = Invoke-DbaDbPiiScan -SqlInstance $TestConfig.instance1 -Database $db -ExcludeTable Customer, TestTable
             $results.Table | Should -Be TestTable2

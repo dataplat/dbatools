@@ -1,126 +1,158 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Invoke-DbaDbTransfer",
+    $PSDefaultParameterValues = (Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = @(
-            'SqlInstance',
-            'SqlCredential',
-            'DestinationSqlInstance',
-            'DestinationSqlCredential',
-            'Database',
-            'DestinationDatabase',
-            'BatchSize',
-            'BulkCopyTimeOut',
-            'InputObject',
-            'EnableException',
-            'CopyAllObjects',
-            'CopyAll',
-            'SchemaOnly',
-            'DataOnly',
-            'ScriptingOption',
-            'ScriptOnly'
-        )
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        BeforeAll {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = (Get-TestConfig).CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "DestinationSqlInstance",
+                "DestinationSqlCredential",
+                "Database",
+                "DestinationDatabase",
+                "BatchSize",
+                "BulkCopyTimeOut",
+                "InputObject",
+                "EnableException",
+                "CopyAllObjects",
+                "CopyAll",
+                "SchemaOnly",
+                "DataOnly",
+                "ScriptingOption",
+                "ScriptOnly"
+            )
+        }
+
+        It "Should have the expected parameters" {
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $dbName = 'dbatools_transfer'
-        $source = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $destination = Connect-DbaInstance -SqlInstance $TestConfig.instance3
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbName -Confirm:$false
-        $source.Query("CREATE DATABASE $dbName")
-        $db = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbName
-        $null = $db.Query("CREATE TABLE dbo.transfer_test (id int);
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $global:dbName = "dbatools_transfer"
+        $global:testConfig = Get-TestConfig
+        
+        $splatSource = @{
+            SqlInstance     = $global:testConfig.instance2
+            EnableException = $true
+        }
+        $global:source = Connect-DbaInstance @splatSource
+        
+        $splatDestination = @{
+            SqlInstance     = $global:testConfig.instance3
+            EnableException = $true
+        }
+        $global:destination = Connect-DbaInstance @splatDestination
+        
+        Remove-DbaDatabase -SqlInstance $global:testConfig.instance2 -Database $global:dbName -Confirm:$false -ErrorAction SilentlyContinue
+        $global:source.Query("CREATE DATABASE $global:dbName")
+        $global:db = Get-DbaDatabase -SqlInstance $global:testConfig.instance2 -Database $global:dbName
+        
+        $null = $global:db.Query("CREATE TABLE dbo.transfer_test (id int);
             INSERT dbo.transfer_test
             SELECT top 10 1
             FROM sys.objects")
-        $null = $db.Query("CREATE TABLE dbo.transfer_test2 (id int)")
-        $null = $db.Query("CREATE TABLE dbo.transfer_test3 (id int)")
-        $null = $db.Query("CREATE TABLE dbo.transfer_test4 (id int);
+        $null = $global:db.Query("CREATE TABLE dbo.transfer_test2 (id int)")
+        $null = $global:db.Query("CREATE TABLE dbo.transfer_test3 (id int)")
+        $null = $global:db.Query("CREATE TABLE dbo.transfer_test4 (id int);
             INSERT dbo.transfer_test4
             SELECT top 13 1
             FROM sys.objects")
-        $securePassword = 'bar' | ConvertTo-SecureString -AsPlainText -Force
-        $creds = New-Object PSCredential ('foo', $securePassword)
+        
+        $securePassword = "bar" | ConvertTo-SecureString -AsPlainText -Force
+        $global:creds = New-Object PSCredential ("foo", $securePassword)
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Cleanup all created objects.
         try {
-            $null = $db.Query("DROP TABLE dbo.transfer_test")
-            $null = $db.Query("DROP TABLE dbo.transfer_test2")
-            $null = $db.Query("DROP TABLE dbo.transfer_test3")
-            $null = $db.Query("DROP TABLE dbo.transfer_test4")
+            $null = $global:db.Query("DROP TABLE dbo.transfer_test")
+            $null = $global:db.Query("DROP TABLE dbo.transfer_test2")
+            $null = $global:db.Query("DROP TABLE dbo.transfer_test3")
+            $null = $global:db.Query("DROP TABLE dbo.transfer_test4")
         } catch {
             $null = 1
         }
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbName -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $global:testConfig.instance2 -Database $global:dbName -Confirm:$false -ErrorAction SilentlyContinue
+
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
     Context "Testing scripting invocation" {
         It "Should script all objects" {
-            $transfer = New-DbaDbTransfer -SqlInstance $TestConfig.instance2 -Database $dbName -CopyAllObjects
+            $transfer = New-DbaDbTransfer -SqlInstance $global:testConfig.instance2 -Database $global:dbName -CopyAllObjects
             $scripts = $transfer | Invoke-DbaDbTransfer -ScriptOnly
             $script = $scripts -join "`n"
-            $script | Should -BeLike '*CREATE TABLE `[dbo`].`[transfer_test`]*'
-            $script | Should -BeLike '*CREATE TABLE `[dbo`].`[transfer_test2`]*'
-            $script | Should -BeLike '*CREATE TABLE `[dbo`].`[transfer_test3`]*'
-            $script | Should -BeLike '*CREATE TABLE `[dbo`].`[transfer_test4`]*'
+            $script | Should -BeLike "*CREATE TABLE `[dbo`].`[transfer_test`]*"
+            $script | Should -BeLike "*CREATE TABLE `[dbo`].`[transfer_test2`]*"
+            $script | Should -BeLike "*CREATE TABLE `[dbo`].`[transfer_test3`]*"
+            $script | Should -BeLike "*CREATE TABLE `[dbo`].`[transfer_test4`]*"
         }
         It "Should script all tables with schema only" {
-            $scripts = Invoke-DbaDbTransfer -SqlInstance $TestConfig.instance2 -Database $dbName -CopyAll Tables -SchemaOnly -ScriptOnly
+            $scripts = Invoke-DbaDbTransfer -SqlInstance $global:testConfig.instance2 -Database $global:dbName -CopyAll Tables -SchemaOnly -ScriptOnly
             $script = $scripts -join "`n"
-            $script | Should -BeLike '*CREATE TABLE `[dbo`].`[transfer_test`]*'
-            $script | Should -BeLike '*CREATE TABLE `[dbo`].`[transfer_test2`]*'
-            $script | Should -BeLike '*CREATE TABLE `[dbo`].`[transfer_test3`]*'
-            $script | Should -BeLike '*CREATE TABLE `[dbo`].`[transfer_test4`]*'
+            $script | Should -BeLike "*CREATE TABLE `[dbo`].`[transfer_test`]*"
+            $script | Should -BeLike "*CREATE TABLE `[dbo`].`[transfer_test2`]*"
+            $script | Should -BeLike "*CREATE TABLE `[dbo`].`[transfer_test3`]*"
+            $script | Should -BeLike "*CREATE TABLE `[dbo`].`[transfer_test4`]*"
         }
     }
     Context "Testing object transfer" {
         BeforeEach {
-            Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName -Confirm:$false
-            $destination.Query("CREATE DATABASE $dbname")
-            $db2 = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName
+            Remove-DbaDatabase -SqlInstance $global:testConfig.instance3 -Database $global:dbName -Confirm:$false -ErrorAction SilentlyContinue
+            $global:destination.Query("CREATE DATABASE $global:dbName")
+            $global:db2 = Get-DbaDatabase -SqlInstance $global:testConfig.instance3 -Database $global:dbName
         }
-        AfterAll {
-            Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName -Confirm:$false
+        AfterEach {
+            Remove-DbaDatabase -SqlInstance $global:testConfig.instance3 -Database $global:dbName -Confirm:$false -ErrorAction SilentlyContinue
         }
         It "Should transfer all tables" {
-            $result = Invoke-DbaDbTransfer -SqlInstance $TestConfig.instance2 -DestinationSqlInstance $TestConfig.instance3 -Database $dbName -CopyAll Tables
-            $tables = Get-DbaDbTable -SqlInstance $TestConfig.instance3 -Database $dbName -Table transfer_test, transfer_test2, transfer_test3, transfer_test4
+            $result = Invoke-DbaDbTransfer -SqlInstance $global:testConfig.instance2 -DestinationSqlInstance $global:testConfig.instance3 -Database $global:dbName -CopyAll Tables
+            $tables = Get-DbaDbTable -SqlInstance $global:testConfig.instance3 -Database $global:dbName -Table transfer_test, transfer_test2, transfer_test3, transfer_test4
             $tables.Count | Should -Be 4
-            $db.Query("select id from dbo.transfer_test").id | Should -Not -BeNullOrEmpty
-            $db.Query("select id from dbo.transfer_test4").id | Should -Not -BeNullOrEmpty
-            $db.Query("select id from dbo.transfer_test").id | Should -BeIn $db2.Query("select id from dbo.transfer_test").id
-            $db.Query("select id from dbo.transfer_test4").id | Should -BeIn $db2.Query("select id from dbo.transfer_test4").id
-            $result.SourceInstance | Should -Be $TestConfig.instance2
-            $result.SourceDatabase | Should -Be $dbName
-            $result.DestinationInstance | Should -Be $TestConfig.instance3
-            $result.DestinationDatabase | Should -Be $dbName
+            $global:db.Query("select id from dbo.transfer_test").id | Should -Not -BeNullOrEmpty
+            $global:db.Query("select id from dbo.transfer_test4").id | Should -Not -BeNullOrEmpty
+            $global:db.Query("select id from dbo.transfer_test").id | Should -BeIn $global:db2.Query("select id from dbo.transfer_test").id
+            $global:db.Query("select id from dbo.transfer_test4").id | Should -BeIn $global:db2.Query("select id from dbo.transfer_test4").id
+            $result.SourceInstance | Should -Be $global:testConfig.instance2
+            $result.SourceDatabase | Should -Be $global:dbName
+            $result.DestinationInstance | Should -Be $global:testConfig.instance3
+            $result.DestinationDatabase | Should -Be $global:dbName
             $result.Elapsed.TotalMilliseconds | Should -BeGreaterThan 0
-            $result.Status | Should -Be 'Success'
-            $result.Log -join "`n" | Should -BeLike '*CREATE TABLE `[dbo`].`[transfer_test`]*'
+            $result.Status | Should -Be "Success"
+            $result.Log -join "`n" | Should -BeLike "*CREATE TABLE `[dbo`].`[transfer_test`]*"
         }
         It "Should transfer select tables piping the transfer object" {
-            $sourceTables = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database $dbName -Table transfer_test, transfer_test2
-            $transfer = $sourceTables | New-DbaDbTransfer -SqlInstance $TestConfig.instance2 -DestinationSqlInstance $TestConfig.instance3 -Database $dbName
+            $sourceTables = Get-DbaDbTable -SqlInstance $global:testConfig.instance2 -Database $global:dbName -Table transfer_test, transfer_test2
+            $transfer = $sourceTables | New-DbaDbTransfer -SqlInstance $global:testConfig.instance2 -DestinationSqlInstance $global:testConfig.instance3 -Database $global:dbName
             $result = $transfer | Invoke-DbaDbTransfer
-            $tables = Get-DbaDbTable -SqlInstance $TestConfig.instance3 -Database $dbName -Table transfer_test, transfer_test2
+            $tables = Get-DbaDbTable -SqlInstance $global:testConfig.instance3 -Database $global:dbName -Table transfer_test, transfer_test2
             $tables.Count | Should -Be 2
-            $db.Query("select id from dbo.transfer_test").id | Should -Not -BeNullOrEmpty
-            $db.Query("select id from dbo.transfer_test").id | Should -BeIn $db2.Query("select id from dbo.transfer_test").id
-            $result.SourceInstance | Should -Be $TestConfig.instance2
-            $result.SourceDatabase | Should -Be $dbName
-            $result.DestinationInstance | Should -Be $TestConfig.instance3
-            $result.DestinationDatabase | Should -Be $dbName
+            $global:db.Query("select id from dbo.transfer_test").id | Should -Not -BeNullOrEmpty
+            $global:db.Query("select id from dbo.transfer_test").id | Should -BeIn $global:db2.Query("select id from dbo.transfer_test").id
+            $result.SourceInstance | Should -Be $global:testConfig.instance2
+            $result.SourceDatabase | Should -Be $global:dbName
+            $result.DestinationInstance | Should -Be $global:testConfig.instance3
+            $result.DestinationDatabase | Should -Be $global:dbName
             $result.Elapsed.TotalMilliseconds | Should -BeGreaterThan 0
-            $result.Status | Should -Be 'Success'
-            $result.Log -join "`n" | Should -BeLike '*CREATE TABLE `[dbo`].`[transfer_test`]*'
+            $result.Status | Should -Be "Success"
+            $result.Log -join "`n" | Should -BeLike "*CREATE TABLE `[dbo`].`[transfer_test`]*"
         }
     }
 }

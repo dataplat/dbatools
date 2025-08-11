@@ -1,19 +1,66 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Import-DbaCsv",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
+
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 $global:TestConfig = Get-TestConfig
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'Path', 'SqlInstance', 'SqlCredential', 'Database', 'Table', 'Schema', 'Truncate', 'Delimiter', 'SingleColumn', 'BatchSize', 'NotifyAfter', 'TableLock', 'CheckConstraints', 'FireTriggers', 'KeepIdentity', 'KeepNulls', 'Column', 'ColumnMap', 'KeepOrdinalOrder', 'AutoCreateTable', 'NoProgress', 'NoHeaderRow', 'UseFileNameForSchema', 'Quote', 'Escape', 'Comment', 'TrimmingOption', 'BufferSize', 'ParseErrorAction', 'Encoding', 'NullValue', 'MaxQuotedFieldLength', 'SkipEmptyLine', 'SupportsMultiline', 'UseColumnDefault', 'EnableException', 'NoTransaction'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        BeforeAll {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "Path",
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "Table",
+                "Schema",
+                "Truncate",
+                "Delimiter",
+                "SingleColumn",
+                "BatchSize",
+                "NotifyAfter",
+                "TableLock",
+                "CheckConstraints",
+                "FireTriggers",
+                "KeepIdentity",
+                "KeepNulls",
+                "Column",
+                "ColumnMap",
+                "KeepOrdinalOrder",
+                "AutoCreateTable",
+                "NoProgress",
+                "NoHeaderRow",
+                "UseFileNameForSchema",
+                "Quote",
+                "Escape",
+                "Comment",
+                "TrimmingOption",
+                "BufferSize",
+                "ParseErrorAction",
+                "Encoding",
+                "NullValue",
+                "MaxQuotedFieldLength",
+                "SkipEmptyLine",
+                "SupportsMultiline",
+                "UseColumnDefault",
+                "EnableException",
+                "NoTransaction"
+            )
+        }
+
+        It "Should have the expected parameters" {
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $pathSuperSmall = "$($TestConfig.appveyorlabrepo)\csv\SuperSmall.csv"
         $pathCommaSeparatedWithHeader = "$($TestConfig.appveyorlabrepo)\csv\CommaSeparatedWithHeader.csv"
@@ -23,7 +70,14 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     AfterAll {
-        Get-DbaDbTable -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -Database tempdb -Table SuperSmall, CommaSeparatedWithHeader | Remove-DbaDbTable -Confirm:$false
+        # Clean up test tables
+        Get-DbaDbTable -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -Database tempdb -Table SuperSmall, CommaSeparatedWithHeader, cols, cols2, NoHeaderRow, WithTypes, WithGuidsAndBits -ErrorAction SilentlyContinue | Remove-DbaDbTable -Confirm:$false -ErrorAction SilentlyContinue
+
+        # Clean up temporary files
+        $tempFiles = @(
+            "$($TestConfig.Temp)\foo.csv"
+        )
+        Remove-Item -Path $tempFiles -ErrorAction SilentlyContinue
     }
 
     Context "Works as expected" {
@@ -55,7 +109,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "performs 4 imports" {
             $results = Import-DbaCsv -Path $pathSuperSmall, $pathSuperSmall -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -Database tempdb -Delimiter `t -NotifyAfter 50000 -WarningVariable warn2 -AutoCreateTable
 
-            ($results).Count | Should -Be 4
+            $results.Count | Should -Be 4
             foreach ($result in $results) {
                 $result.RowsCopied | Should -Be 999
                 $result.Database | Should -Be tempdb
@@ -136,7 +190,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $filePath = "$($TestConfig.Temp)\foo.csv"
             $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
             Invoke-DbaQuery -SqlInstance $server -Query 'CREATE TABLE WithGuidsAndBits (one_guid UNIQUEIDENTIFIER, one_bit BIT)'
-            $row = [pscustomobject]@{
+            $row = [PSCustomObject]@{
                 one_guid = (New-Guid).Guid
                 one_bit  = 1
             }
