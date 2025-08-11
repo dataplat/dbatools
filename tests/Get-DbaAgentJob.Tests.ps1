@@ -1,114 +1,81 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
-param(
-    $ModuleName = "dbatools",
-    $CommandName = "Get-DbaAgentJob",
-    $PSDefaultParameterValues = $TestConfig.Defaults
-)
-
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 $global:TestConfig = Get-TestConfig
 
-Describe $CommandName -Tag UnitTests {
-    Context "Parameter validation" {
-        BeforeAll {
-            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
-            $expectedParameters = $TestConfig.CommonParameters
-            $expectedParameters += @(
-                "SqlInstance",
-                "SqlCredential",
-                "Job",
-                "ExcludeJob",
-                "Database",
-                "Category",
-                "ExcludeDisabledJobs",
-                "EnableException",
-                "ExcludeCategory",
-                "IncludeExecution",
-                "Type"
-            )
-        }
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Job', 'ExcludeJob', 'Database', 'Category', 'ExcludeDisabledJobs', 'EnableException', 'ExcludeCategory', 'IncludeExecution', 'Type'
 
-        It "Should have the expected parameters" {
-            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        It "Should only contain our specific parameters" {
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe $CommandName -Tag IntegrationTests {
+Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Command gets jobs" {
         BeforeAll {
             $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob
             $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob_disabled -Disabled
         }
-
         AfterAll {
             $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob, dbatoolsci_testjob_disabled -Confirm:$false
         }
-
+        $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 | Where-Object { $_.Name -match "dbatoolsci_testjob" }
         It "Should get 2 dbatoolsci jobs" {
-            $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 | Where-Object { $PSItem.Name -match "dbatoolsci_testjob" }
-            $results.Count | Should -Be 2
+            $results.count | Should Be 2
         }
-
+        $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob
         It "Should get a specific job" {
-            $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob
-            $results.Name | Should -Be "dbatoolsci_testjob"
+            $results.name | Should Be "dbatoolsci_testjob"
         }
-    }
 
+    }
     Context "Command gets no disabled jobs" {
         BeforeAll {
             $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob
             $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob_disabled -Disabled
         }
-
         AfterAll {
             $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob, dbatoolsci_testjob_disabled -Confirm:$false
         }
-
+        $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -ExcludeDisabledJobs | Where-Object { $_.Name -match "dbatoolsci_testjob" }
         It "Should return only enabled jobs" {
-            $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -ExcludeDisabledJobs | Where-Object { $PSItem.Name -match "dbatoolsci_testjob" }
-            $results.Enabled -contains $false | Should -Be $false
+            $results.enabled -contains $False | Should Be $False
         }
     }
-
     Context "Command doesn't get excluded job" {
         BeforeAll {
             $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob
             $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob_disabled -Disabled
         }
-
         AfterAll {
             $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob, dbatoolsci_testjob_disabled -Confirm:$false
         }
-
+        $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -ExcludeJob dbatoolsci_testjob | Where-Object { $_.Name -match "dbatoolsci_testjob" }
         It "Should not return excluded job" {
-            $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -ExcludeJob dbatoolsci_testjob | Where-Object { $PSItem.Name -match "dbatoolsci_testjob" }
-            $results.Name -contains "dbatoolsci_testjob" | Should -Be $false
+            $results.name -contains "dbatoolsci_testjob" | Should Be $False
         }
     }
-
     Context "Command doesn't get excluded category" {
         BeforeAll {
-            $null = New-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category "Cat1"
-            $null = New-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category "Cat2"
+            $null = New-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category 'Cat1'
+            $null = New-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category 'Cat2'
 
-            $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob_cat1 -Category "Cat1"
-            $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob_cat2 -Category "Cat2"
+            $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob_cat1 -Category 'Cat1'
+            $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob_cat2 -Category 'Cat2'
         }
-
         AfterAll {
-            $null = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category "Cat1", "Cat2" -Confirm:$false
+            $null = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category 'Cat1', 'Cat2' -Confirm:$false
 
             $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob_cat1, dbatoolsci_testjob_cat2 -Confirm:$false
         }
-
+        $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -ExcludeCategory 'Cat2' | Where-Object { $_.Name -match "dbatoolsci_testjob" }
         It "Should not return excluded job" {
-            $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -ExcludeCategory "Cat2" | Where-Object { $PSItem.Name -match "dbatoolsci_testjob" }
-            $results.Name -contains "dbatoolsci_testjob_cat2" | Should -Be $false
+            $results.name -contains "dbatoolsci_testjob_cat2" | Should Be $False
         }
     }
-
     Context "Command gets jobs when databases are specified" {
         BeforeAll {
             $jobName1 = "dbatoolsci_dbfilter_$(Get-Random)"
@@ -123,29 +90,23 @@ Describe $CommandName -Tag IntegrationTests {
             $null = New-DbaAgentJobStep -SqlInstance $TestConfig.instance2 -Job $jobName2 -StepName "TSQL-y" -Subsystem TransactSql -Database "model"
             $null = New-DbaAgentJobStep -SqlInstance $TestConfig.instance2 -Job $jobName2 -StepName "TSQL-z" -Subsystem TransactSql -Database "master"
         }
-
         AfterAll {
             $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $jobName1, $jobName2 -Confirm:$false
         }
-
+        $resultSingleDatabase = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Database tempdb
         It "Returns result with single database" {
-            $resultSingleDatabase = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Database tempdb
             $resultSingleDatabase.Count | Should -BeGreaterOrEqual 1
         }
-
         It "Returns job result for Database: tempdb" {
-            $resultSingleDatabase = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Database tempdb
-            $resultSingleDatabase.Name -contains $jobName1 | Should -BeTrue
+            $resultSingleDatabase.name -contains $jobName1 | Should -BeTrue
         }
 
+        $resultMultipleDatabases = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Database tempdb, model
         It "Returns both jobs with double database" {
-            $resultMultipleDatabases = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Database tempdb, model
             $resultMultipleDatabases.Count | Should -BeGreaterOrEqual 2
         }
-
         It "Includes job result for Database: model" {
-            $resultMultipleDatabases = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Database tempdb, model
-            $resultMultipleDatabases.Name -contains $jobName2 | Should -BeTrue
+            $resultMultipleDatabases.name -contains $jobName2 | Should -BeTrue
         }
     }
 }
