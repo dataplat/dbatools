@@ -104,7 +104,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "connection is properly made using a string" {
         BeforeAll {
-            $splatConnection = @{
+            $params = @{
                 BatchSeparator           = "GO"
                 ConnectTimeout           = 1
                 Database                 = "tempdb"
@@ -119,8 +119,7 @@ Describe $CommandName -Tag IntegrationTests {
                 StatementTimeout         = 0
                 ApplicationIntent        = "ReadOnly"
             }
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1 @splatConnection
-            $params = $splatConnection
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1 @params
         }
 
         It "returns the proper name" {
@@ -194,7 +193,7 @@ Describe $CommandName -Tag IntegrationTests {
             It "keeps the same database context" {
                 $null = $server.Databases["msdb"].Tables.Count
                 # This currently fails!
-                #$server.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be 'tempdb'
+                #$server.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be "tempdb"
             }
         }
     }
@@ -218,7 +217,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "keeps the same database context" {
             $null = $server.Databases["msdb"].Tables.Count
             # This currently fails!
-            #$server.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be 'tempdb'
+            #$server.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be "tempdb"
         }
     }
 
@@ -274,7 +273,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "multiple connections are properly made using strings" {
         It "returns the proper names" {
-            $server = @(Connect-DbaInstance -SqlInstance $TestConfig.instance1, $TestConfig.instance2)
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1, $TestConfig.instance2
             $server[0].Name | Should -Be $TestConfig.instance1
             $server[1].Name | Should -Be $TestConfig.instance2
         }
@@ -283,14 +282,14 @@ Describe $CommandName -Tag IntegrationTests {
     Context "multiple dedicated admin connections are properly made using strings" {
         # This might fail if a parallel test uses DAC - how can we ensure that this is the only test that is run?
         It "opens and closes the connections" {
-            $server = @(Connect-DbaInstance -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -DedicatedAdminConnection)
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -DedicatedAdminConnection
             $server[0].Name | Should -Be "ADMIN:$($TestConfig.instance1)"
             $server[1].Name | Should -Be "ADMIN:$($TestConfig.instance2)"
             $null = $server | Disconnect-DbaInstance
             # DAC is not reopened in the background
             Start-Sleep -Seconds 10
-            $server = @(Connect-DbaInstance -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -DedicatedAdminConnection)
-            $server.Status.Count | Should -Be 2
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -DedicatedAdminConnection
+            $server.Count | Should -Be 2
             $null = $server | Disconnect-DbaInstance
         }
     }
