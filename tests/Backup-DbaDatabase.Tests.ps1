@@ -72,6 +72,7 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues.Remove('Backup-DbaDatabase:BackupDirectory')
 
         # Remove the backup directory.
         Remove-Item -Path $DestBackupDir -Force -Recurse -ErrorAction SilentlyContinue
