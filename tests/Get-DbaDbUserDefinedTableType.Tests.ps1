@@ -16,10 +16,10 @@ Describe $CommandName -Tag UnitTests {
             $expectedParameters += @(
                 "SqlInstance",
                 "SqlCredential",
+                "EnableException",
                 "Database",
                 "ExcludeDatabase",
-                "Type",
-                "EnableException"
+                "Type"
             )
         }
 
@@ -31,32 +31,50 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $tabletypename = ("dbatools_{0}" -f $(Get-Random))
-        $tabletypename1 = ("dbatools_{0}" -f $(Get-Random))
-        $server.Query("CREATE TYPE $tabletypename AS TABLE([column1] INT NULL)", 'tempdb')
-        $server.Query("CREATE TYPE $tabletypename1 AS TABLE([column1] INT NULL)", 'tempdb')
+        $tableTypeName = "dbatools_$(Get-Random)"
+        $tableTypeName1 = "dbatools_$(Get-Random)"
+        $server.Query("CREATE TYPE $tableTypeName AS TABLE([column1] INT NULL)", "tempdb")
+        $server.Query("CREATE TYPE $tableTypeName1 AS TABLE([column1] INT NULL)", "tempdb")
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
     }
+
     AfterAll {
-        $null = $server.Query("DROP TYPE $tabletypename", 'tempdb')
-        $null = $server.Query("DROP TYPE $tabletypename1", 'tempdb')
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $null = $server.Query("DROP TYPE $tableTypeName", "tempdb")
+        $null = $server.Query("DROP TYPE $tableTypeName1", "tempdb")
+
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
     Context "Gets a Db User Defined Table Type" {
         BeforeAll {
-            $results = Get-DbaDbUserDefinedTableType -SqlInstance $TestConfig.instance2 -Database tempdb -Type $tabletypename
+            $splatUserDefinedTableType = @{
+                SqlInstance = $TestConfig.instance2
+                Database    = "tempdb"
+                Type        = $tableTypeName
+            }
+            $results = Get-DbaDbUserDefinedTableType @splatUserDefinedTableType
         }
 
         It "Gets results" {
             $results | Should -Not -BeNullOrEmpty
         }
 
-        It "Should have a name of $tabletypename" {
-            $results.Name | Should -Be $tabletypename
+        It "Should have a name of $tableTypeName" {
+            $results.Name | Should -BeExactly $tableTypeName
         }
 
         It "Should have an owner of dbo" {
-            $results.Owner | Should -Be "dbo"
+            $results.Owner | Should -BeExactly "dbo"
         }
 
         It "Should have a count of 1" {
@@ -64,9 +82,9 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
-    Context "Gets all the Db User Defined Table Type" {
+    Context "Gets all the Db User Defined Table Types" {
         BeforeAll {
-            $results = Get-DbaDbUserDefinedTableType -SqlInstance $TestConfig.instance2 -Database tempdb
+            $results = Get-DbaDbUserDefinedTableType -SqlInstance $TestConfig.instance2 -Database "tempdb"
         }
 
         It "Gets results" {

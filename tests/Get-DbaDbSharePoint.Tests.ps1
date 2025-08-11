@@ -5,9 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
@@ -50,18 +47,19 @@ Describe $CommandName -Tag IntegrationTests {
         foreach ($db in $spdb) {
             try {
                 $null = $server.Query("Create Database [$db]")
-            } catch { continue }
+            } catch {
+                continue
+            }
         }
 
         # Andreas Jordan: We should try to get a backup working again or even better just a sql script to set this up.
         # This takes a long time but I cannot figure out why every backup of this db is malformed
         $bacpac = "$($TestConfig.appveyorlabrepo)\bacpac\sharepoint_config.bacpac"
-
         if (Test-Path -Path $bacpac) {
             $sqlpackage = (Get-Command sqlpackage -ErrorAction Ignore).Source
             if (-not $sqlpackage) {
                 $libraryPath = Get-DbatoolsLibraryPath
-                if ($libraryPath -match 'desktop$') {
+                if ($libraryPath -match "desktop$") {
                     $sqlpackage = Join-DbaPath -Path (Get-DbatoolsLibraryPath) -ChildPath lib, dac, sqlpackage.exe
                 } elseif ($isWindows) {
                     $sqlpackage = Join-DbaPath -Path (Get-DbatoolsLibraryPath) -ChildPath lib, dac, sqlpackage.exe
@@ -81,9 +79,6 @@ Describe $CommandName -Tag IntegrationTests {
             $skip = $true
         }
 
-        # Store skip value globally for use in It blocks
-        $global:skipIntegrationTests = $skip
-
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
     }
@@ -102,28 +97,10 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbaDbSharePoint -SqlInstance $TestConfig.instance2
         }
 
-        It "Returns SharePoint_Admin_7c0c491d0e6f43858f75afa5399d49ab from in the SharePoint database list" -Skip:$global:skipIntegrationTests {
-            "SharePoint_Admin_7c0c491d0e6f43858f75afa5399d49ab" | Should -BeIn $results.Name
-        }
-
-        It "Returns WSS_Logging from in the SharePoint database list" -Skip:$global:skipIntegrationTests {
-            "WSS_Logging" | Should -BeIn $results.Name
-        }
-
-        It "Returns SecureStoreService_20e1764876504335a6d8dd0b1937f4bf from in the SharePoint database list" -Skip:$global:skipIntegrationTests {
-            "SecureStoreService_20e1764876504335a6d8dd0b1937f4bf" | Should -BeIn $results.Name
-        }
-
-        It "Returns DefaultWebApplicationDB from in the SharePoint database list" -Skip:$global:skipIntegrationTests {
-            "DefaultWebApplicationDB" | Should -BeIn $results.Name
-        }
-
-        It "Returns SharePoint_Config_4c524cb90be44c6f906290fe3e34f2e0 from in the SharePoint database list" -Skip:$global:skipIntegrationTests {
-            "SharePoint_Config_4c524cb90be44c6f906290fe3e34f2e0" | Should -BeIn $results.Name
-        }
-
-        It "Returns DefaultPowerPivotServiceApplicationDB-5b638361-c6fc-4ad9-b8ba-d05e63e48ac6 from in the SharePoint database list" -Skip:$global:skipIntegrationTests {
-            "DefaultPowerPivotServiceApplicationDB-5b638361-c6fc-4ad9-b8ba-d05e63e48ac6" | Should -BeIn $results.Name
+        foreach ($db in $spdb) {
+            It "returns $db from in the SharePoint database list" -Skip:$skip {
+                $db | Should -BeIn $results.Name
+            }
         }
     }
 }
