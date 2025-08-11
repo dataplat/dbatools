@@ -1,44 +1,112 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Import-DbaBinaryFile",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
+
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 $global:TestConfig = Get-TestConfig
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Table', 'Schema', 'FilePath', 'EnableException', 'Statement', 'NoFileNameColumn', 'BinaryColumn', 'FileNameColumn', 'InputObject', 'Path'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        BeforeAll {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "Table",
+                "Schema",
+                "FilePath",
+                "EnableException",
+                "Statement",
+                "NoFileNameColumn",
+                "BinaryColumn",
+                "FileNameColumn",
+                "InputObject",
+                "Path"
+            )
+        }
+
+        It "Should have the expected parameters" {
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $db = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database tempdb
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $splatConnection = @{
+            SqlInstance = $TestConfig.instance2
+            Database    = "tempdb"
+        }
+        $db = Get-DbaDatabase @splatConnection
         $null = $db.Query("CREATE TABLE [dbo].[BunchOFiles]([FileName123] [nvarchar](50) NULL, [TheFile123] [image] NULL)")
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Cleanup created test table
         try {
             $null = $db.Query("DROP TABLE dbo.BunchOFiles")
         } catch {
+            # Suppress cleanup errors
             $null = 1
         }
     }
 
     It "imports files into table data" {
-        $results = Import-DbaBinaryFile -SqlInstance $TestConfig.instance2 -Database tempdb -Table BunchOFiles -FilePath "$($TestConfig.appveyorlabrepo)\azure\adalsql.msi" -WarningAction Continue -ErrorAction Stop -EnableException
+        $splatImport = @{
+            SqlInstance     = $TestConfig.instance2
+            Database        = "tempdb"
+            Table           = "BunchOFiles"
+            FilePath        = "$($TestConfig.appveyorlabrepo)\azure\adalsql.msi"
+            WarningAction   = "Continue"
+            ErrorAction     = "Stop"
+            EnableException = $true
+        }
+        $results = Import-DbaBinaryFile @splatImport
         $results.Database | Should -Be "tempdb"
         $results.FilePath | Should -match "adalsql.msi"
     }
+
     It "imports files into table data from piped" {
-        $results = Get-ChildItem -Path "$($TestConfig.appveyorlabrepo)\certificates" | Import-DbaBinaryFile -SqlInstance $TestConfig.instance2 -Database tempdb -Table BunchOFiles -WarningAction Continue -ErrorAction Stop -EnableException
+        $splatImportPiped = @{
+            SqlInstance     = $TestConfig.instance2
+            Database        = "tempdb"
+            Table           = "BunchOFiles"
+            WarningAction   = "Continue"
+            ErrorAction     = "Stop"
+            EnableException = $true
+        }
+        $results = Get-ChildItem -Path "$($TestConfig.appveyorlabrepo)\certificates" | Import-DbaBinaryFile @splatImportPiped
         $results.Database | Should -Be @("tempdb", "tempdb")
         Split-Path -Path $results.FilePath -Leaf | Should -Be @("localhost.crt", "localhost.pfx")
     }
 
     It "piping from Get-DbaBinaryFileTable works" {
-        $results = Get-DbaBinaryFileTable -SqlInstance $TestConfig.instance2 -Database tempdb -Table BunchOFiles | Import-DbaBinaryFile -WarningAction Continue -ErrorAction Stop -EnableException -Path "$($TestConfig.appveyorlabrepo)\certificates"
+        $splatBinaryFileTable = @{
+            SqlInstance = $TestConfig.instance2
+            Database    = "tempdb"
+            Table       = "BunchOFiles"
+        }
+        $splatImportWithPath = @{
+            WarningAction   = "Continue"
+            ErrorAction     = "Stop"
+            EnableException = $true
+            Path            = "$($TestConfig.appveyorlabrepo)\certificates"
+        }
+        $results = Get-DbaBinaryFileTable @splatBinaryFileTable | Import-DbaBinaryFile @splatImportWithPath
         $results.Database | Should -Be @("tempdb", "tempdb")
         Split-Path -Path $results.FilePath -Leaf | Should -Be @("localhost.crt", "localhost.pfx")
     }

@@ -1,19 +1,63 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Import-DbaCsv",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'Path', 'SqlInstance', 'SqlCredential', 'Database', 'Table', 'Schema', 'Truncate', 'Delimiter', 'SingleColumn', 'BatchSize', 'NotifyAfter', 'TableLock', 'CheckConstraints', 'FireTriggers', 'KeepIdentity', 'KeepNulls', 'Column', 'ColumnMap', 'KeepOrdinalOrder', 'AutoCreateTable', 'NoProgress', 'NoHeaderRow', 'UseFileNameForSchema', 'Quote', 'Escape', 'Comment', 'TrimmingOption', 'BufferSize', 'ParseErrorAction', 'Encoding', 'NullValue', 'MaxQuotedFieldLength', 'SkipEmptyLine', 'SupportsMultiline', 'UseColumnDefault', 'EnableException', 'NoTransaction'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        BeforeAll {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "Path",
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "Table",
+                "Schema",
+                "Truncate",
+                "Delimiter",
+                "SingleColumn",
+                "BatchSize",
+                "NotifyAfter",
+                "TableLock",
+                "CheckConstraints",
+                "FireTriggers",
+                "KeepIdentity",
+                "KeepNulls",
+                "Column",
+                "ColumnMap",
+                "KeepOrdinalOrder",
+                "AutoCreateTable",
+                "NoProgress",
+                "NoHeaderRow",
+                "UseFileNameForSchema",
+                "Quote",
+                "Escape",
+                "Comment",
+                "TrimmingOption",
+                "BufferSize",
+                "ParseErrorAction",
+                "Encoding",
+                "NullValue",
+                "MaxQuotedFieldLength",
+                "SkipEmptyLine",
+                "SupportsMultiline",
+                "UseColumnDefault",
+                "NoTransaction",
+                "EnableException"
+            )
+        }
+
+        It "Should have the expected parameters" {
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $pathSuperSmall = "$($TestConfig.appveyorlabrepo)\csv\SuperSmall.csv"
         $pathCommaSeparatedWithHeader = "$($TestConfig.appveyorlabrepo)\csv\CommaSeparatedWithHeader.csv"
@@ -23,7 +67,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     AfterAll {
-        Get-DbaDbTable -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -Database tempdb -Table SuperSmall, CommaSeparatedWithHeader | Remove-DbaDbTable -Confirm:$false
+        Get-DbaDbTable -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -Database tempdb -Table SuperSmall, CommaSeparatedWithHeader -ErrorAction SilentlyContinue | Remove-DbaDbTable -Confirm:$false -ErrorAction SilentlyContinue
     }
 
     Context "Works as expected" {
@@ -102,52 +146,52 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $result.Database | Should -Be tempdb
             $result.Table | Should -Be CommaSeparatedWithHeader
 
-            Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database tempdb -Query 'DROP TABLE CommaSeparatedWithHeader'
+            Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database tempdb -Query "DROP TABLE CommaSeparatedWithHeader"
         }
 
         It "works with NoHeaderRow" {
             # See #7759
             $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
-            Invoke-DbaQuery -SqlInstance $server -Query 'CREATE TABLE NoHeaderRow (c1 VARCHAR(50), c2 VARCHAR(50), c3 VARCHAR(50))'
+            Invoke-DbaQuery -SqlInstance $server -Query "CREATE TABLE NoHeaderRow (c1 VARCHAR(50), c2 VARCHAR(50), c3 VARCHAR(50))"
 
-            $result = Import-DbaCsv -Path $pathCols -NoHeaderRow -SqlInstance $server -Database tempdb -Table 'NoHeaderRow'
-            $data = Invoke-DbaQuery -SqlInstance $server -Query 'SELECT * FROM NoHeaderRow' -As PSObject
+            $result = Import-DbaCsv -Path $pathCols -NoHeaderRow -SqlInstance $server -Database tempdb -Table "NoHeaderRow"
+            $data = Invoke-DbaQuery -SqlInstance $server -Query "SELECT * FROM NoHeaderRow" -As PSObject
 
             $result.RowsCopied | Should -Be 3
-            $data[0].c1 | Should -Be 'firstcol'
+            $data[0].c1 | Should -Be "firstcol"
 
-            Invoke-DbaQuery -SqlInstance $server -Query 'DROP TABLE NoHeaderRow'
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE NoHeaderRow"
         }
 
         It "works with tables which have non-varchar types (date)" {
             # See #9433
             $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
-            Invoke-DbaQuery -SqlInstance $server -Query 'CREATE TABLE WithTypes ([date] DATE, col1 VARCHAR(50), col2 VARCHAR(50))'
-            $result = Import-DbaCsv -Path $pathCommaSeparatedWithHeader -SqlInstance $server -Database tempdb -Table 'WithTypes'
+            Invoke-DbaQuery -SqlInstance $server -Query "CREATE TABLE WithTypes ([date] DATE, col1 VARCHAR(50), col2 VARCHAR(50))"
+            $result = Import-DbaCsv -Path $pathCommaSeparatedWithHeader -SqlInstance $server -Database tempdb -Table "WithTypes"
 
             $result | Should -Not -BeNullOrEmpty
             $result.RowsCopied | Should -Be 1
 
-            Invoke-DbaQuery -SqlInstance $server -Query 'DROP TABLE WithTypes'
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE WithTypes"
         }
 
         It "works with tables which have non-varchar types (guid, bit)" {
             # See #9433
-            $filePath = "$($TestConfig.Temp)\foo.csv"
+            $filePath = "$($TestConfig.Temp)\foo-$(Get-Random).csv"
             $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
-            Invoke-DbaQuery -SqlInstance $server -Query 'CREATE TABLE WithGuidsAndBits (one_guid UNIQUEIDENTIFIER, one_bit BIT)'
+            Invoke-DbaQuery -SqlInstance $server -Query "CREATE TABLE WithGuidsAndBits (one_guid UNIQUEIDENTIFIER, one_bit BIT)"
             $row = [pscustomobject]@{
                 one_guid = (New-Guid).Guid
                 one_bit  = 1
             }
             $row | Export-Csv -Path $filePath -NoTypeInformation
 
-            $result = Import-DbaCsv -Path $filePath -SqlInstance $server -Database tempdb -Table 'WithGuidsAndBits'
+            $result = Import-DbaCsv -Path $filePath -SqlInstance $server -Database tempdb -Table "WithGuidsAndBits"
 
             $result.RowsCopied | Should -Be 1
 
-            Invoke-DbaQuery -SqlInstance $server -Query 'DROP TABLE WithGuidsAndBits'
-            Remove-Item $filePath
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE WithGuidsAndBits"
+            Remove-Item $filePath -ErrorAction SilentlyContinue
         }
     }
 }
