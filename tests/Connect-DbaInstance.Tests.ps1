@@ -263,12 +263,12 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "clones when using Backup-DabInstace" {
             $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1 -Database tempdb
-            $results = Backup-DbaDatabase -SqlInstance $server -Database msdb
+            $results = Backup-DbaDatabase -SqlInstance $server -Database msdb -IgnoreFileChecks
             if ($results.FullName) {
                 Remove-Item -Path $results.FullName -ErrorAction SilentlyContinue
             }
 
-            $results = Backup-DbaDatabase -SqlInstance $server -Database msdb -WarningVariable warn
+            $results = Backup-DbaDatabase -SqlInstance $server -Database msdb -WarningVariable warn -IgnoreFileChecks
             $warn | Should -BeNullOrEmpty
 
             if ($results.FullName) {
