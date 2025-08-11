@@ -144,10 +144,8 @@ Describe "Backup-DbaDbCertificate" -Tag "IntegrationTests" {
         }
 
         It "Returns results with proper data" {
-            $results | Should -BeGreaterOrEqual 3
-            $results.Certificate | Should -Contain $cert1.Name
-            $results.Certificate | Should -Contain $cert2.Name
-            $results.Certificate | Should -Contain $cert3.Name
+            $results | Should -HaveCount 3
+            $results.Certificate | Should -Be $cert1.Name, $cert2.Name, $cert3.Name
         }
     }
 }
