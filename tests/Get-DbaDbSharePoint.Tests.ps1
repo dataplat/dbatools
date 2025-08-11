@@ -1,25 +1,48 @@
-$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaDbSharePoint",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
+
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 $global:TestConfig = Get-TestConfig
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'ConfigDatabase', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        BeforeAll {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "ConfigDatabase",
+                "InputObject",
+                "EnableException"
+            )
+        }
+
+        It "Should have the expected parameters" {
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $skip = $false
-        $spdb = 'SharePoint_Admin_7c0c491d0e6f43858f75afa5399d49ab', 'WSS_Logging', 'SecureStoreService_20e1764876504335a6d8dd0b1937f4bf', 'DefaultWebApplicationDB', 'SharePoint_Config_4c524cb90be44c6f906290fe3e34f2e0', 'DefaultPowerPivotServiceApplicationDB-5b638361-c6fc-4ad9-b8ba-d05e63e48ac6', 'SharePoint_Config_4c524cb90be44c6f906290fe3e34f2e0'
-        Get-DbaProcess -SqlInstance $TestConfig.instance2 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
+        $global:skip = $false
+        $global:spdb = @(
+            "SharePoint_Admin_7c0c491d0e6f43858f75afa5399d49ab",
+            "WSS_Logging",
+            "SecureStoreService_20e1764876504335a6d8dd0b1937f4bf",
+            "DefaultWebApplicationDB",
+            "SharePoint_Config_4c524cb90be44c6f906290fe3e34f2e0",
+            "DefaultPowerPivotServiceApplicationDB-5b638361-c6fc-4ad9-b8ba-d05e63e48ac6",
+            "SharePoint_Config_4c524cb90be44c6f906290fe3e34f2e0"
+        )
+        Get-DbaProcess -SqlInstance $TestConfig.instance2 -Program "dbatools PowerShell module - dbatools.io" | Stop-DbaProcess -WarningAction SilentlyContinue
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        foreach ($db in $spdb) {
+        foreach ($db in $global:spdb) {
             try {
                 $null = $server.Query("Create Database [$db]")
             } catch { continue }
@@ -31,7 +54,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $sqlpackage = (Get-Command sqlpackage -ErrorAction Ignore).Source
             if (-not $sqlpackage) {
                 $libraryPath = Get-DbatoolsLibraryPath
-                if ($libraryPath -match 'desktop$') {
+                if ($libraryPath -match "desktop$") {
                     $sqlpackage = Join-DbaPath -Path (Get-DbatoolsLibraryPath) -ChildPath lib, dac, sqlpackage.exe
                 } elseif ($isWindows) {
                     $sqlpackage = Join-DbaPath -Path (Get-DbatoolsLibraryPath) -ChildPath lib, dac, sqlpackage.exe
@@ -45,20 +68,23 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             # Unhandled Exception: System.IO.FileNotFoundException: Could not load file or assembly 'System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51' or one of its dependencies. The system cannot find the file specified.
             # So we don't run the following line but skip the tests
             # . $sqlpackage /Action:Import /tsn:$TestConfig.instance2 /tdn:Sharepoint_Config /sf:$bacpac /p:Storage=File
-            $skip = $true
+            $global:skip = $true
         } else {
             Write-Warning -Message "No bacpac found in path [$bacpac], skipping tests."
-            $skip = $true
+            $global:skip = $true
         }
     }
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $spdb -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $global:spdb -Confirm:$false
     }
     Context "Command gets SharePoint Databases" {
-        $results = Get-DbaDbSharePoint -SqlInstance $TestConfig.instance2
-        foreach ($db in $spdb) {
-            It -Skip:$skip "returns $db from in the SharePoint database list" {
-                $db | Should -BeIn $results.Name
+        BeforeAll {
+            $global:results = Get-DbaDbSharePoint -SqlInstance $TestConfig.instance2
+        }
+
+        foreach ($db in $global:spdb) {
+            It -Skip:$global:skip "returns $db from in the SharePoint database list" {
+                $db | Should -BeIn $global:results.Name
             }
         }
     }

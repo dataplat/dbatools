@@ -1,55 +1,90 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaDbUserDefinedTableType",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
+
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 $global:TestConfig = Get-TestConfig
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException', 'Database', 'ExcludeDatabase', 'Type'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        BeforeAll {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "Type",
+                "EnableException"
+            )
+        }
+
+        It "Should have the expected parameters" {
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $tabletypename = ("dbatools_{0}" -f $(Get-Random))
-        $tabletypename1 = ("dbatools_{0}" -f $(Get-Random))
-        $server.Query("CREATE TYPE $tabletypename AS TABLE([column1] INT NULL)", 'tempdb')
-        $server.Query("CREATE TYPE $tabletypename1 AS TABLE([column1] INT NULL)", 'tempdb')
+        $tableTypeName = ("dbatools_{0}" -f $(Get-Random))
+        $tableTypeName1 = ("dbatools_{0}" -f $(Get-Random))
+        $server.Query("CREATE TYPE $tableTypeName AS TABLE([column1] INT NULL)", "tempdb")
+        $server.Query("CREATE TYPE $tableTypeName1 AS TABLE([column1] INT NULL)", "tempdb")
     }
+
     AfterAll {
-        $null = $server.Query("DROP TYPE $tabletypename", 'tempdb')
-        $null = $server.Query("DROP TYPE $tabletypename1", 'tempdb')
+        $null = $server.Query("DROP TYPE $tableTypeName", "tempdb")
+        $null = $server.Query("DROP TYPE $tableTypeName1", "tempdb")
     }
 
     Context "Gets a Db User Defined Table Type" {
-        $results = Get-DbaDbUserDefinedTableType -SqlInstance $TestConfig.instance2 -database tempdb -Type $tabletypename
+        BeforeAll {
+            $splatSingleType = @{
+                SqlInstance = $TestConfig.instance2
+                Database    = "tempdb"
+                Type        = $tableTypeName
+            }
+            $singleResults = Get-DbaDbUserDefinedTableType @splatSingleType
+        }
+
         It "Gets results" {
-            $results | Should Not Be $Null
+            $singleResults | Should -Not -BeNullOrEmpty
         }
-        It "Should have a name of $tabletypename" {
-            $results.name | Should Be "$tabletypename"
+
+        It "Should have a name of $tableTypeName" {
+            $singleResults.Name | Should -Be $tableTypeName
         }
+
         It "Should have an owner of dbo" {
-            $results.owner | Should Be "dbo"
+            $singleResults.Owner | Should -Be "dbo"
         }
+
         It "Should have a count of 1" {
-            $results.Count | Should Be 1
+            $singleResults.Count | Should -Be 1
         }
     }
 
-    Context "Gets all the Db User Defined Table Type" {
-        $results = Get-DbaDbUserDefinedTableType -SqlInstance $TestConfig.instance2 -database tempdb
-        It "Gets results" {
-            $results | Should Not Be $Null
-        }
-        It "Should have a count of 2" {
-            $results.Count | Should Be 2
+    Context "Gets all the Db User Defined Table Types" {
+        BeforeAll {
+            $splatAllTypes = @{
+                SqlInstance = $TestConfig.instance2
+                Database    = "tempdb"
+            }
+            $allResults = Get-DbaDbUserDefinedTableType @splatAllTypes
         }
 
+        It "Gets results" {
+            $allResults | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should have a count of 2" {
+            $allResults.Count | Should -Be 2
+        }
     }
 }
