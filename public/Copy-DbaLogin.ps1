@@ -297,7 +297,6 @@ function Copy-DbaLogin {
                     Write-Message -Level Verbose -Message "Force was specified. Attempting to drop $newUserName on $destinstance."
 
                     try {
-                        Write-Message -Level Output ('{0}: going to do $ownedDbs next' -f (Get-Date))
                         # Sometimes when a database is in an AG this fails randomly. Details on issue #9648
                         # so will try this multiple times
                         $maxRetries = 3
