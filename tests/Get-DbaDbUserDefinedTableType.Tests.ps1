@@ -31,8 +31,7 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $tableTypeName = "dbatools_$(Get-Random)"
@@ -40,19 +39,14 @@ Describe $CommandName -Tag IntegrationTests {
         $server.Query("CREATE TYPE $tableTypeName AS TABLE([column1] INT NULL)", "tempdb")
         $server.Query("CREATE TYPE $tableTypeName1 AS TABLE([column1] INT NULL)", "tempdb")
 
-        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
-        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $null = $server.Query("DROP TYPE $tableTypeName", "tempdb")
-        $null = $server.Query("DROP TYPE $tableTypeName1", "tempdb")
-
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $null = $server.Query("DROP TYPE $tabletypename", "tempdb") -ErrorAction SilentlyContinue
+        $null = $server.Query("DROP TYPE $tabletypename1", "tempdb") -ErrorAction SilentlyContinue
     }
 
     Context "Gets a Db User Defined Table Type" {
@@ -78,13 +72,13 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should have a count of 1" {
-            $results.Status.Count | Should -BeExactly 1
+            $results.Count | Should -BeExactly 1
         }
     }
 
-    Context "Gets all the Db User Defined Table Types" {
+    Context "Gets all the Db User Defined Table Type" {
         BeforeAll {
-            $results = Get-DbaDbUserDefinedTableType -SqlInstance $TestConfig.instance2 -Database "tempdb"
+            $results = Get-DbaDbUserDefinedTableType -SqlInstance $TestConfig.instance2 -Database tempdb
         }
 
         It "Gets results" {
@@ -92,7 +86,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should have a count of 2" {
-            $results.Status.Count | Should -BeExactly 2
+            $results.Count | Should -BeExactly 2
         }
     }
 }
