@@ -1,87 +1,131 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaLogin",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
+
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 $global:TestConfig = Get-TestConfig
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Login', 'IncludeFilter', 'ExcludeLogin', 'ExcludeFilter', 'ExcludeSystemLogin', 'Type', 'HasAccess', 'Locked', 'Disabled', , 'MustChangePassword', 'Detailed', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        BeforeAll {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Login",
+                "IncludeFilter",
+                "ExcludeLogin",
+                "ExcludeFilter",
+                "ExcludeSystemLogin",
+                "Type",
+                "HasAccess",
+                "Locked",
+                "Disabled",
+                "MustChangePassword",
+                "Detailed",
+                "EnableException"
+            )
+        }
+
+        It "Should have the expected parameters" {
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $SkipLocalTest = $true # Change to $false to run the local-only tests on a local instance. This is being used because the 'locked' test makes assumptions the password policy configuration is enabled for the Windows OS.
-        $random = Get-Random
+        $global:random = Get-Random
 
         $password = ConvertTo-SecureString -String "password1A@" -AsPlainText -Force
-        New-DbaLogin -SqlInstance $TestConfig.instance1 -Login "testlogin1_$random" -Password $password
-        New-DbaLogin -SqlInstance $TestConfig.instance1 -Login "testlogin2_$random" -Password $password
+        New-DbaLogin -SqlInstance $TestConfig.instance1 -Login "testlogin1_$global:random" -Password $password
+        New-DbaLogin -SqlInstance $TestConfig.instance1 -Login "testlogin2_$global:random" -Password $password
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
-        Remove-DbaLogin -SqlInstance $TestConfig.instance1 -Login "testlogin1_$random", "testlogin2_$random" -Confirm:$false -Force
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        Remove-DbaLogin -SqlInstance $TestConfig.instance1 -Login "testlogin1_$global:random", "testlogin2_$global:random" -Confirm:$false -Force
+
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
     Context "Does sql instance have a SA account" {
-        $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login sa
+        BeforeAll {
+            $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login sa
+        }
+
         It "Should report that one account named SA exists" {
-            $results.Count | Should Be 1
+            $results.Count | Should -Be 1
         }
     }
 
     Context "Check that SA account is enabled" {
-        $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login sa
+        BeforeAll {
+            $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login sa
+        }
+
         It "Should say the SA account is disabled FALSE" {
-            $results.IsDisabled | Should Be "False"
+            $results.IsDisabled | Should -Be "False"
         }
     }
 
     Context "Check that SA account is SQL Login" {
-        $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login sa -Type SQL -Detailed
-        It "Should report that one SQL Login named SA exists" {
-            $results.Count | Should Be 1
+        BeforeAll {
+            $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login sa -Type SQL -Detailed
         }
+
+        It "Should report that one SQL Login named SA exists" {
+            $results.Count | Should -Be 1
+        }
+
         It "Should get LoginProperties via Detailed switch" {
-            $results.BadPasswordCount | Should Not Be $null
-            $results.PasswordHash | Should Not Be $null
+            $results.BadPasswordCount | Should -Not -Be $null
+            $results.PasswordHash | Should -Not -Be $null
         }
     }
 
     Context "Validate params" {
-
         It "Multiple logins" {
-            $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login "testlogin1_$random", "testlogin2_$random" -Type SQL
+            $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login "testlogin1_$global:random", "testlogin2_$global:random" -Type SQL
             $results.Count | Should -Be 2
-            $results.Name | Should -Contain "testlogin1_$random"
-            $results.Name | Should -Contain "testlogin2_$random"
+            $results.Name | Should -Contain "testlogin1_$global:random"
+            $results.Name | Should -Contain "testlogin2_$global:random"
         }
 
         It "ExcludeLogin" {
-            $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -ExcludeLogin "testlogin2_$random" -Type SQL
-            $results.Name | Should -Not -Contain "testlogin2_$random"
-            $results.Name | Should -Contain "testlogin1_$random"
+            $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -ExcludeLogin "testlogin2_$global:random" -Type SQL
+            $results.Name | Should -Not -Contain "testlogin2_$global:random"
+            $results.Name | Should -Contain "testlogin1_$global:random"
 
-            $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -ExcludeLogin "testlogin1_$random", "testlogin2_$random" -Type SQL
-            $results.Name | Should -Not -Contain "testlogin2_$random"
-            $results.Name | Should -Not -Contain "testlogin1_$random"
+            $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -ExcludeLogin "testlogin1_$global:random", "testlogin2_$global:random" -Type SQL
+            $results.Name | Should -Not -Contain "testlogin2_$global:random"
+            $results.Name | Should -Not -Contain "testlogin1_$global:random"
         }
 
         It "IncludeFilter" {
-            $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -IncludeFilter "*$random" -Type SQL
+            $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -IncludeFilter "*$global:random" -Type SQL
             $results.Count | Should -Be 2
-            $results.Name | Should -Contain "testlogin1_$random"
-            $results.Name | Should -Contain "testlogin2_$random"
+            $results.Name | Should -Contain "testlogin1_$global:random"
+            $results.Name | Should -Contain "testlogin2_$global:random"
         }
 
         It "ExcludeFilter" {
-            $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -ExcludeFilter "*$random" -Type SQL
-            $results.Name | Should -Not -Contain "testlogin1_$random"
-            $results.Name | Should -Not -Contain "testlogin2_$random"
+            $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -ExcludeFilter "*$global:random" -Type SQL
+            $results.Name | Should -Not -Contain "testlogin1_$global:random"
+            $results.Name | Should -Not -Contain "testlogin2_$global:random"
         }
 
         It "ExcludeSystemLogin" {
@@ -91,15 +135,15 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
         It "HasAccess" {
             $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -HasAccess -Type SQL
-            $results.Name | Should -Contain "testlogin1_$random"
-            $results.Name | Should -Contain "testlogin2_$random"
+            $results.Name | Should -Contain "testlogin1_$global:random"
+            $results.Name | Should -Contain "testlogin2_$global:random"
         }
 
         It "Disabled" {
-            $null = Set-DbaLogin -SqlInstance $TestConfig.instance1 -Login "testlogin1_$random" -Disable
+            $null = Set-DbaLogin -SqlInstance $TestConfig.instance1 -Login "testlogin1_$global:random" -Disable
             $result = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Disabled
-            $result.Name | Should -Contain "testlogin1_$random"
-            $null = Set-DbaLogin -SqlInstance $TestConfig.instance1 -Login "testlogin1_$random" -Enable
+            $result.Name | Should -Contain "testlogin1_$global:random"
+            $null = Set-DbaLogin -SqlInstance $TestConfig.instance1 -Login "testlogin1_$global:random" -Enable
         }
 
         It "Detailed" {
@@ -117,13 +161,17 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             ($results[0].PSobject.Properties.Name -contains "PasswordLastSetTime") | Should -Be $true
         }
 
-        It -Skip:$SkipLocalTest "Locked" {
-            $results = Set-DbaLogin -SqlInstance $TestConfig.instance1 -Login "testlogin1_$random" -PasswordPolicyEnforced -EnableException
+        It "Locked" -Skip:$SkipLocalTest {
+            $results = Set-DbaLogin -SqlInstance $TestConfig.instance1 -Login "testlogin1_$global:random" -PasswordPolicyEnforced -EnableException
             $results.PasswordPolicyEnforced | Should -Be $true
 
             # simulate a lockout
-            $invalidPassword = ConvertTo-SecureString -String 'invalid' -AsPlainText -Force
-            $invalidSqlCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "testlogin1_$random", $invalidPassword
+            $invalidPassword = ConvertTo-SecureString -String "invalid" -AsPlainText -Force
+            $splatInvalidCredential = @{
+                TypeName     = "System.Management.Automation.PSCredential"
+                ArgumentList = "testlogin1_$global:random", $invalidPassword
+            }
+            $invalidSqlCredential = New-Object @splatInvalidCredential
 
             # exceed the lockout count
             for (($i = 0); $i -le 4; $i++) {
@@ -136,27 +184,27 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             }
 
             $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Locked
-            $results.Name | Should -Contain "testlogin1_$random"
+            $results.Name | Should -Contain "testlogin1_$global:random"
 
-            $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login "testlogin1_$random" -Type SQL
+            $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login "testlogin1_$global:random" -Type SQL
             $results.IsLocked | Should -Be $true
 
-            $results = Set-DbaLogin -SqlInstance $TestConfig.instance1 -Login "testlogin1_$random" -Unlock -Force
+            $results = Set-DbaLogin -SqlInstance $TestConfig.instance1 -Login "testlogin1_$global:random" -Unlock -Force
             $results.IsLocked | Should -Be $false
 
             $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Locked
-            $results.Name | Should -Not -Contain "testlogin1_$random"
+            $results.Name | Should -Not -Contain "testlogin1_$global:random"
 
-            $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login "testlogin1_$random" -Type SQL
+            $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login "testlogin1_$global:random" -Type SQL
             $results.IsLocked | Should -Be $false
         }
 
         It "MustChangePassword" {
-            $changeResult = Set-DbaLogin -SqlInstance $TestConfig.instance1 -Login "testlogin1_$random" -MustChange -Password $password -PasswordPolicyEnforced -PasswordExpirationEnabled
+            $changeResult = Set-DbaLogin -SqlInstance $TestConfig.instance1 -Login "testlogin1_$global:random" -MustChange -Password $password -PasswordPolicyEnforced -PasswordExpirationEnabled
             $changeResult.MustChangePassword | Should -Be $true
 
             $result = Get-DbaLogin -SqlInstance $TestConfig.instance1 -MustChangePassword
-            $result.Name | Should -Contain "testlogin1_$random"
+            $result.Name | Should -Contain "testlogin1_$global:random"
         }
     }
 }

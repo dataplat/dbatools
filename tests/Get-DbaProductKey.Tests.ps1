@@ -1,34 +1,73 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaProductKey",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'SqlCredential', 'Credential', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        BeforeAll {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "ComputerName",
+                "SqlCredential",
+                "Credential",
+                "EnableException"
+            )
+        }
+
+        It "Should have the expected parameters" {
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
+    Context "Gets ProductKey for SQL Server instances" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-    Context "Gets ProductKey for Instances on $($env:ComputerName)" {
-        $results = Get-DbaProductKey -ComputerName $env:ComputerName
-        It "Gets results" {
-            $results | Should Not Be $null
+            # Get product key from the test instances
+            $allResults = @()
+            foreach ($instance in $TestConfig.Instances) {
+                try {
+                    $computerName = ($instance -split "\\|,")[0]
+                    $result = Get-DbaProductKey -ComputerName $computerName
+                    if ($result) {
+                        $allResults += $result
+                    }
+                } catch {
+                    # Some instances may not be accessible for product key retrieval
+                    Write-Warning "Could not get product key for $instance`: $($_.Exception.Message)"
+                }
+            }
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
-        Foreach ($row in $results) {
-            It "Should have Version $($row.Version)" {
-                $row.Version | Should not be $null
+
+        It "Gets results from at least one instance" {
+            $allResults | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should have Version for all results" {
+            foreach ($result in $allResults) {
+                $result.Version | Should -Not -BeNullOrEmpty
             }
-            It "Should have Edition $($row.Edition)" {
-                $row.Edition | Should not be $null
+        }
+
+        It "Should have Edition for all results" {
+            foreach ($result in $allResults) {
+                $result.Edition | Should -Not -BeNullOrEmpty
             }
-            It "Should have Key $($row.key)" {
-                $row.key | Should not be $null
+        }
+
+        It "Should have Key for all results" {
+            foreach ($result in $allResults) {
+                $result.Key | Should -Not -BeNullOrEmpty
             }
         }
     }
