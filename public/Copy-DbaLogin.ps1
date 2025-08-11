@@ -297,35 +297,96 @@ function Copy-DbaLogin {
                     Write-Message -Level Verbose -Message "Force was specified. Attempting to drop $newUserName on $destinstance."
 
                     try {
-                        $ownedDbs = $destServer.Databases | Where-Object Owner -eq $newUserName
+                        Write-Message -Level Output ('{0}: going to do $ownedDbs next' -f (Get-Date))
+                        # Sometimes when a database is in an AG this fails randomly. Details on issue #9648
+                        # so will try this multiple times
+                        $maxRetries = 3
+                        $retryCount = 0
+                        $operationSuccessful = $false
 
-                        foreach ($ownedDb in $ownedDbs) {
-                            Write-Message -Level Verbose -Message "Changing database owner for $($ownedDb.name) from $newUserName to sa."
-                            $ownedDb.SetOwner('sa')
-                            $ownedDb.Alter()
-                        }
+                        do {
+                            try {
+                                Write-Message -Level Verbose -Message "Attempting to enumerate databases, jobs and processes (attempt $($retryCount + 1)/$maxRetries)"
 
-                        $ownedJobs = $destServer.JobServer.Jobs | Where-Object OwnerLoginName -eq $newUserName
+                                $ownedDbs = $destServer.Databases | Where-Object Owner -eq $newUserName
 
-                        foreach ($ownedJob in $ownedJobs) {
-                            Write-Message -Level Verbose -Message "Changing job owner for $($ownedJob.name) from $newUserName to sa."
-                            $ownedJob.Set_OwnerLoginName('sa')
-                            $ownedJob.Alter()
-                        }
+                                foreach ($ownedDb in $ownedDbs) {
+                                    Write-Message -Level Verbose -Message "Changing database owner for $($ownedDb.name) from $newUserName to sa."
+                                    $ownedDb.SetOwner('sa')
+                                    $ownedDb.Alter()
+                                }
 
-                        $activeConnections = $destServer.EnumProcesses() | Where-Object Login -eq $newUserName
+                                $ownedJobs = $destServer.JobServer.Jobs | Where-Object OwnerLoginName -eq $newUserName
 
-                        if ($activeConnections -and $KillActiveConnection) {
-                            if (!$destServer.Logins.Item($newUserName).IsDisabled) {
-                                $disabled = $true
-                                $destServer.Logins.Item($newUserName).Disable()
+                                foreach ($ownedJob in $ownedJobs) {
+                                    Write-Message -Level Verbose -Message "Changing job owner for $($ownedJob.name) from $newUserName to sa."
+                                    $ownedJob.Set_OwnerLoginName('sa')
+                                    $ownedJob.Alter()
+                                }
+
+                                $activeConnections = $destServer.EnumProcesses() | Where-Object Login -eq $newUserName
+
+                                if ($activeConnections -and $KillActiveConnection) {
+                                    if (!$destServer.Logins.Item($newUserName).IsDisabled) {
+                                        $disabled = $true
+                                        $destServer.Logins.Item($newUserName).Disable()
+                                    }
+
+                                    $activeConnections | ForEach-Object { $destServer.KillProcess($_.Spid) }
+                                    Write-Message -Level Verbose -Message "-KillActiveConnection was provided. There are $($activeConnections.Count) active connections killed."
+                                } elseif ($activeConnections) {
+                                    Write-Message -Level Verbose -Message "There are $($activeConnections.Count) active connections found for the login $newUserName. Utilize -KillActiveConnection to kill the connections."
+                                }
+
+                                # If we get here, the operation was successful
+                                $operationSuccessful = $true
+                                Write-Message -Level Verbose -Message "Database, job and process enumeration completed successfully"
+
+                            } catch {
+                                $retryCount++
+
+                                # Check for AG read-only errors at multiple levels in the exception hierarchy
+                                $sqlException = $null
+                                $currentException = $_.Exception
+
+                                # Walk through the exception chain to find SQL exception with error 978
+                                while ($currentException -and !$sqlException) {
+                                    if ($currentException -is [Microsoft.Data.SqlClient.SqlException] -and $currentException.Number -eq 978) {
+                                        $sqlException = $currentException
+                                        break
+                                    }
+                                    $currentException = $currentException.InnerException
+                                }
+
+                                $isRetryableError = $false
+                                if ($sqlException) {
+                                    $isRetryableError = $true
+                                    Write-Message -Level Warning -Message "AG read-only error detected (attempt $retryCount/$maxRetries): $($sqlException.Message)"
+                                } elseif ($_.Exception.Message -like "*availability group*" -and
+                                    $_.Exception.Message -like "*read only*") {
+                                    $isRetryableError = $true
+                                    Write-Message -Level Warning -Message "AG error detected (attempt $retryCount/$maxRetries): $($_.Exception.Message)"
+                                } elseif ($_.Exception.Message -like "*Enumerate processes failed*" -and
+                                    $_.Exception.InnerException -and
+                                    $_.Exception.InnerException.Message -like "*availability group*") {
+                                    $isRetryableError = $true
+                                    Write-Message -Level Warning -Message "AG process enumeration error detected (attempt $retryCount/$maxRetries): $($_.Exception.InnerException.Message)"
+                                }
+
+                                if ($isRetryableError -and $retryCount -lt $maxRetries) {
+                                    Write-Message -Level Output -Message "Retrying in 2 seconds..."
+                                    Start-Sleep -Seconds 2
+                                } else {
+                                    if ($retryCount -ge $maxRetries) {
+                                        Write-Message -Level Error -Message "Failed after $maxRetries attempts: $($_.Exception.Message)"
+                                    } else {
+                                        Write-Message -Level Error -Message "Non-retryable error: $($_.Exception.Message)"
+                                    }
+                                    throw
+                                }
                             }
+                        } while (-not $operationSuccessful -and $retryCount -lt $maxRetries)
 
-                            $activeConnections | ForEach-Object { $destServer.KillProcess($_.Spid) }
-                            Write-Message -Level Verbose -Message "-KillActiveConnection was provided. There are $($activeConnections.Count) active connections killed."
-                        } elseif ($activeConnections) {
-                            Write-Message -Level Verbose -Message "There are $($activeConnections.Count) active connections found for the login $newUserName. Utilize -KillActiveConnection to kill the connections."
-                        }
                         try {
                             $destServer.Logins.Item($newUserName).Drop()
                         } catch {
