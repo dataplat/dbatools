@@ -1,19 +1,36 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName = "dbatools",
+    $CommandName = "Test-DbaDbQueryStore",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
+
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 $global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag "UnitTests" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        BeforeAll {
+            $command = Get-Command $CommandName
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                'SqlInstance',
+                'SqlCredential',
+                'Database',
+                'ExcludeDatabase',
+                'InputObject',
+                'EnableException'
+            )
+        }
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+            $actualParameters = $command.Parameters.Keys | Where-Object { $PSItem -notin "WhatIf", "Confirm" }
+            $actualParameters | Should -BeIn $expectedParameters
+            $expectedParameters | Should -BeIn $actualParameters
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $dbname = "JESSdbatoolsci_querystore_$(get-random)"
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
@@ -31,22 +48,22 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
 
         $results = Test-DbaDbQueryStore -SqlInstance $svr -Database $dbname
         It 'Should return results' {
-            $results | Should Not BeNullOrEmpty
+            $results | Should -Not -BeNullOrEmpty
         }
         It 'Should show query store is enabled' {
-            ($results | Where-Object Name -eq 'ActualState').Value | Should Be 'ReadWrite'
+            ($results | Where-Object Name -eq 'ActualState').Value | Should -Be 'ReadWrite'
         }
         It 'Should show recommended value for query store is to be enabled' {
-            ($results | Where-Object Name -eq 'ActualState').RecommendedValue | Should Be 'ReadWrite'
+            ($results | Where-Object Name -eq 'ActualState').RecommendedValue | Should -Be 'ReadWrite'
         }
         It 'Should show query store meets best practice' {
-            ($results | Where-Object Name -eq 'ActualState').IsBestPractice | Should Be $true
+            ($results | Where-Object Name -eq 'ActualState').IsBestPractice | Should -Be $true
         }
         It 'Should show trace flag  7745 is enabled' {
-            ($results | Where-Object Name -eq 'Trace Flag 7745 Enabled').Value | Should Be 'Enabled'
+            ($results | Where-Object Name -eq 'Trace Flag 7745 Enabled').Value | Should -Be 'Enabled'
         }
         It 'Should show trace flag 7745 meets best practice' {
-            ($results | Where-Object Name -eq 'Trace Flag 7745 Enabled').IsBestPractice | Should Be $true
+            ($results | Where-Object Name -eq 'Trace Flag 7745 Enabled').IsBestPractice | Should -Be $true
         }
     }
 
@@ -55,10 +72,10 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
 
         $results = Test-DbaDbQueryStore -SqlInstance $TestConfig.instance2 -ExcludeDatabase $dbname
         It 'Should return results' {
-            $results | Should Not BeNullOrEmpty
+            $results | Should -Not -BeNullOrEmpty
         }
         It "Should not return results for $dbname" {
-            ($results | Where-Object { $_.Database -eq $dbname }) | Should BeNullOrEmpty
+            ($results | Where-Object { $_.Database -eq $dbname }) | Should -BeNullOrEmpty
         }
     }
 
@@ -67,13 +84,13 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
 
         $results = $svr | Test-DbaDbQueryStore
         It 'Should return results' {
-            $results | Should Not BeNullOrEmpty
+            $results | Should -Not -BeNullOrEmpty
         }
         It 'Should show query store meets best practice' {
-            ($results | Where-Object { $_.Database -eq $dbname -and $_.Name -eq 'ActualState' }).IsBestPractice | Should Be $true
+            ($results | Where-Object { $_.Database -eq $dbname -and $_.Name -eq 'ActualState' }).IsBestPractice | Should -Be $true
         }
         It 'Should show trace flag 7745 meets best practice' {
-            ($results | Where-Object { $_.Name -eq 'Trace Flag 7745 Enabled' }).IsBestPractice | Should Be $true
+            ($results | Where-Object { $_.Name -eq 'Trace Flag 7745 Enabled' }).IsBestPractice | Should -Be $true
         }
     }
 }

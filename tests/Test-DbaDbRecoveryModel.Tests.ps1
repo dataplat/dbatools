@@ -1,18 +1,35 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName = "dbatools",
+    $CommandName = "Test-DbaDbRecoveryModel",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
+
+Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 $global:TestConfig = Get-TestConfig
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "$CommandName Unit Tests" -Tag "UnitTests" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'Database', 'ExcludeDatabase', 'SqlCredential', 'RecoveryModel', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        BeforeAll {
+            $command = Get-Command $CommandName
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                'SqlInstance',
+                'Database',
+                'ExcludeDatabase',
+                'SqlCredential',
+                'RecoveryModel',
+                'EnableException'
+            )
+        }
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            $actualParameters = $command.Parameters.Keys | Where-Object { $PSItem -notin "WhatIf", "Confirm" }
+            $actualParameters | Should -BeIn $expectedParameters
+            $expectedParameters | Should -BeIn $actualParameters
         }
     }
 }
-Describe "$CommandName Intigration Tests" -Tag  "IntegrationTests" {
+Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $fullRecovery = "dbatoolsci_RecoveryModelFull"
         $bulkLoggedRecovery = "dbatoolsci_RecoveryModelBulk"
@@ -40,65 +57,54 @@ Describe "$CommandName Intigration Tests" -Tag  "IntegrationTests" {
     }
 
     Context "Default Execution" {
-        $results = Test-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -Database $fullRecovery, $psudoSimpleRecovery, 'Model'
-
         It "Should return $fullRecovery, $psudoSimpleRecovery, and Model" {
-            $results.Database | should -BeIn ($fullRecovery, $psudoSimpleRecovery, 'Model')
+            $results = Test-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -Database $fullRecovery, $psudoSimpleRecovery, 'Model'
+            $results.Database | Should -BeIn ($fullRecovery, $psudoSimpleRecovery, 'Model')
         }
-
     }
 
     Context "Full Recovery" {
-        $results = Test-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -RecoveryModel Full -Database $fullRecovery, $psudoSimpleRecovery -ExcludeDatabase 'Model'
-
         It "Should return $fullRecovery and $psudoSimpleRecovery" {
-            $results.Database | should -BeIn ($fullRecovery, $psudoSimpleRecovery)
+            $results = Test-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -RecoveryModel Full -Database $fullRecovery, $psudoSimpleRecovery -ExcludeDatabase 'Model'
+            $results.Database | Should -BeIn ($fullRecovery, $psudoSimpleRecovery)
         }
     }
 
     Context "Bulk Logged Recovery" {
-        $results = Test-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -RecoveryModel Bulk_Logged -Database $bulkLoggedRecovery
-
         It "Should return $bulkLoggedRecovery" {
-            $results.Database | should -Be "$bulkLoggedRecovery"
+            $results = Test-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -RecoveryModel Bulk_Logged -Database $bulkLoggedRecovery
+            $results.Database | Should -Be "$bulkLoggedRecovery"
         }
-
     }
 
     Context "Simple Recovery" {
-        $results = Test-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -RecoveryModel Simple -Database $simpleRecovery
-
         It "Should return $simpleRecovery" {
-            $results.Database | should -Be "$simpleRecovery"
+            $results = Test-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -RecoveryModel Simple -Database $simpleRecovery
+            $results.Database | Should -Be "$simpleRecovery"
         }
-
     }
 
     Context "Psudo Simple Recovery" {
-        $results = Test-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -RecoveryModel Full | Where-Object {$_.database -eq "$psudoSimpleRecovery"}
-
         It "Should return $psudoSimpleRecovery" {
-            $results.Database | should -Be "$psudoSimpleRecovery"
+            $results = Test-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -RecoveryModel Full | Where-Object { $_.database -eq "$psudoSimpleRecovery" }
+            $results.Database | Should -Be "$psudoSimpleRecovery"
         }
-
     }
 
     Context "Error Check" {
-
         It "Should Throw Error for Incorrect Recovery Model" {
-            {Test-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -RecoveryModel Awesome -EnableException -Database 'dontexist' } | should -Throw
+            { Test-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -RecoveryModel Awesome -EnableException -Database 'dontexist' } | Should -Throw
         }
 
-        Mock Connect-DbaInstance { Throw } -ModuleName dbatools
-        It "Should Thow Error for a DB Connection Error" {
-            {Test-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -EnableException | Should -Throw }
+        It "Should Throw Error for a DB Connection Error" {
+            Mock Connect-DbaInstance { Throw } -ModuleName dbatools
+            { Test-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -EnableException } | Should -Throw
         }
 
-        Mock Select-DefaultView { Throw } -ModuleName dbatools
-        It "Should Thow Error for Output Error " {
-            {Test-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -EnableException | Should -Throw }
+        It "Should Throw Error for Output Error" {
+            Mock Select-DefaultView { Throw } -ModuleName dbatools
+            { Test-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -EnableException } | Should -Throw
         }
-
     }
 
 

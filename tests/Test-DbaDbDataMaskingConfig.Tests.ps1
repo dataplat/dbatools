@@ -1,6 +1,9 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName               = "dbatools",
+    $CommandName              = [System.IO.Path]::GetFileName($PSCommandPath.Replace('.Tests.ps1', '')),
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -8,7 +11,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         [object[]]$knownParameters = 'FilePath', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
         }
     }
 
@@ -102,12 +105,12 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
         Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database $dbname -Query $query
 
-        $file = New-DbaDbMaskingConfig -SqlInstance $TestConfig.instance1 -Database $dbname -Table Customer -Path "C:\temp\datamasking"
+        $file = New-DbaDbMaskingConfig -SqlInstance $TestConfig.instance1 -Database $dbname -Table Customer -Path "$($TestConfig.Temp)\datamasking"
 
     }
     AfterAll {
         Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname -Confirm:$false
-        Remove-Item -Path "C:\temp\datamasking" -Recurse
+        Remove-Item -Path "$($TestConfig.Temp)\datamasking" -Recurse -Force -ErrorAction SilentlyContinue
     }
 
     It "gives no errors with a correct json file" {
