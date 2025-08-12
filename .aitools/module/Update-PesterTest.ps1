@@ -98,7 +98,8 @@ function Update-PesterTest {
         [string[]]$CacheFilePath = @(
             (Resolve-Path "$PSScriptRoot/prompts/style.md" -ErrorAction SilentlyContinue).Path,
             (Resolve-Path "$PSScriptRoot/prompts/migration.md" -ErrorAction SilentlyContinue).Path,
-            (Resolve-Path "$PSScriptRoot/../../private/testing/Get-TestConfig.ps1" -ErrorAction SilentlyContinue).Path
+            (Resolve-Path "$PSScriptRoot/../../private/testing/Get-TestConfig.ps1" -ErrorAction SilentlyContinue).Path,
+            (Resolve-Path "$PSScriptRoot/../../tests/appveyor.pester.ps1" -ErrorAction SilentlyContinue).Path
         ),
         [int]$MaxFileSize = 500kb,
         [string]$Model,
