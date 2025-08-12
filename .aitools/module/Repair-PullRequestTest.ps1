@@ -27,12 +27,9 @@ function Repair-PullRequestTest {
        or committing any changes.
 
    .PARAMETER Pattern
-       Pattern to filter test files. Only files matching this pattern will be processed.
-       Supports wildcards (e.g., "*Login*" to match files containing "Login").
-
-   .PARAMETER Force
-       When on Development branch, forces switching to PR branch and copying only
-       failures from that branch. Without this, Development branch will not process PRs.
+       Optional regex pattern to filter test failures by filename. When specified, only processes
+       failures that match the pattern using the -match operator. This parameter is passed through
+       to Get-AppVeyorFailure for filtering.
 
    .NOTES
        Tags: Testing, Pester, PullRequest, CI
@@ -54,6 +51,14 @@ function Repair-PullRequestTest {
    .EXAMPLE
        PS C:\> Repair-PullRequestTest -BuildNumber 12345
        Fixes failing tests from AppVeyor build #12345 across all relevant PRs.
+
+   .EXAMPLE
+       PS C:\> Repair-PullRequestTest -PRNumber 9234 -Pattern "Remove-Dba"
+       Fixes failing tests in PR #9234, but only processes failures matching "Remove-Dba".
+
+   .EXAMPLE
+       PS C:\> Repair-PullRequestTest -Pattern "\.Tests\.ps1$"
+       Fixes failing tests from all open PRs, but only processes failures from .Tests.ps1 files.
    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
@@ -62,8 +67,7 @@ function Repair-PullRequestTest {
         [int]$MaxPRs = 5,
         [int]$BuildNumber,
         [switch]$CopyOnly,
-        [string]$Pattern,
-        [switch]$Force
+        [string]$Pattern
     )
 
     begin {
@@ -131,46 +135,23 @@ function Repair-PullRequestTest {
                     Write-Verbose "Found PR for current branch: $originalBranch"
                     $prs = @($currentBranchPR | ConvertFrom-Json)
                 } else {
-                    # Check if current branch is Development - if so, only proceed if Force is specified
-                    if ($originalBranch -eq "Development" -or $originalBranch -eq "development") {
-                        if ($Force) {
-                            Write-Verbose "Force flag specified on Development branch, fetching PRs"
-                            $prsJson = gh pr list --state open --limit $MaxPRs --json "number,title,headRefName,state,statusCheckRollup" 2>$null
-                            $prs = $prsJson | ConvertFrom-Json
+                    Write-Verbose "No PR found for current branch, fetching all open PRs"
+                    $prsJson = gh pr list --state open --limit $MaxPRs --json "number,title,headRefName,state,statusCheckRollup" 2>$null
+                    $prs = $prsJson | ConvertFrom-Json
 
-                            # For each PR, get the files changed (since pr list doesn't include files)
-                            $prsWithFiles = @()
-                            foreach ($pr in $prs) {
-                                $prWithFiles = gh pr view $pr.number --json "number,title,headRefName,state,statusCheckRollup,files" 2>$null
-                                if ($prWithFiles) {
-                                    $prsWithFiles += ($prWithFiles | ConvertFrom-Json)
-                                }
-                            }
-                            $prs = $prsWithFiles
-                        } else {
-                            Write-Warning "On Development branch - use -Force flag to process PRs"
-                            return
+                    # For each PR, get the files changed (since pr list doesn't include files)
+                    $prsWithFiles = @()
+                    foreach ($pr in $prs) {
+                        $prWithFiles = gh pr view $pr.number --json "number,title,headRefName,state,statusCheckRollup,files" 2>$null
+                        if ($prWithFiles) {
+                            $prsWithFiles += ($prWithFiles | ConvertFrom-Json)
                         }
-                    } else {
-                        # For any other branch without a PR, treat current branch as the "PR"
-                        Write-Verbose "No open PR exists for current branch '$originalBranch' — running in standalone branch repair mode"
-                        $prs = @(@{
-                            number      = "current"
-                            title       = "Standalone Branch Test Repair"
-                            headRefName = $originalBranch
-                            state       = "open"
-                            statusCheckRollup = @()
-                            files       = @()
-                        })
                     }
+                    $prs = $prsWithFiles
                 }
             }
 
-            if ($prs.Count -eq 1 -and $prs[0].number -eq "current") {
-                Write-Verbose "No open PR found for branch '$originalBranch', processing in current branch mode"
-            } else {
-                Write-Verbose "Found $($prs.Count) open PR(s)"
-            }
+            Write-Verbose "Found $($prs.Count) open PR(s)"
 
             # Handle specific build number scenario differently
             if ($BuildNumber) {
@@ -181,6 +162,7 @@ function Repair-PullRequestTest {
                 $getFailureParams = @{
                     BuildNumber = $BuildNumber
                 }
+                if ($Pattern) { $getFailureParams.Pattern = $Pattern }
                 $allFailedTestsAcrossPRs = @(Get-AppVeyorFailure @getFailureParams)
 
                 if (-not $allFailedTestsAcrossPRs) {
@@ -216,37 +198,7 @@ function Repair-PullRequestTest {
                     $prProgress = [math]::Round(($prCount / $totalPRs) * 100, 0)
 
                     Write-Progress -Activity "Repairing Pull Request Tests" -Status "Collecting failures from PR #$($pr.number) - $($pr.title)" -PercentComplete $prProgress -Id 0
-                    if ($pr.number -eq "current") {
-                        Write-Verbose "`nCollecting failures from standalone branch '$($pr.headRefName)'"
-                    } else {
-                        Write-Verbose "`nCollecting failures from PR #$($pr.number) - $($pr.title)"
-                    }
-
-                    # Handle "current" branch case (non-PR branch that isn't Development)
-                    if ($pr.number -eq "current") {
-                        Write-Verbose "Processing current branch '$($pr.headRefName)' without PR context"
-
-                        # For current branch, try to get AppVeyor failures for this branch
-                        $selectedPR = $pr
-                        $allRelevantTestFiles = @()  # Will process all failing tests found
-
-                        # Try to get AppVeyor failures for the current branch
-                        Write-Verbose "Attempting to get AppVeyor failures for current branch '$($pr.headRefName)'"
-                        $getFailureParams = @{
-                            Branch = $pr.headRefName
-                        }
-                        $currentBranchFailures = Get-AppVeyorFailure @getFailureParams
-
-                        if ($currentBranchFailures) {
-                            Write-Verbose "Found $($currentBranchFailures.Count) AppVeyor failures for current branch '$($pr.headRefName)'"
-                            $allFailedTestsAcrossPRs += $currentBranchFailures
-                        } else {
-                            Write-Verbose "No AppVeyor failures found for current branch '$($pr.headRefName)'"
-                        }
-
-                        Write-Verbose "Selected current branch '$($pr.headRefName)' as target for fixes"
-                        break  # Exit the loop since we're only processing the current branch
-                    }
+                    Write-Verbose "`nCollecting failures from PR #$($pr.number) - $($pr.title)"
 
                     # Get the list of files changed in this PR to filter which tests to fix
                     $changedTestFiles = @()
@@ -300,6 +252,7 @@ function Repair-PullRequestTest {
                     $getFailureParams = @{
                         PullRequest = $pr.number
                     }
+                    if ($Pattern) { $getFailureParams.Pattern = $Pattern }
                     $prFailedTests = Get-AppVeyorFailure @getFailureParams
 
                     if (-not $prFailedTests) {
@@ -308,44 +261,12 @@ function Repair-PullRequestTest {
                     }
 
                     # Filter tests for this PR and add to collection
-                    # Only include tests that are actually in the changed files for this PR
                     foreach ($test in $prFailedTests) {
                         $testFileName = [System.IO.Path]::GetFileName($test.TestFile)
-                        if ($relevantTestFiles.Count -gt 0 -and $testFileName -in $relevantTestFiles) {
+                        if ($relevantTestFiles.Count -eq 0 -or $testFileName -in $relevantTestFiles) {
                             $allFailedTestsAcrossPRs += $test
                         }
                     }
-                }
-            }
-
-            # Handle case where we have a current branch but no AppVeyor failures
-            if ($selectedPR -and $selectedPR.number -eq "current" -and -not $allFailedTestsAcrossPRs) {
-                if ($Pattern) {
-                    Write-Verbose "Processing current branch without AppVeyor failure data - will process test files matching pattern '$Pattern'"
-
-                    # For current branch without failure data, we'll create dummy failure entries for test files
-                    # that match the specified pattern only
-                    $testDirectory = Join-Path (Split-Path $PSScriptRoot -Parent) "tests"
-                    if (-not (Test-Path $testDirectory)) {
-                        $testDirectory = Join-Path $pwd "tests"
-                    }
-
-                    $testFiles = Get-ChildItem -Path $testDirectory -Filter "*.Tests.ps1" -ErrorAction SilentlyContinue
-                    $testFiles = $testFiles | Where-Object { $_.Name -match $Pattern }
-
-                    $allFailedTestsAcrossPRs = @()
-                    foreach ($testFile in $testFiles) {
-                        $allFailedTestsAcrossPRs += @{
-                            TestFile = $testFile.Name
-                            TestName = "Unknown"
-                            ErrorMessage = "Processing current branch with pattern filter without specific failure data"
-                        }
-                    }
-
-                    Write-Verbose "Created $($allFailedTestsAcrossPRs.Count) test entries for current branch processing with pattern '$Pattern'"
-                } else {
-                    Write-Warning "No AppVeyor failures found for current branch. Use -BuildNumber to specify a specific build, -Pattern to filter specific tests, or run from a branch with actual test failures."
-                    return
                 }
             }
 
@@ -360,31 +281,14 @@ function Repair-PullRequestTest {
             Write-Verbose "All relevant test files across PRs - $($allRelevantTestFiles -join ', ')"
 
             # Create hash table to group ALL errors by unique file name
-            $fileErrorMap     = @{}
+            $fileErrorMap = @{}
             $fileErrorPath = @()
             $testdirectory = Join-Path $script:ModulePath "tests"
 
-            # Apply Pattern filter first if specified
-            $filteredTests = if ($Pattern) {
-                $allFailedTestsAcrossPRs | Where-Object { [System.IO.Path]::GetFileName($_.TestFile) -match $Pattern }
-            } else {
-                $allFailedTestsAcrossPRs
-            }
-
-            foreach ($test in $filteredTests) {
+            foreach ($test in $allFailedTestsAcrossPRs) {
                 $fileName = [System.IO.Path]::GetFileName($test.TestFile)
-                # ONLY include files that are actually in the PR changes or current branch failures
-                if ($allRelevantTestFiles.Count -gt 0 -and $fileName -in $allRelevantTestFiles) {
-                    if (-not $fileErrorMap.ContainsKey($fileName)) {
-                        $fileErrorMap[$fileName] = @()
-                    }
-                    $fileErrorMap[$fileName] += $test
-
-                    if ($test.TestFile) {
-                        $fileErrorPath += (Join-Path $testdirectory $test.TestFile)
-                    }
-                } elseif ($allRelevantTestFiles.Count -eq 0 -and $selectedPR.number -eq "current") {
-                    # Only for current branch without PR context, allow the test if it matches pattern
+                # ONLY include files that are actually in the PR changes
+                if ($allRelevantTestFiles.Count -eq 0 -or $fileName -in $allRelevantTestFiles) {
                     if (-not $fileErrorMap.ContainsKey($fileName)) {
                         $fileErrorMap[$fileName] = @()
                     }
@@ -396,11 +300,7 @@ function Repair-PullRequestTest {
                 }
             }
             $fileErrorPath = $fileErrorPath | Sort-Object -Unique
-            $filterMessage = "filtered to PR changes only"
-            if ($Pattern) {
-                $filterMessage += " and pattern '$Pattern'"
-            }
-            Write-Verbose "Found failures in $($fileErrorMap.Keys.Count) unique test files ($filterMessage)"
+            Write-Verbose "Found failures in $($fileErrorMap.Keys.Count) unique test files (filtered to PR changes only)"
             foreach ($fileName in $fileErrorMap.Keys) {
                 Write-Verbose "  ${fileName} - $($fileErrorMap[$fileName].Count) failures"
                 Write-Verbose "    Paths: $fileErrorPath"
@@ -408,11 +308,7 @@ function Repair-PullRequestTest {
 
             # If no relevant failures after filtering, exit
             if ($fileErrorMap.Keys.Count -eq 0) {
-                if ($selectedPR.number -eq "current") {
-                    Write-Verbose "No test failures found for current branch processing"
-                } else {
-                    Write-Verbose "No test failures found in files that were changed in the PR(s)"
-                }
+                Write-Verbose "No test failures found in files that were changed in the PR(s)"
                 return
             }
 
@@ -543,27 +439,6 @@ function Repair-PullRequestTest {
             Get-ChildItem env: | ForEach-Object { $cleanEnvVars[$_.Name] = $_.Value }
 
             $updateJobs = @()
-
-            # Register Ctrl-C handler to stop background jobs immediately
-            $ctrlCHandler = Register-EngineEvent PowerShell.Exiting -Action {
-                Write-Warning "Ctrl-C detected, stopping all Update-PesterTest background jobs..."
-                Get-Job | Where-Object { $_.Command -like '*Update-PesterTest*' -or $_.Name -like '*RepairPR-*' } | Stop-Job -Force -ErrorAction SilentlyContinue
-                Get-Job | Where-Object { $_.Command -like '*Update-PesterTest*' -or $_.Name -like '*RepairPR-*' } | Remove-Job -Force -ErrorAction SilentlyContinue
-                Write-Warning "Background jobs stopped due to interrupt"
-            }
-
-            # Also add a trap for pipeline stopped exceptions (Ctrl-C during execution)
-            trap [System.Management.Automation.PipelineStoppedException] {
-                Write-Warning "Pipeline stopped (Ctrl-C), cleaning up background jobs..."
-                $updateJobs | ForEach-Object {
-                    if ($_.Job.State -eq 'Running') {
-                        Stop-Job -Job $_.Job -Force -ErrorAction SilentlyContinue
-                        Remove-Job -Job $_.Job -Force -ErrorAction SilentlyContinue
-                    }
-                }
-                Write-Warning "Background jobs cleaned up"
-                throw
-            }
             foreach ($fileName in $fileErrorMap.Keys) {
                 # Skip if already processed
                 if ($processedFiles.ContainsKey($fileName)) {
@@ -579,7 +454,7 @@ function Repair-PullRequestTest {
 
                 Write-Verbose "Starting parallel job for Update-PesterTest on: $fileName"
 
-                $job = Start-Job -Name "RepairPR-$fileName-$(Get-Random)" -ScriptBlock {
+                $job = Start-Job -ScriptBlock {
                     param($TestPath, $GitRoot, $EnvVars)
 
                     # Set working directory
@@ -620,7 +495,6 @@ function Repair-PullRequestTest {
 
                         # Call Update-PesterTest with correct parameters
                         Update-PesterTest -InputObject (Get-Item $TestPath) -PromptFilePath $promptFilePath -CacheFilePath $cacheFilePaths
-                        -NoAutoFix
 
                         # Clean up environment flag
                         Remove-Item env:SKIP_DBATOOLS_IMPORT -ErrorAction SilentlyContinue
@@ -640,72 +514,39 @@ function Repair-PullRequestTest {
                 }
             }
 
-            # Poll for job completion with progress updates
-            Write-Verbose "Started $($updateJobs.Count) parallel Update-PesterTest jobs, polling for completion..."
+            # Wait for all jobs to complete and collect results
+            Write-Verbose "Started $($updateJobs.Count) parallel Update-PesterTest jobs, waiting for completion..."
 
-            $totalJobs = $updateJobs.Count
-            $completedJobs = 0
-            $processedJobIds = @()
+            # Wait for ALL jobs to complete in parallel first
+            $null = $updateJobs.Job | Wait-Job
 
-            while ($completedJobs -lt $totalJobs) {
-                Start-Sleep -Seconds 5
-
-                # Check for completed jobs that haven't been processed yet
-                foreach ($jobInfo in $updateJobs) {
-                    if ($jobInfo.Job.Id -in $processedJobIds) {
-                        continue  # Skip already processed jobs
-                    }
-
-                    if ($jobInfo.Job.State -eq 'Completed' -and $jobInfo.Job.HasMoreData) {
-                        try {
-                            $result = Receive-Job -Job $jobInfo.Job
-                            $completedJobs++
-                            $processedJobIds += $jobInfo.Job.Id
-
-                            if ($result.Success) {
-                                Write-Verbose "Update-PesterTest completed successfully for: $($jobInfo.FileName)"
-                                $processedFiles[$jobInfo.FileName] = $true
-                            } else {
-                                Write-Warning "Update-PesterTest failed for $($jobInfo.FileName): $($result.Error)"
-                            }
-
-                            # Update progress
-                            $progress = [math]::Round(($completedJobs / $totalJobs) * 100, 0)
-                            Write-Progress -Activity "Running Update-PesterTest (Parallel)" -Status "Completed $($jobInfo.FileName) ($completedJobs/$totalJobs)" -PercentComplete $progress -Id 1
-
-                        } catch {
-                            Write-Warning "Error processing Update-PesterTest job for $($jobInfo.FileName): $($_.Exception.Message)"
-                            $completedJobs++
-                            $processedJobIds += $jobInfo.Job.Id
-                        }
-                    }
-                    elseif ($jobInfo.Job.State -eq 'Failed') {
-                        Write-Warning "Update-PesterTest job failed for $($jobInfo.FileName)"
-                        $completedJobs++
-                        $processedJobIds += $jobInfo.Job.Id
-
-                        # Update progress
-                        $progress = [math]::Round(($completedJobs / $totalJobs) * 100, 0)
-                        Write-Progress -Activity "Running Update-PesterTest (Parallel)" -Status "Failed $($jobInfo.FileName) ($completedJobs/$totalJobs)" -PercentComplete $progress -Id 1
-                    }
-                }
-            }
-
-            # Clean up all jobs
+            # Then process all results without additional waiting
+            $completedCount = 0
             foreach ($jobInfo in $updateJobs) {
-                if ($jobInfo.Job.State -eq 'Running') {
-                    Stop-Job -Job $jobInfo.Job -Force -ErrorAction SilentlyContinue
+                try {
+                    $result = Receive-Job -Job $jobInfo.Job  # No -Wait since jobs are already complete
+                    $completedCount++
+
+                    if ($result.Success) {
+                        Write-Verbose "Update-PesterTest completed successfully for: $($jobInfo.FileName)"
+                        $processedFiles[$jobInfo.FileName] = $true
+                    } else {
+                        Write-Warning "Update-PesterTest failed for $($jobInfo.FileName): $($result.Error)"
+                    }
+
+                    # Update progress
+                    $progress = [math]::Round(($completedCount / $updateJobs.Count) * 100, 0)
+                    Write-Progress -Activity "Running Update-PesterTest (Parallel)" -Status "Processed $($jobInfo.FileName) ($completedCount/$($updateJobs.Count))" -PercentComplete $progress -Id 1
+
+                } catch {
+                    Write-Warning "Error processing Update-PesterTest job for $($jobInfo.FileName): $($_.Exception.Message)"
+                } finally {
+                    Remove-Job -Job $jobInfo.Job -Force -ErrorAction SilentlyContinue
                 }
-                Remove-Job -Job $jobInfo.Job -Force -ErrorAction SilentlyContinue
             }
 
             Write-Verbose "All $($updateJobs.Count) Update-PesterTest parallel jobs completed"
             Write-Progress -Activity "Running Update-PesterTest (Parallel)" -Completed -Id 1
-
-            # Unregister the Ctrl-C handler
-            if ($ctrlCHandler) {
-                Unregister-Event -SourceIdentifier $ctrlCHandler.Name -ErrorAction SilentlyContinue
-            }
 
             # Commit changes if requested
             if ($AutoCommit) {
@@ -762,19 +603,10 @@ function Repair-PullRequestTest {
             }
             # Kill any remaining jobs related to Update-PesterTest to ensure cleanup
             try {
-                Get-Job | Where-Object { $_.Command -like "*Update-PesterTest*" -or $_.Name -like "*RepairPR-*" } | Stop-Job -ErrorAction SilentlyContinue
-                Get-Job | Where-Object { $_.Command -like "*Update-PesterTest*" -or $_.Name -like "*RepairPR-*" } | Remove-Job -Force -ErrorAction SilentlyContinue
+                Get-Job | Where-Object Command -like "*Update-PesterTest*" | Stop-Job -ErrorAction SilentlyContinue
+                Get-Job | Where-Object Command -like "*Update-PesterTest*" | Remove-Job -Force -ErrorAction SilentlyContinue
             } catch {
                 Write-Warning "Error while attempting to clean up jobs: $($_.Exception.Message)"
-            }
-
-            # Clean up the Ctrl-C handler if it still exists
-            try {
-                if ($ctrlCHandler) {
-                    Unregister-Event -SourceIdentifier $ctrlCHandler.Name -ErrorAction SilentlyContinue
-                }
-            } catch {
-                Write-Verbose "Ctrl-C handler cleanup: $($_.Exception.Message)"
             }
         }
     }
