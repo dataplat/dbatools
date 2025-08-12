@@ -96,7 +96,7 @@ All helper functions are automatically imported but not exported publicly. They 
 Repair-PullRequestTest
 
 # Fix tests in a specific PR with auto-commit
-Repair-PullRequestTest -PRNumber 1234 -AutoCommit
+Repair-PullRequestTest -PullRequest 1234 -AutoCommit
 
 # Show AppVeyor build status
 Show-AppVeyorBuildStatus -BuildId 12345
