@@ -235,7 +235,7 @@ function Get-AppVeyorFailure {
                     }
 
                     if ($appveyorCheck -and $appveyorCheck.targetUrl) {
-                        if ($appveyorCheck.targetUrl -match '/builds/(\d+)') {
+                        if ($appveyorCheck.targetUrl -match '/builds/(\d+)' -and $Matches.Count -gt 1) {
                             $derivedBuildId = $Matches[1]
                             Write-Verbose "Extracted build ID $derivedBuildId from PR check URL: $($appveyorCheck.targetUrl)"
                         }
@@ -257,7 +257,7 @@ function Get-AppVeyorFailure {
                     } | Select-Object -First 1
 
                     if ($appveyorStatus -and $appveyorStatus.target_url) {
-                        if ($appveyorStatus.target_url -match '/builds/(\d+)') {
+                        if ($appveyorStatus.target_url -match '/builds/(\d+)' -and $Matches.Count -gt 1) {
                             $derivedBuildId = $Matches[1]
                             Write-Verbose "Extracted build ID $derivedBuildId from branch status for '$Branch'"
                         }
@@ -275,7 +275,7 @@ function Get-AppVeyorFailure {
                         } | Select-Object -First 1
 
                         if ($appveyorCheckRun -and $appveyorCheckRun.details_url) {
-                            if ($appveyorCheckRun.details_url -match '/builds/(\d+)') {
+                            if ($appveyorCheckRun.details_url -match '/builds/(\d+)' -and $Matches.Count -gt 1) {
                                 $derivedBuildId = $Matches[1]
                                 Write-Verbose "Extracted build ID $derivedBuildId from branch check-run for '$Branch'"
                             }
@@ -303,7 +303,7 @@ function Get-AppVeyorFailure {
                             } | Select-Object -First 1
 
                             if ($appveyorCheckRun -and $appveyorCheckRun.details_url) {
-                                if ($appveyorCheckRun.details_url -match '/builds/(\d+)') {
+                                if ($appveyorCheckRun.details_url -match '/builds/(\d+)' -and $Matches.Count -gt 1) {
                                     $derivedBuildId = $Matches[1]
                                     Write-Verbose "Extracted build ID $derivedBuildId from check-run URL: $($appveyorCheckRun.details_url)"
                                 }
@@ -320,7 +320,7 @@ function Get-AppVeyorFailure {
                                 } | Select-Object -First 1
 
                                 if ($appveyorStatus -and $appveyorStatus.target_url) {
-                                    if ($appveyorStatus.target_url -match '/builds/(\d+)') {
+                                    if ($appveyorStatus.target_url -match '/builds/(\d+)' -and $Matches.Count -gt 1) {
                                         $derivedBuildId = $Matches[1]
                                         Write-Verbose "Extracted build ID $derivedBuildId from status URL: $($appveyorStatus.target_url)"
                                     }
@@ -383,7 +383,7 @@ function Get-AppVeyorFailure {
                     }
 
                     if ($appveyorCheck -and $appveyorCheck.targetUrl) {
-                        if ($appveyorCheck.targetUrl -match '/builds/(\d+)') {
+                        if ($appveyorCheck.targetUrl -match '/builds/(\d+)' -and $Matches.Count -gt 1) {
                             $autoBuildId = $Matches[1]
                             Write-Verbose "Auto-detected build ID $autoBuildId from current branch PR"
                         }
@@ -404,7 +404,7 @@ function Get-AppVeyorFailure {
                         } | Select-Object -First 1
 
                         if ($appveyorStatus -and $appveyorStatus.target_url) {
-                            if ($appveyorStatus.target_url -match '/builds/(\d+)') {
+                            if ($appveyorStatus.target_url -match '/builds/(\d+)' -and $Matches.Count -gt 1) {
                                 $autoBuildId = $Matches[1]
                                 Write-Verbose "Auto-detected build ID $autoBuildId from branch status for current branch '$currentBranch'"
                             }
@@ -422,7 +422,7 @@ function Get-AppVeyorFailure {
                             } | Select-Object -First 1
 
                             if ($appveyorCheckRun -and $appveyorCheckRun.details_url) {
-                                if ($appveyorCheckRun.details_url -match '/builds/(\d+)') {
+                                if ($appveyorCheckRun.details_url -match '/builds/(\d+)' -and $Matches.Count -gt 1) {
                                     $autoBuildId = $Matches[1]
                                     Write-Verbose "Auto-detected build ID $autoBuildId from branch check-run for current branch '$currentBranch'"
                                 }
@@ -445,7 +445,7 @@ function Get-AppVeyorFailure {
                                 } | Select-Object -First 1
 
                                 if ($appveyorCheckRun -and $appveyorCheckRun.details_url) {
-                                    if ($appveyorCheckRun.details_url -match '/builds/(\d+)') {
+                                    if ($appveyorCheckRun.details_url -match '/builds/(\d+)' -and $Matches.Count -gt 1) {
                                         $autoBuildId = $Matches[1]
                                         Write-Verbose "Auto-detected build ID $autoBuildId from check-run for commit SHA"
                                     }
@@ -462,7 +462,7 @@ function Get-AppVeyorFailure {
                                     } | Select-Object -First 1
 
                                     if ($appveyorStatus -and $appveyorStatus.target_url) {
-                                        if ($appveyorStatus.target_url -match '/builds/(\d+)') {
+                                        if ($appveyorStatus.target_url -match '/builds/(\d+)' -and $Matches.Count -gt 1) {
                                             $autoBuildId = $Matches[1]
                                             Write-Verbose "Auto-detected build ID $autoBuildId from status for commit SHA"
                                         }
@@ -540,7 +540,7 @@ function Get-AppVeyorFailure {
             continue
         }
 
-        if ($appveyorCheck.link -match '/project/[^/]+/[^/]+/builds/(\d+)') {
+        if ($appveyorCheck.link -match '/project/[^/]+/[^/]+/builds/(\d+)' -and $Matches.Count -gt 1) {
             $buildmatch = $Matches[1]
         } else {
             Write-Verbose "Could not parse AppVeyor build ID from URL: $($appveyorCheck.link)"
