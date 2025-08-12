@@ -102,6 +102,28 @@ function Get-AppVeyorFailure {
                     }
                 }
             }
+<<<<<<< Updated upstream
+=======
+            $history = Invoke-AppVeyorApi @apiParams
+
+            if (-not $history -or -not $history.builds) {
+                Write-Verbose "No build history found"
+                Write-Progress -Activity "Get-AppVeyorFailure" -Completed
+                return
+            }
+
+            # Find the latest build for this branch
+            $branchBuild = $history.builds | Where-Object { $_.branch -eq $Branch } | Select-Object -First 1
+
+            if (-not $branchBuild) {
+                Write-Verbose "No builds found for branch: $Branch"
+                Write-Progress -Activity "Get-AppVeyorFailure" -Completed
+                return
+            }
+
+            $BuildId = $branchBuild.buildId
+            Write-Verbose "Found latest build ID $BuildId for branch '$Branch'"
+>>>>>>> Stashed changes
         } catch {
             # Silently fall back to existing logic
             Write-Verbose "GitHub CLI approach failed, falling back to AppVeyor history API"
@@ -142,18 +164,22 @@ function Get-AppVeyorFailure {
     }
 
     # If BuildNumber is specified (either directly or found from branch), use it directly
-    if ($BuildNumber) {
-        Write-Progress -Activity "Get-AppVeyorFailure" -Status "Fetching build details for build #$BuildNumber..." -PercentComplete 0
-        Write-Verbose "Using specified build number: $BuildNumber"
+    if ($BuildNumber -or $BuildId) {
+        # For backward compatibility, BuildNumber parameter maps to buildId for API calls
+        if ($BuildNumber -and -not $BuildId) {
+            $BuildId = $BuildNumber
+        }
+        Write-Progress -Activity "Get-AppVeyorFailure" -Status "Fetching build details for build ID $BuildId..." -PercentComplete 0
+        Write-Verbose "Using specified build ID: $BuildId"
 
         try {
             $apiParams = @{
-                Endpoint = "projects/dataplat/dbatools/builds/$BuildNumber"
+                Endpoint = "projects/dataplat/dbatools/builds/$BuildId"
             }
             $build = Invoke-AppVeyorApi @apiParams
 
             if (-not $build -or -not $build.build -or -not $build.build.jobs) {
-                Write-Verbose "No build data or jobs found for build $BuildNumber"
+                Write-Verbose "No build data or jobs found for build ID $BuildId"
                 Write-Progress -Activity "Get-AppVeyorFailure" -Completed
                 return
             }
@@ -161,7 +187,7 @@ function Get-AppVeyorFailure {
             $failedJobs = $build.build.jobs | Where-Object Status -eq "failed"
 
             if (-not $failedJobs) {
-                Write-Verbose "No failed jobs found in build $BuildNumber"
+                Write-Verbose "No failed jobs found in build ID $BuildId"
                 Write-Progress -Activity "Get-AppVeyorFailure" -Completed
                 return
             }
@@ -172,12 +198,12 @@ function Get-AppVeyorFailure {
             foreach ($job in $failedJobs) {
                 $currentJob++
                 $jobProgress = [math]::Round(($currentJob / $totalJobs) * 100)
-                Write-Progress -Activity "Getting job failure information" -Status "Processing failed job $currentJob of $totalJobs for build #$BuildNumber" -PercentComplete $jobProgress -CurrentOperation "Job: $($job.name)"
+                Write-Progress -Activity "Getting job failure information" -Status "Processing failed job $currentJob of $totalJobs for build ID $BuildId" -PercentComplete $jobProgress -CurrentOperation "Job: $($job.name)"
                 Write-Verbose "Processing failed job: $($job.name) (ID: $($job.jobId))"
                 (Get-TestArtifact -JobId $job.jobid).Content.Failures
             }
         } catch {
-            Write-Verbose "Failed to fetch AppVeyor build details for build ${BuildNumber}: $_"
+            Write-Verbose "Failed to fetch AppVeyor build details for build ID ${BuildId}: $_"
         }
 
         Write-Progress -Activity "Get-AppVeyorFailure" -Completed
@@ -207,6 +233,43 @@ function Get-AppVeyorFailure {
         $prPercentComplete = [math]::Round(($currentPR / $totalPRs) * 100)
         Write-Progress -Activity "Getting PR build information" -Status "Processing PR #$prNumber ($currentPR of $totalPRs)" -PercentComplete $prPercentComplete
         Write-Verbose "Fetching AppVeyor build information for PR #$prNumber"
+
+        # Get the list of files changed in this PR to filter which test failures to return
+        $prDetailsJson = gh pr view $prNumber --json "files" 2>$null
+        if (-not $prDetailsJson) {
+            Write-Verbose "Could not fetch PR details for PR #$prNumber"
+            continue
+        }
+
+        $prDetails = $prDetailsJson | ConvertFrom-Json
+        $changedTestFiles = @()
+        $changedCommandFiles = @()
+
+        if ($prDetails.files -and $prDetails.files.Count -gt 0) {
+            foreach ($file in $prDetails.files) {
+                $filename = if ($file.filename) { $file.filename } elseif ($file.path) { $file.path } else { $file }
+
+                if ($filename -like "*Tests.ps1" -or $filename -like "tests/*.Tests.ps1") {
+                    $testFileName = [System.IO.Path]::GetFileName($filename)
+                    $changedTestFiles += $testFileName
+                    Write-Verbose "Added test file: $testFileName"
+                } elseif ($filename -like "public/*.ps1") {
+                    $commandName = [System.IO.Path]::GetFileNameWithoutExtension($filename)
+                    $testFileName = "$commandName.Tests.ps1"
+                    $changedCommandFiles += $testFileName
+                    Write-Verbose "Added command test file: $testFileName (from command - $commandName)"
+                }
+            }
+        }
+
+        # Combine both directly changed test files and test files for changed commands
+        $relevantTestFiles = ($changedTestFiles + $changedCommandFiles) | Sort-Object -Unique
+        Write-Verbose "Relevant test files for PR #${prNumber}: $($relevantTestFiles -join ', ')"
+
+        if ($relevantTestFiles.Count -eq 0) {
+            Write-Verbose "No test files changed in PR #$prNumber, skipping"
+            continue
+        }
 
         $checksJson = gh pr checks $prNumber --json "name,state,link" 2>$null
         if (-not $checksJson) {
@@ -257,7 +320,17 @@ function Get-AppVeyorFailure {
                 $currentJob++
                 Write-Progress -Activity "Getting job failure information" -Status "Processing failed job $currentJob of $totalJobs for PR #$prNumber" -PercentComplete $prPercentComplete -CurrentOperation "Job: $($job.name)"
                 Write-Verbose "Processing failed job: $($job.name) (ID: $($job.jobId))"
-                (Get-TestArtifact -JobId $job.jobid).Content.Failures
+
+                $allFailures = (Get-TestArtifact -JobId $job.jobid).Content.Failures
+
+                # Filter failures to only include test files that were changed in this PR
+                $filteredFailures = $allFailures | Where-Object {
+                    $testFileName = [System.IO.Path]::GetFileName($_.TestFile)
+                    $testFileName -in $relevantTestFiles
+                }
+
+                Write-Verbose "Found $($allFailures.Count) total failures, filtered to $($filteredFailures.Count) failures for changed files"
+                $filteredFailures
             }
         } catch {
             Write-Verbose "Failed to fetch AppVeyor build details for build ${buildId}: $_"

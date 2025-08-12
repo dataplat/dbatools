@@ -153,10 +153,10 @@ function Repair-PullRequestTest {
                         }
                     } else {
                         # For any other branch without a PR, treat current branch as the "PR"
-                        Write-Verbose "No PR found for current branch '$originalBranch', but it's not Development - treating current branch as PR"
+                        Write-Verbose "No open PR exists for current branch '$originalBranch' — running in standalone branch repair mode"
                         $prs = @(@{
                             number      = "current"
-                            title       = "Current Branch Test Repair"
+                            title       = "Standalone Branch Test Repair"
                             headRefName = $originalBranch
                             state       = "open"
                             statusCheckRollup = @()
@@ -166,7 +166,11 @@ function Repair-PullRequestTest {
                 }
             }
 
-            Write-Verbose "Found $($prs.Count) open PR(s)"
+            if ($prs.Count -eq 1 -and $prs[0].number -eq "current") {
+                Write-Verbose "No open PR found for branch '$originalBranch', processing in current branch mode"
+            } else {
+                Write-Verbose "Found $($prs.Count) open PR(s)"
+            }
 
             # Handle specific build number scenario differently
             if ($BuildNumber) {
@@ -212,7 +216,11 @@ function Repair-PullRequestTest {
                     $prProgress = [math]::Round(($prCount / $totalPRs) * 100, 0)
 
                     Write-Progress -Activity "Repairing Pull Request Tests" -Status "Collecting failures from PR #$($pr.number) - $($pr.title)" -PercentComplete $prProgress -Id 0
-                    Write-Verbose "`nCollecting failures from PR #$($pr.number) - $($pr.title)"
+                    if ($pr.number -eq "current") {
+                        Write-Verbose "`nCollecting failures from standalone branch '$($pr.headRefName)'"
+                    } else {
+                        Write-Verbose "`nCollecting failures from PR #$($pr.number) - $($pr.title)"
+                    }
 
                     # Handle "current" branch case (non-PR branch that isn't Development)
                     if ($pr.number -eq "current") {
