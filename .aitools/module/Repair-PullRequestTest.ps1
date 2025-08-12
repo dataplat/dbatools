@@ -185,85 +185,9 @@ function Repair-PullRequestTest {
                 Write-Verbose "Created temp directory: $tempDir"
             }
 
-            # Get open PRs
-            Write-Verbose "Fetching open pull requests..."
-            Write-Progress -Activity "Repairing Pull Request Tests" -Status "Fetching open PRs..." -PercentComplete 0
-
-            if ($PullRequest) {
-                $prsJson = gh pr view $PullRequest --json "number,title,headRefName,state,statusCheckRollup,files" 2>$null
-                if (-not $prsJson) {
-                    throw "Could not fetch PR #$PullRequest"
-                }
-                $prs = @($prsJson | ConvertFrom-Json)
-            } else {
-                # Enhanced auto-detection: try current branch first, then PR, then all open PRs
-                Write-Verbose "No PR number specified, attempting auto-detection from current branch '$originalBranch'"
-
-                # First, try to auto-detect build failures from current branch directly
-                $autoDetectedFailures = $null
-                try {
-                    Write-Verbose "Attempting to auto-detect AppVeyor failures from current branch '$originalBranch'"
-                    $getFailureParams = @{}
-                    if ($Pattern) { $getFailureParams.Pattern = $Pattern }
-
-                    # This will use the enhanced auto-detection in Get-AppVeyorFailure
-                    $autoDetectedFailures = @(Get-AppVeyorFailure @getFailureParams)
-
-                    if ($autoDetectedFailures -and $autoDetectedFailures.Count -gt 0) {
-                        Write-Verbose "Successfully auto-detected $($autoDetectedFailures.Count) failures from current branch '$originalBranch'"
-
-                        # Create a pseudo-PR object for the current branch
-                        $prs = @(@{
-                            number = "auto-detected"
-                            title = "Auto-detected from branch: $originalBranch"
-                            headRefName = $originalBranch
-                            state = "open"
-                            statusCheckRollup = @()
-                            files = @()  # We'll process all failures since we can't determine changed files
-                        })
-
-                        # Set a flag to indicate we're using auto-detected failures
-                        $usingAutoDetectedFailures = $true
-                    } else {
-                        Write-Verbose "No failures detected from current branch '$originalBranch' (branch may not be published)"
-                        # If Get-AppVeyorFailure returned nothing, it likely means the branch isn't published
-                        return
-                    }
-                } catch {
-                    Write-Verbose "Auto-detection from current branch failed: $_"
-                }
-
-                # If auto-detection didn't work, fall back to PR-based approach
-                if (-not $autoDetectedFailures) {
-                    Write-Verbose "Auto-detection failed, trying PR-based approach for current branch '$originalBranch'"
-                    $currentBranchPR = gh pr view --json "number,title,headRefName,state,statusCheckRollup,files" 2>$null
-
-                    if ($currentBranchPR) {
-                        Write-Verbose "Found PR for current branch: $originalBranch"
-                        $prs = @($currentBranchPR | ConvertFrom-Json)
-                    } else {
-                        Write-Verbose "No PR found for current branch, fetching all open PRs"
-                        $prsJson = gh pr list --state open --limit $Limit --json "number,title,headRefName,state,statusCheckRollup" 2>$null
-                        $prs = $prsJson | ConvertFrom-Json
-
-                        # For each PR, get the files changed (since pr list doesn't include files)
-                        $prsWithFiles = @()
-                        foreach ($pr in $prs) {
-                            $prWithFiles = gh pr view $pr.number --json "number,title,headRefName,state,statusCheckRollup,files" 2>$null
-                            if ($prWithFiles) {
-                                $prsWithFiles += ($prWithFiles | ConvertFrom-Json)
-                            }
-                        }
-                        $prs = $prsWithFiles
-                    }
-                }
-            }
-
-            Write-Verbose "Found $($prs.Count) open PR(s)"
-
-            # Handle specific build number scenario differently
+            # Handle specific build number scenario FIRST - skip all PR/branch auto-detection
             if ($BuildId) {
-                Write-Verbose "Using specific build number: $BuildId, bypassing PR-based detection"
+                Write-Verbose "Using specific build number: $BuildId, skipping PR/branch auto-detection entirely"
                 Write-Progress -Activity "Repairing Pull Request Tests" -Status "Fetching test failures from AppVeyor build #$BuildId..." -PercentComplete 50 -Id 0
 
                 # Get failures directly from the specified build
@@ -290,15 +214,14 @@ function Repair-PullRequestTest {
                     return
                 }
 
-                # Use the first PR for branch operations (or current branch if no PR specified)
-                $selectedPR = $prs | Select-Object -First 1
-                if (-not $selectedPR -and -not $PullRequest) {
-                    # No PR context, stay on current branch
-                    $selectedPR = @{
-                        number      = "current"
-                        headRefName = $originalBranch
-                    }
+                # Create a pseudo-PR object for the current branch when using BuildId
+                $selectedPR = @{
+                    number      = "buildid-$BuildId"
+                    headRefName = $originalBranch
+                    title       = "BuildId: $BuildId"
                 }
+
+                Write-Verbose "BuildId mode: Using current branch '$originalBranch' for operations"
             } elseif ($Branch) {
                 Write-Verbose "Using specific branch name: $Branch, getting build ID from branch"
                 Write-Progress -Activity "Repairing Pull Request Tests" -Status "Getting AppVeyor build failures from branch '$Branch'..." -PercentComplete 50 -Id 0
@@ -330,107 +253,186 @@ function Repair-PullRequestTest {
                     headRefName = $Branch
                     title       = "Branch: $Branch"
                 }
-            } elseif ($usingAutoDetectedFailures) {
-                Write-Verbose "Using auto-detected failures from current branch '$originalBranch'"
-                Write-Progress -Activity "Repairing Pull Request Tests" -Status "Processing auto-detected failures from current branch..." -PercentComplete 50 -Id 0
+            } else {
+                # Get open PRs only when not using BuildId or Branch
+                Write-Verbose "Fetching open pull requests..."
+                Write-Progress -Activity "Repairing Pull Request Tests" -Status "Fetching open PRs..." -PercentComplete 0
 
-                # Use the auto-detected failures
-                $allFailedTestsAcrossPRs = $autoDetectedFailures
+                if ($PullRequest) {
+                    $prsJson = gh pr view $PullRequest --json "number,title,headRefName,state,statusCheckRollup,files" 2>$null
+                    if (-not $prsJson) {
+                        throw "Could not fetch PR #$PullRequest"
+                    }
+                    $prs = @($prsJson | ConvertFrom-Json)
+                } else {
+                    # Enhanced auto-detection: try current branch first, then PR, then all open PRs
+                    Write-Verbose "No PR number specified, attempting auto-detection from current branch '$originalBranch'"
 
-                # For auto-detected mode, determine modified files via git diff
-                Write-Verbose "Auto-detection mode: Determining modified files for current branch '$originalBranch'"
-                $allRelevantTestFiles = Get-ModifiedTestFiles -BaseBranch "origin/development" -TargetBranch "HEAD"
+                    # First, try to auto-detect build failures from current branch directly
+                    $autoDetectedFailures = $null
+                    try {
+                        Write-Verbose "Attempting to auto-detect AppVeyor failures from current branch '$originalBranch'"
+                        $getFailureParams = @{}
+                        if ($Pattern) { $getFailureParams.Pattern = $Pattern }
 
-                if ($allRelevantTestFiles.Count -eq 0) {
-                    Write-Warning "No modified test files found for current branch '$originalBranch'. Cannot determine which tests to repair."
-                    return
+                        # This will use the enhanced auto-detection in Get-AppVeyorFailure
+                        $autoDetectedFailures = @(Get-AppVeyorFailure @getFailureParams)
+
+                        if ($autoDetectedFailures -and $autoDetectedFailures.Count -gt 0) {
+                            Write-Verbose "Successfully auto-detected $($autoDetectedFailures.Count) failures from current branch '$originalBranch'"
+
+                            # Create a pseudo-PR object for the current branch
+                            $prs = @(@{
+                                number = "auto-detected"
+                                title = "Auto-detected from branch: $originalBranch"
+                                headRefName = $originalBranch
+                                state = "open"
+                                statusCheckRollup = @()
+                                files = @()  # We'll process all failures since we can't determine changed files
+                            })
+
+                            # Set a flag to indicate we're using auto-detected failures
+                            $usingAutoDetectedFailures = $true
+                        } else {
+                            Write-Verbose "No failures detected from current branch '$originalBranch' (branch may not be published)"
+                            # If Get-AppVeyorFailure returned nothing, it likely means the branch isn't published
+                            return
+                        }
+                    } catch {
+                        Write-Verbose "Auto-detection from current branch failed: $_"
+                    }
+
+                    # If auto-detection didn't work, fall back to PR-based approach
+                    if (-not $autoDetectedFailures) {
+                        Write-Verbose "Auto-detection failed, trying PR-based approach for current branch '$originalBranch'"
+                        $currentBranchPR = gh pr view --json "number,title,headRefName,state,statusCheckRollup,files" 2>$null
+
+                        if ($currentBranchPR) {
+                            Write-Verbose "Found PR for current branch: $originalBranch"
+                            $prs = @($currentBranchPR | ConvertFrom-Json)
+                        } else {
+                            Write-Verbose "No PR found for current branch, fetching all open PRs"
+                            $prsJson = gh pr list --state open --limit $Limit --json "number,title,headRefName,state,statusCheckRollup" 2>$null
+                            $prs = $prsJson | ConvertFrom-Json
+
+                            # For each PR, get the files changed (since pr list doesn't include files)
+                            $prsWithFiles = @()
+                            foreach ($pr in $prs) {
+                                $prWithFiles = gh pr view $pr.number --json "number,title,headRefName,state,statusCheckRollup,files" 2>$null
+                                if ($prWithFiles) {
+                                    $prsWithFiles += ($prWithFiles | ConvertFrom-Json)
+                                }
+                            }
+                            $prs = $prsWithFiles
+                        }
+                    }
                 }
 
-                # Use the pseudo-PR object we already created
-                $selectedPR = $prs[0]
-            } else {
-                # Original PR-based logic
-                # Collect ALL failed tests from ALL PRs first, then deduplicate
-                $allFailedTestsAcrossPRs = @()
-                $allRelevantTestFiles = @()
-                $selectedPR = $null  # We'll use the first PR with failures for branch operations
+                Write-Verbose "Found $($prs.Count) open PR(s)"
 
-                # Initialize overall progress tracking
-                $prCount = 0
-                $totalPRs = $prs.Count
+                # Process PR-based logic
+                if ($usingAutoDetectedFailures) {
+                    Write-Verbose "Using auto-detected failures from current branch '$originalBranch'"
+                    Write-Progress -Activity "Repairing Pull Request Tests" -Status "Processing auto-detected failures from current branch..." -PercentComplete 50 -Id 0
 
-                foreach ($pr in $prs) {
-                    $prCount++
-                    $prProgress = [math]::Round(($prCount / $totalPRs) * 100, 0)
+                    # Use the auto-detected failures
+                    $allFailedTestsAcrossPRs = $autoDetectedFailures
 
-                    Write-Progress -Activity "Repairing Pull Request Tests" -Status "Collecting failures from PR #$($pr.number) - $($pr.title)" -PercentComplete $prProgress -Id 0
-                    Write-Verbose "`nCollecting failures from PR #$($pr.number) - $($pr.title)"
+                    # For auto-detected mode, determine modified files via git diff
+                    Write-Verbose "Auto-detection mode: Determining modified files for current branch '$originalBranch'"
+                    $allRelevantTestFiles = Get-ModifiedTestFiles -BaseBranch "origin/development" -TargetBranch "HEAD"
 
-                    # Get the list of files changed in this PR to filter which tests to fix
-                    $changedTestFiles = @()
-                    $changedCommandFiles = @()
+                    if ($allRelevantTestFiles.Count -eq 0) {
+                        Write-Warning "No modified test files found for current branch '$originalBranch'. Cannot determine which tests to repair."
+                        return
+                    }
 
-                    Write-Verbose "PR files object: $($pr.files | ConvertTo-Json -Depth 3)"
+                    # Use the pseudo-PR object we already created
+                    $selectedPR = $prs[0]
+                } else {
+                    # Original PR-based logic
+                    # Collect ALL failed tests from ALL PRs first, then deduplicate
+                    $allFailedTestsAcrossPRs = @()
+                    $allRelevantTestFiles = @()
+                    $selectedPR = $null  # We'll use the first PR with failures for branch operations
 
-                    if ($pr.files -and $pr.files.Count -gt 0) {
-                        foreach ($file in $pr.files) {
-                            $filename = if ($file.filename) { $file.filename } elseif ($file.path) { $file.path } else { $file }
+                    # Initialize overall progress tracking
+                    $prCount = 0
+                    $totalPRs = $prs.Count
 
-                            if ($filename -like "*Tests.ps1" -or $filename -like "tests/*.Tests.ps1") {
-                                $testFileName = [System.IO.Path]::GetFileName($filename)
-                                $changedTestFiles += $testFileName
-                                Write-Verbose "Added test file: $testFileName"
-                            } elseif ($filename -like "public/*.ps1") {
-                                $commandName = [System.IO.Path]::GetFileNameWithoutExtension($filename)
-                                $testFileName = "$commandName.Tests.ps1"
-                                $changedCommandFiles += $testFileName
-                                Write-Verbose "Added command test file: $testFileName (from command - $commandName)"
+                    foreach ($pr in $prs) {
+                        $prCount++
+                        $prProgress = [math]::Round(($prCount / $totalPRs) * 100, 0)
+
+                        Write-Progress -Activity "Repairing Pull Request Tests" -Status "Collecting failures from PR #$($pr.number) - $($pr.title)" -PercentComplete $prProgress -Id 0
+                        Write-Verbose "`nCollecting failures from PR #$($pr.number) - $($pr.title)"
+
+                        # Get the list of files changed in this PR to filter which tests to fix
+                        $changedTestFiles = @()
+                        $changedCommandFiles = @()
+
+                        Write-Verbose "PR files object: $($pr.files | ConvertTo-Json -Depth 3)"
+
+                        if ($pr.files -and $pr.files.Count -gt 0) {
+                            foreach ($file in $pr.files) {
+                                $filename = if ($file.filename) { $file.filename } elseif ($file.path) { $file.path } else { $file }
+
+                                if ($filename -like "*Tests.ps1" -or $filename -like "tests/*.Tests.ps1") {
+                                    $testFileName = [System.IO.Path]::GetFileName($filename)
+                                    $changedTestFiles += $testFileName
+                                    Write-Verbose "Added test file: $testFileName"
+                                } elseif ($filename -like "public/*.ps1") {
+                                    $commandName = [System.IO.Path]::GetFileNameWithoutExtension($filename)
+                                    $testFileName = "$commandName.Tests.ps1"
+                                    $changedCommandFiles += $testFileName
+                                    Write-Verbose "Added command test file: $testFileName (from command - $commandName)"
+                                }
                             }
+                        } else {
+                            Write-Verbose "No files found in PR object or files array is empty"
                         }
-                    } else {
-                        Write-Verbose "No files found in PR object or files array is empty"
-                    }
 
-                    # Combine both directly changed test files and test files for changed commands
-                    $relevantTestFiles = ($changedTestFiles + $changedCommandFiles) | Sort-Object -Unique
-                    $allRelevantTestFiles += $relevantTestFiles
+                        # Combine both directly changed test files and test files for changed commands
+                        $relevantTestFiles = ($changedTestFiles + $changedCommandFiles) | Sort-Object -Unique
+                        $allRelevantTestFiles += $relevantTestFiles
 
-                    Write-Verbose "Relevant test files for PR #$($pr.number) - $($relevantTestFiles -join '`n ')"
+                        Write-Verbose "Relevant test files for PR #$($pr.number) - $($relevantTestFiles -join '`n ')"
 
-                    # Check for AppVeyor failures
-                    $appveyorChecks = $pr.statusCheckRollup | Where-Object {
-                        $_.context -like "*appveyor*" -and $_.state -match "PENDING|FAILURE"
-                    }
+                        # Check for AppVeyor failures
+                        $appveyorChecks = $pr.statusCheckRollup | Where-Object {
+                            $_.context -like "*appveyor*" -and $_.state -match "PENDING|FAILURE"
+                        }
 
-                    if (-not $appveyorChecks) {
-                        Write-Verbose "No AppVeyor failures found in PR #$($pr.number)"
-                        continue
-                    }
+                        if (-not $appveyorChecks) {
+                            Write-Verbose "No AppVeyor failures found in PR #$($pr.number)"
+                            continue
+                        }
 
-                    # Store the first PR with failures to use for branch operations
-                    if (-not $selectedPR) {
-                        $selectedPR = $pr
-                        Write-Verbose "Selected PR #$($pr.number) '$($pr.headRefName)' as target branch for fixes"
-                    }
+                        # Store the first PR with failures to use for branch operations
+                        if (-not $selectedPR) {
+                            $selectedPR = $pr
+                            Write-Verbose "Selected PR #$($pr.number) '$($pr.headRefName)' as target branch for fixes"
+                        }
 
-                    # Get AppVeyor build details
-                    Write-Progress -Activity "Repairing Pull Request Tests" -Status "Fetching test failures from AppVeyor for PR #$($pr.number)..." -PercentComplete $prProgress -Id 0
-                    $getFailureParams = @{
-                        PullRequest = $pr.number
-                    }
-                    if ($Pattern) { $getFailureParams.Pattern = $Pattern }
-                    $prFailedTests = Get-AppVeyorFailure @getFailureParams
+                        # Get AppVeyor build details
+                        Write-Progress -Activity "Repairing Pull Request Tests" -Status "Fetching test failures from AppVeyor for PR #$($pr.number)..." -PercentComplete $prProgress -Id 0
+                        $getFailureParams = @{
+                            PullRequest = $pr.number
+                        }
+                        if ($Pattern) { $getFailureParams.Pattern = $Pattern }
+                        $prFailedTests = Get-AppVeyorFailure @getFailureParams
 
-                    if (-not $prFailedTests) {
-                        Write-Verbose "Could not retrieve test failures from AppVeyor for PR #$($pr.number)"
-                        continue
-                    }
+                        if (-not $prFailedTests) {
+                            Write-Verbose "Could not retrieve test failures from AppVeyor for PR #$($pr.number)"
+                            continue
+                        }
 
-                    # Filter tests for this PR and add to collection - only include files that were actually changed
-                    foreach ($test in $prFailedTests) {
-                        $testFileName = [System.IO.Path]::GetFileName($test.TestFile)
-                        if ($relevantTestFiles.Count -gt 0 -and $testFileName -in $relevantTestFiles) {
-                            $allFailedTestsAcrossPRs += $test
+                        # Filter tests for this PR and add to collection - only include files that were actually changed
+                        foreach ($test in $prFailedTests) {
+                            $testFileName = [System.IO.Path]::GetFileName($test.TestFile)
+                            if ($relevantTestFiles.Count -gt 0 -and $testFileName -in $relevantTestFiles) {
+                                $allFailedTestsAcrossPRs += $test
+                            }
                         }
                     }
                 }
@@ -441,6 +443,8 @@ function Repair-PullRequestTest {
                 Write-Verbose "No test failures found across any PRs"
                 return
             }
+
+            # Continue with the rest of the processing logic...
 
             # Now deduplicate and group ALL failures by test file
             $allRelevantTestFiles = $allRelevantTestFiles | Sort-Object -Unique
@@ -528,7 +532,7 @@ function Repair-PullRequestTest {
             Write-Verbose "Copied $($copiedFiles.Count) working test files from development branch"
 
             # Switch to the selected PR branch for all operations (unless using current branch)
-            if ($selectedPR.number -notin @("current", "branch", "auto-detected")) {
+            if ($selectedPR.number -notin @("current", "branch", "auto-detected") -and -not ($selectedPR.number -like "buildid-*")) {
                 Write-Verbose "Switching to PR #$($selectedPR.number) branch '$($selectedPR.headRefName)'"
                 git fetch origin $selectedPR.headRefName 2>$null | Out-Null
 
