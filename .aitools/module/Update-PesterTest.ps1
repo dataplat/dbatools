@@ -43,7 +43,7 @@ function Update-PesterTest {
     .PARAMETER PassCount
         Sometimes you need multiple passes to get the desired result.
 
-    .PARAMETER NoAuthFix
+    .PARAMETER NoAutoFix
         If specified, disables automatic PSScriptAnalyzer fixes after AI modifications.
         By default, autofix is enabled and runs separately from PassCount iterations using targeted fix messages.
 
@@ -98,7 +98,8 @@ function Update-PesterTest {
         [string[]]$CacheFilePath = @(
             (Resolve-Path "$PSScriptRoot/prompts/style.md" -ErrorAction SilentlyContinue).Path,
             (Resolve-Path "$PSScriptRoot/prompts/migration.md" -ErrorAction SilentlyContinue).Path,
-            (Resolve-Path "$PSScriptRoot/../../private/testing/Get-TestConfig.ps1" -ErrorAction SilentlyContinue).Path
+            (Resolve-Path "$PSScriptRoot/../../private/testing/Get-TestConfig.ps1" -ErrorAction SilentlyContinue).Path,
+            (Resolve-Path "$PSScriptRoot/../../tests/appveyor.pester.ps1" -ErrorAction SilentlyContinue).Path
         ),
         [int]$MaxFileSize = 500kb,
         [string]$Model,
@@ -106,7 +107,7 @@ function Update-PesterTest {
         [string]$Tool = 'Claude',
         [switch]$AutoTest,
         [int]$PassCount = 1,
-        [switch]$NoAuthFix,
+        [switch]$NoAutoFix,
         [string]$AutoFixModel = $Model,
         [int]$MaxRetries = 0,
         [string]$SettingsPath = (Resolve-Path "$PSScriptRoot/../../tests/PSScriptAnalyzerRules.psd1" -ErrorAction SilentlyContinue).Path,
@@ -332,7 +333,7 @@ function Update-PesterTest {
                 }
 
                 # AutoFix workflow - run PSScriptAnalyzer and fix violations if found
-                if (-not $NoAuthFix) {
+                if (-not $NoAutoFix) {
                     Write-Verbose "Running AutoFix for $cmdName"
                     $autoFixParams = @{
                         FilePath     = $filename
@@ -346,6 +347,7 @@ function Update-PesterTest {
                     if ($PSBOUndParameters.ContainsKey('ReasoningEffort')) {
                         $aiParams.ReasoningEffort = $ReasoningEffort
                     }
+                    $null = Get-ChildItem $filename -Recurse | Invoke-DbatoolsFormatter
                     Invoke-AutoFix @autoFixParams
                 }
             }
