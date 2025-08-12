@@ -1,23 +1,52 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Remove-DbaRgWorkloadGroup",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'WorkloadGroup', 'ResourcePool', 'ResourcePoolType', 'SkipReconfigure', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        BeforeAll {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "WorkloadGroup",
+                "ResourcePool",
+                "ResourcePoolType",
+                "SkipReconfigure",
+                "InputObject",
+                "EnableException"
+            )
+        }
+
+        It "Should have the expected parameters" {
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        
+        $null = Set-DbaResourceGovernor -SqlInstance $TestConfig.instance2 -Enabled
+        
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+    }
+
+    AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+    }
+
     Context "Functionality" {
-        BeforeAll {
-            $null = Set-DbaResourceGovernor -SqlInstance $TestConfig.instance2 -Enabled
-        }
         It "Removes a workload group in default resource pool" {
             $wklGroupName = "dbatoolssci_wklgroupTest"
             $splatNewWorkloadGroup = @{
@@ -31,7 +60,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $result3 = Get-DbaRgWorkloadGroup -SqlInstance $TestConfig.instance2 | Where-Object Name -eq $wklGroupName
 
             $newWorkloadGroup | Should -Not -Be $null
-            $result.Count | Should -BeGreaterThan $result3.Count
+            $result.Status.Count | Should -BeGreaterThan $result3.Status.Count
             $result2.Status | Should -Be "Dropped"
             $result2.IsRemoved | Should -Be $true
             $result3 | Should -Be $null
@@ -62,7 +91,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $null = Remove-DbaRgResourcePool -SqlInstance $TestConfig.instance2 -ResourcePool $resourcePoolName -Type $resourcePoolType
 
             $newWorkloadGroup | Should -Not -Be $null
-            $result.Count | Should -BeGreaterThan $result3.Count
+            $result.Status.Count | Should -BeGreaterThan $result3.Status.Count
             $result2.Status | Should -Be "Dropped"
             $result2.IsRemoved | Should -Be $true
             $result3 | Should -Be $null
@@ -82,7 +111,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $result3 = Get-DbaRgWorkloadGroup -SqlInstance $TestConfig.instance2 | Where-Object Name -in $wklGroupName, $wklGroupName2
 
             $newWorkloadGroups | Should -Not -Be $null
-            $result.Count | Should -BeGreaterThan $result3.Count
+            $result.Status.Count | Should -BeGreaterThan $result3.Status.Count
             $result2.Status | Should -Be "Dropped"
             $result2.IsRemoved | Should -Be $true
             $result3 | Should -Be $null
@@ -100,7 +129,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $result3 = Get-DbaRgWorkloadGroup -SqlInstance $TestConfig.instance2 | Where-Object Name -eq $wklGroupName
 
             $newWorkloadGroup | Should -Not -Be $null
-            $result.Count | Should -BeGreaterThan $result3.Count
+            $result.Status.Count | Should -BeGreaterThan $result3.Status.Count
             $result2.Status | Should -Be "Dropped"
             $result2.IsRemoved | Should -Be $true
             $result3 | Should -Be $null

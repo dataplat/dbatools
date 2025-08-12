@@ -1,20 +1,38 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Remove-DbaDbSnapshot",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
+
 $global:TestConfig = Get-TestConfig
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Snapshot', 'InputObject', 'AllSnapshots', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        BeforeAll {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "Snapshot",
+                "InputObject",
+                "AllSnapshots",
+                "Force",
+                "EnableException"
+            )
+        }
+
+        It "Should have the expected parameters" {
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
 # Targets only instance2 because it's the only one where Snapshots can happen
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         Get-DbaProcess -SqlInstance $TestConfig.instance2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
@@ -34,10 +52,10 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
     Context "Parameters validation" {
         It "Stops if no Database or AllDatabases" {
-            { Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -EnableException -WarningAction SilentlyContinue } | Should Throw "You must pipe"
+            { Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -EnableException -WarningAction SilentlyContinue } | Should -Throw "You must pipe"
         }
         It "Is nice by default" {
-            { Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance2 *> $null } | Should Not Throw "You must pipe"
+            { Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance2 *> $null } | Should -Not -Throw "You must pipe"
         }
     }
 
@@ -53,30 +71,30 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
 
         It "Honors the Database parameter, dropping only snapshots of that database" {
             $results = Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db1 -Confirm:$false
-            $results.Count | Should Be 2
+            $results.Count | Should -Be 2
             $result = Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db2 -Confirm:$false
-            $result.Name | Should Be $db2_snap1
+            $result.Name | Should -Be $db2_snap1
         }
 
         It "Honors the ExcludeDatabase parameter, returning relevant snapshots" {
             $alldbs = (Get-DbaDatabase -SqlInstance $TestConfig.instance2 | Where-Object IsDatabaseSnapShot -eq $false | Where-Object Name -notin @($db1, $db2)).Name
             $results = Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -ExcludeDatabase $alldbs -Confirm:$false
-            $results.Count | Should Be 3
+            $results.Count | Should -Be 3
         }
         It "Honors the Snapshot parameter" {
             $result = Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Snapshot $db1_snap1 -Confirm:$false
-            $result.Name | Should Be $db1_snap1
+            $result.Name | Should -Be $db1_snap1
         }
         It "Works with piped snapshots" {
             $result = Get-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Snapshot $db1_snap1 | Remove-DbaDbSnapshot -Confirm:$false
-            $result.Name | Should Be $db1_snap1
+            $result.Name | Should -Be $db1_snap1
             $result = Get-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Snapshot $db1_snap1
-            $result | Should Be $null
+            $result | Should -BeNullOrEmpty
         }
         It "Has the correct default properties" {
             $result = Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db2 -Confirm:$false
-            $ExpectedPropsDefault = 'ComputerName', 'Name', 'InstanceName', 'SqlInstance', 'Status'
-            ($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should Be ($ExpectedPropsDefault | Sort-Object)
+            $expectedPropsDefault = "ComputerName", "Name", "InstanceName", "SqlInstance", "Status"
+            ($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should -Be ($expectedPropsDefault | Sort-Object)
         }
     }
 }

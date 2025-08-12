@@ -1,42 +1,79 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Resume-DbaAgDbDataMovement",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$commandname Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'AvailabilityGroup', 'Database', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        BeforeAll {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "AvailabilityGroup",
+                "Database",
+                "InputObject",
+                "EnableException"
+            )
+        }
+
+        It "Should have the expected parameters" {
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $null = Get-DbaProcess -SqlInstance $TestConfig.instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance3
-        $agname = "dbatoolsci_resumeagdb_agroup"
-        $dbname = "dbatoolsci_resumeagdb_agroupdb"
-        $server.Query("create database $dbname")
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbname | Backup-DbaDatabase -FilePath "$($TestConfig.Temp)\$dbname.bak"
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbname | Backup-DbaDatabase -FilePath "$($TestConfig.Temp)\$dbname.trn" -Type Log
-        $ag = New-DbaAvailabilityGroup -Primary $TestConfig.instance3 -Name $agname -ClusterType None -FailoverMode Manual -Database $dbname -Confirm:$false -Certificate dbatoolsci_AGCert -UseLastBackup
-        $null = Get-DbaAgDatabase -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname | Suspend-DbaAgDbDataMovement -Confirm:$false
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $null = Get-DbaProcess -SqlInstance $TestConfig.instance3 -Program "dbatools PowerShell module - dbatools.io" | Stop-DbaProcess -WarningAction SilentlyContinue
+        $global:server = Connect-DbaInstance -SqlInstance $TestConfig.instance3
+        $global:agName = "dbatoolsci_resumeagdb_agroup"
+        $global:dbName = "dbatoolsci_resumeagdb_agroupdb"
+        $global:server.Query("create database $global:dbName")
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $global:dbName | Backup-DbaDatabase -FilePath "$($TestConfig.Temp)\$global:dbName.bak"
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $global:dbName | Backup-DbaDatabase -FilePath "$($TestConfig.Temp)\$global:dbName.trn" -Type Log
+        
+        $splatAvailabilityGroup = @{
+            Primary      = $TestConfig.instance3
+            Name         = $global:agName
+            ClusterType  = "None"
+            FailoverMode = "Manual"
+            Database     = $global:dbName
+            Confirm      = $false
+            Certificate  = "dbatoolsci_AGCert"
+            UseLastBackup = $true
+        }
+        $global:ag = New-DbaAvailabilityGroup @splatAvailabilityGroup
+        $null = Get-DbaAgDatabase -SqlInstance $TestConfig.instance3 -AvailabilityGroup $global:agName | Suspend-DbaAgDbDataMovement -Confirm $false
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+    
     AfterAll {
-        $null = Remove-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $agname -Confirm:$false
-        $null = Get-DbaEndpoint -SqlInstance $server -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
-        $null = Remove-DbaDatabase -SqlInstance $server -Database $dbname -Confirm:$false
-        Remove-Item -Path "$($TestConfig.Temp)\$dbname.bak", "$($TestConfig.Temp)\$dbname.trn"
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $null = Remove-DbaAvailabilityGroup -SqlInstance $global:server -AvailabilityGroup $global:agName -Confirm $false
+        $null = Get-DbaEndpoint -SqlInstance $global:server -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm $false
+        $null = Remove-DbaDatabase -SqlInstance $global:server -Database $global:dbName -Confirm $false
+        Remove-Item -Path "$($TestConfig.Temp)\$global:dbName.bak", "$($TestConfig.Temp)\$global:dbName.trn" -ErrorAction SilentlyContinue
+
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
-    Context "resumes  data movement" {
-        It "returns resumed results" {
-            $results = Resume-DbaAgDbDataMovement -SqlInstance $TestConfig.instance3 -Database $dbname -Confirm:$false
-            $results.AvailabilityGroup | Should -Be $agname
-            $results.Name | Should -Be $dbname
-            $results.SynchronizationState | Should -Be 'Synchronized'
+    
+    Context "Resumes data movement" {
+        It "Returns resumed results" {
+            $results = Resume-DbaAgDbDataMovement -SqlInstance $TestConfig.instance3 -Database $global:dbName -Confirm $false
+            $results.AvailabilityGroup | Should -Be $global:agName
+            $results.Name | Should -Be $global:dbName
+            $results.SynchronizationState | Should -Be "Synchronized"
         }
     }
 } #$TestConfig.instance2 for appveyor

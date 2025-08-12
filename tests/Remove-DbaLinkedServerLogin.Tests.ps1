@@ -1,25 +1,41 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Remove-DbaLinkedServerLogin",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'LinkedServer', 'LocalLogin', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        BeforeAll {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "LinkedServer",
+                "LocalLogin",
+                "InputObject",
+                "EnableException"
+            )
+        }
+
+        It "Should have the expected parameters" {
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $random = Get-Random
         $instance2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $instance3 = Connect-DbaInstance -SqlInstance $TestConfig.instance3
 
-        $securePassword = ConvertTo-SecureString -String 'securePassword' -AsPlainText -Force
+        $securePassword = ConvertTo-SecureString -String "securePassword" -AsPlainText -Force
         $localLogin1Name = "dbatoolscli_localLogin1_$random"
         $localLogin2Name = "dbatoolscli_localLogin2_$random"
         $localLogin3Name = "dbatoolscli_localLogin3_$random"
@@ -32,35 +48,123 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $linkedServer1Name = "dbatoolscli_linkedServer1_$random"
         $linkedServer2Name = "dbatoolscli_linkedServer2_$random"
 
-        New-DbaLogin -SqlInstance $instance2 -Login $localLogin1Name, $localLogin2Name, $localLogin3Name, $localLogin4Name, $localLogin5Name, $localLogin6Name, $localLogin7Name -SecurePassword $securePassword
-        New-DbaLogin -SqlInstance $instance3 -Login $remoteLoginName -SecurePassword $securePassword
+        $splatLocalLogins = @{
+            SqlInstance     = $instance2
+            Login           = $localLogin1Name, $localLogin2Name, $localLogin3Name, $localLogin4Name, $localLogin5Name, $localLogin6Name, $localLogin7Name
+            SecurePassword  = $securePassword
+        }
+        New-DbaLogin @splatLocalLogins
 
-        $linkedServer1 = New-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServer1Name -ServerProduct mssql -Provider sqlncli -DataSource $instance3
-        $linkedServer2 = New-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServer2Name -ServerProduct mssql -Provider sqlncli -DataSource $instance3
+        $splatRemoteLogin = @{
+            SqlInstance     = $instance3
+            Login           = $remoteLoginName
+            SecurePassword  = $securePassword
+        }
+        New-DbaLogin @splatRemoteLogin
 
-        $linkedServerLogin1 = New-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin1Name -RemoteUser $remoteLoginName -RemoteUserPassword $securePassword
-        $linkedServerLogin2 = New-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin2Name -RemoteUser $remoteLoginName -RemoteUserPassword $securePassword
-        $linkedServerLogin3 = New-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin3Name -RemoteUser $remoteLoginName -RemoteUserPassword $securePassword
-        $linkedServerLogin4 = New-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin4Name -RemoteUser $remoteLoginName -RemoteUserPassword $securePassword
-        $linkedServerLogin5 = New-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin5Name -RemoteUser $remoteLoginName -RemoteUserPassword $securePassword
-        $linkedServerLogin6 = New-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin6Name -RemoteUser $remoteLoginName -RemoteUserPassword $securePassword
-        $linkedServerLogin7 = New-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name, $linkedServer2Name -LocalLogin $localLogin7Name -RemoteUser $remoteLoginName -RemoteUserPassword $securePassword
+        $splatLinkedServer1 = @{
+            SqlInstance   = $instance2
+            LinkedServer  = $linkedServer1Name
+            ServerProduct = "mssql"
+            Provider      = "sqlncli"
+            DataSource    = $instance3
+        }
+        $linkedServer1 = New-DbaLinkedServer @splatLinkedServer1
+
+        $splatLinkedServer2 = @{
+            SqlInstance   = $instance2
+            LinkedServer  = $linkedServer2Name
+            ServerProduct = "mssql"
+            Provider      = "sqlncli"
+            DataSource    = $instance3
+        }
+        $linkedServer2 = New-DbaLinkedServer @splatLinkedServer2
+
+        $splatLinkedServerLogin1 = @{
+            SqlInstance        = $instance2
+            LinkedServer       = $linkedServer1Name
+            LocalLogin         = $localLogin1Name
+            RemoteUser         = $remoteLoginName
+            RemoteUserPassword = $securePassword
+        }
+        $linkedServerLogin1 = New-DbaLinkedServerLogin @splatLinkedServerLogin1
+
+        $splatLinkedServerLogin2 = @{
+            SqlInstance        = $instance2
+            LinkedServer       = $linkedServer1Name
+            LocalLogin         = $localLogin2Name
+            RemoteUser         = $remoteLoginName
+            RemoteUserPassword = $securePassword
+        }
+        $linkedServerLogin2 = New-DbaLinkedServerLogin @splatLinkedServerLogin2
+
+        $splatLinkedServerLogin3 = @{
+            SqlInstance        = $instance2
+            LinkedServer       = $linkedServer1Name
+            LocalLogin         = $localLogin3Name
+            RemoteUser         = $remoteLoginName
+            RemoteUserPassword = $securePassword
+        }
+        $linkedServerLogin3 = New-DbaLinkedServerLogin @splatLinkedServerLogin3
+
+        $splatLinkedServerLogin4 = @{
+            SqlInstance        = $instance2
+            LinkedServer       = $linkedServer1Name
+            LocalLogin         = $localLogin4Name
+            RemoteUser         = $remoteLoginName
+            RemoteUserPassword = $securePassword
+        }
+        $linkedServerLogin4 = New-DbaLinkedServerLogin @splatLinkedServerLogin4
+
+        $splatLinkedServerLogin5 = @{
+            SqlInstance        = $instance2
+            LinkedServer       = $linkedServer1Name
+            LocalLogin         = $localLogin5Name
+            RemoteUser         = $remoteLoginName
+            RemoteUserPassword = $securePassword
+        }
+        $linkedServerLogin5 = New-DbaLinkedServerLogin @splatLinkedServerLogin5
+
+        $splatLinkedServerLogin6 = @{
+            SqlInstance        = $instance2
+            LinkedServer       = $linkedServer1Name
+            LocalLogin         = $localLogin6Name
+            RemoteUser         = $remoteLoginName
+            RemoteUserPassword = $securePassword
+        }
+        $linkedServerLogin6 = New-DbaLinkedServerLogin @splatLinkedServerLogin6
+
+        $splatLinkedServerLogin7 = @{
+            SqlInstance        = $instance2
+            LinkedServer       = $linkedServer1Name, $linkedServer2Name
+            LocalLogin         = $localLogin7Name
+            RemoteUser         = $remoteLoginName
+            RemoteUserPassword = $securePassword
+        }
+        $linkedServerLogin7 = New-DbaLinkedServerLogin @splatLinkedServerLogin7
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+
     AfterAll {
-        Remove-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServer1Name, $linkedServer2Name -Confirm:$false -Force
-        Remove-DbaLogin -SqlInstance $instance2 -Login $localLogin1Name, $localLogin2Name, $localLogin3Name, $localLogin4Name, $localLogin5Name, $localLogin6Name, $localLogin7Name -Confirm:$false
-        Remove-DbaLogin -SqlInstance $instance3 -Login $remoteLoginName -Confirm:$false
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        Remove-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServer1Name, $linkedServer2Name -Confirm:$false -Force -ErrorAction SilentlyContinue
+        Remove-DbaLogin -SqlInstance $instance2 -Login $localLogin1Name, $localLogin2Name, $localLogin3Name, $localLogin4Name, $localLogin5Name, $localLogin6Name, $localLogin7Name -Confirm:$false -ErrorAction SilentlyContinue
+        Remove-DbaLogin -SqlInstance $instance3 -Login $remoteLoginName -Confirm:$false -ErrorAction SilentlyContinue
     }
 
-    Context "ensure command works" {
+    Context "When validating command behavior" {
 
-        It "Check the validation for a linked server" {
+        It "Should require LinkedServer parameter when not specified" {
             $results = Remove-DbaLinkedServerLogin -SqlInstance $instance2 -LocalLogin $localLogin1Name -Confirm:$false -WarningVariable WarnVar -WarningAction SilentlyContinue
             $results | Should -BeNullOrEmpty
             $WarnVar | Should -Match "LinkedServer is required"
         }
 
-        It "Remove a linked server login" {
+        It "Should remove a single linked server login" {
             $results = Get-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin1Name
             $results.length | Should -Be 1
 
@@ -76,7 +180,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results | Should -BeNullOrEmpty
         }
 
-        It "Remove a linked server login via pipeline with a server instance passed in" {
+        It "Should remove a linked server login via pipeline with a server instance" {
             $results = $instance2 | Get-DbaLinkedServerLogin -LinkedServer $linkedServer1Name -LocalLogin $localLogin4Name
             $results.length | Should -Be 1
 
@@ -85,7 +189,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results | Should -BeNullOrEmpty
         }
 
-        It "Remove a linked server login via pipeline with a linked server passed in" {
+        It "Should remove a linked server login via pipeline with a linked server object" {
             $results = $linkedServer1 | Get-DbaLinkedServerLogin -LocalLogin $localLogin5Name
             $results.length | Should -Be 1
 
@@ -94,7 +198,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results | Should -BeNullOrEmpty
         }
 
-        It "Remove a linked server login via pipeline with a linked server login passed in" {
+        It "Should remove a linked server login via pipeline with a linked server login object" {
             $results = $linkedServer1 | Get-DbaLinkedServerLogin -LocalLogin $localLogin6Name
             $results.length | Should -Be 1
 
@@ -103,7 +207,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results | Should -BeNullOrEmpty
         }
 
-        It "Remove linked server logins for multiple linked servers and omit the LocalLogin param" {
+        It "Should remove linked server logins for multiple linked servers without LocalLogin parameter" {
             $results = $instance2 | Get-DbaLinkedServerLogin -LinkedServer $linkedServer1Name, $linkedServer2Name
             $results.Parent.Name | Should -Contain $linkedServer1Name
             $results.Parent.Name | Should -Contain $linkedServer2Name
