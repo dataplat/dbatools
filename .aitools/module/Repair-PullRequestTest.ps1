@@ -17,7 +17,7 @@ function Repair-PullRequestTest {
    .PARAMETER MaxPRs
        Maximum number of PRs to process. Default: 5
 
-   .PARAMETER BuildNumber
+   .PARAMETER BuildId
        Specific AppVeyor build number to target instead of automatically detecting from PR checks.
        When specified, uses this build number directly rather than finding the latest build for the PR.
 
@@ -45,11 +45,11 @@ function Repair-PullRequestTest {
        Fixes failing tests in PR #9234 and automatically commits the changes.
 
    .EXAMPLE
-       PS C:\> Repair-PullRequestTest -PRNumber 9234 -BuildNumber 12345
+       PS C:\> Repair-PullRequestTest -PRNumber 9234 -BuildId 12345
        Fixes failing tests in PR #9234 using AppVeyor build #12345 instead of the latest build.
 
    .EXAMPLE
-       PS C:\> Repair-PullRequestTest -BuildNumber 12345
+       PS C:\> Repair-PullRequestTest -BuildId 12345
        Fixes failing tests from AppVeyor build #12345 across all relevant PRs.
 
    .EXAMPLE
@@ -65,7 +65,7 @@ function Repair-PullRequestTest {
         [int]$PRNumber,
         [switch]$AutoCommit,
         [int]$MaxPRs = 5,
-        [int]$BuildNumber,
+        [int]$BuildId,
         [switch]$CopyOnly,
         [string]$Pattern
     )
@@ -154,19 +154,19 @@ function Repair-PullRequestTest {
             Write-Verbose "Found $($prs.Count) open PR(s)"
 
             # Handle specific build number scenario differently
-            if ($BuildNumber) {
-                Write-Verbose "Using specific build number: $BuildNumber, bypassing PR-based detection"
-                Write-Progress -Activity "Repairing Pull Request Tests" -Status "Fetching test failures from AppVeyor build #$BuildNumber..." -PercentComplete 50 -Id 0
+            if ($BuildId) {
+                Write-Verbose "Using specific build number: $BuildId, bypassing PR-based detection"
+                Write-Progress -Activity "Repairing Pull Request Tests" -Status "Fetching test failures from AppVeyor build #$BuildId..." -PercentComplete 50 -Id 0
 
                 # Get failures directly from the specified build
                 $getFailureParams = @{
-                    BuildNumber = $BuildNumber
+                    BuildId = $BuildId
                 }
                 if ($Pattern) { $getFailureParams.Pattern = $Pattern }
                 $allFailedTestsAcrossPRs = @(Get-AppVeyorFailure @getFailureParams)
 
                 if (-not $allFailedTestsAcrossPRs) {
-                    Write-Verbose "Could not retrieve test failures from AppVeyor build #$BuildNumber"
+                    Write-Verbose "Could not retrieve test failures from AppVeyor build #$BuildId"
                     return
                 }
 

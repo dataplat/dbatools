@@ -9,10 +9,10 @@ function Get-AppVeyorFailure {
         from build artifacts and returns detailed failure data for analysis.
 
     .PARAMETER PullRequest
-        Array of pull request numbers to process. If not specified and no BuildNumber is provided,
+        Array of pull request numbers to process. If not specified and no BuildId is provided,
         processes all open pull requests with AppVeyor failures.
 
-    .PARAMETER BuildNumber
+    .PARAMETER BuildId
         Specific AppVeyor build number to target instead of automatically detecting from PR checks.
         When specified, retrieves failures directly from this build number, ignoring PR-based detection.
 
@@ -38,7 +38,7 @@ function Get-AppVeyorFailure {
         Retrieves test failures from AppVeyor builds associated with PRs #9234 and #9235.
 
     .EXAMPLE
-        PS C:\> Get-AppVeyorFailure -BuildNumber 12345
+        PS C:\> Get-AppVeyorFailure -BuildId 12345
         Retrieves test failures directly from AppVeyor build #12345, bypassing PR detection.
 
     .EXAMPLE
@@ -53,24 +53,24 @@ function Get-AppVeyorFailure {
     param (
         [int[]]$PullRequest,
 
-        [int]$BuildNumber,
+        [int]$BuildId,
 
         [string]$Pattern
     )
 
-    # If BuildNumber is specified, use it directly instead of looking up PR checks
-    if ($BuildNumber) {
-        Write-Progress -Activity "Get-AppVeyorFailure" -Status "Fetching build details for build #$BuildNumber..." -PercentComplete 0
-        Write-Verbose "Using specified build number: $BuildNumber"
+    # If BuildId is specified, use it directly instead of looking up PR checks
+    if ($BuildId) {
+        Write-Progress -Activity "Get-AppVeyorFailure" -Status "Fetching build details for build #$BuildId..." -PercentComplete 0
+        Write-Verbose "Using specified build number: $BuildId"
 
         try {
             $apiParams = @{
-                Endpoint = "projects/dataplat/dbatools/builds/$BuildNumber"
+                Endpoint = "projects/dataplat/dbatools/builds/$BuildId"
             }
             $build = Invoke-AppVeyorApi @apiParams
 
             if (-not $build -or -not $build.build -or -not $build.build.jobs) {
-                Write-Verbose "No build data or jobs found for build $BuildNumber"
+                Write-Verbose "No build data or jobs found for build $BuildId"
                 Write-Progress -Activity "Get-AppVeyorFailure" -Completed
                 return
             }
@@ -78,7 +78,7 @@ function Get-AppVeyorFailure {
             $failedJobs = $build.build.jobs | Where-Object Status -eq "failed"
 
             if (-not $failedJobs) {
-                Write-Verbose "No failed jobs found in build $BuildNumber"
+                Write-Verbose "No failed jobs found in build $BuildId"
                 Write-Progress -Activity "Get-AppVeyorFailure" -Completed
                 return
             }
@@ -89,13 +89,13 @@ function Get-AppVeyorFailure {
             foreach ($job in $failedJobs) {
                 $currentJob++
                 $jobProgress = [math]::Round(($currentJob / $totalJobs) * 100)
-                Write-Progress -Activity "Getting job failure information" -Status "Processing failed job $currentJob of $totalJobs for build #$BuildNumber" -PercentComplete $jobProgress -CurrentOperation "Job: $($job.name)"
+                Write-Progress -Activity "Getting job failure information" -Status "Processing failed job $currentJob of $totalJobs for build #$BuildId" -PercentComplete $jobProgress -CurrentOperation "Job: $($job.name)"
                 Write-Verbose "Processing failed job: $($job.name) (ID: $($job.jobId))"
                 $failures = (Get-TestArtifact -JobId $job.jobid).Content.Failures
                 if ($Pattern) { $failures | Where-Object { $_ -match $Pattern } } else { $failures }
             }
         } catch {
-            Write-Verbose "Failed to fetch AppVeyor build details for build ${BuildNumber}: $_"
+            Write-Verbose "Failed to fetch AppVeyor build details for build ${BuildId}: $_"
         }
 
         Write-Progress -Activity "Get-AppVeyorFailure" -Completed
@@ -141,7 +141,7 @@ function Get-AppVeyorFailure {
         }
 
         if ($appveyorCheck.link -match '/project/[^/]+/[^/]+/builds/(\d+)') {
-            $buildId = $Matches[1]
+            $buildmatch = $Matches[1]
         } else {
             Write-Verbose "Could not parse AppVeyor build ID from URL: $($appveyorCheck.link)"
             continue
@@ -149,22 +149,22 @@ function Get-AppVeyorFailure {
 
         try {
             Write-Progress -Activity "Getting build details" -Status "Fetching build details for PR #$prNumber" -PercentComplete $prPercentComplete
-            Write-Verbose "Fetching build details for build ID: $buildId"
+            Write-Verbose "Fetching build details for build ID: $buildmatch"
 
             $apiParams = @{
-                Endpoint = "projects/dataplat/dbatools/builds/$buildId"
+                Endpoint = "projects/dataplat/dbatools/builds/$buildmatch"
             }
             $build = Invoke-AppVeyorApi @apiParams
 
             if (-not $build -or -not $build.build -or -not $build.build.jobs) {
-                Write-Verbose "No build data or jobs found for build $buildId"
+                Write-Verbose "No build data or jobs found for build $buildmatch"
                 continue
             }
 
             $failedJobs = $build.build.jobs | Where-Object Status -eq "failed"
 
             if (-not $failedJobs) {
-                Write-Verbose "No failed jobs found in build $buildId"
+                Write-Verbose "No failed jobs found in build $buildmatch"
                 continue
             }
 
