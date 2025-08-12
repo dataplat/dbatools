@@ -59,34 +59,85 @@ function Get-AppVeyorFailure {
         Write-Progress -Activity "Get-AppVeyorFailure" -Status "Fetching latest build for branch '$Branch'..." -PercentComplete 0
         Write-Verbose "Looking for latest AppVeyor build for branch: $Branch"
 
+        # Try GitHub CLI integration first
+        $usedGh = $false
         try {
-            # Get recent builds and find the latest one for this branch
-            $apiParams = @{
-                Endpoint = "projects/dataplat/dbatools/history?recordsNumber=50"
+            $Owner = "dataplat"
+            $Repo = "dbatools"
+
+            # Get the latest commit SHA for the branch
+            $sha = (& gh api "repos/$Owner/$Repo/commits?sha=$Branch&per_page=1" -q '.[0].sha' 2>$null)
+            if ($sha) {
+                $sha = $sha.Trim()
+
+                # Try checks API first
+                $detailsUrl = (& gh api "repos/$Owner/$Repo/commits/$sha/check-runs?per_page=100" -q '.check_runs | sort_by(.started_at, .created_at) | reverse[] | select((.name|test("appveyor";"i")) or (.app.slug=="appveyor")) | .details_url' 2>$null)
+                if ($detailsUrl) {
+                    $detailsUrl = ($detailsUrl -split "`r?`n" | Select-Object -First 1).Trim()
+                }
+
+                # Fallback to statuses API if no check-runs found
+                if (-not $detailsUrl) {
+                    $detailsUrl = (& gh api "repos/$Owner/$Repo/commits/$sha/status" -q '.statuses | sort_by(.updated_at, .created_at) | reverse[] | select(.context|test("appveyor";"i")) | .target_url' 2>$null)
+                    if ($detailsUrl) {
+                        $detailsUrl = ($detailsUrl -split "`r?`n" | Select-Object -First 1).Trim()
+                    }
+                }
+
+                # Extract AppVeyor build version from URL
+                if ($detailsUrl -and $detailsUrl -match '/build/([^/?#]+)') {
+                    $version = $Matches[1]
+                    Write-Verbose "Using GitHub checks to resolve AppVeyor build for branch '$Branch' (version: $version)"
+
+                    # Call AppVeyor API directly with the version
+                    $apiParams = @{
+                        Endpoint = "projects/dataplat/dbatools/build/$version"
+                    }
+                    $build = Invoke-AppVeyorApi @apiParams
+
+                    if ($build -and $build.build) {
+                        $BuildNumber = $build.build.buildNumber
+                        $usedGh = $true
+                        Write-Verbose "Successfully resolved build #$BuildNumber using GitHub CLI"
+                    }
+                }
             }
-            $history = Invoke-AppVeyorApi @apiParams
-
-            if (-not $history -or -not $history.builds) {
-                Write-Verbose "No build history found"
-                Write-Progress -Activity "Get-AppVeyorFailure" -Completed
-                return
-            }
-
-            # Find the latest build for this branch
-            $branchBuild = $history.builds | Where-Object { $_.branch -eq $Branch } | Select-Object -First 1
-
-            if (-not $branchBuild) {
-                Write-Verbose "No builds found for branch: $Branch"
-                Write-Progress -Activity "Get-AppVeyorFailure" -Completed
-                return
-            }
-
-            $BuildNumber = $branchBuild.buildNumber
-            Write-Verbose "Found latest build #$BuildNumber for branch '$Branch'"
         } catch {
-            Write-Verbose "Failed to fetch build history for branch ${Branch}: $_"
-            Write-Progress -Activity "Get-AppVeyorFailure" -Completed
-            return
+            # Silently fall back to existing logic
+            Write-Verbose "GitHub CLI approach failed, falling back to AppVeyor history API"
+        }
+
+        # Fallback to existing -Branch logic if GitHub CLI didn't work
+        if (-not $usedGh) {
+            try {
+                # Get recent builds and find the latest one for this branch
+                $apiParams = @{
+                    Endpoint = "projects/dataplat/dbatools/history?recordsNumber=50"
+                }
+                $history = Invoke-AppVeyorApi @apiParams
+
+                if (-not $history -or -not $history.builds) {
+                    Write-Verbose "No build history found"
+                    Write-Progress -Activity "Get-AppVeyorFailure" -Completed
+                    return
+                }
+
+                # Find the latest build for this branch
+                $branchBuild = $history.builds | Where-Object { $_.branch -eq $Branch } | Select-Object -First 1
+
+                if (-not $branchBuild) {
+                    Write-Verbose "No builds found for branch: $Branch"
+                    Write-Progress -Activity "Get-AppVeyorFailure" -Completed
+                    return
+                }
+
+                $BuildNumber = $branchBuild.buildNumber
+                Write-Verbose "Found latest build #$BuildNumber for branch '$Branch'"
+            } catch {
+                Write-Verbose "Failed to fetch build history for branch ${Branch}: $_"
+                Write-Progress -Activity "Get-AppVeyorFailure" -Completed
+                return
+            }
         }
     }
 
