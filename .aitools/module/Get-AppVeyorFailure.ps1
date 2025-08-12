@@ -97,6 +97,31 @@ function Get-AppVeyorFailure {
                 $commitSha = git rev-parse $BranchName 2>$null
             }
 
+            # Try with branch name first (GitHub accepts branch names in commits API)
+            $branchStatusJson = gh api "repos/dataplat/dbatools/commits/$BranchName/status" 2>$null
+            if ($branchStatusJson) {
+                $branchStatus = $branchStatusJson | ConvertFrom-Json
+                $appveyorStatus = $branchStatus.statuses | Where-Object {
+                    $_.context -like "*appveyor*" -or $_.context -like "*AppVeyor*"
+                }
+                if ($appveyorStatus) {
+                    return $true
+                }
+            }
+
+            # Also try check-runs API with branch name
+            $branchCheckRunsJson = gh api "repos/dataplat/dbatools/commits/$BranchName/check-runs" 2>$null
+            if ($branchCheckRunsJson) {
+                $branchCheckRuns = $branchCheckRunsJson | ConvertFrom-Json
+                $appveyorCheckRun = $branchCheckRuns.check_runs | Where-Object {
+                    $_.name -like "*AppVeyor*" -or $_.app.name -like "*AppVeyor*"
+                }
+                if ($appveyorCheckRun) {
+                    return $true
+                }
+            }
+
+            # Fallback to commit SHA approach if branch name didn't work
             if ($commitSha) {
                 # Try to find AppVeyor status/checks for this commit
                 $checkRunsJson = gh api "repos/dataplat/dbatools/commits/$commitSha/check-runs" 2>$null
@@ -222,50 +247,89 @@ function Get-AppVeyorFailure {
             if (-not $derivedBuildId) {
                 Write-Verbose "No build ID found from PR checks, trying commit status approach"
 
-                # Get the latest commit SHA for the branch
-                $commitSha = git rev-parse "origin/$Branch" 2>$null
-                if (-not $commitSha) {
-                    $commitSha = git rev-parse $Branch 2>$null
+                # Try with branch name first (GitHub accepts branch names in commits API)
+                Write-Verbose "Trying branch name '$Branch' directly in GitHub API"
+                $branchStatusJson = gh api "repos/dataplat/dbatools/commits/$Branch/status" 2>$null
+                if ($branchStatusJson) {
+                    $branchStatus = $branchStatusJson | ConvertFrom-Json
+                    $appveyorStatus = $branchStatus.statuses | Where-Object {
+                        $_.context -like "*appveyor*" -or $_.context -like "*AppVeyor*"
+                    } | Select-Object -First 1
+
+                    if ($appveyorStatus -and $appveyorStatus.target_url) {
+                        if ($appveyorStatus.target_url -match '/builds/(\d+)') {
+                            $derivedBuildId = $Matches[1]
+                            Write-Verbose "Extracted build ID $derivedBuildId from branch status for '$Branch'"
+                        }
+                    }
                 }
 
-                if ($commitSha) {
-                    Write-Verbose "Getting commit status for SHA: $commitSha"
-
-                    # Try check-runs API first (newer GitHub checks)
-                    $checkRunsJson = gh api "repos/dataplat/dbatools/commits/$commitSha/check-runs" 2>$null
-                    if ($checkRunsJson) {
-                        $checkRuns = $checkRunsJson | ConvertFrom-Json
-                        $appveyorCheckRun = $checkRuns.check_runs | Where-Object {
+                # Also try check-runs API with branch name
+                if (-not $derivedBuildId) {
+                    Write-Verbose "Trying check-runs API with branch name '$Branch'"
+                    $branchCheckRunsJson = gh api "repos/dataplat/dbatools/commits/$Branch/check-runs" 2>$null
+                    if ($branchCheckRunsJson) {
+                        $branchCheckRuns = $branchCheckRunsJson | ConvertFrom-Json
+                        $appveyorCheckRun = $branchCheckRuns.check_runs | Where-Object {
                             $_.name -like "*AppVeyor*" -or $_.app.name -like "*AppVeyor*"
                         } | Select-Object -First 1
 
                         if ($appveyorCheckRun -and $appveyorCheckRun.details_url) {
                             if ($appveyorCheckRun.details_url -match '/builds/(\d+)') {
                                 $derivedBuildId = $Matches[1]
-                                Write-Verbose "Extracted build ID $derivedBuildId from check-run URL: $($appveyorCheckRun.details_url)"
+                                Write-Verbose "Extracted build ID $derivedBuildId from branch check-run for '$Branch'"
                             }
                         }
                     }
+                }
 
-                    # Fallback to status API (older GitHub status checks)
-                    if (-not $derivedBuildId) {
-                        $statusJson = gh api "repos/dataplat/dbatools/commits/$commitSha/status" 2>$null
-                        if ($statusJson) {
-                            $status = $statusJson | ConvertFrom-Json
-                            $appveyorStatus = $status.statuses | Where-Object {
-                                $_.context -like "*appveyor*" -or $_.context -like "*AppVeyor*"
+                # Fallback to commit SHA approach if branch name didn't work
+                if (-not $derivedBuildId) {
+                    # Get the latest commit SHA for the branch
+                    $commitSha = git rev-parse "origin/$Branch" 2>$null
+                    if (-not $commitSha) {
+                        $commitSha = git rev-parse $Branch 2>$null
+                    }
+
+                    if ($commitSha) {
+                        Write-Verbose "Branch name approach failed, trying with commit SHA: $commitSha"
+
+                        # Try check-runs API first (newer GitHub checks)
+                        $checkRunsJson = gh api "repos/dataplat/dbatools/commits/$commitSha/check-runs" 2>$null
+                        if ($checkRunsJson) {
+                            $checkRuns = $checkRunsJson | ConvertFrom-Json
+                            $appveyorCheckRun = $checkRuns.check_runs | Where-Object {
+                                $_.name -like "*AppVeyor*" -or $_.app.name -like "*AppVeyor*"
                             } | Select-Object -First 1
 
-                            if ($appveyorStatus -and $appveyorStatus.target_url) {
-                                if ($appveyorStatus.target_url -match '/builds/(\d+)') {
+                            if ($appveyorCheckRun -and $appveyorCheckRun.details_url) {
+                                if ($appveyorCheckRun.details_url -match '/builds/(\d+)') {
                                     $derivedBuildId = $Matches[1]
-                                    Write-Verbose "Extracted build ID $derivedBuildId from status URL: $($appveyorStatus.target_url)"
+                                    Write-Verbose "Extracted build ID $derivedBuildId from check-run URL: $($appveyorCheckRun.details_url)"
                                 }
                             }
                         }
+
+                        # Fallback to status API (older GitHub status checks)
+                        if (-not $derivedBuildId) {
+                            $statusJson = gh api "repos/dataplat/dbatools/commits/$commitSha/status" 2>$null
+                            if ($statusJson) {
+                                $status = $statusJson | ConvertFrom-Json
+                                $appveyorStatus = $status.statuses | Where-Object {
+                                    $_.context -like "*appveyor*" -or $_.context -like "*AppVeyor*"
+                                } | Select-Object -First 1
+
+                                if ($appveyorStatus -and $appveyorStatus.target_url) {
+                                    if ($appveyorStatus.target_url -match '/builds/(\d+)') {
+                                        $derivedBuildId = $Matches[1]
+                                        Write-Verbose "Extracted build ID $derivedBuildId from status URL: $($appveyorStatus.target_url)"
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        Write-Verbose "Could not resolve commit SHA for branch '$Branch'"
                     }
-                } else {
-                    Write-Verbose "Could not resolve commit SHA for branch '$Branch'"
                 }
             }
 
@@ -330,39 +394,78 @@ function Get-AppVeyorFailure {
                 if (-not $autoBuildId) {
                     Write-Verbose "No build ID found from PR, trying commit status for current branch"
 
-                    $commitSha = git rev-parse HEAD 2>$null
-                    if ($commitSha) {
-                        Write-Verbose "Getting commit status for current HEAD: $commitSha"
+                    # Try with branch name first (GitHub accepts branch names in commits API)
+                    Write-Verbose "Trying branch name '$currentBranch' directly in GitHub API"
+                    $branchStatusJson = gh api "repos/dataplat/dbatools/commits/$currentBranch/status" 2>$null
+                    if ($branchStatusJson) {
+                        $branchStatus = $branchStatusJson | ConvertFrom-Json
+                        $appveyorStatus = $branchStatus.statuses | Where-Object {
+                            $_.context -like "*appveyor*" -or $_.context -like "*AppVeyor*"
+                        } | Select-Object -First 1
 
-                        # Try check-runs API first
-                        $checkRunsJson = gh api "repos/dataplat/dbatools/commits/$commitSha/check-runs" 2>$null
-                        if ($checkRunsJson) {
-                            $checkRuns = $checkRunsJson | ConvertFrom-Json
-                            $appveyorCheckRun = $checkRuns.check_runs | Where-Object {
+                        if ($appveyorStatus -and $appveyorStatus.target_url) {
+                            if ($appveyorStatus.target_url -match '/builds/(\d+)') {
+                                $autoBuildId = $Matches[1]
+                                Write-Verbose "Auto-detected build ID $autoBuildId from branch status for current branch '$currentBranch'"
+                            }
+                        }
+                    }
+
+                    # Also try check-runs API with branch name
+                    if (-not $autoBuildId) {
+                        Write-Verbose "Trying check-runs API with branch name '$currentBranch'"
+                        $branchCheckRunsJson = gh api "repos/dataplat/dbatools/commits/$currentBranch/check-runs" 2>$null
+                        if ($branchCheckRunsJson) {
+                            $branchCheckRuns = $branchCheckRunsJson | ConvertFrom-Json
+                            $appveyorCheckRun = $branchCheckRuns.check_runs | Where-Object {
                                 $_.name -like "*AppVeyor*" -or $_.app.name -like "*AppVeyor*"
                             } | Select-Object -First 1
 
                             if ($appveyorCheckRun -and $appveyorCheckRun.details_url) {
                                 if ($appveyorCheckRun.details_url -match '/builds/(\d+)') {
                                     $autoBuildId = $Matches[1]
-                                    Write-Verbose "Auto-detected build ID $autoBuildId from check-run for current branch"
+                                    Write-Verbose "Auto-detected build ID $autoBuildId from branch check-run for current branch '$currentBranch'"
                                 }
                             }
                         }
+                    }
 
-                        # Fallback to status API
-                        if (-not $autoBuildId) {
-                            $statusJson = gh api "repos/dataplat/dbatools/commits/$commitSha/status" 2>$null
-                            if ($statusJson) {
-                                $status = $statusJson | ConvertFrom-Json
-                                $appveyorStatus = $status.statuses | Where-Object {
-                                    $_.context -like "*appveyor*" -or $_.context -like "*AppVeyor*"
+                    # Fallback to commit SHA if branch name didn't work
+                    if (-not $autoBuildId) {
+                        $commitSha = git rev-parse HEAD 2>$null
+                        if ($commitSha) {
+                            Write-Verbose "Branch name approach failed, trying with commit SHA: $commitSha"
+
+                            # Try check-runs API first
+                            $checkRunsJson = gh api "repos/dataplat/dbatools/commits/$commitSha/check-runs" 2>$null
+                            if ($checkRunsJson) {
+                                $checkRuns = $checkRunsJson | ConvertFrom-Json
+                                $appveyorCheckRun = $checkRuns.check_runs | Where-Object {
+                                    $_.name -like "*AppVeyor*" -or $_.app.name -like "*AppVeyor*"
                                 } | Select-Object -First 1
 
-                                if ($appveyorStatus -and $appveyorStatus.target_url) {
-                                    if ($appveyorStatus.target_url -match '/builds/(\d+)') {
+                                if ($appveyorCheckRun -and $appveyorCheckRun.details_url) {
+                                    if ($appveyorCheckRun.details_url -match '/builds/(\d+)') {
                                         $autoBuildId = $Matches[1]
-                                        Write-Verbose "Auto-detected build ID $autoBuildId from status for current branch"
+                                        Write-Verbose "Auto-detected build ID $autoBuildId from check-run for commit SHA"
+                                    }
+                                }
+                            }
+
+                            # Fallback to status API with commit SHA
+                            if (-not $autoBuildId) {
+                                $statusJson = gh api "repos/dataplat/dbatools/commits/$commitSha/status" 2>$null
+                                if ($statusJson) {
+                                    $status = $statusJson | ConvertFrom-Json
+                                    $appveyorStatus = $status.statuses | Where-Object {
+                                        $_.context -like "*appveyor*" -or $_.context -like "*AppVeyor*"
+                                    } | Select-Object -First 1
+
+                                    if ($appveyorStatus -and $appveyorStatus.target_url) {
+                                        if ($appveyorStatus.target_url -match '/builds/(\d+)') {
+                                            $autoBuildId = $Matches[1]
+                                            Write-Verbose "Auto-detected build ID $autoBuildId from status for commit SHA"
+                                        }
                                     }
                                 }
                             }
@@ -382,21 +485,36 @@ function Get-AppVeyorFailure {
                 if ($Pattern) { $getFailureParams.Pattern = $Pattern }
                 return Get-AppVeyorFailure @getFailureParams
             } else {
-                Write-Verbose "Could not auto-detect build ID from current branch '$currentBranch', falling back to open PRs"
+                Write-Verbose "Could not auto-detect build ID from current branch '$currentBranch'"
+
+                # Only fall back to all open PRs if we're on the development branch
+                if ($currentBranch -eq "development") {
+                    Write-Verbose "On development branch, falling back to processing all open PRs"
+                } else {
+                    Write-Warning "Could not find AppVeyor build for branch '$currentBranch'. Only the development branch will fall back to processing all open PRs."
+                    Write-Progress -Activity "Get-AppVeyorFailure" -Completed
+                    return
+                }
             }
         }
 
-        # Fallback: get all open PRs if auto-detection failed
-        Write-Verbose "Falling back to processing all open PRs..."
-        $prsJson = gh pr list --state open --json "number,title,headRefName,state,statusCheckRollup"
-        if (-not $prsJson) {
+        # Fallback: get all open PRs if auto-detection failed AND we're on development branch
+        if ($currentBranch -eq "development") {
+            Write-Verbose "Falling back to processing all open PRs..."
+            $prsJson = gh pr list --state open --json "number,title,headRefName,state,statusCheckRollup"
+            if (-not $prsJson) {
+                Write-Progress -Activity "Get-AppVeyorFailure" -Completed
+                Write-Warning "No open pull requests found and could not auto-detect build from current branch"
+                return
+            }
+            $openPRs = $prsJson | ConvertFrom-Json
+            $PullRequest = $openPRs | ForEach-Object { $_.number }
+            Write-Verbose "Found $($PullRequest.Count) open PRs: $($PullRequest -join ',')"
+        } else {
+            # Should not reach here due to earlier return, but just in case
             Write-Progress -Activity "Get-AppVeyorFailure" -Completed
-            Write-Warning "No open pull requests found and could not auto-detect build from current branch"
             return
         }
-        $openPRs = $prsJson | ConvertFrom-Json
-        $PullRequest = $openPRs | ForEach-Object { $_.number }
-        Write-Verbose "Found $($PullRequest.Count) open PRs: $($PullRequest -join ',')"
     }
 
     $totalPRs = $PullRequest.Count
