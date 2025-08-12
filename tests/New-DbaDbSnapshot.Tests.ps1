@@ -1,12 +1,9 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "New-DbaDbSnapshot",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
-
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
@@ -36,19 +33,27 @@ Describe $CommandName -Tag UnitTests {
 
 # Targets only instance2 because it's the only one where Snapshots can happen
 Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
     Context "Parameter validation" {
         It "Stops if no Database or AllDatabases" {
-            { New-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -EnableException -WarningAction SilentlyContinue } | Should -Throw "You must specify"
+            { New-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -EnableException -WarningAction SilentlyContinue } | Should Throw "You must specify"
         }
         It "Is nice by default" {
-            { New-DbaDbSnapshot -SqlInstance $TestConfig.instance2 *> $null -WarningAction SilentlyContinue } | Should -Not -Throw "You must specify"
+            { New-DbaDbSnapshot -SqlInstance $TestConfig.instance2 *> $null -WarningAction SilentlyContinue } | Should Not Throw "You must specify"
         }
     }
 
     Context "Operations on not supported databases" {
         It "Doesn't support model, master or tempdb" {
             $result = New-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -EnableException -Database model, master, tempdb -WarningAction SilentlyContinue
-            $result | Should -BeNullOrEmpty
+            $result | Should -Be $null
         }
     }
 
@@ -77,43 +82,41 @@ Describe $CommandName -Tag IntegrationTests {
 
             Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $global:db1, $global:db2, $global:db3, $global:db4 -Confirm:$false -ErrorAction SilentlyContinue
             Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance2 -Database $global:db1, $global:db2, $global:db3, $global:db4 -ErrorAction SilentlyContinue
-
-            # As this is the last block we do not need to reset the $PSDefaultParameterValues.
         }
 
         It "Skips over offline databases nicely" {
             $global:server.Query("ALTER DATABASE $global:db3 SET OFFLINE WITH ROLLBACK IMMEDIATE")
             $result = New-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -EnableException -Database $global:db3
-            $result | Should -BeNullOrEmpty
+            $result | Should -Be $null
             $global:server.Query("ALTER DATABASE $global:db3 SET ONLINE WITH ROLLBACK IMMEDIATE")
         }
 
         It "Refuses to accept multiple source databases with a single name target" {
-            { New-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -EnableException -Database $global:db1, $global:db2 -Name "dbatools_Snapped" -WarningAction SilentlyContinue } | Should -Throw
+            { New-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -EnableException -Database $global:db1, $global:db2 -Name "dbatools_Snapped" -WarningAction SilentlyContinue } | Should Throw
         }
 
         It "Halts when path is not accessible" {
-            { New-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $global:db1 -Path B:\Funnydbatoolspath -EnableException -WarningAction SilentlyContinue } | Should -Throw
+            { New-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $global:db1 -Path B:\Funnydbatoolspath -EnableException -WarningAction SilentlyContinue } | Should Throw
         }
 
         It "Creates snaps for multiple dbs by default" {
             $results = New-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -EnableException -Database $global:db1, $global:db2
-            $results | Should -Not -BeNullOrEmpty
+            $results | Should -Not -Be $null
             foreach ($result in $results) {
-                $result.SnapshotOf -in @($global:db1, $global:db2) | Should -BeTrue
+                $result.SnapshotOf -in @($global:db1, $global:db2) | Should -Be $true
             }
         }
 
         It "Creates snap with the correct name" {
             $result = New-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -EnableException -Database $global:db1 -Name "dbatools_SnapMe_right"
-            $result | Should -Not -BeNullOrEmpty
+            $result | Should -Not -Be $null
             $result.SnapshotOf | Should -Be $global:db1
             $result.Name | Should -Be "dbatools_SnapMe_right"
         }
 
         It "Creates snap with the correct name template" {
             $result = New-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -EnableException -Database $global:db2 -NameSuffix "dbatools_SnapMe_{0}_funny"
-            $result | Should -Not -BeNullOrEmpty
+            $result | Should -Not -Be $null
             $result.SnapshotOf | Should -Be $global:db2
             $result.Name | Should -Be ("dbatools_SnapMe_{0}_funny" -f $global:db2)
         }
@@ -126,15 +129,15 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Creates multiple snaps for db with dot in the name (see #8829)" {
             $results = New-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -EnableException -Database $global:db4
-            $results | Should -Not -BeNullOrEmpty
+            $results | Should -Not -Be $null
             foreach ($result in $results) {
-                $result.SnapshotOf -in @($global:db4) | Should -BeTrue
+                $result.SnapshotOf -in @($global:db4) | Should -Be $true
             }
             Start-Sleep -Seconds 2
             $results = New-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -EnableException -Database $global:db4
-            $results | Should -Not -BeNullOrEmpty
+            $results | Should -Not -Be $null
             foreach ($result in $results) {
-                $result.SnapshotOf -in @($global:db4) | Should -BeTrue
+                $result.SnapshotOf -in @($global:db4) | Should -Be $true
             }
         }
     }

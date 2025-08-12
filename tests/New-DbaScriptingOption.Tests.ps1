@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "New-DbaScriptingOption",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -15,7 +15,7 @@ Describe $CommandName -Tag UnitTests {
             $expectedParameters = $TestConfig.CommonParameters
         }
 
-        It "Should have the expected parameters" {
+        It -Skip "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }

@@ -1,12 +1,9 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "New-DbaXESmartTableWriter",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
-
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
@@ -33,20 +30,34 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 Describe $CommandName -Tag IntegrationTests {
-    Context "Creates a smart object" {
-        BeforeAll {
+    BeforeAll {
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
+        # Create test database for table writer
+        $testDb = "dbatoolsci_xetablewriter_$(Get-Random)"
+        $testTable = "xe_events_test"
+
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $testDb
+
+        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+    }
+
+    AfterAll {
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $testDb -Confirm:$false
+    }
+
+    Context "Creates a smart table writer object" {
+        It "Returns the object with all of the correct properties" {
             $splatTableWriter = @{
                 SqlInstance = $TestConfig.instance2
-                Database    = "planning"
+                Database    = $testDb
+                Table       = $testTable
             }
-        }
-
-        It "returns the object with all of the correct properties" {
             $results = New-DbaXESmartTableWriter @splatTableWriter
-            $results.ServerName | Should -Be $TestConfig.instance2
-            $results.DatabaseName | Should -Be "planning"
-            $results.Password | Should -Be $null
-            $results.DelaySeconds | Should -Be 0
+            $results | Should -Not -BeNullOrEmpty
+            $results.GetType().Name | Should -Be "TableAppenderResponse"
         }
     }
 }

@@ -1,9 +1,12 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "New-DbaDbTransfer",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
+
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+$global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
@@ -37,18 +40,9 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
         $dbName = "dbatools_transfer"
-        $splatSource = @{
-            SqlInstance = $TestConfig.instance1
-        }
-        $splatDestination = @{
-            SqlInstance = $TestConfig.instance2
-        }
-        $source = Connect-DbaInstance @splatSource
-        $destination = Connect-DbaInstance @splatDestination
+        $source = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+        $destination = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $source.Query("CREATE DATABASE $dbName")
         $db = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbName
         $null = $db.Query("CREATE TABLE dbo.transfer_test (id int);
@@ -94,31 +88,18 @@ Describe $CommandName -Tag IntegrationTests {
             "ExternalLibraries"
         )
         $securePassword = "bar" | ConvertTo-SecureString -AsPlainText -Force
-        $splatCredential = @{
-            TypeName     = "PSCredential"
-            ArgumentList = "foo", $securePassword
-        }
-        $creds = New-Object @splatCredential
-
-        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        $creds = New-Object PSCredential ("foo", $securePassword)
     }
     AfterAll {
-        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-        # Clean up test tables
         try {
             $null = $db.Query("DROP TABLE dbo.transfer_test")
             $null = $db.Query("DROP TABLE dbo.transfer_test2")
             $null = $db.Query("DROP TABLE dbo.transfer_test3")
             $null = $db.Query("DROP TABLE dbo.transfer_test4")
         } catch {
-            # Silently continue if tables don't exist
+            $null = 1
         }
-
-        # Remove test database
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbName -Confirm:$false -ErrorAction SilentlyContinue
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbName -Confirm:$false
     }
     Context "Testing connection parameters" {
         It "Should create a transfer object" {
@@ -137,11 +118,11 @@ Describe $CommandName -Tag IntegrationTests {
         }
         It "Should properly assign dest server parameters from full connstring" {
             $transfer = New-DbaDbTransfer -SqlInstance $TestConfig.instance1 -Database $dbName -DestinationSqlInstance "Data Source=foo;User=bar;password=foobar;Initial Catalog=hog"
-            $transfer.DestinationDatabase | Should -Be "hog"
+            $transfer.DestinationDatabase | Should -Be hog
             $transfer.DestinationLoginSecure | Should -Be $false
-            $transfer.DestinationLogin | Should -Be "bar"
-            $transfer.DestinationPassword | Should -Be "foobar"
-            $transfer.DestinationServer | Should -Be "foo"
+            $transfer.DestinationLogin | Should -Be bar
+            $transfer.DestinationPassword | Should -Be foobar
+            $transfer.DestinationServer | Should -Be foo
         }
         It "Should properly assign dest server parameters from trusted connstring" {
             $transfer = New-DbaDbTransfer -SqlInstance $TestConfig.instance1 -Database $dbName -DestinationSqlInstance "Data Source=foo;Integrated Security=True"
@@ -149,19 +130,11 @@ Describe $CommandName -Tag IntegrationTests {
             $transfer.DestinationLoginSecure | Should -Be $true
             $transfer.DestinationLogin | Should -BeNullOrEmpty
             $transfer.DestinationPassword | Should -BeNullOrEmpty
-            $transfer.DestinationServer | Should -Be "foo"
+            $transfer.DestinationServer | Should -Be foo
         }
         It "Should properly assign dest server parameters from server object" {
-            $splatDestInstance = @{
-                SqlInstance = $TestConfig.instance2
-                Database    = "msdb"
-            }
-            $dest = Connect-DbaInstance @splatDestInstance
-            $splatConnStringBuilder = @{
-                TypeName     = "Microsoft.Data.SqlClient.SqlConnectionStringBuilder"
-                ArgumentList = $dest.ConnectionContext.ConnectionString
-            }
-            $connStringBuilder = New-Object @splatConnStringBuilder
+            $dest = Connect-DbaInstance -SqlInstance $TestConfig.instance2 -Database msdb
+            $connStringBuilder = New-Object Microsoft.Data.SqlClient.SqlConnectionStringBuilder $dest.ConnectionContext.ConnectionString
             $transfer = New-DbaDbTransfer -SqlInstance $TestConfig.instance1 -Database $dbName -DestinationSqlInstance $dest
             $transfer.DestinationDatabase | Should -Be $connStringBuilder["Initial Catalog"]
             $transfer.DestinationLoginSecure | Should -Be $connStringBuilder["Integrated Security"]
@@ -170,12 +143,12 @@ Describe $CommandName -Tag IntegrationTests {
             $transfer.DestinationServer | Should -Be $connStringBuilder["Data Source"]
         }
         It "Should properly assign dest server parameters from plaintext params" {
-            $transfer = New-DbaDbTransfer -SqlInstance $TestConfig.instance1 -Database $dbName -DestinationSqlInstance "foo" -DestinationDatabase "bar" -DestinationSqlCredential $creds
-            $transfer.DestinationDatabase | Should -Be "bar"
+            $transfer = New-DbaDbTransfer -SqlInstance $TestConfig.instance1 -Database $dbName -DestinationSqlInstance foo -DestinationDatabase bar -DestinationSqlCredential $creds
+            $transfer.DestinationDatabase | Should -Be bar
             $transfer.DestinationLoginSecure | Should -Be $false
             $transfer.DestinationLogin | Should -Be $creds.UserName
             $transfer.DestinationPassword | Should -Be $creds.GetNetworkCredential().Password
-            $transfer.DestinationServer | Should -Be "foo"
+            $transfer.DestinationServer | Should -Be foo
         }
     }
     Context "Testing function parameters" {
@@ -200,17 +173,17 @@ Describe $CommandName -Tag IntegrationTests {
             $script | Should -BeLike "*CREATE TABLE `[dbo`].`[transfer_test4`]*"
         }
         It "Should script one table with just data" {
-            $table = Get-DbaDbTable -SqlInstance $TestConfig.instance1 -Database $dbName -Table "transfer_test"
+            $table = Get-DbaDbTable -SqlInstance $TestConfig.instance1 -Database $dbName -Table transfer_test
             $transfer = New-DbaDbTransfer -SqlInstance $TestConfig.instance1 -Database $dbName -InputObject $table -DataOnly
             $transfer.ObjectList.Count | Should -Be 1
             $transfer.CopyData | Should -Be $true
             $transfer.CopySchema | Should -Be $false
-            # # data only ScriptTransfer still creates schema
+            # data only ScriptTransfer still creates schema
             $script = $transfer.ScriptTransfer() -join "`n"
             $script | Should -BeLike "*CREATE TABLE `[dbo`].`[transfer_test`]*"
         }
         It "Should script two tables from pipeline" {
-            $tables = Get-DbaDbTable -SqlInstance $TestConfig.instance1 -Database $dbName -Table "transfer_test2", "transfer_test4"
+            $tables = Get-DbaDbTable -SqlInstance $TestConfig.instance1 -Database $dbName -Table transfer_test2, transfer_test4
             $transfer = $tables | New-DbaDbTransfer -SqlInstance $TestConfig.instance1 -Database $dbName
             $transfer.ObjectList.Count | Should -Be 2
             $script = $transfer.ScriptTransfer() -join "`n"
@@ -230,16 +203,16 @@ Describe $CommandName -Tag IntegrationTests {
     }
     Context "Testing object transfer" {
         BeforeEach {
-            $destination.Query("CREATE DATABASE $dbName")
+            $destination.Query("CREATE DATABASE $dbname")
             $db2 = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbName
         }
         AfterEach {
-            Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbName -Confirm:$false -ErrorAction SilentlyContinue
+            Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbName -Confirm:$false
         }
         It "Should transfer all tables" {
             $transfer = New-DbaDbTransfer -SqlInstance $TestConfig.instance1 -DestinationSqlInstance $TestConfig.instance2 -Database $dbName -CopyAll Tables
             $transfer.TransferData()
-            $tables = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database $dbName -Table "transfer_test", "transfer_test2", "transfer_test3", "transfer_test4"
+            $tables = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database $dbName -Table transfer_test, transfer_test2, transfer_test3, transfer_test4
             $tables.Count | Should -Be 4
             $db.Query("select id from dbo.transfer_test").id | Should -Not -BeNullOrEmpty
             $db.Query("select id from dbo.transfer_test4").id | Should -Not -BeNullOrEmpty
@@ -247,20 +220,20 @@ Describe $CommandName -Tag IntegrationTests {
             $db.Query("select id from dbo.transfer_test4").id | Should -BeIn $db2.Query("select id from dbo.transfer_test4").id
         }
         It "Should transfer two tables with just schemas" {
-            $sourceTables = Get-DbaDbTable -SqlInstance $TestConfig.instance1 -Database $dbName -Table "transfer_test", "transfer_test2"
+            $sourceTables = Get-DbaDbTable -SqlInstance $TestConfig.instance1 -Database $dbName -Table transfer_test, transfer_test2
             $transfer = $sourceTables | New-DbaDbTransfer -SqlInstance $TestConfig.instance1 -DestinationSqlInstance $TestConfig.instance2 -Database $dbName -SchemaOnly
             $transfer.TransferData()
-            $tables = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database $dbName -Table "transfer_test", "transfer_test2"
+            $tables = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database $dbName -Table transfer_test, transfer_test2
             $tables.Count | Should -Be 2
             $db2.Query("select id from dbo.transfer_test").id | Should -BeNullOrEmpty
         }
         It "Should transfer two tables without copying schema" {
             $null = $db2.Query("CREATE TABLE dbo.transfer_test (id int)")
             $null = $db2.Query("CREATE TABLE dbo.transfer_test2 (id int)")
-            $sourceTables = Get-DbaDbTable -SqlInstance $TestConfig.instance1 -Database $dbName -Table "transfer_test", "transfer_test2"
+            $sourceTables = Get-DbaDbTable -SqlInstance $TestConfig.instance1 -Database $dbName -Table transfer_test, transfer_test2
             $transfer = $sourceTables | New-DbaDbTransfer -SqlInstance $TestConfig.instance1 -DestinationSqlInstance $TestConfig.instance2 -Database $dbName -DataOnly
             $transfer.TransferData()
-            $tables = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database $dbName -Table "transfer_test", "transfer_test2"
+            $tables = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database $dbName -Table transfer_test, transfer_test2
             $tables.Count | Should -Be 2
             $db.Query("select id from dbo.transfer_test").id | Should -Not -BeNullOrEmpty
             $db.Query("select id from dbo.transfer_test").id | Should -BeIn $db2.Query("select id from dbo.transfer_test").id

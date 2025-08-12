@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "New-DbaReplCreationScriptOptions",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -8,19 +8,19 @@ param(
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 $global:TestConfig = Get-TestConfig
 
-Add-ReplicationLibrary
-
 Describe $CommandName -Tag UnitTests {
-    Context "Parameter validation" {
-        BeforeAll {
-            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
-            $expectedParameters = $TestConfig.CommonParameters
-            $expectedParameters += @(
-                "Options",
-                "NoDefaults"
-            )
-        }
+    BeforeAll {
+        Add-ReplicationLibrary
 
+        $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+        $expectedParameters = $TestConfig.CommonParameters
+        $expectedParameters += @(
+            "Options",
+            "NoDefaults"
+        )
+    }
+
+    Context "Parameter validation" {
         It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
