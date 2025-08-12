@@ -574,6 +574,7 @@ function Repair-PullRequestTest {
 
                         # Call Update-PesterTest with correct parameters
                         Update-PesterTest -InputObject (Get-Item $TestPath) -PromptFilePath $promptFilePath -CacheFilePath $cacheFilePaths
+                        -NoAutoFix
 
                         # Clean up environment flag
                         Remove-Item env:SKIP_DBATOOLS_IMPORT -ErrorAction SilentlyContinue
