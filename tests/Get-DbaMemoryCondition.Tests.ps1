@@ -1,27 +1,14 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
-param(
-    $ModuleName  = "dbatools",
-    $CommandName = "Get-DbaMemoryCondition",
-    $PSDefaultParameterValues = $TestConfig.Defaults
-)
-
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 $global:TestConfig = Get-TestConfig
 
-Describe $CommandName -Tag UnitTests {
-    Context "Parameter validation" {
-        BeforeAll {
-            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
-            $expectedParameters = $TestConfig.CommonParameters
-            $expectedParameters += @(
-                "SqlInstance",
-                "SqlCredential",
-                "EnableException"
-            )
-        }
-
-        It "Should have the expected parameters" {
-            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -31,42 +18,17 @@ Describe $CommandName -Tag UnitTests {
     Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
     for more guidence.
 #>
-Describe $CommandName -Tag IntegrationTests {
+Describe "Get-DbaMemoryCondition Integration Test" -Tag "IntegrationTests" {
     Context "Command actually works" {
-        BeforeAll {
-            $results = Get-DbaMemoryCondition -SqlInstance $TestConfig.instance1
-        }
+        $results = Get-DbaMemoryCondition -SqlInstance $TestConfig.instance1
 
         It "returns results" {
-            $results.Count | Should -BeGreaterThan 0
+            $($results | Measure-Object).Count -gt 0 | Should Be $true
         }
-
         It "has the correct properties" {
             $result = $results[0]
-            $expectedProps = @(
-                "ComputerName",
-                "InstanceName",
-                "SqlInstance",
-                "Runtime",
-                "NotificationTime",
-                "NotificationType",
-                "MemoryUtilizationPercent",
-                "TotalPhysicalMemory",
-                "AvailablePhysicalMemory",
-                "TotalPageFile",
-                "AvailablePageFile",
-                "TotalVirtualAddressSpace",
-                "AvailableVirtualAddressSpace",
-                "NodeId",
-                "SQLReservedMemory",
-                "SQLCommittedMemory",
-                "RecordId",
-                "Type",
-                "Indicators",
-                "RecordTime",
-                "CurrentTime"
-            )
-            ($result.PsObject.Properties.Name | Sort-Object) | Should -Be ($expectedProps | Sort-Object)
+            $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Runtime,NotificationTime,NotificationType,MemoryUtilizationPercent,TotalPhysicalMemory,AvailablePhysicalMemory,TotalPageFile,AvailablePageFile,TotalVirtualAddressSpace,AvailableVirtualAddressSpace,NodeId,SQLReservedMemory,SQLCommittedMemory,RecordId,Type,Indicators,RecordTime,CurrentTime'.Split(',')
+            ($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
         }
     }
 }

@@ -1,40 +1,19 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
-param(
-    $ModuleName  = "dbatools",
-    $CommandName = "Get-DbaLogin",
-    $PSDefaultParameterValues = $TestConfig.Defaults
-)
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+$global:TestConfig = Get-TestConfig
 
-Describe $CommandName -Tag UnitTests {
-    Context "Parameter validation" {
-        BeforeAll {
-            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
-            $expectedParameters = $TestConfig.CommonParameters
-            $expectedParameters += @(
-                "SqlInstance",
-                "SqlCredential",
-                "Login",
-                "IncludeFilter",
-                "ExcludeLogin",
-                "ExcludeFilter",
-                "ExcludeSystemLogin",
-                "Type",
-                "HasAccess",
-                "Locked",
-                "Disabled",
-                "MustChangePassword",
-                "Detailed",
-                "EnableException"
-            )
-        }
-
-        It "Should have the expected parameters" {
-            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Login', 'IncludeFilter', 'ExcludeLogin', 'ExcludeFilter', 'ExcludeSystemLogin', 'Type', 'HasAccess', 'Locked', 'Disabled', , 'MustChangePassword', 'Detailed', 'EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
 
-Describe $CommandName -Tag IntegrationTests {
+Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $SkipLocalTest = $true # Change to $false to run the local-only tests on a local instance. This is being used because the 'locked' test makes assumptions the password policy configuration is enabled for the Windows OS.
         $random = Get-Random
@@ -49,37 +28,27 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Does sql instance have a SA account" {
-        BeforeAll {
-            $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login sa
-        }
-
+        $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login sa
         It "Should report that one account named SA exists" {
-            $results.Count | Should -Be 1
+            $results.Count | Should Be 1
         }
     }
 
     Context "Check that SA account is enabled" {
-        BeforeAll {
-            $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login sa
-        }
-
+        $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login sa
         It "Should say the SA account is disabled FALSE" {
-            $results.IsDisabled | Should -Be "False"
+            $results.IsDisabled | Should Be "False"
         }
     }
 
     Context "Check that SA account is SQL Login" {
-        BeforeAll {
-            $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login sa -Type SQL -Detailed
-        }
-
+        $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login sa -Type SQL -Detailed
         It "Should report that one SQL Login named SA exists" {
-            $results.Count | Should -Be 1
+            $results.Count | Should Be 1
         }
-
         It "Should get LoginProperties via Detailed switch" {
-            $results.BadPasswordCount | Should -Not -Be $null
-            $results.PasswordHash | Should -Not -Be $null
+            $results.BadPasswordCount | Should Not Be $null
+            $results.PasswordHash | Should Not Be $null
         }
     }
 
@@ -148,12 +117,12 @@ Describe $CommandName -Tag IntegrationTests {
             ($results[0].PSobject.Properties.Name -contains "PasswordLastSetTime") | Should -Be $true
         }
 
-        It "Locked" -Skip:$SkipLocalTest {
+        It -Skip:$SkipLocalTest "Locked" {
             $results = Set-DbaLogin -SqlInstance $TestConfig.instance1 -Login "testlogin1_$random" -PasswordPolicyEnforced -EnableException
             $results.PasswordPolicyEnforced | Should -Be $true
 
             # simulate a lockout
-            $invalidPassword = ConvertTo-SecureString -String "invalid" -AsPlainText -Force
+            $invalidPassword = ConvertTo-SecureString -String 'invalid' -AsPlainText -Force
             $invalidSqlCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "testlogin1_$random", $invalidPassword
 
             # exceed the lockout count
