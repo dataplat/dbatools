@@ -1,15 +1,17 @@
 function Repair-PullRequestTest {
     <#
    .SYNOPSIS
-       Fixes failing Pester tests in open pull requests by replacing with working versions and running Update-PesterTest.
+       Fixes failing Pester tests with automatic detection from current branch or specified sources.
 
    .DESCRIPTION
-       This function checks open PRs for AppVeyor failures, extracts failing test information,
-       and replaces failing tests with working versions from the Development branch, then runs
-       Update-PesterTest to migrate them properly.
+       This function automatically detects and fixes failing Pester tests. When called without parameters,
+       it automatically detects AppVeyor build failures from the current branch and repairs them by
+       replacing failing tests with working versions from the Development branch, then runs Update-PesterTest
+       to migrate them properly. You can also specify PR numbers, build IDs, or branch names explicitly.
 
    .PARAMETER PullRequest
-       Specific PR number to process. If not specified, processes all open PRs with failures.
+       Specific PR number to process. If not specified, automatically detects failures from current branch,
+       or falls back to processing all open PRs with failures.
 
    .PARAMETER AutoCommit
        If specified, automatically commits the fixes made by the repair process.
@@ -20,6 +22,10 @@ function Repair-PullRequestTest {
    .PARAMETER BuildId
        Specific AppVeyor build number to target instead of automatically detecting from PR checks.
        When specified, uses this build number directly rather than finding the latest build for the PR.
+
+   .PARAMETER Branch
+       Branch name to get AppVeyor build failures from. The function will attempt to find the AppVeyor
+       build associated with this branch and repair the failing tests on that branch.
 
    .PARAMETER CopyOnly
        If specified, stops the repair process right after copying working test files
@@ -38,7 +44,8 @@ function Repair-PullRequestTest {
 
    .EXAMPLE
        PS C:\> Repair-PullRequestTest
-       Checks all open PRs and fixes failing tests using Claude.
+       Automatically detects and fixes failing tests from the current branch's AppVeyor build.
+       If no failures are found for the current branch, falls back to checking all open PRs.
 
    .EXAMPLE
        PS C:\> Repair-PullRequestTest -PullRequest 9234 -AutoCommit
@@ -59,6 +66,14 @@ function Repair-PullRequestTest {
    .EXAMPLE
        PS C:\> Repair-PullRequestTest -Pattern "\.Tests\.ps1$"
        Fixes failing tests from all open PRs, but only processes failures from .Tests.ps1 files.
+
+   .EXAMPLE
+       PS C:\> Repair-PullRequestTest -Branch "feature/new-command" -AutoCommit
+       Fixes failing tests from AppVeyor builds associated with the "feature/new-command" branch and commits the changes.
+
+   .EXAMPLE
+       PS C:\> Repair-PullRequestTest -Branch "main" -Pattern "Connect-Dba" -CopyOnly
+       Copies working test files for "Connect-Dba" failures from the main branch without running Update-PesterTest.
    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
@@ -66,6 +81,7 @@ function Repair-PullRequestTest {
         [switch]$AutoCommit,
         [int]$Limit = 5,
         [int]$BuildId,
+        [string]$Branch,
         [switch]$CopyOnly,
         [string]$Pattern
     )
@@ -127,27 +143,62 @@ function Repair-PullRequestTest {
                 }
                 $prs = @($prsJson | ConvertFrom-Json)
             } else {
-                # Try to find PR for current branch first
-                Write-Verbose "No PR number specified, checking for PR associated with current branch '$originalBranch'"
-                $currentBranchPR = gh pr view --json "number,title,headRefName,state,statusCheckRollup,files" 2>$null
+                # Enhanced auto-detection: try current branch first, then PR, then all open PRs
+                Write-Verbose "No PR number specified, attempting auto-detection from current branch '$originalBranch'"
 
-                if ($currentBranchPR) {
-                    Write-Verbose "Found PR for current branch: $originalBranch"
-                    $prs = @($currentBranchPR | ConvertFrom-Json)
-                } else {
-                    Write-Verbose "No PR found for current branch, fetching all open PRs"
-                    $prsJson = gh pr list --state open --limit $Limit --json "number,title,headRefName,state,statusCheckRollup" 2>$null
-                    $prs = $prsJson | ConvertFrom-Json
+                # First, try to auto-detect build failures from current branch directly
+                $autoDetectedFailures = $null
+                try {
+                    Write-Verbose "Attempting to auto-detect AppVeyor failures from current branch '$originalBranch'"
+                    $getFailureParams = @{}
+                    if ($Pattern) { $getFailureParams.Pattern = $Pattern }
 
-                    # For each PR, get the files changed (since pr list doesn't include files)
-                    $prsWithFiles = @()
-                    foreach ($pr in $prs) {
-                        $prWithFiles = gh pr view $pr.number --json "number,title,headRefName,state,statusCheckRollup,files" 2>$null
-                        if ($prWithFiles) {
-                            $prsWithFiles += ($prWithFiles | ConvertFrom-Json)
-                        }
+                    # This will use the enhanced auto-detection in Get-AppVeyorFailure
+                    $autoDetectedFailures = @(Get-AppVeyorFailure @getFailureParams)
+
+                    if ($autoDetectedFailures) {
+                        Write-Verbose "Successfully auto-detected $($autoDetectedFailures.Count) failures from current branch '$originalBranch'"
+
+                        # Create a pseudo-PR object for the current branch
+                        $prs = @(@{
+                            number = "auto-detected"
+                            title = "Auto-detected from branch: $originalBranch"
+                            headRefName = $originalBranch
+                            state = "open"
+                            statusCheckRollup = @()
+                            files = @()  # We'll process all failures since we can't determine changed files
+                        })
+
+                        # Set a flag to indicate we're using auto-detected failures
+                        $usingAutoDetectedFailures = $true
                     }
-                    $prs = $prsWithFiles
+                } catch {
+                    Write-Verbose "Auto-detection from current branch failed: $_"
+                }
+
+                # If auto-detection didn't work, fall back to PR-based approach
+                if (-not $autoDetectedFailures) {
+                    Write-Verbose "Auto-detection failed, trying PR-based approach for current branch '$originalBranch'"
+                    $currentBranchPR = gh pr view --json "number,title,headRefName,state,statusCheckRollup,files" 2>$null
+
+                    if ($currentBranchPR) {
+                        Write-Verbose "Found PR for current branch: $originalBranch"
+                        $prs = @($currentBranchPR | ConvertFrom-Json)
+                    } else {
+                        Write-Verbose "No PR found for current branch, fetching all open PRs"
+                        $prsJson = gh pr list --state open --limit $Limit --json "number,title,headRefName,state,statusCheckRollup" 2>$null
+                        $prs = $prsJson | ConvertFrom-Json
+
+                        # For each PR, get the files changed (since pr list doesn't include files)
+                        $prsWithFiles = @()
+                        foreach ($pr in $prs) {
+                            $prWithFiles = gh pr view $pr.number --json "number,title,headRefName,state,statusCheckRollup,files" 2>$null
+                            if ($prWithFiles) {
+                                $prsWithFiles += ($prWithFiles | ConvertFrom-Json)
+                            }
+                        }
+                        $prs = $prsWithFiles
+                    }
                 }
             }
 
@@ -182,6 +233,43 @@ function Repair-PullRequestTest {
                         headRefName = $originalBranch
                     }
                 }
+            } elseif ($Branch) {
+                Write-Verbose "Using specific branch name: $Branch, getting build ID from branch"
+                Write-Progress -Activity "Repairing Pull Request Tests" -Status "Getting AppVeyor build failures from branch '$Branch'..." -PercentComplete 50 -Id 0
+
+                # Get failures directly from the specified branch
+                $getFailureParams = @{
+                    Branch = $Branch
+                }
+                if ($Pattern) { $getFailureParams.Pattern = $Pattern }
+                $allFailedTestsAcrossPRs = @(Get-AppVeyorFailure @getFailureParams)
+
+                if (-not $allFailedTestsAcrossPRs) {
+                    Write-Verbose "Could not retrieve test failures from AppVeyor for branch '$Branch'"
+                    return
+                }
+
+                # For branch-specific mode, we don't filter by PR files - process all failures
+                $allRelevantTestFiles = @()
+
+                # Create a pseudo-PR object for the specified branch
+                $selectedPR = @{
+                    number      = "branch"
+                    headRefName = $Branch
+                    title       = "Branch: $Branch"
+                }
+            } elseif ($usingAutoDetectedFailures) {
+                Write-Verbose "Using auto-detected failures from current branch '$originalBranch'"
+                Write-Progress -Activity "Repairing Pull Request Tests" -Status "Processing auto-detected failures from current branch..." -PercentComplete 50 -Id 0
+
+                # Use the auto-detected failures
+                $allFailedTestsAcrossPRs = $autoDetectedFailures
+
+                # For auto-detected mode, we don't filter by PR files - process all failures
+                $allRelevantTestFiles = @()
+
+                # Use the pseudo-PR object we already created
+                $selectedPR = $prs[0]
             } else {
                 # Original PR-based logic
                 # Collect ALL failed tests from ALL PRs first, then deduplicate
@@ -362,7 +450,7 @@ function Repair-PullRequestTest {
             Write-Verbose "Copied $($copiedFiles.Count) working test files from development branch"
 
             # Switch to the selected PR branch for all operations (unless using current branch)
-            if ($selectedPR.number -ne "current") {
+            if ($selectedPR.number -notin @("current", "branch", "auto-detected")) {
                 Write-Verbose "Switching to PR #$($selectedPR.number) branch '$($selectedPR.headRefName)'"
                 git fetch origin $selectedPR.headRefName 2>$null | Out-Null
 
@@ -373,6 +461,21 @@ function Repair-PullRequestTest {
                 $afterCheckout = git rev-parse --abbrev-ref HEAD 2>$null
                 if ($afterCheckout -ne $selectedPR.headRefName) {
                     Write-Error "Failed to checkout selected PR branch '$($selectedPR.headRefName)'. Currently on '$afterCheckout'."
+                    return
+                }
+
+                Write-Verbose "Successfully checked out branch '$($selectedPR.headRefName)'"
+            } elseif ($selectedPR.number -eq "branch") {
+                Write-Verbose "Switching to specified branch '$($selectedPR.headRefName)'"
+                git fetch origin $selectedPR.headRefName 2>$null | Out-Null
+
+                # Force checkout to handle any file conflicts (like .aider files)
+                git checkout $selectedPR.headRefName --force 2>$null | Out-Null
+
+                # Verify the checkout worked
+                $afterCheckout = git rev-parse --abbrev-ref HEAD 2>$null
+                if ($afterCheckout -ne $selectedPR.headRefName) {
+                    Write-Error "Failed to checkout specified branch '$($selectedPR.headRefName)'. Currently on '$afterCheckout'."
                     return
                 }
 
