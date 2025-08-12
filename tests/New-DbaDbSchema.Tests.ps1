@@ -18,7 +18,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $random = Get-Random
         $server1 = Connect-DbaInstance -SqlInstance $TestConfig.instance1
         $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $null = Get-DbaProcess -SqlInstance $server1, $server2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false
+        $null = Get-DbaProcess -SqlInstance $server1, $server2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
         $newDbName = "dbatoolsci_newdb_$random"
         $newDbs = New-DbaDatabase -SqlInstance $server1, $server2 -Name $newDbName
 
@@ -38,12 +38,14 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "commands work as expected" {
 
         It "validates required Schema" {
-            $schema = New-DbaDbSchema -SqlInstance $server1
+            $schema = New-DbaDbSchema -SqlInstance $server1 -WarningAction SilentlyContinue -WarningVariable WarVar
+            $WarVar | Should -Match "Schema is required"
             $schema | Should -BeNullOrEmpty
         }
 
         It "validates required Database param" {
-            $schema = New-DbaDbSchema -SqlInstance $server1 -Schema TestSchema1
+            $schema = New-DbaDbSchema -SqlInstance $server1 -Schema TestSchema1 -WarningAction SilentlyContinue -WarningVariable WarVar
+            $WarVar | Should -Match "Database is required when SqlInstance is specified"
             $schema | Should -BeNullOrEmpty
         }
 
@@ -62,7 +64,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "reports a warning that the schema already exists" {
-            $schema = New-DbaDbSchema -SqlInstance $server1 -Database $newDbName -Schema TestSchema1 -SchemaOwner $userName
+            $schema = New-DbaDbSchema -SqlInstance $server1 -Database $newDbName -Schema TestSchema1 -SchemaOwner $userName -WarningAction SilentlyContinue -WarningVariable WarVar
+            $WarVar | Should -Match "Schema TestSchema1 already exists in the database"
             $schema | Should -BeNullOrEmpty
         }
 

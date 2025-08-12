@@ -168,10 +168,8 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                     return $obj
                 }
 
-
-
-                $result = Test-DbaMaxMemory -SqlInstance 'ABC'  -WarningVariable warnvar -WarningAction Continue
-                $warnvar | Should -BeLike "*The memory calculation may be inaccurate as the following SQL components have also been detected*"
+                $result = Test-DbaMaxMemory -SqlInstance 'ABC'  -WarningVariable WarnVar -WarningAction SilentlyContinue
+                $WarnVar | Should -BeLike "*The memory calculation may be inaccurate as the following SQL components have also been detected*"
             }
 
 

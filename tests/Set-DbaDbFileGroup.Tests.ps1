@@ -58,13 +58,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "A warning is returned when trying to set the options for a filegroup that doesn't exist" {
-            $results = Set-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name -FileGroup invalidFileGroupName -Default -AutoGrowAllFiles -Confirm:$false -WarningVariable warnings
-            $warnings | Should -BeLike "*Filegroup invalidFileGroupName does not exist in the database $db1name on $($TestConfig.instance2)"
+            $results = Set-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name -FileGroup invalidFileGroupName -Default -AutoGrowAllFiles -Confirm:$false -WarningVariable WarnVar -WarningAction SilentlyContinue
+            $WarnVar | Should -BeLike "*Filegroup invalidFileGroupName does not exist in the database $db1name on $($TestConfig.instance2)"
         }
 
         It "A warning is returned when trying to set the options for an empty filegroup" {
-            $results = Set-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name -FileGroup $fileGroup2Name -Default -AutoGrowAllFiles -Confirm:$false -WarningVariable warnings
-            $warnings | Should -BeLike "*Filegroup $fileGroup2Name is empty on $db1name on $($TestConfig.instance2). Before the options can be set there must be at least one file in the filegroup."
+            $results = Set-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name -FileGroup $fileGroup2Name -Default -AutoGrowAllFiles -Confirm:$false -WarningVariable WarnVar -WarningAction SilentlyContinue
+            $WarnVar | Should -BeLike "*Filegroup $fileGroup2Name is empty on $db1name on $($TestConfig.instance2). Before the options can be set there must be at least one file in the filegroup."
         }
 
         It "Sets the filegroup options using a database from a pipeline and a filegroup from a pipeline" {
