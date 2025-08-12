@@ -439,6 +439,27 @@ function Repair-PullRequestTest {
             Get-ChildItem env: | ForEach-Object { $cleanEnvVars[$_.Name] = $_.Value }
 
             $updateJobs = @()
+
+            # Register Ctrl-C handler to stop background jobs immediately
+            $ctrlCHandler = Register-EngineEvent PowerShell.Exiting -Action {
+                Write-Warning "Ctrl-C detected, stopping all Update-PesterTest background jobs..."
+                Get-Job | Where-Object { $_.Command -like '*Update-PesterTest*' -or $_.Name -like '*RepairPR-*' } | Stop-Job -Force -ErrorAction SilentlyContinue
+                Get-Job | Where-Object { $_.Command -like '*Update-PesterTest*' -or $_.Name -like '*RepairPR-*' } | Remove-Job -Force -ErrorAction SilentlyContinue
+                Write-Warning "Background jobs stopped due to interrupt"
+            }
+
+            # Also add a trap for pipeline stopped exceptions (Ctrl-C during execution)
+            trap [System.Management.Automation.PipelineStoppedException] {
+                Write-Warning "Pipeline stopped (Ctrl-C), cleaning up background jobs..."
+                $updateJobs | ForEach-Object {
+                    if ($_.Job.State -eq 'Running') {
+                        Stop-Job -Job $_.Job -Force -ErrorAction SilentlyContinue
+                        Remove-Job -Job $_.Job -Force -ErrorAction SilentlyContinue
+                    }
+                }
+                Write-Warning "Background jobs cleaned up"
+                throw
+            }
             foreach ($fileName in $fileErrorMap.Keys) {
                 # Skip if already processed
                 if ($processedFiles.ContainsKey($fileName)) {
@@ -454,7 +475,7 @@ function Repair-PullRequestTest {
 
                 Write-Verbose "Starting parallel job for Update-PesterTest on: $fileName"
 
-                $job = Start-Job -ScriptBlock {
+                $job = Start-Job -Name "RepairPR-$fileName-$(Get-Random)" -ScriptBlock {
                     param($TestPath, $GitRoot, $EnvVars)
 
                     # Set working directory
@@ -567,11 +588,19 @@ function Repair-PullRequestTest {
 
             # Clean up all jobs
             foreach ($jobInfo in $updateJobs) {
+                if ($jobInfo.Job.State -eq 'Running') {
+                    Stop-Job -Job $jobInfo.Job -Force -ErrorAction SilentlyContinue
+                }
                 Remove-Job -Job $jobInfo.Job -Force -ErrorAction SilentlyContinue
             }
 
             Write-Verbose "All $($updateJobs.Count) Update-PesterTest parallel jobs completed"
             Write-Progress -Activity "Running Update-PesterTest (Parallel)" -Completed -Id 1
+
+            # Unregister the Ctrl-C handler
+            if ($ctrlCHandler) {
+                Unregister-Event -SourceIdentifier $ctrlCHandler.Name -ErrorAction SilentlyContinue
+            }
 
             # Commit changes if requested
             if ($AutoCommit) {
@@ -628,10 +657,19 @@ function Repair-PullRequestTest {
             }
             # Kill any remaining jobs related to Update-PesterTest to ensure cleanup
             try {
-                Get-Job | Where-Object Command -like "*Update-PesterTest*" | Stop-Job -ErrorAction SilentlyContinue
-                Get-Job | Where-Object Command -like "*Update-PesterTest*" | Remove-Job -Force -ErrorAction SilentlyContinue
+                Get-Job | Where-Object { $_.Command -like "*Update-PesterTest*" -or $_.Name -like "*RepairPR-*" } | Stop-Job -ErrorAction SilentlyContinue
+                Get-Job | Where-Object { $_.Command -like "*Update-PesterTest*" -or $_.Name -like "*RepairPR-*" } | Remove-Job -Force -ErrorAction SilentlyContinue
             } catch {
                 Write-Warning "Error while attempting to clean up jobs: $($_.Exception.Message)"
+            }
+
+            # Clean up the Ctrl-C handler if it still exists
+            try {
+                if ($ctrlCHandler) {
+                    Unregister-Event -SourceIdentifier $ctrlCHandler.Name -ErrorAction SilentlyContinue
+                }
+            } catch {
+                Write-Verbose "Ctrl-C handler cleanup: $($_.Exception.Message)"
             }
         }
     }
