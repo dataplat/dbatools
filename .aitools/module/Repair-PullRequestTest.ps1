@@ -132,6 +132,69 @@ function Repair-PullRequestTest {
 
     process {
         try {
+            # Helper function to check if branch has been published to AppVeyor
+            function Test-BranchPublished {
+                param([string]$BranchName)
+
+                if (-not $BranchName -or $BranchName -eq "HEAD") {
+                    return $false
+                }
+
+                try {
+                    # Check if branch exists on remote
+                    $remoteBranch = git ls-remote --heads origin $BranchName 2>$null
+                    if (-not $remoteBranch) {
+                        Write-Verbose "Branch '$BranchName' not found on remote origin"
+                        return $false
+                    }
+
+                    # Check if there are any AppVeyor builds for this branch
+                    $commitSha = git rev-parse "origin/$BranchName" 2>$null
+                    if (-not $commitSha) {
+                        $commitSha = git rev-parse $BranchName 2>$null
+                    }
+
+                    if ($commitSha) {
+                        # Try to find AppVeyor status/checks for this commit
+                        $checkRunsJson = gh api "repos/dataplat/dbatools/commits/$commitSha/check-runs" 2>$null
+                        if ($checkRunsJson) {
+                            $checkRuns = $checkRunsJson | ConvertFrom-Json
+                            $appveyorCheckRun = $checkRuns.check_runs | Where-Object {
+                                $_.name -like "*AppVeyor*" -or $_.app.name -like "*AppVeyor*"
+                            }
+                            if ($appveyorCheckRun) {
+                                return $true
+                            }
+                        }
+
+                        # Fallback to status API
+                        $statusJson = gh api "repos/dataplat/dbatools/commits/$commitSha/status" 2>$null
+                        if ($statusJson) {
+                            $status = $statusJson | ConvertFrom-Json
+                            $appveyorStatus = $status.statuses | Where-Object {
+                                $_.context -like "*appveyor*" -or $_.context -like "*AppVeyor*"
+                            }
+                            if ($appveyorStatus) {
+                                return $true
+                            }
+                        }
+                    }
+
+                    return $false
+                } catch {
+                    Write-Verbose "Error checking if branch '$BranchName' is published: $_"
+                    return $false
+                }
+            }
+
+            # Early exit if current branch hasn't been published (unless specific BuildId, Branch, or PullRequest is provided)
+            if (-not $BuildId -and -not $Branch -and -not $PullRequest) {
+                if (-not (Test-BranchPublished -BranchName $originalBranch)) {
+                    Write-Verbose "Current branch '$originalBranch' has not been published to AppVeyor. No errors to repair."
+                    return
+                }
+            }
+
             # Get open PRs
             Write-Verbose "Fetching open pull requests..."
             Write-Progress -Activity "Repairing Pull Request Tests" -Status "Fetching open PRs..." -PercentComplete 0

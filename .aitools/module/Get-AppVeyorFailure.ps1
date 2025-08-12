@@ -75,6 +75,76 @@ function Get-AppVeyorFailure {
         [string]$Pattern
     )
 
+    # Helper function to check if branch has been published to AppVeyor
+    function Test-BranchPublished {
+        param([string]$BranchName)
+
+        if (-not $BranchName -or $BranchName -eq "HEAD") {
+            return $false
+        }
+
+        try {
+            # Check if branch exists on remote
+            $remoteBranch = git ls-remote --heads origin $BranchName 2>$null
+            if (-not $remoteBranch) {
+                Write-Verbose "Branch '$BranchName' not found on remote origin"
+                return $false
+            }
+
+            # Check if there are any AppVeyor builds for this branch
+            $commitSha = git rev-parse "origin/$BranchName" 2>$null
+            if (-not $commitSha) {
+                $commitSha = git rev-parse $BranchName 2>$null
+            }
+
+            if ($commitSha) {
+                # Try to find AppVeyor status/checks for this commit
+                $checkRunsJson = gh api "repos/dataplat/dbatools/commits/$commitSha/check-runs" 2>$null
+                if ($checkRunsJson) {
+                    $checkRuns = $checkRunsJson | ConvertFrom-Json
+                    $appveyorCheckRun = $checkRuns.check_runs | Where-Object {
+                        $_.name -like "*AppVeyor*" -or $_.app.name -like "*AppVeyor*"
+                    }
+                    if ($appveyorCheckRun) {
+                        return $true
+                    }
+                }
+
+                # Fallback to status API
+                $statusJson = gh api "repos/dataplat/dbatools/commits/$commitSha/status" 2>$null
+                if ($statusJson) {
+                    $status = $statusJson | ConvertFrom-Json
+                    $appveyorStatus = $status.statuses | Where-Object {
+                        $_.context -like "*appveyor*" -or $_.context -like "*AppVeyor*"
+                    }
+                    if ($appveyorStatus) {
+                        return $true
+                    }
+                }
+            }
+
+            return $false
+        } catch {
+            Write-Verbose "Error checking if branch '$BranchName' is published: $_"
+            return $false
+        }
+    }
+
+    # Early exit if current branch hasn't been published (unless specific BuildId or Branch is provided)
+    if (-not $BuildId -and -not $Branch -and -not $PullRequest) {
+        $currentBranch = git rev-parse --abbrev-ref HEAD 2>$null
+        if (-not $currentBranch) {
+            $currentBranch = git branch --show-current 2>$null
+        }
+
+        if ($currentBranch -and $currentBranch -ne "HEAD") {
+            if (-not (Test-BranchPublished -BranchName $currentBranch)) {
+                Write-Verbose "Current branch '$currentBranch' has not been published to AppVeyor. No errors to check."
+                return
+            }
+        }
+    }
+
     # If BuildId is specified, use it directly instead of looking up PR checks
     if ($BuildId) {
         Write-Progress -Activity "Get-AppVeyorFailure" -Status "Fetching build details for build #$BuildId..." -PercentComplete 0
