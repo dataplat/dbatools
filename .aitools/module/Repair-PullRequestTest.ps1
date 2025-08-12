@@ -114,20 +114,11 @@ function Repair-PullRequestTest {
             throw "Not authenticated with GitHub CLI. Please run 'gh auth login' first."
         }
 
-        # Create temp directory for working test files (cross-platform)
-        $tempDir = if ($IsWindows -or $env:OS -eq "Windows_NT") {
-            Join-Path $env:TEMP "dbatools-repair-$(Get-Random)"
-        } else {
-            Join-Path "/tmp" "dbatools-repair-$(Get-Random)"
-        }
-
-        if (-not (Test-Path $tempDir)) {
-            New-Item -Path $tempDir -ItemType Directory -Force | Out-Null
-            Write-Verbose "Created temp directory: $tempDir"
-        }
-
         # Initialize hash table to track processed files across all PRs
         $processedFiles = @{}
+
+        # Initialize tempDir variable to avoid null reference in finally block
+        $tempDir = $null
     }
 
     process {
@@ -190,9 +181,21 @@ function Repair-PullRequestTest {
             # Early exit if current branch hasn't been published (unless specific BuildId, Branch, or PullRequest is provided)
             if (-not $BuildId -and -not $Branch -and -not $PullRequest) {
                 if (-not (Test-BranchPublished -BranchName $originalBranch)) {
-                    Write-Verbose "Current branch '$originalBranch' has not been published to AppVeyor. No errors to repair."
+                    Write-Warning "Current branch '$originalBranch' has not been published to AppVeyor. No errors to repair."
                     return
                 }
+            }
+
+            # Create temp directory for working test files (cross-platform)
+            $tempDir = if ($IsWindows -or $env:OS -eq "Windows_NT") {
+                Join-Path $env:TEMP "dbatools-repair-$(Get-Random)"
+            } else {
+                Join-Path "/tmp" "dbatools-repair-$(Get-Random)"
+            }
+
+            if (-not (Test-Path $tempDir)) {
+                New-Item -Path $tempDir -ItemType Directory -Force | Out-Null
+                Write-Verbose "Created temp directory: $tempDir"
             }
 
             # Get open PRs
@@ -763,7 +766,7 @@ function Repair-PullRequestTest {
             }
 
             # Clean up temp directory
-            if (Test-Path $tempDir) {
+            if ($tempDir -and (Test-Path $tempDir)) {
                 Remove-Item $tempDir -Recurse -Force -ErrorAction SilentlyContinue
                 Write-Verbose "Cleaned up temp directory - $tempDir"
             }

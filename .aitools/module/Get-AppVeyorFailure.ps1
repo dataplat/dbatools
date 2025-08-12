@@ -139,7 +139,7 @@ function Get-AppVeyorFailure {
 
         if ($currentBranch -and $currentBranch -ne "HEAD") {
             if (-not (Test-BranchPublished -BranchName $currentBranch)) {
-                Write-Verbose "Current branch '$currentBranch' has not been published to AppVeyor. No errors to check."
+                Write-Warning "Current branch '$currentBranch' has not been published to AppVeyor. No errors to check."
                 return
             }
         }
