@@ -122,11 +122,14 @@ function Start-DbaXESmartTarget {
                 [switch]$EnableException
             )
             begin {
+                $xedll = Get-XESmartTargetPath -EnableException:$EnableException
+                if (-not $xedll) {
+                    return
+                }
                 try {
-                    $xedll = Join-DbaPath -Path $script:libraryroot -ChildPath third-party, XESmartTarget, XESmartTarget.Core.dll
                     Add-Type -Path $xedll -ErrorAction Stop
                 } catch {
-                    Stop-Function -Message "Could not load XESmartTarget.Core.dll" -ErrorRecord $_ -Target "XESmartTarget"
+                    Stop-Function -Message "Could not load XESmartTarget.Core.dll from: $xedll" -ErrorRecord $_ -Target "XESmartTarget"
                     return
                 }
             }
@@ -193,7 +196,12 @@ function Start-DbaXESmartTarget {
                         $ModulePath
                     )
                     Import-Module "$ModulePath\dbatools.psd1"
-                    Add-Type -Path "$ModulePath\bin\libraries\third-party\XESmartTarget\XESmartTarget.Core.dll" -ErrorAction Stop
+                    # Load XESmartTarget.Core.dll using the same logic as the main function
+                    $xedll = & (Get-Module dbatools) { Get-XESmartTargetPath }
+                    if (-not $xedll) {
+                        throw "Could not find XESmartTarget.Core.dll"
+                    }
+                    Add-Type -Path $xedll -ErrorAction Stop
                     $params = @{
                         SqlInstance = $Parameters.SqlInstance.InputObject
                         Database    = $Parameters.Database

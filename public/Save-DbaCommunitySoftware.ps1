@@ -17,6 +17,7 @@ function Save-DbaCommunitySoftware {
         * WhoIsActive: https://github.com/amachanic/sp_whoisactive/releases
         * DbaMultiTool: https://github.com/LowlyDBA/dba-multitool/releases
         * AzSqlTips: https://github.com/microsoft/azure-sql-tips/releases/
+        * XESmartTarget: https://github.com/spaghettidba/XESmartTarget/releases
 
     .PARAMETER Software
         Name of the software to download.
@@ -28,6 +29,7 @@ function Save-DbaCommunitySoftware {
         * WhoIsActive: Adam Machanic's comprehensive activity monitoring stored procedure sp_WhoIsActive (https://github.com/amachanic/sp_whoisactive)
         * DbaMultiTool: John McCall's T-SQL scripts for the long haul: optimizing storage, on-the-fly documentation, and general administrative needs (https://dba-multitool.org)
         * AzSqlTips: Azure SQL PM team scripts to review Azure SQL Database design, health and performance.
+        * XESmartTarget: XESmartTarget by Gianluca Sartori for analyzing Extended Events (https://github.com/spaghettidba/XESmartTarget)
 
     .PARAMETER Branch
         Specifies the branch. Defaults to master or main. Can only be used if Software is used.
@@ -73,10 +75,15 @@ function Save-DbaCommunitySoftware {
 
         Updates the local cache of the First Responder Kit based on the given file.
 
+    .EXAMPLE
+        PS C:\> Save-DbaCommunitySoftware -Software XESmartTarget
+
+        Updates the local cache of XESmartTarget objects.
+
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
-        [ValidateSet('MaintenanceSolution', 'FirstResponderKit', 'DarlingData', 'SQLWATCH', 'WhoIsActive', 'DbaMultiTool', 'AzSqlTips')]
+        [ValidateSet('MaintenanceSolution', 'FirstResponderKit', 'DarlingData', 'SQLWATCH', 'WhoIsActive', 'DbaMultiTool', 'AzSqlTips', 'XESmartTarget')]
         [string]$Software,
         [string]$Branch,
         [string]$LocalFile,
@@ -215,6 +222,38 @@ function Save-DbaCommunitySoftware {
             if (-not $LocalDirectory) {
                 $LocalDirectory = Join-Path -Path $dbatoolsData -ChildPath "AzSqlTips"
             }
+        } elseif ($Software -eq 'XESmartTarget') {
+            # We currently ignore -Branch as there is only one branch and there are no pre-releases.
+            if (-not $Url -and -not $LocalFile) {
+                $releasesUrl = "https://api.github.com/repos/spaghettidba/XESmartTarget/releases"
+                try {
+                    try {
+                        $releasesJson = Invoke-TlsWebRequest -Uri $releasesUrl -UseBasicParsing -ErrorAction Stop
+                    } catch {
+                        # Try with default proxy and usersettings
+                        (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
+                        $releasesJson = Invoke-TlsWebRequest -Uri $releasesUrl -UseBasicParsing -ErrorAction Stop
+                    }
+                } catch {
+                    Stop-Function -Message "Unable to get release information from $releasesUrl." -ErrorRecord $_
+                    return
+                }
+                $latestRelease = ($releasesJson | ConvertFrom-Json) | Select-Object -First 1
+                if ($null -eq $latestRelease) {
+                    Stop-Function -Message "No release found."
+                    return
+                }
+                # Look for the Windows x64 ZIP file in assets, fallback to zipball
+                $windowsAsset = $latestRelease.assets | Where-Object { $_.name -like "*x64*" -and $_.name -like "*.zip" } | Select-Object -First 1
+                if ($windowsAsset) {
+                    $Url = $windowsAsset.browser_download_url
+                } else {
+                    $Url = $latestRelease.zipball_url
+                }
+            }
+            if (-not $LocalDirectory) {
+                $LocalDirectory = Join-Path -Path $dbatoolsData -ChildPath "XESmartTarget"
+            }
         }
 
         # First part is download and extract and we use the temp directory for that and clean up afterwards.
@@ -345,6 +384,14 @@ function Save-DbaCommunitySoftware {
                 # copy the sqldb-tips directory from like 'azure-sql-tips-1.10.zip' to 'AzSqlTips' to be able to handle this like the other software.
                 if ($sourceDirectoryName -like '*azure-sql-tips-*') {
                     Rename-Item -Path $sourceDirectory.FullName -NewName 'AzSqlTips'
+                    $sourceDirectory = Get-ChildItem -Path $zipFolder -Directory
+                    $sourceDirectoryName = $sourceDirectory.Name
+                }
+            } elseif ($Software -eq 'XESmartTarget') {
+                # As this software is downloaded as a release, the directory has a different name.
+                # Rename the directory from like 'spaghettidba-XESmartTarget-abc1234' to 'XESmartTarget' to be able to handle this like the other software.
+                if ($sourceDirectoryName -like '*XESmartTarget-*' -or $sourceDirectoryName -like 'spaghettidba-*') {
+                    Rename-Item -Path $sourceDirectory.FullName -NewName 'XESmartTarget'
                     $sourceDirectory = Get-ChildItem -Path $zipFolder -Directory
                     $sourceDirectoryName = $sourceDirectory.Name
                 }
