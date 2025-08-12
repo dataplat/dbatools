@@ -37,35 +37,13 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbaMemoryCondition -SqlInstance $TestConfig.instance1
         }
 
-        It "Returns results" {
-            $results.Count | Should -BeGreaterThan 0
+        It "returns results" {
+            $results.Status.Count | Should -BeGreaterThan 0
         }
 
-        It "Has the correct properties" {
+        It "has the correct properties" {
             $result = $results[0]
-            $expectedProps = @(
-                "ComputerName",
-                "InstanceName",
-                "SqlInstance",
-                "Runtime",
-                "NotificationTime",
-                "NotificationType",
-                "MemoryUtilizationPercent",
-                "TotalPhysicalMemory",
-                "AvailablePhysicalMemory",
-                "TotalPageFile",
-                "AvailablePageFile",
-                "TotalVirtualAddressSpace",
-                "AvailableVirtualAddressSpace",
-                "NodeId",
-                "SQLReservedMemory",
-                "SQLCommittedMemory",
-                "RecordId",
-                "Type",
-                "Indicators",
-                "RecordTime",
-                "CurrentTime"
-            )
+            $expectedProps = "ComputerName", "InstanceName", "SqlInstance", "Runtime", "NotificationTime", "NotificationType", "MemoryUtilizationPercent", "TotalPhysicalMemory", "AvailablePhysicalMemory", "TotalPageFile", "AvailablePageFile", "TotalVirtualAddressSpace", "AvailableVirtualAddressSpace", "NodeId", "SQLReservedMemory", "SQLCommittedMemory", "RecordId", "Type", "Indicators", "RecordTime", "CurrentTime"
             ($result.PsObject.Properties.Name | Sort-Object) | Should -Be ($expectedProps | Sort-Object)
         }
     }
