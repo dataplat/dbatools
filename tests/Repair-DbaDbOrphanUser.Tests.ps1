@@ -37,46 +37,29 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        # Explain what needs to be set up for the test:
-        # To test orphan user repair, we need to create users in a database and then drop their corresponding logins,
-        # making them orphaned users. Then recreate some logins to test the repair functionality.
-
-        # Set variables. They are available in all the It blocks.
-        $databaseName = "dbatoolsci_orphan"
-        $orphanLogin1 = "dbatoolsci_orphan1"
-        $orphanLogin2 = "dbatoolsci_orphan2"
-        $orphanLogin3 = "dbatoolsci_orphan3"
-
-        $loginsql = @"
-CREATE LOGIN [$orphanLogin1] WITH PASSWORD = N"password1", CHECK_EXPIRATION = OFF, CHECK_POLICY = OFF;
-CREATE LOGIN [$orphanLogin2] WITH PASSWORD = N"password2", CHECK_EXPIRATION = OFF, CHECK_POLICY = OFF;
-CREATE LOGIN [$orphanLogin3] WITH PASSWORD = N"password3", CHECK_EXPIRATION = OFF, CHECK_POLICY = OFF;
-CREATE DATABASE $databaseName;
+        $loginSql = @"
+CREATE LOGIN [dbatoolsci_orphan1] WITH PASSWORD = N'password1', CHECK_EXPIRATION = OFF, CHECK_POLICY = OFF;
+CREATE LOGIN [dbatoolsci_orphan2] WITH PASSWORD = N'password2', CHECK_EXPIRATION = OFF, CHECK_POLICY = OFF;
+CREATE LOGIN [dbatoolsci_orphan3] WITH PASSWORD = N'password3', CHECK_EXPIRATION = OFF, CHECK_POLICY = OFF;
+CREATE DATABASE dbatoolsci_orphan;
 "@
-        $splatConnection = @{
-            SqlInstance     = $TestConfig.instance1
-            EnableException = $true
-        }
-        $server = Connect-DbaInstance @splatConnection
-        $null = Remove-DbaLogin -SqlInstance $server -Login $orphanLogin1, $orphanLogin2, $orphanLogin3 -Force -Confirm:$false
-        $null = Remove-DbaDatabase -SqlInstance $server -Database $databaseName -Confirm:$false
-        $null = Invoke-DbaQuery -SqlInstance $server -Query $loginsql
-
-        $usersql = @"
-CREATE USER [$orphanLogin1] FROM LOGIN [$orphanLogin1];
-CREATE USER [$orphanLogin2] FROM LOGIN [$orphanLogin2];
-CREATE USER [$orphanLogin3] FROM LOGIN [$orphanLogin3];
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+        $null = Remove-DbaLogin -SqlInstance $server -Login dbatoolsci_orphan1, dbatoolsci_orphan2, dbatoolsci_orphan3 -Force -Confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $server -Database dbatoolsci_orphan -Confirm:$false
+        $null = Invoke-DbaQuery -SqlInstance $server -Query $loginSql
+        $userSql = @"
+CREATE USER [dbatoolsci_orphan1] FROM LOGIN [dbatoolsci_orphan1];
+CREATE USER [dbatoolsci_orphan2] FROM LOGIN [dbatoolsci_orphan2];
+CREATE USER [dbatoolsci_orphan3] FROM LOGIN [dbatoolsci_orphan3];
 "@
-        Invoke-DbaQuery -SqlInstance $server -Query $usersql -Database $databaseName
-
-        $dropOrphanLogins = "DROP LOGIN [$orphanLogin1];DROP LOGIN [$orphanLogin2];"
-        Invoke-DbaQuery -SqlInstance $server -Query $dropOrphanLogins
-
-        $recreateLoginsql = @"
-CREATE LOGIN [$orphanLogin1] WITH PASSWORD = N"password1", CHECK_EXPIRATION = OFF, CHECK_POLICY = OFF;
-CREATE LOGIN [$orphanLogin2] WITH PASSWORD = N"password2", CHECK_EXPIRATION = OFF, CHECK_POLICY = OFF;
+        Invoke-DbaQuery -SqlInstance $server -Query $userSql -Database dbatoolsci_orphan
+        $dropOrphan = "DROP LOGIN [dbatoolsci_orphan1];DROP LOGIN [dbatoolsci_orphan2];"
+        Invoke-DbaQuery -SqlInstance $server -Query $dropOrphan
+        $recreateLoginSql = @"
+CREATE LOGIN [dbatoolsci_orphan1] WITH PASSWORD = N'password1', CHECK_EXPIRATION = OFF, CHECK_POLICY = OFF;
+CREATE LOGIN [dbatoolsci_orphan2] WITH PASSWORD = N'password2', CHECK_EXPIRATION = OFF, CHECK_POLICY = OFF;
 "@
-        Invoke-DbaQuery -SqlInstance $server -Query $recreateLoginsql
+        Invoke-DbaQuery -SqlInstance $server -Query $recreateLoginSql
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -86,51 +69,43 @@ CREATE LOGIN [$orphanLogin2] WITH PASSWORD = N"password2", CHECK_EXPIRATION = OF
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        # Cleanup all created objects.
-        $splatConnection = @{
-            SqlInstance     = $TestConfig.instance1
-            EnableException = $true
-        }
-        $server = Connect-DbaInstance @splatConnection
-        $null = Remove-DbaLogin -SqlInstance $server -Login $orphanLogin1, $orphanLogin2, $orphanLogin3 -Force -Confirm:$false -ErrorAction SilentlyContinue
-        $null = Remove-DbaDatabase -SqlInstance $server -Database $databaseName -Confirm:$false -ErrorAction SilentlyContinue
-
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+        $null = Remove-DbaLogin -SqlInstance $server -Login dbatoolsci_orphan1, dbatoolsci_orphan2, dbatoolsci_orphan3 -Force -Confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $server -Database dbatoolsci_orphan -Confirm:$false
     }
 
-    Context "When repairing orphan users" {
+    It "shows time taken for preparation" {
+        1 | Should -Be 1
+    }
+
+    Context "When repairing orphaned users" {
         BeforeAll {
-            $splatRepairOrphans = @{
-                SqlInstance = $TestConfig.instance1
-                Database    = $databaseName
-            }
-            $results = Repair-DbaDbOrphanUser @splatRepairOrphans
+            $global:repairResults = Repair-DbaDbOrphanUser -SqlInstance $TestConfig.instance1 -Database dbatoolsci_orphan
         }
 
         It "Finds two orphans" {
-            $results.Count | Should -Be 2
-            foreach ($user in $results) {
-                $user.User | Should -BeIn @($orphanLogin1, $orphanLogin2)
-                $user.DatabaseName | Should -Be $databaseName
+            $global:repairResults.Count | Should -Be 2
+            foreach ($user in $global:repairResults) {
+                $user.User | Should -BeIn @("dbatoolsci_orphan1", "dbatoolsci_orphan2")
+                $user.DatabaseName | Should -Be "dbatoolsci_orphan"
                 $user.Status | Should -Be "Success"
             }
         }
 
         It "has the correct properties" {
-            $result = $results[0]
-            $expectedProps = "ComputerName","InstanceName","SqlInstance","DatabaseName","User","Status"
+            $result = $global:repairResults[0]
+            $expectedProps = "ComputerName,InstanceName,SqlInstance,DatabaseName,User,Status".Split(",")
             ($result.PsObject.Properties.Name | Sort-Object) | Should -Be ($expectedProps | Sort-Object)
         }
     }
 
-    Context "When no orphan users exist" {
+    Context "When running repair again" {
+        BeforeAll {
+            $global:secondRepairResults = Repair-DbaDbOrphanUser -SqlInstance $TestConfig.instance1 -Database dbatoolsci_orphan
+        }
+
         It "does not find any other orphan" {
-            $splatNoOrphans = @{
-                SqlInstance = $TestConfig.instance1
-                Database    = $databaseName
-            }
-            $results = Repair-DbaDbOrphanUser @splatNoOrphans
-            $results | Should -BeNullOrEmpty
+            $global:secondRepairResults | Should -BeNullOrEmpty
         }
     }
 }

@@ -5,13 +5,10 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
-    Context "Validate parameters" {
+    Context "Parameter validation" {
         BeforeAll {
-            $hasParameters = (Get-Command $CommandName).Parameters.Keys | Where-Object { $PSItem -notin ("whatif", "confirm") }
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
                 "Path",
@@ -23,14 +20,14 @@ Describe $CommandName -Tag UnitTests {
             )
         }
 
-        It "Should only contain our specific parameters" {
+        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 
-    Context "Confirm impact should be medium" {
+    Context "Confirm impact validation" {
         BeforeAll {
-            $command = Get-Command Remove-DbaBackup
+            $command = Get-Command $CommandName
             $metadata = [System.Management.Automation.CommandMetadata]$command
         }
 
@@ -40,43 +37,34 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
+
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-        $testPath = "TestDrive:\sqlbackups"
+        $testPath = "TestDrive:\sqlbackups-$(Get-Random)"
+        $pathsToCleanup = @()
         if (!(Test-Path $testPath)) {
-            New-Item -Path $testPath -ItemType Container
+            $null = New-Item -Path $testPath -ItemType Directory
         }
-
-        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        $pathsToCleanup += $testPath
     }
 
     AfterAll {
-        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-        # Clean up test files and directories
-        Remove-Item -Path $testPath -Recurse -ErrorAction SilentlyContinue
-
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        Remove-Item -Path $pathsToCleanup -Recurse -ErrorAction SilentlyContinue
     }
 
     Context "Path validation" {
-        It "Should throw when path does not exist" {
-            { Remove-DbaBackup -Path "funnypath" -BackupFileExtension "bak" -RetentionPeriod "0d" -EnableException } | Should -Throw "not found"
+        It "Should throw when path not found" {
+            { Remove-DbaBackup -Path "funnypath" -BackupFileExtension bak -RetentionPeriod "0d" -EnableException } | Should -Throw "*not found*"
         }
     }
 
     Context "RetentionPeriod validation" {
         It "Should throw when retention period format is invalid" {
-            { Remove-DbaBackup -Path $testPath -BackupFileExtension "bak" -RetentionPeriod "ad" -EnableException } | Should -Throw "format invalid"
+            { Remove-DbaBackup -Path $testPath -BackupFileExtension bak -RetentionPeriod "ad" -EnableException } | Should -Throw "*format invalid*"
         }
 
         It "Should throw when retention period units are invalid" {
-            { Remove-DbaBackup -Path $testPath -BackupFileExtension "bak" -RetentionPeriod "11y" -EnableException } | Should -Throw "units invalid"
+            { Remove-DbaBackup -Path $testPath -BackupFileExtension bak -RetentionPeriod "11y" -EnableException } | Should -Throw "*units invalid*"
         }
     }
 
@@ -84,80 +72,87 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should not throw when extension starts with period" {
             { Remove-DbaBackup -Path $testPath -BackupFileExtension ".bak" -RetentionPeriod "0d" -EnableException -WarningAction SilentlyContinue } | Should -Not -Throw
         }
-    }
 
-    Context "BackupFileExtension message validation" {
         It "Should warn when extension starts with period" {
             Remove-DbaBackup -Path $testPath -BackupFileExtension ".bak" -RetentionPeriod "0d" -WarningAction SilentlyContinue -WarningVariable warnmessage
-            $warnmessage | Should -Match period
+            $warnmessage | Should -Match "period"
         }
     }
 
-    Context "Files are removed" {
-        BeforeAll {
+    Context "File removal" {
+        BeforeEach {
             for ($i = 1; $i -le 5; $i++) {
                 $filepath = Join-Path $testPath "dbatoolsci_$($i)_backup.bak"
-                Set-Content $filepath -value "."
+                Set-Content $filepath -Value "."
                 (Get-ChildItem $filepath).LastWriteTime = (Get-Date).AddDays(-5)
             }
         }
 
         It "Should remove all files with retention 0d" {
-            $null = Remove-DbaBackup -Path $testPath -BackupFileExtension "bak" -RetentionPeriod "0d"
+            $null = Remove-DbaBackup -Path $testPath -BackupFileExtension bak -RetentionPeriod "0d"
             (Get-ChildItem -Path $testPath -File -Recurse).Count | Should -Be 0
         }
     }
 
-    Context "Files with matching extensions only are removed" {
-        BeforeAll {
+    Context "Extension-specific file removal" {
+        BeforeEach {
+            # Create .bak files
             for ($i = 1; $i -le 5; $i++) {
                 $filepath = Join-Path $testPath "dbatoolsci_$($i)_backup.bak"
-                Set-Content $filepath -value "."
+                Set-Content $filepath -Value "."
                 (Get-ChildItem $filepath).LastWriteTime = (Get-Date).AddDays(-5)
             }
+            # Create .trn files
             for ($i = 1; $i -le 5; $i++) {
                 $filepath = Join-Path $testPath "dbatoolsci_$($i)_backup.trn"
-                Set-Content $filepath -value "."
+                Set-Content $filepath -Value "."
                 (Get-ChildItem $filepath).LastWriteTime = (Get-Date).AddDays(-5)
             }
         }
 
-        It "Should remove all files but not the trn ones" {
-            $null = Remove-DbaBackup -Path $testPath -BackupFileExtension "bak" -RetentionPeriod "0d"
+        It "Should remove only matching extension files" {
+            $null = Remove-DbaBackup -Path $testPath -BackupFileExtension bak -RetentionPeriod "0d"
             (Get-ChildItem -Path $testPath -File -Recurse).Count | Should -Be 5
             (Get-ChildItem -Path $testPath -File -Recurse).Name | Should -BeLike "*trn"
         }
     }
 
-    Context "Cleanup empty folders" {
-        BeforeAll {
-            $testPathinner_empty = "TestDrive:\sqlbackups\empty"
-            if (!(Test-Path $testPathinner_empty)) {
-                New-Item -Path $testPathinner_empty -ItemType Container
+    Context "Empty folder cleanup" {
+        BeforeEach {
+            # Create empty subdirectory
+            $testPathInnerEmpty = "$testPath\empty"
+            if (!(Test-Path $testPathInnerEmpty)) {
+                $null = New-Item -Path $testPathInnerEmpty -ItemType Directory
             }
-            $testPathinner = "TestDrive:\sqlbackups\inner"
-            if (!(Test-Path $testPathinner)) {
-                New-Item -Path $testPathinner -ItemType Container
+
+            # Create subdirectory with files
+            $testPathInner = "$testPath\inner"
+            if (!(Test-Path $testPathInner)) {
+                $null = New-Item -Path $testPathInner -ItemType Directory
             }
+
+            # Create files in root test path
             for ($i = 1; $i -le 5; $i++) {
                 $filepath = Join-Path $testPath "dbatoolsci_$($i)_backup.bak"
-                Set-Content $filepath -value "."
+                Set-Content $filepath -Value "."
                 (Get-ChildItem $filepath).LastWriteTime = (Get-Date).AddDays(-5)
             }
+
+            # Create files in inner subdirectory
             for ($i = 1; $i -le 5; $i++) {
-                $filepath = Join-Path $testPathinner "dbatoolsci_$($i)_backup.bak"
-                Set-Content $filepath -value "."
+                $filepath = Join-Path $testPathInner "dbatoolsci_$($i)_backup.bak"
+                Set-Content $filepath -Value "."
                 (Get-ChildItem $filepath).LastWriteTime = (Get-Date).AddDays(-5)
             }
         }
 
-        It "Removes files but leaves empty dirs" {
-            Remove-DbaBackup -Path $testPath -BackupFileExtension "bak" -RetentionPeriod "0d"
+        It "Should remove files but leave empty directories by default" {
+            Remove-DbaBackup -Path $testPath -BackupFileExtension bak -RetentionPeriod "0d"
             (Get-ChildItem -Path $testPath -Directory -Recurse).Count | Should -Be 2
         }
 
-        It "Removes files and removes empty dirs" {
-            Remove-DbaBackup -Path $testPath -BackupFileExtension "bak" -RetentionPeriod "0d" -RemoveEmptyBackupFolder
+        It "Should remove files and empty directories when specified" {
+            Remove-DbaBackup -Path $testPath -BackupFileExtension bak -RetentionPeriod "0d" -RemoveEmptyBackupFolder
             (Get-ChildItem -Path $testPath -Directory -Recurse).Count | Should -Be 0
         }
     }

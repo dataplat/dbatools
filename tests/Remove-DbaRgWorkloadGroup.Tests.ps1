@@ -29,24 +29,17 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
-    BeforeAll {
-        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
-        
-        $null = Set-DbaResourceGovernor -SqlInstance $TestConfig.instance2 -Enabled
-        
-        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
-    }
-
-    AfterAll {
-        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
-        
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
-    }
-
     Context "Functionality" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Set-DbaResourceGovernor -SqlInstance $TestConfig.instance2 -Enabled
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
         It "Removes a workload group in default resource pool" {
             $wklGroupName = "dbatoolssci_wklgroupTest"
             $splatNewWorkloadGroup = @{
@@ -60,11 +53,12 @@ Describe $CommandName -Tag IntegrationTests {
             $result3 = Get-DbaRgWorkloadGroup -SqlInstance $TestConfig.instance2 | Where-Object Name -eq $wklGroupName
 
             $newWorkloadGroup | Should -Not -Be $null
-            $result.Status.Count | Should -BeGreaterThan $result3.Status.Count
+            $result.Count | Should -BeGreaterThan $result3.Count
             $result2.Status | Should -Be "Dropped"
             $result2.IsRemoved | Should -Be $true
             $result3 | Should -Be $null
         }
+
         It "Removes a workload group in a user defined resource pool" {
             $wklGroupName = "dbatoolssci_wklgroupTest"
             $resourcePoolName = "dbatoolssci_poolTest"
@@ -91,11 +85,12 @@ Describe $CommandName -Tag IntegrationTests {
             $null = Remove-DbaRgResourcePool -SqlInstance $TestConfig.instance2 -ResourcePool $resourcePoolName -Type $resourcePoolType
 
             $newWorkloadGroup | Should -Not -Be $null
-            $result.Status.Count | Should -BeGreaterThan $result3.Status.Count
+            $result.Count | Should -BeGreaterThan $result3.Count
             $result2.Status | Should -Be "Dropped"
             $result2.IsRemoved | Should -Be $true
             $result3 | Should -Be $null
         }
+
         It "Removes multiple workload groups" {
             $wklGroupName = "dbatoolssci_wklgroupTest"
             $wklGroupName2 = "dbatoolssci_wklgroupTest"
@@ -111,11 +106,12 @@ Describe $CommandName -Tag IntegrationTests {
             $result3 = Get-DbaRgWorkloadGroup -SqlInstance $TestConfig.instance2 | Where-Object Name -in $wklGroupName, $wklGroupName2
 
             $newWorkloadGroups | Should -Not -Be $null
-            $result.Status.Count | Should -BeGreaterThan $result3.Status.Count
+            $result.Count | Should -BeGreaterThan $result3.Count
             $result2.Status | Should -Be "Dropped"
             $result2.IsRemoved | Should -Be $true
             $result3 | Should -Be $null
         }
+
         It "Removes a piped workload group" {
             $wklGroupName = "dbatoolssci_wklgroupTest"
             $splatNewWorkloadGroup = @{
@@ -129,7 +125,7 @@ Describe $CommandName -Tag IntegrationTests {
             $result3 = Get-DbaRgWorkloadGroup -SqlInstance $TestConfig.instance2 | Where-Object Name -eq $wklGroupName
 
             $newWorkloadGroup | Should -Not -Be $null
-            $result.Status.Count | Should -BeGreaterThan $result3.Status.Count
+            $result.Count | Should -BeGreaterThan $result3.Count
             $result2.Status | Should -Be "Dropped"
             $result2.IsRemoved | Should -Be $true
             $result3 | Should -Be $null

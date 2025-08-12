@@ -89,7 +89,7 @@ Describe $CommandName -Tag IntegrationTests {
             $result = Get-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Snapshot $db1_snap1 | Remove-DbaDbSnapshot -Confirm:$false
             $result.Name | Should -Be $db1_snap1
             $result = Get-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Snapshot $db1_snap1
-            $result | Should -BeNullOrEmpty
+            $result | Should -Be $null
         }
         It "Has the correct default properties" {
             $result = Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db2 -Confirm:$false
