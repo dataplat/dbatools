@@ -148,7 +148,7 @@ function Repair-PullRequestTest {
                             }
                             $prs = $prsWithFiles
                         } else {
-                            Write-Verbose "On Development branch without Force flag - skipping PR processing"
+                            Write-Warning "On Development branch - use -Force flag to process PRs"
                             return
                         }
                     } else {
@@ -301,31 +301,33 @@ function Repair-PullRequestTest {
 
             # Handle case where we have a current branch but no AppVeyor failures
             if ($selectedPR -and $selectedPR.number -eq "current" -and -not $allFailedTestsAcrossPRs) {
-                Write-Verbose "Processing current branch without AppVeyor failure data - will process all test files matching pattern or all tests"
-
-                # For current branch without failure data, we'll create dummy failure entries for all test files
-                # that match the pattern (if specified) or all test files
-                $testDirectory = Join-Path (Split-Path $PSScriptRoot -Parent) "tests"
-                if (-not (Test-Path $testDirectory)) {
-                    $testDirectory = Join-Path $pwd "tests"
-                }
-
-                $testFiles = Get-ChildItem -Path $testDirectory -Filter "*.Tests.ps1" -ErrorAction SilentlyContinue
-
                 if ($Pattern) {
-                    $testFiles = $testFiles | Where-Object { $_.Name -match $Pattern }
-                }
+                    Write-Verbose "Processing current branch without AppVeyor failure data - will process test files matching pattern '$Pattern'"
 
-                $allFailedTestsAcrossPRs = @()
-                foreach ($testFile in $testFiles) {
-                    $allFailedTestsAcrossPRs += @{
-                        TestFile = $testFile.Name
-                        TestName = "Unknown"
-                        ErrorMessage = "Processing current branch without specific failure data"
+                    # For current branch without failure data, we'll create dummy failure entries for test files
+                    # that match the specified pattern only
+                    $testDirectory = Join-Path (Split-Path $PSScriptRoot -Parent) "tests"
+                    if (-not (Test-Path $testDirectory)) {
+                        $testDirectory = Join-Path $pwd "tests"
                     }
-                }
 
-                Write-Verbose "Created $($allFailedTestsAcrossPRs.Count) test entries for current branch processing"
+                    $testFiles = Get-ChildItem -Path $testDirectory -Filter "*.Tests.ps1" -ErrorAction SilentlyContinue
+                    $testFiles = $testFiles | Where-Object { $_.Name -match $Pattern }
+
+                    $allFailedTestsAcrossPRs = @()
+                    foreach ($testFile in $testFiles) {
+                        $allFailedTestsAcrossPRs += @{
+                            TestFile = $testFile.Name
+                            TestName = "Unknown"
+                            ErrorMessage = "Processing current branch with pattern filter without specific failure data"
+                        }
+                    }
+
+                    Write-Verbose "Created $($allFailedTestsAcrossPRs.Count) test entries for current branch processing with pattern '$Pattern'"
+                } else {
+                    Write-Warning "No AppVeyor failures found for current branch. Use -BuildNumber to specify a specific build, -Pattern to filter specific tests, or run from a branch with actual test failures."
+                    return
+                }
             }
 
             # If no failures found anywhere, exit
