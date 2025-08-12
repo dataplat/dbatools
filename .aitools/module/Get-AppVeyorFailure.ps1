@@ -16,6 +16,10 @@ function Get-AppVeyorFailure {
         Specific AppVeyor build number to target instead of automatically detecting from PR checks.
         When specified, retrieves failures directly from this build number, ignoring PR-based detection.
 
+    .PARAMETER Branch
+        Specific branch name to get AppVeyor failures for. When specified, finds the latest build
+        for this branch and retrieves failures from it.
+
     .NOTES
         Tags: Testing, AppVeyor, CI, PullRequest
         Author: dbatools team
@@ -36,15 +40,57 @@ function Get-AppVeyorFailure {
     .EXAMPLE
         PS C:\> Get-AppVeyorFailure -BuildNumber 12345
         Retrieves test failures directly from AppVeyor build #12345, bypassing PR detection.
+
+    .EXAMPLE
+        PS C:\> Get-AppVeyorFailure -Branch "feature-branch"
+        Retrieves test failures from the latest AppVeyor build for the specified branch.
     #>
     [CmdletBinding()]
     param (
         [int[]]$PullRequest,
 
-        [int]$BuildNumber
+        [int]$BuildNumber,
+
+        [string]$Branch
     )
 
-    # If BuildNumber is specified, use it directly instead of looking up PR checks
+    # If Branch is specified, find the latest build for that branch
+    if ($Branch) {
+        Write-Progress -Activity "Get-AppVeyorFailure" -Status "Fetching latest build for branch '$Branch'..." -PercentComplete 0
+        Write-Verbose "Looking for latest AppVeyor build for branch: $Branch"
+
+        try {
+            # Get recent builds and find the latest one for this branch
+            $apiParams = @{
+                Endpoint = "projects/dataplat/dbatools/history?recordsNumber=50"
+            }
+            $history = Invoke-AppVeyorApi @apiParams
+
+            if (-not $history -or -not $history.builds) {
+                Write-Verbose "No build history found"
+                Write-Progress -Activity "Get-AppVeyorFailure" -Completed
+                return
+            }
+
+            # Find the latest build for this branch
+            $branchBuild = $history.builds | Where-Object { $_.branch -eq $Branch } | Select-Object -First 1
+
+            if (-not $branchBuild) {
+                Write-Verbose "No builds found for branch: $Branch"
+                Write-Progress -Activity "Get-AppVeyorFailure" -Completed
+                return
+            }
+
+            $BuildNumber = $branchBuild.buildNumber
+            Write-Verbose "Found latest build #$BuildNumber for branch '$Branch'"
+        } catch {
+            Write-Verbose "Failed to fetch build history for branch ${Branch}: $_"
+            Write-Progress -Activity "Get-AppVeyorFailure" -Completed
+            return
+        }
+    }
+
+    # If BuildNumber is specified (either directly or found from branch), use it directly
     if ($BuildNumber) {
         Write-Progress -Activity "Get-AppVeyorFailure" -Status "Fetching build details for build #$BuildNumber..." -PercentComplete 0
         Write-Verbose "Using specified build number: $BuildNumber"
