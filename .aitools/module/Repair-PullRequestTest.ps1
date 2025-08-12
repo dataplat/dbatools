@@ -30,6 +30,10 @@ function Repair-PullRequestTest {
        Pattern to filter test files. Only files matching this pattern will be processed.
        Supports wildcards (e.g., "*Login*" to match files containing "Login").
 
+   .PARAMETER Force
+       When on Development branch, forces switching to PR branch and copying only
+       failures from that branch. Without this, Development branch will not process PRs.
+
    .NOTES
        Tags: Testing, Pester, PullRequest, CI
        Author: dbatools team
@@ -58,7 +62,8 @@ function Repair-PullRequestTest {
         [int]$MaxPRs = 5,
         [int]$BuildNumber,
         [switch]$CopyOnly,
-        [string]$Pattern
+        [string]$Pattern,
+        [switch]$Force
     )
 
     begin {
@@ -126,21 +131,26 @@ function Repair-PullRequestTest {
                     Write-Verbose "Found PR for current branch: $originalBranch"
                     $prs = @($currentBranchPR | ConvertFrom-Json)
                 } else {
-                    # Check if current branch is Development - if so, skip and look for other PRs
+                    # Check if current branch is Development - if so, only proceed if Force is specified
                     if ($originalBranch -eq "Development" -or $originalBranch -eq "development") {
-                        Write-Verbose "No PR found for Development branch, fetching all open PRs"
-                        $prsJson = gh pr list --state open --limit $MaxPRs --json "number,title,headRefName,state,statusCheckRollup" 2>$null
-                        $prs = $prsJson | ConvertFrom-Json
+                        if ($Force) {
+                            Write-Verbose "Force flag specified on Development branch, fetching PRs"
+                            $prsJson = gh pr list --state open --limit $MaxPRs --json "number,title,headRefName,state,statusCheckRollup" 2>$null
+                            $prs = $prsJson | ConvertFrom-Json
 
-                        # For each PR, get the files changed (since pr list doesn't include files)
-                        $prsWithFiles = @()
-                        foreach ($pr in $prs) {
-                            $prWithFiles = gh pr view $pr.number --json "number,title,headRefName,state,statusCheckRollup,files" 2>$null
-                            if ($prWithFiles) {
-                                $prsWithFiles += ($prWithFiles | ConvertFrom-Json)
+                            # For each PR, get the files changed (since pr list doesn't include files)
+                            $prsWithFiles = @()
+                            foreach ($pr in $prs) {
+                                $prWithFiles = gh pr view $pr.number --json "number,title,headRefName,state,statusCheckRollup,files" 2>$null
+                                if ($prWithFiles) {
+                                    $prsWithFiles += ($prWithFiles | ConvertFrom-Json)
+                                }
                             }
+                            $prs = $prsWithFiles
+                        } else {
+                            Write-Warning "On Development branch - use -Force flag to process PRs"
+                            return
                         }
-                        $prs = $prsWithFiles
                     } else {
                         # For any other branch without a PR, treat current branch as the "PR"
                         Write-Verbose "No PR found for current branch '$originalBranch', but it's not Development - treating current branch as PR"
@@ -279,9 +289,10 @@ function Repair-PullRequestTest {
                     }
 
                     # Filter tests for this PR and add to collection
+                    # Only include tests that are actually in the changed files for this PR
                     foreach ($test in $prFailedTests) {
                         $testFileName = [System.IO.Path]::GetFileName($test.TestFile)
-                        if ($relevantTestFiles.Count -eq 0 -or $testFileName -in $relevantTestFiles) {
+                        if ($relevantTestFiles.Count -gt 0 -and $testFileName -in $relevantTestFiles) {
                             $allFailedTestsAcrossPRs += $test
                         }
                     }
@@ -290,31 +301,33 @@ function Repair-PullRequestTest {
 
             # Handle case where we have a current branch but no AppVeyor failures
             if ($selectedPR -and $selectedPR.number -eq "current" -and -not $allFailedTestsAcrossPRs) {
-                Write-Verbose "Processing current branch without AppVeyor failure data - will process all test files matching pattern or all tests"
-
-                # For current branch without failure data, we'll create dummy failure entries for all test files
-                # that match the pattern (if specified) or all test files
-                $testDirectory = Join-Path (Split-Path $PSScriptRoot -Parent) "tests"
-                if (-not (Test-Path $testDirectory)) {
-                    $testDirectory = Join-Path $pwd "tests"
-                }
-
-                $testFiles = Get-ChildItem -Path $testDirectory -Filter "*.Tests.ps1" -ErrorAction SilentlyContinue
-
                 if ($Pattern) {
-                    $testFiles = $testFiles | Where-Object { $_.Name -match $Pattern }
-                }
+                    Write-Verbose "Processing current branch without AppVeyor failure data - will process test files matching pattern '$Pattern'"
 
-                $allFailedTestsAcrossPRs = @()
-                foreach ($testFile in $testFiles) {
-                    $allFailedTestsAcrossPRs += @{
-                        TestFile = $testFile.Name
-                        TestName = "Unknown"
-                        ErrorMessage = "Processing current branch without specific failure data"
+                    # For current branch without failure data, we'll create dummy failure entries for test files
+                    # that match the specified pattern only
+                    $testDirectory = Join-Path (Split-Path $PSScriptRoot -Parent) "tests"
+                    if (-not (Test-Path $testDirectory)) {
+                        $testDirectory = Join-Path $pwd "tests"
                     }
-                }
 
-                Write-Verbose "Created $($allFailedTestsAcrossPRs.Count) test entries for current branch processing"
+                    $testFiles = Get-ChildItem -Path $testDirectory -Filter "*.Tests.ps1" -ErrorAction SilentlyContinue
+                    $testFiles = $testFiles | Where-Object { $_.Name -match $Pattern }
+
+                    $allFailedTestsAcrossPRs = @()
+                    foreach ($testFile in $testFiles) {
+                        $allFailedTestsAcrossPRs += @{
+                            TestFile = $testFile.Name
+                            TestName = "Unknown"
+                            ErrorMessage = "Processing current branch with pattern filter without specific failure data"
+                        }
+                    }
+
+                    Write-Verbose "Created $($allFailedTestsAcrossPRs.Count) test entries for current branch processing with pattern '$Pattern'"
+                } else {
+                    Write-Warning "No AppVeyor failures found for current branch. Use -BuildNumber to specify a specific build, -Pattern to filter specific tests, or run from a branch with actual test failures."
+                    return
+                }
             }
 
             # If no failures found anywhere, exit
@@ -341,8 +354,18 @@ function Repair-PullRequestTest {
 
             foreach ($test in $filteredTests) {
                 $fileName = [System.IO.Path]::GetFileName($test.TestFile)
-                # ONLY include files that are actually in the PR changes
-                if ($allRelevantTestFiles.Count -eq 0 -or $fileName -in $allRelevantTestFiles) {
+                # ONLY include files that are actually in the PR changes or current branch failures
+                if ($allRelevantTestFiles.Count -gt 0 -and $fileName -in $allRelevantTestFiles) {
+                    if (-not $fileErrorMap.ContainsKey($fileName)) {
+                        $fileErrorMap[$fileName] = @()
+                    }
+                    $fileErrorMap[$fileName] += $test
+
+                    if ($test.TestFile) {
+                        $fileErrorPath += (Join-Path $testdirectory $test.TestFile)
+                    }
+                } elseif ($allRelevantTestFiles.Count -eq 0 -and $selectedPR.number -eq "current") {
+                    # Only for current branch without PR context, allow the test if it matches pattern
                     if (-not $fileErrorMap.ContainsKey($fileName)) {
                         $fileErrorMap[$fileName] = @()
                     }
@@ -366,7 +389,11 @@ function Repair-PullRequestTest {
 
             # If no relevant failures after filtering, exit
             if ($fileErrorMap.Keys.Count -eq 0) {
-                Write-Verbose "No test failures found in files that were changed in the PR(s)"
+                if ($selectedPR.number -eq "current") {
+                    Write-Verbose "No test failures found for current branch processing"
+                } else {
+                    Write-Verbose "No test failures found in files that were changed in the PR(s)"
+                }
                 return
             }
 
