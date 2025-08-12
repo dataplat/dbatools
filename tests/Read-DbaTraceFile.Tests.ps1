@@ -1,22 +1,53 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Read-DbaTraceFile",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
+
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 $global:TestConfig = Get-TestConfig
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('WhatIf', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Path', 'Database', 'Login', 'Spid', 'EventClass', 'ObjectType', 'ErrorId', 'EventSequence', 'TextData', 'ApplicationName', 'ObjectName', 'Where', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        BeforeAll {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Path",
+                "Database",
+                "Login",
+                "Spid",
+                "EventClass",
+                "ObjectType",
+                "ErrorId",
+                "EventSequence",
+                "TextData",
+                "ApplicationName",
+                "ObjectName",
+                "Where",
+                "EnableException"
+            )
+        }
+
+        It "Should have the expected parameters" {
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         # TODO: Should not be needed as the default trace should always be enabled
         Set-DbaSpConfigure -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -Name DefaultTraceEnabled -Value $true -WarningAction SilentlyContinue
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Verifying command output" {
@@ -39,15 +70,18 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $warn | Should -Be $null
         }
     }
+
     Context "Verify Parameter Use" {
         It "Should execute using parameters Database, Login, Spid" {
-            $results = Get-DbaTrace -SqlInstance $TestConfig.instance2 -Id 1 | Read-DbaTraceFile -Database Master -Login sa -Spid 7 -WarningAction SilentlyContinue -WarningVariable warn
+            $results = Get-DbaTrace -SqlInstance $TestConfig.instance2 -Id 1 | Read-DbaTraceFile -Database "Master" -Login "sa" -Spid 7 -WarningAction SilentlyContinue -WarningVariable warn
             $warn | Should -Be $null
         }
+
         It "Should execute using parameters EventClass, ObjectType, ErrorId" {
             $results = Get-DbaTrace -SqlInstance $TestConfig.instance2 -Id 1 | Read-DbaTraceFile -EventClass 4 -ObjectType 4 -ErrorId 4 -WarningAction SilentlyContinue -WarningVariable warn
             $warn | Should -Be $null
         }
+
         It "Should execute using parameters EventSequence, TextData, ApplicationName, ObjectName" {
             $results = Get-DbaTrace -SqlInstance $TestConfig.instance2 -Id 1 | Read-DbaTraceFile -EventSequence 4 -TextData "Text" -ApplicationName "Application" -ObjectName "Name" -WarningAction SilentlyContinue -WarningVariable warn
             $warn | Should -Be $null

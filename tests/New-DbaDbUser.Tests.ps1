@@ -1,26 +1,47 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "New-DbaDbUser",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 $global:TestConfig = Get-TestConfig
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'IncludeSystem', 'User', 'Login', 'SecurePassword', 'ExternalProvider', 'DefaultSchema', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        BeforeAll {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "IncludeSystem",
+                "User",
+                "Login",
+                "SecurePassword",
+                "ExternalProvider",
+                "DefaultSchema",
+                "Force",
+                "EnableException"
+            )
+        }
+
+        It "Should have the expected parameters" {
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $dbname = "dbatoolscidb_$(Get-Random)"
         $userName = "dbatoolscidb_UserWithLogin"
         $userNameWithPassword = "dbatoolscidb_UserWithPassword"
         $userNameWithoutLogin = "dbatoolscidb_UserWithoutLogin"
 
-        $password = 'MyV3ry$ecur3P@ssw0rd'
+        $password = "MyV3ry`$ecur3P@ssw0rd"
         $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
         $null = New-DbaLogin -SqlInstance $TestConfig.instance2 -Login $userName -Password $securePassword -Force
         $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $dbname
@@ -45,7 +66,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             New-DbaDbUser -SqlInstance $TestConfig.instance2 -Database $dbname -Login $userName -DefaultSchema guest
             $newDbUser = Get-DbaDbUser -SqlInstance $TestConfig.instance2 -Database $dbname | Where-Object Name -eq $userName
             $newDbUser.Name | Should -Be $userName
-            $newDbUser.DefaultSchema | Should -Be 'guest'
+            $newDbUser.DefaultSchema | Should -Be "guest"
         }
     }
     Context "Should create the user with password" {
@@ -53,7 +74,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             New-DbaDbUser -SqlInstance $TestConfig.instance2 -Database $dbname -Username $userNameWithPassword -Password $securePassword -DefaultSchema guest
             $newDbUser = Get-DbaDbUser -SqlInstance $TestConfig.instance2 -Database $dbname | Where-Object Name -eq $userNameWithPassword
             $newDbUser.Name | Should -Be $userNameWithPassword
-            $newDbUser.DefaultSchema | Should -Be 'guest'
+            $newDbUser.DefaultSchema | Should -Be "guest"
         }
     }
     Context "Should create the user without login" {
@@ -61,7 +82,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             New-DbaDbUser -SqlInstance $TestConfig.instance2 -Database $dbname -User $userNameWithoutLogin -DefaultSchema guest
             $results = Get-DbaDbUser -SqlInstance $TestConfig.instance2 -Database $dbname | Where-Object Name -eq $userNameWithoutLogin
             $results.Name | Should -Be $userNameWithoutLogin
-            $results.DefaultSchema | Should -Be 'guest'
+            $results.DefaultSchema | Should -Be "guest"
             $results.Login | Should -BeNullOrEmpty
         }
     }
@@ -70,7 +91,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $dbs = "dbatoolscidb0_$(Get-Random)", "dbatoolscidb1_$(Get-Random)", "dbatoolscidb3_$(Get-Random)"
             $loginName = "dbatoolscidb_Login$(Get-Random)"
 
-            $password = 'MyV3ry$ecur3P@ssw0rd'
+            $password = "MyV3ry`$ecur3P@ssw0rd"
             $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
             $null = New-DbaLogin -SqlInstance $TestConfig.instance2 -Login $loginName -Password $securePassword -Force
             $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $dbs
