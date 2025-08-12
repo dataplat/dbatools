@@ -122,6 +122,56 @@ function Repair-PullRequestTest {
     }
 
     process {
+        # Helper function to get modified files from git diff
+        function Get-ModifiedTestFiles {
+            param(
+                [string]$BaseBranch = "origin/development",
+                [string]$TargetBranch = "HEAD",
+                [string]$CommitSha = $null
+            )
+
+            $modifiedFiles = @()
+            $changedTestFiles = @()
+            $changedCommandFiles = @()
+
+            try {
+                if ($CommitSha) {
+                    # Get files modified in a specific commit
+                    $gitOutput = git diff --name-only "$CommitSha^..$CommitSha" 2>$null
+                } else {
+                    # Get files modified between branches
+                    $gitOutput = git diff --name-only "$BaseBranch...$TargetBranch" 2>$null
+                }
+
+                if ($gitOutput) {
+                    $modifiedFiles = $gitOutput | Where-Object { $_ }
+                    Write-Verbose "Found $($modifiedFiles.Count) modified files via git diff"
+
+                    foreach ($file in $modifiedFiles) {
+                        Write-Verbose "Processing modified file: $file"
+
+                        if ($file -like "*Tests.ps1" -or $file -like "tests/*.Tests.ps1") {
+                            $testFileName = [System.IO.Path]::GetFileName($file)
+                            $changedTestFiles += $testFileName
+                            Write-Verbose "Added test file: $testFileName"
+                        } elseif ($file -like "public/*.ps1") {
+                            $commandName = [System.IO.Path]::GetFileNameWithoutExtension($file)
+                            $testFileName = "$commandName.Tests.ps1"
+                            $changedCommandFiles += $testFileName
+                            Write-Verbose "Added command test file: $testFileName (from command - $commandName)"
+                        }
+                    }
+                }
+            } catch {
+                Write-Warning "Failed to get modified files via git diff: $_"
+            }
+
+            # Combine and deduplicate
+            $relevantTestFiles = ($changedTestFiles + $changedCommandFiles) | Sort-Object -Unique
+            Write-Verbose "Relevant test files from git diff: $($relevantTestFiles -join ', ')"
+
+            return $relevantTestFiles
+        }
         try {
             # Create temp directory for working test files (cross-platform)
             $tempDir = if ($IsWindows -or $env:OS -eq "Windows_NT") {
@@ -228,8 +278,17 @@ function Repair-PullRequestTest {
                     return
                 }
 
-                # For build-specific mode, we don't filter by PR files - process all failures
-                $allRelevantTestFiles = @()
+                # For build-specific mode, determine modified files via git diff from the build commit
+                Write-Verbose "BuildId mode: Determining modified files for build #$BuildId"
+
+                # Try to get the commit SHA from the build (this would require additional AppVeyor API calls)
+                # For now, use current branch comparison as fallback
+                $allRelevantTestFiles = Get-ModifiedTestFiles -BaseBranch "origin/development" -TargetBranch "HEAD"
+
+                if ($allRelevantTestFiles.Count -eq 0) {
+                    Write-Warning "No modified test files found for BuildId mode. Cannot determine which tests to repair."
+                    return
+                }
 
                 # Use the first PR for branch operations (or current branch if no PR specified)
                 $selectedPR = $prs | Select-Object -First 1
@@ -256,8 +315,14 @@ function Repair-PullRequestTest {
                     return
                 }
 
-                # For branch-specific mode, we don't filter by PR files - process all failures
-                $allRelevantTestFiles = @()
+                # For branch-specific mode, determine modified files via git diff
+                Write-Verbose "Branch mode: Determining modified files for branch '$Branch'"
+                $allRelevantTestFiles = Get-ModifiedTestFiles -BaseBranch "origin/development" -TargetBranch "origin/$Branch"
+
+                if ($allRelevantTestFiles.Count -eq 0) {
+                    Write-Warning "No modified test files found for branch '$Branch'. Cannot determine which tests to repair."
+                    return
+                }
 
                 # Create a pseudo-PR object for the specified branch
                 $selectedPR = @{
@@ -272,8 +337,14 @@ function Repair-PullRequestTest {
                 # Use the auto-detected failures
                 $allFailedTestsAcrossPRs = $autoDetectedFailures
 
-                # For auto-detected mode, we don't filter by PR files - process all failures
-                $allRelevantTestFiles = @()
+                # For auto-detected mode, determine modified files via git diff
+                Write-Verbose "Auto-detection mode: Determining modified files for current branch '$originalBranch'"
+                $allRelevantTestFiles = Get-ModifiedTestFiles -BaseBranch "origin/development" -TargetBranch "HEAD"
+
+                if ($allRelevantTestFiles.Count -eq 0) {
+                    Write-Warning "No modified test files found for current branch '$originalBranch'. Cannot determine which tests to repair."
+                    return
+                }
 
                 # Use the pseudo-PR object we already created
                 $selectedPR = $prs[0]
@@ -355,10 +426,10 @@ function Repair-PullRequestTest {
                         continue
                     }
 
-                    # Filter tests for this PR and add to collection
+                    # Filter tests for this PR and add to collection - only include files that were actually changed
                     foreach ($test in $prFailedTests) {
                         $testFileName = [System.IO.Path]::GetFileName($test.TestFile)
-                        if ($relevantTestFiles.Count -eq 0 -or $testFileName -in $relevantTestFiles) {
+                        if ($relevantTestFiles.Count -gt 0 -and $testFileName -in $relevantTestFiles) {
                             $allFailedTestsAcrossPRs += $test
                         }
                     }
@@ -382,8 +453,8 @@ function Repair-PullRequestTest {
 
             foreach ($test in $allFailedTestsAcrossPRs) {
                 $fileName = [System.IO.Path]::GetFileName($test.TestFile)
-                # ONLY include files that are actually in the PR changes
-                if ($allRelevantTestFiles.Count -eq 0 -or $fileName -in $allRelevantTestFiles) {
+                # ONLY include files that are actually in the PR/branch changes
+                if ($fileName -in $allRelevantTestFiles) {
                     if (-not $fileErrorMap.ContainsKey($fileName)) {
                         $fileErrorMap[$fileName] = @()
                     }
