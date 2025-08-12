@@ -25,24 +25,24 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
-    Context "Gets ProductKey for Instances" {
+    Context "When getting product key for local computer" {
         BeforeAll {
             $results = Get-DbaProductKey -ComputerName $env:ComputerName
         }
 
-        It "Gets results" {
+        It "Should return results" {
             $results | Should -Not -BeNullOrEmpty
         }
 
-        It "Should have Version property" {
+        It "Should have Version property populated" {
             $results[0].Version | Should -Not -BeNullOrEmpty
         }
 
-        It "Should have Edition property" {
+        It "Should have Edition property populated" {
             $results[0].Edition | Should -Not -BeNullOrEmpty
         }
 
-        It "Should have Key property" {
+        It "Should have Key property populated" {
             $results[0].Key | Should -Not -BeNullOrEmpty
         }
     }
