@@ -218,13 +218,24 @@ function Repair-PullRequestTest {
                     if ($pr.number -eq "current") {
                         Write-Verbose "Processing current branch '$($pr.headRefName)' without PR context"
 
-                        # For current branch, we don't have AppVeyor failure data from a PR
-                        # so we'll need to process all test files or use other failure detection
+                        # For current branch, try to get AppVeyor failures for this branch
                         $selectedPR = $pr
                         $allRelevantTestFiles = @()  # Will process all failing tests found
 
-                        # Since we don't have AppVeyor data for this branch, we'll skip AppVeyor-based failure detection
-                        # and rely on the Pattern filtering or process all tests if a BuildNumber was provided elsewhere
+                        # Try to get AppVeyor failures for the current branch
+                        Write-Verbose "Attempting to get AppVeyor failures for current branch '$($pr.headRefName)'"
+                        $getFailureParams = @{
+                            Branch = $pr.headRefName
+                        }
+                        $currentBranchFailures = Get-AppVeyorFailure @getFailureParams
+
+                        if ($currentBranchFailures) {
+                            Write-Verbose "Found $($currentBranchFailures.Count) AppVeyor failures for current branch '$($pr.headRefName)'"
+                            $allFailedTestsAcrossPRs += $currentBranchFailures
+                        } else {
+                            Write-Verbose "No AppVeyor failures found for current branch '$($pr.headRefName)'"
+                        }
+
                         Write-Verbose "Selected current branch '$($pr.headRefName)' as target for fixes"
                         break  # Exit the loop since we're only processing the current branch
                     }
