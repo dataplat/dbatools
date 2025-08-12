@@ -8,6 +8,7 @@ param(
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
+            $TestConfig = Get-TestConfig
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -46,8 +47,8 @@ Describe $CommandName -Tag UnitTests {
                 "SkipEmptyLine",
                 "SupportsMultiline",
                 "UseColumnDefault",
-                "NoTransaction",
-                "EnableException"
+                "EnableException",
+                "NoTransaction"
             )
         }
 
@@ -59,6 +60,7 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        $TestConfig = Get-TestConfig
         $pathSuperSmall = "$($TestConfig.appveyorlabrepo)\csv\SuperSmall.csv"
         $pathCommaSeparatedWithHeader = "$($TestConfig.appveyorlabrepo)\csv\CommaSeparatedWithHeader.csv"
         $pathCols = "$($TestConfig.appveyorlabrepo)\csv\cols.csv"
@@ -67,7 +69,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     AfterAll {
-        Get-DbaDbTable -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -Database tempdb -Table SuperSmall, CommaSeparatedWithHeader -ErrorAction SilentlyContinue | Remove-DbaDbTable -Confirm:$false -ErrorAction SilentlyContinue
+        Get-DbaDbTable -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -Database tempdb -Table SuperSmall, CommaSeparatedWithHeader | Remove-DbaDbTable -Confirm:$false -ErrorAction SilentlyContinue
     }
 
     Context "Works as expected" {
@@ -83,12 +85,10 @@ Describe $CommandName -Tag IntegrationTests {
             $null = Import-DbaCsv -SqlInstance $TestConfig.instance1 -Path $pathCol2 -Database tempdb -Table cols
             $null = Import-DbaCsv -SqlInstance $TestConfig.instance1 -Path $pathPipe3 -Database tempdb -Table cols2 -Delimiter "|" -AutoCreateTable
 
-
             $results = Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database tempdb -Query "select * from cols"
 
             $results | Where-Object third -notmatch "three" | Should -BeNullOrEmpty
             $results | Where-Object firstcol -notmatch "one" | Should -BeNullOrEmpty
-
 
             $results = Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database tempdb -Query "select * from cols2"
 
@@ -99,7 +99,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "performs 4 imports" {
             $results = Import-DbaCsv -Path $pathSuperSmall, $pathSuperSmall -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -Database tempdb -Delimiter `t -NotifyAfter 50000 -WarningVariable warn2 -AutoCreateTable
 
-            ($results).Count | Should -Be 4
+            $results.Count | Should -Be 4
             foreach ($result in $results) {
                 $result.RowsCopied | Should -Be 999
                 $result.Database | Should -Be tempdb
@@ -124,7 +124,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Catches the scenario where the database param does not match the server object passed into the command" {
-            $result = Import-DbaCsv -Path $pathSuperSmall -SqlInstance $TestConfig.instance1 -Database InvalidDB -Delimiter `t -Table SuperSmall -Truncate -AutoCreateTable -WarningVariable WarnVar  -WarningAction SilentlyContinue
+            $result = Import-DbaCsv -Path $pathSuperSmall -SqlInstance $TestConfig.instance1 -Database InvalidDB -Delimiter `t -Table SuperSmall -Truncate -AutoCreateTable -WarningVariable WarnVar -WarningAction SilentlyContinue
 
             $WarnVar | Should -BeLike "*Cannot open database * requested by the login. The login failed.*"
             $result | Should -BeNullOrEmpty
@@ -177,10 +177,10 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "works with tables which have non-varchar types (guid, bit)" {
             # See #9433
-            $filePath = "$($TestConfig.Temp)\foo-$(Get-Random).csv"
+            $filePath = "$($TestConfig.Temp)\foo.csv"
             $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
             Invoke-DbaQuery -SqlInstance $server -Query "CREATE TABLE WithGuidsAndBits (one_guid UNIQUEIDENTIFIER, one_bit BIT)"
-            $row = [pscustomobject]@{
+            $row = [PSCustomObject]@{
                 one_guid = (New-Guid).Guid
                 one_bit  = 1
             }

@@ -5,6 +5,8 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
+$exeDir = "C:\Temp\dbatools_$CommandName"
+
 Describe $CommandName -Tag UnitTests {
     BeforeAll {
         # Prevent the functions from executing dangerous stuff and getting right responses where needed
@@ -109,13 +111,13 @@ Describe $CommandName -Tag UnitTests {
             $expectedParameters += @(
                 "ComputerName",
                 "Action",
+                "Credential",
                 "Restart",
                 "Authentication",
-                "Credential",
+                "EnableException",
                 "ExtractPath",
                 "ArgumentList",
-                "NoPendingRenameCheck",
-                "EnableException"
+                "NoPendingRenameCheck"
             )
         }
 
@@ -128,17 +130,17 @@ Describe $CommandName -Tag UnitTests {
             $result = Invoke-DbaAdvancedUpdate -ComputerName $env:COMPUTERNAME -EnableException -Action $singleAction -ArgumentList @("/foo")
             Assert-MockCalled -CommandName Restart-Computer -Exactly 0 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter {
-                if ($ArgumentList[0] -like "/x:*" -and $ArgumentList[1] -eq "/quiet") { return $true }
+                if ($ArgumentList[0] -like '/x:*' -and $ArgumentList[1] -eq "/quiet") { return $true }
             }
             Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter {
-                write-host $ArgumentList
+                Write-Host $ArgumentList
                 if ($ArgumentList -contains "/foo" -and $ArgumentList -contains "/quiet") { return $true }
             }
 
             $result | Should -Not -BeNullOrEmpty
             $result.MajorVersion | Should -Be 2017
-            $result.TargetLevel | Should -Be "RTMCU12"
-            $result.KB | Should -Be "4464082"
+            $result.TargetLevel | Should -Be RTMCU12
+            $result.KB | Should -Be 4464082
             $result.Successful | Should -Be $true
             $result.Restarted | Should -Be $false
             $result.Installer | Should -Be "dummy"
@@ -150,12 +152,12 @@ Describe $CommandName -Tag UnitTests {
             Assert-MockCalled -CommandName Invoke-Program -Exactly 4 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Restart-Computer -Exactly 2 -Scope It -ModuleName dbatools
 
-            $results.Status.Count | Should -Be 2
+            ($results | Measure-Object).Count | Should -Be 2
             #2008SP3
             $result = $results | Select-Object -First 1
-            $result.MajorVersion | Should -Be "2008"
-            $result.TargetLevel | Should -Be "SP3"
-            $result.KB | Should -Be "2546951"
+            $result.MajorVersion | Should -Be 2008
+            $result.TargetLevel | Should -Be SP3
+            $result.KB | Should -Be 2546951
             $result.Successful | Should -Be $true
             $result.Restarted | Should -Be $true
             $result.Installer | Should -Be "dummy"
@@ -164,9 +166,9 @@ Describe $CommandName -Tag UnitTests {
 
             #2008SP3CU7
             $result = $results | Select-Object -First 1 -Skip 1
-            $result.MajorVersion | Should -Be "2008"
-            $result.TargetLevel | Should -Be "SP3CU7"
-            $result.KB | Should -Be "2738350"
+            $result.MajorVersion | Should -Be 2008
+            $result.TargetLevel | Should -Be SP3CU7
+            $result.KB | Should -Be 2738350
             $result.Successful | Should -Be $true
             $result.Restarted | Should -Be $true
             $result.Installer | Should -Be "dummy"
@@ -177,13 +179,13 @@ Describe $CommandName -Tag UnitTests {
     Context "Negative tests" {
         It "fails when update execution has failed" {
             #override default mock
-            Mock -CommandName Invoke-Program -MockWith { [PSCustomObject]@{ Successful = $false; ExitCode = 12345 } } -ModuleName dbatools
-             { Invoke-DbaAdvancedUpdate -ComputerName $env:COMPUTERNAME -EnableException -Action $singleAction } | Should -Throw "failed with exit code 12345"
+            Mock -CommandName Invoke-Program -MockWith { [PSCustomObject] @{ Successful = $false; ExitCode = 12345 } } -ModuleName dbatools
+            { Invoke-DbaAdvancedUpdate -ComputerName $env:COMPUTERNAME -EnableException -Action $singleAction } | Should -Throw "failed with exit code 12345"
             $result = Invoke-DbaAdvancedUpdate -ComputerName $env:COMPUTERNAME -Action $singleAction -WarningVariable warVar 3>$null
             $result | Should -Not -BeNullOrEmpty
-            $result.MajorVersion | Should -Be "2017"
-            $result.TargetLevel | Should -Be "RTMCU12"
-            $result.KB | Should -Be "4464082"
+            $result.MajorVersion | Should -Be 2017
+            $result.TargetLevel | Should -Be RTMCU12
+            $result.KB | Should -Be 4464082
             $result.Successful | Should -Be $false
             $result.Restarted | Should -Be $false
             $result.Installer | Should -Be "dummy"

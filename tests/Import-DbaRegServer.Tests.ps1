@@ -5,9 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
@@ -34,12 +31,10 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        # For all the temp files that we want to clean up after the test, we create a directory that we can delete at the end.
-        $tempPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
-        $null = New-Item -Path $tempPath -ItemType Directory
+        # For all the temporary files that we want to clean up after the test, we create variables to track them.
         $global:tempFilesToRemove = @()
 
-        # Set variables for test objects
+        # Set variables. They are available in all the It blocks.
         $global:srvName = "dbatoolsci-server1"
         $global:group = "dbatoolsci-group1"
         $global:regSrvName = "dbatoolsci-server12"
@@ -58,69 +53,58 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
-    BeforeEach {
-        # We want to run all commands in the BeforeEach block with EnableException to ensure that the test fails if the setup fails.
-        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-        # Create test objects for each test
-        $global:newGroup = Add-DbaRegServerGroup -SqlInstance $TestConfig.instance2 -Name $global:group
-        $global:newServer = Add-DbaRegServer -SqlInstance $TestConfig.instance2 -ServerName $global:srvName -Name $global:regSrvName -Description $global:regSrvDesc -Group $global:newGroup.Name
-
-        $global:newGroup2 = Add-DbaRegServerGroup -SqlInstance $TestConfig.instance2 -Name $global:group2
-        $global:newServer2 = Add-DbaRegServer -SqlInstance $TestConfig.instance2 -ServerName $global:srvName2 -Name $global:regSrvName2 -Description $global:regSrvDesc2
-
-        $global:newServer3 = Add-DbaRegServer -SqlInstance $TestConfig.instance2 -ServerName $global:srvName3 -Name $global:regSrvName3 -Description $global:regSrvDesc3
-
-        # We want to run all commands outside of the BeforeEach block without EnableException to be able to test for specific warnings.
-        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-    }
-
-    AfterEach {
-        # Clean up test objects
-        Get-DbaRegServer -SqlInstance $TestConfig.instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegServer -Confirm:$false -ErrorAction SilentlyContinue
-        Get-DbaRegServerGroup -SqlInstance $TestConfig.instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false -ErrorAction SilentlyContinue
-        Remove-Item -Path $global:tempFilesToRemove -ErrorAction SilentlyContinue
-        $global:tempFilesToRemove = @()
-    }
-
     AfterAll {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        # Clean up any remaining test objects
+        # Cleanup all created objects.
         Get-DbaRegServer -SqlInstance $TestConfig.instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegServer -Confirm:$false -ErrorAction SilentlyContinue
         Get-DbaRegServerGroup -SqlInstance $TestConfig.instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false -ErrorAction SilentlyContinue
 
-        # Remove the temp directory
-        Remove-Item -Path $tempPath -Recurse -ErrorAction SilentlyContinue
+        # Remove temporary files.
+        Remove-Item -Path $global:tempFilesToRemove -ErrorAction SilentlyContinue
 
         # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
-    Context "When importing registered server objects" {
+    Context "When importing registered servers" {
+        BeforeEach {
+            # Clean up any existing test objects before each test
+            Get-DbaRegServer -SqlInstance $TestConfig.instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegServer -Confirm:$false -ErrorAction SilentlyContinue
+            Get-DbaRegServerGroup -SqlInstance $TestConfig.instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false -ErrorAction SilentlyContinue
+        }
+
         It "imports group objects" {
-            $results = $global:newServer.Parent | Import-DbaRegServer -SqlInstance $TestConfig.instance2
+            $newGroup = Add-DbaRegServerGroup -SqlInstance $TestConfig.instance2 -Name $global:group
+            $newServer = Add-DbaRegServer -SqlInstance $TestConfig.instance2 -ServerName $global:srvName -Name $global:regSrvName -Description $global:regSrvDesc -Group $newGroup.Name
+
+            $results = $newServer.Parent | Import-DbaRegServer -SqlInstance $TestConfig.instance2
             $results.Description | Should -Be $global:regSrvDesc
             $results.ServerName | Should -Be $global:srvName
             $results.Parent.Name | Should -Be $global:group
         }
 
         It "imports registered server objects" {
-            $results = $global:newServer2 | Import-DbaRegServer -SqlInstance $TestConfig.instance2
-            $results.ServerName | Should -Be $global:newServer2.ServerName
-            $results.Parent.Name | Should -Be $global:newServer2.Parent.Name
+            $newGroup2 = Add-DbaRegServerGroup -SqlInstance $TestConfig.instance2 -Name $global:group2
+            $newServer2 = Add-DbaRegServer -SqlInstance $TestConfig.instance2 -ServerName $global:srvName2 -Name $global:regSrvName2 -Description $global:regSrvDesc2
+
+            $results2 = $newServer2 | Import-DbaRegServer -SqlInstance $TestConfig.instance2
+            $results2.ServerName | Should -Be $newServer2.ServerName
+            $results2.Parent.Name | Should -Be $newServer2.Parent.Name
         }
 
         It "imports a file from Export-DbaRegServer" {
-            $exportPath = $global:newServer3 | Export-DbaRegServer -Path $tempPath
-            $global:tempFilesToRemove += $exportPath.FullName
-            $results = Import-DbaRegServer -SqlInstance $TestConfig.instance2 -Path $exportPath
-            $results.ServerName | Should -Be @("dbatoolsci-server3")
-            $results.Description | Should -Be @("dbatoolsci-server3desc")
+            $newServer3 = Add-DbaRegServer -SqlInstance $TestConfig.instance2 -ServerName $global:srvName3 -Name $global:regSrvName3 -Description $global:regSrvDesc3
+
+            $results3 = $newServer3 | Export-DbaRegServer -Path C:\temp
+            $global:tempFilesToRemove += $results3.FullName
+            $results4 = Import-DbaRegServer -SqlInstance $TestConfig.instance2 -Path $results3
+            $results4.ServerName | Should -Be @("dbatoolsci-server3")
+            $results4.Description | Should -Be @("dbatoolsci-server3desc")
         }
 
         It "imports from a random object so long as it has ServerName" {
-            $object = [pscustomobject]@{
+            $object = [PSCustomObject]@{
                 ServerName = "dbatoolsci-randobject"
             }
             $results = $object | Import-DbaRegServer -SqlInstance $TestConfig.instance2
@@ -129,7 +113,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "does not import object if ServerName does not exist" {
-            $object = [pscustomobject]@{
+            $object = [PSCustomObject]@{
                 Name = "dbatoolsci-randobject"
             }
             $results = $object | Import-DbaRegServer -SqlInstance $TestConfig.instance2 -WarningAction SilentlyContinue -WarningVariable warn

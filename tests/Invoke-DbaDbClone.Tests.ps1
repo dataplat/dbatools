@@ -33,95 +33,56 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Set variables. They are available in all the It blocks.
+        $dbname = "dbatoolsci_clonetest"
+        $clonedb = "dbatoolsci_clonetest_CLONE"
+        $clonedb2 = "dbatoolsci_clonetest_CLONE2"
+
+        # Create the test database.
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server.Query("CREATE DATABASE $dbname")
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Cleanup all created databases.
+        Get-DbaDatabase -SqlInstance $server -Database $dbname, $clonedb, $clonedb2 | Remove-DbaDatabase -Confirm:$false -ErrorAction SilentlyContinue
+
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+    }
+
     Context "Command functions as expected" {
-        BeforeAll {
-            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-            $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
-
-            $dbname = "dbatoolsci_clonetest"
-            $clonedb = "dbatoolsci_clonetest_CLONE"
-            $clonedb2 = "dbatoolsci_clonetest_CLONE2"
-
-            $splatConnection = @{
-                SqlInstance = $TestConfig.instance2
-            }
-            $server = Connect-DbaInstance @splatConnection
-            $server.Query("CREATE DATABASE $dbname")
-
-            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-            $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
-        }
-
-        AfterAll {
-            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-            $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
-
-            $splatCleanup = @{
-                SqlInstance = $server
-                Database    = $dbname, $clonedb, $clonedb2
-                Confirm     = $false
-            }
-            Get-DbaDatabase @splatCleanup | Remove-DbaDatabase -Confirm:$false
-        }
-
         It "warns if SQL instance version is not supported" {
-            $splatClone = @{
-                SqlInstance     = $TestConfig.instance1
-                Database        = $dbname
-                CloneDatabase   = $clonedb
-                WarningAction   = "SilentlyContinue"
-                WarningVariable = "versionwarn"
-            }
-            $results = Invoke-DbaDbClone @splatClone
+            $results = Invoke-DbaDbClone -SqlInstance $TestConfig.instance1 -Database $dbname -CloneDatabase $clonedb -WarningAction SilentlyContinue -WarningVariable versionwarn
             $versionwarn = $versionwarn | Out-String
             $versionwarn -match "required" | Should -Be $true
         }
 
         It "warns if destination database already exists" {
-            $splatExisting = @{
-                SqlInstance     = $TestConfig.instance2
-                Database        = $dbname
-                CloneDatabase   = "tempdb"
-                WarningAction   = "SilentlyContinue"
-                WarningVariable = "dbwarn"
-            }
-            $results = Invoke-DbaDbClone @splatExisting
+            $results = Invoke-DbaDbClone -SqlInstance $TestConfig.instance2 -Database $dbname -CloneDatabase tempdb -WarningAction SilentlyContinue -WarningVariable dbwarn
             $dbwarn = $dbwarn | Out-String
             $dbwarn -match "exists" | Should -Be $true
         }
 
         It "warns if a system db is specified to clone" {
-            $splatSystem = @{
-                SqlInstance     = $TestConfig.instance2
-                Database        = "master"
-                CloneDatabase   = $clonedb
-                WarningAction   = "SilentlyContinue"
-                WarningVariable = "systemwarn"
-            }
-            $results = Invoke-DbaDbClone @splatSystem
+            $results = Invoke-DbaDbClone -SqlInstance $TestConfig.instance2 -Database master -CloneDatabase $clonedb -WarningAction SilentlyContinue -WarningVariable systemwarn
             $systemwarn = $systemwarn | Out-String
             $systemwarn -match "user database" | Should -Be $true
         }
 
-        Context "When cloning database" {
-            BeforeAll {
-                $splatCloneTest = @{
-                    SqlInstance   = $TestConfig.instance2
-                    Database      = $dbname
-                    CloneDatabase = $clonedb
-                    WarningAction = "SilentlyContinue"
-                }
-                $results = Invoke-DbaDbClone @splatCloneTest
-            }
-
-            It "returns 1 result" {
-                $results.Count | Should -Be 1
-            }
-
-            It "returns a rich database object with the correct name" {
-                $results[0].Name | Should -BeIn $clonedb, $clonedb2
-            }
+        It "creates a clone database successfully" {
+            $results = @(Invoke-DbaDbClone -SqlInstance $TestConfig.instance2 -Database $dbname -CloneDatabase $clonedb -WarningAction SilentlyContinue)
+            $results.Status.Count | Should -BeExactly 1
+            $results[0].Name | Should -BeIn $clonedb, $clonedb2
         }
     }
 }
-
