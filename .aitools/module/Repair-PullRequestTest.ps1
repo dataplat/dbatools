@@ -8,13 +8,13 @@ function Repair-PullRequestTest {
        and replaces failing tests with working versions from the Development branch, then runs
        Update-PesterTest to migrate them properly.
 
-   .PARAMETER PRNumber
+   .PARAMETER PullRequest
        Specific PR number to process. If not specified, processes all open PRs with failures.
 
    .PARAMETER AutoCommit
        If specified, automatically commits the fixes made by the repair process.
 
-   .PARAMETER MaxPRs
+   .PARAMETER Limit
        Maximum number of PRs to process. Default: 5
 
    .PARAMETER BuildId
@@ -41,11 +41,11 @@ function Repair-PullRequestTest {
        Checks all open PRs and fixes failing tests using Claude.
 
    .EXAMPLE
-       PS C:\> Repair-PullRequestTest -PRNumber 9234 -AutoCommit
+       PS C:\> Repair-PullRequestTest -PullRequest 9234 -AutoCommit
        Fixes failing tests in PR #9234 and automatically commits the changes.
 
    .EXAMPLE
-       PS C:\> Repair-PullRequestTest -PRNumber 9234 -BuildId 12345
+       PS C:\> Repair-PullRequestTest -PullRequest 9234 -BuildId 12345
        Fixes failing tests in PR #9234 using AppVeyor build #12345 instead of the latest build.
 
    .EXAMPLE
@@ -53,7 +53,7 @@ function Repair-PullRequestTest {
        Fixes failing tests from AppVeyor build #12345 across all relevant PRs.
 
    .EXAMPLE
-       PS C:\> Repair-PullRequestTest -PRNumber 9234 -Pattern "Remove-Dba"
+       PS C:\> Repair-PullRequestTest -PullRequest 9234 -Pattern "Remove-Dba"
        Fixes failing tests in PR #9234, but only processes failures matching "Remove-Dba".
 
    .EXAMPLE
@@ -62,9 +62,9 @@ function Repair-PullRequestTest {
    #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
-        [int]$PRNumber,
+        [int]$PullRequest,
         [switch]$AutoCommit,
-        [int]$MaxPRs = 5,
+        [int]$Limit = 5,
         [int]$BuildId,
         [switch]$CopyOnly,
         [string]$Pattern
@@ -120,10 +120,10 @@ function Repair-PullRequestTest {
             Write-Verbose "Fetching open pull requests..."
             Write-Progress -Activity "Repairing Pull Request Tests" -Status "Fetching open PRs..." -PercentComplete 0
 
-            if ($PRNumber) {
-                $prsJson = gh pr view $PRNumber --json "number,title,headRefName,state,statusCheckRollup,files" 2>$null
+            if ($PullRequest) {
+                $prsJson = gh pr view $PullRequest --json "number,title,headRefName,state,statusCheckRollup,files" 2>$null
                 if (-not $prsJson) {
-                    throw "Could not fetch PR #$PRNumber"
+                    throw "Could not fetch PR #$PullRequest"
                 }
                 $prs = @($prsJson | ConvertFrom-Json)
             } else {
@@ -136,7 +136,7 @@ function Repair-PullRequestTest {
                     $prs = @($currentBranchPR | ConvertFrom-Json)
                 } else {
                     Write-Verbose "No PR found for current branch, fetching all open PRs"
-                    $prsJson = gh pr list --state open --limit $MaxPRs --json "number,title,headRefName,state,statusCheckRollup" 2>$null
+                    $prsJson = gh pr list --state open --limit $Limit --json "number,title,headRefName,state,statusCheckRollup" 2>$null
                     $prs = $prsJson | ConvertFrom-Json
 
                     # For each PR, get the files changed (since pr list doesn't include files)
@@ -175,7 +175,7 @@ function Repair-PullRequestTest {
 
                 # Use the first PR for branch operations (or current branch if no PR specified)
                 $selectedPR = $prs | Select-Object -First 1
-                if (-not $selectedPR -and -not $PRNumber) {
+                if (-not $selectedPR -and -not $PullRequest) {
                     # No PR context, stay on current branch
                     $selectedPR = @{
                         number      = "current"
