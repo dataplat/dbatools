@@ -5,9 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
@@ -62,22 +59,26 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Set up CSV file paths for testing
         $pathSuperSmall = "$($TestConfig.appveyorlabrepo)\csv\SuperSmall.csv"
         $pathCommaSeparatedWithHeader = "$($TestConfig.appveyorlabrepo)\csv\CommaSeparatedWithHeader.csv"
         $pathCols = "$($TestConfig.appveyorlabrepo)\csv\cols.csv"
         $pathCol2 = "$($TestConfig.appveyorlabrepo)\csv\col2.csv"
         $pathPipe3 = "$($TestConfig.appveyorlabrepo)\csv\pipe3.psv"
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
-        # Clean up test tables
-        Get-DbaDbTable -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -Database tempdb -Table SuperSmall, CommaSeparatedWithHeader, cols, cols2, NoHeaderRow, WithTypes, WithGuidsAndBits -ErrorAction SilentlyContinue | Remove-DbaDbTable -Confirm:$false -ErrorAction SilentlyContinue
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        # Clean up temporary files
-        $tempFiles = @(
-            "$($TestConfig.Temp)\foo.csv"
-        )
-        Remove-Item -Path $tempFiles -ErrorAction SilentlyContinue
+        # Cleanup test tables
+        Get-DbaDbTable -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -Database tempdb -Table SuperSmall, CommaSeparatedWithHeader -ErrorAction SilentlyContinue | Remove-DbaDbTable -Confirm:$false -ErrorAction SilentlyContinue
     }
 
     Context "Works as expected" {
@@ -99,7 +100,6 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Where-Object third -notmatch "three" | Should -BeNullOrEmpty
             $results | Where-Object firstcol -notmatch "one" | Should -BeNullOrEmpty
 
-
             $results = Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database tempdb -Query "select * from cols2"
 
             $results | Where-Object third -notmatch "three" | Should -BeNullOrEmpty
@@ -112,8 +112,8 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Count | Should -Be 4
             foreach ($result in $results) {
                 $result.RowsCopied | Should -Be 999
-                $result.Database | Should -Be tempdb
-                $result.Table | Should -Be SuperSmall
+                $result.Database | Should -Be "tempdb"
+                $result.Table | Should -Be "SuperSmall"
             }
         }
 
@@ -121,16 +121,16 @@ Describe $CommandName -Tag IntegrationTests {
             $result = Import-DbaCsv -Path $pathSuperSmall -SqlInstance $TestConfig.instance1 -Database tempdb -Delimiter `t -Table SuperSmall -Truncate
 
             $result.RowsCopied | Should -Be 999
-            $result.Database | Should -Be tempdb
-            $result.Table | Should -Be SuperSmall
+            $result.Database | Should -Be "tempdb"
+            $result.Table | Should -Be "SuperSmall"
         }
 
         It "works with NoTransaction" {
             $result = Import-DbaCsv -Path $pathSuperSmall -SqlInstance $TestConfig.instance1 -Database tempdb -Delimiter `t -Table SuperSmall -Truncate -NoTransaction
 
             $result.RowsCopied | Should -Be 999
-            $result.Database | Should -Be tempdb
-            $result.Table | Should -Be SuperSmall
+            $result.Database | Should -Be "tempdb"
+            $result.Table | Should -Be "SuperSmall"
         }
 
         It "Catches the scenario where the database param does not match the server object passed into the command" {
@@ -142,8 +142,8 @@ Describe $CommandName -Tag IntegrationTests {
             $result = Import-DbaCsv -Path $pathSuperSmall -SqlInstance $TestConfig.instance1 -Database tempdb -Delimiter `t -Table SuperSmall -Truncate -AutoCreateTable
 
             $result.RowsCopied | Should -Be 999
-            $result.Database | Should -Be tempdb
-            $result.Table | Should -Be SuperSmall
+            $result.Database | Should -Be "tempdb"
+            $result.Table | Should -Be "SuperSmall"
         }
 
         It "Catches the scenario where the header is not properly parsed causing param errors" {
@@ -153,55 +153,55 @@ Describe $CommandName -Tag IntegrationTests {
             $result = Import-DbaCsv -Path $pathCommaSeparatedWithHeader -SqlInstance $TestConfig.instance1 -Database tempdb -Truncate
 
             $result.RowsCopied | Should -Be 1
-            $result.Database | Should -Be tempdb
-            $result.Table | Should -Be CommaSeparatedWithHeader
+            $result.Database | Should -Be "tempdb"
+            $result.Table | Should -Be "CommaSeparatedWithHeader"
 
-            Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database tempdb -Query 'DROP TABLE CommaSeparatedWithHeader'
+            Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database tempdb -Query "DROP TABLE CommaSeparatedWithHeader" -ErrorAction SilentlyContinue
         }
 
         It "works with NoHeaderRow" {
             # See #7759
             $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
-            Invoke-DbaQuery -SqlInstance $server -Query 'CREATE TABLE NoHeaderRow (c1 VARCHAR(50), c2 VARCHAR(50), c3 VARCHAR(50))'
+            Invoke-DbaQuery -SqlInstance $server -Query "CREATE TABLE NoHeaderRow (c1 VARCHAR(50), c2 VARCHAR(50), c3 VARCHAR(50))"
 
-            $result = Import-DbaCsv -Path $pathCols -NoHeaderRow -SqlInstance $server -Database tempdb -Table 'NoHeaderRow'
-            $data = Invoke-DbaQuery -SqlInstance $server -Query 'SELECT * FROM NoHeaderRow' -As PSObject
+            $result = Import-DbaCsv -Path $pathCols -NoHeaderRow -SqlInstance $server -Database tempdb -Table "NoHeaderRow"
+            $data = Invoke-DbaQuery -SqlInstance $server -Query "SELECT * FROM NoHeaderRow" -As PSObject
 
             $result.RowsCopied | Should -Be 3
-            $data[0].c1 | Should -Be 'firstcol'
+            $data[0].c1 | Should -Be "firstcol"
 
-            Invoke-DbaQuery -SqlInstance $server -Query 'DROP TABLE NoHeaderRow'
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE NoHeaderRow" -ErrorAction SilentlyContinue
         }
 
         It "works with tables which have non-varchar types (date)" {
             # See #9433
             $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
-            Invoke-DbaQuery -SqlInstance $server -Query 'CREATE TABLE WithTypes ([date] DATE, col1 VARCHAR(50), col2 VARCHAR(50))'
-            $result = Import-DbaCsv -Path $pathCommaSeparatedWithHeader -SqlInstance $server -Database tempdb -Table 'WithTypes'
+            Invoke-DbaQuery -SqlInstance $server -Query "CREATE TABLE WithTypes ([date] DATE, col1 VARCHAR(50), col2 VARCHAR(50))"
+            $result = Import-DbaCsv -Path $pathCommaSeparatedWithHeader -SqlInstance $server -Database tempdb -Table "WithTypes"
 
             $result | Should -Not -BeNullOrEmpty
             $result.RowsCopied | Should -Be 1
 
-            Invoke-DbaQuery -SqlInstance $server -Query 'DROP TABLE WithTypes'
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE WithTypes" -ErrorAction SilentlyContinue
         }
 
         It "works with tables which have non-varchar types (guid, bit)" {
             # See #9433
             $filePath = "$($TestConfig.Temp)\foo.csv"
             $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
-            Invoke-DbaQuery -SqlInstance $server -Query 'CREATE TABLE WithGuidsAndBits (one_guid UNIQUEIDENTIFIER, one_bit BIT)'
+            Invoke-DbaQuery -SqlInstance $server -Query "CREATE TABLE WithGuidsAndBits (one_guid UNIQUEIDENTIFIER, one_bit BIT)"
             $row = [PSCustomObject]@{
                 one_guid = (New-Guid).Guid
                 one_bit  = 1
             }
             $row | Export-Csv -Path $filePath -NoTypeInformation
 
-            $result = Import-DbaCsv -Path $filePath -SqlInstance $server -Database tempdb -Table 'WithGuidsAndBits'
+            $result = Import-DbaCsv -Path $filePath -SqlInstance $server -Database tempdb -Table "WithGuidsAndBits"
 
             $result.RowsCopied | Should -Be 1
 
-            Invoke-DbaQuery -SqlInstance $server -Query 'DROP TABLE WithGuidsAndBits'
-            Remove-Item $filePath
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE WithGuidsAndBits" -ErrorAction SilentlyContinue
+            Remove-Item $filePath -ErrorAction SilentlyContinue
         }
     }
 }
