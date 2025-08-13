@@ -1,16 +1,14 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Test-DbaLastBackup",
-    $PSDefaultParameterValues = $TestConfig.Defaults
+    $PSDefaultParameterValues = (Get-TestConfig).Defaults
 )
-
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
+            $TestConfig = Get-TestConfig
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -30,17 +28,17 @@ Describe $CommandName -Tag UnitTests {
                 "CopyFile",
                 "CopyPath",
                 "MaxSize",
-                "DeviceType",
+                "MaxDop",
                 "IncludeCopyOnly",
                 "IgnoreLogBackup",
                 "AzureCredential",
                 "InputObject",
+                "EnableException",
+                "DeviceType",
                 "MaxTransferSize",
                 "BufferCount",
                 "IgnoreDiffBackup",
-                "MaxDop",
-                "ReuseSourceFolderStructure",
-                "EnableException"
+                "ReuseSourceFolderStructure"
             )
         }
 
@@ -52,59 +50,72 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        $TestConfig = Get-TestConfig
+
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $random = Get-Random
-        $testlastbackup = "dbatoolsci_testlastbackup$random"
-        $dbs = $testlastbackup, "dbatoolsci_lildb", "dbatoolsci_testrestore", "dbatoolsci_singlerestore"
+        # For all the backups that we want to clean up after the test, we create a directory that we can delete at the end.
+        # Other files can be written there as well, maybe we change the name of that variable later. But for now we focus on backups.
+        $global:backupPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+        $null = New-Item -Path $global:backupPath -ItemType Directory
 
+        # Explain what needs to be set up for the test:
+        # To test backup restoration and validation, we need test databases with various backup types.
+        # For comprehensive testing, we need databases with full, differential, and log backups.
+
+        # Set variables. They are available in all the It blocks.
+        $random = Get-Random
+        $global:testlastbackup = "dbatoolsci_testlastbackup$random"
+        $global:dbs = $global:testlastbackup, "dbatoolsci_lildb", "dbatoolsci_testrestore", "dbatoolsci_singlerestore"
+
+        # Create the objects.
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
-        foreach ($db in $dbs) {
+        foreach ($db in $global:dbs) {
             $server.Query("CREATE DATABASE $db")
             $server.Query("ALTER DATABASE $db SET RECOVERY FULL WITH NO_WAIT")
             $server.Query("CREATE TABLE [$db].[dbo].[Example] (id int identity, name nvarchar(max))")
             $server.Query("INSERT INTO [$db].[dbo].[Example] values ('sample')")
         }
 
-        $backupPath = "$($TestConfig.Temp)\$CommandName"
-        $null = New-Item -Path $backupPath -ItemType Directory
+        # Setup restores and backups on the local drive for Test-DbaLastBackup
+        Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $global:dbs | Backup-DbaDatabase -Type Database -Path $global:backupPath
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query "INSERT INTO [$global:testlastbackup].[dbo].[Example] values ('sample')"
+        Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $global:testlastbackup | Backup-DbaDatabase -Type Differential -Path $global:backupPath
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query "INSERT INTO [$global:testlastbackup].[dbo].[Example] values ('sample1')"
+        Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $global:testlastbackup | Backup-DbaDatabase -Type Differential -Path $global:backupPath
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query "INSERT INTO [$global:testlastbackup].[dbo].[Example] values ('sample2')"
+        Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $global:testlastbackup | Backup-DbaDatabase -Type Log -Path $global:backupPath
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query "INSERT INTO [$global:testlastbackup].[dbo].[Example] values ('sample3')"
+        Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $global:testlastbackup | Backup-DbaDatabase -Type Log -Path $global:backupPath
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query "INSERT INTO [$global:testlastbackup].[dbo].[Example] values ('sample4')"
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+
     AfterAll {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
+        # Cleanup all created object.
         # these for sure
-        $dbs += "bigtestrest", "smalltestrest"
-        Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbs | Remove-DbaDatabase -Confirm:$false -ErrorAction SilentlyContinue
+        $global:dbs += "bigtestrest", "smalltestrest"
+        Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $global:dbs | Remove-DbaDatabase -Confirm:$false
         # those just in case test-dbalastbackup didn't cooperate
-        Get-DbaDatabase -SqlInstance $TestConfig.instance1 | Where-Object Name -like "dbatools-testrestore-dbatoolsci_*" | Remove-DbaDatabase -Confirm:$false -ErrorAction SilentlyContinue
+        Get-DbaDatabase -SqlInstance $TestConfig.instance1 | Where-Object Name -like "dbatools-testrestore-dbatoolsci_*" | Remove-DbaDatabase -Confirm:$false
         # see "Restores using a specific path"
-        Get-ChildItem -Path C:\Temp\dbatools-testrestore-dbatoolsci_singlerestore* -ErrorAction SilentlyContinue | Remove-Item -ErrorAction SilentlyContinue
+        Get-ChildItem -Path C:\Temp\dbatools-testrestore-dbatoolsci_singlerestore* | Remove-Item -ErrorAction SilentlyContinue
 
-        Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
-    }
-    Context "Setup restores and backups on the local drive for Test-DbaLastBackup" {
-        BeforeAll {
-            Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbs | Backup-DbaDatabase -Type Database -Path $backupPath
-            Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query "INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample')"
-            Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $testlastbackup | Backup-DbaDatabase -Type Differential -Path $backupPath
-            Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query "INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample1')"
-            Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $testlastbackup | Backup-DbaDatabase -Type Differential -Path $backupPath
-            Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query "INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample2')"
-            Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $testlastbackup | Backup-DbaDatabase -Type Log -Path $backupPath
-            Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query "INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample3')"
-            Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $testlastbackup | Backup-DbaDatabase -Type Log -Path $backupPath
-            Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query "INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample4')"
-        }
+        # Remove the backup directory.
+        Remove-Item -Path $global:backupPath -Recurse -ErrorAction SilentlyContinue
+
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
     Context "Test a single database" {
         BeforeAll {
-            $singleDbResults = Test-DbaLastBackup -SqlInstance $TestConfig.instance1 -Database $testlastbackup
+            $singleDbResults = Test-DbaLastBackup -SqlInstance $TestConfig.instance1 -Database $global:testlastbackup
         }
 
         It "Should return success" {
@@ -120,13 +131,13 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should be more than 3 databases" {
-            $instanceResults.Count | Should -BeGreaterThan 3
+            $instanceResults.Status.Count | Should -BeGreaterThan 3
         }
     }
 
     Context "Restores using a specific path" {
         BeforeAll {
-            $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database "dbatoolsci_singlerestore" | Backup-DbaDatabase -Path $backupPath
+            $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database "dbatoolsci_singlerestore" | Backup-DbaDatabase -Path $global:backupPath
             $null = Test-DbaLastBackup -SqlInstance $TestConfig.instance1 -Database "dbatoolsci_singlerestore" -DataDirectory C:\Temp -LogDirectory C:\Temp -NoDrop
             $pathResults = Get-DbaDbFile -SqlInstance $TestConfig.instance1 -Database "dbatools-testrestore-dbatoolsci_singlerestore"
         }
@@ -139,42 +150,42 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Test Ignoring Diff Backups" {
         BeforeAll {
-            $noDiffResults = Test-DbaLastBackup -SqlInstance $TestConfig.instance1 -Database $testlastbackup -IgnoreDiffBackup
+            $ignoreDiffResults = Test-DbaLastBackup -SqlInstance $TestConfig.instance1 -Database $global:testlastbackup -IgnoreDiffBackup
         }
 
         It "Should return success" {
-            $noDiffResults.RestoreResult | Should -Be "Success"
+            $ignoreDiffResults.RestoreResult | Should -Be "Success"
         }
 
         It "Should not contain a diff backup" {
-            ($noDiffResults.BackupFiles | Where-Object { $PSItem -like "*diff*" }).Count | Should -Be 0
+            ($ignoreDiffResults.BackupFiles | Where-Object { $PSItem -like "*diff*" }).Status.Count | Should -Be 0
         }
     }
 
     Context "Test dbsize skip and cleanup (Issue 3968)" {
         BeforeAll {
-            $restoreResults1 = Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -Database bigtestrest -Path "$($TestConfig.appveyorlabrepo)\sql2008-backups\db1\FULL" -ReplaceDbNameInFile
-            Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database bigtestrest -Path $backupPath
-            $restoreResults2 = Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -Database smalltestrest -Path "$($TestConfig.appveyorlabrepo)\sql2008-backups\db2\FULL\SQL2008_db2_FULL_20170518_041738.bak" -ReplaceDbNameInFile
-            Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database smalltestrest -Path $backupPath
+            $results1 = Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -Database bigtestrest -Path "$($TestConfig.appveyorlabrepo)\sql2008-backups\db1\FULL" -ReplaceDbNameInFile
+            Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database bigtestrest -Path $global:backupPath
+            $results1 = Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -Database smalltestrest -Path "$($TestConfig.appveyorlabrepo)\sql2008-backups\db2\FULL\SQL2008_db2_FULL_20170518_041738.bak" -ReplaceDbNameInFile
+            Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database smalltestrest -Path $global:backupPath
 
-            $maxSizeResults = Test-DbaLastBackup -SqlInstance $TestConfig.instance1 -Database bigtestrest, smalltestrest -CopyFile -CopyPath c:\temp -MaxSize 5 -Prefix testlast
-            $fileResult = Get-ChildItem c:\temp | Where-Object Name -like "*bigtestrest"
-        }
-
-        It "Should have skipped bigtestrest and tested smalltestrest" {
-            $maxSizeResults[0].RestoreResult | Should -BeLike "*exceeds the specified maximum*"
-            $maxSizeResults[0].DbccResult | Should -Be "Skipped"
-            $maxSizeResults[1].RestoreResult | Should -Be "Success"
-            $maxSizeResults[1].DbccResult | Should -Be "Success"
-        }
-
-        It "Should have removed the temp backup copy even if skipped" {
-            ($null -eq $fileResult) | Should -Be $true
+            $sizeResults = Test-DbaLastBackup -SqlInstance $TestConfig.instance1 -Database bigtestrest, smalltestrest -CopyFile -CopyPath c:\temp -MaxSize 5 -Prefix testlast
+            $fileresult = Get-ChildItem c:\temp | Where-Object Name -like "*bigtestrest"
         }
 
         AfterAll {
-            Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database bigtestrest, smalltestrest | Remove-DbaDatabase -Confirm:$false -ErrorAction SilentlyContinue
+            Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database bigtestrest, smalltestrest | Remove-DbaDatabase -Confirm:$false
+        }
+
+        It "Should have skipped bigtestrest and tested smalltestrest" {
+            $sizeResults[0].RestoreResult | Should -BeLike "*exceeds the specified maximum*"
+            $sizeResults[0].DbccResult | Should -Be "Skipped"
+            $sizeResults[1].RestoreResult | Should -Be "Success"
+            $sizeResults[1].DbccResult | Should -Be "Success"
+        }
+
+        It "Should have removed the temp backup copy even if skipped" {
+            ($null -eq $fileresult) | Should -Be $true
         }
     }
 }

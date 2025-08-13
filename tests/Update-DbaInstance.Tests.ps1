@@ -1,48 +1,31 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Update-DbaInstance",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
-$exeDir = "C:\Temp\dbatools_$CommandName"
-
-Describe "$CommandName Unit Tests" -Tag UnitTests {
+Describe $CommandName -Tag UnitTests {
     BeforeAll {
+        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+        $global:TestConfig = Get-TestConfig
+
+        $exeDir = "C:\Temp\dbatools_$CommandName"
+
         # Prevent the functions from executing dangerous stuff and getting right responses where needed
-        Mock -CommandName Invoke-Program -MockWith {
-            [PSCustomObject]@{
-                Successful = $true
-                ExitCode   = [uint32[]]3010
-            }
-        } -ModuleName dbatools
+        Mock -CommandName Invoke-Program -MockWith { [PSCustomObject]@{ Successful = $true; ExitCode = [uint32[]]3010 } } -ModuleName dbatools
         Mock -CommandName Test-PendingReboot -MockWith { $false } -ModuleName dbatools
         Mock -CommandName Test-ElevationRequirement -MockWith { $null } -ModuleName dbatools
         Mock -CommandName Restart-Computer -MockWith { $null } -ModuleName dbatools
         Mock -CommandName Register-RemoteSessionConfiguration -ModuleName dbatools -MockWith {
-            [PSCustomObject]@{
-                "Name"     = "dbatoolsInstallSqlServerUpdate"
-                Successful = $true
-                Status     = "Dummy"
-            }
+            [PSCustomObject]@{ "Name" = "dbatoolsInstallSqlServerUpdate" ; Successful = $true ; Status = "Dummy" }
         }
         Mock -CommandName Unregister-RemoteSessionConfiguration -ModuleName dbatools -MockWith {
-            [PSCustomObject]@{
-                "Name"     = "dbatoolsInstallSqlServerUpdate"
-                Successful = $true
-                Status     = "Dummy"
-            }
+            [PSCustomObject]@{ "Name" = "dbatoolsInstallSqlServerUpdate" ; Successful = $true ; Status = "Dummy" }
         }
-        Mock -CommandName Get-DbaDiskSpace -MockWith {
-            [PSCustomObject]@{
-                Name = "C:\"
-                Free = 1
-            }
-        } -ModuleName dbatools
+        Mock -CommandName Get-DbaDiskSpace -MockWith { [PSCustomObject]@{ Name = "C:\"; Free = 1 } } -ModuleName dbatools
     }
+
     Context "Parameter validation" {
         BeforeAll {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
@@ -59,11 +42,11 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
                 "Continue",
                 "Throttle",
                 "Authentication",
+                "EnableException",
                 "ExtractPath",
                 "ArgumentList",
                 "Download",
-                "NoPendingRenameCheck",
-                "EnableException"
+                "NoPendingRenameCheck"
             )
         }
 
@@ -71,6 +54,7 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
     Context "testing proper Authorization" {
         BeforeAll {
             Mock -CommandName Get-SQLInstanceComponent -ModuleName dbatools -MockWith {
@@ -110,12 +94,9 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
             # Mock CredSSP initialization
             Mock -CommandName Initialize-CredSSP -ModuleName dbatools -MockWith { }
             # Mock CmObject
-            Mock -CommandName Get-DbaCmObject -ModuleName dbatools -MockWith {
-                [PSCustomObject]@{
-                    SystemType = "x64"
-                }
-            }
+            Mock -CommandName Get-DbaCmObject -ModuleName dbatools -MockWith { [PSCustomObject]@{ SystemType = "x64" } }
         }
+
         It "should call internal functions using CredSSP" {
             $password = "pwd" | ConvertTo-SecureString -AsPlainText -Force
             $cred = New-Object PSCredential("usr", $password)
@@ -124,12 +105,14 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
             Assert-MockCalled -CommandName Initialize-CredSSP -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Invoke-Program -ParameterFilter { $Authentication -eq "CredSSP" } -Exactly 2 -Scope It -ModuleName dbatools
         }
+
         It "should call internal functions using Default" {
             $null = Update-DbaInstance -ComputerName "mocked" -Version "2012SP3" -Path "mocked" -EnableException -Confirm:$false
             Assert-MockCalled -ParameterFilter { $Authentication -eq "Default" } -CommandName Find-SqlInstanceUpdate -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Initialize-CredSSP -Exactly 0 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Invoke-Program -ParameterFilter { $Authentication -eq "Default" } -Exactly 2 -Scope It -ModuleName dbatools
         }
+
         It "should call internal functions using Kerberos" {
             $password = "pwd" | ConvertTo-SecureString -AsPlainText -Force
             $cred = New-Object PSCredential("usr", $password)
@@ -139,9 +122,10 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
             Assert-MockCalled -CommandName Invoke-Program -ParameterFilter { $Authentication -eq "Kerberos" } -Exactly 2 -Scope It -ModuleName dbatools
         }
     }
+
     Context "Validate upgrades to a latest version" {
         BeforeAll {
-            #this is our "currently installed" versions
+            #this is our 'currently installed' versions
             Mock -CommandName Get-SQLInstanceComponent -ModuleName dbatools -MockWith {
                 @(
                     [PSCustomObject]@{InstanceName = "LAB0"; Version = [PSCustomObject]@{
@@ -208,11 +192,13 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
                 $null = New-Item -ItemType File -Path (Join-Path $exeDir $kb) -Force
             }
         }
+
         AfterAll {
             if (Test-Path $exeDir) {
                 Remove-Item $exeDir -Force -Recurse
             }
         }
+
         It "Should mock-upgrade SQL2017\LAB0 to SP0CU12 thinking it's latest" {
             $result = Update-DbaInstance -Version 2017 -Path $exeDir -Restart -EnableException -Confirm:$false
             Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
@@ -230,6 +216,7 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
             $result.Notes | Should -BeNullOrEmpty
             $result.ExtractPath | Should -BeLike "*\dbatools_KB*Extract_*"
         }
+
         It "Should mock-upgrade SQL2008\LAB2 to latest SP" {
             $result = Update-DbaInstance -Version 2008 -InstanceName LAB2 -Type ServicePack -Path $exeDir -Restart -EnableException -Confirm:$false
             Assert-MockCalled -CommandName Test-DbaBuild -Exactly 0 -Scope It -ModuleName dbatools
@@ -248,6 +235,7 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
             $result.Notes | Should -BeNullOrEmpty
             $result.ExtractPath | Should -BeLike "*\dbatools_KB*Extract_*"
         }
+
         It "Should mock-upgrade SQL2008\LAB2 passing extra command line parameters" {
             $result = Update-DbaInstance -Version 2008 -InstanceName LAB2 -Type ServicePack -Path $exeDir -ArgumentList @("/foo", "/bar=foobar") -EnableException -Confirm:$false
             Assert-MockCalled -CommandName Test-DbaBuild -Exactly 0 -Scope It -ModuleName dbatools
@@ -269,6 +257,7 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
             $result.Installer | Should -Be (Join-Path $exeDir "SQLServer2008SP4-KB2979596-x64-ENU.exe")
             $result.ExtractPath | Should -BeLike "*\dbatools_KB*Extract_*"
         }
+
         It "Should mock-upgrade two versions to latest SPs" {
             $results = Update-DbaInstance -Version 2008, 2012 -Type ServicePack -Path $exeDir -Restart -EnableException -Confirm:$false
             Assert-MockCalled -CommandName Test-DbaBuild -Exactly 0 -Scope It -ModuleName dbatools
@@ -303,9 +292,10 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
             $result.ExtractPath | Should -BeLike "*\dbatools_KB*Extract_*"
         }
     }
+
     Context "Validate upgrades to a specific KB" {
         BeforeAll {
-            #this is our "currently installed" versions
+            #this is our 'currently installed' versions
             Mock -CommandName Get-SQLInstanceComponent -ModuleName dbatools -MockWith {
                 @(
                     [PSCustomObject]@{InstanceName = "LAB"; Version = [PSCustomObject]@{
@@ -348,11 +338,13 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
                 $null = New-Item -ItemType File -Path (Join-Path $exeDir $kb) -Force
             }
         }
+
         AfterAll {
             if (Test-Path $exeDir) {
                 Remove-Item $exeDir -Force -Recurse
             }
         }
+
         It "Should mock-upgrade SQL2008 to SP3 (KB2546951)" {
             $result = Update-DbaInstance -Kb KB2546951 -Path $exeDir -Restart -EnableException -Confirm:$false
             Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
@@ -369,6 +361,7 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
             $result.Notes | Should -BeNullOrEmpty
             $result.ExtractPath | Should -BeLike "*\dbatools_KB*Extract_*"
         }
+
         It "Should mock-upgrade SQL2016 to SP1CU4 (KB3182545 + KB4024305) " {
             $result = Update-DbaInstance -Kb 3182545, 4024305 -Path $exeDir -Restart -EnableException -Confirm:$false
             Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
@@ -385,6 +378,7 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
             $result.Notes | Should -BeNullOrEmpty
             $result.ExtractPath | Should -BeLike "*\dbatools_KB*Extract_*"
         }
+
         It "Should mock-upgrade both versions to different KBs" {
             $results = Update-DbaInstance -Kb 3182545, 4040714, KB2546951, KB2738350 -Path $exeDir -Restart -EnableException -Confirm:$false
             Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
@@ -427,9 +421,10 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
             $result.ExtractPath | Should -BeLike "*\dbatools_KB*Extract_*"
         }
     }
+
     Context "Validate upgrades of a specific Major version" {
         BeforeAll {
-            #this is our "currently installed" versions
+            #this is our 'currently installed' versions
             Mock -CommandName Get-SQLInstanceComponent -ModuleName dbatools -MockWith {
                 @(
                     [PSCustomObject]@{InstanceName = "LAB"; Version = [PSCustomObject]@{
@@ -478,16 +473,19 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
                     FullComputerName = $ComputerName
                 }
             }
+            $resolvedComputers += $resolvedComputer.FullComputerName
             # Mock invoke-parallel to prevent runspace-based execution
             Mock -CommandName Invoke-Parallel -ModuleName dbatools -MockWith {
                 $InputObject | ForEach-Object -Process $ScriptBlock
             }
         }
+
         AfterAll {
             if (Test-Path $exeDir) {
                 Remove-Item $exeDir -Force -Recurse
             }
         }
+
         It "Should mock-upgrade two SQL2016 servers to SP2" {
             $results = Update-DbaInstance -ComputerName "localhost", "127.0.0.1" -Version SQL2016SP2 -Path $exeDir -Restart -EnableException -Confirm:$false
             Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 2 -Scope It -ModuleName dbatools
@@ -507,9 +505,10 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
             }
         }
     }
+
     Context "Validate upgrade to the same version when installation failed" {
         BeforeAll {
-            #this is our "currently installed" versions
+            #this is our 'currently installed' versions
             Mock -CommandName Get-SQLInstanceComponent -ModuleName dbatools -MockWith {
                 [PSCustomObject]@{
                     InstanceName = "LAB"
@@ -534,6 +533,7 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
             }
             Mock -CommandName Get-Item -ModuleName dbatools -MockWith { "c:\mocked" }
         }
+
         It "Should mock-upgrade interrupted setup of SQL2012 SP2" {
             $result = Update-DbaInstance -Continue -InstanceName LAB -Version 2012SP2 -Path $exeDir -Restart -EnableException -Confirm:$false
             Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
@@ -552,9 +552,10 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
             $result.ExtractPath | Should -BeLike "*\dbatools_KB*Extract_*"
         }
     }
+
     Context "Download KB before installation" {
         BeforeAll {
-            #this is our "currently installed" versions
+            #this is our 'currently installed' versions
             Mock -CommandName Get-SQLInstanceComponent -ModuleName dbatools -MockWith {
                 [PSCustomObject]@{
                     InstanceName = "LAB"
@@ -581,12 +582,13 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
                 }
             }
         }
+
         It "Should download and mock-upgrade SQL2012 KB3045321" {
             $result = Update-DbaInstance -InstanceName LAB -KB KB3045321 -Path $exeDir -Download -EnableException -Confirm:$false
             Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Save-DbaKbUpdate -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter {
-                $Name -eq '3045321' -and $Path -eq [System.IO.Path]::GetTempPath() -and $Architecture -eq 'x64'
+                $Name -eq "3045321" -and $Path -eq [System.IO.Path]::GetTempPath() -and $Architecture -eq "x64"
             }
 
             $result | Should -Not -BeNullOrEmpty
@@ -601,6 +603,7 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
             $result.ExtractPath | Should -BeLike "*\dbatools_KB*Extract_*"
         }
     }
+
     Context "Should mock-upgrade to a set of specific versions" {
         BeforeAll {
             #Mock Get-Item and Get-ChildItem with a dummy file
@@ -610,150 +613,153 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
                 }
             }
             Mock -CommandName Get-Item -ModuleName dbatools -MockWith { "c:\mocked" }
+
+            $versions = @{
+                "2005"   = @{
+                    Mock     = { [PSCustomObject]@{InstanceName = "LAB"; Version = [PSCustomObject]@{
+                                "SqlInstance" = $null
+                                "Build"       = "9.0.1399"
+                                "NameLevel"   = "2005"
+                                "SPLevel"     = "RTM"
+                                "CULevel"     = $null
+                                "KBLevel"     = $null
+                                "BuildLevel"  = [version]"9.0.1399"
+                                "MatchType"   = "Exact"
+                            }
+                        }
+                    }
+                    Versions = @{
+                        "SP1" = 0
+                        "SP2" = 0
+                        "SP4" = 0, 3
+                    }
+                }
+                "2008"   = @{
+                    Mock     = { [PSCustomObject]@{InstanceName = "LAB"; Version = [PSCustomObject]@{
+                                "SqlInstance" = $null
+                                "Build"       = "10.0.1600"
+                                "NameLevel"   = "2008"
+                                "SPLevel"     = "RTM"
+                                "CULevel"     = $null
+                                "KBLevel"     = $null
+                                "BuildLevel"  = [version]"10.0.1600"
+                                "MatchType"   = "Exact"
+                            }
+                        }
+                    }
+                    Versions = @{
+                        "SP0" = 1, 10
+                        "SP1" = 0, 16
+                        "SP2" = 0, 11
+                        "SP3" = 0, 17
+                        "SP4" = 0
+                    }
+                }
+                "2008R2" = @{
+                    Mock     = { [PSCustomObject]@{InstanceName = "LAB"; Version = [PSCustomObject]@{
+                                "SqlInstance" = $null
+                                "Build"       = "10.50.1600"
+                                "NameLevel"   = "2008R2"
+                                "SPLevel"     = "RTM"
+                                "CULevel"     = $null
+                                "KBLevel"     = $null
+                                "BuildLevel"  = [version]"10.50.1600"
+                                "MatchType"   = "Exact"
+                            }
+                        }
+                    }
+                    Versions = @{
+                        "SP0" = 1, 14
+                        "SP1" = 0, 13
+                        "SP2" = 0, 13
+                        "SP3" = 0
+                    }
+                }
+                "2012"   = @{
+                    Mock     = { [PSCustomObject]@{InstanceName = "LAB"; Version = [PSCustomObject]@{
+                                "SqlInstance" = $null
+                                "Build"       = "11.0.2100"
+                                "NameLevel"   = "2012"
+                                "SPLevel"     = "RTM"
+                                "CULevel"     = $null
+                                "KBLevel"     = $null
+                                "BuildLevel"  = [version]"10.0.2100"
+                                "MatchType"   = "Exact"
+                            }
+                        }
+                    }
+                    Versions = @{
+                        "SP0" = 1, 11
+                        "SP1" = 0, 16
+                        "SP2" = 0, 16
+                        "SP3" = 0, 10
+                        "SP4" = 0
+                    }
+                }
+                "2014"   = @{
+                    Mock     = { [PSCustomObject]@{InstanceName = "LAB"; Version = [PSCustomObject]@{
+                                "SqlInstance" = $null
+                                "Build"       = "12.0.2000"
+                                "NameLevel"   = "2014"
+                                "SPLevel"     = "RTM"
+                                "CULevel"     = $null
+                                "KBLevel"     = $null
+                                "BuildLevel"  = [version]"12.0.2000"
+                                "MatchType"   = "Exact"
+                            }
+                        }
+                    }
+                    Versions = @{
+                        "SP0" = 1, 14
+                        "SP1" = 0, 13
+                        "SP2" = 0, 14
+                        "SP3" = 0
+                    }
+                }
+                "2016"   = @{
+                    Mock     = { [PSCustomObject]@{InstanceName = "LAB"; Version = [PSCustomObject]@{
+                                "SqlInstance" = $null
+                                "Build"       = "13.0.1601"
+                                "NameLevel"   = "2016"
+                                "SPLevel"     = "RTM"
+                                "CULevel"     = $null
+                                "KBLevel"     = $null
+                                "BuildLevel"  = [version]"13.0.1601"
+                                "MatchType"   = "Exact"
+                            }
+                        }
+                    }
+                    Versions = @{
+                        "SP0" = 1, 9
+                        "SP1" = 0, 12
+                        "SP2" = 0, 4
+                    }
+                }
+                "2017"   = @{
+                    Mock     = { [PSCustomObject]@{InstanceName = "LAB"; Version = [PSCustomObject]@{
+                                "SqlInstance" = $null
+                                "Build"       = "14.0.1000"
+                                "NameLevel"   = "2017"
+                                "SPLevel"     = "RTM"
+                                "CULevel"     = $null
+                                "KBLevel"     = $null
+                                "BuildLevel"  = [version]"14.0.1000"
+                                "MatchType"   = "Exact"
+                            }
+                        }
+                    }
+                    Versions = @{
+                        "SP0" = 1, 12
+                    }
+                }
+            }
         }
+
         AfterAll {
         }
-        $versions = @{
-            '2005'   = @{
-                Mock     = { [PSCustomObject]@{InstanceName = "LAB"; Version = [PSCustomObject]@{
-                            "SqlInstance" = $null
-                            "Build"       = "9.0.1399"
-                            "NameLevel"   = "2005"
-                            "SPLevel"     = "RTM"
-                            "CULevel"     = $null
-                            "KBLevel"     = $null
-                            "BuildLevel"  = [version]"9.0.1399"
-                            "MatchType"   = "Exact"
-                        }
-                    }
-                }
-                Versions = @{
-                    'SP1' = 0
-                    'SP2' = 0
-                    'SP4' = 0, 3
-                }
-            }
-            '2008'   = @{
-                Mock     = { [PSCustomObject]@{InstanceName = "LAB"; Version = [PSCustomObject]@{
-                            "SqlInstance" = $null
-                            "Build"       = "10.0.1600"
-                            "NameLevel"   = "2008"
-                            "SPLevel"     = "RTM"
-                            "CULevel"     = $null
-                            "KBLevel"     = $null
-                            "BuildLevel"  = [version]"10.0.1600"
-                            "MatchType"   = "Exact"
-                        }
-                    }
-                }
-                Versions = @{
-                    'SP0' = 1, 10
-                    'SP1' = 0, 16
-                    'SP2' = 0, 11
-                    'SP3' = 0, 17
-                    'SP4' = 0
-                }
-            }
-            '2008R2' = @{
-                Mock     = { [PSCustomObject]@{InstanceName = "LAB"; Version = [PSCustomObject]@{
-                            "SqlInstance" = $null
-                            "Build"       = "10.50.1600"
-                            "NameLevel"   = "2008R2"
-                            "SPLevel"     = "RTM"
-                            "CULevel"     = $null
-                            "KBLevel"     = $null
-                            "BuildLevel"  = [version]"10.50.1600"
-                            "MatchType"   = "Exact"
-                        }
-                    }
-                }
-                Versions = @{
-                    'SP0' = 1, 14
-                    'SP1' = 0, 13
-                    'SP2' = 0, 13
-                    'SP3' = 0
-                }
-            }
-            '2012'   = @{
-                Mock     = { [PSCustomObject]@{InstanceName = "LAB"; Version = [PSCustomObject]@{
-                            "SqlInstance" = $null
-                            "Build"       = "11.0.2100"
-                            "NameLevel"   = "2012"
-                            "SPLevel"     = "RTM"
-                            "CULevel"     = $null
-                            "KBLevel"     = $null
-                            "BuildLevel"  = [version]"10.0.2100"
-                            "MatchType"   = "Exact"
-                        }
-                    }
-                }
-                Versions = @{
-                    'SP0' = 1, 11
-                    'SP1' = 0, 16
-                    'SP2' = 0, 16
-                    'SP3' = 0, 10
-                    'SP4' = 0
-                }
-            }
-            '2014'   = @{
-                Mock     = { [PSCustomObject]@{InstanceName = "LAB"; Version = [PSCustomObject]@{
-                            "SqlInstance" = $null
-                            "Build"       = "12.0.2000"
-                            "NameLevel"   = "2014"
-                            "SPLevel"     = "RTM"
-                            "CULevel"     = $null
-                            "KBLevel"     = $null
-                            "BuildLevel"  = [version]"12.0.2000"
-                            "MatchType"   = "Exact"
-                        }
-                    }
-                }
-                Versions = @{
-                    'SP0' = 1, 14
-                    'SP1' = 0, 13
-                    'SP2' = 0, 14
-                    'SP3' = 0
-                }
-            }
-            '2016'   = @{
-                Mock     = { [PSCustomObject]@{InstanceName = "LAB"; Version = [PSCustomObject]@{
-                            "SqlInstance" = $null
-                            "Build"       = "13.0.1601"
-                            "NameLevel"   = "2016"
-                            "SPLevel"     = "RTM"
-                            "CULevel"     = $null
-                            "KBLevel"     = $null
-                            "BuildLevel"  = [version]"13.0.1601"
-                            "MatchType"   = "Exact"
-                        }
-                    }
-                }
-                Versions = @{
-                    'SP0' = 1, 9
-                    'SP1' = 0, 12
-                    'SP2' = 0, 4
-                }
-            }
-            '2017'   = @{
-                Mock     = { [PSCustomObject]@{InstanceName = "LAB"; Version = [PSCustomObject]@{
-                            "SqlInstance" = $null
-                            "Build"       = "14.0.1000"
-                            "NameLevel"   = "2017"
-                            "SPLevel"     = "RTM"
-                            "CULevel"     = $null
-                            "KBLevel"     = $null
-                            "BuildLevel"  = [version]"14.0.1000"
-                            "MatchType"   = "Exact"
-                        }
-                    }
-                }
-                Versions = @{
-                    'SP0' = 1, 12
-                }
-            }
-        }
+
         foreach ($v in $versions.Keys | Sort-Object) {
-            #this is our "currently installed" versions
+            #this is our 'currently installed' versions
             Mock -CommandName Get-SQLInstanceComponent -ModuleName dbatools -MockWith $versions[$v].Mock
             #cycle through every sp and cu defined
             $upgrades = $versions[$v].Versions
@@ -761,7 +767,7 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
                 foreach ($cu in $upgrades[$upgrade]) {
                     $tLevel = $upgrade
                     $steps = 0
-                    if ($tLevel -eq 'SP0') { $tLevel = 'RTM' }
+                    if ($tLevel -eq "SP0") { $tLevel = "RTM" }
                     else { $steps++ }
                     if ($cu -gt 0) {
                         $cuLevel = "$($tLevel)CU$cu"
@@ -792,9 +798,10 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
             }
         }
     }
+
     Context "Negative tests" {
         BeforeAll {
-            #this is our "currently installed" versions
+            #this is our 'currently installed' versions
             Mock -CommandName Get-SQLInstanceComponent -ModuleName dbatools -MockWith {
                 [PSCustomObject]@{InstanceName = "LAB"; Version = [PSCustomObject]@{
                         "SqlInstance" = $null
@@ -812,37 +819,44 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
                 $null = New-Item -ItemType Directory -Path $exeDir
             }
         }
+
         AfterAll {
             if (Test-Path $exeDir) {
                 Remove-Item $exeDir -Force -Recurse
             }
         }
+
         It "fails when a reboot is pending" {
             #override default mock
             Mock -CommandName Test-PendingReboot -MockWith { $true } -ModuleName dbatools
-            { Update-DbaInstance -Version 2008SP3CU7 -EnableException } | Should -Throw 'Reboot the computer before proceeding'
+            { Update-DbaInstance -Version 2008SP3CU7 -EnableException } | Should -Throw "Reboot the computer before proceeding"
             #revert default mock
             Mock -CommandName Test-PendingReboot -MockWith { $false } -ModuleName dbatools
         }
+
         It "fails when Version string is incorrect" {
-            { Update-DbaInstance -Version '' -EnableException } | Should -Throw 'Cannot validate argument on parameter ''Version'''
-            { Update-DbaInstance -Version $null -EnableException } | Should -Throw 'Cannot validate argument on parameter ''Version'''
-            { Update-DbaInstance -Version SQL2008-SP3 -EnableException } | Should -Throw 'is an incorrect Version value'
-            { Update-DbaInstance -Version SP2CU -EnableException } | Should -Throw 'is an incorrect Version value'
-            { Update-DbaInstance -Version SPCU2 -EnableException } | Should -Throw 'is an incorrect Version value'
-            { Update-DbaInstance -Version SQLSP2CU2 -EnableException } | Should -Throw 'is an incorrect Version value'
+            { Update-DbaInstance -Version "" -EnableException } | Should -Throw "Cannot validate argument on parameter 'Version'"
+            { Update-DbaInstance -Version $null -EnableException } | Should -Throw "Cannot validate argument on parameter 'Version'"
+            { Update-DbaInstance -Version SQL2008-SP3 -EnableException } | Should -Throw "is an incorrect Version value"
+            { Update-DbaInstance -Version SP2CU -EnableException } | Should -Throw "is an incorrect Version value"
+            { Update-DbaInstance -Version SPCU2 -EnableException } | Should -Throw "is an incorrect Version value"
+            { Update-DbaInstance -Version SQLSP2CU2 -EnableException } | Should -Throw "is an incorrect Version value"
         }
+
         It "fails when KB is missing in the folder" {
-            { Update-DbaInstance -Path $exeDir -EnableException } | Should -Throw 'Could not find installer for the SQL2008 update KB'
-            { Update-DbaInstance -Version 2008SP3CU7 -Path $exeDir -EnableException } | Should -Throw 'Could not find installer for the SQL2008 update KB'
+            { Update-DbaInstance -Path $exeDir -EnableException } | Should -Throw "Could not find installer for the SQL2008 update KB"
+            { Update-DbaInstance -Version 2008SP3CU7 -Path $exeDir -EnableException } | Should -Throw "Could not find installer for the SQL2008 update KB"
         }
+
         It "fails when SP level is lower than required" {
-            { Update-DbaInstance -Type CumulativeUpdate -EnableException } | Should -Throw 'Current SP version SQL2008SP2 is not the latest available'
+            { Update-DbaInstance -Type CumulativeUpdate -EnableException } | Should -Throw "Current SP version SQL2008SP2 is not the latest available"
         }
+
         It "fails when repository is not available" {
-            { Update-DbaInstance -Version 2008SP3CU7 -Path .\NonExistingFolder -EnableException } | Should -Throw 'Cannot find path'
-            { Update-DbaInstance -Version 2008SP3CU7 -EnableException } | Should -Throw 'Path to SQL Server updates folder is not set'
+            { Update-DbaInstance -Version 2008SP3CU7 -Path .\NonExistingFolder -EnableException } | Should -Throw "Cannot find path"
+            { Update-DbaInstance -Version 2008SP3CU7 -EnableException } | Should -Throw "Path to SQL Server updates folder is not set"
         }
+
         It "fails when update execution has failed" {
             #Mock Get-Item and Get-ChildItem with a dummy file
             Mock -CommandName Get-ChildItem -ModuleName dbatools -MockWith {
@@ -853,7 +867,7 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
             Mock -CommandName Get-Item -ModuleName dbatools -MockWith { "c:\mocked" }
             #override default mock
             Mock -CommandName Invoke-Program -MockWith { [PSCustomObject]@{ Successful = $false; ExitCode = 12345 } } -ModuleName dbatools
-            { Update-DbaInstance -Version 2008SP3 -EnableException -Path "mocked" -Confirm:$false } | Should -Throw 'failed with exit code 12345'
+            { Update-DbaInstance -Version 2008SP3 -EnableException -Path "mocked" -Confirm:$false } | Should -Throw "failed with exit code 12345"
             $result = Update-DbaInstance -Version 2008SP3 -Path "mocked" -Confirm:$false -WarningVariable warVar 3>$null
             $result | Should -Not -BeNullOrEmpty
             $result.MajorVersion | Should -Be 2008
@@ -862,17 +876,20 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
             $result.Successful | Should -Be $false
             $result.Restarted | Should -Be $false
             $result.Installer | Should -Be "c:\mocked\filename.exe"
-            $result.Notes | Should -BeLike '*failed with exit code 12345*'
+            $result.Notes | Should -BeLike "*failed with exit code 12345*"
             $result.ExtractPath | Should -BeLike "*\dbatools_KB*Extract_*"
-            $warVar | Should -BeLike '*failed with exit code 12345*'
+            $warVar | Should -BeLike "*failed with exit code 12345*"
             #revert default mock
             Mock -CommandName Invoke-Program -MockWith { [PSCustomObject]@{ Successful = $true } } -ModuleName dbatools
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag IntegrationTests {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        $global:TestConfig = Get-TestConfig
+        $exeDir = "C:\Temp\dbatools_$CommandName"
+
         #ignore restart requirements
         Mock -CommandName Test-PendingReboot -MockWith { $false } -ModuleName dbatools
         #ignore elevation requirements
@@ -886,6 +903,7 @@ Describe "$CommandName Integration Tests" -Tag IntegrationTests {
             }
         }
     }
+
     Context "WhatIf upgrade target instance to latest SPCU" {
         It "Should whatif-upgrade to latest SPCU" {
             $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1

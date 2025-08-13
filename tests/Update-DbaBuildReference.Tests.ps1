@@ -1,26 +1,24 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Update-DbaBuildReference",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+
 Describe $CommandName -Tag UnitTests {
     BeforeAll {
-        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
         $global:TestConfig = Get-TestConfig
+        $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+        $expectedParameters = $TestConfig.CommonParameters
+        $expectedParameters += @(
+            "LocalFile",
+            "EnableException"
+        )
     }
 
     Context "Parameter validation" {
-        BeforeAll {
-            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
-            $expectedParameters = $TestConfig.CommonParameters
-            $expectedParameters += @(
-                "LocalFile",
-                "EnableException"
-            )
-        }
-
         It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
@@ -30,6 +28,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag UnitTests {
     Context "Function behavior" {
         BeforeAll {
+            # Setup mock function for testing
             function Get-DbaBuildReferenceIndexOnline { }
         }
 

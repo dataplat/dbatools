@@ -1,9 +1,12 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Test-DbaDiskAllocation",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
+
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+$global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
@@ -24,31 +27,17 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-Describe $CommandName -Tag IntegrationTests {
-    Context "Command functionality" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            
-            $splatStandard = @{
-                ComputerName = $TestConfig.instance2
-            }
-            $standardResults = Test-DbaDiskAllocation @splatStandard
-            
-            $splatNoSql = @{
-                ComputerName = $TestConfig.instance2
-                NoSqlCheck   = $true
-            }
-            $noSqlResults = Test-DbaDiskAllocation @splatNoSql
-            
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
 
+Describe $CommandName -Tag IntegrationTests {
+    Context "Command actually works" {
         It "Should return a result" {
-            $standardResults | Should -Not -Be $null
+            $results = Test-DbaDiskAllocation -ComputerName $TestConfig.instance2
+            $results | Should -Not -BeNullOrEmpty
         }
 
         It "Should return a result not using sql" {
-            $noSqlResults | Should -Not -Be $null
+            $results = Test-DbaDiskAllocation -NoSqlCheck -ComputerName $TestConfig.instance2
+            $results | Should -Not -BeNullOrEmpty
         }
     }
 }
