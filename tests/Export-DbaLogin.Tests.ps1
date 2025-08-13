@@ -86,6 +86,9 @@ Describe $CommandName -Tag IntegrationTests {
         # Track all files for cleanup
         $allfiles = @()
 
+        # Get DestinationVersions for parameterized tests
+        $DestinationVersions = (Get-Command $CommandName).Parameters.DestinationVersion.attributes.validvalues
+
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
     }
@@ -175,14 +178,14 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Should -Match "USE \[$dbname2\]"
         }
 
-        foreach ($version in $((Get-Command $CommandName).Parameters.DestinationVersion.attributes.validvalues)) {
-            It "Should Export for the SQLVersion $version" {
-                $file = Export-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login2 -Database $dbname2 -DestinationVersion $version -WarningAction SilentlyContinue
-                $results = Get-Content -Path $file -Raw
-                $allfiles += $file.FullName
-                $results | Should -Match "$login2|$dbname2"
-                $results | Should -Not -Match "$login1|$dbname1"
-            }
+        It "Should Export for the SQLVersion <DestinationVersion>" -TestCases $($DestinationVersions | ForEach-Object { @{ DestinationVersion = $_ } }) {
+            param($DestinationVersion)
+
+            $file = Export-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login2 -Database $dbname2 -DestinationVersion $DestinationVersion -WarningAction SilentlyContinue
+            $results = Get-Content -Path $file -Raw
+            $allfiles += $file.FullName
+            $results | Should -Match "$login2|$dbname2"
+            $results | Should -Not -Match "$login1|$dbname1"
         }
 
         It "Should Export only logins from the db that is piped in" {
