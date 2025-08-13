@@ -28,6 +28,7 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
         $hideInstanceResults = Get-DbaHideInstance -SqlInstance $TestConfig.instance1
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
