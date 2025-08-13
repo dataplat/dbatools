@@ -5,8 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
 . "$PSScriptRoot\..\private\functions\Get-DirectoryRestoreFile.ps1"
 
 Describe $CommandName -Tag UnitTests {
@@ -35,6 +33,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should return correct parts" {
             for ($i = 0; $i -lt $objectName.Count; $i++) {
                 $result = Get-ObjectNameParts -ObjectName $objectName[$i]
+                $result | Should -Not -BeNull
                 $result.Parsed | Should -Be $true
                 $result.Database | Should -Be $null
                 $result.Schema | Should -Be $null
@@ -42,6 +41,7 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
     Context "Test two part names" {
         BeforeAll {
             $objectName = @("schema1.table1", "[sche..ma2].[table2]", "schema3.[tab..le3]", "[schema4].[table]]x4]", "schema5.[table5]]]")
@@ -52,6 +52,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should return correct parts" {
             for ($i = 0; $i -lt $objectName.Count; $i++) {
                 $result = Get-ObjectNameParts -ObjectName $objectName[$i]
+                $result | Should -Not -BeNull
                 $result.Parsed | Should -Be $true
                 $result.Database | Should -Be $null
                 $result.Schema | Should -Be $schema[$i]
@@ -59,6 +60,7 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
     Context "Test three part names" {
         BeforeAll {
             $objectName = @("database1.schema1.table1", "database2..table2", "database3..[tab..le3]", "db4.[sche..ma4].table4")
@@ -70,6 +72,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should return correct parts" {
             for ($i = 0; $i -lt $objectName.Count; $i++) {
                 $result = Get-ObjectNameParts -ObjectName $objectName[$i]
+                $result | Should -Not -BeNull
                 $result.Parsed | Should -Be $true
                 $result.Database | Should -Be $database[$i]
                 $result.Schema | Should -Be $schema[$i]
@@ -77,9 +80,12 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
     Context "Test wrong names" {
         It "Should not return parts for 'part1.part2.part3.part4'" {
-            (Get-ObjectNameParts -ObjectName "part1.part2.part3.part4").Parsed | Should -Be $false
+            $result = Get-ObjectNameParts -ObjectName "part1.part2.part3.part4"
+            $result | Should -Not -BeNull
+            $result.Parsed | Should -Be $false
         }
     }
 }
