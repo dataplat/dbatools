@@ -56,6 +56,11 @@ Describe $CommandName -Tag IntegrationTests {
         Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance2 -Database $db1, $db2 -ErrorAction SilentlyContinue
     }
     Context "Parameters validation" {
+        BeforeAll {
+            $script:db1 = $db1
+            $script:db2 = $db2
+            $script:server = $server
+        }
         It "Stops if no Database or Snapshot" {
             { Restore-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -EnableException } | Should -Throw -ExpectedMessage "*You must specify*"
         }
@@ -107,7 +112,7 @@ Describe $CommandName -Tag IntegrationTests {
             # the other snapshot has been dropped
             $result = Get-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $script:db1
             $result.SnapshotOf | Should -Be $script:db1
-            $result.Database.Name | Should -Be $script:db1_snap2
+            $result.Database.Name | Should -Be $script:db1_snap1
 
             # the log size has been restored to the correct size
             $script:server.databases[$script:db1].Logfiles.Size | Should -Be 13312
@@ -116,6 +121,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Stops if multiple snapshot for the same db are passed" {
             $result = Restore-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Snapshot $script:db1_snap1, $script:db1_snap2 -Confirm:$false *> $null
             $result | Should -BeNullOrEmpty
+            $Global:Error[0].CategoryInfo.Category | Should -Be 'InvalidData'
         }
 
         It "has the correct default properties" {

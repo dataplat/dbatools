@@ -73,11 +73,11 @@ Describe $CommandName -Tag IntegrationTests {
             $random = Get-Random
 
             # Create the new password
-            $password1 = ConvertTo-SecureString -String "password1A@" -AsPlainText -Force
-            $password2 = ConvertTo-SecureString -String "password2A@" -AsPlainText -Force
+            $password1 = ConvertTo-SecureString -String "ComplexP@ssw0rd1!" -AsPlainText -Force
+            $password2 = ConvertTo-SecureString -String "ComplexP@ssw0rd2!" -AsPlainText -Force
 
             # Create the login
-            New-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random", "testlogin2_$random" -Password $password1
+            New-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random", "testlogin2_$random" -SecurePassword $password1
 
             New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name "testdb1_$random" -Confirm:$false
         }
@@ -88,7 +88,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Does test login exist" {
-            $logins = Get-DbaLogin -SqlInstance $TestConfig.instance2 | Where-Object Name -eq "testlogin1_$random" | Select-Object Name
+            $logins = Get-DbaLogin -SqlInstance $TestConfig.instance2 | Where-Object { $_.Name -eq "testlogin1_$random" } | Select-Object Name
             $logins.Name | Should -Be "testlogin1_$random"
         }
 
@@ -99,14 +99,14 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Change the password from a SecureString" {
-            $result = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random" -Password $password2
+            $result = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random" -SecurePassword $password2
 
             $result.PasswordChanged | Should -Be $true
         }
 
         It "Changes the password from a PSCredential" {
             $cred = New-Object System.Management.Automation.PSCredential ("testlogin1_$random", $password2)
-            $result = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random" -Password $cred
+            $result = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random" -SecurePassword $cred
 
             $result.PasswordChanged | Should -Be $true
         }
@@ -114,14 +114,14 @@ Describe $CommandName -Tag IntegrationTests {
         It "Change the password from piped Login" {
             $login = Get-DbaLogin -Sqlinstance $TestConfig.instance2 -Login "testlogin1_$random"
 
-            $result = $login | Set-DbaLogin -Password $password2
+            $result = $login | Set-DbaLogin -SecurePassword $password2
             $result.PasswordChanged | Should -Be $true
         }
 
         It "Change the password from InputObject" {
             $login = Get-DbaLogin -Sqlinstance $TestConfig.instance2 -Login "testlogin1_$random"
 
-            $result = Set-DbaLogin -InputObject $login -Password $password2
+            $result = Set-DbaLogin -InputObject $login -SecurePassword $password2
             $result.PasswordChanged | Should -Be $true
         }
 
@@ -159,12 +159,12 @@ Describe $CommandName -Tag IntegrationTests {
             $result.PasswordPolicyEnforced | Should -Be $true
 
             # violate policy
-            $invalidPassword = ConvertTo-SecureString -String "password1" -AsPlainText -Force
+            $invalidPassword = ConvertTo-SecureString -String "simple" -AsPlainText -Force
 
-            $result = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random" -Password $invalidPassword -WarningAction 'SilentlyContinue'
+            $result = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random" -SecurePassword $invalidPassword -WarningAction 'SilentlyContinue'
             $result | Should -Be $null
 
-            { Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random" -Password $invalidPassword -EnableException } | Should -Throw
+            { Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random" -SecurePassword $invalidPassword -EnableException } | Should -Throw
         }
 
         It "Disables enforcing password policy on login" {
@@ -292,19 +292,19 @@ Describe $CommandName -Tag IntegrationTests {
             $changeResult.PasswordExpirationEnabled | Should -Be $true
 
             # check_policy and check_expiration must be set on the login
-            $changeResult = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random", "testlogin2_$random" -PasswordMustChange -Password $password1 -WarningAction SilentlyContinue -WarningVariable WarnVar
+            $changeResult = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random", "testlogin2_$random" -PasswordMustChange -SecurePassword $password1 -WarningAction SilentlyContinue -WarningVariable WarnVar
             $WarnVar | Should -Match "Unable to change the password and set the must_change option for \[testlogin1_$random\] because check_policy = False and check_expiration = False"
             $changeResult.Count | Should -Be 1
             $changeResult.Name | Should -Be "testlogin2_$random"
 
-            $changeResult = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random" -PasswordMustChange -Password $password1 -PasswordPolicyEnforced -PasswordExpirationEnabled
+            $changeResult = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random" -PasswordMustChange -SecurePassword $password1 -PasswordPolicyEnforced -PasswordExpirationEnabled
             $changeResult.MustChangePassword | Should -Be $true
             $changeResult.PasswordChanged | Should -Be $true
             $changeResult.PasswordPolicyEnforced | Should -Be $true
             $changeResult.PasswordExpirationEnabled | Should -Be $true
 
             # now change the password and set the must_change
-            $changeResult = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin2_$random" -PasswordMustChange -Password $password1
+            $changeResult = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin2_$random" -PasswordMustChange -SecurePassword $password1
             $changeResult.MustChangePassword | Should -Be $true
             $changeResult.PasswordChanged | Should -Be $true
 

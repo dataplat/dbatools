@@ -56,7 +56,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Is nice by default" {
-            { Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance2 *> $null } | Should -Not -Throw "You must pipe*"
+            { Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance2 *> $null } | Should -Not -Throw
         }
     }
 

@@ -24,7 +24,7 @@ Describe $CommandName -Tag UnitTests {
 
         It "Should have the expected parameters" {
             $comparison = Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters
-            @($comparison) | Should -BeNullOrEmpty
+            @($comparison).Count | Should -Be 0
         }
     }
 }
@@ -41,7 +41,6 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should return valid connection info" {
             $testResults | Should -Not -BeNullOrEmpty
             $testResults.ComputerName | Should -Be $env:COMPUTERNAME
-            $testResults.Available | Should -Not -BeNullOrEmpty
             $testResults.Available | Should -BeOfType [bool]
         }
     }

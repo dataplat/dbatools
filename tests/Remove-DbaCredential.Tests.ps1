@@ -9,7 +9,10 @@ Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
-            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters = @()
+            if ($TestConfig -and $TestConfig.CommonParameters) {
+                $expectedParameters += $TestConfig.CommonParameters
+            }
             $expectedParameters += @(
                 "SqlInstance",
                 "SqlCredential",
@@ -23,7 +26,8 @@ Describe $CommandName -Tag UnitTests {
         }
 
         It "Should have the expected parameters" {
-            @(Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters) | Should -BeNullOrEmpty
+            $comparison = Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters
+            $comparison | Should -BeNullOrEmpty
         }
     }
 }

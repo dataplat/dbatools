@@ -27,7 +27,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
         It "Default set and returns '0 - Off'" {
-            $results = Set-DbaExtendedProtection -SqlInstance $TestConfig.instance1 -EnableException *>$null
+            $results = Set-DbaExtendedProtection -SqlInstance $TestConfig.instance1 -EnableException
             $results.ExtendedProtection | Should -Be "0 - Off"
         }
     }
