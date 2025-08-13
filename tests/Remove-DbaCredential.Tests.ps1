@@ -23,7 +23,7 @@ Describe $CommandName -Tag UnitTests {
         }
 
         It "Should have the expected parameters" {
-            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+            @(Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters) | Should -BeNullOrEmpty
         }
     }
 }
@@ -68,29 +68,29 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Commands work as expected" {
         It "Removes a SQL credential" {
-            (Get-DbaCredential -SqlInstance $global:serverInstance -Credential $global:credentialName) | Should -Not -BeNullOrEmpty
+            @(Get-DbaCredential -SqlInstance $global:serverInstance -Credential $global:credentialName) | Should -Not -BeNullOrEmpty
             Remove-DbaCredential -SqlInstance $global:serverInstance -Credential $global:credentialName -Confirm:$false
-            (Get-DbaCredential -SqlInstance $global:serverInstance -Credential $global:credentialName) | Should -BeNullOrEmpty
+            @(Get-DbaCredential -SqlInstance $global:serverInstance -Credential $global:credentialName) | Should -BeNullOrEmpty
         }
 
         It "Supports piping SQL credential" {
-            (Get-DbaCredential -SqlInstance $global:serverInstance -Credential $global:credentialName) | Should -Not -BeNullOrEmpty
+            @(Get-DbaCredential -SqlInstance $global:serverInstance -Credential $global:credentialName) | Should -Not -BeNullOrEmpty
             Get-DbaCredential -SqlInstance $global:serverInstance -Credential $global:credentialName | Remove-DbaCredential -Confirm:$false
-            (Get-DbaCredential -SqlInstance $global:serverInstance -Credential $global:credentialName) | Should -BeNullOrEmpty
+            @(Get-DbaCredential -SqlInstance $global:serverInstance -Credential $global:credentialName) | Should -BeNullOrEmpty
         }
 
         It "Removes all SQL credentials but excluded" {
-            (Get-DbaCredential -SqlInstance $global:serverInstance -Credential $global:credentialName2) | Should -Not -BeNullOrEmpty
-            (Get-DbaCredential -SqlInstance $global:serverInstance -ExcludeCredential $global:credentialName2) | Should -Not -BeNullOrEmpty
+            @(Get-DbaCredential -SqlInstance $global:serverInstance -Credential $global:credentialName2) | Should -Not -BeNullOrEmpty
+            @(Get-DbaCredential -SqlInstance $global:serverInstance -ExcludeCredential $global:credentialName2) | Should -Not -BeNullOrEmpty
             Remove-DbaCredential -SqlInstance $global:serverInstance -ExcludeCredential $global:credentialName2 -Confirm:$false
-            (Get-DbaCredential -SqlInstance $global:serverInstance -ExcludeCredential $global:credentialName2) | Should -BeNullOrEmpty
-            (Get-DbaCredential -SqlInstance $global:serverInstance -Credential $global:credentialName2) | Should -Not -BeNullOrEmpty
+            @(Get-DbaCredential -SqlInstance $global:serverInstance -ExcludeCredential $global:credentialName2) | Should -BeNullOrEmpty
+            @(Get-DbaCredential -SqlInstance $global:serverInstance -Credential $global:credentialName2) | Should -Not -BeNullOrEmpty
         }
 
         It "Removes all SQL credentials" {
-            (Get-DbaCredential -SqlInstance $global:serverInstance) | Should -Not -BeNullOrEmpty
+            @(Get-DbaCredential -SqlInstance $global:serverInstance) | Should -Not -BeNullOrEmpty
             Remove-DbaCredential -SqlInstance $global:serverInstance -Confirm:$false
-            (Get-DbaCredential -SqlInstance $global:serverInstance) | Should -BeNullOrEmpty
+            @(Get-DbaCredential -SqlInstance $global:serverInstance) | Should -BeNullOrEmpty
         }
     }
 }

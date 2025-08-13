@@ -8,9 +8,8 @@ param(
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
-            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
-            $expectedParameters = $TestConfig.CommonParameters
-            $expectedParameters += @(
+            $hasParameters = (Get-Command $CommandName).Parameters.Keys | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = @(
                 "SqlInstance",
                 "SqlCredential",
                 "Database",
@@ -21,10 +20,11 @@ Describe $CommandName -Tag UnitTests {
                 "Force",
                 "EnableException"
             )
+            $expectedParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         }
 
         It "Should have the expected parameters" {
-            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+            (@(Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters).Count) | Should -Be 0
         }
     }
 }
@@ -56,7 +56,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Is nice by default" {
-            { Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance2 *> $null } | Should -Not -Throw
+            { Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance2 *> $null } | Should -Not -Throw "You must pipe*"
         }
     }
 

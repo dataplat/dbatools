@@ -1,8 +1,7 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
     $ModuleName = "dbatools",
-    $CommandName = "Remove-DbaAgentAlert",
-    $PSDefaultParameterValues = $TestConfig.Defaults
+    $CommandName = "Remove-DbaAgentAlert"
 )
 
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan

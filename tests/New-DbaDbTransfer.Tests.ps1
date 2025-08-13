@@ -33,7 +33,7 @@ Describe $CommandName -Tag UnitTests {
         }
 
         It "Should have the expected parameters" {
-            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+            @(Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters) | Should -BeNullOrEmpty
         }
     }
 }
@@ -110,9 +110,9 @@ Describe $CommandName -Tag IntegrationTests {
             $transfer.BatchSize | Should -Be 50000
             $transfer.BulkCopyTimeout | Should -Be 5000
             $transfer.Database.Name | Should -Be $dbName
-            $transfer.ObjectList | Should -BeNullOrEmpty
+            @($transfer.ObjectList) | Should -BeNullOrEmpty
             $transfer.CopyAllObjects | Should -Be $false
-            $allowedObjects | ForEach-Object { $transfer.($_.ToString()) | Should -BeNullOrEmpty }
+            $allowedObjects | ForEach-Object { @($transfer.($_.ToString())) | Should -BeNullOrEmpty }
             $transfer.CopyData | Should -Be $true
             $transfer.CopySchema | Should -Be $true
             $transfer.DestinationDatabase | Should -Be $dbName
@@ -164,10 +164,10 @@ Describe $CommandName -Tag IntegrationTests {
             $transfer.CopyData | Should -Be $true
             $transfer.CopySchema | Should -Be $true
             $script = $transfer.ScriptTransfer() -join "`n"
-            $script | Should -BeLike "*CREATE TABLE [dbo].[transfer_test]*"
-            $script | Should -BeLike "*CREATE TABLE [dbo].[transfer_test2]*"
-            $script | Should -BeLike "*CREATE TABLE [dbo].[transfer_test3]*"
-            $script | Should -BeLike "*CREATE TABLE [dbo].[transfer_test4]*"
+            $script | Should -BeLike "*CREATE TABLE `[dbo`].`[transfer_test`]*"
+            $script | Should -BeLike "*CREATE TABLE `[dbo`].`[transfer_test2`]*"
+            $script | Should -BeLike "*CREATE TABLE `[dbo`].`[transfer_test3`]*"
+            $script | Should -BeLike "*CREATE TABLE `[dbo`].`[transfer_test4`]*"
         }
 
         It "Should script all tables with just schemas" {
@@ -175,10 +175,10 @@ Describe $CommandName -Tag IntegrationTests {
             $transfer.CopyData | Should -Be $false
             $transfer.CopySchema | Should -Be $true
             $script = $transfer.ScriptTransfer() -join "`n"
-            $script | Should -BeLike "*CREATE TABLE [dbo].[transfer_test]*"
-            $script | Should -BeLike "*CREATE TABLE [dbo].[transfer_test2]*"
-            $script | Should -BeLike "*CREATE TABLE [dbo].[transfer_test3]*"
-            $script | Should -BeLike "*CREATE TABLE [dbo].[transfer_test4]*"
+            $script | Should -BeLike "*CREATE TABLE `[dbo`].`[transfer_test`]*"
+            $script | Should -BeLike "*CREATE TABLE `[dbo`].`[transfer_test2`]*"
+            $script | Should -BeLike "*CREATE TABLE `[dbo`].`[transfer_test3`]*"
+            $script | Should -BeLike "*CREATE TABLE `[dbo`].`[transfer_test4`]*"
         }
 
         It "Should script one table with just data" {
@@ -189,7 +189,7 @@ Describe $CommandName -Tag IntegrationTests {
             $transfer.CopySchema | Should -Be $false
             # # data only ScriptTransfer still creates schema
             $script = $transfer.ScriptTransfer() -join "`n"
-            $script | Should -BeLike "*CREATE TABLE [dbo].[transfer_test]*"
+            $script | Should -BeLike "*CREATE TABLE `[dbo`].`[transfer_test`]*"
         }
 
         It "Should script two tables from pipeline" {
@@ -197,10 +197,10 @@ Describe $CommandName -Tag IntegrationTests {
             $transfer = $tables | New-DbaDbTransfer -SqlInstance $TestConfig.instance1 -Database $dbName
             $transfer.ObjectList.Count | Should -Be 2
             $script = $transfer.ScriptTransfer() -join "`n"
-            $script | Should -Not -BeLike "*CREATE TABLE [dbo].[transfer_test]*"
-            $script | Should -BeLike "*CREATE TABLE [dbo].[transfer_test2]*"
-            $script | Should -Not -BeLike "*CREATE TABLE [dbo].[transfer_test3]*"
-            $script | Should -BeLike "*CREATE TABLE [dbo].[transfer_test4]*"
+            $script | Should -Not -BeLike "*CREATE TABLE `[dbo`].`[transfer_test`]*"
+            $script | Should -BeLike "*CREATE TABLE `[dbo`].`[transfer_test2`]*"
+            $script | Should -Not -BeLike "*CREATE TABLE `[dbo`].`[transfer_test3`]*"
+            $script | Should -BeLike "*CREATE TABLE `[dbo`].`[transfer_test4`]*"
         }
 
         It "Should accept script options object" {
@@ -209,7 +209,7 @@ Describe $CommandName -Tag IntegrationTests {
             $transfer = New-DbaDbTransfer -SqlInstance $TestConfig.instance1 -Database $dbName -CopyAll Tables -ScriptingOption $options
             $transfer.Options.ScriptDrops | Should -BeTrue
             $script = $transfer.ScriptTransfer() -join "`n"
-            $script | Should -BeLike "*DROP TABLE [dbo].[transfer_test]*"
+            $script | Should -BeLike "*DROP TABLE `[dbo`].`[transfer_test`]*"
         }
     }
 
@@ -240,7 +240,7 @@ Describe $CommandName -Tag IntegrationTests {
             $transfer.TransferData()
             $tables = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database $dbName -Table transfer_test, transfer_test2
             $tables.Count | Should -Be 2
-            $db2.Query("select id from dbo.transfer_test").id | Should -BeNullOrEmpty
+            @($db2.Query("select id from dbo.transfer_test").id) | Should -BeNullOrEmpty
         }
 
         It "Should transfer two tables without copying schema" {

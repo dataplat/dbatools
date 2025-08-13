@@ -31,7 +31,7 @@ Describe $CommandName -Tag UnitTests {
         }
 
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
         }
 
         It "Validates -AddRole contains <role>" -TestCases $systemRoles {
@@ -271,7 +271,7 @@ Describe $CommandName -Tag IntegrationTests {
             }
 
             # unlock by resetting the password
-            $results = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random" -Unlock -Password $password1
+            $results = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random" -Unlock -SecurePassword $password1
             $results.IsLocked | Should -Be $false
         }
 

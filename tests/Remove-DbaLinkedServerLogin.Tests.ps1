@@ -23,7 +23,7 @@ Describe $CommandName -Tag UnitTests {
         }
 
         It "Should have the expected parameters" {
-            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+            @(Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters) | Should -BeNullOrEmpty
         }
     }
 }
@@ -81,8 +81,8 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When removing linked server logins" {
 
         It "Check the validation for a linked server" {
-            $results = Remove-DbaLinkedServerLogin -SqlInstance $instance2 -LocalLogin $localLogin1Name -Confirm:$false -EnableException:$false -WarningVariable WarnVar -WarningAction SilentlyContinue
-            $results | Should -BeNullOrEmpty
+            $results = Remove-DbaLinkedServerLogin -SqlInstance $instance2 -LocalLogin $localLogin1Name -Confirm:$false -WarningVariable WarnVar -WarningAction SilentlyContinue
+            @($results) | Should -BeNullOrEmpty
             $WarnVar | Should -Match "LinkedServer is required"
         }
 
@@ -92,14 +92,14 @@ Describe $CommandName -Tag IntegrationTests {
 
             $results = Remove-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin1Name -Confirm:$false
             $results = Get-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin1Name
-            $results | Should -BeNullOrEmpty
+            @($results) | Should -BeNullOrEmpty
 
             $results = Get-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin2Name, $localLogin3Name
             $results.Count | Should -Be 2
 
             $results = Remove-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin2Name, $localLogin3Name -Confirm:$false
             $results = Get-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin2Name, $localLogin3Name
-            $results | Should -BeNullOrEmpty
+            @($results) | Should -BeNullOrEmpty
         }
 
         It "Remove a linked server login via pipeline with a server instance passed in" {
@@ -108,7 +108,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             $results = $instance2 | Remove-DbaLinkedServerLogin -LinkedServer $linkedServer1Name -LocalLogin $localLogin4Name -Confirm:$false
             $results = $instance2 | Get-DbaLinkedServerLogin -LinkedServer $linkedServer1Name -LocalLogin $localLogin4Name
-            $results | Should -BeNullOrEmpty
+            @($results) | Should -BeNullOrEmpty
         }
 
         It "Remove a linked server login via pipeline with a linked server passed in" {
@@ -117,7 +117,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             $results = $linkedServer1 | Remove-DbaLinkedServerLogin -LocalLogin $localLogin5Name -Confirm:$false
             $results = $linkedServer1 | Get-DbaLinkedServerLogin -LocalLogin $localLogin5Name
-            $results | Should -BeNullOrEmpty
+            @($results) | Should -BeNullOrEmpty
         }
 
         It "Remove a linked server login via pipeline with a linked server login passed in" {
@@ -126,7 +126,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             $results = $linkedServerLogin6 | Remove-DbaLinkedServerLogin -Confirm:$false
             $results = $linkedServer1 | Get-DbaLinkedServerLogin -LocalLogin $localLogin6Name
-            $results | Should -BeNullOrEmpty
+            @($results) | Should -BeNullOrEmpty
         }
 
         It "Remove linked server logins for multiple linked servers and omit the LocalLogin param" {

@@ -35,9 +35,6 @@ Describe $CommandName -Tag UnitTests {
 
         It "Should Call Stop-Function. -Database, -AllDatabases and -ExcludeDatabase are mutually exclusive." {
             Set-DbaMaxDop -SqlInstance $TestConfig.instance1 -MaxDop 12 -Database $singledb -AllDatabases -ExcludeDatabase "master" | Should -Be $null
-        }
-
-        It "Validates that Stop Function Mock has been called" {
             Should -Invoke Stop-Function -Times 1 -Exactly -ModuleName dbatools
         }
     }

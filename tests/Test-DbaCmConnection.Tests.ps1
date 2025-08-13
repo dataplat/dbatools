@@ -12,18 +12,19 @@ Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
-            $expectedParameters = $TestConfig.CommonParameters
-            $expectedParameters += @(
+            $expectedParameters = @(
                 "ComputerName",
                 "Credential",
                 "Type",
                 "Force",
                 "EnableException"
             )
+            $expectedParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         }
 
         It "Should have the expected parameters" {
-            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+            $comparison = Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters
+            @($comparison) | Should -BeNullOrEmpty
         }
     }
 }
@@ -38,6 +39,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should return valid connection info" {
+            $testResults | Should -Not -BeNullOrEmpty
             $testResults.ComputerName | Should -Be $env:COMPUTERNAME
             $testResults.Available | Should -Not -BeNullOrEmpty
             $testResults.Available | Should -BeOfType [bool]

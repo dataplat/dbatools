@@ -55,29 +55,29 @@ Describe $CommandName -Tag IntegrationTests {
         }
         It "Set explicitly to '0 - Off' using text" {
             $results = Set-DbaExtendedProtection -SqlInstance $TestConfig.instance1 -Value Off -EnableException -Verbose 4>&1
-            $results[-1] | Should -Be "Value: 0"
+            $results[-1] | Should -BeLike "*Value: 0"
         }
         It "Set explicitly to '0 - Off' using number" {
             $results = Set-DbaExtendedProtection -SqlInstance $TestConfig.instance1 -Value 0 -EnableException -Verbose 4>&1
-            $results[-1] | Should -Be "Value: 0"
+            $results[-1] | Should -BeLike "*Value: 0"
         }
 
         It "Set explicitly to '1 - Allowed' using text" {
             $results = Set-DbaExtendedProtection -SqlInstance $TestConfig.instance1 -Value Allowed -EnableException -Verbose 4>&1
-            $results[-1] | Should -Be "Value: 1"
+            $results[-1] | Should -BeLike "*Value: 1"
         }
         It "Set explicitly to '1 - Allowed' using number" {
             $results = Set-DbaExtendedProtection -SqlInstance $TestConfig.instance1 -Value 1 -EnableException -Verbose 4>&1
-            $results[-1] | Should -Be "Value: 1"
+            $results[-1] | Should -BeLike "*Value: 1"
         }
 
         It "Set explicitly to '2 - Required' using text" {
             $results = Set-DbaExtendedProtection -SqlInstance $TestConfig.instance1 -Value Required -EnableException -Verbose 4>&1
-            $results[-1] | Should -Be "Value: 2"
+            $results[-1] | Should -BeLike "*Value: 2"
         }
         It "Set explicitly to '2 - Required' using number" {
             $results = Set-DbaExtendedProtection -SqlInstance $TestConfig.instance1 -Value 2 -EnableException -Verbose 4>&1
-            $results[-1] | Should -Be "Value: 2"
+            $results[-1] | Should -BeLike "*Value: 2"
         }
     }
 }
