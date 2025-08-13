@@ -183,7 +183,7 @@ Describe $CommandName -Tag UnitTests {
         It "fails when update execution has failed" {
             #override default mock
             Mock -CommandName Invoke-Program -MockWith { [pscustomobject]@{ Successful = $false; ExitCode = 12345 } } -ModuleName dbatools
-            { Invoke-DbaAdvancedUpdate -ComputerName $env:COMPUTERNAME -EnableException -Action $singleAction } | Should -Throw "failed with exit code 12345"
+            { Invoke-DbaAdvancedUpdate -ComputerName $env:COMPUTERNAME -EnableException -Action $singleAction } | Should -Throw -ExpectedMessage "*failed with exit code 12345*"
             $result = Invoke-DbaAdvancedUpdate -ComputerName $env:COMPUTERNAME -Action $singleAction -WarningVariable warVar 3>$null
             $result | Should -Not -BeNullOrEmpty
             $result.MajorVersion | Should -Be 2017
