@@ -145,22 +145,10 @@ Describe $CommandName -Tag UnitTests {
             Get-DbaDatabase -SqlInstance Dummy -ExcludeSystem -ExcludeUser -ErrorAction SilentlyContinue | Should -BeNullOrEmpty
         }
         It "Validates that Stop Function Mock has been called" {
-            $assertMockParams = @{
-                CommandName = "Stop-Function"
-                Times       = 1
-                Exactly     = $true
-                Module      = "dbatools"
-            }
-            Assert-MockCalled @assertMockParams
+            Should -Invoke -CommandName "Stop-Function" -ModuleName "dbatools" -Times 1 -Exactly
         }
         It "Validates that Test-FunctionInterrupt Mock has been called" {
-            $assertMockParams = @{
-                CommandName = "Test-FunctionInterrupt"
-                Times       = 1
-                Exactly     = $true
-                Module      = "dbatools"
-            }
-            Assert-MockCalled @assertMockParams
+            Should -Invoke -CommandName "Test-FunctionInterrupt" -ModuleName "dbatools" -Times 1 -Exactly
         }
     }
     Context "Output" {
@@ -208,22 +196,10 @@ Describe $CommandName -Tag UnitTests {
             $testResult.LastWrite | Should -Not -BeNullOrEmpty
         }
         It "Validates that Connect-DbaInstance Mock has been called" {
-            $assertMockParams = @{
-                CommandName = "Connect-DbaInstance"
-                Times       = 1
-                Exactly     = $true
-                Module      = "dbatools"
-            }
-            Assert-MockCalled @assertMockParams
+            Should -Invoke -CommandName "Connect-DbaInstance" -ModuleName "dbatools" -Times 1 -Exactly
         }
         It "Validates that Invoke-QueryDBlastUsed Mock has been called" {
-            $assertMockParams = @{
-                CommandName = "Invoke-QueryDBlastUsed"
-                Times       = 1
-                Exactly     = $true
-                Module      = "dbatools"
-            }
-            Assert-MockCalled @assertMockParams
+            Should -Invoke -CommandName "Invoke-QueryDBlastUsed" -ModuleName "dbatools" -Times 1 -Exactly
         }
     }
 }
