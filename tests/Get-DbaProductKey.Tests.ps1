@@ -1,65 +1,34 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
-param(
-    $ModuleName  = "dbatools",
-    $CommandName = "Get-DbaProductKey",
-    $PSDefaultParameterValues = $TestConfig.Defaults
-)
-
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 $global:TestConfig = Get-TestConfig
 
-Describe $CommandName -Tag UnitTests {
-    Context "Parameter validation" {
-        BeforeAll {
-            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
-            $expectedParameters = $TestConfig.CommonParameters
-            $expectedParameters += @(
-                "ComputerName",
-                "SqlCredential",
-                "Credential",
-                "EnableException"
-            )
-        }
-
-        It "Should have the expected parameters" {
-            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'ComputerName', 'SqlCredential', 'Credential', 'EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
 
-Describe $CommandName -Tag IntegrationTests {
+Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+
     Context "Gets ProductKey for Instances on $($env:ComputerName)" {
-        BeforeAll {
-            # Add error handling to see what's actually happening
-            try {
-                $script:results = @(Get-DbaProductKey -ComputerName $env:ComputerName -EnableException)
-                Write-Host "Got $($script:results.Count) results" -ForegroundColor Yellow
-            }
-            catch {
-                Write-Host "Error in BeforeAll: $($_.Exception.Message)" -ForegroundColor Red
-                $script:results = @()
-            }
-        }
-
+        $results = Get-DbaProductKey -ComputerName $env:ComputerName
         It "Gets results" {
-            $script:results | Should -Not -BeNullOrEmpty
+            $results | Should Not Be $null
         }
-
-        It "Should have Version property" {
-            foreach ($row in $script:results) {
-                $row.Version | Should -Not -BeNullOrEmpty
+        Foreach ($row in $results) {
+            It "Should have Version $($row.Version)" {
+                $row.Version | Should not be $null
             }
-        }
-
-        It "Should have Edition property" {
-            foreach ($row in $script:results) {
-                $row.Edition | Should -Not -BeNullOrEmpty
+            It "Should have Edition $($row.Edition)" {
+                $row.Edition | Should not be $null
             }
-        }
-
-        It "Should have Key property" {
-            foreach ($row in $script:results) {
-                $row.key | Should -Not -BeNullOrEmpty
+            It "Should have Key $($row.key)" {
+                $row.key | Should not be $null
             }
         }
     }
