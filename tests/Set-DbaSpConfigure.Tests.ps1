@@ -1,58 +1,45 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
-param(
-    $ModuleName  = "dbatools",
-    $CommandName = "Set-DbaSpConfigure",
-    $PSDefaultParameterValues = $TestConfig.Defaults
-)
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+$global:TestConfig = Get-TestConfig
 
-Describe $CommandName -Tag UnitTests {
-    Context "Parameter validation" {
-        BeforeAll {
-            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
-            $expectedParameters = $TestConfig.CommonParameters
-            $expectedParameters += @(
-                "SqlInstance",
-                "SqlCredential",
-                "Value",
-                "Name",
-                "InputObject",
-                "EnableException"
-            )
-        }
-
-        It "Should have the expected parameters" {
-            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Value', 'Name', 'InputObject', 'EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
 
-Describe $CommandName -Tag IntegrationTests {
+Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Set configuration" {
         BeforeAll {
             $remotequerytimeout = (Get-DbaSpConfigure -SqlInstance $TestConfig.instance1 -ConfigName RemoteQueryTimeout).ConfiguredValue
             $newtimeout = $remotequerytimeout + 1
+        }
 
-            # Sanity check
-            if ($null -eq $remotequerytimeout) {
-                return
-            }
+        # Sanity check
+        if ($null -eq $remotequerytimeout) {
+            return
         }
 
         It "changes the remote query timeout from $remotequerytimeout to $newtimeout" {
             $results = Set-DbaSpConfigure -SqlInstance $TestConfig.instance1 -ConfigName RemoteQueryTimeout -Value $newtimeout
-            $results.PreviousValue | Should -Be $remotequerytimeout
-            $results.NewValue | Should -Be $newtimeout
+            $results.PreviousValue | Should Be $remotequerytimeout
+            $results.NewValue | Should Be $newtimeout
         }
 
         It "changes the remote query timeout from $newtimeout to $remotequerytimeout" {
             $results = Set-DbaSpConfigure -SqlInstance $TestConfig.instance1 -ConfigName RemoteQueryTimeout -Value $remotequerytimeout
-            $results.PreviousValue | Should -Be $newtimeout
-            $results.NewValue | Should -Be $remotequerytimeout
+            $results.PreviousValue | Should Be $newtimeout
+            $results.NewValue | Should Be $remotequerytimeout
         }
 
+        $results = Set-DbaSpConfigure -SqlInstance $TestConfig.instance1 -ConfigName RemoteQueryTimeout -Value $remotequerytimeout -WarningVariable warning -WarningAction SilentlyContinue
         It "returns a warning when if the new value is the same as the old" {
-            $results = Set-DbaSpConfigure -SqlInstance $TestConfig.instance1 -ConfigName RemoteQueryTimeout -Value $remotequerytimeout -WarningVariable warning -WarningAction SilentlyContinue
-            $warning -match "existing" | Should -Be $true
+            $warning -match "existing" | Should be $true
         }
     }
 }
