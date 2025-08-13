@@ -119,7 +119,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeEach {
             Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName -Confirm:$false
             $destination.Query("CREATE DATABASE $dbname")
-            $db2 = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName
+            $script:db2 = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName
         }
         AfterAll {
             Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName -Confirm:$false -ErrorAction SilentlyContinue
@@ -141,8 +141,8 @@ Describe $CommandName -Tag IntegrationTests {
             $tables.Status.Count | Should -Be 4
             $db.Query("select id from dbo.transfer_test").id | Should -Not -BeNullOrEmpty
             $db.Query("select id from dbo.transfer_test4").id | Should -Not -BeNullOrEmpty
-            $db.Query("select id from dbo.transfer_test").id | Should -BeIn $db2.Query("select id from dbo.transfer_test").id
-            $db.Query("select id from dbo.transfer_test4").id | Should -BeIn $db2.Query("select id from dbo.transfer_test4").id
+            $db.Query("select id from dbo.transfer_test").id | Should -BeIn $script:db2.Query("select id from dbo.transfer_test").id
+            $db.Query("select id from dbo.transfer_test4").id | Should -BeIn $script:db2.Query("select id from dbo.transfer_test4").id
             $result.SourceInstance | Should -Be $TestConfig.instance2
             $result.SourceDatabase | Should -Be $dbName
             $result.DestinationInstance | Should -Be $TestConfig.instance3
@@ -173,7 +173,7 @@ Describe $CommandName -Tag IntegrationTests {
             $tables = Get-DbaDbTable @splatGetTable2
             $tables.Status.Count | Should -Be 2
             $db.Query("select id from dbo.transfer_test").id | Should -Not -BeNullOrEmpty
-            $db.Query("select id from dbo.transfer_test").id | Should -BeIn $db2.Query("select id from dbo.transfer_test").id
+            $db.Query("select id from dbo.transfer_test").id | Should -BeIn $script:db2.Query("select id from dbo.transfer_test").id
             $result.SourceInstance | Should -Be $TestConfig.instance2
             $result.SourceDatabase | Should -Be $dbName
             $result.DestinationInstance | Should -Be $TestConfig.instance3
