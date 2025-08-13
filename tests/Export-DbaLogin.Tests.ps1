@@ -165,7 +165,7 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Should -Match "IF NOT EXISTS"
             $results | Should -Match "USE \[$global:dbname2\]"
         }
-        foreach ($version in $((Get-Command $CommandName).Parameters.DestinationVersion.attributes.validvalues)) {
+        foreach ($version in $((Get-Command "Export-DbaLogin").Parameters.DestinationVersion.attributes.validvalues)) {
             It "Should Export for the SQLVersion $version" {
                 $file = Export-DbaLogin -SqlInstance $TestConfig.instance2 -Login $global:login2 -Database $global:dbname2 -DestinationVersion $version -WarningAction SilentlyContinue
                 $results = Get-Content -Path $file -Raw

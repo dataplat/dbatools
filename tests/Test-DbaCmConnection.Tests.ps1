@@ -35,6 +35,6 @@ Describe $CommandName -Tag IntegrationTests {
 
     It "returns some valid info" {
         $results.ComputerName | Should -Be $env:COMPUTERNAME
-        $results.Available | Should -BeOfType [bool]
+        $results.Available -is [bool] | Should -Be $true
     }
 }

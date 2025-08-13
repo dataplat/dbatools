@@ -38,7 +38,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Results contain SQLServerAgent version" {
-            $results.text -like "`[100`] Microsoft SQLServerAgent version*" | Should -Be $true
+            ($results.text -like "`[100`] Microsoft SQLServerAgent version*").Count -gt 0 | Should -Be $true
         }
 
         It "LogDate is a DateTime type" {

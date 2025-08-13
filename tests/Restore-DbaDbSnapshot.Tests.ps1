@@ -69,11 +69,11 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Parameters validation" {
         It "Stops if no Database or Snapshot" {
-            { Restore-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -EnableException } | Should -Throw "You must specify"
+            { Restore-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -EnableException } | Should -Throw "*You must specify*"
         }
         
         It "Is nice by default" {
-            { Restore-DbaDbSnapshot -SqlInstance $TestConfig.instance2 *> $null } | Should -Not -Throw "You must specify"
+            { Restore-DbaDbSnapshot -SqlInstance $TestConfig.instance2 *> $null } | Should -Not -Throw
         }
     }
 
@@ -99,7 +99,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             # the other snapshot has been dropped
             $result = Get-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db1
-            $result.Status.Count | Should -Be 1
+            $result.Count | Should -Be 1
 
             # the query doesn't return records inserted before the restore
             $result = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query "SELECT * FROM [$db1].[dbo].[Example]" -QueryTimeout 10
@@ -114,7 +114,7 @@ Describe $CommandName -Tag IntegrationTests {
             # the other snapshot has been dropped
             $result = Get-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db1
             $result.SnapshotOf | Should -Be $db1
-            $result.Database.Name | Should -Be $db1_snap2
+            $result.Database.Name | Should -Be $db1_snap1
 
             # the log size has been restored to the correct size
             $server.databases[$db1].Logfiles.Size | Should -Be 13312

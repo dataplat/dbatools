@@ -57,12 +57,12 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should find a specific job" {
-            $results = Find-DbaAgentJob -SqlInstance $TestConfig.instance2 -JobName dbatoolsci_testjob
+            $results = Find-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob
             $results.name | Should -Be "dbatoolsci_testjob"
         }
 
         It "Should find a specific job but not an excluded job" {
-            $results = Find-DbaAgentJob -SqlInstance $TestConfig.instance2 -JobName *dbatoolsci* -ExcludeJobName dbatoolsci_testjob_disabled
+            $results = Find-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job *dbatoolsci* -ExcludeJobName dbatoolsci_testjob_disabled
             $results.name | Should -Not -Be "dbatoolsci_testjob_disabled"
         }
 
@@ -92,7 +92,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should find 2 jobs that have no schedule" {
-            $results = Find-DbaAgentJob -SqlInstance $TestConfig.instance2 -IsNotScheduled -JobName *dbatoolsci*
+            $results = Find-DbaAgentJob -SqlInstance $TestConfig.instance2 -IsNotScheduled -Job *dbatoolsci*
             $results.Count | Should -Be 2
         }
 
@@ -117,7 +117,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should work with multiple wildcard passed in (see #9572)" {
-            $results = Find-DbaAgentJob -SqlInstance $TestConfig.instance2 -JobName *dbatoolsci*, *dbatoolsregr* -ExcludeJobName dbatoolsci_testjob_disabled
+            $results = Find-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job *dbatoolsci*, *dbatoolsregr* -ExcludeJobName dbatoolsci_testjob_disabled
             $results.Count | Should -Be 2
         }
     }

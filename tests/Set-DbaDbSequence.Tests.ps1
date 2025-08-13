@@ -61,7 +61,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "commands work as expected" {
 
         It "validates required Database param" {
-            $sequence = Set-DbaDbSequence -SqlInstance $server -Sequence "Sequence1_$random" -Schema "Schema_$random" -Confirm:$false -WarningVariable WarnVar -WarningAction SilentlyContinue
+            $sequence = Set-DbaDbSequence -SqlInstance $server -Sequence "Sequence1_$random" -Schema "Schema_$random" -Confirm:$false -WarningAction SilentlyContinue -WarningVariable WarnVar
             $sequence | Should -BeNullOrEmpty
             $WarnVar | Should -Match "Database is required when SqlInstance is specified"
         }

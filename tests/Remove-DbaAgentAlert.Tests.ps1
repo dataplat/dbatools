@@ -34,12 +34,12 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $alertName = "dbatoolsci_test_$(Get-Random)"
-        $alertName2 = "dbatoolsci_test_$(Get-Random)"
+        $script:server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $script:alertName = "dbatoolsci_test_$(Get-Random)"
+        $script:alertName2 = "dbatoolsci_test_$(Get-Random)"
 
-        $null = Invoke-DbaQuery -SqlInstance $server -Query "EXEC msdb.dbo.sp_add_alert @name=N'$alertName', @event_description_keyword=N'$alertName', @severity=25"
-        $null = Invoke-DbaQuery -SqlInstance $server -Query "EXEC msdb.dbo.sp_add_alert @name=N'$alertName2', @event_description_keyword=N'$alertName2', @severity=25"
+        $null = Invoke-DbaQuery -SqlInstance $script:server -Query "EXEC msdb.dbo.sp_add_alert @name=N'$($script:alertName)', @event_description_keyword=N'$($script:alertName)', @severity=25"
+        $null = Invoke-DbaQuery -SqlInstance $script:server -Query "EXEC msdb.dbo.sp_add_alert @name=N'$($script:alertName2)', @event_description_keyword=N'$($script:alertName2)', @severity=25"
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -50,7 +50,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Clean up any remaining alerts
-        $alertsToRemove = Get-DbaAgentAlert -SqlInstance $server -ErrorAction SilentlyContinue | Where-Object Name -like "dbatoolsci_test_*"
+        $alertsToRemove = Get-DbaAgentAlert -SqlInstance $script:server -ErrorAction SilentlyContinue | Where-Object Name -like "dbatoolsci_test_*"
         if ($alertsToRemove) {
             $alertsToRemove | Remove-DbaAgentAlert -Confirm:$false -ErrorAction SilentlyContinue
         }
@@ -59,29 +59,29 @@ Describe $CommandName -Tag IntegrationTests {
     Context "commands work as expected" {
 
         It "removes a SQL Agent alert" {
-            (Get-DbaAgentAlert -SqlInstance $server -Alert $alertName) | Should -Not -BeNullOrEmpty
-            Remove-DbaAgentAlert -SqlInstance $server -Alert $alertName -Confirm:$false
-            (Get-DbaAgentAlert -SqlInstance $server -Alert $alertName) | Should -BeNullOrEmpty
+            (Get-DbaAgentAlert -SqlInstance $script:server -Alert $script:alertName) | Should -Not -BeNullOrEmpty
+            Remove-DbaAgentAlert -SqlInstance $script:server -Alert $script:alertName -Confirm:$false
+            (Get-DbaAgentAlert -SqlInstance $script:server -Alert $script:alertName) | Should -BeNullOrEmpty
         }
 
         It "supports piping SQL Agent alert" {
-            (Get-DbaAgentAlert -SqlInstance $server -Alert $alertName) | Should -Not -BeNullOrEmpty
-            Get-DbaAgentAlert -SqlInstance $server -Alert $alertName | Remove-DbaAgentAlert -Confirm:$false
-            (Get-DbaAgentAlert -SqlInstance $server -Alert $alertName) | Should -BeNullOrEmpty
+            (Get-DbaAgentAlert -SqlInstance $script:server -Alert $script:alertName) | Should -Not -BeNullOrEmpty
+            Get-DbaAgentAlert -SqlInstance $script:server -Alert $script:alertName | Remove-DbaAgentAlert -Confirm:$false
+            (Get-DbaAgentAlert -SqlInstance $script:server -Alert $script:alertName) | Should -BeNullOrEmpty
         }
 
         It "removes all SQL Agent alerts but excluded" {
-            (Get-DbaAgentAlert -SqlInstance $server -Alert $alertName2) | Should -Not -BeNullOrEmpty
-            (Get-DbaAgentAlert -SqlInstance $server -ExcludeAlert $alertName2) | Should -Not -BeNullOrEmpty
-            Remove-DbaAgentAlert -SqlInstance $server -ExcludeAlert $alertName2 -Confirm:$false
-            (Get-DbaAgentAlert -SqlInstance $server -ExcludeAlert $alertName2) | Should -BeNullOrEmpty
-            (Get-DbaAgentAlert -SqlInstance $server -Alert $alertName2) | Should -Not -BeNullOrEmpty
+            (Get-DbaAgentAlert -SqlInstance $script:server -Alert $script:alertName2) | Should -Not -BeNullOrEmpty
+            (Get-DbaAgentAlert -SqlInstance $script:server -ExcludeAlert $script:alertName2) | Should -Not -BeNullOrEmpty
+            Remove-DbaAgentAlert -SqlInstance $script:server -ExcludeAlert $script:alertName2 -Confirm:$false
+            (Get-DbaAgentAlert -SqlInstance $script:server -ExcludeAlert $script:alertName2) | Should -BeNullOrEmpty
+            (Get-DbaAgentAlert -SqlInstance $script:server -Alert $script:alertName2) | Should -Not -BeNullOrEmpty
         }
 
         It "removes all SQL Agent alerts" {
-            (Get-DbaAgentAlert -SqlInstance $server) | Should -Not -BeNullOrEmpty
-            Remove-DbaAgentAlert -SqlInstance $server -Confirm:$false
-            (Get-DbaAgentAlert -SqlInstance $server) | Should -BeNullOrEmpty
+            (Get-DbaAgentAlert -SqlInstance $script:server) | Should -Not -BeNullOrEmpty
+            Remove-DbaAgentAlert -SqlInstance $script:server -Confirm:$false
+            (Get-DbaAgentAlert -SqlInstance $script:server) | Should -BeNullOrEmpty
         }
     }
 }

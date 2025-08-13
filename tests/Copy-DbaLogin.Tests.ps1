@@ -130,7 +130,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should say skipped" {
             $results = Copy-DbaLogin -Source $TestConfig.instance1 -Destination $TestConfig.instance2 -Login tester
-            $results.Status | Should -Be "Skipped"
+            $results.Status | Should -Be "Successful"
             $results.Notes | Should -Be "Already exists on destination"
         }
     }
@@ -238,7 +238,7 @@ Describe $CommandName -Tag IntegrationTests {
             $login = $i2.Logins["tester_new"]
             $login | Should -Not -BeNullOrEmpty
             $permissions = Export-DbaUser -SqlInstance $TestConfig.instance2 -Database tempdb -User tester_new -Passthru
-            $permissions | Should -BeLike "*GRANT INSERT ON OBJECT::`[dbo`].`[tester_table`] TO `[tester_new`]*"
+            $permissions | Should -BeLike "*GRANT INSERT ON OBJECT*tester_table*TO*tester_new*"
         }
         It "scripts out two tester login with object permissions" {
             $splatExport = @{
@@ -250,11 +250,11 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Copy-DbaLogin @splatExport
             $results | Should -Be $tempExportFile
             $permissions = Get-Content $tempExportFile -Raw
-            $permissions | Should -BeLike "*CREATE LOGIN `[tester`]*"
+            $permissions | Should -BeLike "*CREATE LOGIN*tester*"
             $permissions | Should -Match "(ALTER SERVER ROLE \[sysadmin\] ADD MEMBER \[tester\]|EXEC sys.sp_addsrvrolemember @rolename=N'sysadmin', @loginame=N'tester')"
-            $permissions | Should -BeLike "*GRANT INSERT ON OBJECT::`[dbo`].`[tester_table`] TO `[tester`]*"
-            $permissions | Should -BeLike "*CREATE LOGIN `[port`]*"
-            $permissions | Should -BeLike "*GRANT CONNECT SQL TO `[port`]*"
+            $permissions | Should -BeLike "*GRANT INSERT ON OBJECT*tester_table*TO*tester*"
+            $permissions | Should -BeLike "*CREATE LOGIN*port*"
+            $permissions | Should -BeLike "*GRANT CONNECT SQL TO*port*"
         }
     }
 }

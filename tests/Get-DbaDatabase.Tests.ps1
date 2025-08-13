@@ -8,6 +8,10 @@ param(
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 $global:TestConfig = Get-TestConfig
 
+# Define mock functions globally for Pester v5
+function Invoke-QueryRawDatabases { }
+function Invoke-QueryDBlastUsed { }
+
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
@@ -59,7 +63,6 @@ Describe $CommandName -Tag UnitTests {
                     ) #databases
                 } #object
             } -ModuleName dbatools #mock connect-SqlInstance
-            function Invoke-QueryRawDatabases { }
             Mock Invoke-QueryRawDatabases -MockWith {
                 [object]@(
                     @{
@@ -114,7 +117,6 @@ Describe $CommandName -Tag UnitTests {
                     )
                 } #object
             } -ModuleName dbatools #mock connect-SqlInstance
-            function Invoke-QueryDBlastUsed { }
             Mock Invoke-QueryDBlastUsed -MockWith {
                 [object]@{
                     dbname     = "db1"
@@ -122,7 +124,6 @@ Describe $CommandName -Tag UnitTests {
                     last_write = (Get-Date).AddHours(-1)
                 }
             } -ModuleName dbatools
-            function Invoke-QueryRawDatabases { }
             Mock Invoke-QueryRawDatabases -MockWith {
                 [object]@(
                     @{

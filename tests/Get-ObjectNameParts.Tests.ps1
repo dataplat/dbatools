@@ -12,11 +12,8 @@ $global:TestConfig = Get-TestConfig
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
-            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
-            $expectedParameters = $TestConfig.CommonParameters
-            $expectedParameters += @(
-                "ObjectName"
-            )
+            $hasParameters = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
+            $expectedParameters = @('ObjectName')
         }
 
         It "Should have the expected parameters" {
@@ -47,7 +44,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $objectName = @("schema1.table1", "[sche..ma2].[table2]", "schema3.[tab..le3]", "[schema4].[table]]x4]", "schema5.[table5]]]")
             $table = @("table1", "table2", "tab..le3", "table]]x4", "table5]]")
-            $schema = @("schema1", "sche..ma2", "schema3", "schema4", "schema5")
+            $schema = @("schema1", "sche..ma2", "sche ma3", "schema4", "schema5")
         }
 
         It "Should return correct parts" {

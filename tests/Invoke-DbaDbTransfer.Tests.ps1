@@ -84,35 +84,35 @@ Describe $CommandName -Tag IntegrationTests {
         } catch {
             # Silently continue if tables don't exist
         }
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbName -Confirm $false -ErrorAction SilentlyContinue
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbName -Confirm:$false -ErrorAction SilentlyContinue
     }
     Context "Testing scripting invocation" {
         It "Should script all objects" {
             $transfer = New-DbaDbTransfer -SqlInstance $TestConfig.instance2 -Database $dbName -CopyAllObjects
             $scripts = $transfer | Invoke-DbaDbTransfer -ScriptOnly
             $script = $scripts -join "`n"
-            $script | Should -BeLike "*CREATE TABLE `[dbo`].`[transfer_test`]*"
-            $script | Should -BeLike "*CREATE TABLE `[dbo`].`[transfer_test2`]*"
-            $script | Should -BeLike "*CREATE TABLE `[dbo`].`[transfer_test3`]*"
-            $script | Should -BeLike "*CREATE TABLE `[dbo`].`[transfer_test4`]*"
+            $script | Should -BeLike "*CREATE TABLE [dbo].[transfer_test]*"
+            $script | Should -BeLike "*CREATE TABLE [dbo].[transfer_test2]*"
+            $script | Should -BeLike "*CREATE TABLE [dbo].[transfer_test3]*"
+            $script | Should -BeLike "*CREATE TABLE [dbo].[transfer_test4]*"
         }
         It "Should script all tables with schema only" {
             $scripts = Invoke-DbaDbTransfer -SqlInstance $TestConfig.instance2 -Database $dbName -CopyAll Tables -SchemaOnly -ScriptOnly
             $script = $scripts -join "`n"
-            $script | Should -BeLike "*CREATE TABLE `[dbo`].`[transfer_test`]*"
-            $script | Should -BeLike "*CREATE TABLE `[dbo`].`[transfer_test2`]*"
-            $script | Should -BeLike "*CREATE TABLE `[dbo`].`[transfer_test3`]*"
-            $script | Should -BeLike "*CREATE TABLE `[dbo`].`[transfer_test4`]*"
+            $script | Should -BeLike "*CREATE TABLE [dbo].[transfer_test]*"
+            $script | Should -BeLike "*CREATE TABLE [dbo].[transfer_test2]*"
+            $script | Should -BeLike "*CREATE TABLE [dbo].[transfer_test3]*"
+            $script | Should -BeLike "*CREATE TABLE [dbo].[transfer_test4]*"
         }
     }
     Context "Testing object transfer" {
         BeforeEach {
-            Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName -Confirm $false -ErrorAction SilentlyContinue
+            Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName -Confirm:$false -ErrorAction SilentlyContinue
             $destination.Query("CREATE DATABASE $dbname")
             $db2 = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName
         }
         AfterAll {
-            Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName -Confirm $false -ErrorAction SilentlyContinue
+            Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName -Confirm:$false -ErrorAction SilentlyContinue
         }
         It "Should transfer all tables" {
             $result = Invoke-DbaDbTransfer -SqlInstance $TestConfig.instance2 -DestinationSqlInstance $TestConfig.instance3 -Database $dbName -CopyAll Tables
@@ -128,7 +128,7 @@ Describe $CommandName -Tag IntegrationTests {
             $result.DestinationDatabase | Should -Be $dbName
             $result.Elapsed.TotalMilliseconds | Should -BeGreaterThan 0
             $result.Status | Should -Be "Success"
-            $result.Log -join "`n" | Should -BeLike "*CREATE TABLE `[dbo`].`[transfer_test`]*"
+            $result.Log -join "`n" | Should -BeLike "*CREATE TABLE [dbo].[transfer_test]*"
         }
         It "Should transfer select tables piping the transfer object" {
             $sourceTables = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database $dbName -Table transfer_test, transfer_test2
@@ -144,7 +144,7 @@ Describe $CommandName -Tag IntegrationTests {
             $result.DestinationDatabase | Should -Be $dbName
             $result.Elapsed.TotalMilliseconds | Should -BeGreaterThan 0
             $result.Status | Should -Be "Success"
-            $result.Log -join "`n" | Should -BeLike "*CREATE TABLE `[dbo`].`[transfer_test`]*"
+            $result.Log -join "`n" | Should -BeLike "*CREATE TABLE [dbo].[transfer_test]*"
         }
     }
 }

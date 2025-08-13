@@ -85,7 +85,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             It "returns a rich database object with the correct name" {
                 foreach ($result in $results) {
-                    $result.Name | Should -BeIn $clonedb, $clonedb2
+                    $result.Name | Should -Be $clonedb
                 }
             }
         }
