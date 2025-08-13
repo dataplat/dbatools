@@ -51,14 +51,14 @@ Describe $CommandName -Tag IntegrationTests {
             Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance2 -Database $db1
         }
         It "Stops if no Database or AllDatabases" {
-            { Set-DbaDbState -SqlInstance $TestConfig.instance2 -EnableException } | Should -Throw "You must specify"
+            { Set-DbaDbState -SqlInstance $TestConfig.instance2 -EnableException } | Should -Throw -ExpectedMessage "*You must specify*"
         }
         It "Is nice by default" {
-            { Set-DbaDbState -SqlInstance $TestConfig.instance2 *> $null } | Should -Not -Throw "You must specify"
+            { Set-DbaDbState -SqlInstance $TestConfig.instance2 *> $null } | Should -Not -Throw
         }
         It "Errors out when multiple 'access' params are passed with EnableException" {
-            { Set-DbaDbState -SqlInstance $TestConfig.instance2 -Database $db1 -SingleUser -RestrictedUser -EnableException } | Should -Throw "You can only specify one of: -SingleUser,-RestrictedUser,-MultiUser"
-            { Set-DbaDbState -SqlInstance $TestConfig.instance2 -Database $db1 -MultiUser -RestrictedUser -EnableException } | Should -Throw "You can only specify one of: -SingleUser,-RestrictedUser,-MultiUser"
+            { Set-DbaDbState -SqlInstance $TestConfig.instance2 -Database $db1 -SingleUser -RestrictedUser -EnableException } | Should -Throw -ExpectedMessage "*You can only specify one of: -SingleUser,-RestrictedUser,-MultiUser*"
+            { Set-DbaDbState -SqlInstance $TestConfig.instance2 -Database $db1 -MultiUser -RestrictedUser -EnableException } | Should -Throw -ExpectedMessage "*You can only specify one of: -SingleUser,-RestrictedUser,-MultiUser*"
         }
         It "Errors out when multiple 'access' params are passed without EnableException" {
             { Set-DbaDbState -SqlInstance $TestConfig.instance2 -Database $db1 -SingleUser -RestrictedUser *> $null } | Should -Not -Throw
@@ -67,8 +67,8 @@ Describe $CommandName -Tag IntegrationTests {
             $result | Should -BeNullOrEmpty
         }
         It "Errors out when multiple 'status' params are passed with EnableException" {
-            { Set-DbaDbState -SqlInstance $TestConfig.instance2 -Database $db1 -Offline -Online -EnableException } | Should -Throw "You can only specify one of: -Online,-Offline,-Emergency,-Detached"
-            { Set-DbaDbState -SqlInstance $TestConfig.instance2 -Database $db1 -Emergency -Online -EnableException } | Should -Throw "You can only specify one of: -Online,-Offline,-Emergency,-Detached"
+            { Set-DbaDbState -SqlInstance $TestConfig.instance2 -Database $db1 -Offline -Online -EnableException } | Should -Throw -ExpectedMessage "*You can only specify one of: -Online,-Offline,-Emergency,-Detached*"
+            { Set-DbaDbState -SqlInstance $TestConfig.instance2 -Database $db1 -Emergency -Online -EnableException } | Should -Throw -ExpectedMessage "*You can only specify one of: -Online,-Offline,-Emergency,-Detached*"
         }
         It "Errors out when multiple 'status' params are passed without Silent" {
             { Set-DbaDbState -SqlInstance $TestConfig.instance2 -Database $db1 -Offline -Online *> $null } | Should -Not -Throw
@@ -77,7 +77,7 @@ Describe $CommandName -Tag IntegrationTests {
             $result | Should -BeNullOrEmpty
         }
         It "Errors out when multiple 'rw' params are passed with EnableException" {
-            { Set-DbaDbState -SqlInstance $TestConfig.instance2 -Database $db1 -ReadOnly -ReadWrite -EnableException } | Should -Throw "You can only specify one of: -ReadOnly,-ReadWrite"
+            { Set-DbaDbState -SqlInstance $TestConfig.instance2 -Database $db1 -ReadOnly -ReadWrite -EnableException } | Should -Throw -ExpectedMessage "*You can only specify one of: -ReadOnly,-ReadWrite*"
         }
         It "Errors out when multiple 'rw' params are passed without EnableException" {
             { Set-DbaDbState -SqlInstance $TestConfig.instance2 -Database $db1 -ReadOnly -ReadWrite *> $null } | Should -Not -Throw

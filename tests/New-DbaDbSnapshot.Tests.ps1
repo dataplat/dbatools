@@ -38,10 +38,10 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Parameter validation" {
         It "Stops if no Database or AllDatabases" {
-            { New-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -EnableException -WarningAction SilentlyContinue } | Should -Throw "You must specify"
+            { New-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -EnableException -WarningAction SilentlyContinue } | Should -Throw "*You must specify*"
         }
         It "Is nice by default" {
-            { New-DbaDbSnapshot -SqlInstance $TestConfig.instance2 *> $null -WarningAction SilentlyContinue } | Should -Not -Throw "You must specify"
+            { New-DbaDbSnapshot -SqlInstance $TestConfig.instance2 *> $null -WarningAction SilentlyContinue } | Should -Not -Throw
         }
     }
 

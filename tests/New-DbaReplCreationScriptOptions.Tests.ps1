@@ -15,9 +15,8 @@ Describe $CommandName -Tag UnitTests {
 
     Context "Parameter validation" {
         BeforeAll {
-            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
-            $expectedParameters = $TestConfig.CommonParameters
-            $expectedParameters += @(
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin $TestConfig.CommonParameters }
+            $expectedParameters = @(
                 "Options",
                 "NoDefaults"
             )

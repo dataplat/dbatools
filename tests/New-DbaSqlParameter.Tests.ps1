@@ -50,7 +50,7 @@ Describe $CommandName -Tag IntegrationTests {
             AS
             BEGIN
             set @json_result = (
-                select ""sample"" as ""example""
+                select 'sample' as 'example'
                 for json path, without_array_wrapper
             );
             END"

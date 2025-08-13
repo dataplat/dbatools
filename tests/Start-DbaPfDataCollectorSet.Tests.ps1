@@ -1,15 +1,16 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
     $ModuleName = "dbatools",
-    $CommandName = "Start-DbaPfDataCollectorSet",
-    $PSDefaultParameterValues = $TestConfig.Defaults
+    $CommandName = "Start-DbaPfDataCollectorSet"
 )
+
+$global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
-            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters = $global:TestConfig.CommonParameters
             $expectedParameters += @(
                 "ComputerName",
                 "Credential",
@@ -28,21 +29,21 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $global:set = Get-DbaPfDataCollectorSet | Select-Object -First 1
-        $global:set | Stop-DbaPfDataCollectorSet -WarningAction SilentlyContinue
+        $script:set = Get-DbaPfDataCollectorSet | Select-Object -First 1
+        $script:set | Stop-DbaPfDataCollectorSet -WarningAction SilentlyContinue
         Start-Sleep 2
     }
 
     AfterAll {
-        $global:set | Stop-DbaPfDataCollectorSet -WarningAction SilentlyContinue
+        $script:set | Stop-DbaPfDataCollectorSet -WarningAction SilentlyContinue
     }
 
     Context "Verifying command works" {
         It "returns a result with the right computername and name is not null" {
-            $results = $global:set | Select-Object -First 1 | Start-DbaPfDataCollectorSet -WarningAction SilentlyContinue -WarningVariable warn
+            $results = $script:set | Select-Object -First 1 | Start-DbaPfDataCollectorSet -WarningAction SilentlyContinue -WarningVariable warn
             if (-not $warn) {
                 $results.ComputerName | Should -Be $env:COMPUTERNAME
-                $results.Name | Should -Not -Be $null
+                $results.Name | Should -Not -BeNullOrEmpty
             }
         }
     }

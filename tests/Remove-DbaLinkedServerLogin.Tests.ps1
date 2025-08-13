@@ -81,7 +81,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When removing linked server logins" {
 
         It "Check the validation for a linked server" {
-            $results = Remove-DbaLinkedServerLogin -SqlInstance $instance2 -LocalLogin $localLogin1Name -Confirm:$false -WarningVariable WarnVar -WarningAction SilentlyContinue
+            $results = Remove-DbaLinkedServerLogin -SqlInstance $instance2 -LocalLogin $localLogin1Name -Confirm:$false -EnableException:$false -WarningVariable WarnVar -WarningAction SilentlyContinue
             $results | Should -BeNullOrEmpty
             $WarnVar | Should -Match "LinkedServer is required"
         }

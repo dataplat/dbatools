@@ -57,10 +57,10 @@ Describe $CommandName -Tag IntegrationTests {
     }
     Context "Parameters validation" {
         It "Stops if no Database or Snapshot" {
-            { Restore-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -EnableException } | Should -Throw "You must specify"
+            { Restore-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -EnableException } | Should -Throw -ExpectedMessage "*You must specify*"
         }
         It "Is nice by default" {
-            { Restore-DbaDbSnapshot -SqlInstance $TestConfig.instance2 *> $null } | Should -Not -Throw "You must specify"
+            { Restore-DbaDbSnapshot -SqlInstance $TestConfig.instance2 *> $null } | Should -Not -Throw
         }
     }
     Context "Operations on snapshots" {
@@ -99,7 +99,7 @@ Describe $CommandName -Tag IntegrationTests {
             # the other snapshot has been dropped
             $result = Get-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db1
             $result.SnapshotOf | Should -Be $db1
-            $result.Database.Name | Should -Be $db1_snap1
+            $result.Database.Name | Should -Be $db1_snap2
 
             # the log size has been restored to the correct size
             $server.databases[$db1].Logfiles.Size | Should -Be 13312

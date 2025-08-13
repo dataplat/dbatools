@@ -38,13 +38,7 @@ Describe $CommandName -Tag UnitTests {
         }
 
         It "Validates that Stop Function Mock has been called" {
-            $assertMockParams = @{
-                CommandName = "Stop-Function"
-                Times       = 1
-                Exactly     = $true
-                Module      = "dbatools"
-            }
-            Assert-MockCalled @assertMockParams
+            Should -Invoke Stop-Function -Times 1 -Exactly -ModuleName dbatools
         }
     }
 }

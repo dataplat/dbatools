@@ -39,6 +39,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should return valid connection info" {
             $testResults.ComputerName | Should -Be $env:COMPUTERNAME
+            $testResults.Available | Should -Not -BeNullOrEmpty
             $testResults.Available | Should -BeOfType [bool]
         }
     }

@@ -61,20 +61,20 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname -Confirm $false
-        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm $false
+        Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname -Confirm:$false
+        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
 
         # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
     Context "sets ag properties" {
         It "returns modified results" {
-            $results = Set-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname -Confirm $false -DtcSupportEnabled $false
+            $results = Set-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname -Confirm:$false -DtcSupportEnabled:$false
             $results.AvailabilityGroup | Should -Be $agname
             $results.DtcSupportEnabled | Should -Be $false
         }
         It "returns newly modified results" {
-            $results = Set-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname -Confirm $false -DtcSupportEnabled
+            $results = Set-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname -Confirm:$false -DtcSupportEnabled
             $results.AvailabilityGroup | Should -Be $agname
             $results.DtcSupportEnabled | Should -Be $true
         }

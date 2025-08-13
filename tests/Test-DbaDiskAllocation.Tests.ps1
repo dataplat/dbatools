@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
+    $ModuleName  = "dbatools",
     $CommandName = "Test-DbaDiskAllocation",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -8,10 +8,6 @@ param(
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe $CommandName -Tag UnitTests {
-    BeforeAll {
-        $global:TestConfig = Get-TestConfig
-    }
-
     Context "Parameter validation" {
         BeforeAll {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
@@ -32,10 +28,6 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
-    BeforeAll {
-        $global:TestConfig = Get-TestConfig
-    }
-
     Context "Command actually works" {
         It "Should return a result" {
             $results = Test-DbaDiskAllocation -ComputerName $TestConfig.instance2

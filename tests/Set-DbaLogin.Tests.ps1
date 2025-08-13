@@ -11,29 +11,9 @@ $global:TestConfig = Get-TestConfig
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
-            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
-            $expectedParameters = $TestConfig.CommonParameters
-            $expectedParameters += @(
-                "SqlInstance",
-                "SqlCredential",
-                "Login",
-                "SecurePassword",
-                "DefaultDatabase",
-                "Unlock",
-                "PasswordMustChange",
-                "NewName",
-                "Disable",
-                "Enable",
-                "DenyLogin",
-                "GrantLogin",
-                "PasswordPolicyEnforced",
-                "PasswordExpirationEnabled",
-                "AddRole",
-                "RemoveRole",
-                "Force",
-                "InputObject",
-                "EnableException"
-            )
+            $params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('WhatIf', 'Confirm') }
+            $knownParameters = 'SqlInstance', 'SqlCredential', 'Login', 'SecurePassword', 'DefaultDatabase', 'Unlock', 'PasswordMustChange', 'NewName', 'Disable', 'Enable', 'DenyLogin', 'GrantLogin', 'PasswordPolicyEnforced', 'PasswordExpirationEnabled', 'AddRole', 'RemoveRole', 'Force', 'InputObject', 'EnableException'
+            $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
 
             $systemRoles = @(
                 @{role = "bulkadmin" },
@@ -50,8 +30,8 @@ Describe $CommandName -Tag UnitTests {
             $command = Get-Command $CommandName
         }
 
-        It "Should have the expected parameters" {
-            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
 
         It "Validates -AddRole contains <role>" -TestCases $systemRoles {
@@ -251,7 +231,7 @@ Describe $CommandName -Tag IntegrationTests {
             $result.PasswordPolicyEnforced | Should -Be $false
         }
 
-        It "Unlock" -Skip:$SkipLocalTest {
+        It -Skip:$SkipLocalTest "Unlock" {
             $results = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random" -PasswordPolicyEnforced -EnableException
             $results.PasswordPolicyEnforced | Should -Be $true
 
@@ -291,7 +271,7 @@ Describe $CommandName -Tag IntegrationTests {
             }
 
             # unlock by resetting the password
-            $results = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random" -Unlock -SecurePassword $password1
+            $results = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random" -Unlock -Password $password1
             $results.IsLocked | Should -Be $false
         }
 

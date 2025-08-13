@@ -52,11 +52,11 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Parameter validation" {
         It "Stops if no Database or AllDatabases" {
-            { Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -EnableException -WarningAction SilentlyContinue } | Should -Throw "You must pipe"
+            { Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -EnableException -WarningAction SilentlyContinue } | Should -Throw -ExpectedMessage "You must pipe*"
         }
 
         It "Is nice by default" {
-            { Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance2 *> $null } | Should -Not -Throw "You must pipe"
+            { Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance2 *> $null } | Should -Not -Throw
         }
     }
 

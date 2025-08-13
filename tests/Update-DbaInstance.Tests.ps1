@@ -1,4 +1,4 @@
-#Requires -Module @ { ModuleName="Pester"; ModuleVersion="5.0" }
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
     $ModuleName = "dbatools",
     $CommandName = "Update-DbaInstance",
@@ -13,17 +13,17 @@ $exeDir = "C:\Temp\dbatools_$CommandName"
 Describe "$CommandName Unit Tests" -Tag UnitTests {
     BeforeAll {
         # Prevent the functions from executing dangerous stuff and getting right responses where needed
-        Mock -CommandName Invoke-Program -MockWith { [PSCustomObject]@ { Successful = $true; ExitCode = [uint32[]]3010 } } -ModuleName dbatools
+        Mock -CommandName Invoke-Program -MockWith { [PSCustomObject]@{ Successful = $true; ExitCode = [uint32[]]3010 } } -ModuleName dbatools
         Mock -CommandName Test-PendingReboot -MockWith { $false } -ModuleName dbatools
         Mock -CommandName Test-ElevationRequirement -MockWith { $null } -ModuleName dbatools
         Mock -CommandName Restart-Computer -MockWith { $null } -ModuleName dbatools
         Mock -CommandName Register-RemoteSessionConfiguration -ModuleName dbatools -MockWith {
-            [PSCustomObject]@ { "Name" = "dbatoolsInstallSqlServerUpdate" ; Successful = $true ; Status = "Dummy" }
+            [PSCustomObject]@{ "Name" = "dbatoolsInstallSqlServerUpdate" ; Successful = $true ; Status = "Dummy" }
         }
         Mock -CommandName Unregister-RemoteSessionConfiguration -ModuleName dbatools -MockWith {
-            [PSCustomObject]@ { "Name" = "dbatoolsInstallSqlServerUpdate" ; Successful = $true ; Status = "Dummy" }
+            [PSCustomObject]@{ "Name" = "dbatoolsInstallSqlServerUpdate" ; Successful = $true ; Status = "Dummy" }
         }
-        Mock -CommandName Get-DbaDiskSpace -MockWith { [PSCustomObject]@ { Name = "C:\"; Free = 1 } } -ModuleName dbatools
+        Mock -CommandName Get-DbaDiskSpace -MockWith { [PSCustomObject]@{ Name = "C:\"; Free = 1 } } -ModuleName dbatools
     }
     Context "Parameter validation" {
         BeforeAll {
@@ -56,7 +56,7 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
     Context "testing proper Authorization" {
         BeforeAll {
             Mock -CommandName Get-SQLInstanceComponent -ModuleName dbatools -MockWith {
-                [PSCustomObject]@ {
+                [PSCustomObject]@{
                     InstanceName = "LAB"
                     Version      = [PSCustomObject]@ {
                         "SqlInstance" = $null
@@ -72,20 +72,20 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
             }
             #Mock Get-Item and Get-ChildItem with a dummy file
             Mock -CommandName Get-ChildItem -ModuleName dbatools -MockWith {
-                [PSCustomObject]@ {
+                [PSCustomObject]@{
                     FullName = "c:\mocked\filename.exe"
                 }
             }
             Mock -CommandName Get-Item -ModuleName dbatools -MockWith { "c:\mocked" }
             # mock Find-SqlInstanceUpdate
             Mock -CommandName Find-SqlInstanceUpdate -ModuleName dbatools -MockWith {
-                [PSCustomObject]@ {
+                [PSCustomObject]@{
                     FullName = "c:\mocked\path"
                 }
             }
             # Mock name resolution
             Mock -CommandName Resolve-DbaNetworkName -ModuleName dbatools -MockWith {
-                [PSCustomObject]@ {
+                [PSCustomObject]@{
                     FullComputerName = "mock"
                 }
             }
@@ -122,7 +122,7 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
             #this is our 'currently installed' versions
             Mock -CommandName Get-SQLInstanceComponent -ModuleName dbatools -MockWith {
                 @(
-                    [PSCustomObject]@ { InstanceName = 'LAB0'; Version = [PSCustomObject]@ {
+                    [PSCustomObject]@{ InstanceName = 'LAB0'; Version = [PSCustomObject]@ {
                             "SqlInstance" = $null
                             "Build" = "14.0.3038"
                             "NameLevel" = "2017"
@@ -133,7 +133,7 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
                             "MatchType" = "Exact"
                         }
                     }
-                    [PSCustomObject]@ { InstanceName = "LAB"; Version = [PSCustomObject]@ {
+                    [PSCustomObject]@{ InstanceName = "LAB"; Version = [PSCustomObject]@ {
                             "SqlInstance" = $null
                             "Build" = "11.0.5058"
                             "NameLevel" = "2012"
@@ -144,7 +144,7 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
                             "MatchType" = "Exact"
                         }
                     }
-                    [PSCustomObject]@ { InstanceName = 'LAB2'; Version = [PSCustomObject]@ {
+                    [PSCustomObject]@{ InstanceName = 'LAB2'; Version = [PSCustomObject]@ {
                             "SqlInstance" = $null
                             "Build" = "10.0.5770"
                             "NameLevel" = "2008"
@@ -159,7 +159,7 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
             }
             #Mock 2017 to think CU12 is the latest patch available
             Mock -CommandName Test-DbaBuild -ModuleName dbatools -MockWith {
-                [PSCustomObject]@ {
+                [PSCustomObject]@{
                     "Build" = "14.0.3038"
                     "BuildTarget" = [version]"14.0.3045"
                     "Compliant" = $false
@@ -243,7 +243,7 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
             $result.KB | Should -Be 2979596
             $result.Successful | Should -Be $true
             $result.Restarted | Should -Be $false
-            $result.InstanceName | Should -Be "LAB"2
+            $result.InstanceName | Should -Be "LAB2"
             $result.Installer | Should -Be (Join-Path $exeDir 'SQLServer2008SP4-KB2979596-x64-ENU.exe')
             $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract_*'
         }
@@ -286,7 +286,7 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
             #this is our 'currently installed' versions
             Mock -CommandName Get-SQLInstanceComponent -ModuleName dbatools -MockWith {
                 @(
-                    [PSCustomObject]@ { InstanceName = "LAB"; Version = [PSCustomObject]@ {
+                    [PSCustomObject]@{ InstanceName = "LAB"; Version = [PSCustomObject]@ {
                             "SqlInstance" = $null
                             "Build" = "13.0.4435"
                             "NameLevel" = "2016"
@@ -297,7 +297,7 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
                             "MatchType" = "Exact"
                         }
                     }
-                    [PSCustomObject]@ { InstanceName = 'LAB2'; Version = [PSCustomObject]@ {
+                    [PSCustomObject]@{ InstanceName = 'LAB2'; Version = [PSCustomObject]@ {
                             "SqlInstance" = $null
                             "Build" = "10.0.4279"
                             "NameLevel" = "2008"
@@ -396,7 +396,7 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
             #2008SP3CU7
             $result = $results | Select-Object -First 1 -Skip 2
             $result.MajorVersion | Should -Be 2008
-            $result.TargetLevel | Should -Be "SP3"CU7
+            $result.TargetLevel | Should -Be "SP3CU7"
             $result.KB | Should -Be 2738350
             $result.Successful | Should -Be $true
             $result.Restarted | Should -Be $true
@@ -410,7 +410,7 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
             #this is our 'currently installed' versions
             Mock -CommandName Get-SQLInstanceComponent -ModuleName dbatools -MockWith {
                 @(
-                    [PSCustomObject]@ { InstanceName = "LAB"; Version = [PSCustomObject]@ {
+                    [PSCustomObject]@{ InstanceName = "LAB"; Version = [PSCustomObject]@ {
                             "SqlInstance" = $null
                             "Build" = "13.0.4435"
                             "NameLevel" = "2016"
@@ -421,7 +421,7 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
                             "MatchType" = "Exact"
                         }
                     }
-                    [PSCustomObject]@ { InstanceName = 'LAB2'; Version = [PSCustomObject]@ {
+                    [PSCustomObject]@{ InstanceName = 'LAB2'; Version = [PSCustomObject]@ {
                             "SqlInstance" = $null
                             "Build" = "10.0.4279"
                             "NameLevel" = "2008"
@@ -452,7 +452,7 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
             }
             # Mock computer names to test multiple computers
             Mock -CommandName Resolve-DbaNetworkName -ParameterFilter { $ComputerName -in "localhost", "127.0.0.1" } -ModuleName dbatools -MockWith {
-                [PSCustomObject]@ {
+                [PSCustomObject]@{
                     FullComputerName = $ComputerName
                 }
             }
@@ -490,7 +490,7 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
         BeforeAll {
             #this is our 'currently installed' versions
             Mock -CommandName Get-SQLInstanceComponent -ModuleName dbatools -MockWith {
-                [PSCustomObject]@ {
+                [PSCustomObject]@{
                     InstanceName = "LAB"
                     Version      = [PSCustomObject]@ {
                         "SqlInstance" = $null
@@ -507,7 +507,7 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
             }
             #Mock Get-Item and Get-ChildItem with a dummy file
             Mock -CommandName Get-ChildItem -ModuleName dbatools -MockWith {
-                [PSCustomObject]@ {
+                [PSCustomObject]@{
                     FullName = "c:\mocked\filename.exe"
                 }
             }
@@ -535,7 +535,7 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
         BeforeAll {
             #this is our 'currently installed' versions
             Mock -CommandName Get-SQLInstanceComponent -ModuleName dbatools -MockWith {
-                [PSCustomObject]@ {
+                [PSCustomObject]@{
                     InstanceName = "LAB"
                     Version      = [PSCustomObject]@ {
                         "SqlInstance" = $null
@@ -554,7 +554,7 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
             Mock -CommandName Copy-Item -ModuleName dbatools -MockWith { }
             Mock -CommandName Find-SqlInstanceUpdate -ModuleName dbatools -MockWith { }
             Mock -CommandName Save-DbaKbUpdate -ModuleName dbatools -MockWith {
-                [PSCustomObject]@ {
+                [PSCustomObject]@{
                     FullName = "c:\mocked\filename.exe"
                     Name     = 'filename.exe'
                 }
@@ -584,7 +584,7 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
         BeforeAll {
             #Mock Get-Item and Get-ChildItem with a dummy file
             Mock -CommandName Get-ChildItem -ModuleName dbatools -MockWith {
-                [PSCustomObject]@ {
+                [PSCustomObject]@{
                     FullName = "c:\mocked\filename.exe"
                 }
             }
@@ -592,9 +592,9 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
         }
         AfterAll {
         }
-        $versions = @ {
-            '2005' = @ {
-                Mock     = { [PSCustomObject]@ { InstanceName = "LAB"; Version = [PSCustomObject]@ {
+        $versions = @{
+            '2005' = @{
+                Mock     = { [PSCustomObject]@{ InstanceName = "LAB"; Version = [PSCustomObject]@{
                             "SqlInstance" = $null
                             "Build" = "9.0.1399"
                             "NameLevel" = "2005"
@@ -606,14 +606,14 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
                         }
                     }
                 }
-                Versions = @ {
+                Versions = @{
                     'SP1' = 0
                     'SP2' = 0
                     'SP4' = 0, 3
                 }
             }
-            '2008' = @ {
-                Mock     = { [PSCustomObject]@ { InstanceName = "LAB"; Version = [PSCustomObject]@ {
+            '2008' = @{
+                Mock     = { [PSCustomObject]@{ InstanceName = "LAB"; Version = [PSCustomObject]@{
                             "SqlInstance" = $null
                             "Build" = "10.0.1600"
                             "NameLevel" = "2008"
@@ -625,7 +625,7 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
                         }
                     }
                 }
-                Versions = @ {
+                Versions = @{
                     'SP0' = 1, 10
                     'SP1' = 0, 16
                     'SP2' = 0, 11
@@ -633,8 +633,8 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
                     'SP4' = 0
                 }
             }
-            '2008R2' = @ {
-                Mock     = { [PSCustomObject]@ { InstanceName = "LAB"; Version = [PSCustomObject]@ {
+            '2008R2' = @{
+                Mock     = { [PSCustomObject]@{ InstanceName = "LAB"; Version = [PSCustomObject]@{
                             "SqlInstance" = $null
                             "Build" = "10.50.1600"
                             "NameLevel" = "2008R2"
@@ -646,15 +646,15 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
                         }
                     }
                 }
-                Versions = @ {
+                Versions = @{
                     'SP0' = 1, 14
                     'SP1' = 0, 13
                     'SP2' = 0, 13
                     'SP3' = 0
                 }
             }
-            '2012' = @ {
-                Mock     = { [PSCustomObject]@ { InstanceName = "LAB"; Version = [PSCustomObject]@ {
+            '2012' = @{
+                Mock     = { [PSCustomObject]@{ InstanceName = "LAB"; Version = [PSCustomObject]@{
                             "SqlInstance" = $null
                             "Build" = "11.0.2100"
                             "NameLevel" = "2012"
@@ -666,7 +666,7 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
                         }
                     }
                 }
-                Versions = @ {
+                Versions = @{
                     'SP0' = 1, 11
                     'SP1' = 0, 16
                     'SP2' = 0, 16
@@ -674,8 +674,8 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
                     'SP4' = 0
                 }
             }
-            '2014' = @ {
-                Mock     = { [PSCustomObject]@ { InstanceName = "LAB"; Version = [PSCustomObject]@ {
+            '2014' = @{
+                Mock     = { [PSCustomObject]@{ InstanceName = "LAB"; Version = [PSCustomObject]@{
                             "SqlInstance" = $null
                             "Build" = "12.0.2000"
                             "NameLevel" = "2014"
@@ -687,15 +687,15 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
                         }
                     }
                 }
-                Versions = @ {
+                Versions = @{
                     'SP0' = 1, 14
                     'SP1' = 0, 13
                     'SP2' = 0, 14
                     'SP3' = 0
                 }
             }
-            '2016' = @ {
-                Mock     = { [PSCustomObject]@ { InstanceName = "LAB"; Version = [PSCustomObject]@ {
+            '2016' = @{
+                Mock     = { [PSCustomObject]@{ InstanceName = "LAB"; Version = [PSCustomObject]@{
                             "SqlInstance" = $null
                             "Build" = "13.0.1601"
                             "NameLevel" = "2016"
@@ -707,14 +707,14 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
                         }
                     }
                 }
-                Versions = @ {
+                Versions = @{
                     'SP0' = 1, 9
                     'SP1' = 0, 12
                     'SP2' = 0, 4
                 }
             }
-            '2017' = @ {
-                Mock     = { [PSCustomObject]@ { InstanceName = "LAB"; Version = [PSCustomObject]@ {
+            '2017' = @{
+                Mock     = { [PSCustomObject]@{ InstanceName = "LAB"; Version = [PSCustomObject]@{
                             "SqlInstance" = $null
                             "Build" = "14.0.1000"
                             "NameLevel" = "2017"
@@ -726,7 +726,7 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
                         }
                     }
                 }
-                Versions = @ {
+                Versions = @{
                     'SP0' = 1, 12
                 }
             }
@@ -775,7 +775,7 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
         BeforeAll {
             #this is our 'currently installed' versions
             Mock -CommandName Get-SQLInstanceComponent -ModuleName dbatools -MockWith {
-                [PSCustomObject]@ { InstanceName = "LAB"; Version = [PSCustomObject]@ {
+                [PSCustomObject]@{ InstanceName = "LAB"; Version = [PSCustomObject]@ {
                         "SqlInstance" = $null
                         "Build" = "10.0.4279"
                         "NameLevel" = "2008"
@@ -825,13 +825,13 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
         It "fails when update execution has failed" {
             #Mock Get-Item and Get-ChildItem with a dummy file
             Mock -CommandName Get-ChildItem -ModuleName dbatools -MockWith {
-                [PSCustomObject]@ {
+                [PSCustomObject]@{
                     FullName = "c:\mocked\filename.exe"
                 }
             }
             Mock -CommandName Get-Item -ModuleName dbatools -MockWith { "c:\mocked" }
             #override default mock
-            Mock -CommandName Invoke-Program -MockWith { [PSCustomObject]@ { Successful = $false; ExitCode = 12345 } } -ModuleName dbatools
+            Mock -CommandName Invoke-Program -MockWith { [PSCustomObject]@{ Successful = $false; ExitCode = 12345 } } -ModuleName dbatools
             { Update-DbaInstance -Version 2008SP3 -EnableException -Path "mocked" -Confirm:$false } | Should -Throw 'failed with exit code 12345'
             $result = Update-DbaInstance -Version 2008SP3 -Path "mocked" -Confirm:$false -WarningVariable warVar 3>$null
             $result | Should -Not -BeNullOrEmpty
@@ -845,7 +845,7 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
             $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract_*'
             $warVar | Should -BeLike '*failed with exit code 12345*'
             #revert default mock
-            Mock -CommandName Invoke-Program -MockWith { [PSCustomObject]@ { Successful = $true } } -ModuleName dbatools
+            Mock -CommandName Invoke-Program -MockWith { [PSCustomObject]@{ Successful = $true } } -ModuleName dbatools
         }
     }
 }
@@ -860,7 +860,7 @@ Describe "$CommandName Integration Tests" -Tag IntegrationTests {
         Mock -CommandName Restart-Computer -MockWith { $null } -ModuleName dbatools
         # mock whole Find-SqlInstanceUpdate because it's executed remotely
         Mock -CommandName Find-SqlInstanceUpdate -ModuleName dbatools -MockWith {
-            [PSCustomObject]@ {
+            [PSCustomObject]@{
                 FullName = "c:\mocked\filename.exe"
             }
         }

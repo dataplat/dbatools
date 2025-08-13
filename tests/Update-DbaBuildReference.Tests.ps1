@@ -27,16 +27,14 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag UnitTests {
     Context "Internal function calls" {
-        BeforeAll {
-            function Get-DbaBuildReferenceIndexOnline { }
-        }
-
         It "calls the internal function" {
+            function Get-DbaBuildReferenceIndexOnline { }
             Mock Get-DbaBuildReferenceIndexOnline -MockWith { } -ModuleName dbatools
             { Update-DbaBuildReference -EnableException -ErrorAction Stop } | Should -Not -Throw
         }
 
         It "errors out when cannot download" {
+            function Get-DbaBuildReferenceIndexOnline { }
             Mock Get-DbaBuildReferenceIndexOnline -MockWith { throw "cannot download" } -ModuleName dbatools
             { Update-DbaBuildReference -EnableException -ErrorAction Stop } | Should -Throw
         }

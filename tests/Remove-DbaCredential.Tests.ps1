@@ -52,8 +52,15 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterEach block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        # Cleanup any remaining credentials
-        Remove-DbaCredential -SqlInstance $global:serverInstance -Confirm:$false -ErrorAction SilentlyContinue
+        # Cleanup any remaining test credentials
+        try {
+            $testCredentials = Get-DbaCredential -SqlInstance $global:serverInstance | Where-Object Name -like "dbatoolsci_test_*"
+            if ($testCredentials) {
+                $testCredentials | Remove-DbaCredential -Confirm:$false -ErrorAction SilentlyContinue
+            }
+        } catch {
+            # Ignore cleanup errors
+        }
 
         # Reset EnableException setting
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")

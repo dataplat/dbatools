@@ -84,15 +84,10 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     AfterEach {
-        # We want to run all commands in the AfterEach block with EnableException to ensure that the test fails if the cleanup fails.
-        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
         # Clean up availability group and endpoints after each test
-        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agName -ErrorAction SilentlyContinue
-        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint -ErrorAction SilentlyContinue
-
-        # Reset EnableException for next test
-        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        # Use SilentlyContinue to prevent SQL Server clustering errors from failing tests
+        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agName -Confirm:$false -ErrorAction SilentlyContinue
+        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false -ErrorAction SilentlyContinue
     }
 
     AfterAll {
@@ -100,7 +95,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName -ErrorAction SilentlyContinue
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbName -Confirm:$false -ErrorAction SilentlyContinue
 
         # Remove the backup directory.
         Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
@@ -120,7 +115,7 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $results = New-DbaAvailabilityGroup @splatAg
             $results.AvailabilityDatabases.Name | Should -Be $dbName
-            $results.AvailabilityDatabases.Status.Count | Should -Be 1 -Because "There should be only the named database in the group"
+            $results.AvailabilityDatabases.Count | Should -Be 1 -Because "There should be only the named database in the group"
         }
 
         It "returns an ag with no database if one was not named" {
@@ -132,7 +127,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Certificate  = "dbatoolsci_AGCert"
             }
             $results = New-DbaAvailabilityGroup @splatAgNoDb
-            $results.AvailabilityDatabases.Status.Count | Should -Be 0 -Because "No database was named"
+            $results.AvailabilityDatabases.Count | Should -Be 0 -Because "No database was named"
         }
     }
 } #$TestConfig.instance2 for appveyor

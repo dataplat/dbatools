@@ -43,7 +43,7 @@ Describe $CommandName -Tag IntegrationTests {
                 )
                 $server = [DbaInstanceParameter[]]$TestConfig.instance1
                 @{
-                    DisplayName        = "SQL Server ($($instance.InstanceName))"
+                    DisplayName        = "SQL Server ($($server.InstanceName))"
                     AdvancedProperties = @(
                         @{
                             Name  = "REGROOT"

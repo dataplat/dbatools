@@ -159,20 +159,20 @@ Describe $CommandName -Tag IntegrationTests {
             foreach ($key in $global:results.keys) {
                 $global:results[$key].EnumJobReferences() | Should -Contain $jobId
 
-                if ($results[$key].FrequencyTypes -eq "Monthly") {
+                if ($global:results[$key].FrequencyTypes -eq "Monthly") {
                     $global:results[$key].FrequencyInterval | Should -Be $key
-                } elseif ($results[$key].FrequencyTypes -eq "Weekly") {
+                } elseif ($global:results[$key].FrequencyTypes -eq "Weekly") {
                     switch ($key) {
-                        "Sunday" { $results[$key].FrequencyInterval | Should -Be 1 }
-                        "Monday" { $results[$key].FrequencyInterval | Should -Be 2 }
-                        "Tuesday" { $results[$key].FrequencyInterval | Should -Be 4 }
-                        "Wednesday" { $results[$key].FrequencyInterval | Should -Be 8 }
-                        "Thursday" { $results[$key].FrequencyInterval | Should -Be 16 }
-                        "Friday" { $results[$key].FrequencyInterval | Should -Be 32 }
-                        "Saturday" { $results[$key].FrequencyInterval | Should -Be 64 }
-                        "Weekdays" { $results[$key].FrequencyInterval | Should -Be 62 }
-                        "Weekend" { $results[$key].FrequencyInterval | Should -Be 65 }
-                        "EveryDay" { $results[$key].FrequencyInterval | Should -Be 127 }
+                        "Sunday" { $global:results[$key].FrequencyInterval | Should -Be 1 }
+                        "Monday" { $global:results[$key].FrequencyInterval | Should -Be 2 }
+                        "Tuesday" { $global:results[$key].FrequencyInterval | Should -Be 4 }
+                        "Wednesday" { $global:results[$key].FrequencyInterval | Should -Be 8 }
+                        "Thursday" { $global:results[$key].FrequencyInterval | Should -Be 16 }
+                        "Friday" { $global:results[$key].FrequencyInterval | Should -Be 32 }
+                        "Saturday" { $global:results[$key].FrequencyInterval | Should -Be 64 }
+                        "Weekdays" { $global:results[$key].FrequencyInterval | Should -Be 62 }
+                        "Weekend" { $global:results[$key].FrequencyInterval | Should -Be 65 }
+                        "EveryDay" { $global:results[$key].FrequencyInterval | Should -Be 127 }
                     }
                 }
             }
