@@ -28,10 +28,11 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $results = Get-DbaHideInstance -SqlInstance $TestConfig.instance1 -EnableException
+        $hideInstanceResults = Get-DbaHideInstance -SqlInstance $TestConfig.instance1
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     It "Returns true or false" {
-        $results.HideInstance | Should -Not -BeNullOrEmpty
+        $hideInstanceResults.HideInstance | Should -Not -BeNullOrEmpty
     }
 }

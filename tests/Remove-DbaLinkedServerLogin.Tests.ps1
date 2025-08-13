@@ -1,25 +1,43 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName = "dbatools",
+    $CommandName = "Remove-DbaLinkedServerLogin",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
+
 $global:TestConfig = Get-TestConfig
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'LinkedServer', 'LocalLogin', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        BeforeAll {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "LinkedServer",
+                "LocalLogin",
+                "InputObject",
+                "EnableException"
+            )
+        }
+
+        It "Should have the expected parameters" {
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $random = Get-Random
         $instance2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $instance3 = Connect-DbaInstance -SqlInstance $TestConfig.instance3
 
-        $securePassword = ConvertTo-SecureString -String 'securePassword' -AsPlainText -Force
+        $securePassword = ConvertTo-SecureString -String "securePassword" -AsPlainText -Force
         $localLogin1Name = "dbatoolscli_localLogin1_$random"
         $localLogin2Name = "dbatoolscli_localLogin2_$random"
         $localLogin3Name = "dbatoolscli_localLogin3_$random"
@@ -45,14 +63,22 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $linkedServerLogin5 = New-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin5Name -RemoteUser $remoteLoginName -RemoteUserPassword $securePassword
         $linkedServerLogin6 = New-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin6Name -RemoteUser $remoteLoginName -RemoteUserPassword $securePassword
         $linkedServerLogin7 = New-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name, $linkedServer2Name -LocalLogin $localLogin7Name -RemoteUser $remoteLoginName -RemoteUserPassword $securePassword
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         Remove-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServer1Name, $linkedServer2Name -Confirm:$false -Force
         Remove-DbaLogin -SqlInstance $instance2 -Login $localLogin1Name, $localLogin2Name, $localLogin3Name, $localLogin4Name, $localLogin5Name, $localLogin6Name, $localLogin7Name -Confirm:$false
         Remove-DbaLogin -SqlInstance $instance3 -Login $remoteLoginName -Confirm:$false
+
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
-    Context "ensure command works" {
+    Context "When removing linked server logins" {
 
         It "Check the validation for a linked server" {
             $results = Remove-DbaLinkedServerLogin -SqlInstance $instance2 -LocalLogin $localLogin1Name -Confirm:$false -WarningVariable WarnVar -WarningAction SilentlyContinue
@@ -62,14 +88,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
         It "Remove a linked server login" {
             $results = Get-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin1Name
-            $results.length | Should -Be 1
+            $results.Count | Should -Be 1
 
             $results = Remove-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin1Name -Confirm:$false
             $results = Get-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin1Name
             $results | Should -BeNullOrEmpty
 
             $results = Get-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin2Name, $localLogin3Name
-            $results.length | Should -Be 2
+            $results.Count | Should -Be 2
 
             $results = Remove-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin2Name, $localLogin3Name -Confirm:$false
             $results = Get-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin2Name, $localLogin3Name
@@ -78,7 +104,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
         It "Remove a linked server login via pipeline with a server instance passed in" {
             $results = $instance2 | Get-DbaLinkedServerLogin -LinkedServer $linkedServer1Name -LocalLogin $localLogin4Name
-            $results.length | Should -Be 1
+            $results.Count | Should -Be 1
 
             $results = $instance2 | Remove-DbaLinkedServerLogin -LinkedServer $linkedServer1Name -LocalLogin $localLogin4Name -Confirm:$false
             $results = $instance2 | Get-DbaLinkedServerLogin -LinkedServer $linkedServer1Name -LocalLogin $localLogin4Name
@@ -87,7 +113,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
         It "Remove a linked server login via pipeline with a linked server passed in" {
             $results = $linkedServer1 | Get-DbaLinkedServerLogin -LocalLogin $localLogin5Name
-            $results.length | Should -Be 1
+            $results.Count | Should -Be 1
 
             $results = $linkedServer1 | Remove-DbaLinkedServerLogin -LocalLogin $localLogin5Name -Confirm:$false
             $results = $linkedServer1 | Get-DbaLinkedServerLogin -LocalLogin $localLogin5Name
@@ -96,7 +122,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
         It "Remove a linked server login via pipeline with a linked server login passed in" {
             $results = $linkedServer1 | Get-DbaLinkedServerLogin -LocalLogin $localLogin6Name
-            $results.length | Should -Be 1
+            $results.Count | Should -Be 1
 
             $results = $linkedServerLogin6 | Remove-DbaLinkedServerLogin -Confirm:$false
             $results = $linkedServer1 | Get-DbaLinkedServerLogin -LocalLogin $localLogin6Name

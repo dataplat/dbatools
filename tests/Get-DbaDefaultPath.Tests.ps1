@@ -33,19 +33,19 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Data returns a value that contains :\" {
-            $results.Data -match "\:\\" | Should -BeTrue
+            $results.Data -match ":\\" | Should -BeTrue
         }
 
         It "Log returns a value that contains :\" {
-            $results.Log -match "\:\\" | Should -BeTrue
+            $results.Log -match ":\\" | Should -BeTrue
         }
 
         It "Backup returns a value that contains :\" {
-            $results.Backup -match "\:\\" | Should -BeTrue
+            $results.Backup -match ":\\" | Should -BeTrue
         }
 
         It "ErrorLog returns a value that contains :\" {
-            $results.ErrorLog -match "\:\\" | Should -BeTrue
+            $results.ErrorLog -match ":\\" | Should -BeTrue
         }
     }
 }
