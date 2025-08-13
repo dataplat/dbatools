@@ -160,9 +160,12 @@ Describe $CommandName -Tag UnitTest {
         }
     }
     Context "Passing just -Update works, see #6823" {
-        It "works with -Update" {
+        BeforeAll {
             function Get-DbaBuildReferenceIndexOnline { }
             Mock Get-DbaBuildReferenceIndexOnline -MockWith { } -ModuleName dbatools
+        }
+
+        It "works with -Update" {
             Get-DbaBuild -Update -WarningVariable warnings 3>$null
             $warnings | Should -BeNullOrEmpty
         }
@@ -270,7 +273,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $results = Get-DbaBuild -SqlInstance $TestConfig.instance1, $TestConfig.instance2
         }
-        
+
         It "Should return an exact match" {
             $results | Should -Not -BeNullOrEmpty
             foreach ($r in $results) {
