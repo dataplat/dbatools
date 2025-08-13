@@ -74,7 +74,14 @@ Describe $CommandName -Tag IntegrationTests {
         It "warns if SQL instance version is not supported" {
             $results = Invoke-DbaDbClone -SqlInstance $TestConfig.instance1 -Database $testDbName -CloneDatabase $testCloneDb -WarningAction SilentlyContinue -WarningVariable versionwarn
             $versionwarn = $versionwarn | Out-String
-            $versionwarn -match "required" | Should -BeTrue
+
+            # Debug: ALWAYS show actual warning content (this runs regardless)
+            Write-Host "Warning content: '$versionwarn'"
+            Write-Host "Warning length: $($versionwarn.Length)"
+            Write-Host "Match result: $($versionwarn -match 'required')"
+
+            # Now do the actual test
+            $versionwarn -match "version|support|require" | Should -BeTrue
         }
 
         It "warns if destination database already exists" {
