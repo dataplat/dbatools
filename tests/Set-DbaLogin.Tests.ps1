@@ -91,6 +91,9 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "verify command functions" {
         BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
             $SkipLocalTest = $true # Change to $false to run the local-only tests on a local instance. This is being used because the 'locked' test makes assumptions the password policy configuration is enabled for the Windows OS.
             $random = Get-Random
 
@@ -102,9 +105,15 @@ Describe $CommandName -Tag IntegrationTests {
             New-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random", "testlogin2_$random" -Password $password1
 
             New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name "testdb1_$random" -Confirm:$false
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
             Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random", "testlogin2_$random" -Confirm:$false -Force
             Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database "testdb1_$random" -Confirm:$false
         }
@@ -183,7 +192,7 @@ Describe $CommandName -Tag IntegrationTests {
             # violate policy
             $invalidPassword = ConvertTo-SecureString -String "password1" -AsPlainText -Force
 
-            $result = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random" -Password $invalidPassword -WarningAction "SilentlyContinue"
+            $result = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random" -Password $invalidPassword -WarningAction SilentlyContinue
             $result | Should -Be $null
 
             { Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random" -Password $invalidPassword -EnableException } | Should -Throw
@@ -227,7 +236,7 @@ Describe $CommandName -Tag IntegrationTests {
             $result.PasswordPolicyEnforced | Should -Be $true
 
             # testlogin1_$random will get skipped since it does not have PasswordPolicyEnforced set to true (check_policy = ON)
-            $result = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random", "testlogin2_$random" -PasswordExpirationEnabled -WarningAction "SilentlyContinue" -WarningVariable WarnVar
+            $result = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random", "testlogin2_$random" -PasswordExpirationEnabled -WarningAction SilentlyContinue -WarningVariable WarnVar
             $WarnVar | Should -Match "Couldn't set check_expiration = ON because check_policy = OFF for \[testlogin1_$random\]"
             $result.Count | Should -Be 1
             $result.Name | Should -Be "testlogin2_$random"
@@ -253,7 +262,7 @@ Describe $CommandName -Tag IntegrationTests {
             $result.PasswordPolicyEnforced | Should -Be $false
         }
 
-        It "Unlock" -Skip:$SkipLocalTest {
+        It -Skip:$SkipLocalTest "Unlock" {
             $results = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random" -PasswordPolicyEnforced -EnableException
             $results.PasswordPolicyEnforced | Should -Be $true
 
@@ -299,7 +308,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "PasswordMustChange" {
             # password is required
-            $changeResult = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random" -PasswordMustChange -WarningAction "SilentlyContinue" -WarningVariable WarnVar
+            $changeResult = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random" -PasswordMustChange -WarningAction SilentlyContinue -WarningVariable WarnVar
             $WarnVar | Should -Match "You must specify a password when using the -PasswordMustChange parameter"
             $changeResult | Should -BeNullOrEmpty
 
@@ -314,7 +323,7 @@ Describe $CommandName -Tag IntegrationTests {
             $changeResult.PasswordExpirationEnabled | Should -Be $true
 
             # check_policy and check_expiration must be set on the login
-            $changeResult = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random", "testlogin2_$random" -PasswordMustChange -Password $password1 -WarningAction "SilentlyContinue" -WarningVariable WarnVar
+            $changeResult = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random", "testlogin2_$random" -PasswordMustChange -Password $password1 -WarningAction SilentlyContinue -WarningVariable WarnVar
             $WarnVar | Should -Match "Unable to change the password and set the must_change option for \[testlogin1_$random\] because check_policy = False and check_expiration = False"
             $changeResult.Count | Should -Be 1
             $changeResult.Name | Should -Be "testlogin2_$random"

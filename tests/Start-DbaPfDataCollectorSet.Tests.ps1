@@ -32,11 +32,9 @@ Describe $CommandName -Tag IntegrationTests {
         $global:testSet | Stop-DbaPfDataCollectorSet -WarningAction SilentlyContinue
         Start-Sleep 2
     }
-    
     AfterAll {
         $global:testSet | Stop-DbaPfDataCollectorSet -WarningAction SilentlyContinue
     }
-    
     Context "Verifying command works" {
         It "returns a result with the right computername and name is not null" {
             $results = $global:testSet | Select-Object -First 1 | Start-DbaPfDataCollectorSet -WarningAction SilentlyContinue -WarningVariable warn

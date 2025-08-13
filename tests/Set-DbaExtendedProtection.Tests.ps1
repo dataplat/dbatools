@@ -39,20 +39,20 @@ Describe $CommandName -Tag IntegrationTests {
             Mock Test-ShouldProcess { $false } -ModuleName dbatools
             Mock Invoke-ManagedComputerCommand -MockWith {
                 param (
-                $ComputerName,
-                $Credential,
-                $ScriptBlock,
-                $EnableException
-            )
-               $server = [DbaInstanceParameter[]]$TestConfig.instance1
-               @{
-                    DisplayName = "SQL Server ($($instance.InstanceName))"
+                    $ComputerName,
+                    $Credential,
+                    $ScriptBlock,
+                    $EnableException
+                )
+                $server = [DbaInstanceParameter[]]$TestConfig.instance1
+                @{
+                    DisplayName        = "SQL Server ($($instance.InstanceName))"
                     AdvancedProperties = @(
-                            @{
-                                Name = "REGROOT"
-                                Value = "Software\Microsoft\Microsoft SQL Server\MSSQL10_50.SQL2008R2SP2"
-                            }
-                        )
+                        @{
+                            Name  = "REGROOT"
+                            Value = "Software\Microsoft\Microsoft SQL Server\MSSQL10_50.SQL2008R2SP2"
+                        }
+                    )
                 }
             } -ModuleName dbatools
         }

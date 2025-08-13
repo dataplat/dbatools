@@ -28,11 +28,11 @@ Describe $CommandName -Tag UnitTests {
                 "StaleQueryThreshold",
                 "MaxPlansPerQuery",
                 "WaitStatsCaptureMode",
+                "EnableException",
                 "CustomCapturePolicyExecutionCount",
                 "CustomCapturePolicyTotalCompileCPUTimeMS",
                 "CustomCapturePolicyTotalExecutionCPUTimeMS",
-                "CustomCapturePolicyStaleThresholdHours",
-                "EnableException"
+                "CustomCapturePolicyStaleThresholdHours"
             )
         }
 
@@ -44,57 +44,32 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
-
-        # Clean up any existing test databases
         Get-DbaDatabase -SqlInstance $TestConfig.instance1, $TestConfig.instance2 | Where-Object Name -Match "dbatoolsci" | Remove-DbaDatabase -Confirm:$false
-        
-        # Create test database for Query Store testing
         New-DbaDatabase -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -Name dbatoolsciqs
-
-        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
     }
-
     AfterAll {
-        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
-
-        # Clean up test databases
         Get-DbaDatabase -SqlInstance $TestConfig.instance1, $TestConfig.instance2 | Where-Object Name -Match "dbatoolsci" | Remove-DbaDatabase -Confirm:$false
     }
-
-    Context "Query Store option configuration" {
-        BeforeAll {
-            $allResults = @()
-            $allServers = @()
+    Context "When testing Query Store functionality" {
+        It "should warn for SQL Server versions below 2016" {
             foreach ($instance in ($TestConfig.instance1, $TestConfig.instance2)) {
                 $server = Connect-DbaInstance -SqlInstance $instance
-                $allServers += $server
                 $results = Get-DbaDbQueryStoreOption -SqlInstance $server -WarningVariable warning 3>&1
-                $allResults += [PSCustomObject]@{
-                    Instance = $instance
-                    Server   = $server
-                    Results  = $results
-                    Warning  = $warning
+
+                if ($server.VersionMajor -lt 13) {
+                    $warning | Should -Not -BeNullOrEmpty
                 }
             }
         }
 
-        It "Should warn on SQL Server versions below 2016" {
-            foreach ($testResult in $allResults) {
-                if ($testResult.Server.VersionMajor -lt 13) {
-                    $testResult.Warning | Should -Not -BeNullOrEmpty
-                }
-            }
-        }
+        It "should return valid results for supported SQL Server versions" {
+            foreach ($instance in ($TestConfig.instance1, $TestConfig.instance2)) {
+                $server = Connect-DbaInstance -SqlInstance $instance
+                $results = Get-DbaDbQueryStoreOption -SqlInstance $server -WarningVariable warning 3>&1
 
-        It "Should return valid results on supported SQL Server versions" {
-            foreach ($testResult in $allResults) {
-                if ($testResult.Server.VersionMajor -ge 13) {
-                    $result = $testResult.Results | Where-Object Database -eq "dbatoolsciqs"
-                    if ($testResult.Server.VersionMajor -lt 16) {
+                if ($server.VersionMajor -ge 13) {
+                    $result = $results | Where-Object Database -eq dbatoolsciqs
+                    if ($server.VersionMajor -lt 16) {
                         $result.ActualState | Should -Be "Off"
                     } else {
                         $result.ActualState | Should -Be "ReadWrite"
@@ -104,37 +79,34 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
 
-        It "Should change the specified parameter to the new value" {
-            foreach ($testResult in $allResults) {
-                if ($testResult.Server.VersionMajor -ge 13) {
-                    $splatSetOptions = @{
-                        SqlInstance   = $testResult.Instance
-                        Database      = "dbatoolsciqs"
-                        FlushInterval = 901
-                        State         = "ReadWrite"
-                    }
-                    $results = Set-DbaDbQueryStoreOption @splatSetOptions
+        It "should change the specified param to the new value" {
+            foreach ($instance in ($TestConfig.instance1, $TestConfig.instance2)) {
+                $server = Connect-DbaInstance -SqlInstance $instance
+                if ($server.VersionMajor -ge 13) {
+                    $results = Set-DbaDbQueryStoreOption -SqlInstance $instance -Database dbatoolsciqs -FlushInterval 901 -State ReadWrite
                     $results.DataFlushIntervalInSeconds | Should -Be 901
                 }
             }
         }
 
-        It "Should return only one database when specified" {
-            foreach ($testResult in $allResults) {
-                if ($testResult.Server.VersionMajor -ge 13) {
-                    $results = Get-DbaDbQueryStoreOption -SqlInstance $testResult.Instance -Database "dbatoolsciqs"
-                    $results.Status.Count | Should -Be 1
+        It "should only get one database when specified" {
+            foreach ($instance in ($TestConfig.instance1, $TestConfig.instance2)) {
+                $server = Connect-DbaInstance -SqlInstance $instance
+                if ($server.VersionMajor -ge 13) {
+                    $results = Get-DbaDbQueryStoreOption -SqlInstance $instance -Database dbatoolsciqs
+                    $results.Count | Should -Be 1
                     $results.Database | Should -Be "dbatoolsciqs"
                 }
             }
         }
 
-        It "Should exclude specified database" {
-            foreach ($testResult in $allResults) {
-                if ($testResult.Server.VersionMajor -ge 13) {
-                    $results = Get-DbaDbQueryStoreOption -SqlInstance $testResult.Instance -ExcludeDatabase "dbatoolsciqs"
-                    $excludedResult = $results | Where-Object Database -eq "dbatoolsciqs"
-                    $excludedResult.Status.Count | Should -Be 0
+        It "should not get excluded database" {
+            foreach ($instance in ($TestConfig.instance1, $TestConfig.instance2)) {
+                $server = Connect-DbaInstance -SqlInstance $instance
+                if ($server.VersionMajor -ge 13) {
+                    $results = Get-DbaDbQueryStoreOption -SqlInstance $instance -ExcludeDatabase dbatoolsciqs
+                    $result = $results | Where-Object Database -eq dbatoolsciqs
+                    $result.Count | Should -Be 0
                 }
             }
         }

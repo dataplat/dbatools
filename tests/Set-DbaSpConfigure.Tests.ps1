@@ -38,19 +38,19 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
 
-        It "changes the remote query timeout from original value to new value" {
+        It "changes the remote query timeout from $remotequerytimeout to $newtimeout" {
             $results = Set-DbaSpConfigure -SqlInstance $TestConfig.instance1 -ConfigName RemoteQueryTimeout -Value $newtimeout
             $results.PreviousValue | Should -Be $remotequerytimeout
             $results.NewValue | Should -Be $newtimeout
         }
 
-        It "changes the remote query timeout back to original value" {
+        It "changes the remote query timeout from $newtimeout to $remotequerytimeout" {
             $results = Set-DbaSpConfigure -SqlInstance $TestConfig.instance1 -ConfigName RemoteQueryTimeout -Value $remotequerytimeout
             $results.PreviousValue | Should -Be $newtimeout
             $results.NewValue | Should -Be $remotequerytimeout
         }
 
-        It "returns a warning when the new value is the same as the old" {
+        It "returns a warning when if the new value is the same as the old" {
             $results = Set-DbaSpConfigure -SqlInstance $TestConfig.instance1 -ConfigName RemoteQueryTimeout -Value $remotequerytimeout -WarningVariable warning -WarningAction SilentlyContinue
             $warning -match "existing" | Should -Be $true
         }

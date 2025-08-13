@@ -5,9 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
@@ -33,10 +30,13 @@ Describe $CommandName -Tag UnitTests {
     Context "Input validation" {
         BeforeAll {
             Mock Stop-Function { } -ModuleName dbatools
+            $singledb = "dbatoolsci_singledb"
         }
+
         It "Should Call Stop-Function. -Database, -AllDatabases and -ExcludeDatabase are mutually exclusive." {
-            Set-DbaMaxDop -SqlInstance $TestConfig.instance1 -MaxDop 12 -Database $singledb -AllDatabases -ExcludeDatabase "master" | Should -Be
+            Set-DbaMaxDop -SqlInstance $TestConfig.instance1 -MaxDop 12 -Database $singledb -AllDatabases -ExcludeDatabase "master" | Should -Be $null
         }
+
         It "Validates that Stop Function Mock has been called" {
             $assertMockParams = @{
                 CommandName = "Stop-Function"
@@ -55,10 +55,10 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         Get-DbaProcess -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -Program "dbatools PowerShell module - dbatools.io" | Stop-DbaProcess -WarningAction SilentlyContinue
-        $singledb = "dbatoolsci_singledb"
-        $dbs = "dbatoolsci_lildb", "dbatoolsci_testMaxDop", $singledb
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbs | Remove-DbaDatabase -Confirm:$false
-        foreach ($db in $dbs) {
+        $global:singledb = "dbatoolsci_singledb"
+        $global:dbs = "dbatoolsci_lildb", "dbatoolsci_testMaxDop", $global:singledb
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $global:dbs | Remove-DbaDatabase -Confirm:$false
+        foreach ($db in $global:dbs) {
             Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query "CREATE DATABASE $db"
             Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query "CREATE DATABASE $db"
         }
@@ -66,21 +66,22 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+
     AfterAll {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbs | Remove-DbaDatabase -Confirm:$false
-        Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbs | Remove-DbaDatabase -Confirm:$false
+        Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $global:dbs -ErrorAction SilentlyContinue | Remove-DbaDatabase -Confirm:$false
+        Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $global:dbs -ErrorAction SilentlyContinue | Remove-DbaDatabase -Confirm:$false
     }
 
     Context "Apply to multiple instances" {
         BeforeAll {
-            $results = Set-DbaMaxDop -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -MaxDop 2
+            $multiInstanceResults = Set-DbaMaxDop -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -MaxDop 2
         }
 
         It "Returns MaxDop 2 for each instance" {
-            foreach ($result in $results) {
+            foreach ($result in $multiInstanceResults) {
                 $result.CurrentInstanceMaxDop | Should -Be 2
             }
         }
@@ -88,11 +89,11 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Connects to 2016+ instance and apply configuration to single database" {
         BeforeAll {
-            $results = Set-DbaMaxDop -SqlInstance $TestConfig.instance2 -MaxDop 4 -Database $singledb
+            $singleDbResults = Set-DbaMaxDop -SqlInstance $TestConfig.instance2 -MaxDop 4 -Database $global:singledb
         }
 
         It "Returns 4 for each database" {
-            foreach ($result in $results) {
+            foreach ($result in $singleDbResults) {
                 $result.DatabaseMaxDop | Should -Be 4
             }
         }
@@ -100,11 +101,11 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Connects to 2016+ instance and apply configuration to multiple databases" {
         BeforeAll {
-            $results = Set-DbaMaxDop -SqlInstance $TestConfig.instance2 -MaxDop 8 -Database $dbs
+            $multiDbResults = Set-DbaMaxDop -SqlInstance $TestConfig.instance2 -MaxDop 8 -Database $global:dbs
         }
 
         It "Returns 8 for each database" {
-            foreach ($result in $results) {
+            foreach ($result in $multiDbResults) {
                 $result.DatabaseMaxDop | Should -Be 8
             }
         }
@@ -112,33 +113,33 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Piping from Test-DbaMaxDop works" {
         BeforeAll {
-            $results = Test-DbaMaxDop -SqlInstance $TestConfig.instance2 | Set-DbaMaxDop -MaxDop 4
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+            $pipeTestResults = Test-DbaMaxDop -SqlInstance $TestConfig.instance2 | Set-DbaMaxDop -MaxDop 4
+            $pipeTestServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         }
 
         It "Command returns output" {
-            $results.CurrentInstanceMaxDop | Should -Not -BeNullOrEmpty
-            $results.CurrentInstanceMaxDop | Should -Be 4
+            $pipeTestResults.CurrentInstanceMaxDop | Should -Not -BeNullOrEmpty
+            $pipeTestResults.CurrentInstanceMaxDop | Should -Be 4
         }
 
         It "Maxdop should match expected" {
-            $server.Configuration.MaxDegreeOfParallelism.ConfigValue | Should -Be 4
+            $pipeTestServer.Configuration.MaxDegreeOfParallelism.ConfigValue | Should -Be 4
         }
     }
 
     Context "Piping SqlInstance name works" {
         BeforeAll {
-            $results = $TestConfig.instance2 | Set-DbaMaxDop -MaxDop 2
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+            $pipeInstanceResults = $TestConfig.instance2 | Set-DbaMaxDop -MaxDop 2
+            $pipeInstanceServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         }
 
         It "Command returns output" {
-            $results.CurrentInstanceMaxDop | Should -Not -BeNullOrEmpty
-            $results.CurrentInstanceMaxDop | Should -Be 2
+            $pipeInstanceResults.CurrentInstanceMaxDop | Should -Not -BeNullOrEmpty
+            $pipeInstanceResults.CurrentInstanceMaxDop | Should -Be 2
         }
 
         It "Maxdop should match expected" {
-            $server.Configuration.MaxDegreeOfParallelism.ConfigValue | Should -Be 2
+            $pipeInstanceServer.Configuration.MaxDegreeOfParallelism.ConfigValue | Should -Be 2
         }
     }
 }

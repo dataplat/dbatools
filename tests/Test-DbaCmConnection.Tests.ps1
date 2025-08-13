@@ -29,19 +29,16 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
-    Context "Testing WMI connection" {
+    Context "When testing WMI connection" {
         BeforeAll {
-            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-            $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+            $splatConnection = @{
+                Type = "Wmi"
+            }
+            $results = Test-DbaCmConnection @splatConnection
         }
 
-        It "Should return valid computer name" {
-            $results = Test-DbaCmConnection -Type Wmi
-            $results.ComputerName | Should -Be $env:COMPUTERNAME
-        }
-
-        It "Should return boolean availability status" {
-            $results = Test-DbaCmConnection -Type Wmi
+        It "Returns some valid info" {
+            $results.ComputerName -eq $env:COMPUTERNAME | Should -BeTrue
             $results.Available | Should -BeOfType [bool]
         }
     }
