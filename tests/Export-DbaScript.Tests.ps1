@@ -71,7 +71,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should include BatchSeparator based on the Formatting.BatchSeparator configuration" {
             $results = $testTable | Export-DbaScript -Passthru
-            $results -match "(Get-DbatoolsConfigValue -FullName 'Formatting.BatchSeparator')" | Should -BeTrue
+            $results | Should -Match "(Get-DbatoolsConfigValue -FullName 'Formatting.BatchSeparator')"
         }
 
         It "Should include the defined BatchSeparator" {
@@ -87,11 +87,11 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should not append when using NoPrefix (#7455)" {
             $null = $testTable | Export-DbaScript -NoPrefix -FilePath $testFilePath
             $linecount1 = @(Get-Content $testFilePath).Count
-            
+
             $null = $testTable | Export-DbaScript -NoPrefix -FilePath $testFilePath
             $linecount2 = @(Get-Content $testFilePath).Count
             $linecount1 | Should -Be $linecount2
-            
+
             $null = $testTable | Export-DbaScript -NoPrefix -FilePath $testFilePath -Append
             $linecount3 = @(Get-Content $testFilePath).Count
             $linecount1 | Should -Not -Be $linecount3
