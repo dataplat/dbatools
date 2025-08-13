@@ -45,14 +45,14 @@ Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-        
+
         $random = Get-Random
         $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $email1 = "test1$($random)@test.com"
         $email2 = "test2$($random)@test.com"
         $email3 = "test3$($random)@test.com"
         $email4 = "test4$($random)@test.com"
-        
+
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -60,12 +60,12 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-        
+
         $null = Remove-DbaAgentOperator -SqlInstance $server2 -Operator $email1 -ErrorAction SilentlyContinue
         $null = Remove-DbaAgentOperator -SqlInstance $server2 -Operator $email2 -ErrorAction SilentlyContinue
         $null = Remove-DbaAgentOperator -SqlInstance $server2 -Operator $email3 -ErrorAction SilentlyContinue
         $null = Remove-DbaAgentOperator -SqlInstance $server2 -Operator $email4 -ErrorAction SilentlyContinue
-        
+
         # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
@@ -100,12 +100,12 @@ Describe $CommandName -Tag IntegrationTests {
                 NetSendAddress    = "dbauser1"
                 PagerAddress      = "dbauser1@pager.dbatools.io"
                 PagerDay          = "Everyday"
-                SaturdayStartTime = 070000
-                SaturdayEndTime   = 180000
-                SundayStartTime   = 080000
-                SundayEndTime     = 170000
-                WeekdayStartTime  = 060000
-                WeekdayEndTime    = 190000
+                SaturdayStartTime = "070000"  # <- Add quotes
+                SaturdayEndTime   = "180000"  # <- Add quotes
+                SundayStartTime   = "080000"  # <- Add quotes
+                SundayEndTime     = "170000"  # <- Add quotes
+                WeekdayStartTime  = "060000"  # <- Add quotes
+                WeekdayEndTime    = "190000"  # <- Add quotes
             }
             $results = New-DbaAgentOperator @splatOperatorFull
             $results.Enabled | Should -Be $true
