@@ -1,38 +1,29 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
-param(
-    $ModuleName = "dbatools",
-    $CommandName = "Set-DbaLogin",
-    $PSDefaultParameterValues = $TestConfig.Defaults
-)
-
+$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 $global:TestConfig = Get-TestConfig
 
-Describe $CommandName -Tag UnitTests {
-    Context "Parameter validation" {
-        BeforeAll {
-            $params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('WhatIf', 'Confirm') }
-            $knownParameters = 'SqlInstance', 'SqlCredential', 'Login', 'SecurePassword', 'DefaultDatabase', 'Unlock', 'PasswordMustChange', 'NewName', 'Disable', 'Enable', 'DenyLogin', 'GrantLogin', 'PasswordPolicyEnforced', 'PasswordExpirationEnabled', 'AddRole', 'RemoveRole', 'Force', 'InputObject', 'EnableException'
-            $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-
-            $systemRoles = @(
-                @{role = "bulkadmin" },
-                @{role = "dbcreator" },
-                @{role = "diskadmin" },
-                @{role = "processadmin" },
-                @{role = "public" },
-                @{role = "securityadmin" },
-                @{role = "serveradmin" },
-                @{role = "setupadmin" },
-                @{role = "sysadmin" }
-            )
-
-            $command = Get-Command $CommandName
-        }
-
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('WhatIf', 'Confirm') }
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Login', 'SecurePassword', 'DefaultDatabase', 'Unlock', 'PasswordMustChange', 'NewName', 'Disable', 'Enable', 'DenyLogin', 'GrantLogin', 'PasswordPolicyEnforced', 'PasswordExpirationEnabled', 'AddRole', 'RemoveRole', 'Force', 'InputObject', 'EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
+
+        $systemRoles = @(
+            @{role = 'bulkadmin' },
+            @{role = 'dbcreator' },
+            @{role = 'diskadmin' },
+            @{role = 'processadmin' },
+            @{role = 'public' },
+            @{role = 'securityadmin' },
+            @{role = 'serveradmin' },
+            @{role = 'setupadmin' },
+            @{role = 'sysadmin' }
+        )
+
+        $command = Get-Command $CommandName
 
         It "Validates -AddRole contains <role>" -TestCases $systemRoles {
             param ($role)
@@ -45,39 +36,39 @@ Describe $CommandName -Tag UnitTests {
         }
 
         It "Validates -Login and -NewName aren't the same" {
-            { Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login testlogin -NewName testLogin -EnableException } | Should -Throw "Login name is the same as the value in -NewName"
+            { Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login testlogin -NewName testLogin -EnableException } | Should -Throw 'Login name is the same as the value in -NewName'
         }
 
         It "Validates -Enable and -Disable aren't used together" {
-            { Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login testlogin -Enable -Disable -EnableException } | Should -Throw "You cannot use both -Enable and -Disable together"
+            { Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login testlogin -Enable -Disable -EnableException } | Should -Throw 'You cannot use both -Enable and -Disable together'
         }
 
         It "Validates -GrantLogin and -DenyLogin aren't used together" {
-            { Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login testlogin -GrantLogin -DenyLogin -EnableException } | Should -Throw "You cannot use both -GrantLogin and -DenyLogin together"
+            { Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login testlogin -GrantLogin -DenyLogin -EnableException } | Should -Throw 'You cannot use both -GrantLogin and -DenyLogin together'
         }
 
         It "Validates -Login is required when using -SqlInstance" {
-            { Set-DbaLogin -SqlInstance $TestConfig.instance2 -EnableException } | Should -Throw "You must specify a Login when using SqlInstance"
+            { Set-DbaLogin -SqlInstance $TestConfig.instance2 -EnableException } | Should -Throw 'You must specify a Login when using SqlInstance'
         }
 
         It "Validates -Password is a SecureString or PSCredential" {
-            { Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testLogin" -Password "password" -EnableException } | Should -Throw "Password must be a PSCredential or SecureString"
+            { Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login 'testLogin' -Password 'password' -EnableException } | Should -Throw 'Password must be a PSCredential or SecureString'
         }
     }
 }
 
-Describe $CommandName -Tag IntegrationTests {
+Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
     Context "verify command functions" {
         BeforeAll {
             $SkipLocalTest = $true # Change to $false to run the local-only tests on a local instance. This is being used because the 'locked' test makes assumptions the password policy configuration is enabled for the Windows OS.
             $random = Get-Random
 
             # Create the new password
-            $password1 = ConvertTo-SecureString -String "ComplexP@ssw0rd1!" -AsPlainText -Force
-            $password2 = ConvertTo-SecureString -String "ComplexP@ssw0rd2!" -AsPlainText -Force
+            $password1 = ConvertTo-SecureString -String "password1A@" -AsPlainText -Force
+            $password2 = ConvertTo-SecureString -String "password2A@" -AsPlainText -Force
 
             # Create the login
-            New-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random", "testlogin2_$random" -SecurePassword $password1
+            New-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random", "testlogin2_$random" -Password $password1
 
             New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name "testdb1_$random" -Confirm:$false
         }
@@ -93,20 +84,20 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Verifies -NewName doesn't already exist when renaming a login" {
-            $result = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random" -NewName "sa" -EnableException
+            $result = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random" -NewName 'sa' -EnableException
 
-            $result.Notes | Should -Be "New login name already exists"
+            $result.Notes | Should -Be 'New login name already exists'
         }
 
-        It "Change the password from a SecureString" {
-            $result = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random" -SecurePassword $password2
+        It 'Change the password from a SecureString' {
+            $result = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random" -Password $password2
 
             $result.PasswordChanged | Should -Be $true
         }
 
-        It "Changes the password from a PSCredential" {
+        It 'Changes the password from a PSCredential' {
             $cred = New-Object System.Management.Automation.PSCredential ("testlogin1_$random", $password2)
-            $result = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random" -SecurePassword $cred
+            $result = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random" -Password $cred
 
             $result.PasswordChanged | Should -Be $true
         }
@@ -114,14 +105,14 @@ Describe $CommandName -Tag IntegrationTests {
         It "Change the password from piped Login" {
             $login = Get-DbaLogin -Sqlinstance $TestConfig.instance2 -Login "testlogin1_$random"
 
-            $result = $login | Set-DbaLogin -SecurePassword $password2
+            $result = $login | Set-DbaLogin -Password $password2
             $result.PasswordChanged | Should -Be $true
         }
 
         It "Change the password from InputObject" {
             $login = Get-DbaLogin -Sqlinstance $TestConfig.instance2 -Login "testlogin1_$random"
 
-            $result = Set-DbaLogin -InputObject $login -SecurePassword $password2
+            $result = Set-DbaLogin -InputObject $login -Password $password2
             $result.PasswordChanged | Should -Be $true
         }
 
@@ -150,7 +141,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Enforces password policy on login" {
             $result = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random" -PasswordPolicyEnforced
 
-            $result.PasswordPolicyEnforced | Should -Be $true
+            $result.PasswordPolicyEnforced | Should Be $true
         }
 
         It "Catches errors when password can't be changed" {
@@ -159,20 +150,20 @@ Describe $CommandName -Tag IntegrationTests {
             $result.PasswordPolicyEnforced | Should -Be $true
 
             # violate policy
-            $invalidPassword = ConvertTo-SecureString -String "simple" -AsPlainText -Force
+            $invalidPassword = ConvertTo-SecureString -String "password1" -AsPlainText -Force
 
-            $result = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random" -SecurePassword $invalidPassword -WarningAction 'SilentlyContinue'
+            $result = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random" -Password $invalidPassword -WarningAction 'SilentlyContinue'
             $result | Should -Be $null
 
-            { Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random" -SecurePassword $invalidPassword -EnableException } | Should -Throw
+            { Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random" -Password $invalidPassword -EnableException } | Should -Throw
         }
 
         It "Disables enforcing password policy on login" {
             $result = Get-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random"
-            $result.PasswordPolicyEnforced | Should -Be $true
+            $result.PasswordPolicyEnforced | Should Be $true
 
             $result = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random" -PasswordPolicyEnforced:$false
-            $result.PasswordPolicyEnforced | Should -Be $false
+            $result.PasswordPolicyEnforced | Should Be $false
         }
 
         It "Add roles to login" {
@@ -202,19 +193,19 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "PasswordExpirationEnabled" {
             $result = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin2_$random" -PasswordPolicyEnforced
-            $result.PasswordPolicyEnforced | Should -Be $true
+            $result.PasswordPolicyEnforced | Should Be $true
 
             # testlogin1_$random will get skipped since it does not have PasswordPolicyEnforced set to true (check_policy = ON)
             $result = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random", "testlogin2_$random" -PasswordExpirationEnabled -WarningAction SilentlyContinue -WarningVariable WarnVar
             $WarnVar | Should -Match "Couldn't set check_expiration = ON because check_policy = OFF for \[testlogin1_$random\]"
             $result.Count | Should -Be 1
             $result.Name | Should -Be "testlogin2_$random"
-            $result.PasswordExpirationEnabled | Should -Be $true
+            $result.PasswordExpirationEnabled | Should Be $true
 
             # set both params for this login
             $result = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random" -PasswordPolicyEnforced -PasswordExpirationEnabled
             $result.PasswordExpirationEnabled | Should -Be $true
-            $result.PasswordPolicyEnforced | Should -Be $true
+            $result.PasswordPolicyEnforced | Should Be $true
 
             # disable the setting for this login
             $result = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random" -PasswordExpirationEnabled:$false
@@ -224,11 +215,11 @@ Describe $CommandName -Tag IntegrationTests {
         It "Ensure both password policy settings can be disabled at the same time" {
             $result = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random" -PasswordPolicyEnforced -PasswordExpirationEnabled
             $result.PasswordExpirationEnabled | Should -Be $true
-            $result.PasswordPolicyEnforced | Should -Be $true
+            $result.PasswordPolicyEnforced | Should Be $true
 
             $result = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random" -PasswordPolicyEnforced:$false -PasswordExpirationEnabled:$false
             $result.PasswordExpirationEnabled | Should -Be $false
-            $result.PasswordPolicyEnforced | Should -Be $false
+            $result.PasswordPolicyEnforced | Should Be $false
         }
 
         It -Skip:$SkipLocalTest "Unlock" {
@@ -284,27 +275,27 @@ Describe $CommandName -Tag IntegrationTests {
             # ensure the policy settings are off
             $result = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random" -PasswordPolicyEnforced:$false -PasswordExpirationEnabled:$false
             $result.PasswordExpirationEnabled | Should -Be $false
-            $result.PasswordPolicyEnforced | Should -Be $false
+            $result.PasswordPolicyEnforced | Should Be $false
 
             # set the policy options separately for testlogin2
             $changeResult = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin2_$random" -PasswordPolicyEnforced -PasswordExpirationEnabled
-            $changeResult.PasswordPolicyEnforced | Should -Be $true
-            $changeResult.PasswordExpirationEnabled | Should -Be $true
+            $changeResult.PasswordPolicyEnforced | Should Be $true
+            $changeResult.PasswordExpirationEnabled | Should Be $true
 
             # check_policy and check_expiration must be set on the login
-            $changeResult = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random", "testlogin2_$random" -PasswordMustChange -SecurePassword $password1 -WarningAction SilentlyContinue -WarningVariable WarnVar
+            $changeResult = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random", "testlogin2_$random" -PasswordMustChange -Password $password1 -WarningAction SilentlyContinue -WarningVariable WarnVar
             $WarnVar | Should -Match "Unable to change the password and set the must_change option for \[testlogin1_$random\] because check_policy = False and check_expiration = False"
             $changeResult.Count | Should -Be 1
             $changeResult.Name | Should -Be "testlogin2_$random"
 
-            $changeResult = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random" -PasswordMustChange -SecurePassword $password1 -PasswordPolicyEnforced -PasswordExpirationEnabled
+            $changeResult = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin1_$random" -PasswordMustChange -Password $password1 -PasswordPolicyEnforced -PasswordExpirationEnabled
             $changeResult.MustChangePassword | Should -Be $true
             $changeResult.PasswordChanged | Should -Be $true
-            $changeResult.PasswordPolicyEnforced | Should -Be $true
-            $changeResult.PasswordExpirationEnabled | Should -Be $true
+            $changeResult.PasswordPolicyEnforced | Should Be $true
+            $changeResult.PasswordExpirationEnabled | Should Be $true
 
             # now change the password and set the must_change
-            $changeResult = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin2_$random" -PasswordMustChange -SecurePassword $password1
+            $changeResult = Set-DbaLogin -SqlInstance $TestConfig.instance2 -Login "testlogin2_$random" -PasswordMustChange -Password $password1
             $changeResult.MustChangePassword | Should -Be $true
             $changeResult.PasswordChanged | Should -Be $true
 
