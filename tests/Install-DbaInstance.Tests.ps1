@@ -76,12 +76,12 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
-    
+
     Context "Validate installs of each version" {
         BeforeAll {
             $global:cred = [pscredential]::new("foo", (ConvertTo-SecureString "bar" -Force -AsPlainText))
         }
-        
+
         It "Should install SQL<version> with all features enabled" -TestCases @(
             @{ version = "2008"; canonicVersion = "10.0"; mainNode = "SQLSERVER2008" }
             @{ version = "2008R2"; canonicVersion = "10.50"; mainNode = "SQLSERVER2008" }
@@ -98,7 +98,7 @@ Describe $CommandName -Tag UnitTests {
                 "FEATURES=""SQLEngine,AS"""
                 "ACTION=""Install"""
             ) | Set-Content -Path TestDrive:\Configuration.ini -Force
-            
+
             $result = Install-DbaInstance -Version $version -Path TestDrive: -EnableException -Confirm:$false -Feature All
             Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Find-SqlInstanceSetup -Exactly 1 -Scope It -ModuleName dbatools
@@ -116,7 +116,7 @@ Describe $CommandName -Tag UnitTests {
                 $result.Configuration.$mainNode.SQLTEMPDBFILECOUNT | Should -Be 8
             }
         }
-        
+
         It "Should install SQL<version> with custom parameters" -TestCases @(
             @{ version = "2008"; canonicVersion = "10.0"; mainNode = "SQLSERVER2008" }
             @{ version = "2008R2"; canonicVersion = "10.50"; mainNode = "SQLSERVER2008" }
@@ -169,7 +169,7 @@ Describe $CommandName -Tag UnitTests {
                 $result.Configuration.$mainNode.SQLTEMPDBFILECOUNT | Should -Be 8
             }
         }
-        
+
         It "Should install SQL<version> with custom configuration file" -TestCases @(
             @{ version = "2008"; canonicVersion = "10.0"; mainNode = "SQLSERVER2008" }
             @{ version = "2008R2"; canonicVersion = "10.50"; mainNode = "SQLSERVER2008" }
@@ -186,7 +186,7 @@ Describe $CommandName -Tag UnitTests {
                 "FEATURES=""SQLEngine,AS"""
                 "ACTION=""Install"""
             ) | Set-Content -Path TestDrive:\Configuration.ini -Force
-            
+
             $splatConfig = @{
                 SqlInstance       = "localhost\NewInstance:13337"
                 Version           = $version
@@ -213,7 +213,7 @@ Describe $CommandName -Tag UnitTests {
                 $result.Configuration.$mainNode.SQLTEMPDBFILECOUNT | Should -Be 8
             }
         }
-        
+
         It "Should install SQL<version> slipstreaming the updates" -TestCases @(
             @{ version = "2008"; canonicVersion = "10.0"; mainNode = "SQLSERVER2008" }
             @{ version = "2008R2"; canonicVersion = "10.50"; mainNode = "SQLSERVER2008" }
@@ -239,7 +239,7 @@ Describe $CommandName -Tag UnitTests {
             $result.Configuration.$mainNode.UPDATESOURCE | Should -Be "TestDrive:"
             $result.Configuration.$mainNode.UPDATEENABLED | Should -Be "True"
         }
-        
+
         It "Should install SQL<version> with default features and restart" -TestCases @(
             @{ version = "2008"; canonicVersion = "10.0"; mainNode = "SQLSERVER2008" }
             @{ version = "2008R2"; canonicVersion = "10.50"; mainNode = "SQLSERVER2008" }
@@ -277,7 +277,7 @@ Describe $CommandName -Tag UnitTests {
             # reverting the mock
             Mock -CommandName Invoke-Program -MockWith { [pscustomobject]@{ Successful = $true; ExitCode = [uint32[]]0 } } -ModuleName dbatools
         }
-        
+
         It "Should install tools for SQL<version>" -TestCases @(
             @{ version = "2008"; canonicVersion = "10.0"; mainNode = "SQLSERVER2008" }
             @{ version = "2008R2"; canonicVersion = "10.50"; mainNode = "SQLSERVER2008" }
@@ -312,27 +312,27 @@ Describe $CommandName -Tag UnitTests {
             }
         }
     }
-    
+
     Context "Negative tests" {
         It "fails when a reboot is pending" {
             #override default mock
             Mock -CommandName Test-PendingReboot -MockWith { $true } -ModuleName dbatools
-            { Install-DbaInstance -Version 2008 -Path TestDrive: -EnableException } | Should -Throw "Reboot the computer before proceeding"
+            { Install-DbaInstance -Version 2008 -Path TestDrive: -EnableException } | Should -Throw -ExpectedMessage "*Reboot the computer before proceeding*"
             #revert default mock
             Mock -CommandName Test-PendingReboot -MockWith { $false } -ModuleName dbatools
         }
         It "fails when setup is missing in the folder" {
             $null = New-Item -Path TestDrive:\EmptyDir -ItemType Directory -Force
-            { Install-DbaInstance -Version 2008 -Path TestDrive:\EmptyDir -EnableException } | Should -Throw "Failed to find setup file for SQL2008"
+            { Install-DbaInstance -Version 2008 -Path TestDrive:\EmptyDir -EnableException } | Should -Throw -ExpectedMessage "*Failed to find setup file for SQL2008*"
         }
         It "fails when repository is not available" {
-            { Install-DbaInstance -Version 2008 -Path .\NonExistingFolder -EnableException } | Should -Throw "Cannot find path"
-            { Install-DbaInstance -Version 2008 -EnableException } | Should -Throw "Path to SQL Server setup folder is not set"
+            { Install-DbaInstance -Version 2008 -Path .\NonExistingFolder -EnableException } | Should -Throw -ExpectedMessage "*Cannot find path*"
+            { Install-DbaInstance -Version 2008 -EnableException } | Should -Throw -ExpectedMessage "*Path to SQL Server setup folder is not set*"
         }
         It "fails when update execution has failed" {
             #override default mock
             Mock -CommandName Invoke-Program -MockWith { [pscustomobject]@{ Successful = $false; ExitCode = 12345 } } -ModuleName dbatools
-            { Install-DbaInstance -Version 2008 -EnableException -Path "TestDrive:" -Confirm:$false } | Should -Throw "Installation failed with exit code 12345"
+            { Install-DbaInstance -Version 2008 -EnableException -Path "TestDrive:" -Confirm:$false } | Should -Throw -ExpectedMessage "*Installation failed with exit code 12345*"
             $result = Install-DbaInstance -Version 2008 -Path "TestDrive:" -Confirm:$false -WarningVariable warVar 3>$null
             $result | Should -Not -BeNullOrEmpty
             $result.Version | Should -Be ([version]"10.0")
