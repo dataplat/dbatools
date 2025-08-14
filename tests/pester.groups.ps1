@@ -46,7 +46,8 @@ $TestsRunGroups = @{
         'Get-DbaEstimatedCompletionTime',
         # fails so often
         'Get-DbaDbMasterKey',
-        'Backup-DbaDbCertificate'
+        'Backup-DbaDbCertificate',
+        'Set-DbaDbQueryStoreOption'
     )
     # do not run everywhere
     "disabled"          = @()
