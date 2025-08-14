@@ -1,24 +1,51 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "New-DbaXESmartQueryExec",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Query', 'EnableException', 'Event', 'Filter'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+BeforeDiscovery {
+    $TestConfig = Get-TestConfig
+}
+
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        BeforeAll {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "Query",
+                "EnableException",
+                "Event",
+                "Filter"
+            )
+        }
+
+        It "Should have the expected parameters" {
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+
+Describe $CommandName -Tag IntegrationTests {
     Context "Creates a smart object" {
-        It "returns the object with all of the correct properties" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns the object with all of the correct properties" {
             $results = New-DbaXESmartQueryExec -SqlInstance $TestConfig.instance2 -Database dbadb -Query "update table set whatever = 1"
-            $results.TSQL | Should -Be 'update table set whatever = 1'
+            $results.TSQL | Should -Be "update table set whatever = 1"
             $results.ServerName | Should -Be $TestConfig.instance2
-            $results.DatabaseName | Should -be 'dbadb'
+            $results.DatabaseName | Should -Be "dbadb"
             $results.Password | Should -Be $null
         }
     }
