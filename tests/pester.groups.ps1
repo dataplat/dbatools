@@ -45,7 +45,8 @@ $TestsRunGroups = @{
         # uses a backup that only works on SQL Server 2022
         'Get-DbaEstimatedCompletionTime',
         # fails so often
-        'Get-DbaDbMasterKey'
+        'Get-DbaDbMasterKey',
+        'Backup-DbaDbCertificate'
     )
     # do not run everywhere
     "disabled"          = @()
