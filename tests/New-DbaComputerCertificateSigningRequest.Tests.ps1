@@ -29,14 +29,6 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
-    BeforeAll {
-        $filesToRemove = @()
-    }
-
-    AfterAll {
-        Remove-Item -Path $filesToRemove -ErrorAction SilentlyContinue
-    }
-
     It "generates a new certificate" {
         $files = New-DbaComputerCertificateSigningRequest
         $files.Count | Should -Be 2

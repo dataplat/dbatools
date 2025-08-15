@@ -57,7 +57,6 @@ Describe $CommandName -Tag IntegrationTests {
                     [LastName] [varchar](50) NULL,
                     [City] [varchar](100) NULL
                 ) ON [PRIMARY];"
-        $filesToRemove = @()
 
         # Create the objects.
         New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $generatorDb
@@ -77,9 +76,6 @@ Describe $CommandName -Tag IntegrationTests {
         # Remove the backup directory.
         Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
 
-        # Remove any temporary files created during tests.
-        Remove-Item -Path $filesToRemove -ErrorAction SilentlyContinue
-
         # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
@@ -90,7 +86,6 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Returns the proper output" {
             $configFile = New-DbaDbDataGeneratorConfig -SqlInstance $TestConfig.instance2 -Database $generatorDb -Path $backupPath -Rows 10
-            $filesToRemove += $configFile.FullName
 
             $results = Invoke-DbaDbDataGenerator -SqlInstance $TestConfig.instance2 -Database $generatorDb -Confirm:$false -FilePath $configFile.FullName
 
