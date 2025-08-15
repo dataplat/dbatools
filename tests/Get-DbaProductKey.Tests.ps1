@@ -1,8 +1,4 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
-
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 param(
     $ModuleName  = "dbatools",
     $CommandName = "Get-DbaProductKey",
