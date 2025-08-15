@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "Invoke-DbaDbDataMasking",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -10,7 +10,7 @@ $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -34,9 +34,6 @@ Describe $CommandName -Tag UnitTests {
                 "DictionaryExportPath",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -77,15 +74,15 @@ Describe $CommandName -Tag IntegrationTests {
 
         $splatDatabase = @{
             SqlInstance = $TestConfig.instance2
-            Name        = $dbName
-            Confirm     = $false
+                        Name        = $dbName
+                        Confirm     = $false
         }
         $null = New-DbaDatabase @splatDatabase
 
         $splatQuery = @{
             SqlInstance = $TestConfig.instance2
-            Database    = $dbName
-            Query       = $sql
+                        Database    = $dbName
+                        Query       = $sql
         }
         $null = Invoke-DbaQuery @splatQuery
 
@@ -99,8 +96,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         $splatRemoveDb = @{
             SqlInstance = $TestConfig.instance2
-            Database    = $dbName
-            Confirm     = $false
+                        Database    = $dbName
+                        Confirm     = $false
         }
         $null = Remove-DbaDatabase @splatRemoveDb -ErrorAction SilentlyContinue
 
@@ -112,43 +109,43 @@ Describe $CommandName -Tag IntegrationTests {
         It "starts with the right data" {
             $splatQuery1 = @{
                 SqlInstance = $TestConfig.instance2
-                Database    = $dbName
-                Query       = "select * from people where fname = 'Joe'"
+                            Database    = $dbName
+                                Query       = "select * from people where fname = 'Joe'"
             }
             Invoke-DbaQuery @splatQuery1 | Should -Not -Be $null
 
             $splatQuery2 = @{
                 SqlInstance = $TestConfig.instance2
-                Database    = $dbName
-                Query       = "select * from people where lname = 'Schmee'"
+                            Database    = $dbName
+                                Query       = "select * from people where lname = 'Schmee'"
             }
             Invoke-DbaQuery @splatQuery2 | Should -Not -Be $null
 
             $splatQuery3 = @{
                 SqlInstance = $TestConfig.instance2
-                Database    = $dbName
-                Query       = "select * from people where percenttest = 29.53"
+                            Database    = $dbName
+                                Query       = "select * from people where percenttest = 29.53"
             }
             Invoke-DbaQuery @splatQuery3 | Should -Not -Be $null
 
             $splatQuery4 = @{
                 SqlInstance = $TestConfig.instance2
-                Database    = $dbName
-                Query       = "select * from people where percenttest = 65.38"
+                            Database    = $dbName
+                                Query       = "select * from people where percenttest = 65.38"
             }
             Invoke-DbaQuery @splatQuery4 | Should -Not -Be $null
 
             $splatQuery5 = @{
                 SqlInstance = $TestConfig.instance2
-                Database    = $dbName
-                Query       = "select * from people where bittest = 1 AND lname = 'Schmoe'"
+                            Database    = $dbName
+                                Query       = "select * from people where bittest = 1 AND lname = 'Schmoe'"
             }
             Invoke-DbaQuery @splatQuery5 | Should -Not -Be $null
 
             $splatQuery6 = @{
                 SqlInstance = $TestConfig.instance2
-                Database    = $dbName
-                Query       = "select * from people where bittest = 0 AND lname = 'Schmee'"
+                            Database    = $dbName
+                                Query       = "select * from people where bittest = 0 AND lname = 'Schmee'"
             }
             Invoke-DbaQuery @splatQuery6 | Should -Not -Be $null
         }
@@ -156,16 +153,16 @@ Describe $CommandName -Tag IntegrationTests {
         It "returns the proper output" {
             $splatConfig = @{
                 SqlInstance = $TestConfig.instance2
-                Database    = $dbName
-                Path        = $tempPath
+                            Database    = $dbName
+                                Path        = $tempPath
             }
             $configFile = New-DbaDbMaskingConfig @splatConfig
 
             $splatMasking = @{
-                FilePath    = $configFile.FullName
+                                FilePath    = $configFile.FullName
                 SqlInstance = $TestConfig.instance2
-                Database    = $dbName
-                Confirm     = $false
+                            Database    = $dbName
+                            Confirm     = $false
             }
             $results = @(Invoke-DbaDbDataMasking @splatMasking)
             $filesToCleanup += $configFile.FullName
@@ -180,50 +177,50 @@ Describe $CommandName -Tag IntegrationTests {
         It "masks the data and does not delete it" {
             $splatQueryAll = @{
                 SqlInstance = $TestConfig.instance2
-                Database    = $dbName
-                Query       = "select * from people"
+                            Database    = $dbName
+                                Query       = "select * from people"
             }
             Invoke-DbaQuery @splatQueryAll | Should -Not -Be $null
 
             $splatQueryJoe = @{
                 SqlInstance = $TestConfig.instance2
-                Database    = $dbName
-                Query       = "select * from people where fname = 'Joe'"
+                            Database    = $dbName
+                                Query       = "select * from people where fname = 'Joe'"
             }
             Invoke-DbaQuery @splatQueryJoe | Should -Be $null
 
             $splatQuerySchmee = @{
                 SqlInstance = $TestConfig.instance2
-                Database    = $dbName
-                Query       = "select * from people where lname = 'Schmee'"
+                            Database    = $dbName
+                                Query       = "select * from people where lname = 'Schmee'"
             }
             Invoke-DbaQuery @splatQuerySchmee | Should -Be $null
 
             $splatQueryPercent1 = @{
                 SqlInstance = $TestConfig.instance2
-                Database    = $dbName
-                Query       = "select * from people where percenttest = 29.53"
+                            Database    = $dbName
+                                Query       = "select * from people where percenttest = 29.53"
             }
             Invoke-DbaQuery @splatQueryPercent1 | Should -Be $null
 
             $splatQueryPercent2 = @{
                 SqlInstance = $TestConfig.instance2
-                Database    = $dbName
-                Query       = "select * from people where percenttest = 65.38"
+                            Database    = $dbName
+                                Query       = "select * from people where percenttest = 65.38"
             }
             Invoke-DbaQuery @splatQueryPercent2 | Should -Be $null
 
             $splatQueryBit1 = @{
                 SqlInstance = $TestConfig.instance2
-                Database    = $dbName
-                Query       = "select * from people where bittest = 1 AND lname = 'Schmoe'"
+                            Database    = $dbName
+                                Query       = "select * from people where bittest = 1 AND lname = 'Schmoe'"
             }
             Invoke-DbaQuery @splatQueryBit1 | Should -Be $null
 
             $splatQueryBit2 = @{
                 SqlInstance = $TestConfig.instance2
-                Database    = $dbName
-                Query       = "select * from people where bittest = 0 AND lname = 'Schmee'"
+                            Database    = $dbName
+                                Query       = "select * from people where bittest = 0 AND lname = 'Schmee'"
             }
             Invoke-DbaQuery @splatQueryBit2 | Should -Be $null
         }

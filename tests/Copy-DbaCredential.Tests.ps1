@@ -11,7 +11,7 @@ $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -27,9 +27,6 @@ Describe $CommandName -Tag UnitTests {
                 "Force",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -40,8 +37,8 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $credLogins   = @("thor", "thorsmomma", "thor_crypto")
-        $plaintext    = "BigOlPassword!"
+        $credLogins = @("thor", "thorsmomma", "thor_crypto")
+        $plaintext = "BigOlPassword!"
         $credPassword = ConvertTo-SecureString $plaintext -AsPlainText -Force
 
         $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2

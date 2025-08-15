@@ -58,7 +58,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $timenow = (Get-Date -uformat "%m%d%Y%H")
         $ExportedCredential = Get-ChildItem $DefaultExportPath, $AltExportPath | Where-Object { $_.Name -match "$timenow\d{4}-login.sql|Dbatoolsci_login_CustomFile.sql" }
         if ($ExportedCredential) {
-            $null = Remove-Item -Path $($ExportedCredential.FullName) -ErrorAction SilentlyContinue
+            $null = Remove-Item -Path $($ExportedCredential.FullName)
         }
 
         Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login3 -Confirm:$false

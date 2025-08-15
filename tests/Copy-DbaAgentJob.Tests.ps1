@@ -19,7 +19,7 @@ Describe $CommandName -Tag IntegrationTests {
         # To test copying agent jobs, we need to create test jobs on the source instance that can be copied to the destination
 
         # Set variables. They are available in all the It blocks.
-        $sourceJobName         = "dbatoolsci_copyjob"
+        $sourceJobName = "dbatoolsci_copyjob"
         $sourceJobDisabledName = "dbatoolsci_copyjob_disabled"
 
         # Create the objects.
@@ -47,7 +47,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $command = Get-Command $CommandName
             $hasParameters = $command.Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
@@ -64,9 +64,6 @@ Describe $CommandName -Tag IntegrationTests {
                 "InputObject",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }

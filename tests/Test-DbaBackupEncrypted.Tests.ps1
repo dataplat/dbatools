@@ -39,9 +39,9 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
             $splat = @{
                 MasterKeySecurePassword = $passwd
-                BackupSecurePassword    = $passwd
-                BackupPath              = $backupPath
-                EnableException         = $true
+                                BackupSecurePassword    = $passwd
+                                BackupPath              = $backupPath
+                                EnableException         = $true
             }
             $null = $alldbs | Start-DbaDbEncryption @splat
             $backups = $alldbs | Select-Object -First 1 | Backup-DbaDatabase -Path $backupPath

@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName = "Pester"; ModuleVersion = "5.0" }
 param(
-    $ModuleName  = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "Set-DbaAgReplica",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -10,8 +10,8 @@ $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
-            $hasParameters      = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
                 "SqlInstance",
@@ -31,9 +31,6 @@ Describe $CommandName -Tag UnitTests {
                 "InputObject",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -52,14 +49,14 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Create the availability group.
         $splatAvailabilityGroup = @{
-            Primary      = $TestConfig.instance3
-            Name         = $agName
-            ClusterType  = "None"
+                        Primary      = $TestConfig.instance3
+                        Name         = $agName
+                        ClusterType  = "None"
             FailoverMode = "Manual"
-            Certificate  = "dbatoolsci_AGCert"
-            Confirm      = $false
+                        Certificate  = "dbatoolsci_AGCert"
+                        Confirm      = $false
         }
-        $ag          = New-DbaAvailabilityGroup @splatAvailabilityGroup
+        $ag = New-DbaAvailabilityGroup @splatAvailabilityGroup
         $replicaName = $ag.PrimaryReplica
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
@@ -80,11 +77,11 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Sets AG properties" {
         It "Returns modified results when setting BackupPriority" {
             $splatBackupPriority = @{
-                SqlInstance       = $TestConfig.instance3
+                                SqlInstance       = $TestConfig.instance3
                 AvailabilityGroup = $agName
-                Replica           = $replicaName
-                BackupPriority    = 100
-                Confirm           = $false
+                                Replica           = $replicaName
+                                BackupPriority    = 100
+                                Confirm           = $false
             }
             $results = Set-DbaAgReplica @splatBackupPriority
             $results.AvailabilityGroup | Should -Be $agName
@@ -93,11 +90,11 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Returns modified results when setting SeedingMode" {
             $splatSeedingMode = @{
-                SqlInstance       = $TestConfig.instance3
+                                SqlInstance       = $TestConfig.instance3
                 AvailabilityGroup = $agName
-                Replica           = $replicaName
-                SeedingMode       = "Automatic"
-                Confirm           = $false
+                                Replica           = $replicaName
+                                SeedingMode       = "Automatic"
+                                Confirm           = $false
             }
             $results = Set-DbaAgReplica @splatSeedingMode
             $results.AvailabilityGroup | Should -Be $agName
@@ -107,9 +104,9 @@ Describe $CommandName -Tag IntegrationTests {
         It "Attempts to add a ReadOnlyRoutingList" {
             $splatRoutingList = @{
                 ReadOnlyRoutingList = "nondockersql"
-                WarningAction       = "SilentlyContinue"
-                WarningVariable     = "warn"
-                Confirm             = $false
+                                WarningAction       = "SilentlyContinue"
+                                WarningVariable     = "warn"
+                                Confirm             = $false
             }
             $null = Get-DbaAgReplica -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agName | Select-Object -First 1 | Set-DbaAgReplica @splatRoutingList
             $warn | Should -Match "does not exist. Only availability"

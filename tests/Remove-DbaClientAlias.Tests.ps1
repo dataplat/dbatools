@@ -1,13 +1,13 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "Remove-DbaClientAlias",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -16,9 +16,6 @@ Describe $CommandName -Tag UnitTests {
                 "Alias",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -57,8 +54,8 @@ Describe $CommandName -Tag IntegrationTests {
         Context "removes an array of aliases" {
             BeforeAll {
                 $global:testCases = @(
-                    @{"Alias" = "dbatoolscialias2"},
-                    @{"Alias" = "dbatoolscialias3"}
+                    @{"Alias" = "dbatoolscialias2" },
+                    @{"Alias" = "dbatoolscialias3" }
                 )
                 $global:aliases = Get-DbaClientAlias
             }
@@ -93,17 +90,14 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         Context "SQL client is not installed" {
-            BeforeAll {
+            It "warns that the key doesn't exist" {
                 Mock -CommandName Test-Path -MockWith {
                     return $false
                 }
                 $global:defaultParamValues = $PSDefaultParameterValues
-                $PSDefaultParameterValues = @{"*:WarningVariable" = "+buffer"}
+                $PSDefaultParameterValues = @{"*:WarningVariable" = "+buffer" }
                 $null = Remove-DbaClientAlias -Alias dbatoolscialias5 -WarningAction SilentlyContinue
                 $PSDefaultParameterValues = $global:defaultParamValues
-            }
-
-            It "warns that the key doesn't exist" {
                 $buffer.Count -ge 4 | Should -Be $true
             }
         }

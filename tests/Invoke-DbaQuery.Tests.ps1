@@ -1,7 +1,7 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
 param(
-    $ModuleName               = "dbatools",
-    $CommandName              = "Invoke-DbaQuery",
+        $ModuleName  = "dbatools",
+    $CommandName = "Invoke-DbaQuery",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
@@ -230,9 +230,9 @@ SELECT @@servername as dbname
 '@
         $results = @()
         Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database tempdb -Query $query -Verbose 4>&1 | ForEach-Object {
-            $results += [pscustomobject]@{
+            $results += [PSCustomObject]@{
                 FiredAt = (Get-Date).ToUniversalTime()
-                Out     = $PSItem
+                                Out     = $PSItem
             }
         }
         $results.Length | Should -Be 7 # 6 'messages' plus the actual resultset
@@ -261,9 +261,9 @@ SELECT @@servername as dbname
 '@
         $results = @()
         Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database tempdb -Query $query -MessagesToOutput | ForEach-Object {
-            $results += [pscustomobject]@{
+            $results += [PSCustomObject]@{
                 FiredAt = (Get-Date).ToUniversalTime()
-                Out     = $PSItem
+                                Out     = $PSItem
             }
         }
         $results.Length | Should -Be 7 # 6 'messages' plus the actual resultset
@@ -377,13 +377,13 @@ BEGIN
 END"
         $outparam = New-DbaSqlParameter -Direction Output -Size -1
         $inparam = @()
-        $inparam += [pscustomobject]@{
+        $inparam += [PSCustomObject]@{
             somestring = 'string1'
-            somedate   = '2021-07-15T01:02:00'
+                        somedate   = '2021-07-15T01:02:00'
         }
-        $inparam += [pscustomobject]@{
+        $inparam += [PSCustomObject]@{
             somestring = 'string2'
-            somedate   = '2021-07-15T02:03:00'
+                        somedate   = '2021-07-15T02:03:00'
         }
         $sqlparams = @{
             'newid'     = $outparam

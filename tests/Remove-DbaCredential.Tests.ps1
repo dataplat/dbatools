@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "Remove-DbaCredential",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -10,7 +10,7 @@ $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -23,9 +23,6 @@ Describe $CommandName -Tag UnitTests {
                 "InputObject",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -68,13 +65,13 @@ Describe $CommandName -Tag IntegrationTests {
             # Create fresh credentials for each test to ensure isolation
             $splatCreateCred1 = @{
                 SqlInstance = $TestConfig.instance2
-                Query       = "CREATE CREDENTIAL $credentialName WITH IDENTITY = 'NT AUTHORITY\SYSTEM', SECRET = 'G31o)lkJ8HNd!';"
+                                Query       = "CREATE CREDENTIAL $credentialName WITH IDENTITY = 'NT AUTHORITY\SYSTEM', SECRET = 'G31o)lkJ8HNd!';"
             }
             $null = Invoke-DbaQuery @splatCreateCred1
 
             $splatCreateCred2 = @{
                 SqlInstance = $TestConfig.instance2
-                Query       = "CREATE CREDENTIAL $credentialName2 WITH IDENTITY = 'NT AUTHORITY\SYSTEM', SECRET = 'G31o)lkJ8HNd!';"
+                                Query       = "CREATE CREDENTIAL $credentialName2 WITH IDENTITY = 'NT AUTHORITY\SYSTEM', SECRET = 'G31o)lkJ8HNd!';"
             }
             $null = Invoke-DbaQuery @splatCreateCred2
         }
@@ -83,8 +80,8 @@ Describe $CommandName -Tag IntegrationTests {
             # Clean up credentials created in this specific test
             $splatCleanup = @{
                 SqlInstance = $TestConfig.instance2
-                Credential  = @($credentialName, $credentialName2, $credentialName3, $credentialName4)
-                Confirm     = $false
+                                Credential  = @($credentialName, $credentialName2, $credentialName3, $credentialName4)
+                                Confirm     = $false
             }
             Remove-DbaCredential @splatCleanup -ErrorAction SilentlyContinue
         }
@@ -92,14 +89,14 @@ Describe $CommandName -Tag IntegrationTests {
         It "removes a SQL credential" {
             $splatGetCredential = @{
                 SqlInstance = $TestConfig.instance2
-                Credential  = $credentialName
+                                Credential  = $credentialName
             }
             (Get-DbaCredential @splatGetCredential) | Should -Not -BeNullOrEmpty
 
             $splatRemoveCredential = @{
                 SqlInstance = $TestConfig.instance2
-                Credential  = $credentialName
-                Confirm     = $false
+                                Credential  = $credentialName
+                                Confirm     = $false
             }
             Remove-DbaCredential @splatRemoveCredential
 
@@ -109,7 +106,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "supports piping SQL credential" {
             $splatGetCredential = @{
                 SqlInstance = $TestConfig.instance2
-                Credential  = $credentialName
+                                Credential  = $credentialName
             }
             (Get-DbaCredential @splatGetCredential) | Should -Not -BeNullOrEmpty
 
@@ -121,26 +118,26 @@ Describe $CommandName -Tag IntegrationTests {
             # Create additional credential for this specific test
             $splatCreateCred3 = @{
                 SqlInstance = $TestConfig.instance2
-                Query       = "CREATE CREDENTIAL $credentialName3 WITH IDENTITY = 'NT AUTHORITY\SYSTEM', SECRET = 'G31o)lkJ8HNd!';"
+                                Query       = "CREATE CREDENTIAL $credentialName3 WITH IDENTITY = 'NT AUTHORITY\SYSTEM', SECRET = 'G31o)lkJ8HNd!';"
             }
             $null = Invoke-DbaQuery @splatCreateCred3
 
             $splatGetCredential2 = @{
                 SqlInstance = $TestConfig.instance2
-                Credential  = $credentialName2
+                                Credential  = $credentialName2
             }
             (Get-DbaCredential @splatGetCredential2) | Should -Not -BeNullOrEmpty
 
             $splatGetExcluded = @{
-                SqlInstance        = $TestConfig.instance2
+                                SqlInstance       = $TestConfig.instance2
                 ExcludeCredential = $credentialName2
             }
             (Get-DbaCredential @splatGetExcluded) | Should -Not -BeNullOrEmpty
 
             $splatRemoveExcluded = @{
-                SqlInstance        = $TestConfig.instance2
+                                SqlInstance       = $TestConfig.instance2
                 ExcludeCredential = $credentialName2
-                Confirm            = $false
+                                Confirm           = $false
             }
             Remove-DbaCredential @splatRemoveExcluded
 
@@ -152,7 +149,7 @@ Describe $CommandName -Tag IntegrationTests {
             # Create additional credentials for this specific test
             $splatCreateCred4 = @{
                 SqlInstance = $TestConfig.instance2
-                Query       = "CREATE CREDENTIAL $credentialName4 WITH IDENTITY = 'NT AUTHORITY\SYSTEM', SECRET = 'G31o)lkJ8HNd!';"
+                                Query       = "CREATE CREDENTIAL $credentialName4 WITH IDENTITY = 'NT AUTHORITY\SYSTEM', SECRET = 'G31o)lkJ8HNd!';"
             }
             $null = Invoke-DbaQuery @splatCreateCred4
 
@@ -163,7 +160,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             $splatRemoveAll = @{
                 SqlInstance = $TestConfig.instance2
-                Confirm     = $false
+                                Confirm     = $false
             }
             Remove-DbaCredential @splatRemoveAll
 

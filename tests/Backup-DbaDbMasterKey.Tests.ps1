@@ -7,7 +7,7 @@ param(
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -22,9 +22,6 @@ Describe $CommandName -Tag UnitTests {
                 "InputObject",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -45,10 +42,10 @@ Describe $CommandName -Tag IntegrationTests {
         # We'll create the master key if it doesn't exist, and track files created for cleanup.
 
         # Set variables. They are available in all the It blocks.
-        $testInstance    = $TestConfig.instance1
-        $testDatabase    = "tempdb"
-        $masterKeyPass   = ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force
-        $filesToRemove   = @()
+        $testInstance = $TestConfig.instance1
+        $testDatabase = "tempdb"
+        $masterKeyPass = ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force
+        $filesToRemove = @()
 
         # Create the objects.
         if (-not (Get-DbaDbMasterKey -SqlInstance $testInstance -Database $testDatabase)) {

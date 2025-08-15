@@ -1,13 +1,13 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "Import-DbaRegServer",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -18,9 +18,6 @@ Describe $CommandName -Tag UnitTests {
                 "Group",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -89,7 +86,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "imports from a random object so long as it has ServerName" {
-            $object = [pscustomobject]@{
+            $object = [PSCustomObject]@{
                 ServerName = "dbatoolsci-randobject"
             }
             $results = $object | Import-DbaRegServer -SqlInstance $TestConfig.instance2
@@ -98,7 +95,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "does not import object if ServerName does not exist" {
-            $object = [pscustomobject]@{
+            $object = [PSCustomObject]@{
                 Name = "dbatoolsci-randobject"
             }
             $results = $object | Import-DbaRegServer -SqlInstance $TestConfig.instance2 -WarningAction SilentlyContinue -WarningVariable warn

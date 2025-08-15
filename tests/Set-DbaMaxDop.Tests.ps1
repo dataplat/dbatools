@@ -1,13 +1,13 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "Set-DbaMaxDop",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -20,20 +20,14 @@ Describe $CommandName -Tag UnitTests {
                 "AllDatabases",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 
     Context "Input validation" {
-        BeforeAll {
+        It "Should Call Stop-Function. -Database, -AllDatabases and -ExcludeDatabase are mutually exclusive." {
             Mock Stop-Function { } -ModuleName dbatools
             $singledb = "dbatoolsci_singledb"
-        }
-
-        It "Should Call Stop-Function. -Database, -AllDatabases and -ExcludeDatabase are mutually exclusive." {
             Set-DbaMaxDop -SqlInstance $TestConfig.instance1 -MaxDop 12 -Database $singledb -AllDatabases -ExcludeDatabase "master" | Should -Be $null
             Should -Invoke Stop-Function -Times 1 -Exactly -ModuleName dbatools
         }
@@ -67,11 +61,8 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Apply to multiple instances" {
-        BeforeAll {
-            $results = Set-DbaMaxDop -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -MaxDop 2
-        }
-
         It "Returns MaxDop 2 for each instance" {
+            $results = Set-DbaMaxDop -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -MaxDop 2
             foreach ($result in $results) {
                 $result.CurrentInstanceMaxDop | Should -Be 2
             }
@@ -79,11 +70,8 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Connects to 2016+ instance and apply configuration to single database" {
-        BeforeAll {
-            $results = Set-DbaMaxDop -SqlInstance $TestConfig.instance2 -MaxDop 4 -Database $global:singledb
-        }
-
         It "Returns 4 for each database" {
+            $results = Set-DbaMaxDop -SqlInstance $TestConfig.instance2 -MaxDop 4 -Database $global:singledb
             foreach ($result in $results) {
                 $result.DatabaseMaxDop | Should -Be 4
             }
@@ -91,11 +79,8 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Connects to 2016+ instance and apply configuration to multiple databases" {
-        BeforeAll {
-            $results = Set-DbaMaxDop -SqlInstance $TestConfig.instance2 -MaxDop 8 -Database $global:dbs
-        }
-
         It "Returns 8 for each database" {
+            $results = Set-DbaMaxDop -SqlInstance $TestConfig.instance2 -MaxDop 8 -Database $global:dbs
             foreach ($result in $results) {
                 $result.DatabaseMaxDop | Should -Be 8
             }

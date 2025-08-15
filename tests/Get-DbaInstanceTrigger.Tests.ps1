@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "Get-DbaInstanceTrigger",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -10,7 +10,7 @@ $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -18,9 +18,6 @@ Describe $CommandName -Tag UnitTests {
                 "SqlCredential",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -37,7 +34,7 @@ Describe $CommandName -Tag IntegrationTests {
         $trigger2Name = "dbatoolsci_trigger2_$random"
 
         $splatConnection = @{
-            SqlInstance     = $TestConfig.instance2
+                        SqlInstance     = $TestConfig.instance2
             EnableException = $true
         }
         $instance = Connect-DbaInstance @splatConnection
@@ -57,7 +54,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Cleanup the created triggers
         $sql = "DROP TRIGGER [$trigger1Name] ON ALL SERVER;DROP TRIGGER [$trigger2Name] ON ALL SERVER"
-        $instance.query($sql) -ErrorAction SilentlyContinue
+        $instance.query($sql)
 
         # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }

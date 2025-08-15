@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "Get-DbaDbState",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -10,7 +10,7 @@ $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -20,9 +20,6 @@ Describe $CommandName -Tag UnitTests {
                 "ExcludeDatabase",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -46,8 +43,8 @@ Describe $CommandName -Tag IntegrationTests {
 
             $splatRemoveDb = @{
                 SqlInstance = $TestConfig.instance2
-                Database    = $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8
-                Confirm     = $false
+                                Database    = $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8
+                                Confirm     = $false
             }
             Get-DbaDatabase @splatRemoveDb | Remove-DbaDatabase -Confirm $false
 
@@ -77,18 +74,18 @@ Describe $CommandName -Tag IntegrationTests {
 
             $splatSetState = @{
                 SqlInstance = $TestConfig.instance2
-                Database    = $db2, $db3, $db4, $db5, $db7
-                Online      = $true
-                ReadWrite   = $true
-                MultiUser   = $true
-                Force       = $true
+                                Database    = $db2, $db3, $db4, $db5, $db7
+                                Online      = $true
+                                ReadWrite   = $true
+                                MultiUser   = $true
+                                Force       = $true
             }
             $null = Set-DbaDbState @splatSetState
 
             $splatRemoveDbCleanup = @{
                 SqlInstance = $TestConfig.instance2
-                Database    = $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8
-                Confirm     = $false
+                                Database    = $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8
+                                Confirm     = $false
             }
             Remove-DbaDatabase @splatRemoveDbCleanup -ErrorAction SilentlyContinue
 

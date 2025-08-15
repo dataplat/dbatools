@@ -1,13 +1,13 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "Get-DbaDbSpace",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -19,9 +19,6 @@ Describe $CommandName -Tag UnitTests {
                 "InputObject",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -94,11 +91,8 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Gets no DbSpace for specific database when using -ExcludeDatabase" {
-        BeforeAll {
-            $excludeResults = @(Get-DbaDbSpace -SqlInstance $TestConfig.instance2 -ExcludeDatabase $dbName)
-        }
-
         It "Gets no results for excluded database" {
+            $excludeResults = @(Get-DbaDbSpace -SqlInstance $TestConfig.instance2 -ExcludeDatabase $dbName)
             $excludeResults.Database | Should -Not -Contain $dbName
         }
     }

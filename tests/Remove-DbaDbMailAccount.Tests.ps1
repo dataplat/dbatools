@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "Remove-DbaDbMailAccount",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -10,7 +10,7 @@ $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -21,9 +21,6 @@ Describe $CommandName -Tag UnitTests {
                 "InputObject",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -62,16 +59,16 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeEach {
             # Create test accounts for each test
             $splatAccount1 = @{
-                SqlInstance  = $server
-                Name         = $accountname
+                                SqlInstance  = $server
+                                Name         = $accountname
                 EmailAddress = "admin@ad.local"
             }
             $null = New-DbaDbMailAccount @splatAccount1
             $createdAccounts += $accountname
 
             $splatAccount2 = @{
-                SqlInstance  = $server
-                Name         = $accountname2
+                                SqlInstance  = $server
+                                Name         = $accountname2
                 EmailAddress = "admin@ad.local"
             }
             $null = New-DbaDbMailAccount @splatAccount2

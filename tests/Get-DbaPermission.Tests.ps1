@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "Get-DbaPermission",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -10,7 +10,7 @@ $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -22,9 +22,6 @@ Describe $CommandName -Tag UnitTests {
                 "ExcludeSystemObjects",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -57,8 +54,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         $tableName1 = "dbatoolsci_table1_$random"
         $tableSpec1 = @{
-            Name     = "Table1ID"
-            Type     = "INT"
+                        Name     = "Table1ID"
+                        Type     = "INT"
             Nullable = $true
         }
 
@@ -75,8 +72,8 @@ Describe $CommandName -Tag IntegrationTests {
         $schemaNameForTable2 = "dbatoolsci_schema_$random"
         $tableName2 = "dbatoolsci_table2_$random"
         $tableSpec2 = @{
-            Name     = "Table2ID"
-            Type     = "INT"
+                        Name     = "Table2ID"
+                        Type     = "INT"
             Nullable = $true
         }
 

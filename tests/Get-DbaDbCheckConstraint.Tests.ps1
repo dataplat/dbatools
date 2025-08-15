@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "Get-DbaDbCheckConstraint",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -10,7 +10,7 @@ $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -21,9 +21,6 @@ Describe $CommandName -Tag UnitTests {
                 "ExcludeSystemTable",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -35,12 +32,12 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
 
         # Set up test database and tables for check constraint testing
-        $testServer   = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $random       = Get-Random
+        $testServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $random = Get-Random
         $testTableName1 = "dbatools_getdbtbl1"
         $testTableName2 = "dbatools_getdbtbl2"
-        $testCkName   = "dbatools_getdbck"
-        $testDbName   = "dbatoolsci_getdbfk$random"
+        $testCkName = "dbatools_getdbck"
+        $testDbName = "dbatoolsci_getdbfk$random"
 
         $testServer.Query("CREATE DATABASE $testDbName")
         $testServer.Query("CREATE TABLE $testTableName1 (idTbl1 INT PRIMARY KEY)", $testDbName)

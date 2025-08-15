@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "Get-DbaDbServiceBrokerQueue",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -10,7 +10,7 @@ $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -21,9 +21,6 @@ Describe $CommandName -Tag UnitTests {
                 "ExcludeSystemQueue",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -34,7 +31,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
 
-        $server   = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $procname = "dbatools_$(Get-Random)"
         $server.Query("CREATE PROCEDURE $procname AS SELECT 1", "tempdb")
         $queuename = "dbatools_$(Get-Random)"
@@ -57,8 +54,8 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Gets the service broker queue" {
         BeforeAll {
             $splatGetQueue = @{
-                SqlInstance        = $TestConfig.instance2
-                Database           = "tempdb"
+                                SqlInstance        = $TestConfig.instance2
+                                Database           = "tempdb"
                 ExcludeSystemQueue = $true
             }
             $results = Get-DbaDbServiceBrokerQueue @splatGetQueue

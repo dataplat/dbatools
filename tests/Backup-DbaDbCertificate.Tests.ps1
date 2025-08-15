@@ -7,7 +7,7 @@ param(
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -24,9 +24,6 @@ Describe $CommandName -Tag UnitTests {
                 "InputObject",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -65,7 +62,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Can backup a database certificate" {
-        BeforeAll {
+        It "Returns results with proper data" {
             $splatBackupCert = @{
                 SqlInstance        = $TestConfig.instance1
                 Database           = $db1Name
@@ -74,22 +71,20 @@ Describe $CommandName -Tag IntegrationTests {
                 DecryptionPassword = $pw
             }
             $results = Backup-DbaDbCertificate @splatBackupCert
-        }
 
-        AfterAll {
-            Remove-Item -Path $results.Path -ErrorAction SilentlyContinue
-            Remove-Item -Path $results.Key -ErrorAction SilentlyContinue
-        }
-
-        It "Returns results with proper data" {
-            $results.Certificate | Should -Be $cert1.Name
-            $results.Status | Should -BeExactly "Success"
-            $results.DatabaseID | Should -Be $db1.ID
+            try {
+                $results.Certificate | Should -Be $cert1.Name
+                $results.Status | Should -BeExactly "Success"
+                $results.DatabaseID | Should -Be $db1.ID
+            } finally {
+                Remove-Item -Path $results.Path -ErrorAction SilentlyContinue
+                Remove-Item -Path $results.Key -ErrorAction SilentlyContinue
+            }
         }
     }
 
     Context "Can backup a database certificate with a filename (see #9485)" {
-        BeforeAll {
+        It "Returns results with proper data" {
             $splatBackupCertWithName = @{
                 SqlInstance        = $TestConfig.instance1
                 Database           = $db1Name
@@ -99,24 +94,22 @@ Describe $CommandName -Tag IntegrationTests {
                 FileBaseName       = "dbatoolscli_cert1_$random"
             }
             $results = Backup-DbaDbCertificate @splatBackupCertWithName
-        }
 
-        AfterAll {
-            Remove-Item -Path $results.Path -ErrorAction SilentlyContinue
-            Remove-Item -Path $results.Key -ErrorAction SilentlyContinue
-        }
-
-        It "Returns results with proper data" {
-            $results.Certificate | Should -Be $cert1.Name
-            $results.Status | Should -BeExactly "Success"
-            $results.DatabaseID | Should -Be $db1.ID
-            [IO.Path]::GetFileNameWithoutExtension($results.Path) | Should -Be "dbatoolscli_cert1_$random"
+            try {
+                $results.Certificate | Should -Be $cert1.Name
+                $results.Status | Should -BeExactly "Success"
+                $results.DatabaseID | Should -Be $db1.ID
+                [IO.Path]::GetFileNameWithoutExtension($results.Path) | Should -Be "dbatoolscli_cert1_$random"
+            } finally {
+                Remove-Item -Path $results.Path -ErrorAction SilentlyContinue
+                Remove-Item -Path $results.Key -ErrorAction SilentlyContinue
+            }
         }
     }
 
     Context "Warns the caller if the cert cannot be found" {
-        BeforeAll {
-            $invalidDBCertName  = "dbatoolscli_invalidCertName"
+        It "Does warn" {
+            $invalidDBCertName = "dbatoolscli_invalidCertName"
             $invalidDBCertName2 = "dbatoolscli_invalidCertName2"
             $splatBackupInvalidCert = @{
                 SqlInstance        = $TestConfig.instance1
@@ -127,20 +120,18 @@ Describe $CommandName -Tag IntegrationTests {
                 WarningAction      = "SilentlyContinue"
             }
             $results = Backup-DbaDbCertificate @splatBackupInvalidCert
-        }
 
-        AfterAll {
-            Remove-Item -Path $results.Path -ErrorAction SilentlyContinue
-            Remove-Item -Path $results.Key -ErrorAction SilentlyContinue
-        }
-
-        It "Does warn" {
-            $WarnVar | Should -Match "Database certificate\(s\) .* not found"
+            try {
+                $WarnVar | Should -Match "Database certificate\(s\) .* not found"
+            } finally {
+                Remove-Item -Path $results.Path -ErrorAction SilentlyContinue
+                Remove-Item -Path $results.Key -ErrorAction SilentlyContinue
+            }
         }
     }
 
     Context "Backs up all db certs for a database" {
-        BeforeAll {
+        It "Returns results with proper data" {
             $splatBackupDbCerts = @{
                 SqlInstance        = $TestConfig.instance1
                 Database           = $db1Name
@@ -148,37 +139,33 @@ Describe $CommandName -Tag IntegrationTests {
                 DecryptionPassword = $pw
             }
             $results = Backup-DbaDbCertificate @splatBackupDbCerts
-        }
 
-        AfterAll {
-            Remove-Item -Path $results.Path -ErrorAction SilentlyContinue
-            Remove-Item -Path $results.Key -ErrorAction SilentlyContinue
-        }
-
-        It "Returns results with proper data" {
-            $results | Should -HaveCount 2
-            $results.Certificate | Should -Be $cert1.Name, $cert2.Name
+            try {
+                $results | Should -HaveCount 2
+                $results.Certificate | Should -Be $cert1.Name, $cert2.Name
+            } finally {
+                Remove-Item -Path $results.Path -ErrorAction SilentlyContinue
+                Remove-Item -Path $results.Key -ErrorAction SilentlyContinue
+            }
         }
     }
 
     Context "Backs up all db certs for an instance" {
-        BeforeAll {
+        It "Returns results with proper data" {
             $splatBackupAllCerts = @{
                 SqlInstance        = $TestConfig.instance1
                 EncryptionPassword = $pw
                 DecryptionPassword = $pw
             }
             $results = Backup-DbaDbCertificate @splatBackupAllCerts
-        }
 
-        AfterAll {
-            Remove-Item -Path $results.Path -ErrorAction SilentlyContinue
-            Remove-Item -Path $results.Key -ErrorAction SilentlyContinue
-        }
-
-        It "Returns results with proper data" {
-            $results | Should -HaveCount 3
-            $results.Certificate | Should -Be $cert1.Name, $cert2.Name, $cert3.Name
+            try {
+                $results | Should -HaveCount 3
+                $results.Certificate | Should -Be $cert1.Name, $cert2.Name, $cert3.Name
+            } finally {
+                Remove-Item -Path $results.Path -ErrorAction SilentlyContinue
+                Remove-Item -Path $results.Key -ErrorAction SilentlyContinue
+            }
         }
     }
 }

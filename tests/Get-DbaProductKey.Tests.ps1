@@ -4,14 +4,14 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 $global:TestConfig = Get-TestConfig
 
 param(
-    $ModuleName  = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "Get-DbaProductKey",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $script:hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $script:expectedParameters = $global:TestConfig.CommonParameters
             $script:expectedParameters += @(
@@ -20,9 +20,6 @@ Describe $CommandName -Tag UnitTests {
                 "Credential",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $script:expectedParameters -DifferenceObject $script:hasParameters | Should -BeNullOrEmpty
         }
     }

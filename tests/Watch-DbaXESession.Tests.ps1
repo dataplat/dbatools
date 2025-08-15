@@ -1,13 +1,13 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "Watch-DbaXESession",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -18,9 +18,6 @@ Describe $CommandName -Tag UnitTests {
                 "Raw",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -33,7 +30,7 @@ Describe $CommandName -Tag IntegrationTests {
             Stop-DbaXESession -SqlInstance $TestConfig.instance2 -Session system_health
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
-        
+
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
             Start-DbaXESession -SqlInstance $TestConfig.instance2 -Session system_health

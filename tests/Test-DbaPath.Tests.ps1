@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "Test-DbaPath",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -16,7 +16,7 @@ $global:TestConfig = Get-TestConfig
 #>
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -25,9 +25,6 @@ Describe $CommandName -Tag UnitTests {
                 "Path",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -74,12 +71,12 @@ Describe $CommandName -Tag IntegrationTests {
             ($results.SqlInstance | Sort-Object -Unique).Count | Should -Be 2
         }
 
-        It "Should return pscustomobject results when passed an array (even with one path)" {
+        It "Should return PSCustomObject results when passed an array (even with one path)" {
             $results = Test-DbaPath -SqlInstance $TestConfig.instance2 -Path @($trueTest)
             ($results | Where-Object FilePath -eq $trueTest).FileExists | Should -Be $true
         }
 
-        It "Should return pscustomobject results indicating if the path is a file or a directory" {
+        It "Should return PSCustomObject results indicating if the path is a file or a directory" {
             $results = Test-DbaPath -SqlInstance $TestConfig.instance2 -Path @($trueTest, $trueTestPath)
             ($results | Where-Object FilePath -eq $trueTest).FileExists | Should -Be $true
             ($results | Where-Object FilePath -eq $trueTestPath).FileExists | Should -Be $true

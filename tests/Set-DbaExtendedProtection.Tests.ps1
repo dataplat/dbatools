@@ -1,13 +1,13 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "Set-DbaExtendedProtection",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -16,9 +16,6 @@ Describe $CommandName -Tag UnitTests {
                 "Value",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -43,10 +40,10 @@ Describe $CommandName -Tag IntegrationTests {
                 )
                 $server = [DbaInstanceParameter[]]$TestConfig.instance1
                 @{
-                    DisplayName        = "SQL Server ($($server.InstanceName))"
+                                        DisplayName        = "SQL Server ($($server.InstanceName))"
                     AdvancedProperties = @(
                         @{
-                            Name  = "REGROOT"
+                                                        Name  = "REGROOT"
                             Value = "Software\Microsoft\Microsoft SQL Server\MSSQL10_50.SQL2008R2SP2"
                         }
                     )

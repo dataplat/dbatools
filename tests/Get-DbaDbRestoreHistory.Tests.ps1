@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "Get-DbaDbRestoreHistory",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -10,7 +10,7 @@ $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Validate parameters" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -24,9 +24,6 @@ Describe $CommandName -Tag UnitTests {
                 "Last",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -46,27 +43,27 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1, $dbname2 | Remove-DbaDatabase -Confirm:$false
 
         $splatRestore1 = @{
-            SqlInstance           = $TestConfig.instance2
-            Path                  = "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak"
-            DatabaseName          = $dbname1
+                        SqlInstance           = $TestConfig.instance2
+                        Path                  = "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak"
+                        DatabaseName          = $dbname1
             DestinationFilePrefix = $dbname1
         }
         $null = Restore-DbaDatabase @splatRestore1
 
         $splatRestore2 = @{
-            SqlInstance           = $TestConfig.instance2
-            Path                  = "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak"
-            DatabaseName          = $dbname2
+                        SqlInstance           = $TestConfig.instance2
+                        Path                  = "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak"
+                        DatabaseName          = $dbname2
             DestinationFilePrefix = $dbname2
         }
         $null = Restore-DbaDatabase @splatRestore2
 
         $splatRestore3 = @{
-            SqlInstance           = $TestConfig.instance2
-            Path                  = "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak"
-            DatabaseName          = $dbname2
+                        SqlInstance           = $TestConfig.instance2
+                        Path                  = "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak"
+                        DatabaseName          = $dbname2
             DestinationFilePrefix = "rsh_pre_$dbname2"
-            WithReplace           = $true
+                        WithReplace           = $true
         }
         $null = Restore-DbaDatabase @splatRestore3
 
@@ -75,10 +72,10 @@ Describe $CommandName -Tag IntegrationTests {
         $logBackup = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1 -Type Log
 
         $splatRestoreFinal = @{
-            SqlInstance  = $TestConfig.instance2
-            Path         = $diffBackup.BackupPath, $logBackup.BackupPath
+                        SqlInstance  = $TestConfig.instance2
+                        Path         = $diffBackup.BackupPath, $logBackup.BackupPath
             DatabaseName = $dbname1
-            WithReplace  = $true
+                        WithReplace  = $true
         }
         $null = Restore-DbaDatabase @splatRestoreFinal
 
@@ -147,12 +144,9 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
     Context "return object properties" {
-        BeforeAll {
+        It "has the correct properties" {
             $results = Get-DbaDbRestoreHistory -SqlInstance $TestConfig.instance2 -Database $dbname1, $dbname2
             $result = $results[0]
-        }
-
-        It "has the correct properties" {
             $ExpectedProps = @(
                 "ComputerName",
                 "InstanceName",

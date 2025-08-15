@@ -1,13 +1,13 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "Publish-DbaDacPackage",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -26,9 +26,6 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException",
                 "DacFxPath"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -129,10 +126,10 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Performs a script generation using custom path" {
             $splatOption = @{
-                Action   = "Publish"
+                                Action   = "Publish"
                 Property = @{
                     GenerateDeploymentScript = $true
-                    DatabaseScriptPath       = "C:\Temp\testdb.sql"
+                                        DatabaseScriptPath       = "C:\Temp\testdb.sql"
                 }
             }
             $opts = New-DbaDacOption @splatOption
@@ -171,8 +168,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should throw when ScriptOnly is used" {
-             { $bacpac | Publish-DbaDacPackage -Database $dbname -SqlInstance $TestConfig.instance2 -ScriptOnly -Type Bacpac -EnableException -Confirm:$false } | Should -Throw
+            { $bacpac | Publish-DbaDacPackage -Database $dbname -SqlInstance $TestConfig.instance2 -ScriptOnly -Type Bacpac -EnableException -Confirm:$false } | Should -Throw
         }
     }
 }
-

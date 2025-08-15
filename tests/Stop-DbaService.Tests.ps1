@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "Stop-DbaService",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -10,7 +10,7 @@ $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -24,9 +24,6 @@ Describe $CommandName -Tag UnitTests {
                 "Force",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -37,7 +34,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
-            
+
             $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
             $instanceName = $server.ServiceName
             $computerName = $server.NetName
@@ -50,7 +47,7 @@ Describe $CommandName -Tag IntegrationTests {
                 $service.State | Should -Be 'Stopped'
                 $service.Status | Should -Be 'Successful'
             }
-            
+
             # Start services using native cmdlets
             if ($instanceName -eq 'MSSQLSERVER') {
                 $serviceName = "SQLSERVERAGENT"
@@ -67,7 +64,7 @@ Describe $CommandName -Tag IntegrationTests {
                 $service.State | Should -Be 'Stopped'
                 $service.Status | Should -Be 'Successful'
             }
-            
+
             # Start services using native cmdlets
             if ($instanceName -eq 'MSSQLSERVER') {
                 $serviceName = "MSSQLSERVER", "SQLSERVERAGENT"

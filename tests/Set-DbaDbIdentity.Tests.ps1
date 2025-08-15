@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "Set-DbaDbIdentity",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -10,7 +10,7 @@ $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -21,9 +21,6 @@ Describe $CommandName -Tag UnitTests {
                 "ReSeedValue",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -81,11 +78,8 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Reseed option returns correct results" {
-        BeforeAll {
-            $result = Set-DbaDbIdentity -SqlInstance $TestConfig.instance2 -Database $dbname -Table $tableName2 -ReSeedValue 400 -Confirm:$false
-        }
-
         It "Returns correct results" {
+            $result = Set-DbaDbIdentity -SqlInstance $TestConfig.instance2 -Database $dbname -Table $tableName2 -ReSeedValue 400 -Confirm:$false
             $result.cmd -eq "DBCC CHECKIDENT('$tableName2', RESEED, 400)" | Should -Be $true
             $result.IdentityValue -eq "5." | Should -Be $true
         }

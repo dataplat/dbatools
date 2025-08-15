@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "Repair-DbaDbOrphanUser",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -100,11 +100,8 @@ CREATE LOGIN [dbatoolsci_orphan2] WITH PASSWORD = N'password2', CHECK_EXPIRATION
     }
 
     Context "When running repair again" {
-        BeforeAll {
-            $global:secondRepairResults = Repair-DbaDbOrphanUser -SqlInstance $TestConfig.instance1 -Database dbatoolsci_orphan
-        }
-
         It "does not find any other orphan" {
+            $global:secondRepairResults = Repair-DbaDbOrphanUser -SqlInstance $TestConfig.instance1 -Database dbatoolsci_orphan
             $global:secondRepairResults | Should -BeNullOrEmpty
         }
     }

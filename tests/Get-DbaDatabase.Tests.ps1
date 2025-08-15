@@ -77,15 +77,15 @@ Describe "$commandname Unit Tests" -Tags "UnitTests", Get-DBADatabase {
         }
         Mock Connect-DbaInstance -MockWith {
             [object]@{
-                Name      = 'SQLServerName'
+                                Name      = 'SQLServerName'
                 Databases = @(
                     @{
-                        Name           = 'db1'
-                        Status         = 'Normal'
-                        ReadOnly       = 'false'
+                                                Name           = 'db1'
+                                                Status         = 'Normal'
+                                                ReadOnly       = 'false'
                         IsSystemObject = 'false'
-                        RecoveryModel  = 'Full'
-                        Owner          = 'sa'
+                                                RecoveryModel  = 'Full'
+                                                Owner          = 'sa'
                     }
                 ) #databases
             } #object
@@ -94,7 +94,7 @@ Describe "$commandname Unit Tests" -Tags "UnitTests", Get-DBADatabase {
         Mock Invoke-QueryRawDatabases -MockWith {
             [object]@(
                 @{
-                    name  = 'db1'
+                                        name  = 'db1'
                     state = 0
                     Owner = 'sa'
                 }
@@ -126,16 +126,16 @@ Describe "$commandname Unit Tests" -Tags "UnitTests", Get-DBADatabase {
         It "Should have Last Read and Last Write Property when IncludeLastUsed switch is added" {
             Mock Connect-DbaInstance -MockWith {
                 [object]@{
-                    Name      = 'SQLServerName'
+                                    Name      = 'SQLServerName'
                     Databases = @(
                         @{
-                            Name           = 'db1'
-                            Status         = 'Normal'
-                            ReadOnly       = 'false'
+                                                    Name           = 'db1'
+                                                    Status         = 'Normal'
+                                                    ReadOnly       = 'false'
                             IsSystemObject = 'false'
-                            RecoveryModel  = 'Full'
-                            Owner          = 'sa'
-                            IsAccessible   = $true
+                                                    RecoveryModel  = 'Full'
+                                                    Owner          = 'sa'
+                                                        IsAccessible   = $true
                         }
                     )
                 } #object
@@ -144,16 +144,16 @@ Describe "$commandname Unit Tests" -Tags "UnitTests", Get-DBADatabase {
             Mock Invoke-QueryDBlastUsed -MockWith {
                 [object]
                 @{
-                    dbname     = 'db1'
-                    last_read  = (Get-Date).AddHours(-1)
-                    last_write = (Get-Date).AddHours(-1)
+                                        dbname     = 'db1'
+                                        last_read  = (Get-Date).AddHours(-1)
+                    last_write = (Get-Date).AddHours( - 1)
                 }
             } -ModuleName dbatools
             function Invoke-QueryRawDatabases { }
             Mock Invoke-QueryRawDatabases -MockWith {
                 [object]@(
                     @{
-                        name  = 'db1'
+                                            name  = 'db1'
                         state = 0
                         Owner = 'sa'
                     }

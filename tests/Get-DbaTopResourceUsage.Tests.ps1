@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "Get-DbaTopResourceUsage",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -9,7 +9,7 @@ $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -22,9 +22,6 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException",
                 "ExcludeSystem"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -34,14 +31,14 @@ Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $splatDuration = @{
             SqlInstance = $TestConfig.Instances
-            Type        = "Duration"
-            Database    = "master"
+                        Type        = "Duration"
+                        Database    = "master"
         }
         $results = Get-DbaTopResourceUsage @splatDuration
 
         $splatExcluded = @{
-            SqlInstance     = $TestConfig.Instances
-            Type            = "Duration"
+                        SqlInstance     = $TestConfig.Instances
+                        Type            = "Duration"
             ExcludeDatabase = "master"
         }
         $resultsExcluded = Get-DbaTopResourceUsage @splatExcluded

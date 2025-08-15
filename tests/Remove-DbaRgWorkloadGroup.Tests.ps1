@@ -1,13 +1,13 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "Remove-DbaRgWorkloadGroup",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -20,9 +20,6 @@ Describe $CommandName -Tag UnitTests {
                 "InputObject",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -43,9 +40,9 @@ Describe $CommandName -Tag IntegrationTests {
         It "Removes a workload group in default resource pool" {
             $wklGroupName = "dbatoolssci_wklgroupTest"
             $splatNewWorkloadGroup = @{
-                SqlInstance   = $TestConfig.instance2
+                                SqlInstance   = $TestConfig.instance2
                 WorkloadGroup = $wklGroupName
-                Force         = $true
+                                Force         = $true
             }
             $newWorkloadGroup = New-DbaRgWorkloadGroup @splatNewWorkloadGroup
             $result = Get-DbaRgWorkloadGroup -SqlInstance $TestConfig.instance2 | Where-Object Name -eq $wklGroupName
@@ -64,17 +61,17 @@ Describe $CommandName -Tag IntegrationTests {
             $resourcePoolName = "dbatoolssci_poolTest"
             $resourcePoolType = "Internal"
             $splatNewResourcePool = @{
-                SqlInstance  = $TestConfig.instance2
+                                SqlInstance  = $TestConfig.instance2
                 ResourcePool = $resourcePoolName
-                Type         = $resourcePoolType
-                Force        = $true
+                                Type         = $resourcePoolType
+                                Force        = $true
             }
             $splatNewWorkloadGroup = @{
-                SqlInstance      = $TestConfig.instance2
-                WorkloadGroup    = $wklGroupName
-                ResourcePool     = $resourcePoolName
+                                SqlInstance      = $TestConfig.instance2
+                                WorkloadGroup    = $wklGroupName
+                                ResourcePool     = $resourcePoolName
                 ResourcePoolType = $resourcePoolType
-                Force            = $true
+                                Force            = $true
             }
             $null = New-DbaRgResourcePool @splatNewResourcePool
             $newWorkloadGroup = New-DbaRgWorkloadGroup @splatNewWorkloadGroup
@@ -95,9 +92,9 @@ Describe $CommandName -Tag IntegrationTests {
             $wklGroupName = "dbatoolssci_wklgroupTest"
             $wklGroupName2 = "dbatoolssci_wklgroupTest"
             $splatNewWorkloadGroup = @{
-                SqlInstance   = $TestConfig.instance2
+                                SqlInstance   = $TestConfig.instance2
                 WorkloadGroup = @($wklGroupName, $wklGroupName2)
-                Force         = $true
+                                Force         = $true
             }
 
             $newWorkloadGroups = New-DbaRgWorkloadGroup @splatNewWorkloadGroup
@@ -115,9 +112,9 @@ Describe $CommandName -Tag IntegrationTests {
         It "Removes a piped workload group" {
             $wklGroupName = "dbatoolssci_wklgroupTest"
             $splatNewWorkloadGroup = @{
-                SqlInstance   = $TestConfig.instance2
+                                SqlInstance   = $TestConfig.instance2
                 WorkloadGroup = $wklGroupName
-                Force         = $true
+                                Force         = $true
             }
             $newWorkloadGroup = New-DbaRgWorkloadGroup @splatNewWorkloadGroup
             $result = Get-DbaRgWorkloadGroup -SqlInstance $TestConfig.instance2 | Where-Object Name -eq $wklGroupName
