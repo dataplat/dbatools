@@ -36,14 +36,10 @@ Describe $CommandName -Tag IntegrationTests {
         $trigger1Name = "dbatoolsci_trigger1_$random"
         $trigger2Name = "dbatoolsci_trigger2_$random"
 
-        $splatConnection = @{
-            SqlInstance     = $TestConfig.instance2
-            EnableException = $true
-        }
-        $instance = Connect-DbaInstance @splatConnection
+        $instance = Connect-DbaInstance -SqlInstance $TestConfig.instance2
 
-        $sql1 = "CREATE TRIGGER [$trigger1Name] ON ALL SERVER FOR CREATE_DATABASE AS PRINT ""Database Created."""
-        $sql2 = "CREATE TRIGGER [$trigger2Name] ON ALL SERVER FOR CREATE_DATABASE AS PRINT ""Database Created."""
+        $sql1 = "CREATE TRIGGER [$trigger1Name] ON ALL SERVER FOR CREATE_DATABASE AS PRINT 'Database Created.'"
+        $sql2 = "CREATE TRIGGER [$trigger2Name] ON ALL SERVER FOR CREATE_DATABASE AS PRINT 'Database Created.'"
         $instance.query($sql1)
         $instance.query($sql2)
 
@@ -67,7 +63,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should return the expected number of triggers" {
-            $results.Status.Count | Should -BeGreaterOrEqual 2
+            $results.Count | Should -BeGreaterOrEqual 2
         }
 
         It "Should have correct properties" {
