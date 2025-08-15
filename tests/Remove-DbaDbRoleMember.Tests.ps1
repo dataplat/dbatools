@@ -125,8 +125,8 @@ Describe $CommandName -Tag IntegrationTests {
         $null = $cleanupServer.Query("DROP USER User1", "msdb")
         $null = $cleanupServer.Query("DROP USER User2", "msdb")
 
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $testDatabase -Confirm:$false -ErrorAction SilentlyContinue
-        Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $testUser1, $testUser2 -Confirm:$false -ErrorAction SilentlyContinue
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $testDatabase -Confirm:$false
+        Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $testUser1, $testUser2 -Confirm:$false
 
         # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
