@@ -147,25 +147,25 @@ Describe $CommandName -Tag IntegrationTests {
         It "Excludes database context" {
             $scriptingOptions = New-DbaScriptingOption
             $scriptingOptions.IncludeDatabaseContext = $false
-            $null = Export-DbaUser -SqlInstance $TestConfig.instance1 -Database $dbname -ScriptingOptionsObject $scriptingOptions -FilePath $outputFile2 -WarningAction SilentlyContinue
+            $null = Export-DbaUser -SqlInstance $TestConfig.instance1 -Database $dbname -ScriptingOptionsObject $scriptingOptions -FilePath $outputFile2
             $results = Get-Content -Path $outputFile2 -Raw
-            $results | Should -Not -BeLike ("*USE `[" + $dbname + "`]*")
+            $results | Should -Not -Match ([regex]::Escape("USE [$dbname]"))
             Remove-Item -Path $outputFile2 -ErrorAction SilentlyContinue
         }
 
         It "Includes database context" {
             $scriptingOptions = New-DbaScriptingOption
             $scriptingOptions.IncludeDatabaseContext = $true
-            $null = Export-DbaUser -SqlInstance $TestConfig.instance1 -Database $dbname -ScriptingOptionsObject $scriptingOptions -FilePath $outputFile2 -WarningAction SilentlyContinue
+            $null = Export-DbaUser -SqlInstance $TestConfig.instance1 -Database $dbname -ScriptingOptionsObject $scriptingOptions -FilePath $outputFile2
             $results = Get-Content -Path $outputFile2 -Raw
-            $results | Should -BeLike ("*USE `[" + $dbname + "`]*")
+            $results | Should -Match ([regex]::Escape("USE [$dbname]"))
             Remove-Item -Path $outputFile2 -ErrorAction SilentlyContinue
         }
 
         It "Defaults to include database context" {
-            $null = Export-DbaUser -SqlInstance $TestConfig.instance1 -Database $dbname -FilePath $outputFile2 -WarningAction SilentlyContinue
+            $null = Export-DbaUser -SqlInstance $TestConfig.instance1 -Database $dbname -FilePath $outputFile2
             $results = Get-Content -Path $outputFile2 -Raw
-            $results | Should -BeLike ("*USE `[" + $dbname + "`]*")
+            $results | Should -Match ([regex]::Escape("USE [$dbname]"))
             Remove-Item -Path $outputFile2 -ErrorAction SilentlyContinue
         }
 
