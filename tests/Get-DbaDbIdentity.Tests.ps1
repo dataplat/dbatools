@@ -45,7 +45,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
 
         $null = $db.Query("DROP TABLE dbo.dbatoolsci_example;
-        DROP TABLE dbo.dbatoolsci_example2") -ErrorAction SilentlyContinue
+        DROP TABLE dbo.dbatoolsci_example2")
     }
 
     Context "Validate standard output" {

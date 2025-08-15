@@ -125,8 +125,8 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $cleanupServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2 -EnableException
-        $null = $cleanupServer.Query("DROP USER User1", "msdb") -ErrorAction SilentlyContinue
-        $null = $cleanupServer.Query("DROP USER User2", "msdb") -ErrorAction SilentlyContinue
+        $null = $cleanupServer.Query("DROP USER User1", "msdb")
+        $null = $cleanupServer.Query("DROP USER User2", "msdb")
 
         Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $testDatabase -Confirm:$false -ErrorAction SilentlyContinue
         Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $testUser1, $testUser2 -Confirm:$false -ErrorAction SilentlyContinue

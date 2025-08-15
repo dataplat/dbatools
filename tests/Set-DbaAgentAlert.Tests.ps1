@@ -54,7 +54,7 @@ Describe $CommandName -Tag IntegrationTests {
             Database    = "master"
         }
         $server = Connect-DbaInstance @splatConnection
-        $server.Query("EXEC msdb.dbo.sp_delete_alert @name=N'dbatoolsci test alert NEW'") -ErrorAction SilentlyContinue
+        $server.Query("EXEC msdb.dbo.sp_delete_alert @name=N'dbatoolsci test alert NEW'")
     }
 
     Context "When modifying agent alerts" {

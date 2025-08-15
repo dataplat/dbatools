@@ -62,7 +62,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
         AfterAll {
             if ($global:loginTest) {
-                $global:loginTest.Drop() -ErrorAction SilentlyContinue
+                $global:loginTest.Drop()
             }
         }
 

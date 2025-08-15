@@ -71,7 +71,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Cleanup all created objects.
         $db = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database tempdb
-        $null = $db.Query("DROP TABLE dbo.BunchOFilez") -ErrorAction SilentlyContinue
+        $null = $db.Query("DROP TABLE dbo.BunchOFilez")
 
         # Remove the backup directory.
         Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
