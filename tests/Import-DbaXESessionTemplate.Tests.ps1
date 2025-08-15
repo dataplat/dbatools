@@ -25,12 +25,41 @@ Describe $CommandName -Tag UnitTests {
 
         It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Import-DbaXESessionTemplate",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
+
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        BeforeAll {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Name",
+                "Path",
+                "Template",
+                "TargetFilePath",
+                "TargetFileMetadataPath",
+                "EnableException",
+                "StartUpState"
+            )
+        }
+
+        It "Should have the expected parameters" {
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
 Describe $CommandName -Tag IntegrationTests {
+Describe $CommandName -Tag IntegrationTests {
     AfterAll {
+        $null = Get-DbaXESession -SqlInstance $TestConfig.instance2 -Session "Overly Complex Queries" | Remove-DbaXESession
         $null = Get-DbaXESession -SqlInstance $TestConfig.instance2 -Session "Overly Complex Queries" | Remove-DbaXESession
     }
 

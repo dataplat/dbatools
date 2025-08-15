@@ -39,6 +39,37 @@ Describe $CommandName -Tag UnitTests {
 
         It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        BeforeAll {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "ComputerName",
+                "Credential",
+                "DisplayName",
+                "SchedulesEnabled",
+                "RootPath",
+                "Segment",
+                "SegmentMaxDuration",
+                "SegmentMaxSize",
+                "Subdirectory",
+                "SubdirectoryFormat",
+                "SubdirectoryFormatPattern",
+                "Task",
+                "TaskRunAsSelf",
+                "TaskArguments",
+                "TaskUserTextArguments",
+                "StopOnCompletion",
+                "Path",
+                "Template",
+                "Instance",
+                "EnableException"
+            )
+        }
+
+        It "Should have the expected parameters" {
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
@@ -47,10 +78,10 @@ Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
         $collectorSetName = "Long Running Queries"
-        
+
         # Clean up any existing collector sets before starting
         $null = Get-DbaPfDataCollectorSet -CollectorSet $collectorSetName | Remove-DbaPfDataCollectorSet -Confirm:$false
-        
+
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 

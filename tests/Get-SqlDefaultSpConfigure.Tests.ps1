@@ -26,6 +26,7 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
+Describe $CommandName -Tag IntegrationTests {
     Context "Try all versions of SQL" {
         BeforeAll {
             $versionName = @{

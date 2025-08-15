@@ -34,6 +34,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+
     Context "Returning Files from one folder" {
         BeforeAll {
             $null = New-Item "TestDrive:\backups\" -ItemType Directory
@@ -51,24 +52,30 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should Return an array of FileInfo" {
             $results | Should -BeOfType System.IO.FileSystemInfo
+            $results | Should -BeOfType System.IO.FileSystemInfo
         }
+
 
         It "Should Return 3 files" {
             $results.count | Should -Be 3
         }
 
+
         It "Should return 1 bak file" {
             ($results | Where-Object FullName -like "*\backups\Full.bak").count | Should -Be 1
         }
+
 
         It "Should return 2 trn files" {
             ($results | Where-Object FullName -like "*\backups\*.trn").count | Should -Be 2
         }
 
+
         It "Should not contain log2b.trn" {
             ($results | Where-Object FullName -like "*\backups\*log2b.trn").count | Should -Be 0
         }
     }
+
 
     Context "Returning Files from folders with recursion" {
         BeforeAll {
@@ -87,15 +94,19 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should Return an array of FileInfo" {
             $results2 | Should -BeOfType System.IO.FileSystemInfo
+            $results2 | Should -BeOfType System.IO.FileSystemInfo
         }
+
 
         It "Should Return 4 files" {
             $results2.count | Should -Be 4
         }
 
+
         It "Should return 1 bak file" {
             ($results2 | Where-Object FullName -like "*\backupsRecurse\Full.bak").count | Should -Be 1
         }
+
 
         It "Should return 3 trn files" {
             ($results2 | Where-Object FullName -like "*\backupsRecurse\*.trn").count | Should -Be 3
