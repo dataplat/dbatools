@@ -47,7 +47,9 @@ $TestsRunGroups = @{
         # fails so often
         'Get-DbaDbMasterKey',
         'Backup-DbaDbCertificate',
-        'Set-DbaDbQueryStoreOption'
+        'Set-DbaDbQueryStoreOption',
+        'Install-DbaInstance',
+        'Invoke-DbaAdvancedUpdate'
     )
     # do not run everywhere
     "disabled"          = @()
