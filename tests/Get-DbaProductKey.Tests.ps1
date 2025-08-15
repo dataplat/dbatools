@@ -1,34 +1,59 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 $global:TestConfig = Get-TestConfig
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'SqlCredential', 'Credential', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaProductKey",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
+
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        BeforeAll {
+            $script:hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $script:expectedParameters = $global:TestConfig.CommonParameters
+            $script:expectedParameters += @(
+                "ComputerName",
+                "SqlCredential",
+                "Credential",
+                "EnableException"
+            )
+        }
+
+        It "Should have the expected parameters" {
+            Compare-Object -ReferenceObject $script:expectedParameters -DifferenceObject $script:hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets ProductKey for Instances on $($env:ComputerName)" {
-        $results = Get-DbaProductKey -ComputerName $env:ComputerName
-        It "Gets results" {
-            $results | Should Not Be $null
+        BeforeAll {
+            $script:results = Get-DbaProductKey -ComputerName $env:ComputerName
         }
-        Foreach ($row in $results) {
-            It "Should have Version $($row.Version)" {
-                $row.Version | Should not be $null
+
+        It "Gets results" {
+            $script:results | Should -Not -Be $null
+        }
+
+        It "Should have Version for each result" {
+            foreach ($row in $script:results) {
+                $row.Version | Should -Not -Be $null
             }
-            It "Should have Edition $($row.Edition)" {
-                $row.Edition | Should not be $null
+        }
+
+        It "Should have Edition for each result" {
+            foreach ($row in $script:results) {
+                $row.Edition | Should -Not -Be $null
             }
-            It "Should have Key $($row.key)" {
-                $row.key | Should not be $null
+        }
+
+        It "Should have Key for each result" {
+            foreach ($row in $script:results) {
+                $row.key | Should -Not -Be $null
             }
         }
     }

@@ -1,5 +1,0 @@
-- name: azure/gpt-5-mini
-  use_temperature: false
-
-- name: azure/gpt-5-chat
-  use_temperature: false

@@ -105,6 +105,11 @@ function Set-DbaDbSequence {
             return
         }
 
+        if ((Test-Bound -ParameterName IncrementBy) -and ($IncrementBy -eq 0)) {
+            Stop-Function -Message "IncrementBy cannot be zero"
+            return
+        }
+
         foreach ($instance in $SqlInstance) {
             $InputObject += Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database
         }

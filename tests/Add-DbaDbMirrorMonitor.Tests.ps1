@@ -1,14 +1,14 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName               = "dbatools",
-    $CommandName              = [System.IO.Path]::GetFileName($PSCommandPath.Replace('.Tests.ps1', '')),
+    $ModuleName  = "dbatools",
+    $CommandName = "Add-DbaDbMirrorMonitor",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Describe $CommandName -Tag "UnitTests" {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
-            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $_ -notin ('WhatIf', 'Confirm') }
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
                 "SqlInstance",
@@ -23,7 +23,7 @@ Describe $CommandName -Tag "UnitTests" {
     }
 }
 
-Describe $CommandName -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     Context "When adding mirror monitor" {
         BeforeAll {
             $results = Add-DbaDbMirrorMonitor -SqlInstance $TestConfig.instance2
@@ -34,7 +34,7 @@ Describe $CommandName -Tag "IntegrationTests" {
         }
 
         It "Adds the mirror monitor" {
-            $results.MonitorStatus | Should -Be 'Added'
+            $results.MonitorStatus | Should -Be "Added"
         }
     }
 }

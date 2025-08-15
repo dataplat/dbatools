@@ -100,7 +100,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             }
         }
         It "Creates the table" {
-            { $null = New-DbaDbTable -SqlInstance $TestConfig.instance1 -Database $dbname -Name $tablename4 -ColumnMap $map -EnableException } | Should Not Throw
+            { $null = New-DbaDbTable -SqlInstance $TestConfig.instance1 -Database $dbname -Name $tablename4 -ColumnMap $map -EnableException } | Should -Not -Throw
         }
     }
     Context "Should create the table with a nvarcharmax column" {
@@ -126,8 +126,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $tableName = "table_$random"
             $schemaName = "schema_$random"
             $map = @{
-                Name = 'testId'
-                Type = 'int'
+                Name = "testId"
+                Type = "int"
             }
 
             $tableWithSchema = New-DbaDbTable -SqlInstance $TestConfig.instance1 -Database $dbname -Name $tableName -ColumnMap $map -Schema $schemaName
@@ -142,8 +142,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $tableName = "table2_$random"
             $schemaName = "schema2_$random"
             $map = @{
-                Name = 'testId'
-                Type = 'int'
+                Name = "testId"
+                Type = "int"
             }
 
             $tableWithSchema = New-DbaDbTable -SqlInstance $TestConfig.instance1 -Database $dbname -Name $tableName -ColumnMap $map -Schema $schemaName -Passthru
