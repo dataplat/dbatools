@@ -2,7 +2,7 @@
 param(
     $ModuleName  = "dbatools",
     $CommandName = "Copy-DbaDbTableData",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe $CommandName -Tag UnitTests {
@@ -76,14 +76,14 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
 
-        $null = $sourceDb.Query("DROP TABLE dbo.dbatoolsci_example") -ErrorAction SilentlyContinue
-        $null = $sourceDb.Query("DROP TABLE dbo.dbatoolsci_example2") -ErrorAction SilentlyContinue
-        $null = $sourceDb.Query("DROP TABLE dbo.dbatoolsci_example3") -ErrorAction SilentlyContinue
-        $null = $sourceDb.Query("DROP TABLE dbo.dbatoolsci_example4") -ErrorAction SilentlyContinue
-        $null = $destinationDb.Query("DROP TABLE dbo.dbatoolsci_example3") -ErrorAction SilentlyContinue
-        $null = $destinationDb.Query("DROP TABLE dbo.dbatoolsci_example4") -ErrorAction SilentlyContinue
-        $null = $destinationDb.Query("DROP TABLE dbo.dbatoolsci_example") -ErrorAction SilentlyContinue
-        $null = $sourceDb.Query("DROP TABLE tempdb.dbo.dbatoolsci_willexist") -ErrorAction SilentlyContinue
+        $null = $sourceDb.Query("DROP TABLE dbo.dbatoolsci_example")
+        $null = $sourceDb.Query("DROP TABLE dbo.dbatoolsci_example2")
+        $null = $sourceDb.Query("DROP TABLE dbo.dbatoolsci_example3")
+        $null = $sourceDb.Query("DROP TABLE dbo.dbatoolsci_example4")
+        $null = $destinationDb.Query("DROP TABLE dbo.dbatoolsci_example3")
+        $null = $destinationDb.Query("DROP TABLE dbo.dbatoolsci_example4")
+        $null = $destinationDb.Query("DROP TABLE dbo.dbatoolsci_example")
+        $null = $sourceDb.Query("DROP TABLE tempdb.dbo.dbatoolsci_willexist")
 
         # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
