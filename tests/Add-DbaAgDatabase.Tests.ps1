@@ -56,12 +56,12 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Create the objects.
         $splatAg = @{
-                Primary      = $TestConfig.instance3
-                Name         = $agName
-                ClusterType  = "None"
-                FailoverMode = "Manual"
-                Certificate  = "dbatoolsci_AGCert"
-                Confirm      = $false
+            Primary      = $TestConfig.instance3
+            Name         = $agName
+            ClusterType  = "None"
+            FailoverMode = "Manual"
+            Certificate  = "dbatoolsci_AGCert"
+            Confirm      = $false
         }
         $null = New-DbaAvailabilityGroup @splatAg
 
