@@ -38,7 +38,7 @@ Describe $CommandName -Tag IntegrationTests {
                 $results.ServerName | Should -Be $TestConfig.instance2
                 $results.DatabaseName | Should -Be "dbadb"
                 $results.Password | Should -Be $null
-            } finally {
+            } catch {
                 $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
             }
         }

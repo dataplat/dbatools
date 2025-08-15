@@ -47,7 +47,7 @@ Describe $CommandName -Tag IntegrationTests {
             try {
                 $results = Get-DbaDbEncryption -SqlInstance $TestConfig.instance1
                 ($results.Name -match "dbatoolsci").Count -gt 0 | Should -Be $true
-            } finally {
+            } catch {
                 $splatRemove = @{
                     SqlInstance = $TestConfig.instance1
                     Certificate = $cert

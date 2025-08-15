@@ -58,7 +58,7 @@ Describe $CommandName -Tag IntegrationTests {
             try {
                 $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -ExcludeDisabledJobs | Where-Object Name -match "dbatoolsci_testjob"
                 $results.Enabled -contains $false | Should -Be $false
-            } finally {
+            } catch {
                 $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob, dbatoolsci_testjob_disabled -Confirm:$false
             }
         }
@@ -70,7 +70,7 @@ Describe $CommandName -Tag IntegrationTests {
             try {
                 $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -ExcludeJob dbatoolsci_testjob | Where-Object Name -match "dbatoolsci_testjob"
                 $results.Name -contains "dbatoolsci_testjob" | Should -Be $false
-            } finally {
+            } catch {
                 $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob, dbatoolsci_testjob_disabled -Confirm:$false
             }
         }
@@ -84,7 +84,7 @@ Describe $CommandName -Tag IntegrationTests {
             try {
                 $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -ExcludeCategory "Cat2" | Where-Object Name -match "dbatoolsci_testjob"
                 $results.Name -contains "dbatoolsci_testjob_cat2" | Should -Be $false
-            } finally {
+            } catch {
                 $null = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category "Cat1", "Cat2" -Confirm:$false
                 $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob_cat1, dbatoolsci_testjob_cat2 -Confirm:$false
             }

@@ -47,7 +47,7 @@ Describe $CommandName -Tag IntegrationTests {
             try {
                 $testResults.Database | Should -Be $testDb
                 $testResults.BackupCount | Should -Be 1
-            } finally {
+            } catch {
                 # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
                 $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 

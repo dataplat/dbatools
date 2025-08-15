@@ -59,7 +59,7 @@ AS
                 }
                 $results = Find-DbaStoredProcedure @splatFind
                 $results.Name | Should -Contain "cp_dbatoolsci_sysadmin"
-            } finally {
+            } catch {
                 # Cleanup - We want to run all commands in the cleanup with EnableException to ensure that the test fails if the cleanup fails.
                 $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
 

@@ -35,7 +35,7 @@ Describe "Test-DbaDbCollation Integration Tests" -Tags "IntegrationTests" {
             try {
                 $result = Test-DbaDbCollation -SqlInstance $TestConfig.Instance1 -Database $db1
                 $result.IsEqual | Should -Be $true
-            } finally {
+            } catch {
                 Get-DbaDatabase -SqlInstance $server -Database $db1 | Remove-DbaDatabase -Confirm:$false
             }
         }

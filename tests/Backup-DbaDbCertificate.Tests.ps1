@@ -76,7 +76,7 @@ Describe $CommandName -Tag IntegrationTests {
                 $results.Certificate | Should -Be $cert1.Name
                 $results.Status | Should -BeExactly "Success"
                 $results.DatabaseID | Should -Be $db1.ID
-            } finally {
+            } catch {
                 Remove-Item -Path $results.Path -ErrorAction SilentlyContinue
                 Remove-Item -Path $results.Key -ErrorAction SilentlyContinue
             }
@@ -100,7 +100,7 @@ Describe $CommandName -Tag IntegrationTests {
                 $results.Status | Should -BeExactly "Success"
                 $results.DatabaseID | Should -Be $db1.ID
                 [IO.Path]::GetFileNameWithoutExtension($results.Path) | Should -Be "dbatoolscli_cert1_$random"
-            } finally {
+            } catch {
                 Remove-Item -Path $results.Path -ErrorAction SilentlyContinue
                 Remove-Item -Path $results.Key -ErrorAction SilentlyContinue
             }
@@ -123,7 +123,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             try {
                 $WarnVar | Should -Match "Database certificate\(s\) .* not found"
-            } finally {
+            } catch {
                 Remove-Item -Path $results.Path -ErrorAction SilentlyContinue
                 Remove-Item -Path $results.Key -ErrorAction SilentlyContinue
             }
@@ -143,7 +143,7 @@ Describe $CommandName -Tag IntegrationTests {
             try {
                 $results | Should -HaveCount 2
                 $results.Certificate | Should -Be $cert1.Name, $cert2.Name
-            } finally {
+            } catch {
                 Remove-Item -Path $results.Path -ErrorAction SilentlyContinue
                 Remove-Item -Path $results.Key -ErrorAction SilentlyContinue
             }
@@ -162,7 +162,7 @@ Describe $CommandName -Tag IntegrationTests {
             try {
                 $results | Should -HaveCount 3
                 $results.Certificate | Should -Be $cert1.Name, $cert2.Name, $cert3.Name
-            } finally {
+            } catch {
                 Remove-Item -Path $results.Path -ErrorAction SilentlyContinue
                 Remove-Item -Path $results.Key -ErrorAction SilentlyContinue
             }
