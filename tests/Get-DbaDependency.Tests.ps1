@@ -32,42 +32,42 @@ Describe $CommandName -Tag IntegrationTests {
         $dbname = "dbatoolsscidb_$(Get-Random)"
         $null = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbname
 
-        $createTableScript = "IF OBJECT_ID(\"dbo.dbatoolsci_nodependencies\") IS NOT NULL
+        $createTableScript = "IF OBJECT_ID('dbo.dbatoolsci_nodependencies') IS NOT NULL
                             BEGIN
                                 DROP TABLE dbo.dbatoolsci_nodependencies;
                             END
 
-                            IF OBJECT_ID(\"dbo.dbatoolsci3\") IS NOT NULL
+                            IF OBJECT_ID('dbo.dbatoolsci3') IS NOT NULL
                             BEGIN
                                 DROP TABLE dbo.dbatoolsci3;
                             END
 
-                            IF OBJECT_ID(\"dbo.dbatoolsci2\") IS NOT NULL
+                            IF OBJECT_ID('dbo.dbatoolsci2') IS NOT NULL
                             BEGIN
                                 DROP TABLE dbo.dbatoolsci2;
                             END
 
-                            IF OBJECT_ID(\"dbo.dbatoolsci1\") IS NOT NULL
+                            IF OBJECT_ID('dbo.dbatoolsci1') IS NOT NULL
                             BEGIN
                                 DROP TABLE dbo.dbatoolsci1;
                             END
 
-                            IF OBJECT_ID(\"dbo.FK_circref_A_B\") IS NOT NULL
+                            IF OBJECT_ID('dbo.FK_circref_A_B') IS NOT NULL
                             BEGIN
                                 ALTER TABLE dbo.dbatoolsci_circrefA ADD CONSTRAINT FK_circref_A_B FOREIGN KEY(BID) REFERENCES dbo.dbatoolsci_circrefB (ID)
                             END
 
-                            IF OBJECT_ID(\"dbo.FK_circref_B_A\") IS NOT NULL
+                            IF OBJECT_ID('dbo.FK_circref_B_A') IS NOT NULL
                             BEGIN
                                 ALTER TABLE dbo.dbatoolsci_circrefB ADD CONSTRAINT FK_circref_B_A FOREIGN KEY(AID) REFERENCES dbo.dbatoolsci_circrefA (ID)
                             END
 
-                            IF OBJECT_ID(\"dbo.dbatoolsci_circrefA\") IS NOT NULL
+                            IF OBJECT_ID('dbo.dbatoolsci_circrefA') IS NOT NULL
                             BEGIN
                                 DROP TABLE dbo.dbatoolsci_circrefA;
                             END
 
-                            IF OBJECT_ID(\"dbo.dbatoolsci_circrefB\") IS NOT NULL
+                            IF OBJECT_ID('dbo.dbatoolsci_circrefB') IS NOT NULL
                             BEGIN
                                 DROP TABLE dbo.dbatoolsci_circrefB;
                             END
