@@ -48,7 +48,6 @@ Describe $CommandName -Tag IntegrationTests {
         $testInstance    = $TestConfig.instance1
         $testDatabase    = "tempdb"
         $masterKeyPass   = ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force
-        $filesToRemove   = @()
 
         # Create the objects.
         if (-not (Get-DbaDbMasterKey -SqlInstance $testInstance -Database $testDatabase)) {
@@ -74,9 +73,6 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Remove the backup directory.
         Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
-
-        # Remove any tracked files.
-        Remove-Item -Path $filesToRemove -ErrorAction SilentlyContinue
 
         # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
