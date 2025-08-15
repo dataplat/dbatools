@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "Test-DbaDbLogShipStatus",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -10,7 +10,7 @@ $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -23,9 +23,6 @@ Describe $CommandName -Tag UnitTests {
                 "Secondary",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -33,17 +30,18 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     Context "When testing SQL instance edition support" {
-        BeforeAll {
+        It "Should warn if SQL instance edition is not supported" {
             $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
             $skip = $false
             if ($server.Edition -notmatch 'Express') {
                 $skip = $true
             }
-        }
-
-        It -Skip:$skip "Should warn if SQL instance edition is not supported" {
-            $null = Test-DbaDbLogShipStatus -SqlInstance $TestConfig.instance1 -WarningAction SilentlyContinue -WarningVariable editionwarn
-            $editionwarn -match "Express" | Should -BeTrue
+            if (-not $skip) {
+                $null = Test-DbaDbLogShipStatus -SqlInstance $TestConfig.instance1 -WarningAction SilentlyContinue -WarningVariable editionwarn
+                $editionwarn -match "Express" | Should -BeTrue
+            } else {
+                Set-ItResult -Skipped -Because "SQL instance edition is not Express"
+            }
         }
     }
 

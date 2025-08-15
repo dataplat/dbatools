@@ -7,7 +7,7 @@ param(
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -20,9 +20,6 @@ Describe $CommandName -Tag UnitTests {
                 "Force",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -35,7 +32,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Set variables. They are available in all the It blocks.
         $triggerName = "dbatoolsci-trigger"
-        $sql         = "CREATE TRIGGER [$triggerName] -- Trigger name
+        $sql = "CREATE TRIGGER [$triggerName] -- Trigger name
                 ON ALL SERVER FOR LOGON -- Tells you it's a logon trigger
                 AS
                 PRINT 'hello'"
@@ -66,16 +63,13 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "When copying server triggers between instances" {
-        BeforeAll {
+        It "Should report successful copy operation" {
             $splatCopy = @{
                 Source        = $TestConfig.instance1
                 Destination   = $TestConfig.instance2
                 WarningAction = "SilentlyContinue"
             }
             $results = Copy-DbaInstanceTrigger @splatCopy
-        }
-
-        It "Should report successful copy operation" {
             $results.Status | Should -BeExactly "Successful"
         }
     }

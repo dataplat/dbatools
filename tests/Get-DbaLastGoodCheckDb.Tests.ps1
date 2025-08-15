@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "Get-DbaLastGoodCheckDb",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -35,16 +35,16 @@ Describe $CommandName -Tag IntegrationTests {
 
         $splatConnection = @{
             SqlInstance = $TestConfig.instance1
-            Database    = "master"
+                        Database    = "master"
         }
         $server = Connect-DbaInstance @splatConnection
         $server.Query("DBCC CHECKDB")
         $dbname = "dbatoolsci_]_$(Get-Random)"
-        
+
         $splatDatabase = @{
             SqlInstance = $TestConfig.instance1
-            Name        = $dbname
-            Owner       = "sa"
+                        Name        = $dbname
+                        Owner       = "sa"
         }
         $db = New-DbaDatabase @splatDatabase
         $db.Query("DBCC CHECKDB")
@@ -86,7 +86,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $serverConnection = Connect-DbaInstance -SqlInstance $TestConfig.instance1
             $serverPipeResults = $serverConnection | Get-DbaLastGoodCheckDb -Database $dbname, master
-            
+
             $databases = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname, master
             $databasePipeResults = $databases | Get-DbaLastGoodCheckDb
         }

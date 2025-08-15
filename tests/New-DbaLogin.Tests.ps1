@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "New-DbaLogin",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -232,25 +232,25 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Name | Should -Be "tester"
 
             $splatCopyLogins = @{
-                SqlInstance          = $server2
-                Force                = $true
-                PasswordPolicy       = $true
-                PasswordExpiration   = $true
-                DefaultDatabase      = "tempdb"
-                Disabled             = $true
-                Language             = "Nederlands"
-                NewSid               = $true
+                                SqlInstance          = $server2
+                                Force                = $true
+                                PasswordPolicy       = $true
+                                PasswordExpiration   = $true
+                                DefaultDatabase      = "tempdb"
+                                Disabled             = $true
+                                Language             = "Nederlands"
+                                NewSid               = $true
                 LoginRenameHashtable = @{claudio = "port"; port = "claudio" }
-                MapToCredential      = $null
+                                MapToCredential      = $null
             }
             $results = Get-DbaLogin -SqlInstance $server1 -Login claudio, port | New-DbaLogin @splatCopyLogins
             $results.Name | Should -Be @("port", "claudio")
 
             $splatRename = @{
-                SqlInstance          = $server1
+                                SqlInstance          = $server1
                 LoginRenameHashtable = @{tester = "port" }
-                Force                = $true
-                NewSid               = $true
+                                Force                = $true
+                                NewSid               = $true
             }
             $results = Get-DbaLogin -SqlInstance $server1 -Login tester | New-DbaLogin @splatRename
             $results.Name | Should -Be "port"
@@ -313,11 +313,8 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "No overwrite" {
-        BeforeAll {
-            $null = Get-DbaLogin -SqlInstance $server1 -Login tester | New-DbaLogin -SqlInstance $server2 -WarningAction SilentlyContinue -WarningVariable warning 3>&1
-        }
-
         It "Should not attempt overwrite" {
+            $null = Get-DbaLogin -SqlInstance $server1 -Login tester | New-DbaLogin -SqlInstance $server2 -WarningAction SilentlyContinue -WarningVariable warning 3>&1
             $warning | Should -Match "Login tester already exists"
         }
     }

@@ -1,13 +1,13 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "Remove-DbaServerRoleMember",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -19,9 +19,6 @@ Describe $CommandName -Tag UnitTests {
                 "InputObject",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -37,14 +34,14 @@ Describe $CommandName -Tag IntegrationTests {
         $global:login2 = "dbatoolsci_login2_$(Get-Random)"
         $global:customServerRole = "dbatoolsci_customrole_$(Get-Random)"
         $global:fixedServerRoles = "dbcreator", "processadmin"
-        
+
         $splatPassword = @{
-            String      = "Password1234!"
+                        String      = "Password1234!"
             AsPlainText = $true
-            Force       = $true
+                        Force       = $true
         }
         $password = ConvertTo-SecureString @splatPassword
-        
+
         $null = New-DbaLogin -SqlInstance $TestConfig.instance2 -Login $global:login1 -Password $password
         $null = New-DbaLogin -SqlInstance $TestConfig.instance2 -Login $global:login2 -Password $password
         $null = New-DbaServerRole -SqlInstance $TestConfig.instance2 -ServerRole $global:customServerRole -Owner sa
@@ -53,7 +50,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
-    
+
     AfterAll {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true

@@ -1,13 +1,13 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "Remove-DbaAgentProxy",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -18,9 +18,6 @@ Describe $CommandName -Tag UnitTests {
                 "InputObject",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -47,8 +44,8 @@ Describe $CommandName -Tag IntegrationTests {
 
     BeforeEach {
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $proxyName = "dbatoolsci_test_$(get-random)"
-        $proxyName2 = "dbatoolsci_test_$(get-random)"
+        $proxyName = "dbatoolsci_test_$(Get-Random)"
+        $proxyName2 = "dbatoolsci_test_$(Get-Random)"
 
         $null = Invoke-DbaQuery -SqlInstance $server -Query "EXEC msdb.dbo.sp_add_proxy @proxy_name = '$proxyName', @enabled = 1,
         @description = 'Maintenance tasks on catalog application.', @credential_name = 'proxyCred' ;"

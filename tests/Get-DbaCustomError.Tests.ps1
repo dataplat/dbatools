@@ -10,7 +10,7 @@ $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Validate parameters" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -18,9 +18,6 @@ Describe $CommandName -Tag UnitTests {
                 "SqlCredential",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -35,7 +32,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We need to create a custom error message to test retrieval.
 
         # Set variables. They are available in all the It blocks.
-        $customErrorId   = 54321
+        $customErrorId = 54321
         $customErrorText = "Dbatools is Awesome!"
 
         # Create the custom error.

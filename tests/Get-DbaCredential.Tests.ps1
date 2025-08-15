@@ -12,7 +12,7 @@ $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -24,9 +24,6 @@ Describe $CommandName -Tag UnitTests {
                 "ExcludeIdentity",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -48,16 +45,16 @@ Describe $CommandName -Tag IntegrationTests {
 
         $splatThorCred = @{
             SqlInstance = $TestConfig.instance2
-            Name        = "thorcred"
-            Identity    = "thor"
-            Password    = $password
+                        Name        = "thorcred"
+                        Identity    = "thor"
+                        Password    = $password
         }
         $null = New-DbaCredential @splatThorCred
 
         $splatThorsmormmaCred = @{
             SqlInstance = $TestConfig.instance2
-            Identity    = "thorsmomma"
-            Password    = $password
+                        Identity    = "thorsmomma"
+                        Password    = $password
         }
         $null = New-DbaCredential @splatThorsmormmaCred
 
@@ -70,9 +67,9 @@ Describe $CommandName -Tag IntegrationTests {
 
         try {
             $splatGetCred = @{
-                SqlInstance   = $TestConfig.instance2
-                Identity      = "thor", "thorsmomma"
-                ErrorAction   = "Stop"
+                                SqlInstance   = $TestConfig.instance2
+                                Identity      = "thor", "thorsmomma"
+                                ErrorAction   = "Stop"
                 WarningAction = "SilentlyContinue"
             }
             (Get-DbaCredential @splatGetCred).Drop()
@@ -99,7 +96,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "gets more than one credential" {
             $splatMultipleCreds = @{
                 SqlInstance = $TestConfig.instance2
-                Identity    = "thor", "thorsmomma"
+                            Identity    = "thor", "thorsmomma"
             }
             $results = Get-DbaCredential @splatMultipleCreds
             $results.Count | Should -BeGreaterThan 1

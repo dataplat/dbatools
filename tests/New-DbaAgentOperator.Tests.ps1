@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "New-DbaAgentOperator",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -10,7 +10,7 @@ $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Validate parameters" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -33,9 +33,6 @@ Describe $CommandName -Tag UnitTests {
                 "InputObject",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -72,11 +69,11 @@ Describe $CommandName -Tag IntegrationTests {
     Context "New Agent Operator is added properly" {
         It "Should have the right name" {
             $splatOperator1 = @{
-                SqlInstance  = $server2
-                Operator     = $email1
+                                SqlInstance  = $server2
+                                Operator     = $email1
                 EmailAddress = $email1
-                PagerDay     = "Everyday"
-                Force        = $true
+                                PagerDay     = "Everyday"
+                                Force        = $true
             }
             $results = New-DbaAgentOperator @splatOperator1
             $results.Name | Should -Be $email1
@@ -94,18 +91,18 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Creates an agent operator with all params" {
             $splatOperatorFull = @{
-                SqlInstance       = $server2
-                Operator          = $email4
-                EmailAddress      = $email4
-                NetSendAddress    = "dbauser1"
-                PagerAddress      = "dbauser1@pager.dbatools.io"
-                PagerDay          = "Everyday"
+                                SqlInstance       = $server2
+                                Operator          = $email4
+                                EmailAddress      = $email4
+                                NetSendAddress    = "dbauser1"
+                                PagerAddress      = "dbauser1@pager.dbatools.io"
+                                PagerDay          = "Everyday"
                 SaturdayStartTime = "070000"  # <- Add quotes
-                SaturdayEndTime   = "180000"  # <- Add quotes
-                SundayStartTime   = "080000"  # <- Add quotes
-                SundayEndTime     = "170000"  # <- Add quotes
-                WeekdayStartTime  = "060000"  # <- Add quotes
-                WeekdayEndTime    = "190000"  # <- Add quotes
+                                SaturdayEndTime   = "180000"  # <- Add quotes
+                                SundayStartTime   = "080000"  # <- Add quotes
+                                SundayEndTime     = "170000"  # <- Add quotes
+                                WeekdayStartTime  = "060000"  # <- Add quotes
+                                WeekdayEndTime    = "190000"  # <- Add quotes
             }
             $results = New-DbaAgentOperator @splatOperatorFull
             $results.Enabled | Should -Be $true

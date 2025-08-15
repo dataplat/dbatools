@@ -1,13 +1,13 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "Set-DbaStartupParameter",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -33,9 +33,6 @@ Describe $CommandName -Tag UnitTests {
                 "Force",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -59,8 +56,8 @@ Describe $CommandName -Tag IntegrationTests {
         It -Skip:$global:SkipLocalTest "Ensure the startup params are not duplicated when more than one server is modified in the same invocation" {
             $splatSetStartup = @{
                 SqlInstance = $global:defaultInstance, $global:namedInstance
-                TraceFlag   = 3226
-                Confirm     = $false
+                                TraceFlag   = 3226
+                                Confirm     = $false
             }
             $result = Set-DbaStartupParameter @splatSetStartup
 
@@ -83,8 +80,8 @@ Describe $CommandName -Tag IntegrationTests {
         It -Skip:$global:SkipLocalTest "Ensure the correct instance name is returned" {
             $splatSetInstance = @{
                 SqlInstance = $global:namedInstance
-                TraceFlag   = 3226
-                Confirm     = $false
+                                TraceFlag   = 3226
+                                Confirm     = $false
             }
             $result = Set-DbaStartupParameter @splatSetInstance
 

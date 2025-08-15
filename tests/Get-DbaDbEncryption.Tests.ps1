@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "Get-DbaDbEncryption",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -10,7 +10,7 @@ $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -21,9 +21,6 @@ Describe $CommandName -Tag UnitTests {
                 "IncludeSystemDBs",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -35,32 +32,29 @@ Describe $CommandName -Tag UnitTests {
 #>
 Describe $CommandName -Tag IntegrationTests {
     Context "Test Retriving Certificate" {
-        BeforeAll {
+        It "Should find a certificate named $cert" {
             $random = Get-Random
             $cert = "dbatoolsci_getcert$random"
             $password = ConvertTo-SecureString -String Get-Random -AsPlainText -Force
 
             $splatCertificate = @{
                 SqlInstance = $TestConfig.instance1
-                Name        = $cert
-                Password    = $password
+                                Name        = $cert
+                                Password    = $password
             }
             New-DbaDbCertificate @splatCertificate
 
-            $results = Get-DbaDbEncryption -SqlInstance $TestConfig.instance1
-        }
-
-        AfterAll {
-            $splatRemove = @{
-                SqlInstance = $TestConfig.instance1
-                Certificate = $cert
-                Confirm     = $false
+            try {
+                $results = Get-DbaDbEncryption -SqlInstance $TestConfig.instance1
+                ($results.Name -match "dbatoolsci").Count -gt 0 | Should -Be $true
+            } finally {
+                $splatRemove = @{
+                    SqlInstance = $TestConfig.instance1
+                    Certificate = $cert
+                                        Confirm     = $false
+                }
+                Get-DbaDbCertificate @splatRemove | Remove-DbaDbCertificate -Confirm:$false
             }
-            Get-DbaDbCertificate @splatRemove | Remove-DbaDbCertificate -Confirm:$false
-        }
-
-        It "Should find a certificate named $cert" {
-            ($results.Name -match "dbatoolsci").Count -gt 0 | Should -Be $true
         }
     }
 }

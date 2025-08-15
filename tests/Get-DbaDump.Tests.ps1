@@ -1,13 +1,13 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "Get-DbaDump",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -15,9 +15,6 @@ Describe $CommandName -Tag UnitTests {
                 "SqlCredential",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -27,7 +24,7 @@ Describe $CommandName -Tag UnitTests {
 if (-not $env:appveyor) {
     Describe $CommandName -Tag IntegrationTests {
         Context "Testing if memory dump is present" {
-            BeforeAll {
+            It "finds least one dump" {
                 $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
                 $splatConnect = @{
@@ -38,9 +35,7 @@ if (-not $env:appveyor) {
                 $server.Query("DBCC STACKDUMP")
 
                 $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-            }
 
-            It "finds least one dump" {
                 $results = Get-DbaDump -SqlInstance $TestConfig.instance1
                 $results.Count | Should -BeGreaterOrEqual 1
             }

@@ -1,13 +1,13 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "Invoke-DbaDbLogShipping",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -93,9 +93,6 @@ Describe $CommandName -Tag UnitTests {
                 "Force",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -109,15 +106,15 @@ Describe $CommandName -Tag IntegrationTests {
 
     It "returns success" -Skip:$true {
         $splatLogShipping = @{
-            SourceSqlInstance       = $TestConfig.instance2
-            DestinationSqlInstance  = $TestConfig.instance
-            Database                = $global:dbname
-            BackupNetworkPath       = "C:\temp"
-            BackupLocalPath         = "C:\temp\logshipping\backup"
-            GenerateFullBackup      = $true
-            CompressBackup          = $true
+                        SourceSqlInstance       = $TestConfig.instance2
+                        DestinationSqlInstance  = $TestConfig.instance
+                        Database                = $global:dbname
+                        BackupNetworkPath       = "C:\temp"
+                        BackupLocalPath         = "C:\temp\logshipping\backup"
+                        GenerateFullBackup      = $true
+                        CompressBackup          = $true
             SecondaryDatabaseSuffix = "_LS"
-            Force                   = $true
+                        Force                   = $true
         }
         $results = Invoke-DbaDbLogShipping @splatLogShipping
         $results.Status -eq "Success" | Should -Be $true

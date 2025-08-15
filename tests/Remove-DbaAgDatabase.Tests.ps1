@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "Remove-DbaAgDatabase",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -10,7 +10,7 @@ $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -21,9 +21,6 @@ Describe $CommandName -Tag UnitTests {
                 "InputObject",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -43,13 +40,13 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbname | Backup-DbaDatabase -FilePath "$($TestConfig.Temp)\$dbname.trn" -Type Log
 
         $splatAvailabilityGroup = @{
-            Primary       = $TestConfig.instance3
-            Name          = $agname
-            ClusterType   = "None"
-            FailoverMode  = "Manual"
-            Database      = $dbname
-            Confirm       = $false
-            Certificate   = "dbatoolsci_AGCert"
+                        Primary       = $TestConfig.instance3
+                        Name          = $agname
+                        ClusterType   = "None"
+                        FailoverMode  = "Manual"
+                        Database      = $dbname
+                        Confirm       = $false
+                        Certificate   = "dbatoolsci_AGCert"
             UseLastBackup = $true
         }
         $ag = New-DbaAvailabilityGroup @splatAvailabilityGroup

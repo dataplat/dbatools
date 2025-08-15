@@ -198,13 +198,10 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Check if the output scripts were self-contained" {
-        BeforeAll {
+        It "Contains the CREATE ROLE and ALTER ROLE statements for its own roles" {
             # Clean up the output folder
             Remove-Item -Path $outputPath -Recurse -ErrorAction SilentlyContinue
             $null = Export-DbaUser -SqlInstance $TestConfig.instance1 -Database $dbname -Path $outputPath
-        }
-
-        It "Contains the CREATE ROLE and ALTER ROLE statements for its own roles" {
             Get-ChildItem $outputPath | Where-Object Name -like ("*" + $user01 + "*") | ForEach-Object {
                 $content = Get-Content -Path $PSItem.FullName -Raw
                 $content | Should -BeLike "*CREATE ROLE [[]$role01]*"

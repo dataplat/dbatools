@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "Get-DbaDbccStatistic",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -10,7 +10,7 @@ $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -23,9 +23,6 @@ Describe $CommandName -Tag UnitTests {
                 "NoInformationalMessages",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -189,21 +186,15 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Validate returns results for single Object" {
-        BeforeAll {
-            $result = Get-DbaDbccStatistic -SqlInstance $TestConfig.instance2 -Database $dbname -Object $tableName2 -Option StatsStream
-        }
-
         It "returns results" {
+            $result = Get-DbaDbccStatistic -SqlInstance $TestConfig.instance2 -Database $dbname -Object $tableName2 -Option StatsStream
             $result.Count | Should -BeGreaterThan 0
         }
     }
 
     Context "Validate returns results for single Object and Target" {
-        BeforeAll {
-            $result = Get-DbaDbccStatistic -SqlInstance $TestConfig.instance2 -Database $dbname -Object $tableName2 -Target "TestStat2" -Option DensityVector
-        }
-
         It "returns results" {
+            $result = Get-DbaDbccStatistic -SqlInstance $TestConfig.instance2 -Database $dbname -Object $tableName2 -Target "TestStat2" -Option DensityVector
             $result.Count | Should -BeGreaterThan 0
         }
     }

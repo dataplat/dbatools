@@ -1,13 +1,13 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "Select-DbaObject",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -30,9 +30,6 @@ Describe $CommandName -Tag UnitTests {
                 "TypeName",
                 "KeepInputObject"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -41,8 +38,8 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $script:object = [PSCustomObject]@{
-            Foo  = 42
-            Bar  = 18
+                        Foo  = 42
+                        Bar  = 18
             Tara = 21
         }
 
@@ -54,8 +51,8 @@ Describe $CommandName -Tag IntegrationTests {
         $script:list = @()
         $script:list += $script:object
         $script:list += [PSCustomObject]@{
-            Foo  = 23
-            Bar  = 88
+                        Foo  = 23
+                        Bar  = 88
             Tara = 28
         }
     }

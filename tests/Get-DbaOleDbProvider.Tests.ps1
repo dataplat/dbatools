@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "Get-DbaOleDbProvider",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -10,7 +10,7 @@ $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -19,9 +19,6 @@ Describe $CommandName -Tag UnitTests {
                 "Provider",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -29,11 +26,8 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     Context "When connecting to SQL Server" {
-        BeforeAll {
-            $allResults = @(Get-DbaOleDbProvider -SqlInstance $TestConfig.instance1)
-        }
-
         It "Returns OLE DB provider information" {
+            $allResults = @(Get-DbaOleDbProvider -SqlInstance $TestConfig.instance1)
             $allResults | Should -Not -BeNullOrEmpty
         }
     }

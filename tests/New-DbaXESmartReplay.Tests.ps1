@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "New-DbaXESmartReplay",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -33,9 +33,9 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $splatReplay = @{
                 SqlInstance = $TestConfig.instance2
-                Database    = "tempdb"
-                Event       = "sql_batch_completed"
-                Filter      = "duration > 10000"
+                                Database    = "tempdb"
+                                Event       = "sql_batch_completed"
+                                Filter      = "duration > 10000"
             }
         }
 

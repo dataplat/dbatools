@@ -1,13 +1,13 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "Restore-DbaDbCertificate",
     $PSDefaultParameterValues = (Get-TestConfig).Defaults
 )
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = (Get-TestConfig).CommonParameters
             $expectedParameters += @(
@@ -21,9 +21,6 @@ Describe $CommandName -Tag UnitTests {
                 "DecryptionPassword",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -34,15 +31,15 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $global:TestConfig = Get-TestConfig
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            
+
             $masterKeyPassword = ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force
             $certificatePassword = ConvertTo-SecureString -AsPlainText "GoodPass1234!!" -Force
-            
+
             $masterkey = New-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database tempdb -Password $masterKeyPassword
             $cert = New-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Database tempdb
             $backup = Backup-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Certificate $cert.Name -Database tempdb -EncryptionPassword $certificatePassword
             $cert | Remove-DbaDbCertificate
-            
+
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
         AfterEach {
@@ -50,7 +47,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            
+
             $null = $masterkey | Remove-DbaDbMasterKey
             $null = Remove-Item -Path $backup.ExportPath, $backup.ExportKey -ErrorAction SilentlyContinue
         }

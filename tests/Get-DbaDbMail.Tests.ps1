@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "Get-DbaDbMail", # Static command name for dbatools
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -10,7 +10,7 @@ $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -18,9 +18,6 @@ Describe $CommandName -Tag UnitTests {
                 "SqlCredential",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -34,13 +31,13 @@ Describe $CommandName -Tag IntegrationTests {
         # Set variables. They are available in all the It blocks.
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $mailSettings = @{
-            AccountRetryAttempts           = "1"
-            AccountRetryDelay              = "60"
+                        AccountRetryAttempts           = "1"
+                        AccountRetryDelay              = "60"
             DatabaseMailExeMinimumLifeTime = "600"
-            DefaultAttachmentEncoding      = "MIME"
-            LoggingLevel                   = "2"
-            MaxFileSize                    = "1000"
-            ProhibitedExtensions           = "exe,dll,vbs,js"
+                        DefaultAttachmentEncoding      = "MIME"
+                        LoggingLevel                   = "2"
+                        MaxFileSize                    = "1000"
+                        ProhibitedExtensions           = "exe,dll,vbs,js"
         }
         foreach ($m in $mailSettings.GetEnumerator()) {
             $server.query("exec msdb.dbo.sysmail_configure_sp '$($m.key)','$($m.value)';")

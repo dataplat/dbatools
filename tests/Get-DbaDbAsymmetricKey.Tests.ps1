@@ -10,7 +10,7 @@ $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -22,9 +22,6 @@ Describe $CommandName -Tag UnitTests {
                 "InputObject",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -37,32 +34,32 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
 
             # Set variables. They are available in all the It blocks.
-            $keyName         = "test4"
-            $keyName2        = "test5"
-            $algorithm       = "Rsa4096"
-            $dbUser          = "keyowner"
-            $databaseName    = "GetAsKey"
+            $keyName = "test4"
+            $keyName2 = "test5"
+            $algorithm = "Rsa4096"
+            $dbUser = "keyowner"
+            $databaseName = "GetAsKey"
 
             # Create the objects.
             $newDatabase = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $databaseName
             $tPassword = ConvertTo-SecureString "ThisIsThePassword1" -AsPlainText -Force
 
             $splatMasterKey = @{
-                SqlInstance    = $TestConfig.instance2
-                Database       = $databaseName
+                                SqlInstance    = $TestConfig.instance2
+                                Database       = $databaseName
                 SecurePassword = $tPassword
-                Confirm        = $false
+                                Confirm        = $false
             }
             $null = New-DbaDbMasterKey @splatMasterKey
 
             $null = New-DbaDbUser -SqlInstance $TestConfig.instance2 -Database $databaseName -UserName $dbUser
 
             $splatFirstKey = @{
-                SqlInstance     = $TestConfig.instance2
-                Database        = $databaseName
-                Name            = $keyName
-                Owner           = "keyowner"
-                Algorithm       = $algorithm
+                                SqlInstance     = $TestConfig.instance2
+                                Database        = $databaseName
+                                Name            = $keyName
+                                Owner           = "keyowner"
+                                Algorithm       = $algorithm
                 WarningVariable = "warnvar"
             }
             $null = New-DbaDbAsymmetricKey @splatFirstKey
@@ -101,11 +98,11 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should return 2 keys" {
             # Create second key for this test
             $splatSecondKey = @{
-                SqlInstance     = $TestConfig.instance2
-                Database        = $databaseName
-                Name            = $keyName2
-                Owner           = "keyowner"
-                Algorithm       = $algorithm
+                                SqlInstance     = $TestConfig.instance2
+                                Database        = $databaseName
+                                Name            = $keyName2
+                                Owner           = "keyowner"
+                                Algorithm       = $algorithm
                 WarningVariable = "warnvar"
             }
             $null = New-DbaDbAsymmetricKey @splatSecondKey

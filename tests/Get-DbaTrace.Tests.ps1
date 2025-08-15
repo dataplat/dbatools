@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "Get-DbaTrace",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -62,12 +62,9 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Test Check Default Trace" {
-        BeforeAll {
-            $global:results = Get-DbaTrace -SqlInstance $TestConfig.instance2
-        }
-
         It "Should find at least one trace file" {
-            $global:results.Id.Count -gt 0 | Should -Be $true
+            $results = Get-DbaTrace -SqlInstance $TestConfig.instance2
+            $results.Id.Count -gt 0 | Should -Be $true
         }
     }
 }

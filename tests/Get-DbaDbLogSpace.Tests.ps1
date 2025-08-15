@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "Get-DbaDbLogSpace",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -10,7 +10,7 @@ $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -21,9 +21,6 @@ Describe $CommandName -Tag UnitTests {
                 "ExcludeSystemDatabase",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -118,11 +115,8 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Piping servers works" {
-        BeforeAll {
-            $results = $TestConfig.instance2 | Get-DbaDbLogSpace
-        }
-
         It "Should have database name of $db1" {
+            $results = $TestConfig.instance2 | Get-DbaDbLogSpace
             $results.Database | Should -Contain $db1
         }
     }

@@ -1,7 +1,7 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName               = "dbatools",
-    $CommandName              = "Add-DbaAgDatabase",
+    $ModuleName  = "dbatools",
+    $CommandName = "Add-DbaAgDatabase",
     # $TestConfig has to be set outside of the tests by running: $TestConfig = Get-TestConfig
     # This will set $TestConfig.Defaults with the parameter defaults, including:
     # * Confirm = $false
@@ -12,7 +12,7 @@ param(
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -29,9 +29,6 @@ Describe $CommandName -Tag UnitTests {
                 "AdvancedBackupParams",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -52,10 +49,10 @@ Describe $CommandName -Tag IntegrationTests {
         # For negative tests, we need a database without a backup and a non existing database.
 
         # Set variables. They are available in all the It blocks.
-        $agName                  = "addagdb_group"
-        $existingDbWithBackup    = "dbWithBackup"
+        $agName = "addagdb_group"
+        $existingDbWithBackup = "dbWithBackup"
         $existingDbWithoutBackup = "dbWithoutBackup"
-        $nonexistingDb           = "dbdoesnotexist"
+        $nonexistingDb = "dbdoesnotexist"
 
         # Create the objects.
         $splatAg = @{

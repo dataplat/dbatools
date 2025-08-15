@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+        $ModuleName  = "dbatools",
     $CommandName = "New-DbaAgentJobStep",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -10,7 +10,7 @@ $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -38,9 +38,6 @@ Describe $CommandName -Tag UnitTests {
                 "Force",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -76,14 +73,14 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should have the right properties" {
             $splatJobStep = @{
-                SqlInstance    = $TestConfig.instance2
-                Job            = $jobTwo
-                StepName       = "Step X"
-                Subsystem      = "TransactSql"
-                Command        = "select 1"
-                Database       = "master"
-                RetryAttempts  = 2
-                RetryInterval  = 5
+                                SqlInstance    = $TestConfig.instance2
+                                Job            = $jobTwo
+                                StepName       = "Step X"
+                                Subsystem      = "TransactSql"
+                                Command        = "select 1"
+                                Database       = "master"
+                                RetryAttempts  = 2
+                                RetryInterval  = 5
                 OutputFileName = "log.txt"
             }
             $results = New-DbaAgentJobStep @splatJobStep
