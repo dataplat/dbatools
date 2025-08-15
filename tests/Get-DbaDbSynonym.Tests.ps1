@@ -1,12 +1,9 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
     $ModuleName  = "dbatools",
-    $CommandName = "Get-DbaDbSynonym", # Static command name for dbatools
+    $CommandName = "Get-DbaDbSynonym",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
-
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
@@ -36,9 +33,8 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        # Set up test databases and synonyms
         $dbname = "dbatoolsscidb_$(Get-Random)"
         $dbname2 = "dbatoolsscidb2_$(Get-Random)"
 
@@ -50,15 +46,14 @@ Describe $CommandName -Tag IntegrationTests {
         $null = New-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname2 -Schema sch2 -Synonym syn3 -BaseObject obj2
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     AfterAll {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        # Cleanup all created objects
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname, $dbname2 -Confirm:$false -ErrorAction SilentlyContinue
-        $null = Remove-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Confirm:$false -ErrorAction SilentlyContinue
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname, $dbname2 -Confirm:$false
+        $null = Remove-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Confirm:$false
 
         # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
@@ -83,7 +78,6 @@ Describe $CommandName -Tag IntegrationTests {
 
             $result3.Database | Select-Object -Unique | Should -Be $dbname, $dbname2
         }
-
         It "Excludes databases" {
             $result4 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2 -ExcludeDatabase $dbname2
 
@@ -95,11 +89,13 @@ Describe $CommandName -Tag IntegrationTests {
             $result5 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Synonym "syn1", "syn2"
 
             $result5.Name | Select-Object -Unique | Should -Be "syn1", "syn2"
+            $result5.Name | Select-Object -Unique | Should -Be "syn1", "syn2"
         }
 
         It "Excludes synonyms" {
             $result6 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2 -ExcludeSynonym "syn2"
 
+            $result6.Name | Select-Object -Unique | Should -Not -Contain "syn2"
             $result6.Name | Select-Object -Unique | Should -Not -Contain "syn2"
         }
 
@@ -113,11 +109,13 @@ Describe $CommandName -Tag IntegrationTests {
             $result8 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Schema "dbo", "sch2"
 
             $result8.Schema | Select-Object -Unique | Should -Be "dbo", "sch2"
+            $result8.Schema | Select-Object -Unique | Should -Be "dbo", "sch2"
         }
 
         It "Excludes schemas" {
             $result9 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2 -ExcludeSchema "dbo"
 
+            $result9.Schema | Select-Object -Unique | Should -Not -Contain "dbo"
             $result9.Schema | Select-Object -Unique | Should -Not -Contain "dbo"
         }
 
@@ -125,7 +123,7 @@ Describe $CommandName -Tag IntegrationTests {
             $result10 = Get-DbaDbSynonym -WarningAction SilentlyContinue -WarningVariable warn > $null
 
             $warn | Should -Match "You must pipe in a database or specify a SqlInstance"
+            $warn | Should -Match "You must pipe in a database or specify a SqlInstance"
         }
-
     }
 }

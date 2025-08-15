@@ -5,9 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
@@ -31,49 +28,53 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $procname = "dbatools_$(Get-Random)"
-        $server.Query("CREATE PROCEDURE $procname AS SELECT 1", "tempdb")
-        $queuename = "dbatools_$(Get-Random)"
-        $server.Query("CREATE QUEUE $queuename WITH STATUS = ON , RETENTION = OFF , ACTIVATION (  STATUS = ON , PROCEDURE_NAME = $procname , MAX_QUEUE_READERS = 1 , EXECUTE AS OWNER  ), POISON_MESSAGE_HANDLING (STATUS = ON)", "tempdb")
-        $servicename = "dbatools_$(Get-Random)"
-        $server.Query("CREATE SERVICE $servicename ON QUEUE $queuename ([DEFAULT])", "tempdb")
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Set up Service Broker components for testing
+        $global:testServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $global:testProcName = "dbatools_{0}" -f $(Get-Random)
+        $global:testServer.Query("CREATE PROCEDURE $global:testProcName AS SELECT 1", "tempdb")
+        $global:testQueueName = "dbatools_{0}" -f $(Get-Random)
+        $global:testServer.Query("CREATE QUEUE $global:testQueueName WITH STATUS = ON , RETENTION = OFF , ACTIVATION (  STATUS = ON , PROCEDURE_NAME = $global:testProcName , MAX_QUEUE_READERS = 1 , EXECUTE AS OWNER  ), POISON_MESSAGE_HANDLING (STATUS = ON)", "tempdb")
+        $global:testServiceName = "dbatools_{0}" -f $(Get-Random)
+        $global:testServer.Query("CREATE SERVICE $global:testServiceName ON QUEUE $global:testQueueName ([DEFAULT])", "tempdb")
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
+
     AfterAll {
-        try {
-            $null = $server.Query("DROP SERVICE $servicename", "tempdb")
-            $null = $server.Query("DROP QUEUE $queuename", "tempdb")
-            $null = $server.Query("DROP PROCEDURE $procname", "tempdb")
-        } catch {
-            # Suppress errors during cleanup
-        }
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Cleanup Service Broker components
+        $null = $global:testServer.Query("DROP SERVICE $global:testServiceName", "tempdb")
+        $null = $global:testServer.Query("DROP QUEUE $global:testQueueName", "tempdb")
+        $null = $global:testServer.Query("DROP PROCEDURE $global:testProcName", "tempdb")
     }
 
     Context "Gets the service broker service" {
         BeforeAll {
-            $splatServiceBroker = @{
-                SqlInstance          = $TestConfig.instance2
-                Database          = "tempdb"
-                ExcludeSystemService             = $true
-            }
-            $results = Get-DbaDbServiceBrokerService @splatServiceBroker
+            $testResults = Get-DbaDbServiceBrokerService -SqlInstance $TestConfig.instance2 -Database tempdb -ExcludeSystemService:$true
         }
 
         It "Gets results" {
-            $results | Should -Not -BeNullOrEmpty
+            $testResults | Should -Not -BeNullOrEmpty
         }
 
-        It "Should have a name of $servicename" {
-            $results.Name | Should -BeExactly $servicename
+        It "Should have a name of $global:testServiceName" {
+            $testResults.Name | Should -Be $global:testServiceName
         }
+
 
         It "Should have an owner of dbo" {
-            $results.Owner | Should -BeExactly "dbo"
+            $testResults.Owner | Should -Be "dbo"
         }
 
-        It "Should have a queuename of $queuename" {
-            $results.QueueName | Should -BeExactly $queuename
+        It "Should have a queuename of $global:testQueueName" {
+            $testResults.QueueName | Should -Be $global:testQueueName
         }
     }
 }

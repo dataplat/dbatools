@@ -5,9 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
@@ -42,12 +39,12 @@ Describe $CommandName -Tag IntegrationTests {
 CREATE LOGIN [$DBUserName]
     WITH PASSWORD = '$($tempguid.guid)';
 USE Master;
-CREATE USER [$DBUserName] FOR LOGIN [$DBUserName]
+CREATE USER [$dbUserName] FOR LOGIN [$dbUserName]
     WITH DEFAULT_SCHEMA = dbo;
-CREATE LOGIN [$DBUserName2]
+CREATE LOGIN [$dbUserName2]
     WITH PASSWORD = '$($tempguid.guid)';
 USE Master;
-CREATE USER [$DBUserName2] FOR LOGIN [$DBUserName2]
+CREATE USER [$dbUserName2] FOR LOGIN [$dbUserName2]
     WITH DEFAULT_SCHEMA = dbo;
 "@
         Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $CreateTestUser -Database master
@@ -105,27 +102,27 @@ DROP LOGIN [$DBUserName2];
         }
 
         It "Should not Throw an Error" {
-            { Get-DbaDbUser -SqlInstance $TestConfig.instance2 -ExcludeDatabase master -ExcludeSystemUser } | Should -not -Throw
+            { Get-DbaDbUser -SqlInstance $TestConfig.instance2 -ExcludeDatabase master -ExcludeSystemUser } | Should -Not -Throw
         }
 
         It "Should return a specific user" {
-            $resultsByUser.Name | Should -Be $DBUserName2
-            $resultsByUser.Database | Should -Be master
+            $resultsByUser.Name | Should -Be $dbUserName2
+            $resultsByUser.Database | Should -Be "master"
         }
 
         It "Should return two specific users" {
-            $resultsByMultipleUser.Name | Should -Be $DBUserName, $DBUserName2
-            $resultsByMultipleUser.Database | Should -Be master, master
+            $resultsByMultipleUser.Name | Should -Be $dbUserName, $dbUserName2
+            $resultsByMultipleUser.Database | Should -Be "master", "master"
         }
 
         It "Should return a specific user for the given login" {
-            $resultsByLogin.Name | Should -Be $DBUserName2
-            $resultsByLogin.Database | Should -Be master
+            $resultsByLogin.Name | Should -Be $dbUserName2
+            $resultsByLogin.Database | Should -Be "master"
         }
 
         It "Should return two specific users for the given logins" {
-            $resultsByMultipleLogin.Name | Should -Be $DBUserName, $DBUserName2
-            $resultsByMultipleLogin.Database | Should -Be master, master
+            $resultsByMultipleLogin.Name | Should -Be $dbUserName, $dbUserName2
+            $resultsByMultipleLogin.Database | Should -Be "master", "master"
         }
     }
 }

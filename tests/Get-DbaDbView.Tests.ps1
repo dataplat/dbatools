@@ -5,9 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
@@ -51,6 +48,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
     }
+
     AfterAll {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
@@ -67,6 +65,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $results = Get-DbaDbView -SqlInstance $TestConfig.instance2 -Database tempdb
         }
+
         It "Should have standard properties" {
             $ExpectedProps = @(
                 "ComputerName",
@@ -75,9 +74,11 @@ Describe $CommandName -Tag IntegrationTests {
             )
             ($results[0].PsObject.Properties.Name | Where-Object { $PSItem -in $ExpectedProps } | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
         }
-        It "Should get test view: $viewName" {
-            ($results | Where-Object Name -eq $viewName).Name | Should -Be $viewName
+
+        It "Should get test view: $global:viewName" {
+            ($results | Where-Object Name -eq $global:viewName).Name | Should -Be $global:viewName
         }
+
         It "Should include system views" {
             @($results | Where-Object IsSystemObject -eq $true).Count | Should -BeGreaterThan 0
         }
@@ -88,6 +89,7 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbaDbView -SqlInstance $TestConfig.instance2 -ExcludeDatabase master
             "master" | Should -Not -BeIn $results.Database
         }
+
         It "Should exclude system views" {
             $results = Get-DbaDbView -SqlInstance $TestConfig.instance2 -Database master -ExcludeSystemView
             @($results | Where-Object IsSystemObject -eq $true).Count | Should -Be 0
@@ -97,11 +99,12 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Piping workings" {
         It "Should allow piping from string" {
             $results = $TestConfig.instance2 | Get-DbaDbView -Database tempdb
-            ($results | Where-Object Name -eq $viewName).Name | Should -Be $viewName
+            ($results | Where-Object Name -eq $global:viewName).Name | Should -Be $global:viewName
         }
+
         It "Should allow piping from Get-DbaDatabase" {
             $results = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database tempdb | Get-DbaDbView
-            ($results | Where-Object Name -eq $viewName).Name | Should -Be $viewName
+            ($results | Where-Object Name -eq $global:viewName).Name | Should -Be $global:viewName
         }
     }
 

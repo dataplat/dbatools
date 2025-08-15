@@ -73,10 +73,10 @@ Describe $CommandName -Tag IntegrationTests {
             # Unhandled Exception: System.IO.FileNotFoundException: Could not load file or assembly 'System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51' or one of its dependencies. The system cannot find the file specified.
             # So we don't run the following line but skip the tests
             # . $sqlpackage /Action:Import /tsn:$TestConfig.instance2 /tdn:Sharepoint_Config /sf:$bacpac /p:Storage=File
-            $skip = $true
+            $global:skip = $true
         } else {
             Write-Warning -Message "No bacpac found in path [$bacpac], skipping tests."
-            $skip = $true
+            $global:skip = $true
         }
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.

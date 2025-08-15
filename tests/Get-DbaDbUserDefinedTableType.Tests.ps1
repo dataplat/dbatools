@@ -5,9 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
@@ -45,8 +42,8 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = $server.Query("DROP TYPE $tabletypename", "tempdb") -ErrorAction SilentlyContinue
-        $null = $server.Query("DROP TYPE $tabletypename1", "tempdb") -ErrorAction SilentlyContinue
+        $null = $server.Query("DROP TYPE $tabletypename", "tempdb")
+        $null = $server.Query("DROP TYPE $tabletypename1", "tempdb")
     }
 
     Context "Gets a Db User Defined Table Type" {

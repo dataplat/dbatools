@@ -5,9 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
@@ -35,15 +32,15 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Operations on snapshots" {
         BeforeAll {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-            $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             Get-DbaProcess -SqlInstance $TestConfig.instance2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-            $db1 = "dbatoolsci_GetSnap"
-            $db1_snap1 = "dbatoolsci_GetSnap_snapshotted1"
-            $db1_snap2 = "dbatoolsci_GetSnap_snapshotted2"
-            $db2 = "dbatoolsci_GetSnap2"
-            $db2_snap1 = "dbatoolsci_GetSnap2_snapshotted"
+            $global:server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+            $global:db1 = "dbatoolsci_GetSnap"
+            $global:db1_snap1 = "dbatoolsci_GetSnap_snapshotted1"
+            $global:db1_snap2 = "dbatoolsci_GetSnap_snapshotted2"
+            $global:db2 = "dbatoolsci_GetSnap2"
+            $global:db2_snap1 = "dbatoolsci_GetSnap2_snapshotted"
             Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db1, $db2 -Confirm:$false
             Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $db1, $db2 | Remove-DbaDatabase -Confirm:$false
             $server.Query("CREATE DATABASE $db1")
@@ -53,12 +50,12 @@ Describe $CommandName -Tag IntegrationTests {
             $null = New-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db2 -Name $db2_snap1 -WarningAction SilentlyContinue
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-            $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         AfterAll {
             # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-            $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db1, $db2 -ErrorAction SilentlyContinue -Confirm:$false
             Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance2 -Database $db1, $db2 -ErrorAction SilentlyContinue
@@ -68,24 +65,27 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Gets all snapshots by default" {
             $results = Get-DbaDbSnapshot -SqlInstance $TestConfig.instance2
-            ($results | Where-Object Name -Like "dbatoolsci_GetSnap*").Count | Should -BeExactly 3
+            ($results | Where-Object Name -Like "dbatoolsci_GetSnap*").Count | Should -Be 3
         }
 
         It "Honors the Database parameter, returning only snapshots of that database" {
             $results = Get-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db1
-            $results.Count | Should -BeExactly 2
+            $results.Count | Should -Be 2
             $result = Get-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db2
+            $result.SnapshotOf | Should -Be $db2
             $result.SnapshotOf | Should -Be $db2
         }
 
         It "Honors the ExcludeDatabase parameter, returning relevant snapshots" {
             $alldbs = (Get-DbaDatabase -SqlInstance $TestConfig.instance2 | Where-Object IsDatabaseSnapShot -eq $false | Where-Object Name -notin @($db1, $db2)).Name
             $results = Get-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -ExcludeDatabase $alldbs
-            $results.Count | Should -BeExactly 3
+            $results.Count | Should -Be 3
         }
 
         It "Honors the Snapshot parameter" {
             $result = Get-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Snapshot $db1_snap1
+            $result.Name | Should -Be $db1_snap1
+            $result.SnapshotOf | Should -Be $db1
             $result.Name | Should -Be $db1_snap1
             $result.SnapshotOf | Should -Be $db1
         }
@@ -93,19 +93,12 @@ Describe $CommandName -Tag IntegrationTests {
         It "Honors the ExcludeSnapshot parameter" {
             $result = Get-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -ExcludeSnapshot $db1_snap1 -Database $db1
             $result.Name | Should -Be $db1_snap2
+            $result.Name | Should -Be $db1_snap2
         }
 
         It "has the correct default properties" {
             $result = Get-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db2
-            $ExpectedPropsDefault = @(
-                "ComputerName",
-                "CreateDate",
-                "InstanceName",
-                "Name",
-                "SnapshotOf",
-                "SqlInstance",
-                "DiskUsage"
-            )
+            $ExpectedPropsDefault = "ComputerName", "CreateDate", "InstanceName", "Name", "SnapshotOf", "SqlInstance", "DiskUsage"
             ($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should -Be ($ExpectedPropsDefault | Sort-Object)
         }
     }

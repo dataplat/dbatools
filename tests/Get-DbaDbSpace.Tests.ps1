@@ -5,9 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
@@ -33,74 +30,76 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        # Create test database for space testing
-        $dbname = "dbatoolsci_test_$(Get-Random)"
+        # Set variables. They are available in all the It blocks.
+        $dbName = "dbatoolsci_test_$(Get-Random)"
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $null = $server.Query("Create Database [$dbname]")
+        $null = $server.Query("Create Database [$dbName]")
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+
 
     AfterAll {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        # Cleanup test database
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname
+        # Cleanup all created objects.
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbName -Confirm:$false
 
         # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
+
     #Skipping these tests as internals of Get-DbaDbSpace seems to be unreliable in CI
     Context "Gets DbSpace" {
         BeforeAll {
-            $results = Get-DbaDbSpace -SqlInstance $TestConfig.instance2 | Where-Object Database -eq $dbname
+            $allResults = @(Get-DbaDbSpace -SqlInstance $TestConfig.instance2 | Where-Object Database -eq $dbName)
         }
 
         It "Gets results" {
-            $results | Should -Not -BeNullOrEmpty
+            $allResults | Should -Not -BeNullOrEmpty
         }
 
-        It "Should retrieve space for test database" {
-            $results[0].Database | Should -Be $dbname
-            $results[0].UsedSpace | Should -Not -BeNullOrEmpty
+        It "Should retrieve space for $dbName" {
+            $allResults[0].Database | Should -Be $dbName
+            $allResults[0].UsedSpace | Should -Not -BeNullOrEmpty
         }
 
-        It "Should have a physical path for test database" {
-            $results[0].physicalname | Should -Not -BeNullOrEmpty
+        It "Should have a physical path for $dbName" {
+            $allResults[0].PhysicalName | Should -Not -BeNullOrEmpty
         }
     }
 
     #Skipping these tests as internals of Get-DbaDbSpace seems to be unreliable in CI
     Context "Gets DbSpace when using -Database" {
         BeforeAll {
-            $results = Get-DbaDbSpace -SqlInstance $TestConfig.instance2 -Database $dbname
+            $databaseResults = @(Get-DbaDbSpace -SqlInstance $TestConfig.instance2 -Database $dbName)
         }
 
         It "Gets results" {
-            $results | Should -Not -BeNullOrEmpty
+            $databaseResults | Should -Not -BeNullOrEmpty
         }
 
-        It "Should retrieve space for test database" {
-            $results[0].Database | Should -Be $dbname
-            $results[0].UsedSpace | Should -Not -BeNullOrEmpty
+        It "Should retrieve space for $dbName" {
+            $databaseResults[0].Database | Should -Be $dbName
+            $databaseResults[0].UsedSpace | Should -Not -BeNullOrEmpty
         }
 
-        It "Should have a physical path for test database" {
-            $results[0].physicalname | Should -Not -BeNullOrEmpty
+        It "Should have a physical path for $dbName" {
+            $databaseResults[0].PhysicalName | Should -Not -BeNullOrEmpty
         }
     }
 
     Context "Gets no DbSpace for specific database when using -ExcludeDatabase" {
         BeforeAll {
-            $results = Get-DbaDbSpace -SqlInstance $TestConfig.instance2 -ExcludeDatabase $dbname
+            $excludeResults = @(Get-DbaDbSpace -SqlInstance $TestConfig.instance2 -ExcludeDatabase $dbName)
         }
 
-        It "Gets no results" {
-            $results.database | Should -Not -Contain $dbname
+        It "Gets no results for excluded database" {
+            $excludeResults.Database | Should -Not -Contain $dbName
         }
     }
 }
