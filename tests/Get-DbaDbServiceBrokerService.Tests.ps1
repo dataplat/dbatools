@@ -27,6 +27,7 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
@@ -43,6 +44,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+
 
     AfterAll {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
@@ -66,6 +68,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should have a name of $global:testServiceName" {
             $testResults.Name | Should -Be $global:testServiceName
         }
+
 
         It "Should have an owner of dbo" {
             $testResults.Owner | Should -Be "dbo"

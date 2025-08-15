@@ -16,10 +16,10 @@ Describe $CommandName -Tag UnitTests {
             $expectedParameters += @(
                 "SqlInstance",
                 "SqlCredential",
+                "EnableException",
                 "Database",
                 "ExcludeDatabase",
-                "Type",
-                "EnableException"
+                "Type"
             )
         }
 
@@ -31,60 +31,62 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $tableTypeName = ("dbatools_{0}" -f $(Get-Random))
-        $tableTypeName1 = ("dbatools_{0}" -f $(Get-Random))
+        $tableTypeName = "dbatools_$(Get-Random)"
+        $tableTypeName1 = "dbatools_$(Get-Random)"
         $server.Query("CREATE TYPE $tableTypeName AS TABLE([column1] INT NULL)", "tempdb")
         $server.Query("CREATE TYPE $tableTypeName1 AS TABLE([column1] INT NULL)", "tempdb")
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
-        $null = $server.Query("DROP TYPE $tableTypeName", "tempdb")
-        $null = $server.Query("DROP TYPE $tableTypeName1", "tempdb")
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $null = $server.Query("DROP TYPE $tabletypename", "tempdb") -ErrorAction SilentlyContinue
+        $null = $server.Query("DROP TYPE $tabletypename1", "tempdb") -ErrorAction SilentlyContinue
     }
 
     Context "Gets a Db User Defined Table Type" {
         BeforeAll {
-            $splatSingleType = @{
+            $splatUserDefinedTableType = @{
                 SqlInstance = $TestConfig.instance2
                 Database    = "tempdb"
                 Type        = $tableTypeName
             }
-            $singleResults = Get-DbaDbUserDefinedTableType @splatSingleType
+            $results = Get-DbaDbUserDefinedTableType @splatUserDefinedTableType
         }
 
         It "Gets results" {
-            $singleResults | Should -Not -BeNullOrEmpty
+            $results | Should -Not -BeNullOrEmpty
         }
 
         It "Should have a name of $tableTypeName" {
-            $singleResults.Name | Should -Be $tableTypeName
+            $results.Name | Should -BeExactly $tableTypeName
         }
 
         It "Should have an owner of dbo" {
-            $singleResults.Owner | Should -Be "dbo"
+            $results.Owner | Should -BeExactly "dbo"
         }
 
         It "Should have a count of 1" {
-            $singleResults.Count | Should -Be 1
+            $results.Count | Should -BeExactly 1
         }
     }
 
-    Context "Gets all the Db User Defined Table Types" {
+    Context "Gets all the Db User Defined Table Type" {
         BeforeAll {
-            $splatAllTypes = @{
-                SqlInstance = $TestConfig.instance2
-                Database    = "tempdb"
-            }
-            $allResults = Get-DbaDbUserDefinedTableType @splatAllTypes
+            $results = Get-DbaDbUserDefinedTableType -SqlInstance $TestConfig.instance2 -Database tempdb
         }
 
         It "Gets results" {
-            $allResults | Should -Not -BeNullOrEmpty
+            $results | Should -Not -BeNullOrEmpty
         }
 
         It "Should have a count of 2" {
-            $allResults.Count | Should -Be 2
+            $results.Count | Should -BeExactly 2
         }
     }
 }

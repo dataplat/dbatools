@@ -5,9 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
@@ -30,8 +27,11 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $global:skip = $false
-        $global:spdb = @(
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
+        $skip = $false
+        $spdb = @(
             "SharePoint_Admin_7c0c491d0e6f43858f75afa5399d49ab",
             "WSS_Logging",
             "SecureStoreService_20e1764876504335a6d8dd0b1937f4bf",
@@ -40,13 +40,18 @@ Describe $CommandName -Tag IntegrationTests {
             "DefaultPowerPivotServiceApplicationDB-5b638361-c6fc-4ad9-b8ba-d05e63e48ac6",
             "SharePoint_Config_4c524cb90be44c6f906290fe3e34f2e0"
         )
+
         Get-DbaProcess -SqlInstance $TestConfig.instance2 -Program "dbatools PowerShell module - dbatools.io" | Stop-DbaProcess -WarningAction SilentlyContinue
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        foreach ($db in $global:spdb) {
+
+        foreach ($db in $spdb) {
             try {
                 $null = $server.Query("Create Database [$db]")
-            } catch { continue }
+            } catch {
+                continue
+            }
         }
+
         # Andreas Jordan: We should try to get a backup working again or even better just a sql script to set this up.
         # This takes a long time but I cannot figure out why every backup of this db is malformed
         $bacpac = "$($TestConfig.appveyorlabrepo)\bacpac\sharepoint_config.bacpac"
@@ -73,18 +78,28 @@ Describe $CommandName -Tag IntegrationTests {
             Write-Warning -Message "No bacpac found in path [$bacpac], skipping tests."
             $global:skip = $true
         }
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
     }
+
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $global:spdb -Confirm:$false
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $spdb -Confirm:$false -ErrorAction SilentlyContinue
+
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
+
     Context "Command gets SharePoint Databases" {
         BeforeAll {
-            $global:results = Get-DbaDbSharePoint -SqlInstance $TestConfig.instance2
+            $results = Get-DbaDbSharePoint -SqlInstance $TestConfig.instance2
         }
 
-        foreach ($db in $global:spdb) {
-            It -Skip:$global:skip "returns $db from in the SharePoint database list" {
-                $db | Should -BeIn $global:results.Name
+        foreach ($db in $spdb) {
+            It "returns $db from in the SharePoint database list" -Skip:$skip {
+                $db | Should -BeIn $results.Name
             }
         }
     }

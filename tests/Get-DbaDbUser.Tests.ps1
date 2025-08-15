@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
+    $ModuleName  = "dbatools",
     $CommandName = "Get-DbaDbUser",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -33,14 +33,13 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
 
-        $tempguid = [guid]::NewGuid()
-        $dbUserName = "dbatoolssci_$($tempguid.guid)"
-        $dbUserName2 = "dbatoolssci2_$($tempguid.guid)"
-        $createTestUser = @"
-CREATE LOGIN [$dbUserName]
+        $tempguid = [guid]::newguid()
+        $DBUserName = "dbatoolssci_$($tempguid.guid)"
+        $DBUserName2 = "dbatoolssci2_$($tempguid.guid)"
+        $CreateTestUser = @"
+CREATE LOGIN [$DBUserName]
     WITH PASSWORD = '$($tempguid.guid)';
 USE Master;
 CREATE USER [$dbUserName] FOR LOGIN [$dbUserName]
@@ -51,35 +50,33 @@ USE Master;
 CREATE USER [$dbUserName2] FOR LOGIN [$dbUserName2]
     WITH DEFAULT_SCHEMA = dbo;
 "@
-        Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $createTestUser -Database master
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $CreateTestUser -Database master
 
-        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
     }
 
     AfterAll {
-        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
 
-        $dropTestUser = @"
-DROP USER [$dbUserName];
-DROP USER [$dbUserName2];
-DROP LOGIN [$dbUserName];
-DROP LOGIN [$dbUserName2];
+        $DropTestUser = @"
+DROP USER [$DBUserName];
+DROP USER [$DBUserName2];
+DROP LOGIN [$DBUserName];
+DROP LOGIN [$DBUserName2];
 "@
-        Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $dropTestUser -Database master
+        Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $DropTestUser -Database master -ErrorAction SilentlyContinue
     }
 
     Context "Users are correctly located" {
         BeforeAll {
-            $results1 = Get-DbaDbUser -SqlInstance $TestConfig.instance2 -Database master | Where-Object Name -eq $dbUserName | Select-Object *
+            $results1 = Get-DbaDbUser -SqlInstance $TestConfig.instance2 -Database master | Where-Object Name -eq $DBUserName | Select-Object *
             $results2 = Get-DbaDbUser -SqlInstance $TestConfig.instance2
 
-            $resultsByUser = Get-DbaDbUser -SqlInstance $TestConfig.instance2 -Database master -User $dbUserName2
-            $resultsByMultipleUser = Get-DbaDbUser -SqlInstance $TestConfig.instance2 -User $dbUserName, $dbUserName2
+            $resultsByUser = Get-DbaDbUser -SqlInstance $TestConfig.instance2 -Database master -User $DBUserName2
+            $resultsByMultipleUser = Get-DbaDbUser -SqlInstance $TestConfig.instance2 -User $DBUserName, $DBUserName2
 
-            $resultsByLogin = Get-DbaDbUser -SqlInstance $TestConfig.instance2 -Database master -Login $dbUserName2
-            $resultsByMultipleLogin = Get-DbaDbUser -SqlInstance $TestConfig.instance2 -Login $dbUserName, $dbUserName2
+            $resultsByLogin = Get-DbaDbUser -SqlInstance $TestConfig.instance2 -Database master -Login $DBUserName2
+            $resultsByMultipleLogin = Get-DbaDbUser -SqlInstance $TestConfig.instance2 -Login $DBUserName, $DBUserName2
         }
 
         It "Should execute and return results" {
@@ -90,9 +87,9 @@ DROP LOGIN [$dbUserName2];
             $results1 | Should -Not -Be $null
         }
 
-        It "Should have matching login and username of $dbUserName" {
-            $results1.Name | Should -Be $dbUserName
-            $results1.Login | Should -Be $dbUserName
+        It "Should have matching login and username of $DBUserName" {
+            $results1.name | Should -Be $DBUserName
+            $results1.login | Should -Be $DBUserName
         }
 
         It "Should have a login type of SqlLogin" {

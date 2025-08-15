@@ -30,18 +30,21 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $dbname = "dbatoolsscidb_$(Get-Random)"
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbname -Owner sa
         $tablename = "dbatoolssci_$(Get-Random)"
+
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbname -Owner sa
         $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database $dbname -Query "Create table $tablename (col1 int)"
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+
     AfterAll {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
@@ -51,16 +54,22 @@ Describe $CommandName -Tag IntegrationTests {
 
         # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
+
     Context "Should get the table" {
         It "Gets the table" {
             (Get-DbaDbTable -SqlInstance $TestConfig.instance1).Name | Should -Contain $tablename
+            (Get-DbaDbTable -SqlInstance $TestConfig.instance1).Name | Should -Contain $tablename
         }
+
         It "Gets the table when you specify the database" {
+            (Get-DbaDbTable -SqlInstance $TestConfig.instance1 -Database $dbname).Name | Should -Contain $tablename
             (Get-DbaDbTable -SqlInstance $TestConfig.instance1 -Database $dbname).Name | Should -Contain $tablename
         }
     }
+
     Context "Should not get the table if database is excluded" {
         It "Doesn't find the table" {
+            (Get-DbaDbTable -SqlInstance $TestConfig.instance1 -ExcludeDatabase $dbname).Name | Should -Not -Contain $tablename
             (Get-DbaDbTable -SqlInstance $TestConfig.instance1 -ExcludeDatabase $dbname).Name | Should -Not -Contain $tablename
         }
     }

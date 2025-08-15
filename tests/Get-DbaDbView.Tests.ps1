@@ -1,7 +1,7 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
-    $CommandName = "Get-DbaDbView",
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaDbView", # Static command name for dbatools
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
@@ -35,26 +35,33 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
 
-        $global:server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $global:viewName = ("dbatoolsci_{0}" -f $(Get-Random))
-        $global:viewNameWithSchema = ("dbatoolsci_{0}" -f $(Get-Random))
-        $server.Query("CREATE VIEW $global:viewName AS (SELECT 1 as col1)", "tempdb")
-        $server.Query("CREATE SCHEMA [someschema]", "tempdb")
-        $server.Query("CREATE VIEW [someschema].$global:viewNameWithSchema AS (SELECT 1 as col1)", "tempdb")
+        # Set variables. They are available in all the It blocks.
+        $server                = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $viewName              = "dbatoolsci_$(Get-Random)"
+        $viewNameWithSchema    = "dbatoolsci_$(Get-Random)"
+        $schemaName            = "someschema"
+
+        # Create the objects.
+        $server.Query("CREATE VIEW $viewName AS (SELECT 1 as col1)", "tempdb")
+        $server.Query("CREATE SCHEMA [$schemaName]", "tempdb")
+        $server.Query("CREATE VIEW [$schemaName].$viewNameWithSchema AS (SELECT 1 as col1)", "tempdb")
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
     }
 
     AfterAll {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
 
-        $null = $server.Query("DROP VIEW $global:viewName", "tempdb") -ErrorAction SilentlyContinue
-        $null = $server.Query("DROP VIEW [someschema].$global:viewNameWithSchema", "tempdb") -ErrorAction SilentlyContinue
-        $null = $server.Query("DROP SCHEMA [someschema]", "tempdb") -ErrorAction SilentlyContinue
+        # Cleanup all created objects.
+        $null = $server.Query("DROP VIEW $viewName", "tempdb")
+        $null = $server.Query("DROP VIEW [$schemaName].$viewNameWithSchema", "tempdb")
+        $null = $server.Query("DROP SCHEMA [$schemaName]", "tempdb")
+
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
     Context "Command actually works" {
@@ -63,8 +70,12 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should have standard properties" {
-            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance")
-            ($results[0].PsObject.Properties.Name | Where-Object { $PSItem -in $expectedProps } | Sort-Object) | Should -Be ($expectedProps | Sort-Object)
+            $ExpectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance"
+            )
+            ($results[0].PsObject.Properties.Name | Where-Object { $PSItem -in $ExpectedProps } | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
         }
 
         It "Should get test view: $global:viewName" {
@@ -72,7 +83,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should include system views" {
-            ($results | Where-Object IsSystemObject -eq $true).Count | Should -BeGreaterThan 0
+            @($results | Where-Object IsSystemObject -eq $true).Count | Should -BeGreaterThan 0
         }
     }
 
@@ -84,7 +95,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should exclude system views" {
             $results = Get-DbaDbView -SqlInstance $TestConfig.instance2 -Database master -ExcludeSystemView
-            ($results | Where-Object IsSystemObject -eq $true).Count | Should -Be 0
+            @($results | Where-Object IsSystemObject -eq $true).Count | Should -Be 0
         }
     }
 
@@ -103,8 +114,8 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Schema parameter (see #9445)" {
         It "Should return just one view with schema 'someschema'" {
             $results = $TestConfig.instance2 | Get-DbaDbView -Database tempdb -Schema "someschema"
-            ($results | Where-Object Name -eq $global:viewNameWithSchema).Name | Should -Be $global:viewNameWithSchema
-            ($results | Where-Object Schema -ne "someschema").Count | Should -Be 0
+            ($results | Where-Object Name -eq $viewNameWithSchema).Name | Should -Be $viewNameWithSchema
+            @($results | Where-Object Schema -ne "someschema").Count | Should -Be 0
         }
     }
 }

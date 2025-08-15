@@ -1,28 +1,52 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "New-DbaXESmartReplay",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Event', 'Filter', 'DelaySeconds', 'StopOnError', 'ReplayIntervalSeconds', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        BeforeAll {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "Event",
+                "Filter",
+                "DelaySeconds",
+                "StopOnError",
+                "ReplayIntervalSeconds",
+                "EnableException"
+            )
+        }
+
+        It "Should have the expected parameters" {
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    Context "Creates a smart object" {
-        It "returns the object with all of the correct properties" {
-            $columns = "cpu_time", "duration", "physical_reads", "logical_reads", "writes", "row_count", "batch_text"
-            $results = New-DbaXESmartTableWriter -SqlInstance $TestConfig.instance2 -Database dbadb -Table deadlocktracker -OutputColumn $columns -Filter "duration > 10000"
+Describe $CommandName -Tag IntegrationTests {
+    Context "Creates a smart replay object" {
+        BeforeAll {
+            $splatReplay = @{
+                SqlInstance = $TestConfig.instance2
+                Database    = "tempdb"
+                Event       = "sql_batch_completed"
+                Filter      = "duration > 10000"
+            }
+        }
+
+        It "Returns the object with all of the correct properties" {
+            $results = New-DbaXESmartReplay @splatReplay
             $results.ServerName | Should -Be $TestConfig.instance2
-            $results.DatabaseName | Should -be 'dbadb'
+            $results.DatabaseName | Should -Be "tempdb"
             $results.Password | Should -Be $null
-            $results.TableName | Should -Be 'deadlocktracker'
-            $results.IsSingleEvent | Should -Be $true
-            $results.FailOnSingleEventViolation | Should -Be $false
+            $results.Events | Should -Contain "sql_batch_completed"
+            $results.Filter | Should -Be "duration > 10000"
+            $results.StopOnError | Should -Be $false
         }
     }
 }

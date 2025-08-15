@@ -28,6 +28,7 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
@@ -41,6 +42,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
+
     AfterAll {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
@@ -50,6 +52,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
+
 
     #Skipping these tests as internals of Get-DbaDbSpace seems to be unreliable in CI
     Context "Gets DbSpace" {
