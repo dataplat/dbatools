@@ -27,7 +27,6 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
-Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
@@ -51,9 +50,9 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup Service Broker components
-        $null = $global:testServer.Query("DROP SERVICE $global:testServiceName", "tempdb") -ErrorAction SilentlyContinue
-        $null = $global:testServer.Query("DROP QUEUE $global:testQueueName", "tempdb") -ErrorAction SilentlyContinue
-        $null = $global:testServer.Query("DROP PROCEDURE $global:testProcName", "tempdb") -ErrorAction SilentlyContinue
+        $null = $global:testServer.Query("DROP SERVICE $global:testServiceName", "tempdb")
+        $null = $global:testServer.Query("DROP QUEUE $global:testQueueName", "tempdb")
+        $null = $global:testServer.Query("DROP PROCEDURE $global:testProcName", "tempdb")
     }
 
     Context "Gets the service broker service" {

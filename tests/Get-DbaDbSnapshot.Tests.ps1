@@ -29,7 +29,6 @@ Describe $CommandName -Tag UnitTests {
 
 # Targets only instance2 because it's the only one where Snapshots can happen
 Describe $CommandName -Tag IntegrationTests {
-Describe $CommandName -Tag IntegrationTests {
     Context "Operations on snapshots" {
         BeforeAll {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.

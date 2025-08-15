@@ -5,33 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
-param(
-    $ModuleName  = "dbatools",
-    $CommandName = "Get-DbaDbTrigger",
-    $PSDefaultParameterValues = $TestConfig.Defaults
-)
-
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
-Describe $CommandName -Tag UnitTests {
-    Context "Parameter validation" {
-        BeforeAll {
-            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
-            $expectedParameters = $TestConfig.CommonParameters
-            $expectedParameters += @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "ExcludeDatabase",
-                "InputObject",
-                "EnableException"
-            )
-        }
-
-        It "Should have the expected parameters" {
-            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
@@ -53,7 +26,6 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-Describe $CommandName -Tag IntegrationTests {
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
@@ -77,7 +49,6 @@ CREATE TRIGGER dbatoolsci_safety
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
-
     AfterAll {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
@@ -96,17 +67,14 @@ CREATE TRIGGER dbatoolsci_safety
             $allResults | Should -Not -BeNullOrEmpty
         }
 
-
         It "Should be enabled" {
             $allResults.IsEnabled | Should -Be $true
         }
-
 
         It "Should have text of Trigger" {
             $allResults.Text | Should -BeLike "*FOR DROP_SYNONYM*"
         }
     }
-
 
     Context "Gets Database Trigger when using -Database" {
         BeforeAll {
@@ -117,17 +85,14 @@ CREATE TRIGGER dbatoolsci_safety
             $databaseResults | Should -Not -BeNullOrEmpty
         }
 
-
         It "Should be enabled" {
             $databaseResults.IsEnabled | Should -Be $true
         }
-
 
         It "Should have text of Trigger" {
             $databaseResults.Text | Should -BeLike "*FOR DROP_SYNONYM*"
         }
     }
-
 
     Context "Gets no Database Trigger when using -ExcludeDatabase" {
         BeforeAll {

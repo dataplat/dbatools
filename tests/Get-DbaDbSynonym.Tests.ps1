@@ -31,7 +31,6 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
-Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
@@ -61,13 +60,11 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Functionality" {
         It "Returns Results" {
-        It "Returns Results" {
             $result1 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2
 
             $result1.Count | Should -BeGreaterThan 0
         }
 
-        It "Returns all synonyms for all databases" {
         It "Returns all synonyms for all databases" {
             $result2 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2
 
@@ -77,13 +74,10 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Accepts a list of databases" {
-        It "Accepts a list of databases" {
             $result3 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Database $dbname, $dbname2
 
             $result3.Database | Select-Object -Unique | Should -Be $dbname, $dbname2
         }
-
-        It "Excludes databases" {
         It "Excludes databases" {
             $result4 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2 -ExcludeDatabase $dbname2
 
@@ -93,8 +87,6 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Accepts a list of synonyms" {
             $result5 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Synonym "syn1", "syn2"
-        It "Accepts a list of synonyms" {
-            $result5 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Synonym "syn1", "syn2"
 
             $result5.Name | Select-Object -Unique | Should -Be "syn1", "syn2"
             $result5.Name | Select-Object -Unique | Should -Be "syn1", "syn2"
@@ -102,15 +94,11 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Excludes synonyms" {
             $result6 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2 -ExcludeSynonym "syn2"
-        It "Excludes synonyms" {
-            $result6 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2 -ExcludeSynonym "syn2"
 
             $result6.Name | Select-Object -Unique | Should -Not -Contain "syn2"
             $result6.Name | Select-Object -Unique | Should -Not -Contain "syn2"
         }
 
-        It "Finds synonyms for specified schema only" {
-            $result7 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Schema "sch2"
         It "Finds synonyms for specified schema only" {
             $result7 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Schema "sch2"
 
@@ -119,8 +107,6 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Accepts a list of schemas" {
             $result8 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Schema "dbo", "sch2"
-        It "Accepts a list of schemas" {
-            $result8 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2 -Schema "dbo", "sch2"
 
             $result8.Schema | Select-Object -Unique | Should -Be "dbo", "sch2"
             $result8.Schema | Select-Object -Unique | Should -Be "dbo", "sch2"
@@ -128,14 +114,11 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Excludes schemas" {
             $result9 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2 -ExcludeSchema "dbo"
-        It "Excludes schemas" {
-            $result9 = Get-DbaDbSynonym -SqlInstance $TestConfig.instance2 -ExcludeSchema "dbo"
 
             $result9.Schema | Select-Object -Unique | Should -Not -Contain "dbo"
             $result9.Schema | Select-Object -Unique | Should -Not -Contain "dbo"
         }
 
-        It "Input is provided" {
         It "Input is provided" {
             $result10 = Get-DbaDbSynonym -WarningAction SilentlyContinue -WarningVariable warn > $null
 
