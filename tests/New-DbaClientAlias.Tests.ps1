@@ -5,8 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
@@ -37,15 +35,12 @@ Describe $CommandName -Tag IntegrationTests {
 
         AfterAll {
             # Cleanup - Remove any aliases that may have been created
-            Get-DbaClientAlias -Alias $aliasName -ErrorAction SilentlyContinue | Remove-DbaClientAlias -ErrorAction SilentlyContinue
+            Get-DbaClientAlias | Remove-DbaClientAlias
         }
 
         It "Returns accurate information when creating alias" {
             $results = New-DbaClientAlias -ServerName $serverName -Alias $aliasName -Verbose:$false
             $results.AliasName | Should -Be $aliasName, $aliasName
-            
-            # Clean up the created alias
-            $results | Remove-DbaClientAlias
         }
     }
 }

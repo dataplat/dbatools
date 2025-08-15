@@ -99,7 +99,7 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $configResults = New-DbaDbMaskingConfig @splatMaskingConfig
 
-            $configResults.Directory.Name | Should -Be "temp"
+            $configResults.Directory.Name | Should -Match $CommandName
             $configResults.FullName | Should -FileContentMatch $maskingDbName
             $configResults.FullName | Should -FileContentMatch "fname"
         }
