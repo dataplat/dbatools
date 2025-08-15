@@ -51,7 +51,6 @@ Describe $CommandName -Tag IntegrationTests {
                 $splatRemove = @{
                     SqlInstance = $TestConfig.instance1
                     Certificate = $cert
-                    Confirm     = $false
                 }
                 Get-DbaDbCertificate @splatRemove | Remove-DbaDbCertificate -Confirm:$false
             }
