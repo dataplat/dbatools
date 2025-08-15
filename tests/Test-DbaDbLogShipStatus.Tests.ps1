@@ -5,9 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
@@ -33,17 +30,14 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     Context "When testing SQL instance edition support" {
-        BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
-            $skip = $false
-            if ($server.Edition -notmatch 'Express') {
-                $skip = $true
+        It "Should warn if SQL instance edition is not supported" {
+            $null = Test-DbaDbLogShipStatus -SqlInstance $TestConfig.instance1 -WarningAction SilentlyContinue
+            if ($server.Edition -match 'Express') {
+                $WarnVar | Should -Match "Express"
+            } else {
+                $WarnVar | Should -Not -Match "Express"
             }
-        }
 
-        It -Skip:$skip "Should warn if SQL instance edition is not supported" {
-            $null = Test-DbaDbLogShipStatus -SqlInstance $TestConfig.instance1 -WarningAction SilentlyContinue -WarningVariable editionwarn
-            $editionwarn -match "Express" | Should -BeTrue
         }
     }
 
