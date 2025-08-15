@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Get-DbaDbEncryption",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -25,14 +25,10 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+
 Describe $CommandName -Tag IntegrationTests {
     Context "Test Retriving Certificate" {
-        It "Should find a certificate named $cert" {
+        BeforeAll {
             $random = Get-Random
             $cert = "dbatoolsci_getcert$random"
             $password = ConvertTo-SecureString -String Get-Random -AsPlainText -Force
@@ -44,16 +40,19 @@ Describe $CommandName -Tag IntegrationTests {
             }
             New-DbaDbCertificate @splatCertificate
 
-            try {
-                $results = Get-DbaDbEncryption -SqlInstance $TestConfig.instance1
-                ($results.Name -match "dbatoolsci").Count -gt 0 | Should -Be $true
-            } catch {
-                $splatRemove = @{
-                    SqlInstance = $TestConfig.instance1
-                    Certificate = $cert
-                }
-                Get-DbaDbCertificate @splatRemove | Remove-DbaDbCertificate -Confirm:$false
+            $results = Get-DbaDbEncryption -SqlInstance $TestConfig.instance1
+        }
+
+        AfterAll {
+            $splatRemove = @{
+                SqlInstance = $TestConfig.instance1
+                Certificate = $cert
             }
+            Get-DbaDbCertificate @splatRemove | Remove-DbaDbCertificate
+        }
+
+        It "Should find a certificate named $cert" {
+            ($results.Name -match "dbatoolsci").Count -gt 0 | Should -Be $true
         }
     }
 }

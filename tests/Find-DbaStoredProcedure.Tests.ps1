@@ -30,6 +30,7 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     Context "Command finds Procedures in a System Database" {
+        # We want to run all commands in the setup with EnableException to ensure that the test fails if the setup fails.
         It "Should find a specific StoredProcedure named cp_dbatoolsci_sysadmin" {
             # We want to run all commands in the setup with EnableException to ensure that the test fails if the setup fails.
             $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
