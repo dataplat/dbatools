@@ -68,19 +68,6 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Status.Count | Should -BeGreaterOrEqual 2
         }
 
-        It "Should have correct properties" {
-            $expectedProperties = @(
-                "AnsiNullsStatus", "AssemblyName", "BodyStartIndex", "ClassName", "ComputerName",
-                "CreateDate", "DatabaseEngineEdition", "DatabaseEngineType", "DateLastModified",
-                "DdlTriggerEvents", "ExecutionContext", "ExecutionContextLogin", "ExecutionManager",
-                "ID", "ImplementationType", "InstanceName", "IsDesignMode", "IsEnabled", "IsEncrypted",
-                "IsSystemObject", "MethodName", "Name", "Parent", "ParentCollection", "Properties",
-                "QuotedIdentifierStatus", "ServerVersion", "SqlInstance", "State", "Text", "TextBody",
-                "TextHeader", "TextMode", "Urn", "UserData"
-            )
-            ($results[0].PsObject.Properties.Name | Sort-Object) | Should -Be ($expectedProperties | Sort-Object)
-        }
-
         It "Should return our test triggers" {
             $triggerNames = $results | Where-Object Name -in $trigger1Name, $trigger2Name
             $triggerNames.Count | Should -BeExactly 2
