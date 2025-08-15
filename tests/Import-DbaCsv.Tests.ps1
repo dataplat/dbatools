@@ -94,7 +94,6 @@ Describe $CommandName -Tag IntegrationTests {
             $null = Import-DbaCsv -SqlInstance $TestConfig.instance1 -Path $pathCol2 -Database tempdb -Table cols
             $null = Import-DbaCsv -SqlInstance $TestConfig.instance1 -Path $pathPipe3 -Database tempdb -Table cols2 -Delimiter "|" -AutoCreateTable
 
-
             $results = Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database tempdb -Query "select * from cols"
 
             $results | Where-Object third -notmatch "three" | Should -BeNullOrEmpty
@@ -134,7 +133,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Catches the scenario where the database param does not match the server object passed into the command" {
-            $result = Import-DbaCsv -Path $pathSuperSmall -SqlInstance $TestConfig.instance1 -Database InvalidDB -Delimiter `t -Table SuperSmall -Truncate -AutoCreateTable -WarningVariable WarnVar  -WarningAction SilentlyContinue
+            $result = Import-DbaCsv -Path $pathSuperSmall -SqlInstance $TestConfig.instance1 -Database InvalidDB -Delimiter `t -Table SuperSmall -Truncate -AutoCreateTable -WarningVariable WarnVar -WarningAction SilentlyContinue
 
             $WarnVar | Should -BeLike "*Cannot open database * requested by the login. The login failed.*"
             $result | Should -BeNullOrEmpty

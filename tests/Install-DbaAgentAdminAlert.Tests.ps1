@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Install-DbaAgentAdminAlert",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -41,31 +41,21 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
-
-        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
     }
 
     BeforeEach {
-        # Clean up any existing alerts before each test
         Get-DbaAgentAlert -SqlInstance $TestConfig.instance2, $TestConfig.instance3 | Remove-DbaAgentAlert -Confirm:$false
     }
 
     AfterAll {
-        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
-
-        # Clean up all created alerts
-        Get-DbaAgentAlert -SqlInstance $TestConfig.instance2, $TestConfig.instance3 | Remove-DbaAgentAlert -Confirm:$false
-
-        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        Get-DbaAgentAlert -SqlInstance $TestConfig.instance2, $TestConfig.instance3 | Remove-DbaAgentAlert -Confirm:$false -ErrorAction SilentlyContinue
     }
 
     Context "Creating a new SQL Server Agent alert" {
-        BeforeAll {
-            $splatAlert = @{
+        It "Should create a bunch of new alerts with specified parameters" {
+            $splatAlert1 = @{
                 SqlInstance           = $TestConfig.instance2
                 DelayBetweenResponses = 60
                 Disabled              = $false
@@ -76,10 +66,8 @@ Describe $CommandName -Tag IntegrationTests {
                 ExcludeSeverity       = 0
                 EnableException       = $true
             }
-        }
 
-        It "Should create a bunch of new alerts" {
-            $alert = Install-DbaAgentAdminAlert @splatAlert | Select-Object -First 1
+            $alert = Install-DbaAgentAdminAlert @splatAlert1 | Select-Object -First 1
 
             # Assert
             $alert.Name | Should -Not -BeNullOrEmpty
@@ -87,8 +75,8 @@ Describe $CommandName -Tag IntegrationTests {
             $alert.IsEnabled | Should -Be $true
         }
 
-        It "Should create a bunch of new alerts with ExcludeSeverity" {
-            $splatAlertInstance3 = @{
+        It "Should create alerts excluding specified severity level" {
+            $splatAlert2 = @{
                 SqlInstance           = $TestConfig.instance3
                 DelayBetweenResponses = 60
                 Disabled              = $false
@@ -100,7 +88,7 @@ Describe $CommandName -Tag IntegrationTests {
                 EnableException       = $true
             }
 
-            $alerts = Install-DbaAgentAdminAlert @splatAlertInstance3
+            $alerts = Install-DbaAgentAdminAlert @splatAlert2
 
             # Assert
             $alerts.Severity | Should -Not -Contain 17

@@ -1,7 +1,7 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
     $ModuleName  = "dbatools",
-    $CommandName = "Import-DbaXESessionTemplate",
+    $CommandName = "Get-DbaXESessionTemplate",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
@@ -11,15 +11,10 @@ Describe $CommandName -Tag UnitTests {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
-                "SqlInstance",
-                "SqlCredential",
-                "Name",
                 "Path",
+                "Pattern",
                 "Template",
-                "TargetFilePath",
-                "TargetFileMetadataPath",
-                "EnableException",
-                "StartUpState"
+                "EnableException"
             )
         }
 
@@ -30,14 +25,16 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
-    AfterAll {
-        $null = Get-DbaXESession -SqlInstance $TestConfig.instance2 -Session "Overly Complex Queries" | Remove-DbaXESession
-    }
-    Context "Test Importing Session Template" {
-        It -Skip:$true "session imports with proper name and non-default target file location" {
-            $result = Import-DbaXESessionTemplate -SqlInstance $TestConfig.instance2 -Template "Overly Complex Queries" -TargetFilePath "C:\temp"
-            $result.Name | Should -Be "Overly Complex Queries"
-            $result.TargetFile -match "C:\\temp" | Should -Be $true
+    Context "Get Template Index" {
+        BeforeAll {
+            $results = Get-DbaXESessionTemplate
+        }
+
+        It "returns good results with no missing information" {
+            $results | Where-Object Name -eq $null | Should -BeNullOrEmpty
+            $results | Where-Object TemplateName -eq $null | Should -BeNullOrEmpty
+            $results | Where-Object Description -eq $null | Should -BeNullOrEmpty
+            $results | Where-Object Category -eq $null | Should -BeNullOrEmpty
         }
     }
 }

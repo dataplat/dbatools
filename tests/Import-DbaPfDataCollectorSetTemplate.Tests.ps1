@@ -5,9 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
@@ -45,20 +42,34 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $null = Get-DbaPfDataCollectorSet -CollectorSet "Long Running Queries" | Remove-DbaPfDataCollectorSet -Confirm:$false
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+        $collectorSetName = "Long Running Queries"
+
+        # Clean up any existing collector sets before starting
+        $null = Get-DbaPfDataCollectorSet -CollectorSet $collectorSetName | Remove-DbaPfDataCollectorSet -Confirm:$false
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+
+    BeforeEach {
+        $null = Get-DbaPfDataCollectorSet -CollectorSet $collectorSetName | Remove-DbaPfDataCollectorSet -Confirm:$false
+    }
+
     AfterAll {
-        $null = Get-DbaPfDataCollectorSet -CollectorSet "Long Running Queries" | Remove-DbaPfDataCollectorSet -Confirm:$false -ErrorAction SilentlyContinue
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+        $null = Get-DbaPfDataCollectorSet -CollectorSet $collectorSetName | Remove-DbaPfDataCollectorSet -Confirm:$false
     }
+
     Context "Verifying command returns all the required results with pipe" {
         It "returns only one (and the proper) template" {
-            $results = Get-DbaPfDataCollectorSetTemplate -Template "Long Running Queries" | Import-DbaPfDataCollectorSetTemplate
-            $results.Name | Should -Be "Long Running Queries"
+            $results = Get-DbaPfDataCollectorSetTemplate -Template $collectorSetName | Import-DbaPfDataCollectorSetTemplate
+            $results.Name | Should -Be $collectorSetName
             $results.ComputerName | Should -Be $env:COMPUTERNAME
         }
+
         It "returns only one (and the proper) template without pipe" {
-            $results = Import-DbaPfDataCollectorSetTemplate -Template "Long Running Queries"
-            $results.Name | Should -Be "Long Running Queries"
+            $results = Import-DbaPfDataCollectorSetTemplate -Template $collectorSetName
+            $results.Name | Should -Be $collectorSetName
             $results.ComputerName | Should -Be $env:COMPUTERNAME
         }
     }
