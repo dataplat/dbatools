@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName   = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Remove-DbaDbRoleMember",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -10,7 +10,7 @@ $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        It "Should have the expected parameters" {
+        BeforeAll {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -22,6 +22,9 @@ Describe $CommandName -Tag UnitTests {
                 "InputObject",
                 "EnableException"
             )
+        }
+
+        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -122,11 +125,11 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $cleanupServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2 -EnableException
-        $null = $cleanupServer.Query("DROP USER User1", "msdb")
-        $null = $cleanupServer.Query("DROP USER User2", "msdb")
+        $null = $cleanupServer.Query("DROP USER User1", "msdb") -ErrorAction SilentlyContinue
+        $null = $cleanupServer.Query("DROP USER User2", "msdb") -ErrorAction SilentlyContinue
 
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $testDatabase -Confirm:$false
-        Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $testUser1, $testUser2 -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $testDatabase -Confirm:$false -ErrorAction SilentlyContinue
+        Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $testUser1, $testUser2 -Confirm:$false -ErrorAction SilentlyContinue
 
         # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
