@@ -94,10 +94,10 @@ Describe $CommandName -Tag IntegrationTests {
         # Results are saved in $results.
         BeforeAll {
             $splatAddAgDatabase = @{
-                    SqlInstance       = $TestConfig.instance3
-                    AvailabilityGroup = $agName
-                    Database          = $existingDbWithBackup
-                    Confirm           = $false
+                SqlInstance       = $TestConfig.instance3
+                AvailabilityGroup = $agName
+                Database          = $existingDbWithBackup
+                Confirm           = $false
             }
             $results = Add-DbaAgDatabase @splatAddAgDatabase
         }
@@ -117,13 +117,13 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When adding AG database that does not have a backup" {
         BeforeAll {
             $splatAddAgDb = @{
-                    SqlInstance       = $TestConfig.instance3
-                    AvailabilityGroup = $agName
-                    Database          = $existingDbWithoutBackup
-                    # As we don't want an output, we suppress the warning.
-                    # But we can still test the warning because WarningVariable is set globally to WarnVar.
-                    WarningAction     = "SilentlyContinue"
-                    Confirm           = $false
+                SqlInstance       = $TestConfig.instance3
+                AvailabilityGroup = $agName
+                Database          = $existingDbWithoutBackup
+                # As we don't want an output, we suppress the warning.
+                # But we can still test the warning because WarningVariable is set globally to WarnVar.
+                WarningAction     = "SilentlyContinue"
+                Confirm           = $false
             }
             $results = Add-DbaAgDatabase @splatAddAgDb
         }
@@ -140,11 +140,11 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When adding AG database that does not exists" {
         BeforeAll {
             $splatAddAgDb = @{
-                    SqlInstance       = $TestConfig.instance3
-                    AvailabilityGroup = $agName
-                    Database          = $nonexistingDb
-                    WarningAction     = "SilentlyContinue"
-                    Confirm           = $false
+                SqlInstance       = $TestConfig.instance3
+                AvailabilityGroup = $agName
+                Database          = $nonexistingDb
+                WarningAction     = "SilentlyContinue"
+                Confirm           = $false
             }
             $results = Add-DbaAgDatabase @splatAddAgDb
         }
