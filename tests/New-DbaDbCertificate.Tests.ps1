@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "New-DbaDbCertificate",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -41,9 +41,9 @@ Describe $CommandName -Tag IntegrationTests {
             if (-not (Get-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database master)) {
                 $splatMasterKey = @{
                     SqlInstance = $TestConfig.instance1
-                                        Database    = "master"
-                                        Password    = $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force)
-                                        Confirm     = $false
+                    Database    = "master"
+                    Password    = $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force)
+                    Confirm     = $false
                 }
                 $masterkey = New-DbaDbMasterKey @splatMasterKey
             }
@@ -51,9 +51,9 @@ Describe $CommandName -Tag IntegrationTests {
             # Create tempdb master key for testing
             $splatTempDbKey = @{
                 SqlInstance = $TestConfig.instance1
-                                Database    = "tempdb"
-                                Password    = $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force)
-                                Confirm     = $false
+                Database    = "tempdb"
+                Password    = $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force)
+                Confirm     = $false
             }
             $tempdbmasterkey = New-DbaDbMasterKey @splatTempDbKey
 
@@ -83,8 +83,8 @@ Describe $CommandName -Tag IntegrationTests {
         It "Successfully creates a new database certificate in default, master database" {
             $splatCert1 = @{
                 SqlInstance = $TestConfig.instance1
-                                Name        = $certificateName1
-                                Confirm     = $false
+                Name        = $certificateName1
+                Confirm     = $false
             }
             $cert1 = New-DbaDbCertificate @splatCert1
 
@@ -97,9 +97,9 @@ Describe $CommandName -Tag IntegrationTests {
         It "Successfully creates a new database certificate in the tempdb database" {
             $splatCert2 = @{
                 SqlInstance = $TestConfig.instance1
-                                Name        = $certificateName2
-                                Database    = "tempdb"
-                                Confirm     = $false
+                Name        = $certificateName2
+                Database    = "tempdb"
+                Confirm     = $false
             }
             $cert2 = New-DbaDbCertificate @splatCert2
 

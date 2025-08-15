@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Set-DbaAgentJobStep",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -123,23 +123,23 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "set a step with all attributes for Subsystem=PowerShell" {
             $splatJobStep = @{
-                                SqlInstance        = $TestConfig.instance2
-                                Job                = $job1Instance2
-                                StepName           = "Step 3"
-                                Subsystem          = "PowerShell"
-                                Command            = "Get-Random"
+                SqlInstance        = $TestConfig.instance2
+                Job                = $job1Instance2
+                StepName           = "Step 3"
+                Subsystem          = "PowerShell"
+                Command            = "Get-Random"
                 CmdExecSuccessCode = 1
-                                OnSuccessAction    = "GoToStep"
-                                OnSuccessStepId    = 1
-                                OnFailAction       = "GoToStep"
-                                OnFailStepId       = 1
-                                Database           = $newDbName
-                                RetryAttempts      = 2
-                                RetryInterval      = 5
-                                OutputFileName     = "logPowerShell.txt"
-                                Flag               = [Microsoft.SqlServer.Management.Smo.Agent.JobStepFlags]::AppendAllCmdExecOutputToJobHistory
-                                ProxyName          = "dbatoolsci_proxy_1_$random"
-                                Force              = $true
+                OnSuccessAction    = "GoToStep"
+                OnSuccessStepId    = 1
+                OnFailAction       = "GoToStep"
+                OnFailStepId       = 1
+                Database           = $newDbName
+                RetryAttempts      = 2
+                RetryInterval      = 5
+                OutputFileName     = "logPowerShell.txt"
+                Flag               = [Microsoft.SqlServer.Management.Smo.Agent.JobStepFlags]::AppendAllCmdExecOutputToJobHistory
+                ProxyName          = "dbatoolsci_proxy_1_$random"
+                Force              = $true
             }
 
             $results = Set-DbaAgentJobStep @splatJobStep
@@ -165,23 +165,23 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "set a step with all attributes for Subsystem=TransactSql" {
             $splatJobStep = @{
-                                SqlInstance        = $TestConfig.instance2
-                                Job                = $job1Instance2
-                                StepName           = "Step 4"
-                                Subsystem          = "TransactSql"
-                                Command            = "SELECT @@VERSION"
+                SqlInstance        = $TestConfig.instance2
+                Job                = $job1Instance2
+                StepName           = "Step 4"
+                Subsystem          = "TransactSql"
+                Command            = "SELECT @@VERSION"
                 CmdExecSuccessCode = 2
-                                OnSuccessAction    = "GoToStep"
-                                OnSuccessStepId    = 2
-                                OnFailAction       = "GoToStep"
-                                OnFailStepId       = 2
-                                Database           = $newDbName
-                                DatabaseUser       = $userName
-                                RetryAttempts      = 3
-                                RetryInterval      = 6
-                                OutputFileName     = "logSql.txt"
-                                Flag               = [Microsoft.SqlServer.Management.Smo.Agent.JobStepFlags]::AppendToJobHistory
-                                Force              = $true
+                OnSuccessAction    = "GoToStep"
+                OnSuccessStepId    = 2
+                OnFailAction       = "GoToStep"
+                OnFailStepId       = 2
+                Database           = $newDbName
+                DatabaseUser       = $userName
+                RetryAttempts      = 3
+                RetryInterval      = 6
+                OutputFileName     = "logSql.txt"
+                Flag               = [Microsoft.SqlServer.Management.Smo.Agent.JobStepFlags]::AppendToJobHistory
+                Force              = $true
             }
 
             $results = Set-DbaAgentJobStep @splatJobStep
@@ -207,23 +207,23 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "set a step with all attributes for Subsystem=AnalysisCommand" {
             $splatJobStep = @{
-                                SqlInstance        = $TestConfig.instance2
-                                Job                = $job1Instance2
-                                StepName           = "Step 5"
-                                Subsystem          = "AnalysisCommand"
-                                SubsystemServer    = $instance2.Name
-                                Command            = "AnalysisCommand"
+                SqlInstance        = $TestConfig.instance2
+                Job                = $job1Instance2
+                StepName           = "Step 5"
+                Subsystem          = "AnalysisCommand"
+                SubsystemServer    = $instance2.Name
+                Command            = "AnalysisCommand"
                 CmdExecSuccessCode = 3
-                                OnSuccessAction    = "GoToStep"
-                                OnSuccessStepId    = 3
-                                OnFailAction       = "GoToStep"
-                                OnFailStepId       = 3
-                                Database           = $newDbName
-                                RetryAttempts      = 4
-                                RetryInterval      = 7
-                                OutputFileName     = "logAnalysisCommand.txt"
-                                Flag               = [Microsoft.SqlServer.Management.Smo.Agent.JobStepFlags]::LogToTableWithOverwrite
-                                Force              = $true
+                OnSuccessAction    = "GoToStep"
+                OnSuccessStepId    = 3
+                OnFailAction       = "GoToStep"
+                OnFailStepId       = 3
+                Database           = $newDbName
+                RetryAttempts      = 4
+                RetryInterval      = 7
+                OutputFileName     = "logAnalysisCommand.txt"
+                Flag               = [Microsoft.SqlServer.Management.Smo.Agent.JobStepFlags]::LogToTableWithOverwrite
+                Force              = $true
             }
 
             $results = Set-DbaAgentJobStep @splatJobStep
@@ -249,23 +249,23 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "set a step with all attributes for Subsystem=AnalysisQuery" {
             $splatJobStep = @{
-                                SqlInstance        = $TestConfig.instance2
-                                Job                = $job1Instance2
-                                StepName           = "Step 6"
-                                Subsystem          = "AnalysisQuery"
-                                SubsystemServer    = $instance2.Name
-                                Command            = "AnalysisQuery"
+                SqlInstance        = $TestConfig.instance2
+                Job                = $job1Instance2
+                StepName           = "Step 6"
+                Subsystem          = "AnalysisQuery"
+                SubsystemServer    = $instance2.Name
+                Command            = "AnalysisQuery"
                 CmdExecSuccessCode = 4
-                                OnSuccessAction    = "GoToStep"
-                                OnSuccessStepId    = 4
-                                OnFailAction       = "GoToStep"
-                                OnFailStepId       = 4
-                                Database           = $newDbName
-                                RetryAttempts      = 5
-                                RetryInterval      = 8
-                                OutputFileName     = "logAnalysisQuery.txt"
-                                Flag               = [Microsoft.SqlServer.Management.Smo.Agent.JobStepFlags]::None
-                                Force              = $true
+                OnSuccessAction    = "GoToStep"
+                OnSuccessStepId    = 4
+                OnFailAction       = "GoToStep"
+                OnFailStepId       = 4
+                Database           = $newDbName
+                RetryAttempts      = 5
+                RetryInterval      = 8
+                OutputFileName     = "logAnalysisQuery.txt"
+                Flag               = [Microsoft.SqlServer.Management.Smo.Agent.JobStepFlags]::None
+                Force              = $true
             }
 
             $results = Set-DbaAgentJobStep @splatJobStep
@@ -291,22 +291,22 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "set a step with all attributes for Subsystem=CmdExec" {
             $splatJobStep = @{
-                                SqlInstance        = $TestConfig.instance2
-                                Job                = $job1Instance2
-                                StepName           = "Step 7"
-                                Subsystem          = "CmdExec"
-                                SubsystemServer    = $instance2.Name
-                                Command            = "CmdExec"
+                SqlInstance        = $TestConfig.instance2
+                Job                = $job1Instance2
+                StepName           = "Step 7"
+                Subsystem          = "CmdExec"
+                SubsystemServer    = $instance2.Name
+                Command            = "CmdExec"
                 CmdExecSuccessCode = 5
-                                OnSuccessAction    = "GoToStep"
-                                OnSuccessStepId    = 5
-                                OnFailAction       = "GoToStep"
-                                OnFailStepId       = 5
-                                RetryAttempts      = 6
-                                RetryInterval      = 9
-                                OutputFileName     = "logCmdExec.txt"
-                                Flag               = [Microsoft.SqlServer.Management.Smo.Agent.JobStepFlags]::ProvideStopProcessEvent
-                                Force              = $true
+                OnSuccessAction    = "GoToStep"
+                OnSuccessStepId    = 5
+                OnFailAction       = "GoToStep"
+                OnFailStepId       = 5
+                RetryAttempts      = 6
+                RetryInterval      = 9
+                OutputFileName     = "logCmdExec.txt"
+                Flag               = [Microsoft.SqlServer.Management.Smo.Agent.JobStepFlags]::ProvideStopProcessEvent
+                Force              = $true
             }
 
             $results = Set-DbaAgentJobStep @splatJobStep
@@ -331,21 +331,21 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "set a step with all attributes for Subsystem=Distribution" {
             $splatJobStep = @{
-                                SqlInstance        = $TestConfig.instance2
-                                Job                = $job1Instance2
-                                StepName           = "Step 8"
-                                Subsystem          = "Distribution"
-                                Command            = "Distribution"
+                SqlInstance        = $TestConfig.instance2
+                Job                = $job1Instance2
+                StepName           = "Step 8"
+                Subsystem          = "Distribution"
+                Command            = "Distribution"
                 CmdExecSuccessCode = 6
-                                OnSuccessAction    = "GoToStep"
-                                OnSuccessStepId    = 6
-                                OnFailAction       = "GoToStep"
-                                OnFailStepId       = 6
-                                Database           = $newDbName
-                                RetryAttempts      = 7
-                                RetryInterval      = 10
-                                Flag               = [Microsoft.SqlServer.Management.Smo.Agent.JobStepFlags]::None
-                                Force              = $true
+                OnSuccessAction    = "GoToStep"
+                OnSuccessStepId    = 6
+                OnFailAction       = "GoToStep"
+                OnFailStepId       = 6
+                Database           = $newDbName
+                RetryAttempts      = 7
+                RetryInterval      = 10
+                Flag               = [Microsoft.SqlServer.Management.Smo.Agent.JobStepFlags]::None
+                Force              = $true
             }
 
             $results = Set-DbaAgentJobStep @splatJobStep
@@ -369,21 +369,21 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "set a step with all attributes for Subsystem=LogReader" {
             $splatJobStep = @{
-                                SqlInstance        = $TestConfig.instance2
-                                Job                = $job1Instance2
-                                StepName           = "Step 9"
-                                Subsystem          = "LogReader"
-                                Command            = "LogReader"
+                SqlInstance        = $TestConfig.instance2
+                Job                = $job1Instance2
+                StepName           = "Step 9"
+                Subsystem          = "LogReader"
+                Command            = "LogReader"
                 CmdExecSuccessCode = 7
-                                OnSuccessAction    = "GoToStep"
-                                OnSuccessStepId    = 7
-                                OnFailAction       = "GoToStep"
-                                OnFailStepId       = 7
-                                Database           = $newDbName
-                                RetryAttempts      = 8
-                                RetryInterval      = 11
-                                Flag               = [Microsoft.SqlServer.Management.Smo.Agent.JobStepFlags]::AppendAllCmdExecOutputToJobHistory
-                                Force              = $true
+                OnSuccessAction    = "GoToStep"
+                OnSuccessStepId    = 7
+                OnFailAction       = "GoToStep"
+                OnFailStepId       = 7
+                Database           = $newDbName
+                RetryAttempts      = 8
+                RetryInterval      = 11
+                Flag               = [Microsoft.SqlServer.Management.Smo.Agent.JobStepFlags]::AppendAllCmdExecOutputToJobHistory
+                Force              = $true
             }
 
             $results = Set-DbaAgentJobStep @splatJobStep
@@ -407,21 +407,21 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "set a step with all attributes for Subsystem=Merge" {
             $splatJobStep = @{
-                                SqlInstance        = $TestConfig.instance2
-                                Job                = $job1Instance2
-                                StepName           = "Step 10"
-                                Subsystem          = "Merge"
-                                Command            = "Merge"
+                SqlInstance        = $TestConfig.instance2
+                Job                = $job1Instance2
+                StepName           = "Step 10"
+                Subsystem          = "Merge"
+                Command            = "Merge"
                 CmdExecSuccessCode = 8
-                                OnSuccessAction    = "GoToStep"
-                                OnSuccessStepId    = 8
-                                OnFailAction       = "GoToStep"
-                                OnFailStepId       = 8
-                                Database           = $newDbName
-                                RetryAttempts      = 9
-                                RetryInterval      = 12
-                                Flag               = [Microsoft.SqlServer.Management.Smo.Agent.JobStepFlags]::AppendAllCmdExecOutputToJobHistory
-                                Force              = $true
+                OnSuccessAction    = "GoToStep"
+                OnSuccessStepId    = 8
+                OnFailAction       = "GoToStep"
+                OnFailStepId       = 8
+                Database           = $newDbName
+                RetryAttempts      = 9
+                RetryInterval      = 12
+                Flag               = [Microsoft.SqlServer.Management.Smo.Agent.JobStepFlags]::AppendAllCmdExecOutputToJobHistory
+                Force              = $true
             }
 
             $results = Set-DbaAgentJobStep @splatJobStep
@@ -445,21 +445,21 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "set a step with all attributes for Subsystem=QueueReader" {
             $splatJobStep = @{
-                                SqlInstance        = $TestConfig.instance2
-                                Job                = $job1Instance2
-                                StepName           = "Step 11"
-                                Subsystem          = "QueueReader"
-                                Command            = "QueueReader"
+                SqlInstance        = $TestConfig.instance2
+                Job                = $job1Instance2
+                StepName           = "Step 11"
+                Subsystem          = "QueueReader"
+                Command            = "QueueReader"
                 CmdExecSuccessCode = 9
-                                OnSuccessAction    = "GoToStep"
-                                OnSuccessStepId    = 9
-                                OnFailAction       = "GoToStep"
-                                OnFailStepId       = 9
-                                Database           = $newDbName
-                                RetryAttempts      = 10
-                                RetryInterval      = 13
-                                Flag               = [Microsoft.SqlServer.Management.Smo.Agent.JobStepFlags]::AppendAllCmdExecOutputToJobHistory
-                                Force              = $true
+                OnSuccessAction    = "GoToStep"
+                OnSuccessStepId    = 9
+                OnFailAction       = "GoToStep"
+                OnFailStepId       = 9
+                Database           = $newDbName
+                RetryAttempts      = 10
+                RetryInterval      = 13
+                Flag               = [Microsoft.SqlServer.Management.Smo.Agent.JobStepFlags]::AppendAllCmdExecOutputToJobHistory
+                Force              = $true
             }
 
             $results = Set-DbaAgentJobStep @splatJobStep
@@ -483,21 +483,21 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "set a step with all attributes for Subsystem=Snapshot" {
             $splatJobStep = @{
-                                SqlInstance        = $TestConfig.instance2
-                                Job                = $job1Instance2
-                                StepName           = "Step 12"
-                                Subsystem          = "Snapshot"
-                                Command            = "Snapshot"
+                SqlInstance        = $TestConfig.instance2
+                Job                = $job1Instance2
+                StepName           = "Step 12"
+                Subsystem          = "Snapshot"
+                Command            = "Snapshot"
                 CmdExecSuccessCode = 10
-                                OnSuccessAction    = "GoToStep"
-                                OnSuccessStepId    = 10
-                                OnFailAction       = "GoToStep"
-                                OnFailStepId       = 10
-                                Database           = $newDbName
-                                RetryAttempts      = 11
-                                RetryInterval      = 14
-                                Flag               = [Microsoft.SqlServer.Management.Smo.Agent.JobStepFlags]::AppendAllCmdExecOutputToJobHistory
-                                Force              = $true
+                OnSuccessAction    = "GoToStep"
+                OnSuccessStepId    = 10
+                OnFailAction       = "GoToStep"
+                OnFailStepId       = 10
+                Database           = $newDbName
+                RetryAttempts      = 11
+                RetryInterval      = 14
+                Flag               = [Microsoft.SqlServer.Management.Smo.Agent.JobStepFlags]::AppendAllCmdExecOutputToJobHistory
+                Force              = $true
             }
 
             $results = Set-DbaAgentJobStep @splatJobStep
@@ -521,20 +521,20 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "set a step with all attributes for Subsystem=SSIS" {
             $splatJobStep = @{
-                                SqlInstance        = $TestConfig.instance2
-                                Job                = $job1Instance2
-                                StepName           = "Step 13"
-                                Subsystem          = "SSIS"
-                                Command            = "SSIS"
+                SqlInstance        = $TestConfig.instance2
+                Job                = $job1Instance2
+                StepName           = "Step 13"
+                Subsystem          = "SSIS"
+                Command            = "SSIS"
                 CmdExecSuccessCode = 11
-                                OnSuccessAction    = "QuitWithSuccess"
-                                OnFailAction       = "GoToStep"
-                                OnFailStepId       = 11
-                                Database           = $newDbName
-                                RetryAttempts      = 12
-                                RetryInterval      = 15
-                                Flag               = [Microsoft.SqlServer.Management.Smo.Agent.JobStepFlags]::AppendAllCmdExecOutputToJobHistory
-                                Force              = $true
+                OnSuccessAction    = "QuitWithSuccess"
+                OnFailAction       = "GoToStep"
+                OnFailStepId       = 11
+                Database           = $newDbName
+                RetryAttempts      = 12
+                RetryInterval      = 15
+                Flag               = [Microsoft.SqlServer.Management.Smo.Agent.JobStepFlags]::AppendAllCmdExecOutputToJobHistory
+                Force              = $true
             }
 
             $results = Set-DbaAgentJobStep @splatJobStep

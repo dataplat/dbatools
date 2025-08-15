@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Set-DbaStartupParameter",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -56,8 +56,8 @@ Describe $CommandName -Tag IntegrationTests {
         It -Skip:$global:SkipLocalTest "Ensure the startup params are not duplicated when more than one server is modified in the same invocation" {
             $splatSetStartup = @{
                 SqlInstance = $global:defaultInstance, $global:namedInstance
-                                TraceFlag   = 3226
-                                Confirm     = $false
+                TraceFlag   = 3226
+                Confirm     = $false
             }
             $result = Set-DbaStartupParameter @splatSetStartup
 
@@ -80,8 +80,8 @@ Describe $CommandName -Tag IntegrationTests {
         It -Skip:$global:SkipLocalTest "Ensure the correct instance name is returned" {
             $splatSetInstance = @{
                 SqlInstance = $global:namedInstance
-                                TraceFlag   = 3226
-                                Confirm     = $false
+                TraceFlag   = 3226
+                Confirm     = $false
             }
             $result = Set-DbaStartupParameter @splatSetInstance
 

@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Install-DbaInstance",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -127,15 +127,15 @@ Describe $CommandName -Tag UnitTests {
                 SAPWD = "foo"
             }
             $splatInstall = @{
-                                SqlInstance                   = "localhost\NewInstance:13337"
-                                Version                       = $version
-                                Path                          = "TestDrive:"
-                                Configuration                 = $params
-                                EngineCredential              = $global:cred
-                                SaCredential                  = $global:cred
-                                Port                          = 1337
+                SqlInstance                   = "localhost\NewInstance:13337"
+                Version                       = $version
+                Path                          = "TestDrive:"
+                Configuration                 = $params
+                EngineCredential              = $global:cred
+                SaCredential                  = $global:cred
+                Port                          = 1337
                 PerformVolumeMaintenanceTasks = $true
-                                AdminAccount                  = "local\foo", "local\bar"
+                AdminAccount                  = "local\foo", "local\bar"
             }
             $result = Install-DbaInstance @splatInstall -EnableException -Confirm:$false
             Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
@@ -185,9 +185,9 @@ Describe $CommandName -Tag UnitTests {
             ) | Set-Content -Path TestDrive:\Configuration.ini -Force
 
             $splatConfig = @{
-                                SqlInstance       = "localhost\NewInstance:13337"
-                                Version           = $version
-                                Path              = "TestDrive:"
+                SqlInstance       = "localhost\NewInstance:13337"
+                Version           = $version
+                Path              = "TestDrive:"
                 ConfigurationFile = "TestDrive:\Configuration.ini"
             }
             $result = Install-DbaInstance @splatConfig -EnableException -Confirm:$false
@@ -250,7 +250,7 @@ Describe $CommandName -Tag UnitTests {
             Mock -CommandName Invoke-Program -MockWith { [PSCustomObject]@{ Successful = $true; ExitCode = [uint32[]]3010 } } -ModuleName dbatools
             $splatRestart = @{
                 Version = $version
-                                Path    = "TestDrive:"
+                Path    = "TestDrive:"
                 Restart = $true
             }
             $result = Install-DbaInstance @splatRestart -EnableException -Confirm:$false
@@ -287,7 +287,7 @@ Describe $CommandName -Tag UnitTests {
             Mock -CommandName Invoke-Program -MockWith { [PSCustomObject]@{ Successful = $true; ExitCode = [uint32[]]0 } } -ModuleName dbatools
             $splatTools = @{
                 Version = $version
-                                Path    = "TestDrive:"
+                Path    = "TestDrive:"
                 Feature = "Tools"
             }
             $result = Install-DbaInstance @splatTools -EnableException -Confirm:$false

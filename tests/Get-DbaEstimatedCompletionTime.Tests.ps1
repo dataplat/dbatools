@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName  = "dbatools",
     $CommandName = "Get-DbaEstimatedCompletionTime",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -34,28 +34,28 @@ Describe $CommandName -Tag IntegrationTests {
                     Invoke-WebRequest -Uri $TestConfig.BigDatabaseBackupSourceUrl -OutFile $TestConfig.BigDatabaseBackup -ErrorAction Stop
                 }
                 $splatRestore = @{
-                                        SqlInstance         = $TestConfig.instance2
-                                        Path                = $TestConfig.BigDatabaseBackup
-                                        DatabaseName        = "checkdbTestDatabase"
-                                        WithReplace         = $true
+                    SqlInstance         = $TestConfig.instance2
+                    Path                = $TestConfig.BigDatabaseBackup
+                    DatabaseName        = "checkdbTestDatabase"
+                    WithReplace         = $true
                     ReplaceDbNameInFile = $true
-                                        EnableException     = $true
+                    EnableException     = $true
                 }
                 $null = Restore-DbaDatabase @splatRestore
 
                 $splatJob = @{
-                                        SqlInstance     = $TestConfig.instance2
-                                        Job             = "checkdbTestJob"
+                    SqlInstance     = $TestConfig.instance2
+                    Job             = "checkdbTestJob"
                     EnableException = $true
                 }
                 $null = New-DbaAgentJob @splatJob
 
                 $splatJobStep = @{
-                                        SqlInstance     = $TestConfig.instance2
-                                        Job             = "checkdbTestJob"
-                                        StepName        = "checkdb"
-                                        Subsystem       = "TransactSql"
-                                        Command         = "DBCC CHECKDB('checkdbTestDatabase')"
+                    SqlInstance     = $TestConfig.instance2
+                    Job             = "checkdbTestJob"
+                    StepName        = "checkdb"
+                    Subsystem       = "TransactSql"
+                    Command         = "DBCC CHECKDB('checkdbTestDatabase')"
                     EnableException = $true
                 }
                 $null = New-DbaAgentJobStep @splatJobStep

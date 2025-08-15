@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "New-DbaAvailabilityGroup",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -103,12 +103,12 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When creating availability groups" {
         It "returns an ag with a db named" {
             $splatAg = @{
-                                Primary      = $TestConfig.instance3
-                                Name         = $agName
-                                ClusterType  = "None"
+                Primary      = $TestConfig.instance3
+                Name         = $agName
+                ClusterType  = "None"
                 FailoverMode = "Manual"
-                                Database     = $dbName
-                                Certificate  = "dbatoolsci_AGCert"
+                Database     = $dbName
+                Certificate  = "dbatoolsci_AGCert"
             }
             $results = New-DbaAvailabilityGroup @splatAg
             $results.AvailabilityDatabases.Name | Should -Be $dbName
@@ -117,11 +117,11 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "returns an ag with no database if one was not named" {
             $splatAgNoDb = @{
-                                Primary      = $TestConfig.instance3
-                                Name         = $agName
-                                ClusterType  = "None"
+                Primary      = $TestConfig.instance3
+                Name         = $agName
+                ClusterType  = "None"
                 FailoverMode = "Manual"
-                                Certificate  = "dbatoolsci_AGCert"
+                Certificate  = "dbatoolsci_AGCert"
             }
             $results = New-DbaAvailabilityGroup @splatAgNoDb
             $results.AvailabilityDatabases.Count | Should -Be 0 -Because "No database was named"

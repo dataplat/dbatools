@@ -30,10 +30,10 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "Should create the table" {
         BeforeEach {
             $map = @{
-                                Name      = 'test'
-                                Type      = 'varchar'
+                Name      = 'test'
+                Type      = 'varchar'
                 MaxLength = 20
-                                Nullable  = $true
+                Nullable  = $true
             }
         }
         It "Creates the table" {
@@ -46,11 +46,11 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "Should create the table with constraint on column" {
         BeforeEach {
             $map = @{
-                                Name        = 'test'
-                                Type        = 'nvarchar'
-                                MaxLength   = 20
-                                Nullable    = $true
-                                Default     = 'MyTest'
+                Name        = 'test'
+                Type        = 'nvarchar'
+                MaxLength   = 20
+                Nullable    = $true
+                Default     = 'MyTest'
                 DefaultName = 'DF_MyTest'
             }
         }
@@ -66,10 +66,10 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "Should create the table with an identity column" {
         BeforeEach {
             $map = @{
-                                Name              = 'testId'
-                                Type              = 'int'
-                                Identity          = $true
-                                IdentitySeed      = 10
+                Name              = 'testId'
+                Type              = 'int'
+                Identity          = $true
+                IdentitySeed      = 10
                 IdentityIncrement = 2
             }
         }
@@ -88,14 +88,14 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Creates the table" {
             $map = @( )
             $map += @{
-                                Name              = 'Id'
-                                Type              = 'varchar'
-                                MaxLength         = 36
+                Name              = 'Id'
+                Type              = 'varchar'
+                MaxLength         = 36
                 DefaultExpression = 'NEWID()'
             }
             $map += @{
-                                Name          = 'Since'
-                                Type          = 'datetime2'
+                Name          = 'Since'
+                Type          = 'datetime2'
                 DefaultString = '2021-12-31'
             }
             { $null = New-DbaDbTable -SqlInstance $TestConfig.instance1 -Database $dbname -Name $tablename4 -ColumnMap $map -EnableException } | Should -Not -Throw
@@ -104,8 +104,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "Should create the table with a nvarcharmax column" {
         BeforeEach {
             $map = @{
-                                Name     = 'test'
-                                Type     = 'nvarchar'
+                Name     = 'test'
+                Type     = 'nvarchar'
                 Nullable = $true
             }
         }

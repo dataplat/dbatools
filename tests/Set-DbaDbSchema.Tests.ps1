@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Set-DbaDbSchema",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -46,7 +46,7 @@ Describe $CommandName -Tag IntegrationTests {
         $newDbName = "dbatoolsci_newdb_$random"
         $splatNewDb = @{
             SqlInstance = $server1, $server2
-                        Name        = $newDbName
+            Name        = $newDbName
         }
         $newDbs = New-DbaDatabase @splatNewDb
 
@@ -56,22 +56,22 @@ Describe $CommandName -Tag IntegrationTests {
         $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
         $splatLogins = @{
             SqlInstance = $server1, $server2
-                        Login       = $userName, $userName2
-                        Password    = $securePassword
-                        Force       = $true
+            Login       = $userName, $userName2
+            Password    = $securePassword
+            Force       = $true
         }
         $logins = New-DbaLogin @splatLogins
 
         $splatUser1 = @{
             SqlInstance = $server1, $server2
-                        Database    = $newDbName
-                        Login       = $userName
+            Database    = $newDbName
+            Login       = $userName
         }
         $null = New-DbaDbUser @splatUser1
         $splatUser2 = @{
             SqlInstance = $server1, $server2
-                        Database    = $newDbName
-                        Login       = $userName2
+            Database    = $newDbName
+            Login       = $userName2
         }
         $null = New-DbaDbUser @splatUser2
 
@@ -95,8 +95,8 @@ Describe $CommandName -Tag IntegrationTests {
         It "updates the schema to a different owner" {
             $splatNewSchema = @{
                 SqlInstance = $server1
-                            Database    = $newDbName
-                                Schema      = "TestSchema1"
+                Database    = $newDbName
+                Schema      = "TestSchema1"
                 SchemaOwner = $userName
             }
             $schema = New-DbaDbSchema @splatNewSchema
@@ -107,8 +107,8 @@ Describe $CommandName -Tag IntegrationTests {
 
             $splatUpdateSchema = @{
                 SqlInstance = $server1
-                            Database    = $newDbName
-                                Schema      = "TestSchema1"
+                Database    = $newDbName
+                Schema      = "TestSchema1"
                 SchemaOwner = $userName2
             }
             $updatedSchema = Set-DbaDbSchema @splatUpdateSchema
@@ -119,8 +119,8 @@ Describe $CommandName -Tag IntegrationTests {
 
             $splatNewSchemas = @{
                 SqlInstance = $server1, $server2
-                            Database    = $newDbName
-                                Schema      = "TestSchema2", "TestSchema3"
+                Database    = $newDbName
+                Schema      = "TestSchema2", "TestSchema3"
                 SchemaOwner = $userName
             }
             $schemas = New-DbaDbSchema @splatNewSchemas
@@ -131,8 +131,8 @@ Describe $CommandName -Tag IntegrationTests {
 
             $splatUpdateSchemas = @{
                 SqlInstance = $server1, $server2
-                            Database    = $newDbName
-                                Schema      = "TestSchema2", "TestSchema3"
+                Database    = $newDbName
+                Schema      = "TestSchema2", "TestSchema3"
                 SchemaOwner = $userName2
             }
             $updatedSchemas = Set-DbaDbSchema @splatUpdateSchemas

@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Set-DbaRgWorkloadGroup",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -64,29 +64,29 @@ Describe $CommandName -Tag IntegrationTests {
             $wklGroupTestName = "dbatoolssci_wklgroupTest"
             $resourcePoolTestType = "Internal"
             $splatNewWorkloadGroup = @{
-                                SqlInstance                         = $TestConfig.instance2
-                                WorkloadGroup                       = $wklGroupTestName
-                                ResourcePool                        = "default"
-                                ResourcePoolType                    = $resourcePoolTestType
-                                Importance                          = "MEDIUM"
+                SqlInstance                         = $TestConfig.instance2
+                WorkloadGroup                       = $wklGroupTestName
+                ResourcePool                        = "default"
+                ResourcePoolType                    = $resourcePoolTestType
+                Importance                          = "MEDIUM"
                 RequestMaximumMemoryGrantPercentage = 25
-                                RequestMaximumCpuTimeInSeconds      = 0
-                                RequestMemoryGrantTimeoutInSeconds  = 0
-                                MaximumDegreeOfParallelism          = 0
-                                GroupMaximumRequests                = 0
-                                Force                               = $true
+                RequestMaximumCpuTimeInSeconds      = 0
+                RequestMemoryGrantTimeoutInSeconds  = 0
+                MaximumDegreeOfParallelism          = 0
+                GroupMaximumRequests                = 0
+                Force                               = $true
             }
             $splatSetWorkloadGroup = @{
-                                SqlInstance                         = $TestConfig.instance2
-                                WorkloadGroup                       = $wklGroupTestName
-                                ResourcePool                        = "default"
-                                ResourcePoolType                    = $resourcePoolTestType
-                                Importance                          = "HIGH"
+                SqlInstance                         = $TestConfig.instance2
+                WorkloadGroup                       = $wklGroupTestName
+                ResourcePool                        = "default"
+                ResourcePoolType                    = $resourcePoolTestType
+                Importance                          = "HIGH"
                 RequestMaximumMemoryGrantPercentage = 26
-                                RequestMaximumCpuTimeInSeconds      = 5
-                                RequestMemoryGrantTimeoutInSeconds  = 5
-                                MaximumDegreeOfParallelism          = 2
-                                GroupMaximumRequests                = 1
+                RequestMaximumCpuTimeInSeconds      = 5
+                RequestMemoryGrantTimeoutInSeconds  = 5
+                MaximumDegreeOfParallelism          = 2
+                GroupMaximumRequests                = 1
             }
             $newWorkloadGroup = New-DbaRgWorkloadGroup @splatNewWorkloadGroup
             $result = Set-DbaRgWorkloadGroup @splatSetWorkloadGroup
@@ -107,35 +107,35 @@ Describe $CommandName -Tag IntegrationTests {
             $resourcePoolUserTestName = "dbatoolssci_poolTest"
             $resourcePoolUserTestType = "Internal"
             $splatNewResourcePool = @{
-                                SqlInstance  = $TestConfig.instance2
+                SqlInstance  = $TestConfig.instance2
                 ResourcePool = $resourcePoolUserTestName
-                                Type         = $resourcePoolUserTestType
-                                Force        = $true
+                Type         = $resourcePoolUserTestType
+                Force        = $true
             }
             $splatNewWorkloadGroupUser = @{
-                                SqlInstance                         = $TestConfig.instance2
-                                WorkloadGroup                       = $wklGroupUserTestName
-                                ResourcePool                        = $resourcePoolUserTestName
-                                ResourcePoolType                    = $resourcePoolUserTestType
-                                Importance                          = "MEDIUM"
+                SqlInstance                         = $TestConfig.instance2
+                WorkloadGroup                       = $wklGroupUserTestName
+                ResourcePool                        = $resourcePoolUserTestName
+                ResourcePoolType                    = $resourcePoolUserTestType
+                Importance                          = "MEDIUM"
                 RequestMaximumMemoryGrantPercentage = 25
-                                RequestMaximumCpuTimeInSeconds      = 0
-                                RequestMemoryGrantTimeoutInSeconds  = 0
-                                MaximumDegreeOfParallelism          = 0
-                                GroupMaximumRequests                = 0
-                                Force                               = $true
+                RequestMaximumCpuTimeInSeconds      = 0
+                RequestMemoryGrantTimeoutInSeconds  = 0
+                MaximumDegreeOfParallelism          = 0
+                GroupMaximumRequests                = 0
+                Force                               = $true
             }
             $splatSetWorkloadGroupUser = @{
-                                SqlInstance                         = $TestConfig.instance2
-                                WorkloadGroup                       = $wklGroupUserTestName
-                                ResourcePool                        = $resourcePoolUserTestName
-                                ResourcePoolType                    = $resourcePoolUserTestType
-                                Importance                          = "HIGH"
+                SqlInstance                         = $TestConfig.instance2
+                WorkloadGroup                       = $wklGroupUserTestName
+                ResourcePool                        = $resourcePoolUserTestName
+                ResourcePoolType                    = $resourcePoolUserTestType
+                Importance                          = "HIGH"
                 RequestMaximumMemoryGrantPercentage = 26
-                                RequestMaximumCpuTimeInSeconds      = 5
-                                RequestMemoryGrantTimeoutInSeconds  = 5
-                                MaximumDegreeOfParallelism          = 2
-                                GroupMaximumRequests                = 1
+                RequestMaximumCpuTimeInSeconds      = 5
+                RequestMemoryGrantTimeoutInSeconds  = 5
+                MaximumDegreeOfParallelism          = 2
+                GroupMaximumRequests                = 1
             }
             $null = New-DbaRgResourcePool @splatNewResourcePool
             $newWorkloadGroup = New-DbaRgWorkloadGroup @splatNewWorkloadGroupUser
@@ -159,26 +159,26 @@ Describe $CommandName -Tag IntegrationTests {
             $wklGroupMultiTestName = "dbatoolssci_wklgroupTest"
             $wklGroupMultiTestName2 = "dbatoolssci_wklgroupTest2"
             $splatNewWorkloadGroupMulti = @{
-                                SqlInstance                         = $TestConfig.instance2
-                                WorkloadGroup                       = @($wklGroupMultiTestName, $wklGroupMultiTestName2)
-                                Importance                          = "MEDIUM"
+                SqlInstance                         = $TestConfig.instance2
+                WorkloadGroup                       = @($wklGroupMultiTestName, $wklGroupMultiTestName2)
+                Importance                          = "MEDIUM"
                 RequestMaximumMemoryGrantPercentage = 25
-                                RequestMaximumCpuTimeInSeconds      = 0
-                                RequestMemoryGrantTimeoutInSeconds  = 0
-                                MaximumDegreeOfParallelism          = 0
-                                GroupMaximumRequests                = 0
-                                Force                               = $true
+                RequestMaximumCpuTimeInSeconds      = 0
+                RequestMemoryGrantTimeoutInSeconds  = 0
+                MaximumDegreeOfParallelism          = 0
+                GroupMaximumRequests                = 0
+                Force                               = $true
             }
             $splatSetWorkloadGroupMulti = @{
-                                SqlInstance                         = $TestConfig.instance2
-                                WorkloadGroup                       = @($wklGroupMultiTestName, $wklGroupMultiTestName2)
-                                ResourcePool                        = "default"
-                                Importance                          = "HIGH"
+                SqlInstance                         = $TestConfig.instance2
+                WorkloadGroup                       = @($wklGroupMultiTestName, $wklGroupMultiTestName2)
+                ResourcePool                        = "default"
+                Importance                          = "HIGH"
                 RequestMaximumMemoryGrantPercentage = 26
-                                RequestMaximumCpuTimeInSeconds      = 5
-                                RequestMemoryGrantTimeoutInSeconds  = 5
-                                MaximumDegreeOfParallelism          = 2
-                                GroupMaximumRequests                = 1
+                RequestMaximumCpuTimeInSeconds      = 5
+                RequestMemoryGrantTimeoutInSeconds  = 5
+                MaximumDegreeOfParallelism          = 2
+                GroupMaximumRequests                = 1
             }
             $newWorkloadGroups = New-DbaRgWorkloadGroup @splatNewWorkloadGroupMulti
             $result = Set-DbaRgWorkloadGroup @splatSetWorkloadGroupMulti
@@ -199,11 +199,11 @@ Describe $CommandName -Tag IntegrationTests {
             $oldGroupMaximumRequests = 10
             $newGroupMaximumRequests = 10
             $splatNewWorkloadGroupPipe = @{
-                                SqlInstance          = $TestConfig.instance2
-                                WorkloadGroup        = $wklGroupPipeTestName
-                                ResourcePool         = "default"
+                SqlInstance          = $TestConfig.instance2
+                WorkloadGroup        = $wklGroupPipeTestName
+                ResourcePool         = "default"
                 GroupMaximumRequests = $oldGroupMaximumRequests
-                                Force                = $true
+                Force                = $true
             }
             $result = New-DbaRgWorkloadGroup @splatNewWorkloadGroupPipe
             $result2 = $result | Set-DbaRgWorkloadGroup -GroupMaximumRequests $newGroupMaximumRequests
@@ -215,19 +215,19 @@ Describe $CommandName -Tag IntegrationTests {
         It "Skips Resource Governor reconfiguration" {
             $wklGroupSkipTestName = "dbatoolssci_wklgroupTest"
             $splatNewWorkloadGroupSkip = @{
-                                SqlInstance     = $TestConfig.instance2
-                                WorkloadGroup   = $wklGroupSkipTestName
+                SqlInstance     = $TestConfig.instance2
+                WorkloadGroup   = $wklGroupSkipTestName
                 SkipReconfigure = $false
-                                Force           = $true
+                Force           = $true
             }
             $splatSetWorkloadGroupSkip = @{
-                                SqlInstance      = $TestConfig.instance2
-                                WorkloadGroup    = $wklGroupSkipTestName
-                                ResourcePool     = "default"
+                SqlInstance      = $TestConfig.instance2
+                WorkloadGroup    = $wklGroupSkipTestName
+                ResourcePool     = "default"
                 ResourcePoolType = "Internal"
-                                Importance       = "HIGH"
-                                SkipReconfigure  = $true
-                                WarningAction    = "SilentlyContinue"
+                Importance       = "HIGH"
+                SkipReconfigure  = $true
+                WarningAction    = "SilentlyContinue"
             }
 
             $null = New-DbaRgWorkloadGroup @splatNewWorkloadGroupSkip

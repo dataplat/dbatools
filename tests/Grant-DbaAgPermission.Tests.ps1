@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName  = "dbatools",
     $CommandName = "Grant-DbaAgPermission",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -33,12 +33,12 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance3 -InputFile "$($TestConfig.appveyorlabrepo)\sql2008-scripts\logins.sql" -ErrorAction SilentlyContinue
         $agName = "dbatoolsci_ag_grant"
         $splatAvailabilityGroup = @{
-                        Primary      = $TestConfig.instance3
-                        Name         = $agName
-                        ClusterType  = "None"
+            Primary      = $TestConfig.instance3
+            Name         = $agName
+            ClusterType  = "None"
             FailoverMode = "Manual"
-                        Certificate  = "dbatoolsci_AGCert"
-                        Confirm      = $false
+            Certificate  = "dbatoolsci_AGCert"
+            Confirm      = $false
         }
         $null = New-DbaAvailabilityGroup @splatAvailabilityGroup
 

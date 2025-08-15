@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Publish-DbaDacPackage",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -126,10 +126,10 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Performs a script generation using custom path" {
             $splatOption = @{
-                                Action   = "Publish"
+                Action   = "Publish"
                 Property = @{
                     GenerateDeploymentScript = $true
-                                        DatabaseScriptPath       = "C:\Temp\testdb.sql"
+                    DatabaseScriptPath       = "C:\Temp\testdb.sql"
                 }
             }
             $opts = New-DbaDacOption @splatOption

@@ -32,12 +32,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $scheduleOptions = @('Once', 'OneTime', 'Daily', 'Weekly', 'Monthly', 'MonthlyRelative', 'AgentStart', 'AutoStart', 'IdleComputer', 'OnIdle')
 
             foreach ($frequency in $scheduleOptions) {
-                $variables = @{SqlInstance = $TestConfig.instance2
-                                        Schedule                  = "dbatoolsci_$frequency"
-                                        Job                       = 'dbatoolsci_newschedule'
-                                        FrequencyType             = $frequency
+                $variables = @{SqlInstance    = $TestConfig.instance2
+                    Schedule                  = "dbatoolsci_$frequency"
+                    Job                       = 'dbatoolsci_newschedule'
+                    FrequencyType             = $frequency
                     FrequencyRecurrenceFactor = '1'
-                                        FrequencyInterval         = '1'
+                    FrequencyInterval         = '1'
                     FrequencyRelativeInterval = 'First'
                 }
 
@@ -92,16 +92,16 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                     $frequencyType = "Weekly"
                 }
 
-                $variables = @{SqlInstance = $TestConfig.instance2
-                                        Schedule                  = "dbatoolsci_$frequencyinterval"
-                                        Job                       = 'dbatoolsci_newschedule'
-                                        FrequencyType             = $frequencyType
+                $variables = @{SqlInstance    = $TestConfig.instance2
+                    Schedule                  = "dbatoolsci_$frequencyinterval"
+                    Job                       = 'dbatoolsci_newschedule'
+                    FrequencyType             = $frequencyType
                     FrequencyRecurrenceFactor = '1'
-                                        FrequencyInterval         = $frequencyinterval
-                                        StartDate                 = $start
-                                        StartTime                 = '010000'
-                                        EndDate                   = $end
-                                        EndTime                   = '020000'
+                    FrequencyInterval         = $frequencyinterval
+                    StartDate                 = $start
+                    StartTime                 = '010000'
+                    EndDate                   = $end
+                    EndTime                   = '020000'
                 }
 
                 $results[$frequencyinterval] = $(New-DbaAgentSchedule @variables)
@@ -150,18 +150,18 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $scheduleOptions = @('Time', 'Once', 'Second', 'Seconds', 'Minute', 'Minutes', 'Hour', 'Hours')
 
             foreach ($frequencySubdayType in $scheduleOptions) {
-                $variables = @{SqlInstance = $TestConfig.instance2
-                                        Schedule                  = "dbatoolsci_$frequencySubdayType"
-                                        Job                       = 'dbatoolsci_newschedule'
-                                        FrequencyType             = 'Daily'
-                                        FrequencyInterval         = '1'
+                $variables = @{SqlInstance    = $TestConfig.instance2
+                    Schedule                  = "dbatoolsci_$frequencySubdayType"
+                    Job                       = 'dbatoolsci_newschedule'
+                    FrequencyType             = 'Daily'
+                    FrequencyInterval         = '1'
                     FrequencyRecurrenceFactor = '1'
-                                        FrequencySubdayInterval   = 10
-                                        FrequencySubdayType       = $frequencySubdayType
-                                        StartDate                 = $start
-                                        StartTime                 = '010000'
-                                        EndDate                   = $end
-                                        EndTime                   = '020000'
+                    FrequencySubdayInterval   = 10
+                    FrequencySubdayType       = $frequencySubdayType
+                    StartDate                 = $start
+                    StartTime                 = '010000'
+                    EndDate                   = $end
+                    EndTime                   = '020000'
                 }
 
                 $results[$frequencySubdayType] = $(New-DbaAgentSchedule @variables)
@@ -207,19 +207,19 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $scheduleOptions = @('First', 'Second', 'Third', 'Fourth', 'Last')
 
             foreach ($frequencyRelativeInterval in $scheduleOptions) {
-                $variables = @{SqlInstance = $TestConfig.instance2
-                                        Schedule                  = "dbatoolsci_$frequencyRelativeInterval"
-                                        Job                       = 'dbatoolsci_newschedule'
-                                        FrequencyType             = 'MonthlyRelative'           # required to set the FrequencyRelativeInterval
+                $variables = @{SqlInstance    = $TestConfig.instance2
+                    Schedule                  = "dbatoolsci_$frequencyRelativeInterval"
+                    Job                       = 'dbatoolsci_newschedule'
+                    FrequencyType             = 'MonthlyRelative'           # required to set the FrequencyRelativeInterval
                     FrequencyRecurrenceFactor = '2'                         # every 2 months
                     FrequencyRelativeInterval = $frequencyRelativeInterval  # 'First', 'Second', 'Third', 'Fourth', 'Last'
-                                        FrequencyInterval         = '6'                         # Friday or day 6
-                                        FrequencySubDayInterval   = '1'                         # daily frequency 1="occurs once at..." or "occurs every..."
-                                        FrequencySubDayType       = 'Once'
-                                        StartDate                 = $start
-                                        StartTime                 = '010000'
-                                        EndDate                   = $end
-                                        EndTime                   = '020000'
+                    FrequencyInterval         = '6'                         # Friday or day 6
+                    FrequencySubDayInterval   = '1'                         # daily frequency 1="occurs once at..." or "occurs every..."
+                    FrequencySubDayType       = 'Once'
+                    StartDate                 = $start
+                    StartTime                 = '010000'
+                    EndDate                   = $end
+                    EndTime                   = '020000'
                 }
 
                 $results[$frequencyRelativeInterval] = $(New-DbaAgentSchedule @variables)

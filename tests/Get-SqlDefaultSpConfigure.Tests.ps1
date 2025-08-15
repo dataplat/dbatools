@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName  = "dbatools",
     $CommandName = "Get-SqlDefaultSpConfigure",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -23,8 +23,8 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             . "$PSScriptRoot\..\private\functions\Get-SqlDefaultSPConfigure.ps1"
             $versionName = @{
-                                8  = "2000"
-                                9  = "2005"
+                8  = "2000"
+                9  = "2005"
                 10 = "2008/2008R2"
                 11 = "2012"
                 12 = "2014"
@@ -37,9 +37,9 @@ Describe $CommandName -Tag IntegrationTests {
             foreach ($version in 8..14) {
                 $results = Get-SqlDefaultSPConfigure -SqlVersion $version
                 $allResults += [PSCustomObject]@{
-                                        Version     = $version
+                    Version     = $version
                     VersionName = $versionName.Item($version)
-                                        Results     = $results
+                    Results     = $results
                 }
             }
         }

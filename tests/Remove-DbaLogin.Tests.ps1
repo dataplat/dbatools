@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Remove-DbaLogin",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -39,9 +39,9 @@ Describe $CommandName -Tag IntegrationTests {
         # Create test login for removal testing
         $splatLogin = @{
             SqlInstance = $TestConfig.instance1
-                        Login       = $testLogin
-                        Password    = $securePassword
-                        Confirm     = $false
+            Login       = $testLogin
+            Password    = $securePassword
+            Confirm     = $false
         }
         $newLogin = New-DbaLogin @splatLogin
 

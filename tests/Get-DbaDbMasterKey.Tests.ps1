@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName  = "dbatools",
     $CommandName = "Get-DbaDbMasterKey",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -36,9 +36,9 @@ Describe $CommandName -Tag IntegrationTests {
         $null = $server.Query("Create Database [$dbname]")
         $splatMasterKey = @{
             SqlInstance = $TestConfig.instance1
-                        Database    = $dbname
-                        Password    = (ConvertTo-SecureString -AsPlainText -Force -String "ThisIsAPassword!")
-                        Confirm     = $false
+            Database    = $dbname
+            Password    = (ConvertTo-SecureString -AsPlainText -Force -String "ThisIsAPassword!")
+            Confirm     = $false
         }
         $null = New-DbaDbMasterKey @splatMasterKey
     }

@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Start-DbaDbEncryption",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -76,11 +76,11 @@ Describe $CommandName -Tag IntegrationTests {
         It "should mass enable encryption" {
             $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
             $splatEncryption = @{
-                                SqlInstance             = $TestConfig.instance2
-                                Database                = $testDatabases.Name
+                SqlInstance             = $TestConfig.instance2
+                Database                = $testDatabases.Name
                 MasterKeySecurePassword = $passwd
-                                BackupSecurePassword    = $passwd
-                                BackupPath              = $backupPath
+                BackupSecurePassword    = $passwd
+                BackupPath              = $backupPath
             }
             $results = Start-DbaDbEncryption @splatEncryption -WarningVariable warn
             $warn | Should -BeNullOrEmpty

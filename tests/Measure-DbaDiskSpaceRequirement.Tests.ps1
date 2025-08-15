@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Measure-DbaDiskSpaceRequirement",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -35,9 +35,9 @@ Describe $CommandName -Tag IntegrationTests {
             $server2 = Connect-DbaInstance -SqlInstance $global:TestConfig.instance2
 
             $global:splatMeasure = @{
-                                Source              = $global:TestConfig.instance1
-                                Destination         = $global:TestConfig.instance2
-                                Database            = "master"
+                Source              = $global:TestConfig.instance1
+                Destination         = $global:TestConfig.instance2
+                Database            = "master"
                 DestinationDatabase = "Dbatoolsci_DestinationDB"
             }
             $global:results = Measure-DbaDiskSpaceRequirement @global:splatMeasure

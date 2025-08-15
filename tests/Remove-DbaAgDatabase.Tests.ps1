@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Remove-DbaAgDatabase",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -40,13 +40,13 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbname | Backup-DbaDatabase -FilePath "$($TestConfig.Temp)\$dbname.trn" -Type Log
 
         $splatAvailabilityGroup = @{
-                        Primary       = $TestConfig.instance3
-                        Name          = $agname
-                        ClusterType   = "None"
-                        FailoverMode  = "Manual"
-                        Database      = $dbname
-                        Confirm       = $false
-                        Certificate   = "dbatoolsci_AGCert"
+            Primary       = $TestConfig.instance3
+            Name          = $agname
+            ClusterType   = "None"
+            FailoverMode  = "Manual"
+            Database      = $dbname
+            Confirm       = $false
+            Certificate   = "dbatoolsci_AGCert"
             UseLastBackup = $true
         }
         $ag = New-DbaAvailabilityGroup @splatAvailabilityGroup

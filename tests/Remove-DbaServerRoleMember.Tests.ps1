@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Remove-DbaServerRoleMember",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -36,9 +36,9 @@ Describe $CommandName -Tag IntegrationTests {
         $global:fixedServerRoles = "dbcreator", "processadmin"
 
         $splatPassword = @{
-                        String      = "Password1234!"
+            String      = "Password1234!"
             AsPlainText = $true
-                        Force       = $true
+            Force       = $true
         }
         $password = ConvertTo-SecureString @splatPassword
 

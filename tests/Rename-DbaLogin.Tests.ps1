@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Rename-DbaLogin",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -37,8 +37,8 @@ Describe $CommandName -Tag IntegrationTests {
         # Create the test login
         $splatNewLogin = @{
             SqlInstance = $TestConfig.instance1
-                        Login       = $loginName
-                        Password    = $securePassword
+            Login       = $loginName
+            Password    = $securePassword
         }
         $newLogin = New-DbaLogin @splatNewLogin
 
@@ -61,8 +61,8 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $splatRename = @{
                 SqlInstance = $TestConfig.instance1
-                            Login       = $loginName
-                                NewLogin    = $renamedLogin
+                Login       = $loginName
+                NewLogin    = $renamedLogin
             }
             $results = Rename-DbaLogin @splatRename
         }

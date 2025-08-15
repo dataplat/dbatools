@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName  = "dbatools",
     $CommandName = "Get-DbaDbRestoreHistory",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -43,27 +43,27 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1, $dbname2 | Remove-DbaDatabase -Confirm:$false
 
         $splatRestore1 = @{
-                        SqlInstance           = $TestConfig.instance2
-                        Path                  = "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak"
-                        DatabaseName          = $dbname1
+            SqlInstance           = $TestConfig.instance2
+            Path                  = "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak"
+            DatabaseName          = $dbname1
             DestinationFilePrefix = $dbname1
         }
         $null = Restore-DbaDatabase @splatRestore1
 
         $splatRestore2 = @{
-                        SqlInstance           = $TestConfig.instance2
-                        Path                  = "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak"
-                        DatabaseName          = $dbname2
+            SqlInstance           = $TestConfig.instance2
+            Path                  = "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak"
+            DatabaseName          = $dbname2
             DestinationFilePrefix = $dbname2
         }
         $null = Restore-DbaDatabase @splatRestore2
 
         $splatRestore3 = @{
-                        SqlInstance           = $TestConfig.instance2
-                        Path                  = "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak"
-                        DatabaseName          = $dbname2
+            SqlInstance           = $TestConfig.instance2
+            Path                  = "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak"
+            DatabaseName          = $dbname2
             DestinationFilePrefix = "rsh_pre_$dbname2"
-                        WithReplace           = $true
+            WithReplace           = $true
         }
         $null = Restore-DbaDatabase @splatRestore3
 
@@ -72,10 +72,10 @@ Describe $CommandName -Tag IntegrationTests {
         $logBackup = Backup-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1 -Type Log
 
         $splatRestoreFinal = @{
-                        SqlInstance  = $TestConfig.instance2
-                        Path         = $diffBackup.BackupPath, $logBackup.BackupPath
+            SqlInstance  = $TestConfig.instance2
+            Path         = $diffBackup.BackupPath, $logBackup.BackupPath
             DatabaseName = $dbname1
-                        WithReplace  = $true
+            WithReplace  = $true
         }
         $null = Restore-DbaDatabase @splatRestoreFinal
 

@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Import-DbaCsv",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -188,7 +188,7 @@ Describe $CommandName -Tag IntegrationTests {
             Invoke-DbaQuery -SqlInstance $server -Query "CREATE TABLE WithGuidsAndBits (one_guid UNIQUEIDENTIFIER, one_bit BIT)"
             $row = [PSCustomObject]@{
                 one_guid = (New-Guid).Guid
-                                one_bit  = 1
+                one_bit  = 1
             }
             $row | Export-Csv -Path $filePath -NoTypeInformation
 

@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "New-DbaDbMaskingConfig",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -87,8 +87,8 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should output a file with specific content" {
             $splatMaskingConfig = @{
                 SqlInstance = $TestConfig.instance1
-                                Database    = $maskingDbName
-                                Path        = "C:\temp"
+                Database    = $maskingDbName
+                Path        = "C:\temp"
             }
             $configResults = New-DbaDbMaskingConfig @splatMaskingConfig
             $filesToRemove += $configResults.FullName
@@ -101,9 +101,9 @@ Describe $CommandName -Tag IntegrationTests {
         It "Bug 6934: matching IPAddress, Address, and StreetAddress on known names" {
             $splatMaskingConfig = @{
                 SqlInstance = $TestConfig.instance1
-                                Database    = $maskingDbName
-                                Table       = "DbConfigTest"
-                                Path        = "C:\temp"
+                Database    = $maskingDbName
+                Table       = "DbConfigTest"
+                Path        = "C:\temp"
             }
             $configResults = New-DbaDbMaskingConfig @splatMaskingConfig
             $filesToRemove += $configResults.FullName

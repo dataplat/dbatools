@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName  = "dbatools",
     $CommandName = "Get-DbaDbVirtualLogFile",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -33,8 +33,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         $testDbName = "dbatoolsci_getvlf"
         $splatDatabase = @{
-                        SqlInstance     = $TestConfig.instance2
-                        Name            = $testDbName
+            SqlInstance     = $TestConfig.instance2
+            Name            = $testDbName
             EnableException = $true
         }
         $null = New-DbaDatabase @splatDatabase
@@ -56,7 +56,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $splatVirtualLogFile = @{
                 SqlInstance = $TestConfig.instance2
-                                Database    = $testDbName
+                Database    = $testDbName
             }
             $allResults = Get-DbaDbVirtualLogFile @splatVirtualLogFile
         }

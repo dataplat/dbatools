@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "New-DbaAgentAlert",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -72,14 +72,14 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should create a new alert with severity" {
             $splatAlert = @{
-                                SqlInstance           = $TestConfig.instance2
-                                Alert                 = "Test Alert"
+                SqlInstance           = $TestConfig.instance2
+                Alert                 = "Test Alert"
                 DelayBetweenResponses = 60
-                                Disabled              = $false
-                                NotifyMethod          = "NotifyEmail"
-                                NotificationMessage   = "Test Notification"
-                                Severity              = 17
-                                EnableException       = $true
+                Disabled              = $false
+                NotifyMethod          = "NotifyEmail"
+                NotificationMessage   = "Test Notification"
+                Severity              = 17
+                EnableException       = $true
             }
 
             $alert = New-DbaAgentAlert @splatAlert
@@ -95,13 +95,13 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should create a new alert with MessageId" {
             $splatMessageAlert = @{
-                                SqlInstance           = $TestConfig.instance3
-                                Alert                 = "Another Alert"
+                SqlInstance           = $TestConfig.instance3
+                Alert                 = "Another Alert"
                 DelayBetweenResponses = 60
-                                NotifyMethod          = "NotifyEmail"
-                                NotificationMessage   = "Test Notification"
-                                MessageId             = 826
-                                EnableException       = $true
+                NotifyMethod          = "NotifyEmail"
+                NotificationMessage   = "Test Notification"
+                MessageId             = 826
+                EnableException       = $true
             }
 
             $alert = New-DbaAgentAlert @splatMessageAlert

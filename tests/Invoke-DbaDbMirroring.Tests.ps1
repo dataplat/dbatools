@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Invoke-DbaDbMirroring",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -66,11 +66,11 @@ Describe $CommandName -Tag IntegrationTests {
 
     It "returns success" {
         $splatMirroring = @{
-                        Primary    = $TestConfig.instance2
-                        Mirror     = $TestConfig.instance3
-                        Database   = $dbName
-                        Confirm    = $false
-                        Force      = $true
+            Primary    = $TestConfig.instance2
+            Mirror     = $TestConfig.instance3
+            Database   = $dbName
+            Confirm    = $false
+            Force      = $true
             SharedPath = "C:\temp"
         }
         $results = Invoke-DbaDbMirroring @splatMirroring -WarningVariable WarnVar

@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Invoke-DbaDbDbccCheckConstraint",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -74,9 +74,9 @@ Describe $CommandName -Tag IntegrationTests {
 
             $splatCheckConstraint = @{
                 SqlInstance = $TestConfig.instance2
-                                Database    = $dbname
-                                Object      = $tableName
-                                Confirm     = $false
+                Database    = $dbname
+                Object      = $tableName
+                Confirm     = $false
             }
             $result = Invoke-DbaDbDbccCheckConstraint @splatCheckConstraint
         }

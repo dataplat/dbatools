@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Remove-DbaDbRoleMember",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -34,7 +34,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $splatInstance = @{
-                        SqlInstance     = $TestConfig.instance2
+            SqlInstance     = $TestConfig.instance2
             EnableException = $true
         }
 
@@ -45,63 +45,63 @@ Describe $CommandName -Tag IntegrationTests {
         $testDatabase = "dbatoolsci_$(Get-Random)"
 
         $splatLogin1 = @{
-                        SqlInstance     = $TestConfig.instance2
-                        Login           = $testUser1
-                        Password        = ("Password1234!" | ConvertTo-SecureString -AsPlainText -Force)
+            SqlInstance     = $TestConfig.instance2
+            Login           = $testUser1
+            Password        = ("Password1234!" | ConvertTo-SecureString -AsPlainText -Force)
             EnableException = $true
         }
         $null = New-DbaLogin @splatLogin1
 
         $splatLogin2 = @{
-                        SqlInstance     = $TestConfig.instance2
-                        Login           = $testUser2
-                        Password        = ("Password1234!" | ConvertTo-SecureString -AsPlainText -Force)
+            SqlInstance     = $TestConfig.instance2
+            Login           = $testUser2
+            Password        = ("Password1234!" | ConvertTo-SecureString -AsPlainText -Force)
             EnableException = $true
         }
         $null = New-DbaLogin @splatLogin2
 
         $splatDatabase = @{
-                        SqlInstance     = $TestConfig.instance2
-                        Name            = $testDatabase
-                        Owner           = "sa"
+            SqlInstance     = $TestConfig.instance2
+            Name            = $testDatabase
+            Owner           = "sa"
             EnableException = $true
         }
         $null = New-DbaDatabase @splatDatabase
 
         $splatDbUser1 = @{
-                        SqlInstance     = $TestConfig.instance2
-                        Database        = $testDatabase
-                        Login           = $testUser1
-                        Username        = "User1"
+            SqlInstance     = $TestConfig.instance2
+            Database        = $testDatabase
+            Login           = $testUser1
+            Username        = "User1"
             EnableException = $true
         }
         $null = New-DbaDbUser @splatDbUser1
 
         $splatDbUser2 = @{
-                        SqlInstance     = $TestConfig.instance2
-                        Database        = $testDatabase
-                        Login           = $testUser2
-                        Username        = "User2"
+            SqlInstance     = $TestConfig.instance2
+            Database        = $testDatabase
+            Login           = $testUser2
+            Username        = "User2"
             EnableException = $true
         }
         $null = New-DbaDbUser @splatDbUser2
 
         $splatDbUser1Msdb = @{
-                        SqlInstance     = $TestConfig.instance2
-                        Database        = "msdb"
-                        Login           = $testUser1
-                        Username        = "User1"
-                        IncludeSystem   = $true
+            SqlInstance     = $TestConfig.instance2
+            Database        = "msdb"
+            Login           = $testUser1
+            Username        = "User1"
+            IncludeSystem   = $true
             EnableException = $true
         }
         $null = New-DbaDbUser @splatDbUser1Msdb
 
         $splatDbUser2Msdb = @{
-                        SqlInstance     = $TestConfig.instance2
-                        Database        = "msdb"
-                        Login           = $testUser2
-                        Username        = "User2"
-                        IncludeSystem   = $true
+            SqlInstance     = $TestConfig.instance2
+            Database        = "msdb"
+            Login           = $testUser2
+            Username        = "User2"
+            IncludeSystem   = $true
             EnableException = $true
         }
         $null = New-DbaDbUser @splatDbUser2Msdb

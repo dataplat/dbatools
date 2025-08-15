@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "New-DbaAgentJobStep",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -73,14 +73,14 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should have the right properties" {
             $splatJobStep = @{
-                                SqlInstance    = $TestConfig.instance2
-                                Job            = $jobTwo
-                                StepName       = "Step X"
-                                Subsystem      = "TransactSql"
-                                Command        = "select 1"
-                                Database       = "master"
-                                RetryAttempts  = 2
-                                RetryInterval  = 5
+                SqlInstance    = $TestConfig.instance2
+                Job            = $jobTwo
+                StepName       = "Step X"
+                Subsystem      = "TransactSql"
+                Command        = "select 1"
+                Database       = "master"
+                RetryAttempts  = 2
+                RetryInterval  = 5
                 OutputFileName = "log.txt"
             }
             $results = New-DbaAgentJobStep @splatJobStep

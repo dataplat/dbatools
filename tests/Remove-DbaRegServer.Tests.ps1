@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Remove-DbaRegServer",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -40,16 +40,16 @@ Describe $CommandName -Tag IntegrationTests {
         # Create the registered servers.
         $splatServer1 = @{
             SqlInstance = $TestConfig.instance1
-                        ServerName  = $srvName
-                        Name        = $regSrvName
+            ServerName  = $srvName
+            Name        = $regSrvName
             Description = $regSrvDesc
         }
         $newServer = Add-DbaRegServer @splatServer1
 
         $splatServer2 = @{
             SqlInstance = $TestConfig.instance1
-                        ServerName  = $srvName2
-                        Name        = $regSrvName2
+            ServerName  = $srvName2
+            Name        = $regSrvName2
             Description = $regSrvDesc2
         }
         $newServer2 = Add-DbaRegServer @splatServer2

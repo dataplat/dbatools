@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName  = "dbatools",
     $CommandName = "Get-XpDirTreeRestoreFile",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -30,16 +30,16 @@ Describe $CommandName -Tag UnitTests {
                     @{ subdirectory = "full2.bak"; depth = 1; file = 1 })
                 Mock Connect-DbaInstance -MockWith {
                     $obj = [PSCustomObject]@{
-                                                Name                 = "BASEName"
-                                                NetName              = "BASENetName"
-                                                ComputerName         = "BASEComputerName"
-                                                InstanceName         = "BASEInstanceName"
-                                                DomainInstanceName   = "BASEDomainInstanceName"
+                        Name                 = "BASEName"
+                        NetName              = "BASENetName"
+                        ComputerName         = "BASEComputerName"
+                        InstanceName         = "BASEInstanceName"
+                        DomainInstanceName   = "BASEDomainInstanceName"
                         InstallDataDirectory = "BASEInstallDataDirectory"
-                                                ErrorLogPath         = "BASEErrorLog_{0}_{1}_{2}_Path" -f "'", '"', ']'
-                                                ServiceName          = "BASEServiceName"
-                                                VersionMajor         = 9
-                                                ConnectionContext    = New-Object PSObject
+                        ErrorLogPath         = "BASEErrorLog_{0}_{1}_{2}_Path" -f "'", '"', ']'
+                        ServiceName          = "BASEServiceName"
+                        VersionMajor         = 9
+                        ConnectionContext    = New-Object PSObject
                     }
                     Add-Member -InputObject $obj.ConnectionContext -Name ConnectionString  -MemberType NoteProperty -Value "put=an=equal=in=it"
                     Add-Member -InputObject $obj -Name Query -MemberType ScriptMethod -Value {
@@ -73,16 +73,16 @@ Describe $CommandName -Tag UnitTests {
                     @{ subdirectory = "full2low.bak"; depth = 1; file = 1 })
                 Mock Connect-DbaInstance -MockWith {
                     $obj = [PSCustomObject]@{
-                                                Name                 = "BASEName"
-                                                NetName              = "BASENetName"
-                                                ComputerName         = "BASEComputerName"
-                                                InstanceName         = "BASEInstanceName"
-                                                DomainInstanceName   = "BASEDomainInstanceName"
+                        Name                 = "BASEName"
+                        NetName              = "BASENetName"
+                        ComputerName         = "BASEComputerName"
+                        InstanceName         = "BASEInstanceName"
+                        DomainInstanceName   = "BASEDomainInstanceName"
                         InstallDataDirectory = "BASEInstallDataDirectory"
-                                                ErrorLogPath         = "BASEErrorLog_{0}_{1}_{2}_Path" -f "'", '"', ']'
-                                                ServiceName          = "BASEServiceName"
-                                                VersionMajor         = 9
-                                                ConnectionContext    = New-Object PSObject
+                        ErrorLogPath         = "BASEErrorLog_{0}_{1}_{2}_Path" -f "'", '"', ']'
+                        ServiceName          = "BASEServiceName"
+                        VersionMajor         = 9
+                        ConnectionContext    = New-Object PSObject
                     }
                     Add-Member -InputObject $obj.ConnectionContext -Name ConnectionString  -MemberType NoteProperty -Value "put=an=equal=in=it"
                     Add-Member -InputObject $obj -Name Query -MemberType ScriptMethod -Value {

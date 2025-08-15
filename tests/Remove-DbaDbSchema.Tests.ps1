@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Remove-DbaDbSchema",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -57,8 +57,8 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should drop the schema successfully" {
             $splatNewSchema = @{
                 SqlInstance = $server1Instance
-                                Database    = $testDbName
-                                Schema      = "TestSchema1"
+                Database    = $testDbName
+                Schema      = "TestSchema1"
             }
             $schema = New-DbaDbSchema @splatNewSchema
             $schema.Count | Should -Be 1
@@ -67,23 +67,23 @@ Describe $CommandName -Tag IntegrationTests {
 
             $splatRemoveSchema = @{
                 SqlInstance = $server1Instance
-                                Database    = $testDbName
-                                Schema      = "TestSchema1"
-                                Confirm     = $false
+                Database    = $testDbName
+                Schema      = "TestSchema1"
+                Confirm     = $false
             }
             Remove-DbaDbSchema @splatRemoveSchema
 
             $splatGetSchema = @{
                 SqlInstance = $server1Instance
-                                Database    = $testDbName
-                                Schema      = "TestSchema1"
+                Database    = $testDbName
+                Schema      = "TestSchema1"
             }
             (Get-DbaDbSchema @splatGetSchema) | Should -BeNullOrEmpty
 
             $splatNewMultiSchema = @{
                 SqlInstance = $server1Instance, $server2Instance
-                                Database    = $testDbName
-                                Schema      = "TestSchema2", "TestSchema3"
+                Database    = $testDbName
+                Schema      = "TestSchema2", "TestSchema3"
             }
             $schemas = New-DbaDbSchema @splatNewMultiSchema
             $schemas.Count | Should -Be 4
@@ -92,16 +92,16 @@ Describe $CommandName -Tag IntegrationTests {
 
             $splatRemoveMultiSchema = @{
                 SqlInstance = $server1Instance, $server2Instance
-                                Database    = $testDbName
-                                Schema      = "TestSchema2", "TestSchema3"
-                                Confirm     = $false
+                Database    = $testDbName
+                Schema      = "TestSchema2", "TestSchema3"
+                Confirm     = $false
             }
             Remove-DbaDbSchema @splatRemoveMultiSchema
 
             $splatGetMultiSchema = @{
                 SqlInstance = $server1Instance, $server2Instance
-                                Database    = $testDbName
-                                Schema      = "TestSchema2", "TestSchema3"
+                Database    = $testDbName
+                Schema      = "TestSchema2", "TestSchema3"
             }
             (Get-DbaDbSchema @splatGetMultiSchema) | Should -BeNullOrEmpty
         }
@@ -109,8 +109,8 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should support piping databases" {
             $splatNewPipeSchema = @{
                 SqlInstance = $server1Instance
-                                Database    = $testDbName
-                                Schema      = "TestSchema1"
+                Database    = $testDbName
+                Schema      = "TestSchema1"
             }
             $schema = New-DbaDbSchema @splatNewPipeSchema
             $schema.Count | Should -Be 1
@@ -121,8 +121,8 @@ Describe $CommandName -Tag IntegrationTests {
 
             $splatGetPipeSchema = @{
                 SqlInstance = $server1Instance
-                                Database    = $testDbName
-                                Schema      = "TestSchema1"
+                Database    = $testDbName
+                Schema      = "TestSchema1"
             }
             (Get-DbaDbSchema @splatGetPipeSchema) | Should -BeNullOrEmpty
         }

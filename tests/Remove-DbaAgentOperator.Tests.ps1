@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Remove-DbaAgentOperator",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -48,7 +48,7 @@ Describe $CommandName -Tag IntegrationTests {
         # Cleanup all created operators
         $splatCleanup = @{
             SqlInstance = $instanceConnection
-                        Confirm     = $false
+            Confirm     = $false
         }
         $null = Remove-DbaAgentOperator @splatCleanup -Operator $operatorEmail1 -ErrorAction SilentlyContinue
         $null = Remove-DbaAgentOperator @splatCleanup -Operator $operatorEmail2 -ErrorAction SilentlyContinue

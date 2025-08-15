@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Rename-DbaDatabase",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -66,10 +66,10 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Should preview a rename of a database" {
         BeforeAll {
             $splatPreview = @{
-                                SqlInstance  = $TestConfig.instance2
-                                Database     = "dbatoolsci_rename1"
+                SqlInstance  = $TestConfig.instance2
+                Database     = "dbatoolsci_rename1"
                 DatabaseName = "dbatoolsci_rename2"
-                                Preview      = $true
+                Preview      = $true
             }
 
             $previewResults = Rename-DbaDatabase @splatPreview
@@ -86,8 +86,8 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Should rename a database" {
         BeforeAll {
             $splatRename = @{
-                                SqlInstance  = $TestConfig.instance2
-                                Database     = "dbatoolsci_rename1"
+                SqlInstance  = $TestConfig.instance2
+                Database     = "dbatoolsci_rename1"
                 DatabaseName = "dbatoolsci_rename2"
             }
 
@@ -111,8 +111,8 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Should rename a database with a prefix" {
         BeforeAll {
             $splatPrefix = @{
-                                SqlInstance  = $TestConfig.instance2
-                                Database     = "dbatoolsci_rename2"
+                SqlInstance  = $TestConfig.instance2
+                Database     = "dbatoolsci_rename2"
                 DatabaseName = "test_<DBN>"
             }
 
@@ -136,8 +136,8 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Should rename a database with a date" {
         BeforeAll {
             $splatDate = @{
-                                SqlInstance  = $TestConfig.instance2
-                                Database     = "test_dbatoolsci_rename2"
+                SqlInstance  = $TestConfig.instance2
+                Database     = "test_dbatoolsci_rename2"
                 DatabaseName = "<DBN>_<DATE>"
             }
 
@@ -162,9 +162,9 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $splatFilePreview = @{
                 SqlInstance = $TestConfig.instance2
-                                Database    = "dbatoolsci_filemove"
-                                FileName    = "<DBN>_<FGN>_<FNN>"
-                                Preview     = $true
+                Database    = "dbatoolsci_filemove"
+                FileName    = "<DBN>_<FGN>_<FNN>"
+                Preview     = $true
             }
 
             $filePreviewResults = Rename-DbaDatabase @splatFilePreview
@@ -188,9 +188,9 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $splatFileMove = @{
                 SqlInstance = $TestConfig.instance2
-                                Database    = "dbatoolsci_filemove"
-                                FileName    = "<DBN>_<FGN>_<FNN>"
-                                Move        = $true
+                Database    = "dbatoolsci_filemove"
+                FileName    = "<DBN>_<FGN>_<FNN>"
+                Move        = $true
             }
 
             $fileMoveResults = Rename-DbaDatabase @splatFileMove
@@ -213,11 +213,11 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Should rename database files and forces the move" {
         BeforeAll {
             $splatFileForce = @{
-                                SqlInstance   = $TestConfig.instance2
-                                Database      = "dbatoolsci_filemove"
-                                FileName      = "<FNN>_<FT>"
+                SqlInstance   = $TestConfig.instance2
+                Database      = "dbatoolsci_filemove"
+                FileName      = "<FNN>_<FT>"
                 ReplaceBefore = $true
-                                Force         = $true
+                Force         = $true
             }
 
             $fileForceResults = Rename-DbaDatabase @splatFileForce
@@ -241,9 +241,9 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $splatFileOffline = @{
                 SqlInstance = $TestConfig.instance2
-                                Database    = "dbatoolsci_filemove"
-                                FileName    = "<FNN>_<LGN>_<DATE>"
-                                SetOffline  = $true
+                Database    = "dbatoolsci_filemove"
+                FileName    = "<FNN>_<LGN>_<DATE>"
+                SetOffline  = $true
             }
 
             $fileOfflineResults = Rename-DbaDatabase @splatFileOffline
@@ -270,7 +270,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $splatLogical = @{
                 SqlInstance = $TestConfig.instance2
-                                Database    = "dbatoolsci_logicname"
+                Database    = "dbatoolsci_logicname"
                 LogicalName = "<LGN>_<DATE>_<DBN>"
             }
 
@@ -294,8 +294,8 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Should rename the filegroupname name" {
         BeforeAll {
             $splatFileGroup = @{
-                                SqlInstance   = $TestConfig.instance2
-                                Database      = "dbatoolsci_filegroupname"
+                SqlInstance   = $TestConfig.instance2
+                Database      = "dbatoolsci_filegroupname"
                 FileGroupName = "<FGN>_<DATE>_<DBN>"
             }
 

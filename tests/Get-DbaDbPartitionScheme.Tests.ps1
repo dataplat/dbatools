@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName  = "dbatools",
     $CommandName = "Get-DbaDbPartitionScheme",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -45,8 +45,8 @@ CREATE PARTITION SCHEME $PFScheme AS PARTITION [$PFName] ALL TO ( [PRIMARY] );
 
         $splatCreate = @{
             SqlInstance = $TestConfig.instance2
-                        Query       = $CreateTestPartitionScheme
-                        Database    = "master"
+            Query       = $CreateTestPartitionScheme
+            Database    = "master"
         }
         Invoke-DbaQuery @splatCreate
 
@@ -65,9 +65,9 @@ GO
 DROP PARTITION FUNCTION [$PFName];
 "@
         $splatDrop = @{
-                        SqlInstance     = $TestConfig.instance2
-                        Query           = $DropTestPartitionScheme
-                        Database        = "master"
+            SqlInstance     = $TestConfig.instance2
+            Query           = $DropTestPartitionScheme
+            Database        = "master"
             EnableException = $true
         }
         Invoke-DbaQuery @splatDrop -ErrorAction SilentlyContinue

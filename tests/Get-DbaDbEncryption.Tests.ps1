@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName  = "dbatools",
     $CommandName = "Get-DbaDbEncryption",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -39,8 +39,8 @@ Describe $CommandName -Tag IntegrationTests {
 
             $splatCertificate = @{
                 SqlInstance = $TestConfig.instance1
-                                Name        = $cert
-                                Password    = $password
+                Name        = $cert
+                Password    = $password
             }
             New-DbaDbCertificate @splatCertificate
 
@@ -51,7 +51,7 @@ Describe $CommandName -Tag IntegrationTests {
                 $splatRemove = @{
                     SqlInstance = $TestConfig.instance1
                     Certificate = $cert
-                                        Confirm     = $false
+                    Confirm     = $false
                 }
                 Get-DbaDbCertificate @splatRemove | Remove-DbaDbCertificate -Confirm:$false
             }

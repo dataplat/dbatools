@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Set-DbaAvailabilityGroup",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -41,12 +41,12 @@ Describe $CommandName -Tag IntegrationTests {
 
         $agname = "dbatoolsci_agroup"
         $splatPrimary = @{
-                        Primary      = $TestConfig.instance3
-                        Name         = $agname
-                        ClusterType  = "None"
+            Primary      = $TestConfig.instance3
+            Name         = $agname
+            ClusterType  = "None"
             FailoverMode = "Manual"
-                        Certificate  = "dbatoolsci_AGCert"
-                        Confirm      = $false
+            Certificate  = "dbatoolsci_AGCert"
+            Confirm      = $false
         }
         $null = New-DbaAvailabilityGroup @splatPrimary
 
