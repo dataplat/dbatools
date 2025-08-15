@@ -32,7 +32,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When testing SQL instance edition support" {
         It "Should warn if SQL instance edition is not supported" {
             $null = Test-DbaDbLogShipStatus -SqlInstance $TestConfig.instance1 -WarningAction SilentlyContinue
-            if ($server.Edition -match 'Express') {
+            if ((Connect-DbaInstance -SqlInstance $TestConfig.instance1).Edition -match 'Express') {
                 $WarnVar | Should -Match "Express"
             } else {
                 $WarnVar | Should -Not -Match "Express"
