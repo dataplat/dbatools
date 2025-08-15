@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Get-DbaInstanceTrigger",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -33,14 +33,10 @@ Describe $CommandName -Tag IntegrationTests {
         $trigger1Name = "dbatoolsci_trigger1_$random"
         $trigger2Name = "dbatoolsci_trigger2_$random"
 
-        $splatConnection = @{
-            SqlInstance     = $TestConfig.instance2
-            EnableException = $true
-        }
-        $instance = Connect-DbaInstance @splatConnection
+        $instance = Connect-DbaInstance -SqlInstance $TestConfig.instance2
 
-        $sql1 = "CREATE TRIGGER [$trigger1Name] ON ALL SERVER FOR CREATE_DATABASE AS PRINT ""Database Created."""
-        $sql2 = "CREATE TRIGGER [$trigger2Name] ON ALL SERVER FOR CREATE_DATABASE AS PRINT ""Database Created."""
+        $sql1 = "CREATE TRIGGER [$trigger1Name] ON ALL SERVER FOR CREATE_DATABASE AS PRINT 'Database Created.'"
+        $sql2 = "CREATE TRIGGER [$trigger2Name] ON ALL SERVER FOR CREATE_DATABASE AS PRINT 'Database Created.'"
         $instance.query($sql1)
         $instance.query($sql2)
 
@@ -55,7 +51,6 @@ Describe $CommandName -Tag IntegrationTests {
         # Cleanup the created triggers
         $sql = "DROP TRIGGER [$trigger1Name] ON ALL SERVER;DROP TRIGGER [$trigger2Name] ON ALL SERVER"
         $instance.query($sql)
-
         # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
@@ -65,7 +60,20 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should return the expected number of triggers" {
-            $results.Status.Count | Should -BeGreaterOrEqual 2
+            $results.Count | Should -BeGreaterOrEqual 2
+        }
+
+        It "Should have correct properties" {
+            $expectedProperties = @(
+                "AnsiNullsStatus", "AssemblyName", "BodyStartIndex", "ClassName", "ComputerName",
+                "CreateDate", "DatabaseEngineEdition", "DatabaseEngineType", "DateLastModified",
+                "DdlTriggerEvents", "ExecutionContext", "ExecutionContextLogin", "ExecutionManager",
+                "ID", "ImplementationType", "InstanceName", "IsDesignMode", "IsEnabled", "IsEncrypted",
+                "IsSystemObject", "MethodName", "Name", "Parent", "ParentCollection", "Properties",
+                "QuotedIdentifierStatus", "ServerVersion", "SqlInstance", "State", "Text", "TextBody",
+                "TextHeader", "TextMode", "Urn", "UserData"
+            )
+            ($results[0].PsObject.Properties.Name | Sort-Object) | Should -Be ($expectedProperties | Sort-Object)
         }
 
         It "Should return our test triggers" {
