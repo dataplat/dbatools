@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Revoke-DbaAgPermission",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -37,12 +37,12 @@ Describe $CommandName -Tag IntegrationTests {
         $agname = "dbatoolsci_ag_revoke"
 
         $splatAvailabilityGroup = @{
-                        Primary      = $TestConfig.instance3
-                        Name         = $agname
-                        ClusterType  = "None"
+            Primary      = $TestConfig.instance3
+            Name         = $agname
+            ClusterType  = "None"
             FailoverMode = "Manual"
-                        Confirm      = $false
-                        Certificate  = "dbatoolsci_AGCert"
+            Confirm      = $false
+            Certificate  = "dbatoolsci_AGCert"
         }
         $null = New-DbaAvailabilityGroup @splatAvailabilityGroup
 

@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "New-DbaXESmartTableWriter",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -49,8 +49,8 @@ Describe $CommandName -Tag IntegrationTests {
         It "Returns the object with all of the correct properties" {
             $splatTableWriter = @{
                 SqlInstance = $TestConfig.instance2
-                                Database    = $testDb
-                                Table       = $testTable
+                Database    = $testDb
+                Table       = $testTable
             }
             $results = New-DbaXESmartTableWriter @splatTableWriter
             $results | Should -Not -BeNullOrEmpty

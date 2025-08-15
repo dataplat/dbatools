@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Start-DbaMigration",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -77,33 +77,33 @@ Describe $CommandName -Tag IntegrationTests {
         # Create the test databases on instance3 first
         $splatInstance3 = @{
             SqlInstance = $TestConfig.instance3
-                        Query       = "CREATE DATABASE $startmigrationrestoredb2; ALTER DATABASE $startmigrationrestoredb2 SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE"
+            Query       = "CREATE DATABASE $startmigrationrestoredb2; ALTER DATABASE $startmigrationrestoredb2 SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE"
         }
         Invoke-DbaQuery @splatInstance3
 
         # Create the test databases on instance2
         $splatInstance2Db1 = @{
             SqlInstance = $TestConfig.instance2
-                        Query       = "CREATE DATABASE $startmigrationrestoredb; ALTER DATABASE $startmigrationrestoredb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE"
+            Query       = "CREATE DATABASE $startmigrationrestoredb; ALTER DATABASE $startmigrationrestoredb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE"
         }
         Invoke-DbaQuery @splatInstance2Db1
 
         $splatInstance2Db2 = @{
             SqlInstance = $TestConfig.instance2
-                        Query       = "CREATE DATABASE $detachattachdb; ALTER DATABASE $detachattachdb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE"
+            Query       = "CREATE DATABASE $detachattachdb; ALTER DATABASE $detachattachdb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE"
         }
         Invoke-DbaQuery @splatInstance2Db2
 
         $splatInstance2Db3 = @{
             SqlInstance = $TestConfig.instance2
-                        Query       = "CREATE DATABASE $startmigrationrestoredb2; ALTER DATABASE $startmigrationrestoredb2 SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE"
+            Query       = "CREATE DATABASE $startmigrationrestoredb2; ALTER DATABASE $startmigrationrestoredb2 SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE"
         }
         Invoke-DbaQuery @splatInstance2Db3
 
         # Set database owners
         $splatDbOwner = @{
             SqlInstance = $TestConfig.instance2
-                        Database    = $startmigrationrestoredb, $detachattachdb
+            Database    = $startmigrationrestoredb, $detachattachdb
             TargetLogin = "sa"
         }
         $null = Set-DbaDbOwner @splatDbOwner
@@ -128,12 +128,12 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When using backup restore method" {
         BeforeAll {
             $splatMigration = @{
-                                Force         = $true
-                                Source        = $TestConfig.instance2
-                                Destination   = $TestConfig.instance3
+                Force         = $true
+                Source        = $TestConfig.instance2
+                Destination   = $TestConfig.instance3
                 BackupRestore = $true
-                                SharedPath    = $backupPath
-                                Exclude       = "Logins", "SpConfigure", "SysDbUserObjects", "AgentServer", "CentralManagementServer", "ExtendedEvents", "PolicyManagement", "ResourceGovernor", "Endpoints", "ServerAuditSpecifications", "Audits", "LinkedServers", "SystemTriggers", "DataCollector", "DatabaseMail", "BackupDevices", "Credentials"
+                SharedPath    = $backupPath
+                Exclude       = "Logins", "SpConfigure", "SysDbUserObjects", "AgentServer", "CentralManagementServer", "ExtendedEvents", "PolicyManagement", "ResourceGovernor", "Endpoints", "ServerAuditSpecifications", "Audits", "LinkedServers", "SystemTriggers", "DataCollector", "DatabaseMail", "BackupDevices", "Credentials"
             }
             $migrationResults = Start-DbaMigration @splatMigration
         }
@@ -169,11 +169,11 @@ Describe $CommandName -Tag IntegrationTests {
             $backupResults = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Backup-DbaDatabase -BackupDirectory $backupPath
 
             $splatLastBackup = @{
-                                Force         = $true
-                                Source        = $TestConfig.instance2
-                                Destination   = $TestConfig.instance3
+                Force         = $true
+                Source        = $TestConfig.instance2
+                Destination   = $TestConfig.instance3
                 UseLastBackup = $true
-                                Exclude       = "Logins", "SpConfigure", "SysDbUserObjects", "AgentServer", "CentralManagementServer", "ExtendedEvents", "PolicyManagement", "ResourceGovernor", "Endpoints", "ServerAuditSpecifications", "Audits", "LinkedServers", "SystemTriggers", "DataCollector", "DatabaseMail", "BackupDevices", "Credentials", "StartupProcedures"
+                Exclude       = "Logins", "SpConfigure", "SysDbUserObjects", "AgentServer", "CentralManagementServer", "ExtendedEvents", "PolicyManagement", "ResourceGovernor", "Endpoints", "ServerAuditSpecifications", "Audits", "LinkedServers", "SystemTriggers", "DataCollector", "DatabaseMail", "BackupDevices", "Credentials", "StartupProcedures"
             }
             $lastBackupResults = Start-DbaMigration @splatLastBackup
         }

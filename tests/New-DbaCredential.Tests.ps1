@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "New-DbaCredential",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -74,8 +74,8 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should create new credentials with the proper properties but without password" {
             $splatCredential = @{
                 SqlInstance = $TestConfig.instance2
-                                Name        = "https://mystorageaccount.blob.core.windows.net/mycontainer"
-                                Identity    = "Managed Identity"
+                Name        = "https://mystorageaccount.blob.core.windows.net/mycontainer"
+                Identity    = "Managed Identity"
             }
             $results = New-DbaCredential @splatCredential
             $results.Name | Should -Be "https://mystorageaccount.blob.core.windows.net/mycontainer"

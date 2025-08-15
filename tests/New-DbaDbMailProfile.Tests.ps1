@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "New-DbaDbMailProfile",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -63,10 +63,10 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Sets DbMail Profile" {
         BeforeAll {
             $splatProfile = @{
-                                SqlInstance         = $TestConfig.instance2
-                                Profile             = $profilename
-                                Description         = $description
-                                MailAccountName     = $mailaccountname
+                SqlInstance         = $TestConfig.instance2
+                Profile             = $profilename
+                Description         = $description
+                MailAccountName     = $mailaccountname
                 MailAccountPriority = $mailaccountpriority
             }
             $results = New-DbaDbMailProfile @splatProfile

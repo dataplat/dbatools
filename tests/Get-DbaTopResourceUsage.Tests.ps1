@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName  = "dbatools",
     $CommandName = "Get-DbaTopResourceUsage",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -31,14 +31,14 @@ Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $splatDuration = @{
             SqlInstance = $TestConfig.Instances
-                        Type        = "Duration"
-                        Database    = "master"
+            Type        = "Duration"
+            Database    = "master"
         }
         $results = Get-DbaTopResourceUsage @splatDuration
 
         $splatExcluded = @{
-                        SqlInstance     = $TestConfig.Instances
-                        Type            = "Duration"
+            SqlInstance     = $TestConfig.Instances
+            Type            = "Duration"
             ExcludeDatabase = "master"
         }
         $resultsExcluded = Get-DbaTopResourceUsage @splatExcluded

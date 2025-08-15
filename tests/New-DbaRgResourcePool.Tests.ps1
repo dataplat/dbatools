@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "New-DbaRgResourcePool",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -49,13 +49,13 @@ Describe $CommandName -Tag IntegrationTests {
         It "Creates a resource pool" {
             $resourcePoolName = "dbatoolssci_poolTest"
             $splatNewResourcePool = @{
-                                SqlInstance             = $TestConfig.instance2
-                                ResourcePool            = $resourcePoolName
-                                MaximumCpuPercentage    = 100
+                SqlInstance             = $TestConfig.instance2
+                ResourcePool            = $resourcePoolName
+                MaximumCpuPercentage    = 100
                 MaximumMemoryPercentage = 100
-                                MaximumIOPSPerVolume    = 100
-                                CapCpuPercent           = 100
-                                Force                   = $true
+                MaximumIOPSPerVolume    = 100
+                CapCpuPercent           = 100
+                Force                   = $true
             }
             $result = Get-DbaRgResourcePool -SqlInstance $TestConfig.instance2
             $newResourcePool = New-DbaRgResourcePool @splatNewResourcePool
@@ -69,17 +69,17 @@ Describe $CommandName -Tag IntegrationTests {
         It "Works using -Type Internal" {
             $resourcePoolName = "dbatoolssci_poolTest"
             $splatNewResourcePool = @{
-                                SqlInstance             = $TestConfig.instance2
-                                ResourcePool            = $resourcePoolName
-                                MaximumCpuPercentage    = 100
+                SqlInstance             = $TestConfig.instance2
+                ResourcePool            = $resourcePoolName
+                MaximumCpuPercentage    = 100
                 MaximumMemoryPercentage = 100
-                                MaximumIOPSPerVolume    = 100
-                                CapCpuPercent           = 100
-                                MinimumCpuPercentage    = 1
+                MaximumIOPSPerVolume    = 100
+                CapCpuPercent           = 100
+                MinimumCpuPercentage    = 1
                 MinimumMemoryPercentage = 1
-                                MinimumIOPSPerVolume    = 1
-                                Type                    = "Internal"
-                                Force                   = $true
+                MinimumIOPSPerVolume    = 1
+                Type                    = "Internal"
+                Force                   = $true
             }
             $result = Get-DbaRgResourcePool -SqlInstance $TestConfig.instance2 -Type Internal
             $newResourcePool = New-DbaRgResourcePool @splatNewResourcePool
@@ -98,13 +98,13 @@ Describe $CommandName -Tag IntegrationTests {
         It "Works using -Type External" {
             $resourcePoolName = "dbatoolssci_poolTest"
             $splatNewResourcePool = @{
-                                SqlInstance             = $TestConfig.instance2
-                                ResourcePool            = $resourcePoolName
-                                MaximumCpuPercentage    = 100
+                SqlInstance             = $TestConfig.instance2
+                ResourcePool            = $resourcePoolName
+                MaximumCpuPercentage    = 100
                 MaximumMemoryPercentage = 100
-                                MaximumProcesses        = 5
-                                Type                    = "External"
-                                Force                   = $true
+                MaximumProcesses        = 5
+                Type                    = "External"
+                Force                   = $true
             }
             $result = Get-DbaRgResourcePool -SqlInstance $TestConfig.instance2 -Type External
             $newResourcePool = New-DbaRgResourcePool @splatNewResourcePool
@@ -119,15 +119,15 @@ Describe $CommandName -Tag IntegrationTests {
         It "Skips Resource Governor reconfiguration" {
             $resourcePoolName = "dbatoolssci_poolTest"
             $splatNewResourcePool = @{
-                                SqlInstance             = $TestConfig.instance2
-                                ResourcePool            = $resourcePoolName
-                                MaximumCpuPercentage    = 100
+                SqlInstance             = $TestConfig.instance2
+                ResourcePool            = $resourcePoolName
+                MaximumCpuPercentage    = 100
                 MaximumMemoryPercentage = 100
-                                MaximumIOPSPerVolume    = 100
-                                CapCpuPercent           = 100
-                                Force                   = $true
-                                SkipReconfigure         = $true
-                                WarningAction           = "SilentlyContinue"
+                MaximumIOPSPerVolume    = 100
+                CapCpuPercent           = 100
+                Force                   = $true
+                SkipReconfigure         = $true
+                WarningAction           = "SilentlyContinue"
             }
 
             $null = New-DbaRgResourcePool @splatNewResourcePool

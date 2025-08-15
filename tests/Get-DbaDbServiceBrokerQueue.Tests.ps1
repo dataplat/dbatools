@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName  = "dbatools",
     $CommandName = "Get-DbaDbServiceBrokerQueue",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -54,8 +54,8 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Gets the service broker queue" {
         BeforeAll {
             $splatGetQueue = @{
-                                SqlInstance        = $TestConfig.instance2
-                                Database           = "tempdb"
+                SqlInstance        = $TestConfig.instance2
+                Database           = "tempdb"
                 ExcludeSystemQueue = $true
             }
             $results = Get-DbaDbServiceBrokerQueue @splatGetQueue

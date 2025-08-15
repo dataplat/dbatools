@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Remove-DbaAgentSchedule",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -35,15 +35,15 @@ Describe $CommandName -Tag IntegrationTests {
 
         foreach ($FrequencySubdayType in ("Time", "Seconds", "Minutes", "Hours")) {
             $splatSchedule = @{
-                                SqlInstance               = $TestConfig.instance2
-                                Schedule                  = "dbatoolsci_$FrequencySubdayType"
+                SqlInstance               = $TestConfig.instance2
+                Schedule                  = "dbatoolsci_$FrequencySubdayType"
                 FrequencyRecurrenceFactor = "1"
-                                FrequencySubdayInterval   = "1"
-                                FrequencySubdayType       = $FrequencySubdayType
-                                StartDate                 = $startDate
-                                StartTime                 = "010000"
-                                EndDate                   = $endDate
-                                EndTime                   = "020000"
+                FrequencySubdayInterval   = "1"
+                FrequencySubdayType       = $FrequencySubdayType
+                StartDate                 = $startDate
+                StartTime                 = "010000"
+                EndDate                   = $endDate
+                EndTime                   = "020000"
             }
             $null = New-DbaAgentSchedule @splatSchedule
         }

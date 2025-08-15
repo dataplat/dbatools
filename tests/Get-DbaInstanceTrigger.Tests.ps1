@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName  = "dbatools",
     $CommandName = "Get-DbaInstanceTrigger",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -34,7 +34,7 @@ Describe $CommandName -Tag IntegrationTests {
         $trigger2Name = "dbatoolsci_trigger2_$random"
 
         $splatConnection = @{
-                        SqlInstance     = $TestConfig.instance2
+            SqlInstance     = $TestConfig.instance2
             EnableException = $true
         }
         $instance = Connect-DbaInstance @splatConnection

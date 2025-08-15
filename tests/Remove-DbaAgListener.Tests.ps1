@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Remove-DbaAgListener",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -33,19 +33,19 @@ Describe $CommandName -Tag IntegrationTests {
 
         $agName = "dbatoolsci_ag_removelistener"
         $splatAg = @{
-                        Primary      = $TestConfig.instance3
-                        Name         = $agName
-                        ClusterType  = "None"
+            Primary      = $TestConfig.instance3
+            Name         = $agName
+            ClusterType  = "None"
             FailoverMode = "Manual"
-                        Confirm      = $false
-                        Certificate  = "dbatoolsci_AGCert"
+            Confirm      = $false
+            Certificate  = "dbatoolsci_AGCert"
         }
         $ag = New-DbaAvailabilityGroup @splatAg
 
         $splatListener = @{
             IPAddress = "127.0.20.1"
-                        Port      = 14330
-                        Confirm   = $false
+            Port      = 14330
+            Confirm   = $false
         }
         $agListener = $ag | Add-DbaAgListener @splatListener
 

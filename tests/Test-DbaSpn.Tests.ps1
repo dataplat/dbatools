@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Test-DbaSpn",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -31,14 +31,14 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             Mock Resolve-DbaNetworkName {
                 [PSCustomObject]@{
-                                        InputName        = $env:COMPUTERNAME
-                                        ComputerName     = $env:COMPUTERNAME
-                                        IPAddress        = "127.0.0.1"
-                                        DNSHostName      = $env:COMPUTERNAME
-                                        DNSDomain        = $env:COMPUTERNAME
-                                        Domain           = $env:COMPUTERNAME
-                                        DNSHostEntry     = $env:COMPUTERNAME
-                                        FQDN             = $env:COMPUTERNAME
+                    InputName        = $env:COMPUTERNAME
+                    ComputerName     = $env:COMPUTERNAME
+                    IPAddress        = "127.0.0.1"
+                    DNSHostName      = $env:COMPUTERNAME
+                    DNSDomain        = $env:COMPUTERNAME
+                    Domain           = $env:COMPUTERNAME
+                    DNSHostEntry     = $env:COMPUTERNAME
+                    FQDN             = $env:COMPUTERNAME
                     FullComputerName = $env:COMPUTERNAME
                 }
             }

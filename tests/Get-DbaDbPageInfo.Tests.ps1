@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName  = "dbatools",
     $CommandName = "Get-DbaDbPageInfo",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -37,9 +37,9 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Clean up any existing connections
         $splatStopProcess = @{
-                        SqlInstance     = $TestConfig.instance2
-                        Program         = "dbatools PowerShell module - dbatools.io"
-                        WarningAction   = "SilentlyContinue"
+            SqlInstance     = $TestConfig.instance2
+            Program         = "dbatools PowerShell module - dbatools.io"
+            WarningAction   = "SilentlyContinue"
             EnableException = $true
         }
         Get-DbaProcess @splatStopProcess | Stop-DbaProcess -WarningAction SilentlyContinue

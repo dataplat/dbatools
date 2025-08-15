@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Test-DbaMaxMemory",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -50,17 +50,17 @@ Describe $CommandName -Tag UnitTests {
                     New-Object PSObject -Property @{
                         ComputerName = "SQL2016"
                         InstanceName = "MSSQLSERVER"
-                                                SqlInstance  = "SQL2016"
-                                                Total        = 4096
-                                                MaxValue     = 2147483647
+                        SqlInstance  = "SQL2016"
+                        Total        = 4096
+                        MaxValue     = 2147483647
                     }
                 }
 
                 Mock Get-DbaService -MockWith {
                     New-Object PSObject -Property @{
                         InstanceName = "foo"
-                                                State        = "Running"
-                                                ServiceType  = "Engine"
+                        State        = "Running"
+                        ServiceType  = "Engine"
                     }
                 }
             }
@@ -154,27 +154,27 @@ Describe $CommandName -Tag UnitTests {
                 Mock Get-DbaService -MockWith {
                     @{
                         InstanceName = "foo"
-                                                State        = "Running"
-                                                ServiceType  = "SSRS"
+                        State        = "Running"
+                        ServiceType  = "SSRS"
                     },
                     @{
                         InstanceName = "foo"
-                                                State        = "Running"
-                                                ServiceType  = "Engine"
+                        State        = "Running"
+                        ServiceType  = "Engine"
                     }
                 }
                 Mock Connect-DbaInstance {
                     $obj = [PSCustomObject]@{
-                                                Name                 = "BASEName"
-                                                NetName              = "BASENetName"
-                                                ComputerName         = "BASEComputerName"
-                                                InstanceName         = "BASEInstanceName"
-                                                DomainInstanceName   = "BASEDomainInstanceName"
+                        Name                 = "BASEName"
+                        NetName              = "BASENetName"
+                        ComputerName         = "BASEComputerName"
+                        InstanceName         = "BASEInstanceName"
+                        DomainInstanceName   = "BASEDomainInstanceName"
                         InstallDataDirectory = "BASEInstallDataDirectory"
-                                                ErrorLogPath         = "BASEErrorLog_{0}_{1}_{2}_Path" -f "'", '"', "]"
-                                                ServiceName          = "BASEServiceName"
-                                                VersionMajor         = 12
-                                                ConnectionContext    = New-Object PSObject
+                        ErrorLogPath         = "BASEErrorLog_{0}_{1}_{2}_Path" -f "'", '"', "]"
+                        ServiceName          = "BASEServiceName"
+                        VersionMajor         = 12
+                        ConnectionContext    = New-Object PSObject
                     }
                     Add-Member -InputObject $obj.ConnectionContext -Name ConnectionString  -MemberType NoteProperty -Value "put=an=equal=in=it"
                     $obj.PSObject.TypeNames.Clear()

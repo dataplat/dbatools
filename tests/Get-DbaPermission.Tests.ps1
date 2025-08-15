@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName  = "dbatools",
     $CommandName = "Get-DbaPermission",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -54,8 +54,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         $tableName1 = "dbatoolsci_table1_$random"
         $tableSpec1 = @{
-                        Name     = "Table1ID"
-                        Type     = "INT"
+            Name     = "Table1ID"
+            Type     = "INT"
             Nullable = $true
         }
 
@@ -72,8 +72,8 @@ Describe $CommandName -Tag IntegrationTests {
         $schemaNameForTable2 = "dbatoolsci_schema_$random"
         $tableName2 = "dbatoolsci_table2_$random"
         $tableSpec2 = @{
-                        Name     = "Table2ID"
-                        Type     = "INT"
+            Name     = "Table2ID"
+            Type     = "INT"
             Nullable = $true
         }
 

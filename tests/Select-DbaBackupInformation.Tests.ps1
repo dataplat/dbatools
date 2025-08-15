@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Select-DbaBackupInformation",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -292,9 +292,9 @@ Describe $CommandName -Tag IntegrationTests {
                 $BackupInfo = Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
                 [bigint]$redo_start_lsn = "34000000016700004"
                 $ContinuePoints = [PSCustomObject]@{
-                                        redo_start_lsn      = $redo_start_lsn
+                    redo_start_lsn      = $redo_start_lsn
                     FirstRecoveryForkID = "00000000-0000-0000-0000-000000000000"
-                                        Database            = "ContinuePointTest"
+                    Database            = "ContinuePointTest"
                 }
                 $Output = Select-DbaBackupInformation -BackupHistory $BackupInfo -EnableException:$true -ContinuePoints $ContinuePoints
             }

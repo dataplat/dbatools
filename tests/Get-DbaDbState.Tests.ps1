@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName  = "dbatools",
     $CommandName = "Get-DbaDbState",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -43,8 +43,8 @@ Describe $CommandName -Tag IntegrationTests {
 
             $splatRemoveDb = @{
                 SqlInstance = $TestConfig.instance2
-                                Database    = $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8
-                                Confirm     = $false
+                Database    = $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8
+                Confirm     = $false
             }
             Get-DbaDatabase @splatRemoveDb | Remove-DbaDatabase -Confirm $false
 
@@ -74,18 +74,18 @@ Describe $CommandName -Tag IntegrationTests {
 
             $splatSetState = @{
                 SqlInstance = $TestConfig.instance2
-                                Database    = $db2, $db3, $db4, $db5, $db7
-                                Online      = $true
-                                ReadWrite   = $true
-                                MultiUser   = $true
-                                Force       = $true
+                Database    = $db2, $db3, $db4, $db5, $db7
+                Online      = $true
+                ReadWrite   = $true
+                MultiUser   = $true
+                Force       = $true
             }
             $null = Set-DbaDbState @splatSetState
 
             $splatRemoveDbCleanup = @{
                 SqlInstance = $TestConfig.instance2
-                                Database    = $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8
-                                Confirm     = $false
+                Database    = $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8
+                Confirm     = $false
             }
             Remove-DbaDatabase @splatRemoveDbCleanup -ErrorAction SilentlyContinue
 

@@ -80,9 +80,9 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When creating a listener" {
         BeforeAll {
             $splatListener = @{
-                Name        = $listenerName
-                IPAddress   = $listenerIp
-                Port        = $listenerPort
+                Name      = $listenerName
+                IPAddress = $listenerIp
+                Port      = $listenerPort
             }
             $results = $ag | Add-DbaAgListener @splatListener
         }

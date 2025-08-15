@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Remove-DbaDbMailAccount",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -59,16 +59,16 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeEach {
             # Create test accounts for each test
             $splatAccount1 = @{
-                                SqlInstance  = $server
-                                Name         = $accountname
+                SqlInstance  = $server
+                Name         = $accountname
                 EmailAddress = "admin@ad.local"
             }
             $null = New-DbaDbMailAccount @splatAccount1
             $createdAccounts += $accountname
 
             $splatAccount2 = @{
-                                SqlInstance  = $server
-                                Name         = $accountname2
+                SqlInstance  = $server
+                Name         = $accountname2
                 EmailAddress = "admin@ad.local"
             }
             $null = New-DbaDbMailAccount @splatAccount2

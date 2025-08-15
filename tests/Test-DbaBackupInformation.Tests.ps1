@@ -24,16 +24,16 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $BackupHistory = $BackupHistory | Format-DbaBackupInformation
             Mock Connect-DbaInstance -MockWith {
                 $obj = [PSCustomObject]@{
-                                        Name                 = 'BASEName'
-                                        NetName              = 'BASENetName'
-                                        ComputerName         = 'BASEComputerName'
-                                        InstanceName         = 'BASEInstanceName'
-                                        DomainInstanceName   = 'BASEDomainInstanceName'
+                    Name                 = 'BASEName'
+                    NetName              = 'BASENetName'
+                    ComputerName         = 'BASEComputerName'
+                    InstanceName         = 'BASEInstanceName'
+                    DomainInstanceName   = 'BASEDomainInstanceName'
                     InstallDataDirectory = 'BASEInstallDataDirectory'
-                                        ErrorLogPath         = 'BASEErrorLog_{0}_{1}_{2}_Path' -f "'", '"', ']'
-                                        ServiceName          = 'BASEServiceName'
-                                        VersionMajor         = 9
-                                        ConnectionContext    = New-Object PSObject
+                    ErrorLogPath         = 'BASEErrorLog_{0}_{1}_{2}_Path' -f "'", '"', ']'
+                    ServiceName          = 'BASEServiceName'
+                    VersionMajor         = 9
+                    ConnectionContext    = New-Object PSObject
                 }
                 Add-Member -InputObject $obj.ConnectionContext -Name ConnectionString  -MemberType NoteProperty -Value 'put=an=equal=in=it'
                 Add-Member -InputObject $obj -Name Query -MemberType ScriptMethod -Value {
@@ -54,7 +54,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
             Mock New-DbaDirectory { $true }
             Mock Test-DbaPath { [PSCustomObject]@{
-                                        FilePath   = 'does\exists'
+                    FilePath   = 'does\exists'
                     FileExists = $true
                 }
             }
@@ -71,16 +71,16 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $BackupHistory = $BackupHistory | Format-DbaBackupInformation
             Mock Connect-DbaInstance -MockWith {
                 $obj = [PSCustomObject]@{
-                                        Name                 = 'BASEName'
-                                        NetName              = 'BASENetName'
-                                        ComputerName         = 'BASEComputerName'
-                                        InstanceName         = 'BASEInstanceName'
-                                        DomainInstanceName   = 'BASEDomainInstanceName'
+                    Name                 = 'BASEName'
+                    NetName              = 'BASENetName'
+                    ComputerName         = 'BASEComputerName'
+                    InstanceName         = 'BASEInstanceName'
+                    DomainInstanceName   = 'BASEDomainInstanceName'
                     InstallDataDirectory = 'BASEInstallDataDirectory'
-                                        ErrorLogPath         = 'BASEErrorLog_{0}_{1}_{2}_Path' -f "'", '"', ']'
-                                        ServiceName          = 'BASEServiceName'
-                                        VersionMajor         = 9
-                                        ConnectionContext    = New-Object PSObject
+                    ErrorLogPath         = 'BASEErrorLog_{0}_{1}_{2}_Path' -f "'", '"', ']'
+                    ServiceName          = 'BASEServiceName'
+                    VersionMajor         = 9
+                    ConnectionContext    = New-Object PSObject
                 }
                 Add-Member -InputObject $obj.ConnectionContext -Name ConnectionString  -MemberType NoteProperty -Value 'put=an=equal=in=it'
                 Add-Member -InputObject $obj -Name Query -MemberType ScriptMethod -Value {
@@ -100,7 +100,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             Mock Get-DbaDatabase { $null }
             Mock New-DbaDirectory { $true }
             Mock Test-DbaPath { [PSCustomObject]@{
-                                        FilePath   = 'does\not\exists'
+                    FilePath   = 'does\not\exists'
                     FileExists = $false
                 }
             }
@@ -118,16 +118,16 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $BackupHistory[1].OriginalDatabase = 'Error'
             Mock Connect-DbaInstance -MockWith {
                 $obj = [PSCustomObject]@{
-                                        Name                 = 'BASEName'
-                                        NetName              = 'BASENetName'
-                                        ComputerName         = 'BASEComputerName'
-                                        InstanceName         = 'BASEInstanceName'
-                                        DomainInstanceName   = 'BASEDomainInstanceName'
+                    Name                 = 'BASEName'
+                    NetName              = 'BASENetName'
+                    ComputerName         = 'BASEComputerName'
+                    InstanceName         = 'BASEInstanceName'
+                    DomainInstanceName   = 'BASEDomainInstanceName'
                     InstallDataDirectory = 'BASEInstallDataDirectory'
-                                        ErrorLogPath         = 'BASEErrorLog_{0}_{1}_{2}_Path' -f "'", '"', ']'
-                                        ServiceName          = 'BASEServiceName'
-                                        VersionMajor         = 9
-                                        ConnectionContext    = New-Object PSObject
+                    ErrorLogPath         = 'BASEErrorLog_{0}_{1}_{2}_Path' -f "'", '"', ']'
+                    ServiceName          = 'BASEServiceName'
+                    VersionMajor         = 9
+                    ConnectionContext    = New-Object PSObject
                 }
                 Add-Member -InputObject $obj.ConnectionContext -Name ConnectionString  -MemberType NoteProperty -Value 'put=an=equal=in=it'
                 Add-Member -InputObject $obj -Name Query -MemberType ScriptMethod -Value {
@@ -147,7 +147,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             Mock Get-DbaDatabase { $null }
             Mock New-DbaDirectory { $true }
             Mock Test-DbaPath { [PSCustomObject]@{
-                                        FilePath   = 'does\exists'
+                    FilePath   = 'does\exists'
                     FileExists = $true
                 }
             }
@@ -165,16 +165,16 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $BackupHistory[1].OriginalDatabase = 'Error'
             Mock Connect-DbaInstance -MockWith {
                 $obj = [PSCustomObject]@{
-                                        Name                 = 'BASEName'
-                                        NetName              = 'BASENetName'
-                                        ComputerName         = 'BASEComputerName'
-                                        InstanceName         = 'BASEInstanceName'
-                                        DomainInstanceName   = 'BASEDomainInstanceName'
+                    Name                 = 'BASEName'
+                    NetName              = 'BASENetName'
+                    ComputerName         = 'BASEComputerName'
+                    InstanceName         = 'BASEInstanceName'
+                    DomainInstanceName   = 'BASEDomainInstanceName'
                     InstallDataDirectory = 'BASEInstallDataDirectory'
-                                        ErrorLogPath         = 'BASEErrorLog_{0}_{1}_{2}_Path' -f "'", '"', ']'
-                                        ServiceName          = 'BASEServiceName'
-                                        VersionMajor         = 9
-                                        ConnectionContext    = New-Object PSObject
+                    ErrorLogPath         = 'BASEErrorLog_{0}_{1}_{2}_Path' -f "'", '"', ']'
+                    ServiceName          = 'BASEServiceName'
+                    VersionMajor         = 9
+                    ConnectionContext    = New-Object PSObject
                 }
                 Add-Member -InputObject $obj.ConnectionContext -Name ConnectionString  -MemberType NoteProperty -Value 'put=an=equal=in=it'
                 Add-Member -InputObject $obj -Name Query -MemberType ScriptMethod -Value {
@@ -194,7 +194,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             Mock Get-DbaDatabase { '1' }
             Mock New-DbaDirectory { $true }
             Mock Test-DbaPath { [PSCustomObject]@{
-                                        FilePath   = 'does\exists'
+                    FilePath   = 'does\exists'
                     FileExists = $true
                 }
             }
@@ -212,16 +212,16 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $BackupHistory[1].OriginalDatabase = 'Error'
             Mock Connect-DbaInstance -MockWith {
                 $obj = [PSCustomObject]@{
-                                        Name                 = 'BASEName'
-                                        NetName              = 'BASENetName'
-                                        ComputerName         = 'BASEComputerName'
-                                        InstanceName         = 'BASEInstanceName'
-                                        DomainInstanceName   = 'BASEDomainInstanceName'
+                    Name                 = 'BASEName'
+                    NetName              = 'BASENetName'
+                    ComputerName         = 'BASEComputerName'
+                    InstanceName         = 'BASEInstanceName'
+                    DomainInstanceName   = 'BASEDomainInstanceName'
                     InstallDataDirectory = 'BASEInstallDataDirectory'
-                                        ErrorLogPath         = 'BASEErrorLog_{0}_{1}_{2}_Path' -f "'", '"', ']'
-                                        ServiceName          = 'BASEServiceName'
-                                        VersionMajor         = 9
-                                        ConnectionContext    = New-Object PSObject
+                    ErrorLogPath         = 'BASEErrorLog_{0}_{1}_{2}_Path' -f "'", '"', ']'
+                    ServiceName          = 'BASEServiceName'
+                    VersionMajor         = 9
+                    ConnectionContext    = New-Object PSObject
                 }
                 Add-Member -InputObject $obj.ConnectionContext -Name ConnectionString  -MemberType NoteProperty -Value 'put=an=equal=in=it'
                 Add-Member -InputObject $obj -Name Query -MemberType ScriptMethod -Value {
@@ -241,7 +241,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             Mock Get-DbaDatabase { '1' }
             Mock New-DbaDirectory { $true }
             Mock Test-DbaPath { [PSCustomObject]@{
-                                        FilePath   = 'does\exists'
+                    FilePath   = 'does\exists'
                     FileExists = $true
                 }
             }

@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "New-DbaRgWorkloadGroup",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -68,9 +68,9 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Creates a workload group in default resource pool" {
             $splatNewWorkloadGroup = @{
-                                SqlInstance   = $TestConfig.instance2
+                SqlInstance   = $TestConfig.instance2
                 WorkloadGroup = $global:testWorkloadGroup
-                                Force         = $true
+                Force         = $true
             }
             $result = Get-DbaRgWorkloadGroup -SqlInstance $TestConfig.instance2 | Where-Object Name -eq $global:testWorkloadGroup
             $newWorkloadGroup = New-DbaRgWorkloadGroup @splatNewWorkloadGroup
@@ -83,7 +83,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Does nothing without -Force if workload group exists" {
             $splatNewWorkloadGroup = @{
-                                SqlInstance   = $TestConfig.instance2
+                SqlInstance   = $TestConfig.instance2
                 WorkloadGroup = $global:testWorkloadGroup
                 WarningAction = "SilentlyContinue"
             }
@@ -96,23 +96,23 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Creates a workload group in a user defined resource pool" {
             $splatNewResourcePool = @{
-                                SqlInstance  = $TestConfig.instance2
+                SqlInstance  = $TestConfig.instance2
                 ResourcePool = $global:testResourcePool
-                                Type         = $global:testResourcePoolType
-                                Force        = $true
+                Type         = $global:testResourcePoolType
+                Force        = $true
             }
             $splatNewWorkloadGroup = @{
-                                SqlInstance                         = $TestConfig.instance2
-                                WorkloadGroup                       = $global:testWorkloadGroup
-                                ResourcePool                        = $global:testResourcePool
-                                ResourcePoolType                    = $global:testResourcePoolType
-                                Importance                          = "HIGH"
+                SqlInstance                         = $TestConfig.instance2
+                WorkloadGroup                       = $global:testWorkloadGroup
+                ResourcePool                        = $global:testResourcePool
+                ResourcePoolType                    = $global:testResourcePoolType
+                Importance                          = "HIGH"
                 RequestMaximumMemoryGrantPercentage = 26
-                                RequestMaximumCpuTimeInSeconds      = 5
-                                RequestMemoryGrantTimeoutInSeconds  = 5
-                                MaximumDegreeOfParallelism          = 2
-                                GroupMaximumRequests                = 1
-                                Force                               = $true
+                RequestMaximumCpuTimeInSeconds      = 5
+                RequestMemoryGrantTimeoutInSeconds  = 5
+                MaximumDegreeOfParallelism          = 2
+                GroupMaximumRequests                = 1
+                Force                               = $true
             }
             $null = New-DbaRgResourcePool @splatNewResourcePool
             $newWorkloadGroup = New-DbaRgWorkloadGroup @splatNewWorkloadGroup
@@ -133,7 +133,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Creates multiple workload groups" {
             $splatNewWorkloadGroup = @{
                 SqlInstance = $TestConfig.instance2
-                                Force       = $true
+                Force       = $true
             }
             $result = Get-DbaRgWorkloadGroup -SqlInstance $TestConfig.instance2 | Where-Object Name -in $global:testWorkloadGroup, $global:testWorkloadGroup2
             $newWorkloadGroups = New-DbaRgWorkloadGroup @splatNewWorkloadGroup -WorkloadGroup $global:testWorkloadGroup, $global:testWorkloadGroup2
@@ -146,11 +146,11 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Skips Resource Governor reconfiguration" {
             $splatNewWorkloadGroup = @{
-                                SqlInstance     = $TestConfig.instance2
-                                WorkloadGroup   = $global:testWorkloadGroup
+                SqlInstance     = $TestConfig.instance2
+                WorkloadGroup   = $global:testWorkloadGroup
                 SkipReconfigure = $true
-                                Force           = $true
-                                WarningAction   = "SilentlyContinue"
+                Force           = $true
+                WarningAction   = "SilentlyContinue"
             }
 
             $null = New-DbaRgWorkloadGroup @splatNewWorkloadGroup

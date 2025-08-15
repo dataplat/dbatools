@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Install-DbaAgentAdminAlert",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -53,15 +53,15 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Creating a new SQL Server Agent alert" {
         It "Should create a bunch of new alerts with specified parameters" {
             $splatAlert1 = @{
-                                SqlInstance           = $TestConfig.instance2
+                SqlInstance           = $TestConfig.instance2
                 DelayBetweenResponses = 60
-                                Disabled              = $false
-                                NotifyMethod          = "NotifyEmail"
-                                NotificationMessage   = "Test Notification"
-                                Operator              = "Test Operator"
-                                OperatorEmail         = "dba@ad.local"
-                                ExcludeSeverity       = 0
-                                EnableException       = $true
+                Disabled              = $false
+                NotifyMethod          = "NotifyEmail"
+                NotificationMessage   = "Test Notification"
+                Operator              = "Test Operator"
+                OperatorEmail         = "dba@ad.local"
+                ExcludeSeverity       = 0
+                EnableException       = $true
             }
 
             $alert = Install-DbaAgentAdminAlert @splatAlert1 | Select-Object -First 1
@@ -74,15 +74,15 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should create alerts excluding specified severity level" {
             $splatAlert2 = @{
-                                SqlInstance           = $TestConfig.instance3
+                SqlInstance           = $TestConfig.instance3
                 DelayBetweenResponses = 60
-                                Disabled              = $false
-                                NotifyMethod          = "NotifyEmail"
-                                NotificationMessage   = "Test Notification"
-                                Operator              = "Test Operator"
-                                OperatorEmail         = "dba@ad.local"
-                                ExcludeSeverity       = 17
-                                EnableException       = $true
+                Disabled              = $false
+                NotifyMethod          = "NotifyEmail"
+                NotificationMessage   = "Test Notification"
+                Operator              = "Test Operator"
+                OperatorEmail         = "dba@ad.local"
+                ExcludeSeverity       = 17
+                EnableException       = $true
             }
 
             $alerts = Install-DbaAgentAdminAlert @splatAlert2

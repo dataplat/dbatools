@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Set-DbaDbFileGrowth",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -37,8 +37,8 @@ Describe $CommandName -Tag IntegrationTests {
         $testDbName = "dbatoolsci_filegrowthtests"
         $splatNewDatabase = @{
             SqlInstance = $TestConfig.instance2
-                        Name        = $testDbName
-                        Confirm     = $false
+            Name        = $testDbName
+            Confirm     = $false
         }
         $newdb = New-DbaDatabase @splatNewDatabase
 
@@ -53,8 +53,8 @@ Describe $CommandName -Tag IntegrationTests {
         # Clean up the test database
         $splatRemoveDatabase = @{
             SqlInstance = $TestConfig.instance2
-                        Database    = $testDbName
-                        Confirm     = $false
+            Database    = $testDbName
+            Confirm     = $false
         }
         Remove-DbaDatabase @splatRemoveDatabase
 
@@ -65,7 +65,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $splatSetFileGrowth = @{
                 SqlInstance = $TestConfig.instance2
-                            Database    = $testDbName
+                Database    = $testDbName
             }
             $result = Set-DbaDbFileGrowth @splatSetFileGrowth | Select-Object -First 1
         }

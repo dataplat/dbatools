@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName  = "dbatools",
     $CommandName = "Get-DbaDbMailConfig",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -32,13 +32,13 @@ Describe $CommandName -Tag IntegrationTests {
 
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $mailSettings = @{
-                        AccountRetryAttempts           = "1"
-                        AccountRetryDelay              = "60"
+            AccountRetryAttempts           = "1"
+            AccountRetryDelay              = "60"
             DatabaseMailExeMinimumLifeTime = "600"
-                        DefaultAttachmentEncoding      = "MIME"
-                        LoggingLevel                   = "2"
-                        MaxFileSize                    = "1000"
-                        ProhibitedExtensions           = "exe,dll,vbs,js"
+            DefaultAttachmentEncoding      = "MIME"
+            LoggingLevel                   = "2"
+            MaxFileSize                    = "1000"
+            ProhibitedExtensions           = "exe,dll,vbs,js"
         }
         foreach ($m in $mailSettings.GetEnumerator()) {
             $server.query("exec msdb.dbo.sysmail_configure_sp '$($m.key)','$($m.value)';")
@@ -61,13 +61,13 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $results = Get-DbaDbMailConfig -SqlInstance $TestConfig.instance2
             $mailSettings = @{
-                            AccountRetryAttempts           = "1"
-                            AccountRetryDelay              = "60"
+                AccountRetryAttempts           = "1"
+                AccountRetryDelay              = "60"
                 DatabaseMailExeMinimumLifeTime = "600"
-                            DefaultAttachmentEncoding      = "MIME"
-                            LoggingLevel                   = "2"
-                            MaxFileSize                    = "1000"
-                            ProhibitedExtensions           = "exe,dll,vbs,js"
+                DefaultAttachmentEncoding      = "MIME"
+                LoggingLevel                   = "2"
+                MaxFileSize                    = "1000"
+                ProhibitedExtensions           = "exe,dll,vbs,js"
             }
         }
 

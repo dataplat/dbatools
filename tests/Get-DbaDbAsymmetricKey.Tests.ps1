@@ -45,21 +45,21 @@ Describe $CommandName -Tag IntegrationTests {
             $tPassword = ConvertTo-SecureString "ThisIsThePassword1" -AsPlainText -Force
 
             $splatMasterKey = @{
-                                SqlInstance    = $TestConfig.instance2
-                                Database       = $databaseName
+                SqlInstance    = $TestConfig.instance2
+                Database       = $databaseName
                 SecurePassword = $tPassword
-                                Confirm        = $false
+                Confirm        = $false
             }
             $null = New-DbaDbMasterKey @splatMasterKey
 
             $null = New-DbaDbUser -SqlInstance $TestConfig.instance2 -Database $databaseName -UserName $dbUser
 
             $splatFirstKey = @{
-                                SqlInstance     = $TestConfig.instance2
-                                Database        = $databaseName
-                                Name            = $keyName
-                                Owner           = "keyowner"
-                                Algorithm       = $algorithm
+                SqlInstance     = $TestConfig.instance2
+                Database        = $databaseName
+                Name            = $keyName
+                Owner           = "keyowner"
+                Algorithm       = $algorithm
                 WarningVariable = "warnvar"
             }
             $null = New-DbaDbAsymmetricKey @splatFirstKey
@@ -98,11 +98,11 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should return 2 keys" {
             # Create second key for this test
             $splatSecondKey = @{
-                                SqlInstance     = $TestConfig.instance2
-                                Database        = $databaseName
-                                Name            = $keyName2
-                                Owner           = "keyowner"
-                                Algorithm       = $algorithm
+                SqlInstance     = $TestConfig.instance2
+                Database        = $databaseName
+                Name            = $keyName2
+                Owner           = "keyowner"
+                Algorithm       = $algorithm
                 WarningVariable = "warnvar"
             }
             $null = New-DbaDbAsymmetricKey @splatSecondKey

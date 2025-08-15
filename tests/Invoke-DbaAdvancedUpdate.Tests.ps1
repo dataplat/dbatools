@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Invoke-DbaAdvancedUpdate",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -27,63 +27,63 @@ Describe $CommandName -Tag UnitTests {
     }
     BeforeEach {
         $singleAction = [PSCustomObject]@{
-                        ComputerName  = $env:COMPUTERNAME
-                        MajorVersion  = "2017"
-                        Build         = "14.0.3038"
-                        Architecture  = "x64"
+            ComputerName  = $env:COMPUTERNAME
+            MajorVersion  = "2017"
+            Build         = "14.0.3038"
+            Architecture  = "x64"
             TargetVersion = [PSCustomObject]@{
                 "SqlInstance" = $null
-                "Build" = "14.0.3045"
-                "NameLevel" = "2017"
-                "SPLevel" = "RTM", "LATEST"
-                "CULevel" = "CU12"
-                "KBLevel" = "4464082"
-                "BuildLevel" = [version]"14.0.3045"
-                "MatchType" = "Exact"
+                "Build"       = "14.0.3045"
+                "NameLevel"   = "2017"
+                "SPLevel"     = "RTM", "LATEST"
+                "CULevel"     = "CU12"
+                "KBLevel"     = "4464082"
+                "BuildLevel"  = [version]"14.0.3045"
+                "MatchType"   = "Exact"
             }
-                        TargetLevel   = "RTMCU12"
-                        KB            = "4464082"
-                        Successful    = $true
-                        Restarted     = $false
-                        InstanceName  = ""
-                        Installer     = "dummy"
-                        ExtractPath   = $null
-                        Notes         = @()
-                        ExitCode      = $null
-                        Log           = $null
+            TargetLevel   = "RTMCU12"
+            KB            = "4464082"
+            Successful    = $true
+            Restarted     = $false
+            InstanceName  = ""
+            Installer     = "dummy"
+            ExtractPath   = $null
+            Notes         = @()
+            ExitCode      = $null
+            Log           = $null
         }
         $doubleAction = @(
             [PSCustomObject]@{
-                            ComputerName  = $env:COMPUTERNAME
-                                MajorVersion  = "2008"
-                                Build         = "10.0.4279"
-                            Architecture  = "x64"
+                ComputerName  = $env:COMPUTERNAME
+                MajorVersion  = "2008"
+                Build         = "10.0.4279"
+                Architecture  = "x64"
                 TargetVersion = [PSCustomObject]@{
                     "SqlInstance" = $null
-                    "Build" = "10.0.5500"
-                    "NameLevel" = "2008"
-                    "SPLevel" = "SP3"
-                    "CULevel" = ""
-                    "KBLevel" = "2546951"
-                    "BuildLevel" = [version]"10.0.5500"
-                    "MatchType" = "Exact"
+                    "Build"       = "10.0.5500"
+                    "NameLevel"   = "2008"
+                    "SPLevel"     = "SP3"
+                    "CULevel"     = ""
+                    "KBLevel"     = "2546951"
+                    "BuildLevel"  = [version]"10.0.5500"
+                    "MatchType"   = "Exact"
                 }
-                                TargetLevel   = "SP3"
-                                KB            = "2546951"
-                            Successful    = $true
-                            Restarted     = $false
-                            InstanceName  = ""
-                            Installer     = "dummy"
-                            ExtractPath   = $null
-                            Notes         = @()
-                            ExitCode      = $null
-                            Log           = $null
+                TargetLevel   = "SP3"
+                KB            = "2546951"
+                Successful    = $true
+                Restarted     = $false
+                InstanceName  = ""
+                Installer     = "dummy"
+                ExtractPath   = $null
+                Notes         = @()
+                ExitCode      = $null
+                Log           = $null
             },
             [PSCustomObject]@ {
-                            ComputerName  = $env:COMPUTERNAME
-                                MajorVersion  = "2008"
-                                Build         = "10.0.5500"
-                            Architecture  = "x64"
+                ComputerName  = $env:COMPUTERNAME
+                MajorVersion  = "2008"
+                Build         = "10.0.5500"
+                Architecture  = "x64"
                 TargetVersion = [PSCustomObject]@ {
                     "SqlInstance" = $null
                     "Build" = "10.0.5794"
@@ -94,16 +94,16 @@ Describe $CommandName -Tag UnitTests {
                     "BuildLevel" = [version]"10.0.5794"
                     "MatchType" = "Exact"
                 }
-                                TargetLevel   = "SP3CU7"
-                                KB            = "2738350"
-                            Successful    = $true
-                            Restarted     = $false
-                            InstanceName  = ""
-                            Installer     = "dummy"
-                            ExtractPath   = $null
-                            Notes         = @()
-                            ExitCode      = $null
-                            Log           = $null
+                TargetLevel   = "SP3CU7"
+                KB            = "2738350"
+                Successful    = $true
+                Restarted     = $false
+                InstanceName  = ""
+                Installer     = "dummy"
+                ExtractPath   = $null
+                Notes         = @()
+                ExitCode      = $null
+                Log           = $null
             }
         )
     }

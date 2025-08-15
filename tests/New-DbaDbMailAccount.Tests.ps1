@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-        $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "New-DbaDbMailAccount",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -50,11 +50,11 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Gets DbMail Account" {
         BeforeAll {
             $splatMailAccount = @{
-                                SqlInstance    = $TestConfig.instance2
-                                Account        = $accountName
-                                Description    = $description
-                                EmailAddress   = $email_address
-                                DisplayName    = $display_name
+                SqlInstance    = $TestConfig.instance2
+                Account        = $accountName
+                Description    = $description
+                EmailAddress   = $email_address
+                DisplayName    = $display_name
                 ReplyToAddress = $replyto_address
                 # MailServer is not set, because we don't want to configure the mail server on the instance.
                 # MailServer     = $mailserver_name
