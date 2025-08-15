@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Get-DbaAgentJob",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -10,7 +10,7 @@ $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        It "Should have the expected parameters" {
+        BeforeAll {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -26,6 +26,9 @@ Describe $CommandName -Tag UnitTests {
                 "IncludeExecution",
                 "Type"
             )
+        }
+
+        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -52,42 +55,50 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
     Context "Command gets no disabled jobs" {
-        It "Should return only enabled jobs" {
+        BeforeAll {
             $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob
             $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob_disabled -Disabled
-            try {
-                $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -ExcludeDisabledJobs | Where-Object Name -match "dbatoolsci_testjob"
-                $results.Enabled -contains $false | Should -Be $false
-            } catch {
-                $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob, dbatoolsci_testjob_disabled -Confirm:$false
-            }
+        }
+        AfterAll {
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob, dbatoolsci_testjob_disabled -Confirm:$false
+        }
+
+        It "Should return only enabled jobs" {
+            $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -ExcludeDisabledJobs | Where-Object Name -match "dbatoolsci_testjob"
+            $results.Enabled -contains $false | Should -Be $false
         }
     }
     Context "Command doesn't get excluded job" {
-        It "Should not return excluded job" {
+        BeforeAll {
             $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob
             $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob_disabled -Disabled
-            try {
-                $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -ExcludeJob dbatoolsci_testjob | Where-Object Name -match "dbatoolsci_testjob"
-                $results.Name -contains "dbatoolsci_testjob" | Should -Be $false
-            } catch {
-                $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob, dbatoolsci_testjob_disabled -Confirm:$false
-            }
+        }
+        AfterAll {
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob, dbatoolsci_testjob_disabled -Confirm:$false
+        }
+
+        It "Should not return excluded job" {
+            $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -ExcludeJob dbatoolsci_testjob | Where-Object Name -match "dbatoolsci_testjob"
+            $results.Name -contains "dbatoolsci_testjob" | Should -Be $false
         }
     }
     Context "Command doesn't get excluded category" {
-        It "Should not return excluded job" {
+        BeforeAll {
             $null = New-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category "Cat1"
             $null = New-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category "Cat2"
+
             $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob_cat1 -Category "Cat1"
             $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob_cat2 -Category "Cat2"
-            try {
-                $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -ExcludeCategory "Cat2" | Where-Object Name -match "dbatoolsci_testjob"
-                $results.Name -contains "dbatoolsci_testjob_cat2" | Should -Be $false
-            } catch {
-                $null = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category "Cat1", "Cat2" -Confirm:$false
-                $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob_cat1, dbatoolsci_testjob_cat2 -Confirm:$false
-            }
+        }
+        AfterAll {
+            $null = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category "Cat1", "Cat2" -Confirm:$false
+
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob_cat1, dbatoolsci_testjob_cat2 -Confirm:$false
+        }
+
+        It "Should not return excluded job" {
+            $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -ExcludeCategory "Cat2" | Where-Object Name -match "dbatoolsci_testjob"
+            $results.Name -contains "dbatoolsci_testjob_cat2" | Should -Be $false
         }
     }
     Context "Command gets jobs when databases are specified" {
