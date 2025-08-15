@@ -59,12 +59,15 @@ exec sp_addrolemember 'userrole','bob';
             $results.Status.Count -gt 0 | Should -Be $true
         }
 
-        foreach ($result in $results) {
-            It "returns only $dbName or server results" {
+        It "returns only $dbName or server results" {
+            foreach ($result in $results) {
                 $result.Object | Should -BeIn $dbName, "SERVER"
             }
-            if ($result.Object -eq $dbName -and $result.RoleSecurableClass -eq "DATABASE") {
-                It "returns correct securable" {
+        }
+
+        It "returns correct securable" {
+            foreach ($result in $results) {
+                if ($result.Object -eq $dbName -and $result.RoleSecurableClass -eq "DATABASE") {
                     $result.Securable | Should -Be $dbName
                 }
             }
