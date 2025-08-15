@@ -5,10 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-. "$PSScriptRoot\..\private\functions\Get-SqlDefaultSPConfigure.ps1"
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
@@ -26,9 +22,9 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
-Describe $CommandName -Tag IntegrationTests {
     Context "Try all versions of SQL" {
         BeforeAll {
+            . "$PSScriptRoot\..\private\functions\Get-SqlDefaultSPConfigure.ps1"
             $versionName = @{
                 8  = "2000"
                 9  = "2005"

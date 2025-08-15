@@ -1,44 +1,10 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Import-DbaPfDataCollectorSetTemplate",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
-Describe $CommandName -Tag UnitTests {
-    Context "Parameter validation" {
-        BeforeAll {
-            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
-            $expectedParameters = $TestConfig.CommonParameters
-            $expectedParameters += @(
-                "ComputerName",
-                "Credential",
-                "DisplayName",
-                "SchedulesEnabled",
-                "RootPath",
-                "Segment",
-                "SegmentMaxDuration",
-                "SegmentMaxSize",
-                "Subdirectory",
-                "SubdirectoryFormat",
-                "SubdirectoryFormatPattern",
-                "Task",
-                "TaskRunAsSelf",
-                "TaskArguments",
-                "TaskUserTextArguments",
-                "StopOnCompletion",
-                "Path",
-                "Template",
-                "Instance",
-                "EnableException"
-            )
-        }
-
-        It "Should have the expected parameters" {
-            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {

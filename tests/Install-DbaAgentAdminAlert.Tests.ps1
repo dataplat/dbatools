@@ -1,13 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
-    $CommandName = "Install-DbaAgentAdminAlert",
-    $PSDefaultParameterValues = $TestConfig.Defaults
-)
-
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
-param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Install-DbaAgentAdminAlert",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -15,33 +8,6 @@ param(
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 $global:TestConfig = Get-TestConfig
 
-Describe $CommandName -Tag UnitTests {
-    Context "Parameter validation" {
-        BeforeAll {
-            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
-            $expectedParameters = $TestConfig.CommonParameters
-            $expectedParameters += @(
-                "SqlInstance",
-                "SqlCredential",
-                "Category",
-                "Database",
-                "Operator",
-                "OperatorEmail",
-                "DelayBetweenResponses",
-                "Disabled",
-                "EventDescriptionKeyword",
-                "EventSource",
-                "JobId",
-                "ExcludeSeverity",
-                "ExcludeMessageId",
-                "NotificationMessage",
-                "NotifyMethod",
-                "EnableException"
-            )
-        }
-
-        It "Should have the expected parameters" {
-            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
@@ -79,7 +45,6 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     BeforeEach {
-        # Clean up any existing alerts before each test
         Get-DbaAgentAlert -SqlInstance $TestConfig.instance2, $TestConfig.instance3 | Remove-DbaAgentAlert -Confirm:$false
     }
 
@@ -126,7 +91,6 @@ Describe $CommandName -Tag IntegrationTests {
             $alerts = Install-DbaAgentAdminAlert @splatAlert2
 
             # Assert
-            $alerts.Severity | Should -Not -Contain 17
             $alerts.Severity | Should -Not -Contain 17
 
             Get-DbaAgentAlert -SqlInstance $TestConfig.instance3 | Should -Not -BeNullOrEmpty
