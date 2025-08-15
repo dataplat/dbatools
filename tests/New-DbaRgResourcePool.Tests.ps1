@@ -5,9 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
@@ -43,7 +40,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            
+
             $null = Set-DbaResourceGovernor -SqlInstance $TestConfig.instance2 -Enabled
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.

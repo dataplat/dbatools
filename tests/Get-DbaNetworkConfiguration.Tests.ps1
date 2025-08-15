@@ -5,9 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
@@ -53,7 +50,7 @@ Describe $CommandName -Tag IntegrationTests {
                 "Advanced"
             )
             ($resultsFull.PsObject.Properties.Name | Sort-Object) | Should -BeExactly ($expectedPropsFull | Sort-Object)
-            
+
             $expectedPropsTcpIpProperties = @(
                 "ComputerName",
                 "InstanceName",

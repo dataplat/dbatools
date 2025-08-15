@@ -5,7 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {

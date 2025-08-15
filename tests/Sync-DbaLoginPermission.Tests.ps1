@@ -5,9 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
@@ -34,7 +31,7 @@ Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
-        
+
         $tempguid = [guid]::newguid()
         $DBUserName = "dbatoolssci_$($tempguid.guid)"
         $CreateTestUser = @"

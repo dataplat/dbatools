@@ -4,8 +4,6 @@ param(
     $CommandName = "Test-DbaIdentityUsage",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {

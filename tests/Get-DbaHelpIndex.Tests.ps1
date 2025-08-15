@@ -5,8 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
 
 Write-host -Object "${script:instance2}" -ForegroundColor Cyan
 Describe $CommandName -Tag UnitTests {

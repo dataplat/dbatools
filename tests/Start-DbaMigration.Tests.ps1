@@ -5,9 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
@@ -155,7 +152,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should retain database properties after migration" {
             $sourceDbs = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $startmigrationrestoredb2
             $destDbs = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $startmigrationrestoredb2
-            
+
             $sourceDbs.Name | Should -Not -BeNullOrEmpty
             $destDbs.Name | Should -Not -BeNullOrEmpty
             # Compare database properties
@@ -170,7 +167,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             # Create backups first
             $backupResults = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Backup-DbaDatabase -BackupDirectory $backupPath
-            
+
             $splatLastBackup = @{
                 Force       = $true
                 Source      = $TestConfig.instance2
@@ -195,7 +192,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should retain database properties after migration" {
             $sourceDbs = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $startmigrationrestoredb2
             $destDbs = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $startmigrationrestoredb2
-            
+
             $sourceDbs.Name | Should -Not -BeNullOrEmpty
             $destDbs.Name | Should -Not -BeNullOrEmpty
             # Compare database properties

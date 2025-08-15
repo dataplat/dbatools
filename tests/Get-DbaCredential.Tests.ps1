@@ -5,10 +5,7 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
 . "$PSScriptRoot\..\private\functions\Invoke-Command2.ps1"
-
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {

@@ -5,9 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
@@ -40,13 +37,13 @@ Describe $CommandName -Tag IntegrationTests {
             $sourceFilter = "Logon"
             $textFilter = "All rights reserved"
             $login = "DaperDan"
-            
+
             $existingLogin = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login $login
             if ($existingLogin) {
                 Get-DbaProcess -SqlInstance $TestConfig.instance1 -Login $login | Stop-DbaProcess
                 $existingLogin.Drop()
             }
-            
+
             # (1) Cycle errorlog message: The error log has been reinitialized
             $sql = "EXEC sp_cycle_errorlog;"
             $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
@@ -111,17 +108,17 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbaErrorLog -SqlInstance $TestConfig.instance1 -After $afterFilter
             { $results[0].LogDate -ge $afterFilter } | Should -Be $true
         }
-        
+
         It "Returns filtered results for [LogNumber = 1] and [After = $afterFilter]" {
             $results = Get-DbaErrorLog -SqlInstance $TestConfig.instance1 -LogNumber 1 -After $afterFilter
             { $results[0].LogDate -ge $afterFilter } | Should -Be $true
         }
-        
+
         It "Returns filtered result for [Before = $beforeFilter]" {
             $results = Get-DbaErrorLog -SqlInstance $TestConfig.instance1 -Before $beforeFilter
             { $results[-1].LogDate -le $beforeFilter } | Should -Be $true
         }
-        
+
         It "Returns filtered result for [LogNumber = 1] and [Before = $beforeFilter]" {
             $results = Get-DbaErrorLog -SqlInstance $TestConfig.instance1 -LogNumber 1 -Before $beforeFilter
             { $results[-1].LogDate -le $beforeFilter } | Should -Be $true

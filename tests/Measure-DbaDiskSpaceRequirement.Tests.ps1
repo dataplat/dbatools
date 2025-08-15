@@ -5,9 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
@@ -36,7 +33,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $server1 = Connect-DbaInstance -SqlInstance $global:TestConfig.instance1
             $server2 = Connect-DbaInstance -SqlInstance $global:TestConfig.instance2
-            
+
             $global:splatMeasure = @{
                 Source              = $global:TestConfig.instance1
                 Destination         = $global:TestConfig.instance2

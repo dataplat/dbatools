@@ -5,9 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
@@ -56,7 +53,7 @@ Describe $CommandName -Tag IntegrationTests {
             # Cleanup any remaining workload groups
             $wklGroupCleanupNames = @("dbatoolssci_wklgroupTest", "dbatoolssci_wklgroupTest2")
             $resourcePoolCleanupName = "dbatoolssci_poolTest"
-            
+
             $null = Remove-DbaRgWorkloadGroup -SqlInstance $TestConfig.instance2 -WorkloadGroup $wklGroupCleanupNames -ErrorAction SilentlyContinue
             $null = Remove-DbaRgResourcePool -SqlInstance $TestConfig.instance2 -ResourcePool $resourcePoolCleanupName -Type "Internal" -ErrorAction SilentlyContinue
 

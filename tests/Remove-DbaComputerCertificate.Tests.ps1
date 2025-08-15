@@ -5,9 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
@@ -40,7 +37,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "returns the store Name" {
             $results.Store -eq "LocalMachine" | Should -Be $true
         }
-        
+
         It "returns the folder Name" {
             $results.Folder -eq "My" | Should -Be $true
         }

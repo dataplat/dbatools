@@ -5,9 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
@@ -66,7 +63,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should successfully remove the login" {
             $results = Remove-DbaLogin -SqlInstance $TestConfig.instance1 -Login $testLogin -Confirm:$false
             $results.Status | Should -Be "Dropped"
-            
+
             # Verify the login was actually removed
             $verifyLogin = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login $testLogin
             $verifyLogin | Should -BeNullOrEmpty

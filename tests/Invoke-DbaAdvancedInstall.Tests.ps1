@@ -5,9 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     BeforeAll {
         # Prevent the functions from executing dangerous stuff and getting right responses where needed
@@ -64,14 +61,14 @@ Describe $CommandName -Tag UnitTests {
             $version = [version]'10.0'
             $cred = New-Object PSCredential('foo', (ConvertTo-SecureString 'bar' -Force -AsPlainText))
             $mainNode = if ($version.Major -ne 10) { "OPTIONS" } else { "SQLSERVER2008" }
-            
+
             # Create a dummy Configuration.ini
             @(
                 "[$mainNode]"
                 'SQLSVCACCOUNT="foo\bar"'
                 'FEATURES="SQLEngine,AS"'
             ) | Set-Content -Path TestDrive:\Configuration.ini -Force
-            
+
             $config = @{
                 $mainNode = @{
                     ACTION                = "Install"
@@ -100,7 +97,7 @@ Describe $CommandName -Tag UnitTests {
                     X86                   = "False"
                 }
             }
-            
+
             $splatInstall = @{
                 ComputerName                  = $env:COMPUTERNAME
                 InstanceName                  = 'foo'
@@ -142,14 +139,14 @@ Describe $CommandName -Tag UnitTests {
             $version = [version]'10.50'
             $cred = New-Object PSCredential('foo', (ConvertTo-SecureString 'bar' -Force -AsPlainText))
             $mainNode = if ($version.Major -ne 10) { "OPTIONS" } else { "SQLSERVER2008" }
-            
+
             # Create a dummy Configuration.ini
             @(
                 "[$mainNode]"
                 'SQLSVCACCOUNT="foo\bar"'
                 'FEATURES="SQLEngine,AS"'
             ) | Set-Content -Path TestDrive:\Configuration.ini -Force
-            
+
             $config = @{
                 $mainNode = @{
                     ACTION                = "Install"
@@ -178,7 +175,7 @@ Describe $CommandName -Tag UnitTests {
                     X86                   = "False"
                 }
             }
-            
+
             $splatInstall = @{
                 ComputerName                  = $env:COMPUTERNAME
                 InstanceName                  = 'foo'
@@ -220,14 +217,14 @@ Describe $CommandName -Tag UnitTests {
             $version = [version]'11.0'
             $cred = New-Object PSCredential('foo', (ConvertTo-SecureString 'bar' -Force -AsPlainText))
             $mainNode = if ($version.Major -ne 10) { "OPTIONS" } else { "SQLSERVER2008" }
-            
+
             # Create a dummy Configuration.ini
             @(
                 "[$mainNode]"
                 'SQLSVCACCOUNT="foo\bar"'
                 'FEATURES="SQLEngine,AS"'
             ) | Set-Content -Path TestDrive:\Configuration.ini -Force
-            
+
             $config = @{
                 $mainNode = @{
                     ACTION                = "Install"
@@ -256,7 +253,7 @@ Describe $CommandName -Tag UnitTests {
                     X86                   = "False"
                 }
             }
-            
+
             $splatInstall = @{
                 ComputerName                  = $env:COMPUTERNAME
                 InstanceName                  = 'foo'
@@ -298,14 +295,14 @@ Describe $CommandName -Tag UnitTests {
             $version = [version]'12.0'
             $cred = New-Object PSCredential('foo', (ConvertTo-SecureString 'bar' -Force -AsPlainText))
             $mainNode = if ($version.Major -ne 10) { "OPTIONS" } else { "SQLSERVER2008" }
-            
+
             # Create a dummy Configuration.ini
             @(
                 "[$mainNode]"
                 'SQLSVCACCOUNT="foo\bar"'
                 'FEATURES="SQLEngine,AS"'
             ) | Set-Content -Path TestDrive:\Configuration.ini -Force
-            
+
             $config = @{
                 $mainNode = @{
                     ACTION                = "Install"
@@ -334,7 +331,7 @@ Describe $CommandName -Tag UnitTests {
                     X86                   = "False"
                 }
             }
-            
+
             $splatInstall = @{
                 ComputerName                  = $env:COMPUTERNAME
                 InstanceName                  = 'foo'
@@ -376,14 +373,14 @@ Describe $CommandName -Tag UnitTests {
             $version = [version]'13.0'
             $cred = New-Object PSCredential('foo', (ConvertTo-SecureString 'bar' -Force -AsPlainText))
             $mainNode = if ($version.Major -ne 10) { "OPTIONS" } else { "SQLSERVER2008" }
-            
+
             # Create a dummy Configuration.ini
             @(
                 "[$mainNode]"
                 'SQLSVCACCOUNT="foo\bar"'
                 'FEATURES="SQLEngine,AS"'
             ) | Set-Content -Path TestDrive:\Configuration.ini -Force
-            
+
             $config = @{
                 $mainNode = @{
                     ACTION                = "Install"
@@ -412,7 +409,7 @@ Describe $CommandName -Tag UnitTests {
                     X86                   = "False"
                 }
             }
-            
+
             $splatInstall = @{
                 ComputerName                  = $env:COMPUTERNAME
                 InstanceName                  = 'foo'
@@ -454,14 +451,14 @@ Describe $CommandName -Tag UnitTests {
             $version = [version]'14.0'
             $cred = New-Object PSCredential('foo', (ConvertTo-SecureString 'bar' -Force -AsPlainText))
             $mainNode = if ($version.Major -ne 10) { "OPTIONS" } else { "SQLSERVER2008" }
-            
+
             # Create a dummy Configuration.ini
             @(
                 "[$mainNode]"
                 'SQLSVCACCOUNT="foo\bar"'
                 'FEATURES="SQLEngine,AS"'
             ) | Set-Content -Path TestDrive:\Configuration.ini -Force
-            
+
             $config = @{
                 $mainNode = @{
                     ACTION                = "Install"
@@ -490,7 +487,7 @@ Describe $CommandName -Tag UnitTests {
                     X86                   = "False"
                 }
             }
-            
+
             $splatInstall = @{
                 ComputerName                  = $env:COMPUTERNAME
                 InstanceName                  = 'foo'
