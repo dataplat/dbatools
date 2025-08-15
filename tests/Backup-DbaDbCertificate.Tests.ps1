@@ -8,7 +8,6 @@ param(
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         It "Should have the expected parameters" {
-        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -64,7 +63,6 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Can backup a database certificate" {
         It "Returns results with proper data" {
-        It "Returns results with proper data" {
             $splatBackupCert = @{
                 SqlInstance        = $TestConfig.instance1
                 Database           = $db1Name
@@ -86,7 +84,6 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Can backup a database certificate with a filename (see #9485)" {
-        It "Returns results with proper data" {
         It "Returns results with proper data" {
             $splatBackupCertWithName = @{
                 SqlInstance        = $TestConfig.instance1
@@ -113,7 +110,6 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Warns the caller if the cert cannot be found" {
         It "Does warn" {
             $invalidDBCertName = "dbatoolscli_invalidCertName"
-        It "Does warn" {
             $invalidDBCertName = "dbatoolscli_invalidCertName"
             $invalidDBCertName2 = "dbatoolscli_invalidCertName2"
             $splatBackupInvalidCert = @{
@@ -137,7 +133,6 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Backs up all db certs for a database" {
         It "Returns results with proper data" {
-        It "Returns results with proper data" {
             $splatBackupDbCerts = @{
                 SqlInstance        = $TestConfig.instance1
                 Database           = $db1Name
@@ -157,7 +152,6 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Backs up all db certs for an instance" {
-        It "Returns results with proper data" {
         It "Returns results with proper data" {
             $splatBackupAllCerts = @{
                 SqlInstance        = $TestConfig.instance1

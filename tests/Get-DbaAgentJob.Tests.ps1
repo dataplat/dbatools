@@ -1,7 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
     $ModuleName  = "dbatools",
-    $ModuleName  = "dbatools",
     $CommandName = "Get-DbaAgentJob",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -54,7 +53,6 @@ Describe $CommandName -Tag IntegrationTests {
     }
     Context "Command gets no disabled jobs" {
         It "Should return only enabled jobs" {
-        It "Should return only enabled jobs" {
             $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob
             $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob_disabled -Disabled
             try {
@@ -67,7 +65,6 @@ Describe $CommandName -Tag IntegrationTests {
     }
     Context "Command doesn't get excluded job" {
         It "Should not return excluded job" {
-        It "Should not return excluded job" {
             $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob
             $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob_disabled -Disabled
             try {
@@ -79,7 +76,6 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
     Context "Command doesn't get excluded category" {
-        It "Should not return excluded job" {
         It "Should not return excluded job" {
             $null = New-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category "Cat1"
             $null = New-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category "Cat2"
