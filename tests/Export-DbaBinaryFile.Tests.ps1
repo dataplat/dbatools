@@ -38,7 +38,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # For all the backups that we want to clean up after the test, we create a directory that we can delete at the end.
-        $exportPath = "C:\temp\exports-$CommandName-$(Get-Random)"
+        $exportPath = "$($TestConfig.Temp)\exports-$CommandName-$(Get-Random)"
         $null = New-Item -Path $exportPath -ItemType Directory -Force
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.

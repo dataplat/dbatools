@@ -61,7 +61,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     It "returns more than one database" -Skip:$true {
-        $null = Invoke-DbaDbMirroring -Primary $TestConfig.instance2 -Mirror $TestConfig.instance3 -Database $db1, $db2 -Confirm:$false -Force -SharedPath C:\temp -WarningAction Continue
+        $null = Invoke-DbaDbMirroring -Primary $TestConfig.instance2 -Mirror $TestConfig.instance3 -Database $db1, $db2 -Confirm:$false -Force -SharedPath $TestConfig.Temp -WarningAction Continue
         @(Get-DbaDbMirror -SqlInstance $TestConfig.instance3).Count | Should -Be 2
     }
 

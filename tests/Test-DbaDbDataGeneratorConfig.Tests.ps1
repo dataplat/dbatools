@@ -36,12 +36,12 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
         Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database $dbname -Query $query
 
-        $file = New-DbaDbDataGeneratorConfig -SqlInstance $TestConfig.instance1 -Database $dbname -Table Customer -Path "C:\temp\datageneration"
+        $file = New-DbaDbDataGeneratorConfig -SqlInstance $TestConfig.instance1 -Database $dbname -Table Customer -Path "$($TestConfig.Temp)\datageneration"
 
     }
     AfterAll {
         Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname -Confirm:$false
-        Remove-Item -Path "C:\temp\datageneration" -Recurse
+        Remove-Item -Path "$($TestConfig.Temp)\datageneration" -Recurse
     }
 
     It "gives no errors with a correct json file" {

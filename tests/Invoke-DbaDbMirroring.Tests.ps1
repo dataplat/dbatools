@@ -71,7 +71,7 @@ Describe $CommandName -Tag IntegrationTests {
             Database   = $dbName
             Confirm    = $false
             Force      = $true
-            SharedPath = "C:\temp"
+            SharedPath = $TestConfig.Temp
         }
         $results = Invoke-DbaDbMirroring @splatMirroring -WarningVariable WarnVar
         $WarnVar | Should -BeNullOrEmpty
