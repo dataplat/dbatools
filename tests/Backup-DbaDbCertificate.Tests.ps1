@@ -34,6 +34,12 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
+        # For all the backups that we want to clean up after the test, we create a directory that we can delete at the end.
+        # Other files can be written there as well, maybe we change the name of that variable later. But for now we focus on backups.
+        $backupPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+        $null = New-Item -Path $backupPath -ItemType Directory
+        $PSDefaultParameterValues["Backup-DbaDbCertificate:Path"] = $backupPath
+
         $random = Get-Random
         $db1Name = "dbatoolscli_db1_$random"
         $db2Name = "dbatoolscli_db2_$random"
@@ -58,6 +64,9 @@ Describe $CommandName -Tag IntegrationTests {
 
         Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $db1Name, $db2Name -Confirm:$false
 
+        # Remove the backup directory.
+        Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
+
         # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
@@ -72,14 +81,9 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $results = Backup-DbaDbCertificate @splatBackupCert
 
-            try {
-                $results.Certificate | Should -Be $cert1.Name
-                $results.Status | Should -BeExactly "Success"
-                $results.DatabaseID | Should -Be $db1.ID
-            } catch {
-                Remove-Item -Path $results.Path -ErrorAction SilentlyContinue
-                Remove-Item -Path $results.Key -ErrorAction SilentlyContinue
-            }
+            $results.Certificate | Should -Be $cert1.Name
+            $results.Status | Should -BeExactly "Success"
+            $results.DatabaseID | Should -Be $db1.ID
         }
     }
 
@@ -95,15 +99,10 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $results = Backup-DbaDbCertificate @splatBackupCertWithName
 
-            try {
-                $results.Certificate | Should -Be $cert1.Name
-                $results.Status | Should -BeExactly "Success"
-                $results.DatabaseID | Should -Be $db1.ID
-                [IO.Path]::GetFileNameWithoutExtension($results.Path) | Should -Be "dbatoolscli_cert1_$random"
-            } catch {
-                Remove-Item -Path $results.Path -ErrorAction SilentlyContinue
-                Remove-Item -Path $results.Key -ErrorAction SilentlyContinue
-            }
+            $results.Certificate | Should -Be $cert1.Name
+            $results.Status | Should -BeExactly "Success"
+            $results.DatabaseID | Should -Be $db1.ID
+            [IO.Path]::GetFileNameWithoutExtension($results.Path) | Should -Be "dbatoolscli_cert1_$random"
         }
     }
 
@@ -122,12 +121,7 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $results = Backup-DbaDbCertificate @splatBackupInvalidCert
 
-            try {
-                $WarnVar | Should -Match "Database certificate\(s\) .* not found"
-            } catch {
-                Remove-Item -Path $results.Path -ErrorAction SilentlyContinue
-                Remove-Item -Path $results.Key -ErrorAction SilentlyContinue
-            }
+            $WarnVar | Should -Match "Database certificate\(s\) .* not found"
         }
     }
 
@@ -141,13 +135,8 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $results = Backup-DbaDbCertificate @splatBackupDbCerts
 
-            try {
-                $results | Should -HaveCount 2
-                $results.Certificate | Should -Be $cert1.Name, $cert2.Name
-            } catch {
-                Remove-Item -Path $results.Path -ErrorAction SilentlyContinue
-                Remove-Item -Path $results.Key -ErrorAction SilentlyContinue
-            }
+            $results | Should -HaveCount 2
+            $results.Certificate | Should -Be $cert1.Name, $cert2.Name
         }
     }
 
@@ -160,13 +149,8 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $results = Backup-DbaDbCertificate @splatBackupAllCerts
 
-            try {
-                $results | Should -HaveCount 3
-                $results.Certificate | Should -Be $cert1.Name, $cert2.Name, $cert3.Name
-            } catch {
-                Remove-Item -Path $results.Path -ErrorAction SilentlyContinue
-                Remove-Item -Path $results.Key -ErrorAction SilentlyContinue
-            }
+            $results | Should -HaveCount 3
+            $results.Certificate | Should -Be $cert1.Name, $cert2.Name, $cert3.Name
         }
     }
 }

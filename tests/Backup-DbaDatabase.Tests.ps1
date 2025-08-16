@@ -61,7 +61,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = New-Item -Type Container -Path $DestBackupDir
 
         # Write all files to the same backup destination if not otherwise specified
-        $PSDefaultParameterValues['Backup-DbaDatabase:BackupDirectory'] = $DestBackupDir
+        $PSDefaultParameterValues['Backup-DbaDatabase:Path'] = $DestBackupDir
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
@@ -70,7 +70,7 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
-        $PSDefaultParameterValues.Remove('Backup-DbaDatabase:BackupDirectory')
+        $PSDefaultParameterValues.Remove('Backup-DbaDatabase:Path')
 
         # Remove the backup directory.
         Remove-Item -Path $DestBackupDir -Force -Recurse -ErrorAction SilentlyContinue
@@ -177,7 +177,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Handling backup paths that don't exist (1)" {
         BeforeAll {
             $MissingPath = "$DestBackupDir\Missing1\Awol2"
-            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -BackupDirectory $MissingPath -WarningAction SilentlyContinue
+            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -Path $MissingPath -WarningAction SilentlyContinue
         }
 
         It "Should not return object" {
@@ -194,7 +194,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should have backed up to $MissingPath" {
             $MissingPathTrailing = "$DestBackupDir\Missing1\Awol2\"
             $MissingPath = "$DestBackupDir\Missing1\Awol2"
-            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -BackupDirectory $MissingPathTrailing -BuildPath -WarningAction SilentlyContinue
+            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -Path $MissingPathTrailing -BuildPath -WarningAction SilentlyContinue
             $results.BackupFolder | Should -Be "$MissingPath"
             $results.Path | Should -Not -BeLike "*\\*"
         }
@@ -210,7 +210,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "CreateFolder switch should append the databasename to the backup path even when striping" {
         It "Should have appended master to all backup paths" {
             $backupPaths = "$DestBackupDir\stripewithdb1", "$DestBackupDir\stripewithdb2"
-            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -BackupDirectory $backupPaths -CreateFolder
+            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -Path $backupPaths -CreateFolder
             foreach ($path in $results.BackupFolder) {
                 ($results.BackupFolder | Sort-Object) | Should -Be ($backupPaths | Sort-Object | ForEach-Object { [IO.Path]::Combine($PSItem, "master") })
             }
@@ -219,7 +219,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "A fully qualified path should override a backupfolder" {
         BeforeAll {
-            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -BackupDirectory $TestConfig.Temp -BackupFileName "$DestBackupDir\PesterTest2.bak"
+            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -Path $TestConfig.Temp -BackupFileName "$DestBackupDir\PesterTest2.bak"
         }
 
         It "Should report backed up to $DestBackupDir" {
@@ -236,7 +236,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $backupPaths = "$DestBackupDir\stripe1", "$DestBackupDir\stripe2", "$DestBackupDir\stripe3"
             $null = New-Item -Path $backupPaths -ItemType Directory
-            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -BackupDirectory $backupPaths
+            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -Path $backupPaths
         }
 
         It "Should have created 3 backups" {
@@ -257,10 +257,10 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Should stripe if multiple backupfolders specified (2)" {
-        # Assure that striping logic favours -BackupDirectory and not -Filecount
+        # Assure that striping logic favours -Path and not -Filecount
         It "Should have created 3 backups, even when FileCount is different" {
             $backupPaths = "$DestBackupDir\stripe1", "$DestBackupDir\stripe2", "$DestBackupDir\stripe3"
-            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -BackupDirectory $backupPaths -FileCount 2
+            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -Path $backupPaths -FileCount 2
             $results.BackupFilesCount | Should -Be 3
         }
     }
@@ -300,14 +300,14 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Should Backup to default path if none specified" {
         BeforeAll {
-            $PSDefaultParameterValues.Remove("Backup-DbaDatabase:BackupDirectory")
+            $PSDefaultParameterValues.Remove("Backup-DbaDatabase:Path")
             $defaultBackupPath = (Get-DbaDefaultPath -SqlInstance $TestConfig.instance1).Backup
             $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -BackupFileName "PesterTest.bak"
         }
 
         AfterAll {
             Get-ChildItem -Path $results.FullName | Remove-Item -ErrorAction SilentlyContinue
-            $PSDefaultParameterValues["Backup-DbaDatabase:BackupDirectory"] = $DestBackupDir
+            $PSDefaultParameterValues["Backup-DbaDatabase:Path"] = $DestBackupDir
         }
 
         It "Should report it has backed up to the path with the corrrect name" {
@@ -380,12 +380,12 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Should handle NUL as an input path" {
         BeforeAll {
-            $PSDefaultParameterValues.Remove('Backup-DbaDatabase:BackupDirectory')
+            $PSDefaultParameterValues.Remove('Backup-DbaDatabase:Path')
             $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -BackupFileName NUL
         }
 
         AfterAll {
-            $PSDefaultParameterValues["Backup-DbaDatabase:BackupDirectory"] = $DestBackupDir
+            $PSDefaultParameterValues["Backup-DbaDatabase:Path"] = $DestBackupDir
         }
 
         It "Should return succesful backup" {
@@ -460,7 +460,7 @@ go
 
     Context "Test Backup templating" {
         It "Should have replaced the markers" {
-            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master, msdb -BackupDirectory $DestBackupDir\dbname\instancename\backuptype\ -BackupFileName dbname-backuptype.bak -ReplaceInName -BuildPath
+            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master, msdb -Path $DestBackupDir\dbname\instancename\backuptype\ -BackupFileName dbname-backuptype.bak -ReplaceInName -BuildPath
             $instanceName = ([DbaInstanceParameter]$TestConfig.instance1).InstanceName
             $results[0].BackupPath | Should -BeLike "$DestBackupDir\master\$instanceName\Full\master-Full.bak"
             $results[1].BackupPath | Should -BeLike "$DestBackupDir\msdb\$instanceName\Full\msdb-Full.bak"
@@ -469,7 +469,7 @@ go
 
     Context "Test Backup templating when db object piped in issue 8100" {
         It "Should have replaced the markers" {
-            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master, msdb | Backup-DbaDatabase -BackupDirectory $DestBackupDir\db2\dbname\instancename\backuptype\  -BackupFileName dbname-backuptype.bak -ReplaceInName -BuildPath
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master, msdb | Backup-DbaDatabase -Path $DestBackupDir\db2\dbname\instancename\backuptype\  -BackupFileName dbname-backuptype.bak -ReplaceInName -BuildPath
             $instanceName = ([DbaInstanceParameter]$TestConfig.instance1).InstanceName
             $results[0].BackupPath | Should -BeLike "$DestBackupDir\db2\master\$instanceName\Full\master-Full.bak"
             $results[1].BackupPath | Should -BeLike "$DestBackupDir\db2\msdb\$instanceName\Full\msdb-Full.bak"
