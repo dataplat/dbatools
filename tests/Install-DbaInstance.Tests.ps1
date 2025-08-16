@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Install-DbaInstance",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -8,20 +8,20 @@ param(
 Describe $CommandName -Tag UnitTests {
     BeforeAll {
         # Prevent the functions from executing dangerous stuff and getting right responses where needed
-        Mock -CommandName Invoke-Program -MockWith { [pscustomobject]@{ Successful = $true; ExitCode = [uint32[]]0 } } -ModuleName dbatools
+        Mock -CommandName Invoke-Program -MockWith { [PSCustomObject]@{ Successful = $true; ExitCode = [uint32[]]0 } } -ModuleName dbatools
         Mock -CommandName Test-PendingReboot -MockWith { $false } -ModuleName dbatools
         Mock -CommandName Test-ElevationRequirement -MockWith { $null } -ModuleName dbatools
         Mock -CommandName Restart-Computer -MockWith { $null } -ModuleName dbatools
         Mock -CommandName Register-RemoteSessionConfiguration -ModuleName dbatools -MockWith {
-            [pscustomobject]@{ "Name" = "dbatoolsInstallSqlServerUpdate" ; Successful = $true ; Status = "Dummy" }
+            [PSCustomObject]@{ "Name" = "dbatoolsInstallSqlServerUpdate" ; Successful = $true ; Status = "Dummy" }
         }
         Mock -CommandName Unregister-RemoteSessionConfiguration -ModuleName dbatools -MockWith {
-            [pscustomobject]@{ "Name" = "dbatoolsInstallSqlServerUpdate" ; Successful = $true ; Status = "Dummy" }
+            [PSCustomObject]@{ "Name" = "dbatoolsInstallSqlServerUpdate" ; Successful = $true ; Status = "Dummy" }
         }
         Mock -CommandName Set-DbaPrivilege -ModuleName dbatools -MockWith { }
         Mock -CommandName Set-DbaTcpPort -ModuleName dbatools -MockWith { }
         Mock -CommandName Restart-DbaService -ModuleName dbatools -MockWith { }
-        Mock -CommandName Get-DbaCmObject -ModuleName dbatools -MockWith { [pscustomobject]@{NumberOfCores = 24 } } -ParameterFilter { $ClassName -eq "Win32_processor" }
+        Mock -CommandName Get-DbaCmObject -ModuleName dbatools -MockWith { [PSCustomObject]@{NumberOfCores = 24 } } -ParameterFilter { $ClassName -eq "Win32_processor" }
         # mock searching for setup, proper file should always it find
         Mock -CommandName Find-SqlInstanceSetup -MockWith {
             Get-ChildItem $Path -Filter "dummy.exe" -ErrorAction Stop | Select-Object -ExpandProperty FullName -First 1
@@ -30,7 +30,7 @@ Describe $CommandName -Tag UnitTests {
         $null = New-Item -ItemType File -Path TestDrive:\dummy.exe -Force
     }
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -70,16 +70,13 @@ Describe $CommandName -Tag UnitTests {
                 "NoPendingRenameCheck",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 
     Context "Validate installs of each version" {
         BeforeAll {
-            $global:cred = [pscredential]::new("foo", (ConvertTo-SecureString "bar" -Force -AsPlainText))
+            $global:cred = [PSCredential]::new("foo", (ConvertTo-SecureString "bar" -Force -AsPlainText))
         }
 
         It "Should install SQL<version> with all features enabled" -TestCases @(
@@ -250,7 +247,7 @@ Describe $CommandName -Tag UnitTests {
         ) {
             param($version, $canonicVersion, $mainNode)
             # temporary replacing that mock with exit code 3010
-            Mock -CommandName Invoke-Program -MockWith { [pscustomobject]@{ Successful = $true; ExitCode = [uint32[]]3010 } } -ModuleName dbatools
+            Mock -CommandName Invoke-Program -MockWith { [PSCustomObject]@{ Successful = $true; ExitCode = [uint32[]]3010 } } -ModuleName dbatools
             $splatRestart = @{
                 Version = $version
                 Path    = "TestDrive:"
@@ -275,7 +272,7 @@ Describe $CommandName -Tag UnitTests {
             }
 
             # reverting the mock
-            Mock -CommandName Invoke-Program -MockWith { [pscustomobject]@{ Successful = $true; ExitCode = [uint32[]]0 } } -ModuleName dbatools
+            Mock -CommandName Invoke-Program -MockWith { [PSCustomObject]@{ Successful = $true; ExitCode = [uint32[]]0 } } -ModuleName dbatools
         }
 
         It "Should install tools for SQL<version>" -TestCases @(
@@ -287,7 +284,7 @@ Describe $CommandName -Tag UnitTests {
             @{ version = "2017"; canonicVersion = "14.0"; mainNode = "OPTIONS" }
         ) {
             param($version, $canonicVersion, $mainNode)
-            Mock -CommandName Invoke-Program -MockWith { [pscustomobject]@{ Successful = $true; ExitCode = [uint32[]]0 } } -ModuleName dbatools
+            Mock -CommandName Invoke-Program -MockWith { [PSCustomObject]@{ Successful = $true; ExitCode = [uint32[]]0 } } -ModuleName dbatools
             $splatTools = @{
                 Version = $version
                 Path    = "TestDrive:"
@@ -331,7 +328,7 @@ Describe $CommandName -Tag UnitTests {
         }
         It "fails when update execution has failed" {
             #override default mock
-            Mock -CommandName Invoke-Program -MockWith { [pscustomobject]@{ Successful = $false; ExitCode = 12345 } } -ModuleName dbatools
+            Mock -CommandName Invoke-Program -MockWith { [PSCustomObject]@{ Successful = $false; ExitCode = 12345 } } -ModuleName dbatools
             { Install-DbaInstance -Version 2008 -EnableException -Path "TestDrive:" -Confirm:$false } | Should -Throw -ExpectedMessage "*Installation failed with exit code 12345*"
             $result = Install-DbaInstance -Version 2008 -Path "TestDrive:" -Confirm:$false -WarningVariable warVar 3>$null
             $result | Should -Not -BeNullOrEmpty
@@ -342,7 +339,7 @@ Describe $CommandName -Tag UnitTests {
             $result.Notes | Should -BeLike "*Installation failed with exit code 12345*"
             $warVar | Should -BeLike "*Installation failed with exit code 12345*"
             #revert default mock
-            Mock -CommandName Invoke-Program -MockWith { [pscustomobject]@{ Successful = $true; ExitCode = 0 } } -ModuleName dbatools
+            Mock -CommandName Invoke-Program -MockWith { [PSCustomObject]@{ Successful = $true; ExitCode = 0 } } -ModuleName dbatools
         }
     }
 }

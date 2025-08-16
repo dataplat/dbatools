@@ -18,12 +18,9 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
-    BeforeAll {
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1
-    }
-
     Context "gets connected objects" {
         It "returns some results" {
+            $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1
             $results = Get-DbaConnectedInstance
             $results | Should -Not -BeNullOrEmpty
         }

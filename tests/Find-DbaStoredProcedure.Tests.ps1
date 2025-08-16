@@ -10,7 +10,7 @@ $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -23,9 +23,6 @@ Describe $CommandName -Tag UnitTests {
                 "IncludeSystemDatabases",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -33,8 +30,9 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     Context "Command finds Procedures in a System Database" {
-        BeforeAll {
-            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        # We want to run all commands in the setup with EnableException to ensure that the test fails if the setup fails.
+        It "Should find a specific StoredProcedure named cp_dbatoolsci_sysadmin" {
+            # We want to run all commands in the setup with EnableException to ensure that the test fails if the setup fails.
             $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
 
             $ServerProcedure = @"
@@ -51,33 +49,29 @@ AS
             }
             $null = Invoke-DbaQuery @splatCreateProc
 
-            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            # We want to run the test command without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
-        }
 
-        AfterAll {
-            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-            $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+            try {
+                $splatFind = @{
+                    SqlInstance            = $TestConfig.instance2
+                    Pattern                = "dbatools*"
+                    IncludeSystemDatabases = $true
+                }
+                $results = Find-DbaStoredProcedure @splatFind
+                $results.Name | Should -Contain "cp_dbatoolsci_sysadmin"
+            } catch {
+                # Cleanup - We want to run all commands in the cleanup with EnableException to ensure that the test fails if the cleanup fails.
+                $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
 
-            $DropProcedure = "DROP PROCEDURE dbo.cp_dbatoolsci_sysadmin;"
-            $splatDropProc = @{
-                SqlInstance = $TestConfig.instance2
-                Database    = "Master"
-                Query       = $DropProcedure
+                $DropProcedure = "DROP PROCEDURE dbo.cp_dbatoolsci_sysadmin;"
+                $splatDropProc = @{
+                    SqlInstance = $TestConfig.instance2
+                    Database    = "Master"
+                    Query       = $DropProcedure
+                }
+                $null = Invoke-DbaQuery @splatDropProc
             }
-            $null = Invoke-DbaQuery @splatDropProc
-
-            # As this is the last block we do not need to reset the $PSDefaultParameterValues.
-        }
-
-        It "Should find a specific StoredProcedure named cp_dbatoolsci_sysadmin" {
-            $splatFind = @{
-                SqlInstance             = $TestConfig.instance2
-                Pattern                 = "dbatools*"
-                IncludeSystemDatabases  = $true
-            }
-            $results = Find-DbaStoredProcedure @splatFind
-            $results.Name | Should -Contain "cp_dbatoolsci_sysadmin"
         }
     }
 

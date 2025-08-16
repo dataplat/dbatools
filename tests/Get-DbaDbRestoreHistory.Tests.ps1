@@ -10,7 +10,7 @@ $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Validate parameters" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -24,9 +24,6 @@ Describe $CommandName -Tag UnitTests {
                 "Last",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -147,12 +144,9 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
     Context "return object properties" {
-        BeforeAll {
+        It "has the correct properties" {
             $results = Get-DbaDbRestoreHistory -SqlInstance $TestConfig.instance2 -Database $dbname1, $dbname2
             $result = $results[0]
-        }
-
-        It "has the correct properties" {
             $ExpectedProps = @(
                 "ComputerName",
                 "InstanceName",

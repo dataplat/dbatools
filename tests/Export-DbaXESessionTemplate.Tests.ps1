@@ -67,12 +67,9 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Test Importing Session Template" {
-        BeforeAll {
+        It "session exports to disk" {
             $session = Import-DbaXESessionTemplate -SqlInstance $TestConfig.instance2 -Template "Profiler TSQL Duration"
             $results = $session | Export-DbaXESessionTemplate -Path $tempPath
-        }
-
-        It "session exports to disk" {
             $results.Name | Should -Be "$sessionName.xml"
         }
     }

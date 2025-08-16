@@ -7,7 +7,7 @@ param(
 
 Describe $CommandName -Tag UnitTests {
     Context "Validate parameters" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -46,8 +46,6 @@ Describe $CommandName -Tag UnitTests {
                 "IncrementPrefix",
                 "Description"
             )
-        }
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -95,11 +93,8 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Should not backup if database and exclude match" {
-        BeforeAll {
-            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -Exclude master -WarningAction SilentlyContinue
-        }
-
         It "Should not return object" {
+            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -Exclude master -WarningAction SilentlyContinue
             $results | Should -BeNullOrEmpty
         }
     }
@@ -134,11 +129,8 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Database should backup 2 databases" {
-        BeforeAll {
-            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master, msdb
-        }
-
         It "Database backup object count Should Be 2" {
+            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master, msdb
             $results | Should -HaveCount 2
             $results.BackupComplete | Should -Be @($true, $true)
         }
@@ -173,11 +165,8 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "ExcludeDatabase parameter works when using pipes (fixes #5044)" {
-        BeforeAll {
-            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 | Backup-DbaDatabase -ExcludeDatabase master, tempdb, msdb, model -WarningAction SilentlyContinue
-        }
-
         It "Should report it has backed up to the path with the correct name" {
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 | Backup-DbaDatabase -ExcludeDatabase master, tempdb, msdb, model -WarningAction SilentlyContinue
             $results.DatabaseName | Should -Not -Contain master
             $results.DatabaseName | Should -Not -Contain tempdb
             $results.DatabaseName | Should -Not -Contain msdb
@@ -202,35 +191,26 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Handling backup paths that don't exist (2)" {
         # $MissingPathTrailing has a trailing slash but we normalize the path before doing the actual backup
-        BeforeAll {
+        It "Should have backed up to $MissingPath" {
             $MissingPathTrailing = "$DestBackupDir\Missing1\Awol2\"
             $MissingPath = "$DestBackupDir\Missing1\Awol2"
             $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -BackupDirectory $MissingPathTrailing -BuildPath -WarningAction SilentlyContinue
-        }
-
-        It "Should have backed up to $MissingPath" {
             $results.BackupFolder | Should -Be "$MissingPath"
             $results.Path | Should -Not -BeLike "*\\*"
         }
     }
 
     Context "CreateFolder switch should append the databasename to the backup path" {
-        BeforeAll {
-            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -CreateFolder
-        }
-
         It "Should have appended master to the backup path" {
+            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -CreateFolder
             $results.BackupFolder | Should -Be "$DestBackupDir\master"
         }
     }
 
     Context "CreateFolder switch should append the databasename to the backup path even when striping" {
-        BeforeAll {
+        It "Should have appended master to all backup paths" {
             $backupPaths = "$DestBackupDir\stripewithdb1", "$DestBackupDir\stripewithdb2"
             $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -BackupDirectory $backupPaths -CreateFolder
-        }
-
-        It "Should have appended master to all backup paths" {
             foreach ($path in $results.BackupFolder) {
                 ($results.BackupFolder | Sort-Object) | Should -Be ($backupPaths | Sort-Object | ForEach-Object { [IO.Path]::Combine($PSItem, "master") })
             }
@@ -278,12 +258,9 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Should stripe if multiple backupfolders specified (2)" {
         # Assure that striping logic favours -BackupDirectory and not -Filecount
-        BeforeAll {
+        It "Should have created 3 backups, even when FileCount is different" {
             $backupPaths = "$DestBackupDir\stripe1", "$DestBackupDir\stripe2", "$DestBackupDir\stripe3"
             $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -BackupDirectory $backupPaths -FileCount 2
-        }
-
-        It "Should have created 3 backups, even when FileCount is different" {
             $results.BackupFilesCount | Should -Be 3
         }
     }
@@ -373,19 +350,16 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Backup can pipe to restore" {
-        BeforeAll {
-            $random = Get-Random
-            $DestDbRandom = "dbatools_ci_backupdbadatabase$random"
-            $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -Path "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak" -DatabaseName "dbatoolsci_singlerestore"
-            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database "dbatoolsci_singlerestore" | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -DatabaseName $DestDbRandom -TrustDbBackupHistory -ReplaceDbNameInFile
-        }
-
         AfterAll {
             $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database "dbatoolsci_singlerestore" | Remove-DbaDatabase
             $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $DestDbRandom | Remove-DbaDatabase
         }
 
         It "Should return successful restore" {
+            $random = Get-Random
+            $DestDbRandom = "dbatools_ci_backupdbadatabase$random"
+            $null = Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -Path "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak" -DatabaseName "dbatoolsci_singlerestore"
+            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database "dbatoolsci_singlerestore" | Restore-DbaDatabase -SqlInstance $TestConfig.instance2 -DatabaseName $DestDbRandom -TrustDbBackupHistory -ReplaceDbNameInFile
             $results.RestoreComplete | Should -BeTrue
         }
     }
@@ -478,34 +452,25 @@ go
 
     Context "Custom TimeStamp" {
         # Test relies on DateFormat bobob returning bobob as the values aren't interpreted, check here in case .Net rules change
-        BeforeAll {
-            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -TimeStampFormat bobob
-        }
-
         It "Should apply the corect custom Timestamp" {
+            $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master -TimeStampFormat bobob
             ($results | Where-Object { $PSItem.BackupPath -like "*bobob*" }).Count | Should -Be $results.Count
         }
     }
 
     Context "Test Backup templating" {
-        BeforeAll {
+        It "Should have replaced the markers" {
             $results = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master, msdb -BackupDirectory $DestBackupDir\dbname\instancename\backuptype\ -BackupFileName dbname-backuptype.bak -ReplaceInName -BuildPath
             $instanceName = ([DbaInstanceParameter]$TestConfig.instance1).InstanceName
-        }
-
-        It "Should have replaced the markers" {
             $results[0].BackupPath | Should -BeLike "$DestBackupDir\master\$instanceName\Full\master-Full.bak"
             $results[1].BackupPath | Should -BeLike "$DestBackupDir\msdb\$instanceName\Full\msdb-Full.bak"
         }
     }
 
     Context "Test Backup templating when db object piped in issue 8100" {
-        BeforeAll {
+        It "Should have replaced the markers" {
             $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master, msdb | Backup-DbaDatabase -BackupDirectory $DestBackupDir\db2\dbname\instancename\backuptype\  -BackupFileName dbname-backuptype.bak -ReplaceInName -BuildPath
             $instanceName = ([DbaInstanceParameter]$TestConfig.instance1).InstanceName
-        }
-
-        It "Should have replaced the markers" {
             $results[0].BackupPath | Should -BeLike "$DestBackupDir\db2\master\$instanceName\Full\master-Full.bak"
             $results[1].BackupPath | Should -BeLike "$DestBackupDir\db2\msdb\$instanceName\Full\msdb-Full.bak"
         }

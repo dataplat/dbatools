@@ -10,7 +10,7 @@ $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Validate parameters" {
-        BeforeAll {
+        It "Should only contain our specific parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -22,9 +22,6 @@ Describe $CommandName -Tag UnitTests {
                 "InputObject",
                 "EnableException"
             )
-        }
-
-        It "Should only contain our specific parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -76,11 +73,8 @@ Describe $CommandName -Tag IntegrationTests {
         # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
     Context "Count Pages" {
-        BeforeAll {
-            $result = Get-DbaDbPageInfo -SqlInstance $TestConfig.instance2 -Database $dbname
-        }
-
         It "returns the proper results" {
+            $result = Get-DbaDbPageInfo -SqlInstance $TestConfig.instance2 -Database $dbname
             @($result).Count | Should -Be 9
             @($result | Where-Object IsAllocated -eq $false).Count | Should -Be 5
             @($result | Where-Object IsAllocated -eq $true).Count | Should -Be 4

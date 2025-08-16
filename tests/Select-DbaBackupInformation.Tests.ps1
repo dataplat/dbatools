@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Select-DbaBackupInformation",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -10,7 +10,7 @@ $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -24,9 +24,6 @@ Describe $CommandName -Tag UnitTests {
                 "LastRestoreType",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -192,7 +189,7 @@ Describe $CommandName -Tag IntegrationTests {
                 $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\DiffIssues.json -raw)
                 $header | Add-Member -Type NoteProperty -Name FullName -Value 1
 
-                $RestoreDate = Get-date "2017-07-18 09:00:00"
+                $RestoreDate = Get-Date "2017-07-18 09:00:00"
                 $Output = Select-DbaBackupInformation -BackupHistory $Header -RestoreTime $RestoreDate
             }
 
@@ -217,7 +214,7 @@ Describe $CommandName -Tag IntegrationTests {
                 $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\chkptLSN-ne-firstLSN.json -raw)
                 $header | Add-Member -Type NoteProperty -Name FullName -Value 1
 
-                $RestoreDate = Get-date "2017-07-18 09:00:00"
+                $RestoreDate = Get-Date "2017-07-18 09:00:00"
                 $Output = Select-DbaBackupInformation -BackupHistory $Header -RestoreTime $RestoreDate
             }
 
@@ -242,7 +239,7 @@ Describe $CommandName -Tag IntegrationTests {
                 $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\TLogBWFirstLastLsn.json -raw)
                 $header | Add-Member -Type NoteProperty -Name FullName -Value 1
 
-                $RestoreDate = Get-date "2017-07-18 09:00:00"
+                $RestoreDate = Get-Date "2017-07-18 09:00:00"
                 $Output = Select-DbaBackupInformation -BackupHistory $Header -RestoreTime $RestoreDate
             }
 
@@ -267,7 +264,7 @@ Describe $CommandName -Tag IntegrationTests {
                 $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\broken_chain.json -raw)
                 $header | Add-Member -Type NoteProperty -Name FullName -Value 1
 
-                $RestoreDate = Get-date "2017-07-16 17:51:30"
+                $RestoreDate = Get-Date "2017-07-16 17:51:30"
                 $Output = Select-DbaBackupInformation -BackupHistory $Header -RestoreTime $RestoreDate
             }
 

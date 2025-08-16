@@ -1,13 +1,13 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Remove-DbaLinkedServer",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -18,9 +18,6 @@ Describe $CommandName -Tag UnitTests {
                 "Force",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -75,7 +72,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         $securePassword = ConvertTo-SecureString -String "s3cur3P4ssw0rd?" -AsPlainText -Force
         $loginName = "dbatoolscli_test_$random"
-        
+
         $splatLogin = @{
             SqlInstance    = @($instance2, $instance3)
             Login          = $loginName
@@ -124,14 +121,14 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $results = Get-DbaLinkedServer @splatGetLinkedServer1
             $results.Length | Should -Be 1
-            
+
             $splatRemoveLinkedServer1 = @{
                 SqlInstance  = $TestConfig.instance2
                 LinkedServer = $linkedServerName1
                 Confirm      = $false
             }
             Remove-DbaLinkedServer @splatRemoveLinkedServer1
-            
+
             $results = Get-DbaLinkedServer @splatGetLinkedServer1
             $results | Should -BeNullOrEmpty
         }
@@ -155,13 +152,13 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $results = Get-DbaLinkedServer @splatGetLinkedServer2
             $results.Length | Should -Be 1
-            
+
             $splatGetPipelineLinkedServer = @{
                 SqlInstance  = $instance2
                 LinkedServer = $linkedServerName2
             }
             Get-DbaLinkedServer @splatGetPipelineLinkedServer | Remove-DbaLinkedServer -Confirm:$false
-            
+
             $splatGetVerifyLinkedServer = @{
                 SqlInstance  = $instance2
                 LinkedServer = $linkedServerName2
@@ -177,13 +174,13 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $results = Get-DbaLinkedServer @splatGetLinkedServer3
             $results.Length | Should -Be 1
-            
+
             $splatRemovePipelineServer = @{
                 LinkedServer = $linkedServerName3
                 Confirm      = $false
             }
             $instance2 | Remove-DbaLinkedServer @splatRemovePipelineServer
-            
+
             $splatGetVerifyLinkedServer3 = @{
                 SqlInstance  = $instance2
                 LinkedServer = $linkedServerName3
@@ -216,7 +213,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Force   = $true
             }
             Get-DbaLinkedServer @splatGetLinkedServer4Final | Remove-DbaLinkedServer @splatRemoveWithForce
-            
+
             $splatGetVerifyLinkedServer4 = @{
                 SqlInstance  = $instance2
                 LinkedServer = $linkedServerName4

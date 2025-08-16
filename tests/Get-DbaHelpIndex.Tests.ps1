@@ -8,10 +8,10 @@ param(
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 $global:TestConfig = Get-TestConfig
 
-Write-host -Object "${script:instance2}" -ForegroundColor Cyan
+Write-Host -Object "${script:instance2}" -ForegroundColor Cyan
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -27,9 +27,6 @@ Describe $CommandName -Tag UnitTests {
                 "IncludeFragmentation",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -109,11 +106,8 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
     Context "Formatting is correct" {
-        BeforeAll {
-            $results = Get-DbaHelpIndex -SqlInstance $TestConfig.instance2 -Database $dbname -ObjectName Test -IncludeFragmentation
-        }
-
         It "Formatted as strings" {
+            $results = Get-DbaHelpIndex -SqlInstance $TestConfig.instance2 -Database $dbname -ObjectName Test -IncludeFragmentation
             $results.IndexReads | Should -BeOfType "String"
             $results.IndexUpdates | Should -BeOfType "String"
             $results.Size | Should -BeOfType "String"

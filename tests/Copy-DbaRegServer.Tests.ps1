@@ -7,7 +7,7 @@ param(
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -20,9 +20,6 @@ Describe $CommandName -Tag UnitTests {
                 "Force",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -34,24 +31,24 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
 
         # Set variables. They are available in all the It blocks.
-        $serverName        = "dbatoolsci-server1"
-        $groupName         = "dbatoolsci-group1"
-        $regServerName     = "dbatoolsci-server12"
-        $regServerDesc     = "dbatoolsci-server123"
+        $serverName = "dbatoolsci-server1"
+        $groupName = "dbatoolsci-group1"
+        $regServerName = "dbatoolsci-server12"
+        $regServerDesc = "dbatoolsci-server123"
 
         # Create the objects.
         $sourceServer = Connect-DbaInstance $TestConfig.instance2
-        $regStore     = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($sourceServer.ConnectionContext.SqlConnectionObject)
-        $dbStore      = $regStore.DatabaseEngineServerGroup
+        $regStore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($sourceServer.ConnectionContext.SqlConnectionObject)
+        $dbStore = $regStore.DatabaseEngineServerGroup
 
         $newGroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($dbStore, $groupName)
         $newGroup.Create()
         $dbStore.Refresh()
 
-        $groupStore                = $dbStore.ServerGroups[$groupName]
-        $newServer                 = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer($groupStore, $regServerName)
-        $newServer.ServerName      = $serverName
-        $newServer.Description     = $regServerDesc
+        $groupStore = $dbStore.ServerGroups[$groupName]
+        $newServer = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer($groupStore, $regServerName)
+        $newServer.ServerName = $serverName
+        $newServer.Description = $regServerDesc
         $newServer.Create()
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
@@ -64,26 +61,23 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Cleanup all created objects.
         $newGroup.Drop()
-        $destServer      = Connect-DbaInstance $TestConfig.instance1
-        $destRegStore    = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($destServer.ConnectionContext.SqlConnectionObject)
-        $destDbStore     = $destRegStore.DatabaseEngineServerGroup
-        $destGroupStore  = $destDbStore.ServerGroups[$groupName]
+        $destServer = Connect-DbaInstance $TestConfig.instance1
+        $destRegStore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($destServer.ConnectionContext.SqlConnectionObject)
+        $destDbStore = $destRegStore.DatabaseEngineServerGroup
+        $destGroupStore = $destDbStore.ServerGroups[$groupName]
         $destGroupStore.Drop()
 
         # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
     Context "When copying registered servers" {
-        BeforeAll {
+        It "Should complete successfully" {
             $splatCopy = @{
                 Source      = $TestConfig.instance2
                 Destination = $TestConfig.instance1
                 CMSGroup    = $groupName
             }
             $results = Copy-DbaRegServer @splatCopy
-        }
-
-        It "Should complete successfully" {
             $results.Status | Should -Be @("Successful", "Successful")
         }
     }

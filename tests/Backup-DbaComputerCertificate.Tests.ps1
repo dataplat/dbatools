@@ -41,7 +41,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Set variables. They are available in all the It blocks.
         $certThumbprint = "29C469578D6C6211076A09CEE5C5797EEA0C2713"
-        $certPath       = "$($TestConfig.appveyorlabrepo)\certificates\localhost.crt"
+        $certPath = "$($TestConfig.appveyorlabrepo)\certificates\localhost.crt"
 
         # Create the objects.
         $null = Add-DbaComputerCertificate -Path $certPath
@@ -64,11 +64,8 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Certificate is backed up properly" {
-        BeforeAll {
-            $backupResult = Get-DbaComputerCertificate -Thumbprint $certThumbprint | Backup-DbaComputerCertificate -Path $backupPath
-        }
-
         It "Returns the proper results" {
+            $backupResult = Get-DbaComputerCertificate -Thumbprint $certThumbprint | Backup-DbaComputerCertificate -Path $backupPath
             $backupResult.Name | Should -Match "$certThumbprint.cer"
         }
     }

@@ -7,7 +7,7 @@ param(
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -24,9 +24,6 @@ Describe $CommandName -Tag UnitTests {
                 "InputObject",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -47,9 +44,9 @@ Describe $CommandName -Tag IntegrationTests {
         # TODO: Add some negative tests.
 
         # Set variables. They are available in all the It blocks.
-        $agName       = "addagdb_group"
+        $agName = "addagdb_group"
         $listenerName = "listener"
-        $listenerIp   = "127.0.20.1"
+        $listenerIp = "127.0.20.1"
         $listenerPort = 14330
 
         # Create the objects.

@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Install-DbaWhoIsActive",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -11,7 +11,7 @@ $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -22,9 +22,6 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException",
                 "Force"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -50,11 +47,8 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Should install sp_WhoIsActive" {
-        BeforeAll {
-            $installResults = Install-DbaWhoIsActive -SqlInstance $TestConfig.instance1 -Database $dbName
-        }
-
         It "Should output correct results" {
+            $installResults = Install-DbaWhoIsActive -SqlInstance $TestConfig.instance1 -Database $dbName
             $installResults.Database | Should -Be $dbName
             $installResults.Name | Should -Be "sp_WhoisActive"
             $installResults.Status | Should -Be "Installed"
@@ -62,11 +56,8 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Should update sp_WhoIsActive" {
-        BeforeAll {
-            $updateResults = Install-DbaWhoIsActive -SqlInstance $TestConfig.instance1 -Database $dbName
-        }
-
         It "Should output correct results" {
+            $updateResults = Install-DbaWhoIsActive -SqlInstance $TestConfig.instance1 -Database $dbName
             $updateResults.Database | Should -Be $dbName
             $updateResults.Name | Should -Be "sp_WhoisActive"
             $updateResults.Status | Should -Be "Updated"

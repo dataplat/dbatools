@@ -60,21 +60,15 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Does sql instance have a SA account" {
-        BeforeAll {
-            $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login sa
-        }
-
         It "Should report that one account named SA exists" {
+            $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login sa
             $results.Count | Should -BeExactly 1
         }
     }
 
     Context "Check that SA account is enabled" {
-        BeforeAll {
-            $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login sa
-        }
-
         It "Should say the SA account is disabled FALSE" {
+            $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login sa
             $results.IsDisabled | Should -Be $false
         }
     }
@@ -218,8 +212,7 @@ Describe $CommandName -Tag IntegrationTests {
                 # Final verification that the specific login is unlocked
                 $finalResult = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login "testlogin1_$random" -Type SQL
                 $finalResult.IsLocked | Should -Be $false
-            }
-            catch {
+            } catch {
                 # Clean up in case of failure
                 try {
                     Set-DbaLogin -SqlInstance $TestConfig.instance1 -Login "testlogin1_$random" -Unlock -Force -ErrorAction SilentlyContinue

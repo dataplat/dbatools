@@ -83,11 +83,8 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "When enabling encryption directly" {
-        BeforeAll {
-            $null = Disable-DbaDbEncryption -SqlInstance $TestConfig.instance2 -Database $testDb.Name
-        }
-
         It "Should enable encryption on a database" {
+            $null = Disable-DbaDbEncryption -SqlInstance $TestConfig.instance2 -Database $testDb.Name
             $splatEnableEncryption = @{
                 SqlInstance   = $TestConfig.instance2
                 EncryptorName = $mastercert.Name

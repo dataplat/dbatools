@@ -10,7 +10,7 @@ $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -19,9 +19,6 @@ Describe $CommandName -Tag UnitTests {
                 "Pattern",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -52,11 +49,8 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Command finds User Objects" {
-        BeforeAll {
-            $results = Find-DbaUserObject -SqlInstance $TestConfig.instance2
-        }
-
         It "Should find results" {
+            $results = Find-DbaUserObject -SqlInstance $TestConfig.instance2
             $results | Should -Not -BeNull
         }
     }

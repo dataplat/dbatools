@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "New-DbaLogin",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -313,11 +313,8 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "No overwrite" {
-        BeforeAll {
-            $null = Get-DbaLogin -SqlInstance $server1 -Login tester | New-DbaLogin -SqlInstance $server2 -WarningAction SilentlyContinue -WarningVariable warning 3>&1
-        }
-
         It "Should not attempt overwrite" {
+            $null = Get-DbaLogin -SqlInstance $server1 -Login tester | New-DbaLogin -SqlInstance $server2 -WarningAction SilentlyContinue -WarningVariable warning 3>&1
             $warning | Should -Match "Login tester already exists"
         }
     }

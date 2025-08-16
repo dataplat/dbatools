@@ -7,7 +7,7 @@ param(
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -19,9 +19,6 @@ Describe $CommandName -Tag UnitTests {
                 "IncludeSystemObject",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -76,9 +73,9 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $server.Query("EXEC msdb.dbo.sp_syspolicy_delete_policy @policy_id=$global:policyid") -ErrorAction SilentlyContinue
-        $server.Query("EXEC msdb.dbo.sp_syspolicy_delete_object_set @object_set_id=$global:objectsetid") -ErrorAction SilentlyContinue
-        $server.Query("EXEC msdb.dbo.sp_syspolicy_delete_condition @condition_id=$global:conditionid") -ErrorAction SilentlyContinue
+        $server.Query("EXEC msdb.dbo.sp_syspolicy_delete_policy @policy_id=$global:policyid")
+        $server.Query("EXEC msdb.dbo.sp_syspolicy_delete_object_set @object_set_id=$global:objectsetid")
+        $server.Query("EXEC msdb.dbo.sp_syspolicy_delete_condition @condition_id=$global:conditionid")
     }
 
     Context "When retrieving PBM policies" {
