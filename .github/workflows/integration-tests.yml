@@ -89,6 +89,11 @@ jobs:
           Import-Module ./dbatools.psd1 -Force
           Install-DbaSqlPackage -Verbose
 
+      - name: Install XESmartTarget for Extended Events tests
+        run: |
+          Import-Module ./dbatools.psd1 -Force
+          Install-DbaXESmartTarget -Force
+
       - name: Run tests
         env:
           TENANTID: ${{secrets.TENANTID}}
@@ -173,6 +178,12 @@ jobs:
           Import-Module ./dbatools -Force
           Install-DbaSqlPackage -Verbose
 
+      - name: Install XESmartTarget for Extended Events tests (PowerShell)
+        shell: powershell
+        run: |
+          Import-Module ./dbatools -Force
+          Install-DbaXESmartTarget -Force
+
       - name: Run PowerShell tests
         env:
           TENANTID: ${{secrets.TENANTID}}
@@ -186,6 +197,12 @@ jobs:
         run: |
           Import-Module ./dbatools -Force
           Install-DbaSqlPackage -Verbose
+
+      - name: Install XESmartTarget for Extended Events tests (pwsh)
+        shell: pwsh
+        run: |
+          Import-Module ./dbatools -Force
+          Install-DbaXESmartTarget -Force
 
       - name: Run pwsh tests
         env:
