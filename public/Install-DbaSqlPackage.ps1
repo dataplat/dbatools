@@ -1,13 +1,17 @@
 function Install-DbaSqlPackage {
     <#
     .SYNOPSIS
-        Downloads and installs SqlPackage.exe
+        Downloads and installs SqlPackage on Windows, Linux, or macOS
 
     .DESCRIPTION
-        Downloads and installs SqlPackage.exe so that you can use Import-DbaDacpac, Export-DbaDacpac, Publish-DbaDacpac and Get-DbaDacpac.
+        Downloads and installs SqlPackage so that you can use Import-DbaDacpac, Export-DbaDacpac, Publish-DbaDacpac and Get-DbaDacpac.
+
+        Cross-platform support:
+        - Windows: Supports both ZIP (portable) and MSI installation methods
+        - Linux/macOS: Supports ZIP installation method only
 
         By default, SqlPackage is installed as a portable ZIP file to the dbatools directory for CurrentUser scope.
-        For AllUsers (LocalMachine) scope, you can use the MSI installer which requires administrative privileges.
+        For AllUsers (LocalMachine) scope on Windows, you can use the MSI installer which requires administrative privileges.
 
         Writes to $script:PSModuleRoot\bin\sqlpackage by default for CurrentUser scope.
 
@@ -18,12 +22,12 @@ function Install-DbaSqlPackage {
     .PARAMETER Scope
         Specifies the installation scope. Valid values are:
         - CurrentUser: Installs to the dbatools directory (default, uses ZIP)
-        - AllUsers: Installs to Program Files (requires MSI and administrative privileges)
+        - AllUsers: Installs to system location (Windows: Program Files with MSI/admin privileges; Unix: /usr/local/sqlpackage)
 
     .PARAMETER Type
         Specifies the installation type. Valid values are:
-        - Zip: Downloads and extracts the portable ZIP file (default, works for both scopes)
-        - Msi: Downloads and installs the MSI package (AllUsers scope only, requires admin privileges)
+        - Zip: Downloads and extracts the portable ZIP file (default, works on all platforms)
+        - Msi: Downloads and installs the MSI package (Windows only, AllUsers scope only, requires admin privileges)
 
     .PARAMETER LocalFile
         Specifies the path to a local file to install SqlPackage from. This file should be an msi or zip file.
@@ -91,23 +95,39 @@ function Install-DbaSqlPackage {
 
         if ($Force) { $ConfirmPreference = 'none' }
 
-        # Set default path based on scope if not specified
+        # Set default path based on scope and platform if not specified
         if (-not $Path) {
             if ($Scope -eq "CurrentUser") {
                 # Install to dbatools data directory like XESmartTarget
                 $dbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
-                $Path = Join-DbaPath -Path $dbatoolsData -ChildPath "sqlpackage"
+                # Normalize path to remove any trailing slashes before joining
+                $dbatoolsData = $dbatoolsData.TrimEnd('/', '\')
+                $Path = Join-Path -Path $dbatoolsData -ChildPath "sqlpackage"
             } else {
-                # AllUsers scope uses MSI default location
-                $Path = "${env:ProgramFiles}\Microsoft SQL Server\DAC\bin"
+                # AllUsers scope uses platform-specific default location
+                if ($PSVersionTable.Platform -eq "Unix") {
+                    $Path = "/usr/local/sqlpackage"
+                } else {
+                    $Path = "${env:ProgramFiles}\Microsoft SQL Server\DAC\bin"
+                }
             }
         }
 
         Write-Progress -Activity "Installing SqlPackage" -Status "Determining download URLs..." -PercentComplete 5
 
-        # Determine URLs based on type
+        # Determine URLs based on type and platform
         if ($Type -eq "Zip") {
-            $url = "https://aka.ms/sqlpackage-windows"  # Windows .NET 8 ZIP (portable)
+            if ($PSVersionTable.Platform -eq "Unix") {
+                if ($IsLinux) {
+                    $url = "https://aka.ms/sqlpackage-linux"
+                } elseif ($IsMacOS) {
+                    $url = "https://aka.ms/sqlpackage-macos"
+                } else {
+                    $url = "https://aka.ms/sqlpackage-linux"  # Default to Linux for other Unix
+                }
+            } else {
+                $url = "https://aka.ms/sqlpackage-windows"  # Windows .NET 8 ZIP (portable)
+            }
             $fileName = "sqlpackage.zip"
         } else {
             $url = "https://aka.ms/dacfx-msi"  # Windows .NET Framework MSI
@@ -123,27 +143,37 @@ function Install-DbaSqlPackage {
 
         Write-Progress -Activity "Installing SqlPackage" -Status "Validating platform and permissions..." -PercentComplete 10
 
+        # Platform-specific validations
         if ($PSVersionTable.Platform -eq "Unix") {
-            Write-Progress -Activity "Installing SqlPackage" -Completed
-            Stop-Function -Message "SqlPackage is not supported on non-Windows platforms"
-            return
-        }
-
-        # Validate scope and type combination
-        if ($Type -eq "Msi" -and $Scope -eq "CurrentUser") {
-            Write-Progress -Activity "Installing SqlPackage" -Completed
-            Stop-Function -Message "MSI installation is only supported for AllUsers scope. Use Zip type for CurrentUser scope."
-            return
-        }
-
-        # Check for admin privileges when using MSI or AllUsers scope
-        if ($Type -eq "Msi" -or $Scope -eq "AllUsers") {
-            try {
-                $null = Test-ElevationRequirement -ComputerName $env:COMPUTERNAME -Continue
-            } catch {
+            # Unix platforms only support Zip type and CurrentUser scope
+            if ($Type -eq "Msi") {
                 Write-Progress -Activity "Installing SqlPackage" -Completed
-                Stop-Function -Message "MSI installation and AllUsers scope require administrative privileges. Please run as administrator or use CurrentUser scope with Zip type."
+                Stop-Function -Message "MSI installation is only supported on Windows. Use Zip type on Unix platforms."
                 return
+            }
+            if ($Scope -eq "AllUsers") {
+                Write-Progress -Activity "Installing SqlPackage" -Completed
+                Stop-Function -Message "AllUsers scope is only supported on Windows. Use CurrentUser scope on Unix platforms."
+                return
+            }
+        } else {
+            # Windows-specific validations
+            # Validate scope and type combination
+            if ($Type -eq "Msi" -and $Scope -eq "CurrentUser") {
+                Write-Progress -Activity "Installing SqlPackage" -Completed
+                Stop-Function -Message "MSI installation is only supported for AllUsers scope. Use Zip type for CurrentUser scope."
+                return
+            }
+
+            # Check for admin privileges when using MSI or AllUsers scope
+            if ($Type -eq "Msi" -or $Scope -eq "AllUsers") {
+                try {
+                    $null = Test-ElevationRequirement -ComputerName $env:COMPUTERNAME -Continue
+                } catch {
+                    Write-Progress -Activity "Installing SqlPackage" -Completed
+                    Stop-Function -Message "MSI installation and AllUsers scope require administrative privileges. Please run as administrator or use CurrentUser scope with Zip type."
+                    return
+                }
             }
         }
     }
@@ -243,6 +273,18 @@ function Install-DbaSqlPackage {
                 # Unpack archive
                 try {
                     Expand-Archive -Path $LocalFile -DestinationPath $Path -Force:$Force
+
+                    # Make executable on Unix platforms
+                    if ($PSVersionTable.Platform -eq "Unix") {
+                        $executablePath = Join-Path $Path "sqlpackage"
+                        if (Test-Path $executablePath) {
+                            try {
+                                & chmod "+x" $executablePath 2>$null
+                            } catch {
+                                Write-Message -Level Warning -Message "Could not make sqlpackage executable. You may need to run 'chmod +x $executablePath' manually."
+                            }
+                        }
+                    }
                 } catch {
                     Write-Progress -Activity "Installing SqlPackage" -Completed
                     Stop-Function -Message "Unable to extract SqlPackage to $Path. $_" -ErrorRecord $_
@@ -254,10 +296,16 @@ function Install-DbaSqlPackage {
         Write-Progress -Activity "Installing SqlPackage" -Status "Verifying installation..." -PercentComplete 90
 
         # Verify installation
-        $sqlPackagePaths = @(
-            "$Path\SqlPackage.exe"
-            "${env:ProgramFiles}\Microsoft SQL Server\*\DAC\bin\SqlPackage.exe"
-        )
+        if ($PSVersionTable.Platform -eq "Unix") {
+            $sqlPackagePaths = @(
+                "$Path/sqlpackage"
+            )
+        } else {
+            $sqlPackagePaths = @(
+                "$Path\SqlPackage.exe"
+                "${env:ProgramFiles}\Microsoft SQL Server\*\DAC\bin\SqlPackage.exe"
+            )
+        }
 
         $sqlPackageFound = $false
         $installedPath = $null
@@ -278,7 +326,7 @@ function Install-DbaSqlPackage {
             Write-Message -Level Verbose -Message "SqlPackage installed successfully"
             # Return the installation information
             [PSCustomObject]@{
-                Name = "SqlPackage.exe"
+                Name = if ($PSVersionTable.Platform -eq "Unix") { "sqlpackage" } else { "SqlPackage.exe" }
                 Path = $installedPath
                 Installed = $true
             }

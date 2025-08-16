@@ -118,13 +118,18 @@ function Export-DbaDacPackage {
         $null = Test-ExportDirectory -Path $Path
 
         # Check if sqlpackage is available
-        $sqlpackageCmd = Get-Command sqlpackage -ErrorAction SilentlyContinue
-        if (-not $sqlpackageCmd) {
+        $sqlPackagePath = Get-DbaSqlPackagePath
+        if (-not $sqlPackagePath) {
             $installChoice = Read-Host "SqlPackage is required but not found. Would you like to install it now using Install-DbaSqlPackage? (Y/N)"
             if ($installChoice -match '^[Yy]') {
                 try {
                     Install-DbaSqlPackage
                     Write-Message -Level Output -Message "SqlPackage installed successfully. Continuing with export..."
+                    $sqlPackagePath = Get-DbaSqlPackagePath
+                    if (-not $sqlPackagePath) {
+                        Stop-Function -Message "Failed to locate SqlPackage after installation. Please verify the installation." -EnableException:$EnableException
+                        return
+                    }
                 } catch {
                     Stop-Function -Message "Failed to install SqlPackage. Please install manually or use Install-DbaSqlPackage." -EnableException:$EnableException
                     return
@@ -259,7 +264,7 @@ function Export-DbaDacPackage {
                     try {
                         $startprocess = New-Object System.Diagnostics.ProcessStartInfo
 
-                        $sqlpackage = (Get-Command sqlpackage -ErrorAction Ignore).Path
+                        $sqlpackage = Get-DbaSqlPackagePath
                         if ($sqlpackage) {
                             $startprocess.FileName = $sqlpackage
                         } else {
