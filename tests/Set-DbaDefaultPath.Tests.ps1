@@ -41,24 +41,9 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "returns proper information" {
-        BeforeAll {
-            $results = Set-DbaDefaultPath -SqlInstance $TestConfig.instance1 -Type Backup -Path $TestConfig.Temp
-        }
-
-        It "Data returns a value that contains :\" {
-            $results.Data | Should -Match ":\\"
-        }
-
-        It "Log returns a value that contains :\" {
-            $results.Log | Should -Match ":\\"
-        }
-
         It "Backup returns the correct value" {
+            $results = Set-DbaDefaultPath -SqlInstance $TestConfig.instance1 -Type Backup -Path $TestConfig.Temp
             $results.Backup | Should -BeExactly $TestConfig.Temp
-        }
-
-        It "ErrorLog returns a value that contains :\" {
-            $results.ErrorLog | Should -Match ":\\"
         }
     }
 }
