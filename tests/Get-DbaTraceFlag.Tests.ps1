@@ -51,7 +51,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Has the right default properties" {
             $expectedProps = "ComputerName", "InstanceName", "SqlInstance", "TraceFlag", "Global", "Status"
-            $results = Get-DbaTraceFlag -SqlInstance $TestConfig.instance2
+            $results = @( )
+            $results += Get-DbaTraceFlag -SqlInstance $TestConfig.instance2
             ($results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should -Be ($expectedProps | Sort-Object)
         }
 
