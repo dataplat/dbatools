@@ -48,10 +48,10 @@ function Install-DbaSqlPackage {
 
     .NOTES
         Tags: Deployment, Install
-        Author: Kirill Kravtsov (@nvarscar), chrissy24, zippy1981
+        Author: Chrissy LeMaire and Claude
 
         Website: https://dbatools.io
-        Copyright: (c) 2018 by dbatools, licensed under MIT
+        Copyright: (c) 2025 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
@@ -326,8 +326,8 @@ function Install-DbaSqlPackage {
             Write-Message -Level Verbose -Message "SqlPackage installed successfully"
             # Return the installation information
             [PSCustomObject]@{
-                Name = if ($PSVersionTable.Platform -eq "Unix") { "sqlpackage" } else { "SqlPackage.exe" }
-                Path = $installedPath
+                Name      = if ($PSVersionTable.Platform -eq "Unix") { "sqlpackage" } else { "SqlPackage.exe" }
+                Path      = $installedPath
                 Installed = $true
             }
         } else {
