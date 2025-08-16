@@ -111,11 +111,14 @@ function New-DbaXESmartEmail {
         [switch]$EnableException
     )
     begin {
+        $xedll = Get-XESmartTargetPath -EnableException:$EnableException
+        if (-not $xedll) {
+            return
+        }
         try {
-            $xedll = Join-DbaPath -Path $script:libraryroot -ChildPath third-party, XESmartTarget, XESmartTarget.Core.dll
             Add-Type -Path $xedll -ErrorAction Stop
         } catch {
-            Stop-Function -Message "Could not load XESmartTarget.Core.dll" -ErrorRecord $_ -Target "XESmartTarget"
+            Stop-Function -Message "Could not load XESmartTarget.Core.dll from: $xedll" -ErrorRecord $_ -Target "XESmartTarget"
             return
         }
     }

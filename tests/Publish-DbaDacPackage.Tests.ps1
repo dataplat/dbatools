@@ -36,6 +36,25 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
 
+        # Check if SqlPackage is available since Export-DbaDacPackage is used in these tests
+        $sqlPackagePath = Get-DbaSqlPackagePath
+        if (-not $sqlPackagePath) {
+            Write-Warning "SqlPackage.exe not found. Attempting to install..."
+            try {
+                Install-DbaSqlPackage -ErrorAction Stop
+                $sqlPackagePath = Get-DbaSqlPackagePath
+                if (-not $sqlPackagePath) {
+                    throw "SqlPackage installation failed"
+                }
+                Write-Host "SqlPackage installed successfully" -ForegroundColor Green
+            } catch {
+                Write-Warning "Could not install SqlPackage. Tests will be skipped. Error: $_"
+                return
+            }
+        } else {
+            Write-Host "SqlPackage found at: $sqlPackagePath" -ForegroundColor Green
+        }
+
         Get-DbaProcess -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -Program "dbatools PowerShell module - dbatools.io" | Stop-DbaProcess -WarningAction SilentlyContinue
         $dbname = "dbatoolsci_publishdacpac"
         $splatConnection = @{

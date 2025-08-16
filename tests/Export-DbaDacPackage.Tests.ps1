@@ -38,6 +38,25 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
 
+        # Check if SqlPackage is available, skip tests if not found
+        $sqlPackagePath = Get-DbaSqlPackagePath
+        if (-not $sqlPackagePath) {
+            Write-Warning "SqlPackage.exe not found. Attempting to install..."
+            try {
+                Install-DbaSqlPackage -ErrorAction Stop
+                $sqlPackagePath = Get-DbaSqlPackagePath
+                if (-not $sqlPackagePath) {
+                    throw "SqlPackage installation failed"
+                }
+                Write-Host "SqlPackage installed successfully" -ForegroundColor Green
+            } catch {
+                Write-Warning "Could not install SqlPackage. Tests will be skipped. Error: $_"
+                return
+            }
+        } else {
+            Write-Host "SqlPackage found at: $sqlPackagePath" -ForegroundColor Green
+        }
+
         # For all the backups that we want to clean up after the test, we create a directory that we can delete at the end.
         # Other files can be written there as well, maybe we change the name of that variable later. But for now we focus on backups.
         $testFolder = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
