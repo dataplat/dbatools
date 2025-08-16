@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Test-DbaDbRecoveryModel",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -10,7 +10,7 @@ $global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag "UnitTests" {
     Context "Validate parameters" {
-        BeforeAll {
+        It "Should only contain our specific parameters" {
             $command = Get-Command $CommandName
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -21,8 +21,6 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
                 'RecoveryModel',
                 'EnableException'
             )
-        }
-        It "Should only contain our specific parameters" {
             $actualParameters = $command.Parameters.Keys | Where-Object { $PSItem -notin "WhatIf", "Confirm" }
             $actualParameters | Should -BeIn $expectedParameters
             $expectedParameters | Should -BeIn $actualParameters

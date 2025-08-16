@@ -11,7 +11,7 @@ $global:TestConfig = Get-TestConfig
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
-            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object {$PSItem -notin ("WhatIf", "Confirm")}
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
                 "ComputerName",
@@ -32,8 +32,8 @@ Describe $CommandName -Tag UnitTests {
 
     Context "Validate input" {
         It "Cannot resolve hostname of computer" {
-            Mock Resolve-DbaNetworkName {$null}
-            {Get-DbaService -ComputerName "DoesNotExist142" -WarningAction Stop 3> $null} | Should -Throw
+            Mock Resolve-DbaNetworkName { $null }
+            { Get-DbaService -ComputerName "DoesNotExist142" -WarningAction Stop 3> $null } | Should -Throw
         }
     }
 }
@@ -67,7 +67,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "sets startup mode of the service to 'Manual'" {
             $service = Get-DbaService -ComputerName $TestConfig.instance2 -Type Agent -InstanceName $instanceName
-            {$service.ChangeStartMode("Manual")} | Should -Not -Throw
+            { $service.ChangeStartMode("Manual") } | Should -Not -Throw
         }
 
         It "verifies that startup mode of the service is 'Manual'" {
@@ -77,7 +77,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "sets startup mode of the service to 'Automatic'" {
             $service = Get-DbaService -ComputerName $TestConfig.instance2 -Type Agent -InstanceName $instanceName
-            {$service.ChangeStartMode("Automatic")} | Should -Not -Throw
+            { $service.ChangeStartMode("Automatic") } | Should -Not -Throw
         }
 
         It "verifies that startup mode of the service is 'Automatic'" {

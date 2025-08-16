@@ -85,7 +85,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
     Context "Should create the table with using DefaultExpression and DefaultString" {
-        BeforeEach {
+        It "Creates the table" {
             $map = @( )
             $map += @{
                 Name              = 'Id'
@@ -98,8 +98,6 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 Type          = 'datetime2'
                 DefaultString = '2021-12-31'
             }
-        }
-        It "Creates the table" {
             { $null = New-DbaDbTable -SqlInstance $TestConfig.instance1 -Database $dbname -Name $tablename4 -ColumnMap $map -EnableException } | Should -Not -Throw
         }
     }

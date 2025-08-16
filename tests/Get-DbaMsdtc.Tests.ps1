@@ -10,7 +10,7 @@ $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -18,9 +18,6 @@ Describe $CommandName -Tag UnitTests {
                 "Credential",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -32,11 +29,8 @@ Describe $CommandName -Tag UnitTests {
 #>
 Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
-        BeforeAll {
-            $results = Get-DbaMsdtc -ComputerName $env:COMPUTERNAME
-        }
-
         It "returns results" {
+            $results = Get-DbaMsdtc -ComputerName $env:COMPUTERNAME
             $results.DTCServiceName | Should -Not -BeNullOrEmpty
         }
     }

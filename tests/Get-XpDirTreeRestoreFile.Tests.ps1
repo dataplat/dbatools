@@ -9,7 +9,7 @@ Describe $CommandName -Tag UnitTests {
     InModuleScope dbatools {
         BeforeAll {
             #mock Connect-DbaInstance { $true }
-            mock Test-DbaPath { $true }
+            Mock Test-DbaPath { $true }
         }
 
         Context "Test Connection and User Rights" {

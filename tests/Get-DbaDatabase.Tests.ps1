@@ -146,7 +146,7 @@ Describe "$commandname Unit Tests" -Tags "UnitTests", Get-DBADatabase {
                 @{
                     dbname     = 'db1'
                     last_read  = (Get-Date).AddHours(-1)
-                    last_write = (Get-Date).AddHours(-1)
+                    last_write = (Get-Date).AddHours( - 1)
                 }
             } -ModuleName dbatools
             function Invoke-QueryRawDatabases { }

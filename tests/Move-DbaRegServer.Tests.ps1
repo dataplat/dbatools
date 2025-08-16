@@ -1,13 +1,13 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Move-DbaRegServer",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -19,9 +19,6 @@ Describe $CommandName -Tag UnitTests {
                 "InputObject",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -30,7 +27,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-        
+
         $random = Get-Random
         $srvName = "dbatoolsci-server1"
         $group = "dbatoolsci-group1"
@@ -63,12 +60,12 @@ Describe $CommandName -Tag IntegrationTests {
         $newTestGroup5 = Add-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Name $testGroupFinance
         $newServerHR = Add-DbaRegServer -SqlInstance $TestConfig.instance1 -ServerName $srvName -Name $regSrvNameHR -Group $testGroupHR
         $newServerFinance = Add-DbaRegServer -SqlInstance $TestConfig.instance1 -ServerName $srvName -Name $regSrvNameFinance -Group $testGroupHR
-        
+
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     AfterAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-        
+
         Get-DbaRegServer -SqlInstance $TestConfig.instance1 -Name $regSrvName, $regSrvName2, $regSrvName3, $regSrvNameHR, $regSrvNameFinance | Remove-DbaRegServer -Confirm:$false
         Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Group $group, $group2, $testGroupHR, $testGroupFinance | Remove-DbaRegServerGroup -Confirm:$false
     }

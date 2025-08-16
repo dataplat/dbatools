@@ -14,11 +14,8 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
 }
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
-    BeforeAll {
-        $null = New-DbaEndpoint -SqlInstance $TestConfig.instance2 -Type DatabaseMirroring -Role Partner -Name Mirroring -EnableException -Confirm:$false | Start-DbaEndpoint -EnableException -Confirm:$false
-    }
-
     It "removes an endpoint" {
+        $null = New-DbaEndpoint -SqlInstance $TestConfig.instance2 -Type DatabaseMirroring -Role Partner -Name Mirroring -EnableException -Confirm:$false | Start-DbaEndpoint -EnableException -Confirm:$false
         $results = Get-DbaEndpoint -SqlInstance $TestConfig.instance2 | Where-Object EndpointType -eq DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
         $results.Status | Should -Be 'Removed'
     }

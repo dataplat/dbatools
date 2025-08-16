@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Update-DbaInstance",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -160,17 +160,17 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
             #Mock 2017 to think CU12 is the latest patch available
             Mock -CommandName Test-DbaBuild -ModuleName dbatools -MockWith {
                 [PSCustomObject]@{
-                    "Build" = "14.0.3038"
+                    "Build"       = "14.0.3038"
                     "BuildTarget" = [version]"14.0.3045"
-                    "Compliant" = $false
-                    "NameLevel" = "2017"
-                    "SPLevel" = "RTM"
-                    "SPTarget" = "RTM"
-                    "CULevel" = 'CU11'
-                    "CUTarget" = 'CU12'
-                    "KBLevel" = "4462262"
-                    "BuildLevel" = [version]'14.0.3038'
-                    "MatchType" = "Exact"
+                    "Compliant"   = $false
+                    "NameLevel"   = "2017"
+                    "SPLevel"     = "RTM"
+                    "SPTarget"    = "RTM"
+                    "CULevel"     = 'CU11'
+                    "CUTarget"    = 'CU12'
+                    "KBLevel"     = "4462262"
+                    "BuildLevel"  = [version]'14.0.3038'
+                    "MatchType"   = "Exact"
                 }
             } -ParameterFilter { $Build -eq [version]'14.0.3038' -and $MaxBehind -eq '0CU' }
             if (-Not(Test-Path $exeDir)) {
@@ -593,16 +593,16 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
         AfterAll {
         }
         $versions = @{
-            '2005' = @{
+            '2005'   = @{
                 Mock     = { [PSCustomObject]@{ InstanceName = "LAB"; Version = [PSCustomObject]@{
                             "SqlInstance" = $null
-                            "Build" = "9.0.1399"
-                            "NameLevel" = "2005"
-                            "SPLevel" = "RTM"
-                            "CULevel" = $null
-                            "KBLevel" = $null
-                            "BuildLevel" = [version]'9.0.1399'
-                            "MatchType" = "Exact"
+                            "Build"       = "9.0.1399"
+                            "NameLevel"   = "2005"
+                            "SPLevel"     = "RTM"
+                            "CULevel"     = $null
+                            "KBLevel"     = $null
+                            "BuildLevel"  = [version]'9.0.1399'
+                            "MatchType"   = "Exact"
                         }
                     }
                 }
@@ -612,16 +612,16 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
                     'SP4' = 0, 3
                 }
             }
-            '2008' = @{
+            '2008'   = @{
                 Mock     = { [PSCustomObject]@{ InstanceName = "LAB"; Version = [PSCustomObject]@{
                             "SqlInstance" = $null
-                            "Build" = "10.0.1600"
-                            "NameLevel" = "2008"
-                            "SPLevel" = "RTM"
-                            "CULevel" = $null
-                            "KBLevel" = $null
-                            "BuildLevel" = [version]'10.0.1600'
-                            "MatchType" = "Exact"
+                            "Build"       = "10.0.1600"
+                            "NameLevel"   = "2008"
+                            "SPLevel"     = "RTM"
+                            "CULevel"     = $null
+                            "KBLevel"     = $null
+                            "BuildLevel"  = [version]'10.0.1600'
+                            "MatchType"   = "Exact"
                         }
                     }
                 }
@@ -636,13 +636,13 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
             '2008R2' = @{
                 Mock     = { [PSCustomObject]@{ InstanceName = "LAB"; Version = [PSCustomObject]@{
                             "SqlInstance" = $null
-                            "Build" = "10.50.1600"
-                            "NameLevel" = "2008R2"
-                            "SPLevel" = "RTM"
-                            "CULevel" = $null
-                            "KBLevel" = $null
-                            "BuildLevel" = [version]'10.50.1600'
-                            "MatchType" = "Exact"
+                            "Build"       = "10.50.1600"
+                            "NameLevel"   = "2008R2"
+                            "SPLevel"     = "RTM"
+                            "CULevel"     = $null
+                            "KBLevel"     = $null
+                            "BuildLevel"  = [version]'10.50.1600'
+                            "MatchType"   = "Exact"
                         }
                     }
                 }
@@ -653,16 +653,16 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
                     'SP3' = 0
                 }
             }
-            '2012' = @{
+            '2012'   = @{
                 Mock     = { [PSCustomObject]@{ InstanceName = "LAB"; Version = [PSCustomObject]@{
                             "SqlInstance" = $null
-                            "Build" = "11.0.2100"
-                            "NameLevel" = "2012"
-                            "SPLevel" = "RTM"
-                            "CULevel" = $null
-                            "KBLevel" = $null
-                            "BuildLevel" = [version]'10.0.2100'
-                            "MatchType" = "Exact"
+                            "Build"       = "11.0.2100"
+                            "NameLevel"   = "2012"
+                            "SPLevel"     = "RTM"
+                            "CULevel"     = $null
+                            "KBLevel"     = $null
+                            "BuildLevel"  = [version]'10.0.2100'
+                            "MatchType"   = "Exact"
                         }
                     }
                 }
@@ -674,16 +674,16 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
                     'SP4' = 0
                 }
             }
-            '2014' = @{
+            '2014'   = @{
                 Mock     = { [PSCustomObject]@{ InstanceName = "LAB"; Version = [PSCustomObject]@{
                             "SqlInstance" = $null
-                            "Build" = "12.0.2000"
-                            "NameLevel" = "2014"
-                            "SPLevel" = "RTM"
-                            "CULevel" = $null
-                            "KBLevel" = $null
-                            "BuildLevel" = [version]'12.0.2000'
-                            "MatchType" = "Exact"
+                            "Build"       = "12.0.2000"
+                            "NameLevel"   = "2014"
+                            "SPLevel"     = "RTM"
+                            "CULevel"     = $null
+                            "KBLevel"     = $null
+                            "BuildLevel"  = [version]'12.0.2000'
+                            "MatchType"   = "Exact"
                         }
                     }
                 }
@@ -694,16 +694,16 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
                     'SP3' = 0
                 }
             }
-            '2016' = @{
+            '2016'   = @{
                 Mock     = { [PSCustomObject]@{ InstanceName = "LAB"; Version = [PSCustomObject]@{
                             "SqlInstance" = $null
-                            "Build" = "13.0.1601"
-                            "NameLevel" = "2016"
-                            "SPLevel" = "RTM"
-                            "CULevel" = $null
-                            "KBLevel" = $null
-                            "BuildLevel" = [version]'13.0.1601'
-                            "MatchType" = "Exact"
+                            "Build"       = "13.0.1601"
+                            "NameLevel"   = "2016"
+                            "SPLevel"     = "RTM"
+                            "CULevel"     = $null
+                            "KBLevel"     = $null
+                            "BuildLevel"  = [version]'13.0.1601'
+                            "MatchType"   = "Exact"
                         }
                     }
                 }
@@ -713,16 +713,16 @@ Describe "$CommandName Unit Tests" -Tag UnitTests {
                     'SP2' = 0, 4
                 }
             }
-            '2017' = @{
+            '2017'   = @{
                 Mock     = { [PSCustomObject]@{ InstanceName = "LAB"; Version = [PSCustomObject]@{
                             "SqlInstance" = $null
-                            "Build" = "14.0.1000"
-                            "NameLevel" = "2017"
-                            "SPLevel" = "RTM"
-                            "CULevel" = $null
-                            "KBLevel" = $null
-                            "BuildLevel" = [version]'14.0.1000'
-                            "MatchType" = "Exact"
+                            "Build"       = "14.0.1000"
+                            "NameLevel"   = "2017"
+                            "SPLevel"     = "RTM"
+                            "CULevel"     = $null
+                            "KBLevel"     = $null
+                            "BuildLevel"  = [version]'14.0.1000'
+                            "MatchType"   = "Exact"
                         }
                     }
                 }
