@@ -29,7 +29,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -44,9 +44,7 @@ Describe $CommandName -Tag IntegrationTests {
                 "Force",
                 "EnableException"
             )
-        }
 
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }

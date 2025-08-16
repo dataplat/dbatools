@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Start-DbaMigration",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -10,7 +10,7 @@ $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -40,9 +40,6 @@ Describe $CommandName -Tag UnitTests {
                 "MasterKeyPassword",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -131,12 +128,12 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When using backup restore method" {
         BeforeAll {
             $splatMigration = @{
-                Force       = $true
-                Source      = $TestConfig.instance2
-                Destination = $TestConfig.instance3
+                Force         = $true
+                Source        = $TestConfig.instance2
+                Destination   = $TestConfig.instance3
                 BackupRestore = $true
-                SharedPath  = $backupPath
-                Exclude     = "Logins", "SpConfigure", "SysDbUserObjects", "AgentServer", "CentralManagementServer", "ExtendedEvents", "PolicyManagement", "ResourceGovernor", "Endpoints", "ServerAuditSpecifications", "Audits", "LinkedServers", "SystemTriggers", "DataCollector", "DatabaseMail", "BackupDevices", "Credentials"
+                SharedPath    = $backupPath
+                Exclude       = "Logins", "SpConfigure", "SysDbUserObjects", "AgentServer", "CentralManagementServer", "ExtendedEvents", "PolicyManagement", "ResourceGovernor", "Endpoints", "ServerAuditSpecifications", "Audits", "LinkedServers", "SystemTriggers", "DataCollector", "DatabaseMail", "BackupDevices", "Credentials"
             }
             $migrationResults = Start-DbaMigration @splatMigration
         }
@@ -155,7 +152,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should retain database properties after migration" {
             $sourceDbs = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $startmigrationrestoredb2
             $destDbs = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $startmigrationrestoredb2
-            
+
             $sourceDbs.Name | Should -Not -BeNullOrEmpty
             $destDbs.Name | Should -Not -BeNullOrEmpty
             # Compare database properties
@@ -170,13 +167,13 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             # Create backups first
             $backupResults = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeSystem | Backup-DbaDatabase -BackupDirectory $backupPath
-            
+
             $splatLastBackup = @{
-                Force       = $true
-                Source      = $TestConfig.instance2
-                Destination = $TestConfig.instance3
+                Force         = $true
+                Source        = $TestConfig.instance2
+                Destination   = $TestConfig.instance3
                 UseLastBackup = $true
-                Exclude     = "Logins", "SpConfigure", "SysDbUserObjects", "AgentServer", "CentralManagementServer", "ExtendedEvents", "PolicyManagement", "ResourceGovernor", "Endpoints", "ServerAuditSpecifications", "Audits", "LinkedServers", "SystemTriggers", "DataCollector", "DatabaseMail", "BackupDevices", "Credentials", "StartupProcedures"
+                Exclude       = "Logins", "SpConfigure", "SysDbUserObjects", "AgentServer", "CentralManagementServer", "ExtendedEvents", "PolicyManagement", "ResourceGovernor", "Endpoints", "ServerAuditSpecifications", "Audits", "LinkedServers", "SystemTriggers", "DataCollector", "DatabaseMail", "BackupDevices", "Credentials", "StartupProcedures"
             }
             $lastBackupResults = Start-DbaMigration @splatLastBackup
         }
@@ -195,7 +192,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should retain database properties after migration" {
             $sourceDbs = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $startmigrationrestoredb2
             $destDbs = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $startmigrationrestoredb2
-            
+
             $sourceDbs.Name | Should -Not -BeNullOrEmpty
             $destDbs.Name | Should -Not -BeNullOrEmpty
             # Compare database properties

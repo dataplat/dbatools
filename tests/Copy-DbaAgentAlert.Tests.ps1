@@ -7,7 +7,7 @@ param(
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -21,9 +21,6 @@ Describe $CommandName -Tag UnitTests {
                 "Force",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -35,9 +32,9 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
 
         # Set variables for test alerts and operator
-        $alert1        = "dbatoolsci test alert"
-        $alert2        = "dbatoolsci test alert 2"
-        $operatorName  = "Dan the man Levitan"
+        $alert1 = "dbatoolsci test alert"
+        $alert2 = "dbatoolsci test alert 2"
+        $operatorName = "Dan the man Levitan"
         $operatorEmail = "levitan@dbatools.io"
 
         # Connect to instance and create test objects

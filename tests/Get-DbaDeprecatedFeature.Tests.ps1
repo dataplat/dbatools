@@ -36,11 +36,8 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Gets Deprecated Features" {
-        BeforeAll {
-            $deprecatedResults = Get-DbaDeprecatedFeature -SqlInstance $TestConfig.instance1
-        }
-
         It "Gets results" {
+            $deprecatedResults = Get-DbaDeprecatedFeature -SqlInstance $TestConfig.instance1
             $deprecatedResults.DeprecatedFeature | Should -Contain "sysdatabases"
         }
     }

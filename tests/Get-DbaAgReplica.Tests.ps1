@@ -7,7 +7,7 @@ param(
 
 Describe $CommandName -Tag UnitTests {
     Context "Validate parameters" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -18,9 +18,6 @@ Describe $CommandName -Tag UnitTests {
                 "InputObject",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -32,7 +29,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Set variables. They are available in all the It blocks.
-        $agName     = "dbatoolsci_agroup"
+        $agName = "dbatoolsci_agroup"
         $splatNewAg = @{
             Primary      = $TestConfig.instance3
             Name         = $agName
@@ -40,7 +37,7 @@ Describe $CommandName -Tag IntegrationTests {
             FailoverMode = "Manual"
             Certificate  = "dbatoolsci_AGCert"
         }
-        $ag          = New-DbaAvailabilityGroup @splatNewAg
+        $ag = New-DbaAvailabilityGroup @splatNewAg
         $replicaName = $ag.PrimaryReplica
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.

@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Invoke-DbaAdvancedUpdate",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -13,25 +13,25 @@ $exeDir = "C:\Temp\dbatools_$CommandName"
 Describe $CommandName -Tag UnitTests {
     BeforeAll {
         # Prevent the functions from executing dangerous stuff and getting right responses where needed
-        Mock -CommandName Invoke-Program -MockWith { [pscustomobject]@{ Successful = $true; ExitCode = [uint32[]]3010 } } -ModuleName dbatools
+        Mock -CommandName Invoke-Program -MockWith { [PSCustomObject]@{ Successful = $true; ExitCode = [uint32[]]3010 } } -ModuleName dbatools
         Mock -CommandName Test-PendingReboot -MockWith { $false } -ModuleName dbatools
         Mock -CommandName Test-ElevationRequirement -MockWith { $null } -ModuleName dbatools
         Mock -CommandName Restart-Computer -MockWith { $null } -ModuleName dbatools
         Mock -CommandName Register-RemoteSessionConfiguration -ModuleName dbatools -MockWith {
-            [pscustomobject]@{ "Name" = "dbatoolsInstallSqlServerUpdate" ; Successful = $true ; Status = "Dummy" }
+            [PSCustomObject]@{ "Name" = "dbatoolsInstallSqlServerUpdate" ; Successful = $true ; Status = "Dummy" }
         }
         Mock -CommandName Unregister-RemoteSessionConfiguration -ModuleName dbatools -MockWith {
-            [pscustomobject]@{ "Name" = "dbatoolsInstallSqlServerUpdate" ; Successful = $true ; Status = "Dummy" }
+            [PSCustomObject]@{ "Name" = "dbatoolsInstallSqlServerUpdate" ; Successful = $true ; Status = "Dummy" }
         }
-        Mock -CommandName Get-DbaDiskSpace -MockWith { [pscustomobject]@{ Name = "C:\"; Free = 1 } } -ModuleName dbatools
+        Mock -CommandName Get-DbaDiskSpace -MockWith { [PSCustomObject]@{ Name = "C:\"; Free = 1 } } -ModuleName dbatools
     }
     BeforeEach {
-        $singleAction = [pscustomobject]@{
+        $singleAction = [PSCustomObject]@{
             ComputerName  = $env:COMPUTERNAME
             MajorVersion  = "2017"
             Build         = "14.0.3038"
             Architecture  = "x64"
-            TargetVersion = [pscustomobject]@{
+            TargetVersion = [PSCustomObject]@{
                 "SqlInstance" = $null
                 "Build"       = "14.0.3045"
                 "NameLevel"   = "2017"
@@ -53,12 +53,12 @@ Describe $CommandName -Tag UnitTests {
             Log           = $null
         }
         $doubleAction = @(
-            [pscustomobject]@{
+            [PSCustomObject]@{
                 ComputerName  = $env:COMPUTERNAME
                 MajorVersion  = "2008"
                 Build         = "10.0.4279"
                 Architecture  = "x64"
-                TargetVersion = [pscustomobject]@{
+                TargetVersion = [PSCustomObject]@{
                     "SqlInstance" = $null
                     "Build"       = "10.0.5500"
                     "NameLevel"   = "2008"
@@ -79,20 +79,20 @@ Describe $CommandName -Tag UnitTests {
                 ExitCode      = $null
                 Log           = $null
             },
-            [pscustomobject]@{
+            [PSCustomObject]@ {
                 ComputerName  = $env:COMPUTERNAME
                 MajorVersion  = "2008"
                 Build         = "10.0.5500"
                 Architecture  = "x64"
-                TargetVersion = [pscustomobject]@{
+                TargetVersion = [PSCustomObject]@ {
                     "SqlInstance" = $null
-                    "Build"       = "10.0.5794"
-                    "NameLevel"   = "2008"
-                    "SPLevel"     = "SP3"
-                    "CULevel"     = "CU7"
-                    "KBLevel"     = "2738350"
-                    "BuildLevel"  = [version]"10.0.5794"
-                    "MatchType"   = "Exact"
+                    "Build" = "10.0.5794"
+                    "NameLevel" = "2008"
+                    "SPLevel" = "SP3"
+                    "CULevel" = "CU7"
+                    "KBLevel" = "2738350"
+                    "BuildLevel" = [version]"10.0.5794"
+                    "MatchType" = "Exact"
                 }
                 TargetLevel   = "SP3CU7"
                 KB            = "2738350"
@@ -108,7 +108,7 @@ Describe $CommandName -Tag UnitTests {
         )
     }
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -122,9 +122,6 @@ Describe $CommandName -Tag UnitTests {
                 "NoPendingRenameCheck",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -136,7 +133,7 @@ Describe $CommandName -Tag UnitTests {
                 if ($ArgumentList[0] -like "/x:*" -and $ArgumentList[1] -eq "/quiet") { return $true }
             }
             Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter {
-                write-host $ArgumentList
+                Write-Host $ArgumentList
                 if ($ArgumentList -contains "/foo" -and $ArgumentList -contains "/quiet") { return $true }
             }
 
@@ -182,7 +179,7 @@ Describe $CommandName -Tag UnitTests {
     Context "Negative tests" {
         It "fails when update execution has failed" {
             #override default mock
-            Mock -CommandName Invoke-Program -MockWith { [pscustomobject]@{ Successful = $false; ExitCode = 12345 } } -ModuleName dbatools
+            Mock -CommandName Invoke-Program -MockWith { [PSCustomObject]@{ Successful = $false; ExitCode = 12345 } } -ModuleName dbatools
             { Invoke-DbaAdvancedUpdate -ComputerName $env:COMPUTERNAME -EnableException -Action $singleAction } | Should -Throw -ExpectedMessage "*failed with exit code 12345*"
             $result = Invoke-DbaAdvancedUpdate -ComputerName $env:COMPUTERNAME -Action $singleAction -WarningVariable warVar 3>$null
             $result | Should -Not -BeNullOrEmpty
@@ -196,7 +193,7 @@ Describe $CommandName -Tag UnitTests {
             $result.ExtractPath | Should -BeLike "*\dbatools_KB*Extract_*"
             $warVar | Should -BeLike "*failed with exit code 12345*"
             #revert default mock
-            Mock -CommandName Invoke-Program -MockWith { [pscustomobject]@{ Successful = $true } } -ModuleName dbatools
+            Mock -CommandName Invoke-Program -MockWith { [PSCustomObject]@{ Successful = $true } } -ModuleName dbatools
         }
     }
 }

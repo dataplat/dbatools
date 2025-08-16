@@ -40,7 +40,7 @@ Describe $CommandName -Tag IntegrationTests {
         $server = Connect-DbaInstance @splatConnection
         $server.Query("DBCC CHECKDB")
         $dbname = "dbatoolsci_]_$(Get-Random)"
-        
+
         $splatDatabase = @{
             SqlInstance = $TestConfig.instance1
             Name        = $dbname
@@ -86,7 +86,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $serverConnection = Connect-DbaInstance -SqlInstance $TestConfig.instance1
             $serverPipeResults = $serverConnection | Get-DbaLastGoodCheckDb -Database $dbname, master
-            
+
             $databases = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname, master
             $databasePipeResults = $databases | Get-DbaLastGoodCheckDb
         }

@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Sync-DbaLoginPermission",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -10,7 +10,7 @@ $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -22,9 +22,6 @@ Describe $CommandName -Tag UnitTests {
                 "ExcludeLogin",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -34,7 +31,7 @@ Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
-        
+
         $tempguid = [guid]::newguid()
         $DBUserName = "dbatoolssci_$($tempguid.guid)"
         $CreateTestUser = @"
@@ -61,7 +58,7 @@ CREATE LOGIN [$DBUserName]
     Context "Command execution and functionality" {
 
         It "Should not have the user permissions of $DBUserName" {
-            $permissionsBefore = Get-DbaUserPermission -SqlInstance $TestConfig.instance3 -Database master | Where-object {$_.member -eq $DBUserName}
+            $permissionsBefore = Get-DbaUserPermission -SqlInstance $TestConfig.instance3 -Database master | Where-Object { $_.member -eq $DBUserName }
             $permissionsBefore | Should -BeNullOrEmpty
         }
 
@@ -74,7 +71,7 @@ CREATE LOGIN [$DBUserName]
         }
 
         It "Should have copied the user permissions of $DBUserName" {
-            $permissionsAfter = Get-DbaUserPermission -SqlInstance $TestConfig.instance3 -Database master | Where-object {$_.member -eq $DBUserName -and $_.permission -eq 'VIEW ANY DEFINITION' }
+            $permissionsAfter = Get-DbaUserPermission -SqlInstance $TestConfig.instance3 -Database master | Where-Object { $_.member -eq $DBUserName -and $_.permission -eq 'VIEW ANY DEFINITION' }
             $permissionsAfter.member | Should -Be $DBUserName
         }
     }

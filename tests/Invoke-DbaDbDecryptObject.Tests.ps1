@@ -1,13 +1,13 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Invoke-DbaDbDecryptObject",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -19,9 +19,6 @@ Describe $CommandName -Tag UnitTests {
                 "SqlCredential",
                 "SqlInstance"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -305,10 +302,10 @@ SELECT 'áéíñóú¡¿' as SampleUTF8;"
     Context "Decrypt all encrypted objects and use a destination folder" {
         It -Skip:$true "Should be successful" {
             $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.instance1 -Database $dbname -ExportDestination .
-            @($result | Where-Object { $_.Type -eq 'StoredProcedure' }).Count       | Should -Be 1
-            @($result | Where-Object { $_.Type -eq 'Trigger' }).Count               | Should -Be 1
-            @($result | Where-Object { $_.Type -eq 'UserDefinedFunction' }).Count   | Should -Be 3
-            @($result | Where-Object { $_.Type -eq 'View' }).Count                  | Should -Be 4
+            @($result | Where-Object { $_.Type -eq 'StoredProcedure' }).Count | Should -Be 1
+            @($result | Where-Object { $_.Type -eq 'Trigger' }).Count | Should -Be 1
+            @($result | Where-Object { $_.Type -eq 'UserDefinedFunction' }).Count | Should -Be 3
+            @($result | Where-Object { $_.Type -eq 'View' }).Count | Should -Be 4
         }
     }
 

@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Remove-DbaCredential",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -10,7 +10,7 @@ $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -23,9 +23,6 @@ Describe $CommandName -Tag UnitTests {
                 "InputObject",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -132,15 +129,15 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-DbaCredential @splatGetCredential2) | Should -Not -BeNullOrEmpty
 
             $splatGetExcluded = @{
-                SqlInstance        = $TestConfig.instance2
+                SqlInstance       = $TestConfig.instance2
                 ExcludeCredential = $credentialName2
             }
             (Get-DbaCredential @splatGetExcluded) | Should -Not -BeNullOrEmpty
 
             $splatRemoveExcluded = @{
-                SqlInstance        = $TestConfig.instance2
+                SqlInstance       = $TestConfig.instance2
                 ExcludeCredential = $credentialName2
-                Confirm            = $false
+                Confirm           = $false
             }
             Remove-DbaCredential @splatRemoveExcluded
 

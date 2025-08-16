@@ -7,7 +7,7 @@ param(
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -19,9 +19,6 @@ Describe $CommandName -Tag UnitTests {
                 "Force",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -55,7 +52,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "When changing FileStream Level" {
-        BeforeAll {
+        It "Should change the FileStream Level to the new value" {
             $newLevel = ($originalFileStream.InstanceAccessLevel + 1) % 3 #Move it on one, but keep it less than 4 with modulo division
             $results = Enable-DbaFilestream -SqlInstance $TestConfig.instance1 -FileStreamLevel $newLevel -WarningAction SilentlyContinue
         }

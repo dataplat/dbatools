@@ -10,7 +10,7 @@ $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -46,9 +46,6 @@ Describe $CommandName -Tag UnitTests {
                 "KeepCDC",
                 "KeepReplication"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -119,7 +116,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Support databases are excluded when AllDatabase selected" {
-        BeforeAll {
+        It "Support databases should not be migrated" {
             $SupportDbs = @("ReportServer", "ReportServerTempDB", "distribution", "SSISDB")
             $splatCopyAll = @{
                 Source        = $TestConfig.instance2
@@ -129,9 +126,6 @@ Describe $CommandName -Tag IntegrationTests {
                 UseLastBackup = $true
             }
             $results = Copy-DbaDatabase @splatCopyAll
-        }
-
-        It "Support databases should not be migrated" {
             $SupportDbs | Should -Not -BeIn $results.Name
         }
     }

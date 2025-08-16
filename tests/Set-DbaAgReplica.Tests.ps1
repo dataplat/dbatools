@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName = "Pester"; ModuleVersion = "5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName   = "dbatools",
     $CommandName = "Set-DbaAgReplica",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -10,8 +10,8 @@ $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
-            $hasParameters      = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
                 "SqlInstance",
@@ -31,9 +31,6 @@ Describe $CommandName -Tag UnitTests {
                 "InputObject",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -59,7 +56,7 @@ Describe $CommandName -Tag IntegrationTests {
             Certificate  = "dbatoolsci_AGCert"
             Confirm      = $false
         }
-        $ag          = New-DbaAvailabilityGroup @splatAvailabilityGroup
+        $ag = New-DbaAvailabilityGroup @splatAvailabilityGroup
         $replicaName = $ag.PrimaryReplica
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.

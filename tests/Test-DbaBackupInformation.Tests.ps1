@@ -20,7 +20,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     InModuleScope dbatools {
         Context "Everything as it should" {
-            $BackupHistory = Import-CliXml $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\CleanFormatDbaInformation.xml
+            $BackupHistory = Import-Clixml $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\CleanFormatDbaInformation.xml
             $BackupHistory = $BackupHistory | Format-DbaBackupInformation
             Mock Connect-DbaInstance -MockWith {
                 $obj = [PSCustomObject]@{
@@ -67,7 +67,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             }
         }
         Context "Not being able to see backups is bad" {
-            $BackupHistory = Import-CliXml $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\CleanFormatDbaInformation.xml
+            $BackupHistory = Import-Clixml $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\CleanFormatDbaInformation.xml
             $BackupHistory = $BackupHistory | Format-DbaBackupInformation
             Mock Connect-DbaInstance -MockWith {
                 $obj = [PSCustomObject]@{
@@ -113,7 +113,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             }
         }
         Context "Multiple source dbs for restore is bad" {
-            $BackupHistory = Import-CliXml $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\CleanFormatDbaInformation.xml
+            $BackupHistory = Import-Clixml $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\CleanFormatDbaInformation.xml
             $BackupHistory = $BackupHistory | Format-DbaBackupInformation
             $BackupHistory[1].OriginalDatabase = 'Error'
             Mock Connect-DbaInstance -MockWith {
@@ -160,7 +160,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             }
         }
         Context "Fail if Destination db exists" {
-            $BackupHistory = Import-CliXml $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\CleanFormatDbaInformation.xml
+            $BackupHistory = Import-Clixml $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\CleanFormatDbaInformation.xml
             $BackupHistory = $BackupHistory | Format-DbaBackupInformation
             $BackupHistory[1].OriginalDatabase = 'Error'
             Mock Connect-DbaInstance -MockWith {
@@ -207,7 +207,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             }
         }
         Context "Pass if Destination db exists and WithReplace set" {
-            $BackupHistory = Import-CliXml $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\CleanFormatDbaInformation.xml
+            $BackupHistory = Import-Clixml $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\CleanFormatDbaInformation.xml
             $BackupHistory = $BackupHistory | Format-DbaBackupInformation
             $BackupHistory[1].OriginalDatabase = 'Error'
             Mock Connect-DbaInstance -MockWith {

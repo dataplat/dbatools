@@ -10,7 +10,7 @@ $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -19,9 +19,6 @@ Describe $CommandName -Tag UnitTests {
                 "StartupProcedure",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -52,33 +49,24 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "When retrieving all startup procedures" {
-        BeforeAll {
-            $result = Get-DbaStartupProcedure -SqlInstance $TestConfig.instance2
-        }
-
         It "Returns correct results" {
+            $result = Get-DbaStartupProcedure -SqlInstance $TestConfig.instance2
             $result.Schema -eq "dbo" | Should -Be $true
             $result.Name -eq "StartUpProc$random" | Should -Be $true
         }
     }
 
     Context "When filtering by StartupProcedure parameter" {
-        BeforeAll {
-            $result = Get-DbaStartupProcedure -SqlInstance $TestConfig.instance2 -StartupProcedure $startupProc
-        }
-
         It "Returns correct results" {
+            $result = Get-DbaStartupProcedure -SqlInstance $TestConfig.instance2 -StartupProcedure $startupProc
             $result.Schema -eq "dbo" | Should -Be $true
             $result.Name -eq "StartUpProc$random" | Should -Be $true
         }
     }
 
     Context "When filtering by incorrect StartupProcedure parameter" {
-        BeforeAll {
-            $result = Get-DbaStartupProcedure -SqlInstance $TestConfig.instance2 -StartupProcedure "Not.Here"
-        }
-
         It "Returns no results" {
+            $result = Get-DbaStartupProcedure -SqlInstance $TestConfig.instance2 -StartupProcedure "Not.Here"
             $null -eq $result | Should -Be $true
         }
     }
