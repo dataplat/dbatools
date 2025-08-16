@@ -37,9 +37,6 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
 
-        # Disable HADR after test to restore original state
-        Disable-DbaAgHadr -SqlInstance $TestConfig.instance3 -Force -ErrorAction SilentlyContinue
-
         # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 

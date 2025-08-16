@@ -42,10 +42,9 @@ Describe $CommandName -Tag IntegrationTests {
         # We'll create the master key if it doesn't exist, and track files created for cleanup.
 
         # Set variables. They are available in all the It blocks.
-        $testInstance = $TestConfig.instance1
-        $testDatabase = "tempdb"
-        $masterKeyPass = ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force
-        $filesToRemove = @()
+        $testInstance    = $TestConfig.instance1
+        $testDatabase    = "tempdb"
+        $masterKeyPass   = ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force
 
         # Create the objects.
         if (-not (Get-DbaDbMasterKey -SqlInstance $testInstance -Database $testDatabase)) {
@@ -71,9 +70,6 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Remove the backup directory.
         Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
-
-        # Remove any tracked files.
-        Remove-Item -Path $filesToRemove -ErrorAction SilentlyContinue
 
         # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }

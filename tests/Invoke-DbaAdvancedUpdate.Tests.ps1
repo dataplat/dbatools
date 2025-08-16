@@ -79,12 +79,12 @@ Describe $CommandName -Tag UnitTests {
                 ExitCode      = $null
                 Log           = $null
             },
-            [PSCustomObject]@ {
+            [PSCustomObject]@{
                 ComputerName  = $env:COMPUTERNAME
                 MajorVersion  = "2008"
                 Build         = "10.0.5500"
                 Architecture  = "x64"
-                TargetVersion = [PSCustomObject]@ {
+                TargetVersion = [PSCustomObject]@{
                     "SqlInstance" = $null
                     "Build" = "10.0.5794"
                     "NameLevel" = "2008"

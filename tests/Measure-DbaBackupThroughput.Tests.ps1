@@ -27,30 +27,39 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # For all the backups that we want to clean up after the test, we create a directory that we can delete at the end.
+        # Other files can be written there as well, maybe we change the name of that variable later. But for now we focus on backups.
+        $backupPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+        $null = New-Item -Path $backupPath -ItemType Directory
+        $PSDefaultParameterValues["Backup-DbaDatabase:Path"] = $backupPath
+
+        $randomSuffix = Get-Random
+        $testDb = "dbatoolsci_measurethruput$randomSuffix"
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $testDb | Backup-DbaDatabase
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $testDb
+
+        # Remove the backup directory.
+        Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
+    }
+
     Context "Returns output for single database" {
         It "Should return results" {
-            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            $null = Get-DbaProcess -SqlInstance $TestConfig.instance2 | Where-Object Program -Match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
-            $randomSuffix = Get-Random
-            $testDb = "dbatoolsci_measurethruput$randomSuffix"
-            $backupFilePath = "$($TestConfig.Temp)\$($testDb).bak"
-            $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $testDb | Backup-DbaDatabase -FilePath $backupFilePath
-
-            # Get the test results for use in It blocks
             $testResults = Measure-DbaBackupThroughput -SqlInstance $TestConfig.instance2 -Database $testDb
 
-            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-
-            AfterAll {
-                # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-                $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-                $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $testDb -Confirm:$false
-                Remove-Item -Path $backupFilePath -ErrorAction SilentlyContinue
-            }
+            $testResults | Should -Not -BeNullOrEmpty
         }
     }
 }

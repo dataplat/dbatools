@@ -5,9 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         BeforeAll {
@@ -36,76 +33,64 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $splatInstance = @{
-            SqlInstance     = $TestConfig.instance2
-            EnableException = $true
-        }
-
-        $serverInstance = Connect-DbaInstance @splatInstance
+        $serverInstance = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $testUser1 = "dbatoolssci_user1_$(Get-Random)"
         $testUser2 = "dbatoolssci_user2_$(Get-Random)"
         $testRole = "dbatoolssci_role_$(Get-Random)"
         $testDatabase = "dbatoolsci_$(Get-Random)"
 
         $splatLogin1 = @{
-            SqlInstance     = $TestConfig.instance2
-            Login           = $testUser1
-            Password        = ("Password1234!" | ConvertTo-SecureString -AsPlainText -Force)
-            EnableException = $true
+            SqlInstance = $TestConfig.instance2
+            Login       = $testUser1
+            Password    = ("Password1234!" | ConvertTo-SecureString -AsPlainText -Force)
         }
         $null = New-DbaLogin @splatLogin1
 
         $splatLogin2 = @{
-            SqlInstance     = $TestConfig.instance2
-            Login           = $testUser2
-            Password        = ("Password1234!" | ConvertTo-SecureString -AsPlainText -Force)
-            EnableException = $true
+            SqlInstance = $TestConfig.instance2
+            Login       = $testUser2
+            Password    = ("Password1234!" | ConvertTo-SecureString -AsPlainText -Force)
         }
         $null = New-DbaLogin @splatLogin2
 
         $splatDatabase = @{
-            SqlInstance     = $TestConfig.instance2
-            Name            = $testDatabase
-            Owner           = "sa"
-            EnableException = $true
+            SqlInstance = $TestConfig.instance2
+            Name        = $testDatabase
+            Owner       = "sa"
         }
         $null = New-DbaDatabase @splatDatabase
 
         $splatDbUser1 = @{
-            SqlInstance     = $TestConfig.instance2
-            Database        = $testDatabase
-            Login           = $testUser1
-            Username        = "User1"
-            EnableException = $true
+            SqlInstance = $TestConfig.instance2
+            Database    = $testDatabase
+            Login       = $testUser1
+            Username    = "User1"
         }
         $null = New-DbaDbUser @splatDbUser1
 
         $splatDbUser2 = @{
-            SqlInstance     = $TestConfig.instance2
-            Database        = $testDatabase
-            Login           = $testUser2
-            Username        = "User2"
-            EnableException = $true
+            SqlInstance = $TestConfig.instance2
+            Database    = $testDatabase
+            Login       = $testUser2
+            Username    = "User2"
         }
         $null = New-DbaDbUser @splatDbUser2
 
         $splatDbUser1Msdb = @{
-            SqlInstance     = $TestConfig.instance2
-            Database        = "msdb"
-            Login           = $testUser1
-            Username        = "User1"
-            IncludeSystem   = $true
-            EnableException = $true
+            SqlInstance   = $TestConfig.instance2
+            Database      = "msdb"
+            Login         = $testUser1
+            Username      = "User1"
+            IncludeSystem = $true
         }
         $null = New-DbaDbUser @splatDbUser1Msdb
 
         $splatDbUser2Msdb = @{
-            SqlInstance     = $TestConfig.instance2
-            Database        = "msdb"
-            Login           = $testUser2
-            Username        = "User2"
-            IncludeSystem   = $true
-            EnableException = $true
+            SqlInstance   = $TestConfig.instance2
+            Database      = "msdb"
+            Login         = $testUser2
+            Username      = "User2"
+            IncludeSystem = $true
         }
         $null = New-DbaDbUser @splatDbUser2Msdb
 
@@ -124,12 +109,12 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $cleanupServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2 -EnableException
-        $null = $cleanupServer.Query("DROP USER User1", "msdb") -ErrorAction SilentlyContinue
-        $null = $cleanupServer.Query("DROP USER User2", "msdb") -ErrorAction SilentlyContinue
+        $cleanupServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $null = $cleanupServer.Query("DROP USER User1", "msdb")
+        $null = $cleanupServer.Query("DROP USER User2", "msdb")
 
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $testDatabase -Confirm:$false -ErrorAction SilentlyContinue
-        Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $testUser1, $testUser2 -Confirm:$false -ErrorAction SilentlyContinue
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $testDatabase
+        Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $testUser1, $testUser2
 
         # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }

@@ -5,9 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         It "Should have the expected parameters" {
@@ -47,7 +44,6 @@ Describe $CommandName -Tag IntegrationTests {
         # Create unique temporary path for masking config files
         $tempPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
         $null = New-Item -Path $tempPath -ItemType Directory
-        $filesToCleanup = @()
 
         $dbName = "dbatoolsci_masker"
         $sql = "CREATE TABLE [dbo].[people](
@@ -102,7 +98,6 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Remove-DbaDatabase @splatRemoveDb -ErrorAction SilentlyContinue
 
         Remove-Item -Path $tempPath -Recurse -ErrorAction SilentlyContinue
-        Remove-Item -Path $filesToCleanup -ErrorAction SilentlyContinue
     }
 
     Context "Command works" {
@@ -165,7 +160,6 @@ Describe $CommandName -Tag IntegrationTests {
                 Confirm     = $false
             }
             $results = @(Invoke-DbaDbDataMasking @splatMasking)
-            $filesToCleanup += $configFile.FullName
 
             $results[0].Rows | Should -Be 2
             $results[0].Database | Should -Contain $dbName

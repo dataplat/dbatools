@@ -5,9 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Validate parameters" {
         It "Should have the expected parameters" {
@@ -58,10 +55,10 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaAgentOperator -SqlInstance $server2 -Operator $email1 -ErrorAction SilentlyContinue
-        $null = Remove-DbaAgentOperator -SqlInstance $server2 -Operator $email2 -ErrorAction SilentlyContinue
-        $null = Remove-DbaAgentOperator -SqlInstance $server2 -Operator $email3 -ErrorAction SilentlyContinue
-        $null = Remove-DbaAgentOperator -SqlInstance $server2 -Operator $email4 -ErrorAction SilentlyContinue
+        $null = Remove-DbaAgentOperator -SqlInstance $server2 -Operator $email1
+        $null = Remove-DbaAgentOperator -SqlInstance $server2 -Operator $email2
+        $null = Remove-DbaAgentOperator -SqlInstance $server2 -Operator $email3
+        $null = Remove-DbaAgentOperator -SqlInstance $server2 -Operator $email4
 
         # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }

@@ -46,7 +46,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Database    = $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8
                 Confirm     = $false
             }
-            Get-DbaDatabase @splatRemoveDb | Remove-DbaDatabase -Confirm $false
+            Get-DbaDatabase @splatRemoveDb | Remove-DbaDatabase
 
             $server.Query("CREATE DATABASE $db1")
             $server.Query("CREATE DATABASE $db2; ALTER DATABASE $db2 SET OFFLINE WITH ROLLBACK IMMEDIATE")
