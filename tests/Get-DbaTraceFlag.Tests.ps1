@@ -5,9 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         It "Should have the expected parameters" {
@@ -29,14 +26,14 @@ Describe $CommandName -Tag IntegrationTests {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $global:safeTraceFlag = 3226
-            $global:server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-            $global:startingTfs = $global:server.Query("DBCC TRACESTATUS(-1)")
-            $global:startingTfsCount = $global:startingTfs.Count
+            $safeTraceFlag = 3226
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+            $startingTfs = $server.Query("DBCC TRACESTATUS(-1)")
+            $startingTfsCount = $startingTfs.Count
 
-            if ($global:startingTfs.TraceFlag -notcontains $global:safeTraceFlag) {
-                $global:server.Query("DBCC TRACEON($global:safeTraceFlag,-1) WITH NO_INFOMSGS")
-                $global:startingTfsCount++
+            if ($startingTfs.TraceFlag -notcontains $global:safeTraceFlag) {
+                $server.Query("DBCC TRACEON($safeTraceFlag,-1) WITH NO_INFOMSGS")
+                $startingTfsCount++
             }
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
@@ -47,8 +44,8 @@ Describe $CommandName -Tag IntegrationTests {
             # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            if ($global:startingTfs.TraceFlag -notcontains $global:safeTraceFlag) {
-                $global:server.Query("DBCC TRACEOFF($global:safeTraceFlag,-1)")
+            if ($startingTfs.TraceFlag -notcontains $safeTraceFlag) {
+                $server.Query("DBCC TRACEOFF($safeTraceFlag,-1)")
             }
         }
 
@@ -59,13 +56,13 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Returns filtered results" {
-            $results = Get-DbaTraceFlag -SqlInstance $TestConfig.instance2 -TraceFlag $global:safeTraceFlag
+            $results = Get-DbaTraceFlag -SqlInstance $TestConfig.instance2 -TraceFlag $safeTraceFlag
             $results.TraceFlag.Count | Should -Be 1
         }
 
-        It "Returns following number of TFs: $($global:startingTfsCount)" {
+        It "Returns all TFs" {
             $results = Get-DbaTraceFlag -SqlInstance $TestConfig.instance2
-            $results.TraceFlag.Count | Should -Be $global:startingTfsCount
+            $results.TraceFlag.Count | Should -Be $startingTfsCount
         }
     }
 }
