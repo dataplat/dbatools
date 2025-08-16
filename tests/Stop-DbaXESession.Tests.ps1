@@ -1,19 +1,32 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName   = "dbatools",
+    $CommandName = "Stop-DbaXESession",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
+
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 $global:TestConfig = Get-TestConfig
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Session', 'AllSessions', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Session",
+                "AllSessions",
+                "InputObject",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         # Create a valid session and start it
@@ -49,12 +62,15 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $server.Query("IF EXISTS(SELECT * FROM sys.server_event_sessions WHERE name = 'dbatoolsci_session_valid') DROP EVENT SESSION [dbatoolsci_session_valid] ON SERVER;")
     }
 
-    Context "Verifying command works" {
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+    Context "Command execution and functionality" {
+        BeforeAll {
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        }
+
         It "stops the system_health session" {
             $dbatoolsciValid | Stop-DbaXESession
             $dbatoolsciValid.Refresh()
-            $dbatoolsciValid.IsRunning | Should Be $false
+            $dbatoolsciValid.IsRunning | Should -Be $false
         }
 
         It "does not change state if XE session is already stopped" {
@@ -63,13 +79,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             }
             Stop-DbaXESession -SqlInstance $server -Session $dbatoolsciValid.Name -WarningAction SilentlyContinue
             $dbatoolsciValid.Refresh()
-            $dbatoolsciValid.IsRunning | Should Be $false
+            $dbatoolsciValid.IsRunning | Should -Be $false
         }
 
         It "stops all XE Sessions except the system ones if -AllSessions is used" {
             Stop-DbaXESession $server -AllSessions -WarningAction SilentlyContinue
             $dbatoolsciValid.Refresh()
-            $dbatoolsciValid.IsRunning | Should Be $false
+            $dbatoolsciValid.IsRunning | Should -Be $false
         }
     }
 }

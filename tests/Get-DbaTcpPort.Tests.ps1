@@ -1,38 +1,58 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaTcpPort",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Credential', 'All', 'ExcludeIpv6', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Credential",
+                "All",
+                "ExcludeIpv6",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    Context "Command actually works" {
-        $results = Get-DbaTcpPort -SqlInstance $TestConfig.instance2
-        $resultsIpv6 = Get-DbaTcpPort -SqlInstance $TestConfig.instance2 -All -ExcludeIpv6
-        $resultsAll = Get-DbaTcpPort -SqlInstance $TestConfig.instance2 -All
+Describe $CommandName -Tag IntegrationTests {
+    Context "Command functionality" {
+        BeforeAll {
+            $results = Get-DbaTcpPort -SqlInstance $TestConfig.instance2
+            $resultsIpv6 = Get-DbaTcpPort -SqlInstance $TestConfig.instance2 -All -ExcludeIpv6
+            $resultsAll = Get-DbaTcpPort -SqlInstance $TestConfig.instance2 -All
+        }
 
-        It "Should Return a Result" {
+        It "Should return a result" {
             $results | Should -Not -Be $null
         }
 
-        It "has the correct properties" {
+        It "Has the correct properties" {
             $result = $results[0]
-            $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,IPAddress,Port,Static,Type'.Split(',')
-            ($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "IPAddress",
+                "Port",
+                "Static",
+                "Type"
+            )
+            ($result.PsObject.Properties.Name | Sort-Object) | Should -Be ($expectedProps | Sort-Object)
         }
 
-        It "Should Return Multiple Results" {
+        It "Should return multiple results when using All parameter" {
             $resultsAll.Count | Should -BeGreaterThan 1
         }
 
-        It "Should Exclude Ipv6 Results" {
+        It "Should exclude IPv6 results when using ExcludeIpv6 parameter" {
             $resultsAll.Count - $resultsIpv6.Count | Should -BeGreaterThan 0
         }
     }

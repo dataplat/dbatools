@@ -1,14 +1,14 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName               = "dbatools",
-    $CommandName              = [System.IO.Path]::GetFileName($PSCommandPath.Replace('.Tests.ps1', '')),
+    $ModuleName  = "dbatools",
+    $CommandName = "Add-DbaPfDataCollectorCounter",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Describe "Add-DbaPfDataCollectorCounter" -Tag "UnitTests" {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
-            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $_ -notin ('WhatIf', 'Confirm') }
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
                 "ComputerName",
@@ -19,42 +19,43 @@ Describe "Add-DbaPfDataCollectorCounter" -Tag "UnitTests" {
                 "InputObject",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "Add-DbaPfDataCollectorCounter" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $PSDefaultParameterValues['*:Confirm'] = $false
-    }
-
-    BeforeEach {
-        $null = Get-DbaPfDataCollectorSetTemplate -Template 'Long Running Queries' |
-            Import-DbaPfDataCollectorSetTemplate |
-            Get-DbaPfDataCollector |
-            Get-DbaPfDataCollectorCounter -Counter '\LogicalDisk(*)\Avg. Disk Queue Length' |
-            Remove-DbaPfDataCollectorCounter
-
-        $results = Get-DbaPfDataCollectorSet -CollectorSet 'Long Running Queries' | Get-DbaPfDataCollector |
-            Add-DbaPfDataCollectorCounter -Counter '\LogicalDisk(*)\Avg. Disk Queue Length'
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
     }
 
     AfterAll {
-        $null = Get-DbaPfDataCollectorSet -CollectorSet 'Long Running Queries' |
-            Remove-DbaPfDataCollectorSet
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When adding a counter to a data collector" {
-        It "Returns the correct DataCollectorSet" {
-            $results.DataCollectorSet | Should -Be 'Long Running Queries'
-        }
+        BeforeAll {
+            $null = Get-DbaPfDataCollectorSetTemplate -Template "Long Running Queries" |
+                Import-DbaPfDataCollectorSetTemplate |
+                Get-DbaPfDataCollector |
+                Get-DbaPfDataCollectorCounter -Counter "\LogicalDisk(*)\Avg. Disk Queue Length" |
+                Remove-DbaPfDataCollectorCounter
 
-        It "Returns the correct counter name" {
-            $results.Name | Should -Be '\LogicalDisk(*)\Avg. Disk Queue Length'
-        }
+            $results = Get-DbaPfDataCollectorSet -CollectorSet "Long Running Queries" | Get-DbaPfDataCollector |
+            Add-DbaPfDataCollectorCounter -Counter "\LogicalDisk(*)\Avg. Disk Queue Length"
     }
+
+    AfterAll {
+        $null = Get-DbaPfDataCollectorSet -CollectorSet "Long Running Queries" |
+            Remove-DbaPfDataCollectorSet -ErrorAction SilentlyContinue
+    }
+
+    It "Returns the correct DataCollectorSet" {
+        $results.DataCollectorSet | Should -Be "Long Running Queries"
+    }
+
+    It "Returns the correct counter name" {
+        $results.Name | Should -Be "\LogicalDisk(*)\Avg. Disk Queue Length"
+    }
+}
 }

@@ -25,12 +25,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
         It "does not overwrite existing " {
             $results = Install-DbaMaintenanceSolution -SqlInstance $TestConfig.instance2 -Database tempdb -WarningVariable WarnVar -WarningAction SilentlyContinue
-            $WarnVar  | Should -Match "already exists"
+            $WarnVar | Should -Match "already exists"
         }
 
         It "Continues the installation on other servers " {
             $results2 = Install-DbaMaintenanceSolution -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database tempdb -WarningAction SilentlyContinue
-            $sproc = Get-DbaDbModule -SqlInstance $TestConfig.instance3 -Database tempdb | Where-Object { $_.Name -eq "CommandExecute" }
+            $sproc = Get-DbaModule -SqlInstance $TestConfig.instance3 -Database tempdb | Where-Object { $_.Name -eq "CommandExecute" }
             $sproc | Should -Not -BeNullOrEmpty
         }
     }

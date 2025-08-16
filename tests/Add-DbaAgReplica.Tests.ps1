@@ -1,14 +1,14 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName               = "dbatools",
-    $CommandName              = [System.IO.Path]::GetFileName($PSCommandPath.Replace('.Tests.ps1', '')),
+    $ModuleName  = "dbatools",
+    $CommandName = "Add-DbaAgReplica",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Describe $CommandName -Tag "UnitTests" {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
-            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $_ -notin ('WhatIf', 'Confirm') }
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
                 "SqlInstance",
@@ -32,41 +32,54 @@ Describe $CommandName -Tag "UnitTests" {
                 "InputObject",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe $CommandName -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
+        # Explain what needs to be set up for the test:
+        # To add an availability group replica, we need an availability group to work with.
+
+        # Set variables. They are available in all the It blocks.
         $primaryAgName = "dbatoolsci_agroup"
-        $splat = @{
+
+        # Create the objects.
+        $splatPrimary = @{
             Primary      = $TestConfig.instance3
             Name         = $primaryAgName
             ClusterType  = "None"
             FailoverMode = "Manual"
             Certificate  = "dbatoolsci_AGCert"
+            Confirm      = $false
         }
-        $primaryAg = New-DbaAvailabilityGroup @splat
+        $primaryAg = New-DbaAvailabilityGroup @splatPrimary
         $replicaName = $primaryAg.PrimaryReplica
 
-        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
-        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $primaryAgName
-        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint
+        # Cleanup all created objects.
+        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $primaryAgName -Confirm:$false -ErrorAction SilentlyContinue
+        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false -ErrorAction SilentlyContinue
+
+        # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
     Context "When adding AG replicas" {
         BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
             $replicaAgName = "dbatoolsci_add_replicagroup"
             $splatRepAg = @{
                 Primary      = $TestConfig.instance3
@@ -74,28 +87,36 @@ Describe $CommandName -Tag "IntegrationTests" {
                 ClusterType  = "None"
                 FailoverMode = "Manual"
                 Certificate  = "dbatoolsci_AGCert"
+                Confirm      = $false
             }
             $replicaAg = New-DbaAvailabilityGroup @splatRepAg
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         AfterAll {
-            $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $replicaAgName
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Cleanup all created objects.
+            $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $replicaAgName -Confirm:$false -ErrorAction SilentlyContinue
         }
 
         It "Returns results with proper data" {
             $results = Get-DbaAgReplica -SqlInstance $TestConfig.instance3
             $results.AvailabilityGroup | Should -Contain $replicaAgName
-            $results.Role | Should -Contain 'Primary'
-            $results.AvailabilityMode | Should -Contain 'SynchronousCommit'
-            $results.FailoverMode | Should -Contain 'Manual'
+            $results.Role | Should -Contain "Primary"
+            $results.AvailabilityMode | Should -Contain "SynchronousCommit"
+            $results.FailoverMode | Should -Contain "Manual"
         }
 
         It "Returns just one result for a specific replica" {
             $results = Get-DbaAgReplica -SqlInstance $TestConfig.instance3 -Replica $replicaName -AvailabilityGroup $replicaAgName
             $results.AvailabilityGroup | Should -Be $replicaAgName
-            $results.Role | Should -Be 'Primary'
-            $results.AvailabilityMode | Should -Be 'SynchronousCommit'
-            $results.FailoverMode | Should -Be 'Manual'
+            $results.Role | Should -Be "Primary"
+            $results.AvailabilityMode | Should -Be "SynchronousCommit"
+            $results.FailoverMode | Should -Be "Manual"
         }
     }
 } #$TestConfig.instance2 for appveyor

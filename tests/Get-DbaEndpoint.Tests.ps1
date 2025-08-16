@@ -1,27 +1,43 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaEndpoint",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Endpoint', 'Type', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Endpoint",
+                "Type",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
-    It "gets some endpoints" {
-        $results = Get-DbaEndpoint -SqlInstance $TestConfig.instance2
-        $results.Count | Should -BeGreaterThan 1
-        $results.Name | Should -Contain 'TSQL Default TCP'
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        $global:TestConfig = Get-TestConfig
     }
-    It "gets one endpoint" {
-        $results = Get-DbaEndpoint -SqlInstance $TestConfig.instance2 -Endpoint 'TSQL Default TCP'
-        $results.Name | Should -Be 'TSQL Default TCP'
-        $results.Count | Should -Be 1
+
+    Context "When connecting to SQL Server" {
+        It "gets some endpoints" {
+            $results = @(Get-DbaEndpoint -SqlInstance $TestConfig.instance2)
+            $results.Count | Should -BeGreaterThan 1
+            $results.Name | Should -Contain "TSQL Default TCP"
+        }
+
+        It "gets one endpoint" {
+            $results = @(Get-DbaEndpoint -SqlInstance $TestConfig.instance2 -Endpoint "TSQL Default TCP")
+            $results.Name | Should -Be "TSQL Default TCP"
+            $results.Count | Should -Be 1
+        }
     }
 }

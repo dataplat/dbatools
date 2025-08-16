@@ -9,7 +9,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -21,9 +21,6 @@ Describe $CommandName -Tag UnitTests {
                 "Force",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -44,10 +41,10 @@ Describe $CommandName -Tag IntegrationTests {
         # and test copying it to the destination instance.
 
         # Set variables. They are available in all the It blocks.
-        $deviceName     = "dbatoolsci-backupdevice-$(Get-Random)"
+        $deviceName = "dbatoolsci-backupdevice-$(Get-Random)"
         $backupFileName = "$backupPath\$deviceName.bak"
-        $sourceServer   = Connect-DbaInstance -SqlInstance $TestConfig.instance1
-        $destServer     = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $sourceServer = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+        $destServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2
 
         # Create the objects.
         $sourceServer.Query("EXEC master.dbo.sp_addumpdevice @devtype = N'disk', @logicalname = N'$deviceName', @physicalname = N'$backupFileName'")

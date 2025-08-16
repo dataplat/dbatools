@@ -1,37 +1,28 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $ModuleName  = "dbatools",
+    $CommandName = "Clear-DbaPlanCache",
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Describe "Clear-DbaPlanCache" -Tag "UnitTests" {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Clear-DbaPlanCache
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
                 "SqlInstance",
                 "SqlCredential",
                 "Threshold",
                 "InputObject",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
+                "EnableException"
             )
-        }
-
-        It "Has parameter: <_>" -ForEach $expected {
-            $command | Should -HaveParameter $PSItem
-        }
-
-        It "Should have exactly the number of expected parameters ($($expected.Count))" {
-            $hasparms = $command.Parameters.Values.Name
-            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "Clear-DbaPlanCache" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     Context "When not clearing plan cache" {
         BeforeAll {
             # Make plan cache way higher than likely for a test rig
@@ -41,13 +32,13 @@ Describe "Clear-DbaPlanCache" -Tag "IntegrationTests" {
         It "Returns correct datatypes" {
             $results = Clear-DbaPlanCache -SqlInstance $TestConfig.instance1 -Threshold $threshold
             $results.Size | Should -BeOfType [dbasize]
-            $results.Status | Should -Match 'below'
+            $results.Status | Should -Match "below"
         }
 
         It "Supports piping" {
             $results = Get-DbaPlanCache -SqlInstance $TestConfig.instance1 | Clear-DbaPlanCache -Threshold $threshold
             $results.Size | Should -BeOfType [dbasize]
-            $results.Status | Should -Match 'below'
+            $results.Status | Should -Match "below"
         }
     }
 }

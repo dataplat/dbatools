@@ -1,25 +1,60 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName   = "dbatools",
+    $CommandName = "New-DbaXESmartTableWriter",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Table', 'AutoCreateTargetTable', 'UploadIntervalSeconds', 'Event', 'OutputColumn', 'Filter', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "Table",
+                "AutoCreateTargetTable",
+                "UploadIntervalSeconds",
+                "Event",
+                "OutputColumn",
+                "Filter",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    Context "Creates a smart object" {
-        It "returns the object with all of the correct properties" {
-            $results = New-DbaXESmartReplay -SqlInstance $TestConfig.instance2 -Database planning
-            $results.ServerName | Should -Be $TestConfig.instance2
-            $results.DatabaseName | Should -be 'planning'
-            $results.Password | Should -Be $null
-            $results.DelaySeconds | Should -Be 0
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
+        # Create test database for table writer
+        $testDb = "dbatoolsci_xetablewriter_$(Get-Random)"
+        $testTable = "xe_events_test"
+
+        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $testDb
+
+        $PSDefaultParameterValues.Remove('*-Dba*:EnableException')
+    }
+
+    AfterAll {
+        $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
+
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $testDb -Confirm:$false
+    }
+
+    Context "Creates a smart table writer object" {
+        It "Returns the object with all of the correct properties" {
+            $splatTableWriter = @{
+                SqlInstance = $TestConfig.instance2
+                Database    = $testDb
+                Table       = $testTable
+            }
+            $results = New-DbaXESmartTableWriter @splatTableWriter
+            $results | Should -Not -BeNullOrEmpty
+            $results.GetType().Name | Should -Be "TableAppenderResponse"
         }
     }
 }

@@ -7,7 +7,7 @@ param(
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -16,9 +16,6 @@ Describe $CommandName -Tag UnitTests {
                 "TraceFlag",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -34,8 +31,8 @@ Describe $CommandName -Tag IntegrationTests {
         # We use trace flag 3226 which is safe for testing as it only suppresses backup success messages.
 
         # Set variables. They are available in all the It blocks.
-        $safeTraceFlag      = 3226
-        $server             = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+        $safeTraceFlag = 3226
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
         $startingTraceFlags = Get-DbaTraceFlag -SqlInstance $server
 
         # Create the objects.
@@ -60,11 +57,8 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "When disabling trace flags" {
-        BeforeAll {
-            $disableResults = Disable-DbaTraceFlag -SqlInstance $server -TraceFlag $safeTraceFlag
-        }
-
         It "Should disable trace flag $safeTraceFlag" {
+            $disableResults = Disable-DbaTraceFlag -SqlInstance $server -TraceFlag $safeTraceFlag
             $disableResults.TraceFlag | Should -Contain $safeTraceFlag
         }
     }

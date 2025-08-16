@@ -1,31 +1,43 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Get-DbaDump",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
 # Not sure what is up with appveyor but it does not support this at all
 if (-not $env:appveyor) {
-    Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+    Describe $CommandName -Tag IntegrationTests {
         Context "Testing if memory dump is present" {
-            BeforeAll {
-                $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
-                $server.Query("DBCC STACKDUMP")
-                $server.Query("DBCC STACKDUMP")
-            }
-
-            $results = Get-DbaDump -SqlInstance $TestConfig.instance1
             It "finds least one dump" {
-                ($results).Count -ge 1 | Should Be $true
+                $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+                $splatConnect = @{
+                    SqlInstance = $TestConfig.instance1
+                }
+                $server = Connect-DbaInstance @splatConnect
+                $server.Query("DBCC STACKDUMP")
+                $server.Query("DBCC STACKDUMP")
+
+                $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+                $results = Get-DbaDump -SqlInstance $TestConfig.instance1
+                $results.Count | Should -BeGreaterOrEqual 1
             }
         }
     }
