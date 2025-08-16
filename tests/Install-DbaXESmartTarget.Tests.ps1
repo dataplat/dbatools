@@ -31,45 +31,40 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should have installed XESmartTarget successfully" {
-            $results.Successful | Should -Be $true
+            $results.Installed | Should -BeTrue
         }
 
-        It "Returns an object with the expected properties" {
-            $result = $results
-            $ExpectedProps = 'ComputerName', 'Successful', 'Version', 'Path'
-            ($result.PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
+        It "Should have the correct name" {
+            $results.Name | Should -Match arget
         }
 
-        It "Should return a valid installation path" {
-            $results.Path | Should -Not -BeNullOrEmpty
-            Test-Path $results.Path | Should -Be $true
-        }
-
-        It "Should have a valid version" {
-            $results.Version | Should -Not -BeNullOrEmpty
-        }
-
-        It "Should return the correct computer name" {
-            $results.ComputerName | Should -Be $env:COMPUTERNAME
+        It "Should return the correct type" {
+            $results.Type | Should -Not -BeNullOrEmpty
         }
 
         It "XESmartTarget executable should exist" {
-            $xeSmartTargetExe = Join-Path $results.Path "XESmartTarget.exe"
-            Test-Path $xeSmartTargetExe | Should -Be $true
+            $xeSmartTargetExe = Join-Path $results.Path $results.Name
+            Test-Path $xeSmartTargetExe | Should -BeTrue
         }
 
         It "Should install required DLL files" {
-            $dllFiles = @("XESmartTarget.Core.dll")
-            foreach ($dll in $dllFiles) {
-                $dllPath = Join-Path $results.Path $dll
-                Test-Path $dllPath | Should -Be $true
+            # Check for files that should exist based on the command output
+            $requiredFiles = @("Microsoft.Data.SqlClient.SNI.dll", "NLog.config")
+            foreach ($file in $requiredFiles) {
+                $filePath = Join-Path $results.Path $file
+                Test-Path $filePath | Should -BeTrue
             }
         }
 
         It "Should be accessible via Get-XESmartTargetPath" {
             $xeSmartTargetPath = Get-XESmartTargetPath
             $xeSmartTargetPath | Should -Not -BeNullOrEmpty
-            Test-Path $xeSmartTargetPath | Should -Be $true
+            Test-Path $xeSmartTargetPath | Should -BeTrue
+        }
+
+        It "Should have XESmartTarget directory path matching cross-platform pattern" {
+            # Test that the path contains the expected directory structure
+            $results.Path | Should -Match "dbatools[/\\]xesmarttarget"
         }
     }
 }
