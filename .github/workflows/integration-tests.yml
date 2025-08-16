@@ -84,6 +84,11 @@ jobs:
         run: |
           gh repo clone dataplat/appveyor-lab
 
+      - name: Install SqlPackage for DAC tests
+        run: |
+          Import-Module ./dbatools.psd1 -Force
+          Install-DbaSqlPackage -Verbose
+
       - name: Run tests
         env:
           TENANTID: ${{secrets.TENANTID}}
@@ -162,6 +167,12 @@ jobs:
           $PSDefaultParameterValues["*:SqlCredential"] = $cred
           Connect-DbaInstance
 
+      - name: Install SqlPackage for DAC tests (PowerShell)
+        shell: powershell
+        run: |
+          Import-Module ./dbatools -Force
+          Install-DbaSqlPackage -Verbose
+
       - name: Run PowerShell tests
         env:
           TENANTID: ${{secrets.TENANTID}}
@@ -169,6 +180,12 @@ jobs:
           CLIENTSECRET: ${{secrets.CLIENTSECRET}}
         shell: powershell
         run: $null = Invoke-Pester .github/scripts/gh-winactions.ps1 -Output Detailed -PassThru
+
+      - name: Install SqlPackage for DAC tests (pwsh)
+        shell: pwsh
+        run: |
+          Import-Module ./dbatools -Force
+          Install-DbaSqlPackage -Verbose
 
       - name: Run pwsh tests
         env:

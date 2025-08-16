@@ -31,11 +31,18 @@ function Get-DbaSqlPackagePath {
         [switch]$EnableException
     )
 
+    # Determine executable name based on platform
+    if ($PSVersionTable.Platform -eq "Unix") {
+        $executableName = "sqlpackage"
+    } else {
+        $executableName = "SqlPackage"
+    }
+
     # First try to find SqlPackage using Get-Command (system PATH)
     try {
-        $sqlPackageCommand = Get-Command -Name "SqlPackage" -ErrorAction SilentlyContinue
+        $sqlPackageCommand = Get-Command -Name $executableName -ErrorAction SilentlyContinue
         if ($sqlPackageCommand) {
-            Write-Message -Level Verbose -Message "Found SqlPackage.exe in system PATH at: $($sqlPackageCommand.Source)"
+            Write-Message -Level Verbose -Message "Found $executableName in system PATH at: $($sqlPackageCommand.Source)"
             return $sqlPackageCommand.Source
         }
     } catch {
@@ -44,37 +51,66 @@ function Get-DbaSqlPackagePath {
 
     # Second, try the dbatools data directory (installed via Install-DbaSqlPackage)
     $dbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
-    $installedExe = Join-DbaPath -Path $dbatoolsData -ChildPath "sqlpackage", "SqlPackage.exe"
+    # Normalize path to remove any trailing slashes before joining
+    $dbatoolsData = $dbatoolsData.TrimEnd('/', '\')
+
+    if ($PSVersionTable.Platform -eq "Unix") {
+        $installedExe = Join-Path -Path $dbatoolsData -ChildPath "sqlpackage" | Join-Path -ChildPath "sqlpackage"
+    } else {
+        $installedExe = Join-Path -Path $dbatoolsData -ChildPath "sqlpackage" | Join-Path -ChildPath "SqlPackage.exe"
+    }
+
     if (Test-Path -Path $installedExe) {
-        Write-Message -Level Verbose -Message "Found SqlPackage.exe in dbatools data directory at: $installedExe"
+        Write-Message -Level Verbose -Message "Found $executableName in dbatools data directory at: $installedExe"
         return $installedExe
     }
 
     # Third, try the bundled version (legacy path for backwards compatibility)
-    $bundledExe = Join-DbaPath -Path $script:PSModuleRoot -ChildPath "bin", "sqlpackage", "SqlPackage.exe"
+    if ($PSVersionTable.Platform -eq "Unix") {
+        $bundledExe = Join-Path -Path $script:PSModuleRoot -ChildPath "bin" | Join-Path -ChildPath "sqlpackage" | Join-Path -ChildPath "sqlpackage"
+    } else {
+        $bundledExe = Join-Path -Path $script:PSModuleRoot -ChildPath "bin" | Join-Path -ChildPath "sqlpackage" | Join-Path -ChildPath "SqlPackage.exe"
+    }
+
     if (Test-Path -Path $bundledExe) {
-        Write-Message -Level Verbose -Message "Found bundled SqlPackage.exe at: $bundledExe"
+        Write-Message -Level Verbose -Message "Found bundled $executableName at: $bundledExe"
         return $bundledExe
     }
 
-    # Fourth, check common installation paths
-    $commonPaths = @(
-        "${env:ProgramFiles}\Microsoft SQL Server\*\DAC\bin\SqlPackage.exe",
-        "${env:ProgramFiles(x86)}\Microsoft SQL Server\*\DAC\bin\SqlPackage.exe"
-    )
+    # Fourth, check common installation paths (platform-specific)
+    if ($PSVersionTable.Platform -eq "Unix") {
+        $commonPaths = @(
+            "/usr/local/sqlpackage/sqlpackage",
+            "/opt/sqlpackage/sqlpackage"
+        )
+    } else {
+        $commonPaths = @(
+            "${env:ProgramFiles}\Microsoft SQL Server\*\DAC\bin\SqlPackage.exe",
+            "${env:ProgramFiles(x86)}\Microsoft SQL Server\*\DAC\bin\SqlPackage.exe"
+        )
+    }
 
     foreach ($pathPattern in $commonPaths) {
-        $foundPaths = Get-ChildItem -Path $pathPattern -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending
-        if ($foundPaths) {
-            $newestPath = $foundPaths[0].FullName
-            Write-Message -Level Verbose -Message "Found system-installed SqlPackage.exe at: $newestPath"
-            return $newestPath
+        if ($pathPattern -like "*\**") {
+            # Handle wildcard patterns (Windows only)
+            $foundPaths = Get-ChildItem -Path $pathPattern -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending
+            if ($foundPaths) {
+                $newestPath = $foundPaths[0].FullName
+                Write-Message -Level Verbose -Message "Found system-installed $executableName at: $newestPath"
+                return $newestPath
+            }
+        } else {
+            # Handle direct paths (Unix)
+            if (Test-Path -Path $pathPattern) {
+                Write-Message -Level Verbose -Message "Found system-installed $executableName at: $pathPattern"
+                return $pathPattern
+            }
         }
     }
 
-    # If we get here, SqlPackage.exe was not found
+    # If we get here, SqlPackage was not found
     $message = @"
-Could not find SqlPackage.exe. SqlPackage is required for DAC operations.
+Could not find SqlPackage. SqlPackage is required for DAC operations.
 
 To install SqlPackage, use:
     Install-DbaSqlPackage
@@ -84,7 +120,7 @@ This will download and install SqlPackage to your dbatools data directory, makin
 
     if ($EnableException) {
         Stop-Function -Message $message -Target "SqlPackage"
-        throw "SqlPackage.exe not found"
+        throw "SqlPackage not found"
     } else {
         Stop-Function -Message $message -Target "SqlPackage"
         return $null
