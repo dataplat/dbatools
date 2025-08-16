@@ -31,7 +31,7 @@ Describe $CommandName -Tag IntegrationTests {
             $startingTfs = $server.Query("DBCC TRACESTATUS(-1)")
             $startingTfsCount = $startingTfs.Count
 
-            if ($startingTfs.TraceFlag -notcontains $global:safeTraceFlag) {
+            if ($startingTfs.TraceFlag -notcontains $safeTraceFlag) {
                 $server.Query("DBCC TRACEON($safeTraceFlag,-1) WITH NO_INFOMSGS")
                 $startingTfsCount++
             }
