@@ -1,42 +1,41 @@
 function Install-DbaSqlPackage {
     <#
     .SYNOPSIS
-        Installs SqlPackage on Windows, Linux, or macOS using the appropriate method for each platform.
+        Downloads and installs SqlPackage.exe
 
     .DESCRIPTION
-        This function detects the operating system and installs SqlPackage using the most appropriate method:
-        - Windows: Prefers dotnet tool install, falls back to MSI installer
-        - Linux: Uses dotnet tool install with automatic .NET SDK installation if needed
-        - macOS: Uses dotnet tool install with Homebrew .NET SDK installation if needed
+        Downloads and installs SqlPackage.exe so that you can use Import-DbaDacpac, Export-DbaDacpac, Publish-DbaDacpac and Get-DbaDacpac.
 
-        SqlPackage is required for DACPAC/BACPAC operations and is used by Export-DbaDacPackage and other dbatools functions.
+        By default, SqlPackage is installed as a portable ZIP file to the dbatools directory for CurrentUser scope.
+        For AllUsers (LocalMachine) scope, you can use the MSI installer which requires administrative privileges.
 
-    .PARAMETER Method
-        Specifies the installation method to use. Valid options:
-        - DotnetTool: Install as a global .NET tool (requires existing .NET SDK)
-        - MSI: Windows only - Install using the DacFx MSI installer
-        - Zip: Download and extract the standalone zip package (Default)
+        Writes to $script:PSModuleRoot\bin\sqlpackage by default for CurrentUser scope.
 
-    .PARAMETER Force
-        Forces installation even if SqlPackage is already detected on the system.
-
-    .PARAMETER Version
-        Specifies a specific version of SqlPackage to install. If not specified, installs the latest version.
-        Example: "170.1.61"
+    .PARAMETER Path
+        Specifies the path where SqlPackage will be extracted or installed.
+        If not specified, SqlPackage will be installed to the dbatools directory for CurrentUser scope.
 
     .PARAMETER Scope
-        When using DotnetTool method, specifies the installation scope:
-        - Global (default): Install as a global tool available system-wide
-        - CurrentUser: Install as a local tool in the current directory
+        Specifies the installation scope. Valid values are:
+        - CurrentUser: Installs to the dbatools directory (default, uses ZIP)
+        - AllUsers: Installs to Program Files (requires MSI and administrative privileges)
 
-    .PARAMETER InstallPath
-        When using Zip method, specifies the installation directory.
-        Defaults to:
-        - Windows: "$env:ProgramFiles\SqlPackage"
-        - Linux/macOS: "/usr/local/sqlpackage"
+    .PARAMETER Type
+        Specifies the installation type. Valid values are:
+        - Zip: Downloads and extracts the portable ZIP file (default, works for both scopes)
+        - Msi: Downloads and installs the MSI package (AllUsers scope only, requires admin privileges)
 
-    .PARAMETER AddToPath
-        When using Zip method, adds the installation directory to the system PATH.
+    .PARAMETER LocalFile
+        Specifies the path to a local file to install SqlPackage from. This file should be an msi or zip file.
+
+    .PARAMETER Force
+        If this switch is enabled, the Sqlpackage will be downloaded from the internet even if previously cached.
+
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -44,11 +43,11 @@ function Install-DbaSqlPackage {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: SqlPackage, Installation, DACPAC, BACPAC
-        Author: Chrissy LeMaire (@funbucket), dbatools.io
+        Tags: Deployment, Install
+        Author: Kirill Kravtsov (@nvarscar), chrissy24, zippy1981
 
         Website: https://dbatools.io
-        Copyright: (c) 2025 by dbatools, licensed under MIT
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
@@ -57,63 +56,94 @@ function Install-DbaSqlPackage {
     .EXAMPLE
         PS C:\> Install-DbaSqlPackage
 
-        Uses the standalone Zip method to install SqlPackage without requiring .NET SDK.
-        This is the default method that works on all platforms.
+        Downloads SqlPackage ZIP to the dbatools directory for the current user
 
     .EXAMPLE
-        PS C:\> Install-DbaSqlPackage -Method DotnetTool -Version "170.1.61"
+        PS C:\> Install-DbaSqlPackage -Scope AllUsers -Type Msi
 
-        Installs SqlPackage version 170.1.61 as a global .NET tool (requires existing .NET SDK).
-
-    .EXAMPLE
-        PS C:\> Install-DbaSqlPackage -Method MSI -Force
-
-        Forces installation of SqlPackage using the MSI installer on Windows, even if already installed.
+        Downloads and installs SqlPackage MSI for all users (requires administrative privileges)
 
     .EXAMPLE
-        PS C:\> Install-DbaSqlPackage -Method Zip -InstallPath "C:\Tools\SqlPackage" -AddToPath
+        PS C:\> Install-DbaSqlPackage -Path C:\SqlPackage
 
-        Downloads the standalone SqlPackage zip, extracts to C:\Tools\SqlPackage, and adds it to PATH.
+        Downloads SqlPackage ZIP to C:\SqlPackage
+
+    .EXAMPLE
+        PS C:\> Install-DbaSqlPackage -LocalFile C:\temp\sqlpackage.zip
+
+        Installs SqlPackage from the local ZIP file.
+
     #>
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
-        [ValidateSet('DotnetTool', 'MSI', 'Zip')]
-        [string]$Method = 'Zip',
+        [string]$Path,
+        [ValidateSet("CurrentUser", "AllUsers")]
+        [string]$Scope = "CurrentUser",
+        [ValidateSet("Zip", "Msi")]
+        [string]$Type = "Zip",
+        [string]$LocalFile,
         [switch]$Force,
-        [string]$Version,
-        [ValidateSet('Global', 'CurrentUser')]
-        [string]$Scope = 'CurrentUser',
-        [string]$InstallPath,
-        [switch]$AddToPath,
         [switch]$EnableException
     )
 
     begin {
-        # Check if SqlPackage is already available
-        $existingSqlPackage = Get-Command sqlpackage -ErrorAction SilentlyContinue
-        if ($existingSqlPackage -and -not $Force) {
-            Write-Message -Level Output -Message "SqlPackage is already available at: $($existingSqlPackage.Source)"
-            Write-Message -Level Output -Message "Use -Force to reinstall or upgrade."
-            return [PSCustomObject]@{
-                Status  = "Already Installed"
-                Path    = $existingSqlPackage.Source
-                Version = $null
-                Method  = "Existing"
+        Write-Progress -Activity "Installing SqlPackage" -Status "Initializing..." -PercentComplete 0
+
+        if ($Force) { $ConfirmPreference = 'none' }
+
+        # Set default path based on scope if not specified
+        if (-not $Path) {
+            if ($Scope -eq "CurrentUser") {
+                # Install to dbatools data directory like XESmartTarget
+                $dbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
+                $Path = Join-DbaPath -Path $dbatoolsData -ChildPath "sqlpackage"
+            } else {
+                # AllUsers scope uses MSI default location
+                $Path = "${env:ProgramFiles}\Microsoft SQL Server\DAC\bin"
             }
         }
 
-        # Validate method compatibility with OS
-        if ($Method -eq 'MSI' -and -not $isWindows) {
-            Stop-Function -Message "MSI installation method is only supported on Windows" -EnableException:$EnableException
+        Write-Progress -Activity "Installing SqlPackage" -Status "Determining download URLs..." -PercentComplete 5
+
+        # Determine URLs based on type
+        if ($Type -eq "Zip") {
+            $url = "https://aka.ms/sqlpackage-windows"  # Windows .NET 8 ZIP (portable)
+            $fileName = "sqlpackage.zip"
+        } else {
+            $url = "https://aka.ms/dacfx-msi"  # Windows .NET Framework MSI
+            $fileName = "dacfx.msi"
+        }
+
+        $temp = ([System.IO.Path]::GetTempPath())
+        $localCachedCopy = Join-Path -Path $temp -ChildPath $fileName
+
+        if (-not $LocalFile) {
+            $LocalFile = $localCachedCopy
+        }
+
+        Write-Progress -Activity "Installing SqlPackage" -Status "Validating platform and permissions..." -PercentComplete 10
+
+        if ($PSVersionTable.Platform -eq "Unix") {
+            Write-Progress -Activity "Installing SqlPackage" -Completed
+            Stop-Function -Message "SqlPackage is not supported on non-Windows platforms"
             return
         }
 
-        # Set default install path for Zip method
-        if ($Method -eq 'Zip' -and -not $InstallPath) {
-            if ($isWindows) {
-                $InstallPath = "$env:ProgramFiles\SqlPackage"
-            } else {
-                $InstallPath = "/usr/local/sqlpackage"
+        # Validate scope and type combination
+        if ($Type -eq "Msi" -and $Scope -eq "CurrentUser") {
+            Write-Progress -Activity "Installing SqlPackage" -Completed
+            Stop-Function -Message "MSI installation is only supported for AllUsers scope. Use Zip type for CurrentUser scope."
+            return
+        }
+
+        # Check for admin privileges when using MSI or AllUsers scope
+        if ($Type -eq "Msi" -or $Scope -eq "AllUsers") {
+            try {
+                $null = Test-ElevationRequirement -ComputerName $env:COMPUTERNAME -Continue
+            } catch {
+                Write-Progress -Activity "Installing SqlPackage" -Completed
+                Stop-Function -Message "MSI installation and AllUsers scope require administrative privileges. Please run as administrator or use CurrentUser scope with Zip type."
+                return
             }
         }
     }
@@ -121,197 +151,139 @@ function Install-DbaSqlPackage {
     process {
         if (Test-FunctionInterrupt) { return }
 
-        try {
-            switch ($Method) {
-                'DotnetTool' {
-                    Write-Message -Level Output -Message "Installing SqlPackage as .NET global tool..."
+        Write-Progress -Activity "Installing SqlPackage" -Status "Checking for existing installation..." -PercentComplete 15
 
-                    # Check if .NET SDK is available
-                    $dotnetCmd = Get-Command dotnet -ErrorAction SilentlyContinue
-                    if (-not $dotnetCmd) {
-                        Stop-Function -Message ".NET SDK is required for DotnetTool method but was not found. Use -Method Zip for standalone installation without .NET SDK dependency." -EnableException:$EnableException
-                        return
-                    }
-
-                    # Install SqlPackage as dotnet tool
-                    $installArgs = @('tool', 'install', '--global', 'Microsoft.SqlPackage')
-                    if ($Scope -eq 'CurrentUser') {
-                        $installArgs = @('tool', 'install', '--local', 'Microsoft.SqlPackage')
-                    }
-                    if ($Version) {
-                        $installArgs += @('--version', $Version)
-                    }
-                    if ($Force) {
-                        # Remove existing installation first
-                        try {
-                            & dotnet tool uninstall --global Microsoft.SqlPackage 2>$null
-                        } catch {
-                            # Ignore errors if not installed
-                        }
-                    }
-
-                    Write-Message -Level Verbose -Message "Running: dotnet $($installArgs -join ' ')"
-                    $result = & dotnet @installArgs 2>&1
-
-                    if ($LASTEXITCODE -ne 0) {
-                        Stop-Function -Message "Failed to install SqlPackage via dotnet tool: $result" -EnableException:$EnableException
-                        return
-                    }
-
-                    Write-Message -Level Output -Message "SqlPackage installed successfully as .NET global tool"
-                    $installMethod = "DotnetTool"
-                    $installPath = if ($Scope -eq 'Global') {
-                        if ($isWindows) { "$env:USERPROFILE\.dotnet\tools" } else { "$HOME/.dotnet/tools" }
-                    } else {
-                        (Get-Location).Path
-                    }
-                }
-                'MSI' {
-                    Write-Message -Level Output -Message "Installing SqlPackage using MSI installer..."
-
-                    $tempPath = [System.IO.Path]::GetTempPath()
-                    $msiPath = Join-Path $tempPath "DacFramework.msi"
-
-                    try {
-                        Write-Message -Level Output -Message "Downloading DacFramework MSI..."
-                        Invoke-WebRequest -Uri "https://aka.ms/dacfx-msi" -OutFile $msiPath
-
-                        Write-Message -Level Output -Message "Installing MSI package..."
-                        $installArgs = @("/i", "`"$msiPath`"", "/quiet", "/norestart")
-                        $process = Start-Process -FilePath "msiexec.exe" -ArgumentList $installArgs -Wait -PassThru
-
-                        if ($process.ExitCode -ne 0) {
-                            Stop-Function -Message "MSI installation failed with exit code: $($process.ExitCode)" -EnableException:$EnableException
-                            return
-                        }
-
-                        Write-Message -Level Output -Message "SqlPackage installed successfully via MSI"
-                        $installMethod = "MSI"
-                        $installPath = "${env:ProgramFiles(x86)}\Microsoft SQL Server\170\DAC\bin"
-
-                    } finally {
-                        if (Test-Path $msiPath) {
-                            Remove-Item $msiPath -Force -ErrorAction SilentlyContinue
-                        }
-                    }
-                }
-                'Zip' {
-                    Write-Message -Level Output -Message "Installing SqlPackage from zip download..."
-
-                    # Determine download URL based on OS
-                    if ($isWindows) {
-                        $downloadUrl = "https://aka.ms/sqlpackage-windows"
-                        $executableName = "SqlPackage.exe"
-                    } elseif ($isLinux) {
-                        $downloadUrl = "https://aka.ms/sqlpackage-linux"
-                        $executableName = "sqlpackage"
-                    } elseif ($isMacOS) {
-                        $downloadUrl = "https://aka.ms/sqlpackage-macos"
-                        $executableName = "sqlpackage"
-                    }
-
-                    $tempPath = [System.IO.Path]::GetTempPath()
-                    $zipPath = Join-Path $tempPath "sqlpackage.zip"
-
-                    try {
-                        Write-Message -Level Output -Message "Downloading SqlPackage from $downloadUrl..."
-                        Invoke-WebRequest -Uri $downloadUrl -OutFile $zipPath
-
-                        Write-Message -Level Output -Message "Creating installation directory: $InstallPath"
-
-                        if (-not (Test-Path $InstallPath)) {
-                            $null = New-Item -ItemType Directory -Path $InstallPath -Force
-                        }
-
-                        Write-Message -Level Output -Message "Extracting SqlPackage to $InstallPath..."
-                        if ($isWindows) {
-                            Add-Type -AssemblyName System.IO.Compression.FileSystem
-                            [System.IO.Compression.ZipFile]::ExtractToDirectory($zipPath, $InstallPath)
-                        } else {
-                            Invoke-Expression "unzip -q '$zipPath' -d '$InstallPath'"
-                        }
-
-                        # Make executable on Linux/macOS
-                        if (-not $isWindows) {
-                            $executablePath = Join-Path $InstallPath $executableName
-                            if (Test-Path $executablePath) {
-                                Invoke-Expression "chmod +x '$executablePath'"
-                            }
-                        }
-
-                        # Add to PATH if requested
-                        if ($AddToPath) {
-                            Write-Message -Level Output -Message "Adding $InstallPath to PATH..."
-
-                            if ($isWindows) {
-                                $currentPath = [Environment]::GetEnvironmentVariable("Path", "Machine")
-                                if ($currentPath -notlike "*$InstallPath*") {
-                                    [Environment]::SetEnvironmentVariable("Path", "$currentPath;$InstallPath", "Machine")
-                                    $env:PATH = "$env:PATH;$InstallPath"
-                                }
-                            } else {
-                                # Add to shell profile
-                                $profileFiles = @("~/.bashrc", "~/.bash_profile", "~/.zshrc", "~/.zprofile")
-                                $pathExport = "export PATH=`"`$PATH:$InstallPath`""
-
-                                foreach ($profileFile in $profileFiles) {
-                                    if (Test-Path $profileFile) {
-                                        $content = Get-Content $profileFile -Raw -ErrorAction SilentlyContinue
-                                        if ($content -notlike "*$InstallPath*") {
-                                            Add-Content -Path $profileFile -Value $pathExport
-                                        }
-                                    }
-                                }
-
-                                # Update current session PATH
-                                $env:PATH = "$env:PATH:$InstallPath"
-                            }
-                        }
-
-                        Write-Message -Level Output -Message "SqlPackage installed successfully from zip"
-                        $installMethod = "Zip"
-
-                    } finally {
-                        if (Test-Path $zipPath) {
-                            Remove-Item $zipPath -Force -ErrorAction SilentlyContinue
-                        }
-                    }
+        # Check if SqlPackage already exists
+        if (-not $LocalFile.StartsWith("http") -and -not (Test-Path -Path $LocalFile) -and -not $Force) {
+            if (-not (Test-Path -Path $localCachedCopy)) {
+                Write-Message -Level Verbose -Message "No local file exists. Downloading now."
+                if ((Test-Path -Path $localCachedCopy) -and (Test-Path -Path $Path) -and -not $Force) {
+                    Write-Message -Level Warning -Message "SqlPackage already exists at $Path. Skipping download. Use -Force to overwrite."
+                    Write-Progress -Activity "Installing SqlPackage" -Completed
+                    return
                 }
             }
+        }
 
-            # Verify installation
-            Write-Message -Level Output -Message "Verifying SqlPackage installation..."
-            Start-Sleep -Seconds 2  # Allow time for PATH updates
+        if (-not $LocalFile.StartsWith("http") -and (Test-Path -Path $localCachedCopy) -and (Test-Path -Path $Path) -and -not $Force) {
+            Write-Message -Level Verbose -Message "SqlPackage already exists at $Path. Skipping download."
+            Write-Message -Level Verbose -Message "Use -Force to overwrite."
+            Write-Progress -Activity "Installing SqlPackage" -Completed
+            return
+        }
 
-            $sqlPackageCmd = Get-Command sqlpackage -ErrorAction SilentlyContinue
-            if ($sqlPackageCmd) {
+        # Download if needed
+        if ($LocalFile.StartsWith("http") -or -not (Test-Path -Path $LocalFile) -or $Force) {
+            Write-Progress -Activity "Installing SqlPackage" -Status "Starting download from Microsoft..." -PercentComplete 20
+            Write-Message -Level Verbose -Message "Downloading SqlPackage from $url"
+
+            try {
+                Write-Progress -Activity "Installing SqlPackage" -Status "Downloading SqlPackage package..." -PercentComplete 25
                 try {
-                    $versionOutput = & sqlpackage /version 2>&1
-                    $installedVersion = if ($versionOutput -match "(\d+\.\d+\.\d+)") { $matches[1] } else { "Unknown" }
+                    Invoke-TlsWebRequest -Uri $url -OutFile $LocalFile -UseBasicParsing
                 } catch {
-                    $installedVersion = "Unknown"
+                    Write-Progress -Activity "Installing SqlPackage" -Status "Retrying download with proxy settings..." -PercentComplete 28
+                    # Try with default proxy and usersettings
+                    (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
+                    Invoke-TlsWebRequest -Uri $url -OutFile $LocalFile -UseBasicParsing
                 }
+                Write-Progress -Activity "Installing SqlPackage" -Status "Download completed successfully" -PercentComplete 45
+            } catch {
+                Write-Progress -Activity "Installing SqlPackage" -Completed
+                Stop-Function -Message "Couldn't download SqlPackage. Download failed: $_" -ErrorRecord $_
+                return
+            }
+        }
 
-                Write-Message -Level Output -Message "SqlPackage installation verified successfully!"
-                Write-Message -Level Output -Message "Location: $($sqlPackageCmd.Source)"
-                Write-Message -Level Output -Message "Version: $installedVersion"
+        Write-Progress -Activity "Installing SqlPackage" -Status "Preparing installation..." -PercentComplete 50
 
-                [PSCustomObject]@{
-                    Status      = "Successfully Installed"
-                    Path        = $sqlPackageCmd.Source
-                    Version     = $installedVersion
-                    Method      = $installMethod
-                    InstallPath = $installPath
-                }
-
-            } else {
-                Stop-Function -Message "SqlPackage installation completed but sqlpackage command not found in PATH. You may need to restart your shell or manually add the installation directory to your PATH." -EnableException:$EnableException
+        # Install SqlPackage
+        if ($Pscmdlet.ShouldProcess("$LocalFile", "Install SqlPackage")) {
+            if ($LocalFile.StartsWith("http")) {
+                Write-Progress -Activity "Installing SqlPackage" -Completed
+                Stop-Function -Message "LocalFile cannot be a URL. It must be a local file path."
                 return
             }
 
-        } catch {
-            Stop-Function -Message "Installation failed: $($_.Exception.Message)" -ErrorRecord $_ -EnableException:$EnableException
-            return
+            if (-not (Test-Path -Path $LocalFile)) {
+                Write-Progress -Activity "Installing SqlPackage" -Completed
+                Stop-Function -Message "LocalFile $LocalFile does not exist."
+                return
+            }
+
+            if ($LocalFile.EndsWith(".msi") -or $Type -eq "Msi") {
+                Write-Progress -Activity "Installing SqlPackage" -Status "Installing MSI package..." -PercentComplete 70
+                Write-Message -Level Verbose -Message "Installing SqlPackage MSI for AllUsers scope"
+
+                $msiArgs = @(
+                    "/i `"$LocalFile`""
+                    "/quiet"
+                    "/qn"
+                    "/norestart"
+                )
+                $msiArguments = $msiArgs -join " "
+                Write-Message -Level Verbose -Message "Installing SqlPackage from $LocalFile"
+                $process = Start-Process -FilePath msiexec -ArgumentList $msiArguments -Wait -PassThru
+                if ($process.ExitCode -ne 0) {
+                    Write-Progress -Activity "Installing SqlPackage" -Completed
+                    Stop-Function -Message "Failed to install SqlPackage from $LocalFile. Exit code: $($process.ExitCode)"
+                    return
+                }
+            } else {
+                Write-Progress -Activity "Installing SqlPackage" -Status "Extracting ZIP archive..." -PercentComplete 70
+                Write-Message -Level Verbose -Message "Extracting SqlPackage zip to $Path"
+                if (-not (Test-Path -Path $Path)) {
+                    $null = New-Item -ItemType Directory -Path $Path -Force
+                }
+                # Remove existing files if Force is specified
+                if ($Force -and (Test-Path -Path $Path)) {
+                    Remove-Item -Path "$Path\*" -Recurse -Force -ErrorAction SilentlyContinue
+                }
+
+                # Unpack archive
+                try {
+                    Expand-Archive -Path $LocalFile -DestinationPath $Path -Force:$Force
+                } catch {
+                    Write-Progress -Activity "Installing SqlPackage" -Completed
+                    Stop-Function -Message "Unable to extract SqlPackage to $Path. $_" -ErrorRecord $_
+                    return
+                }
+            }
+        }
+
+        Write-Progress -Activity "Installing SqlPackage" -Status "Verifying installation..." -PercentComplete 90
+
+        # Verify installation
+        $sqlPackagePaths = @(
+            "$Path\SqlPackage.exe"
+            "${env:ProgramFiles}\Microsoft SQL Server\*\DAC\bin\SqlPackage.exe"
+        )
+
+        $sqlPackageFound = $false
+        $installedPath = $null
+        foreach ($sqlPath in $sqlPackagePaths) {
+            if (Test-Path -Path $sqlPath) {
+                $sqlPackageFound = $true
+                $installedPath = $sqlPath
+                Write-Message -Level Verbose -Message "SqlPackage found at: $sqlPath"
+                break
+            }
+        }
+
+        Write-Progress -Activity "Installing SqlPackage" -Status "Installation completed!" -PercentComplete 100
+        Start-Sleep -Milliseconds 500
+        Write-Progress -Activity "Installing SqlPackage" -Completed
+
+        if ($sqlPackageFound) {
+            Write-Message -Level Verbose -Message "SqlPackage installed successfully"
+            # Return the installation information
+            [PSCustomObject]@{
+                Name = "SqlPackage.exe"
+                Path = $installedPath
+                Installed = $true
+            }
+        } else {
+            Stop-Function -Message "SqlPackage installation failed - SqlPackage.exe not found in expected locations"
         }
     }
 }
