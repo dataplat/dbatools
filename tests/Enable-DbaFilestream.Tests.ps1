@@ -55,9 +55,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should change the FileStream Level to the new value" {
             $newLevel = ($originalFileStream.InstanceAccessLevel + 1) % 3 #Move it on one, but keep it less than 4 with modulo division
             $results = Enable-DbaFilestream -SqlInstance $TestConfig.instance1 -FileStreamLevel $newLevel -WarningAction SilentlyContinue
-        }
 
-        It "Should change the FileStream Level to the new value" {
             $results.InstanceAccessLevel | Should -Be $newLevel
         }
     }

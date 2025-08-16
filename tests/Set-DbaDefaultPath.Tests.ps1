@@ -23,22 +23,42 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $oldBackupDirectory = (Connect-DbaInstance -SqlInstance $TestConfig.instance1).BackupDirectory
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        Set-DbaDefaultPath -SqlInstance $TestConfig.instance1 -Type Backup -Path $oldBackupDirectory
+    }
+
     Context "returns proper information" {
         BeforeAll {
-            $results = Set-DbaDefaultPath -SqlInstance $TestConfig.instance1 -Type Backup -Path "C:\temp"
+            $results = Set-DbaDefaultPath -SqlInstance $TestConfig.instance1 -Type Backup -Path $TestConfig.Temp
         }
 
         It "Data returns a value that contains :\" {
-            $results.Data -match ":\\"
+            $results.Data | Should -Match ":\\"
         }
+
         It "Log returns a value that contains :\" {
-            $results.Log -match ":\\"
+            $results.Log | Should -Match ":\\"
         }
-        It "Backup returns a value that contains :\" {
-            $results.Backup -match ":\\"
+
+        It "Backup returns the correct value" {
+            $results.Backup | Should -BeExactly $TestConfig.Temp
         }
+
         It "ErrorLog returns a value that contains :\" {
-            $results.ErrorLog -match ":\\"
+            $results.ErrorLog | Should -Match ":\\"
         }
     }
 }
