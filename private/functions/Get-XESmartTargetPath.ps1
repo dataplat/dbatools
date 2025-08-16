@@ -71,7 +71,7 @@ function Get-XESmartTargetPath {
 Could not find XESmartTarget.Core.dll. XESmartTarget is no longer bundled with dbatools.
 
 To install XESmartTarget, use:
-    Save-DbaCommunitySoftware -Software XESmartTarget
+    Install-DbaXESmartTarget
 
 This will download and install XESmartTarget to your dbatools data directory, making it available for use with dbatools XE commands.
 "@
