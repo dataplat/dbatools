@@ -274,13 +274,16 @@ function Install-DbaXESmartTarget {
                 Write-Progress -Activity "Installing XESmartTarget" -Status "Extracting MSI package..." -PercentComplete 70
                 Write-Message -Level Verbose -Message "Extracting XESmartTarget MSI to $Path"
 
-                # Extract MSI using msiexec
+                # Extract MSI using msiexec to a temporary location first
                 try {
+                    $tempExtractPath = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "XESmartTargetExtract_$([System.Guid]::NewGuid().ToString('N').Substring(0,8))"
+                    $null = New-Item -ItemType Directory -Path $tempExtractPath -Force
+
                     $msiArgs = @(
                         "/a"
                         "`"$LocalFile`""
                         "/qn"
-                        "TARGETDIR=`"$Path`""
+                        "TARGETDIR=`"$tempExtractPath`""
                     )
                     $msiArguments = $msiArgs -join " "
                     Write-Message -Level Verbose -Message "Extracting with: msiexec $msiArguments"
@@ -290,6 +293,27 @@ function Install-DbaXESmartTarget {
                         Stop-Function -Message "Failed to extract XESmartTarget from $LocalFile. Exit code: $($process.ExitCode)"
                         return
                     }
+
+                    # Find the XESmartTarget files in the extracted MSI content
+                    $sourceFiles = Get-ChildItem -Path $tempExtractPath -Recurse -File | Where-Object { $_.Name -eq "XESmartTarget.exe" -or $_.Name -eq "XESmartTarget.Core.dll" }
+
+                    if ($sourceFiles) {
+                        # Get the directory containing the XESmartTarget files
+                        $sourceDir = $sourceFiles[0].Directory.FullName
+
+                        # Copy all files from the source directory to the target path
+                        Write-Message -Level Verbose -Message "Copying XESmartTarget files from $sourceDir to $Path"
+                        Get-ChildItem -Path $sourceDir -File | ForEach-Object {
+                            Copy-Item -Path $_.FullName -Destination $Path -Force
+                        }
+                    } else {
+                        Write-Progress -Activity "Installing XESmartTarget" -Completed
+                        Stop-Function -Message "XESmartTarget files not found in extracted MSI content"
+                        return
+                    }
+
+                    # Clean up temporary extraction directory
+                    Remove-Item -Path $tempExtractPath -Recurse -Force -ErrorAction SilentlyContinue
                 } catch {
                     Write-Progress -Activity "Installing XESmartTarget" -Completed
                     Stop-Function -Message "Unable to extract XESmartTarget from MSI: $_" -ErrorRecord $_
@@ -311,9 +335,32 @@ function Install-DbaXESmartTarget {
                 Write-Progress -Activity "Installing XESmartTarget" -Status "Extracting ZIP archive..." -PercentComplete 70
                 Write-Message -Level Verbose -Message "Extracting XESmartTarget zip to $Path"
 
-                # Unpack archive
+                # Unpack archive to temporary location first to handle nested directories
                 try {
-                    Expand-Archive -Path $LocalFile -DestinationPath $Path -Force:$Force
+                    $tempExtractPath = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "XESmartTargetZipExtract_$([System.Guid]::NewGuid().ToString('N').Substring(0,8))"
+                    $null = New-Item -ItemType Directory -Path $tempExtractPath -Force
+
+                    Expand-Archive -Path $LocalFile -DestinationPath $tempExtractPath -Force:$Force
+
+                    # Find XESmartTarget files in the extracted content
+                    $sourceFiles = Get-ChildItem -Path $tempExtractPath -Recurse -File | Where-Object {
+                        $_.Name -eq "XESmartTarget" -or $_.Name -eq "XESmartTarget.exe" -or $_.Name -eq "XESmartTarget.Core.dll"
+                    }
+
+                    if ($sourceFiles) {
+                        # Get the directory containing the XESmartTarget files
+                        $sourceDir = $sourceFiles[0].Directory.FullName
+
+                        # Copy all files from the source directory to the target path
+                        Write-Message -Level Verbose -Message "Copying XESmartTarget files from $sourceDir to $Path"
+                        Get-ChildItem -Path $sourceDir -File | ForEach-Object {
+                            Copy-Item -Path $_.FullName -Destination $Path -Force
+                        }
+                    } else {
+                        Write-Progress -Activity "Installing XESmartTarget" -Completed
+                        Stop-Function -Message "XESmartTarget files not found in extracted ZIP content"
+                        return
+                    }
 
                     # Make executable on Unix platforms
                     if ($PSVersionTable.Platform -eq "Unix") {
@@ -325,16 +372,10 @@ function Install-DbaXESmartTarget {
                                 Write-Message -Level Warning -Message "Could not make XESmartTarget executable. You may need to run 'chmod +x $executablePath' manually."
                             }
                         }
-                        # Also check subfolders
-                        $subfolderExecutables = Get-ChildItem -Path "$Path/*/XESmartTarget" -ErrorAction SilentlyContinue
-                        foreach ($exe in $subfolderExecutables) {
-                            try {
-                                & chmod "+x" $exe.FullName 2>$null
-                            } catch {
-                                Write-Message -Level Warning -Message "Could not make $($exe.FullName) executable."
-                            }
-                        }
                     }
+
+                    # Clean up temporary extraction directory
+                    Remove-Item -Path $tempExtractPath -Recurse -Force -ErrorAction SilentlyContinue
                 } catch {
                     Write-Progress -Activity "Installing XESmartTarget" -Completed
                     Stop-Function -Message "Unable to extract XESmartTarget to $Path. $_" -ErrorRecord $_
@@ -377,6 +418,17 @@ function Install-DbaXESmartTarget {
 
         if ($xeSmartTargetFound) {
             Write-Message -Level Verbose -Message "XESmartTarget installed successfully"
+
+            # Clean up downloaded file if it was downloaded to temp directory
+            if ($LocalFile -eq $localCachedCopy -and (Test-Path -Path $LocalFile)) {
+                try {
+                    Remove-Item -Path $LocalFile -Force -ErrorAction SilentlyContinue
+                    Write-Message -Level Verbose -Message "Cleaned up downloaded file: $LocalFile"
+                } catch {
+                    Write-Message -Level Warning -Message "Could not clean up downloaded file: $LocalFile"
+                }
+            }
+
             # Return the installation information
             [PSCustomObject]@{
                 Name      = if ($PSVersionTable.Platform -eq "Unix") { "XESmartTarget" } else { "XESmartTarget.exe" }
