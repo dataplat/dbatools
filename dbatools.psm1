@@ -929,7 +929,6 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Add-DbaPfDataCollectorCounter',
         'Remove-DbaPfDataCollectorCounter',
         'Get-DbaPfAvailableCounter',
-        'Export-DbaXECsv',
         'Get-DbaOperatingSystem',
         'Get-DbaComputerSystem',
         'Set-DbaPrivilege',

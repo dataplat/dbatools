@@ -149,7 +149,6 @@
         'Export-DbaSysDbUserObject',
         'Export-DbatoolsConfig',
         'Export-DbaUser',
-        'Export-DbaXECsv',
         'Export-DbaXESession',
         'Export-DbaXESessionTemplate',
         'Find-DbaAgentJob',
