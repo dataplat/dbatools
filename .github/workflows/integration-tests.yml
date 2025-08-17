@@ -80,12 +80,11 @@ jobs:
         run: |
           gh repo clone dataplat/appveyor-lab
 
-      - name: Install SqlPackage and XESmartTarget
+      - name: Install SqlPackage
         shell: pwsh
         run: |
           Import-Module ./dbatools.psd1 -Force
           Install-DbaSqlPackage -Force -Verbose
-          Install-DbaXESmartTarget -Force -Verbose
 
       - name: Run tests
         env:
@@ -165,12 +164,11 @@ jobs:
           $PSDefaultParameterValues["*:SqlCredential"] = $cred
           Connect-DbaInstance
 
-      - name: Install SqlPackage and XESmartTarget
+      - name: Install SqlPackage
         shell: pwsh
         run: |
           Import-Module ./dbatools.psd1 -Force
           Install-DbaSqlPackage -Force -Verbose
-          Install-DbaXESmartTarget -Force -Verbose
 
       - name: Run PowerShell tests
         env:
@@ -230,12 +228,11 @@ jobs:
         run: |
           gh repo clone dataplat/appveyor-lab
 
-      - name: Install SqlPackage and XESmartTarget
+      - name: Install SqlPackage
         shell: pwsh
         run: |
           Import-Module ./dbatools.psd1 -Force
           Install-DbaSqlPackage -Force -Verbose
-          Install-DbaXESmartTarget -Force -Verbose
 
       - name: Run macOS tests
         env:

@@ -98,7 +98,7 @@ function Install-DbaSqlPackage {
         # Set default path based on scope and platform if not specified
         if (-not $Path) {
             if ($Scope -eq "CurrentUser") {
-                # Install to dbatools data directory like XESmartTarget
+                # Install to dbatools data directory
                 $dbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
                 # Normalize path to remove any trailing slashes before joining
                 $dbatoolsData = $dbatoolsData.TrimEnd('/', '\')
