@@ -1,13 +1,13 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName   = "dbatools",
+    $ModuleName  = "dbatools",
     $CommandName = "New-DbaXESmartReplay",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -21,25 +21,19 @@ Describe $CommandName -Tag UnitTests {
                 "ReplayIntervalSeconds",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 Describe $CommandName -Tag IntegrationTests {
     Context "Creates a smart replay object" {
-        BeforeAll {
+        It "Returns the object with all of the correct properties" {
             $splatReplay = @{
                 SqlInstance = $TestConfig.instance2
                 Database    = "tempdb"
                 Event       = "sql_batch_completed"
                 Filter      = "duration > 10000"
             }
-        }
-
-        It "Returns the object with all of the correct properties" {
             $results = New-DbaXESmartReplay @splatReplay
             $results.ServerName | Should -Be $TestConfig.instance2
             $results.DatabaseName | Should -Be "tempdb"
