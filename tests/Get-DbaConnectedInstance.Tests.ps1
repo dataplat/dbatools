@@ -9,7 +9,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
-    Context "Validate parameters" {
+    Context "Parameter validation" {
         # fake tests, no parameters to validate
         It "Should only contain our specific parameters" {
             $null | Should -BeNullOrEmpty

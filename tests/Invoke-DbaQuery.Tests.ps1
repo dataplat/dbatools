@@ -1,12 +1,12 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName   = "dbatools",
+    $ModuleName  = "dbatools",
     $CommandName = "Invoke-DbaQuery",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe "Invoke-DbaQuery" -Tag UnitTests {
-    Context "Validate parameters" {
+    Context "Parameter validation" {
         BeforeAll {
             $command = Get-Command Invoke-DbaQuery
             $expectedParameters = $TestConfig.CommonParameters

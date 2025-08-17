@@ -9,7 +9,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 $global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
-    Context "Validate parameters" {
+    Context "Parameter validation" {
         It "Should only contain our specific parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters

@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName   = "dbatools",
+    $ModuleName  = "dbatools",
     $CommandName = "Test-DbaDbRecoveryModel",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -9,7 +9,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 $global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag "UnitTests" {
-    Context "Validate parameters" {
+    Context "Parameter validation" {
         It "Should only contain our specific parameters" {
             $command = Get-Command $CommandName
             $expectedParameters = $TestConfig.CommonParameters

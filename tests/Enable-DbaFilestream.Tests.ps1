@@ -43,7 +43,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Restore the original FileStream level
         if ($originalFileStream.InstanceAccessLevel -eq 0) {
-            $null = Disable-DbaFilestream -SqlInstance $TestConfig.instance1
+            $null = Disable-DbaFilestream -SqlInstance $TestConfig.instance1 -WarningAction SilentlyContinue
         } else {
             $null = Enable-DbaFilestream -SqlInstance $TestConfig.instance1 -FileStreamLevel $originalFileStream.InstanceAccessLevel -WarningAction SilentlyContinue
         }

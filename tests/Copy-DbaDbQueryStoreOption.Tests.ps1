@@ -2,10 +2,8 @@
 param(
     $ModuleName  = "dbatools",
     $CommandName = "Copy-DbaDbQueryStoreOption",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
-
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {

@@ -2,12 +2,8 @@
 param(
     $ModuleName  = "dbatools",
     $CommandName = "Disable-DbaReplDistributor",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
-
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-
-Add-ReplicationLibrary
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
@@ -23,6 +19,8 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
-
-    # Integration tests for replication are in GitHub Actions and run from \tests\gh-actions-repl-*.ps1
 }
+
+# TODO: Is this needed? Add-ReplicationLibrary
+
+# Integration tests for replication are in GitHub Actions and run from \tests\gh-actions-repl-*.ps1

@@ -2,7 +2,7 @@
 param(
     $ModuleName  = "dbatools",
     $CommandName = "Get-DbaSchemaChangeHistory",
-    $PSDefaultParameterValues = (Get-TestConfig).Defaults
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe $CommandName -Tag UnitTests {

@@ -81,12 +81,14 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Connects to multiple instances" {
         It "Returns multiple objects" {
-            $results = Get-DbaMaxMemory -SqlInstance $TestConfig.Instance1, $TestConfig.Instance2
+            # Suppressing warning on Azure: [Test-DbaMaxMemory] The memory calculation may be inaccurate as the following SQL components have also been detected: SSIS,SSAS
+            $results = Get-DbaMaxMemory -SqlInstance $TestConfig.Instance1, $TestConfig.Instance2 -WarningAction SilentlyContinue
             $results.Count | Should -BeGreaterThan 1 # and ultimately not throw an exception
         }
 
         It "Returns the right amount of" {
-            $null = Set-DbaMaxMemory -SqlInstance $TestConfig.Instance1, $TestConfig.Instance2 -Max 1024
+            # Suppressing warning on Azure: [Test-DbaMaxMemory] The memory calculation may be inaccurate as the following SQL components have also been detected: SSIS,SSAS
+            $null = Set-DbaMaxMemory -SqlInstance $TestConfig.Instance1, $TestConfig.Instance2 -Max 1024 -WarningAction SilentlyContinue
             $results = Get-DbaMaxMemory -SqlInstance $TestConfig.Instance1
             $results.MaxValue | Should -Be 1024
         }
