@@ -4,9 +4,6 @@ param(
     $CommandName = "Invoke-DbaDbCorruption",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
-
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
 . "$PSScriptRoot\..\private\functions\Invoke-DbaDbCorruption.ps1"
 
 Describe $CommandName -Tag UnitTests {

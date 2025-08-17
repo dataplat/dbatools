@@ -5,12 +5,9 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe "$CommandName Unit Tests" -Tag "UnitTests" {
     Context "Parameter validation" {
-        It "Should only contain our specific parameters" {
+        It "Should have the expected parameters" {
             $command = Get-Command $CommandName
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(

@@ -1,4 +1,4 @@
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 $Path = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ModulePath = (Get-Item $Path).Parent.FullName
 $ModuleName = (Split-Path -Leaf $MyInvocation.MyCommand.Path) -Replace ".Tests.ps1"

@@ -4,9 +4,6 @@ param(
     $CommandName = "Install-DbaWhoIsActive",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
-
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
 . "$PSScriptRoot\..\private\functions\Invoke-TlsWebRequest"
 
 Describe $CommandName -Tag UnitTests {
