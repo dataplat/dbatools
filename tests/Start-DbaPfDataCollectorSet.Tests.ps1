@@ -24,12 +24,10 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
-    Context "Verifying command works" {
+    # [Start-DbaPfDataCollectorSet] Server Manager Performance Monitor on APPVYR-WIN is disabled..
+    Context -Skip:($env:appveyor) "Verifying command works" {
         BeforeAll {
             $set = Get-DbaPfDataCollectorSet | Select-Object -First 1
-            if (-not $set) {
-                Write-Warning -Message "No data collector sets found."
-            }
             $set | Stop-DbaPfDataCollectorSet -WarningAction SilentlyContinue
             Start-Sleep 2
         }
@@ -39,12 +37,10 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "returns a result with the right computername and name is not null" {
-            if ($set) {
-                $results = $set | Start-DbaPfDataCollectorSet
-                $WarnVar | Should -BeNullOrEmpty
-                $results.ComputerName | Should -Be $env:COMPUTERNAME
-                $results.Name | Should -Not -BeNullOrEmpty
-            }
+            $results = $set | Start-DbaPfDataCollectorSet
+            $WarnVar | Should -BeNullOrEmpty
+            $results.ComputerName | Should -Be $env:COMPUTERNAME
+            $results.Name | Should -Not -BeNullOrEmpty
         }
     }
 }
