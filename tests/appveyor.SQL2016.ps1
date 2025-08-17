@@ -1,5 +1,5 @@
 $indent = '...'
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor DarkGreen
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor DarkGreen
 
 # This script spins up the 2016 instance and the relative setup
 

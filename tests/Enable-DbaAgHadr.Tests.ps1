@@ -1,8 +1,8 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
     $ModuleName  = "dbatools",
     $CommandName = "Enable-DbaAgHadr",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe $CommandName -Tag UnitTests {
@@ -36,9 +36,6 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
-
-        # Disable HADR after test to restore original state
-        Disable-DbaAgHadr -SqlInstance $TestConfig.instance3 -Force -ErrorAction SilentlyContinue
 
         # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }

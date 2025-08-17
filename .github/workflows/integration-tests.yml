@@ -4,6 +4,7 @@ on:
     paths-ignore:
       - '**/*.md'
       - '**/*.json'
+      - '!.github/dbatools-library-version.json'
       - 'docs/**'
       - '.github/FUNDING.yml'
       - '.github/ISSUE_TEMPLATE/**'
@@ -56,19 +57,14 @@ jobs:
           Write-Output "Preview version detected, bypassing PSModuleCache and using install script"
           ./.github/scripts/install-dbatools-library.ps1
 
-      - name: Check file health and set encryption values
+      - name: Set encryption values
         run: |
           Import-Module ./dbatools.psd1 -Force
           Get-Module dbatools.library | Select-Object -ExpandProperty Path -OutVariable lib | Write-Warning
-          $lib = Split-Path -Path $lib -Parent
-          Get-ChildItem (Join-Path $lib -ChildPath core/lib/dac/linux) | Write-Warning
           Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -Register
           Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -Register
           Get-DbatoolsConfigValue -FullName sql.connection.encrypt | Write-Warning
           mkdir /tmp/DbatoolsExport
-
-      - name: Ensure sqlpackage is executable
-        run: chmod +x /home/runner/.local/share/powershell/Modules/dbatools.library/core/lib/dac/linux/sqlpackage || true
 
       - name:  Setup docker images
         run: |
@@ -83,6 +79,12 @@ jobs:
         working-directory: /tmp
         run: |
           gh repo clone dataplat/appveyor-lab
+
+      - name: Install SqlPackage
+        shell: pwsh
+        run: |
+          Import-Module ./dbatools.psd1 -Force
+          Install-DbaSqlPackage -Force -Verbose
 
       - name: Run tests
         env:
@@ -162,6 +164,12 @@ jobs:
           $PSDefaultParameterValues["*:SqlCredential"] = $cred
           Connect-DbaInstance
 
+      - name: Install SqlPackage
+        shell: pwsh
+        run: |
+          Import-Module ./dbatools.psd1 -Force
+          Install-DbaSqlPackage -Force -Verbose
+
       - name: Run PowerShell tests
         env:
           TENANTID: ${{secrets.TENANTID}}
@@ -219,6 +227,12 @@ jobs:
         working-directory: /tmp
         run: |
           gh repo clone dataplat/appveyor-lab
+
+      - name: Install SqlPackage
+        shell: pwsh
+        run: |
+          Import-Module ./dbatools.psd1 -Force
+          Install-DbaSqlPackage -Force -Verbose
 
       - name: Run macOS tests
         env:

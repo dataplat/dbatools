@@ -1,12 +1,9 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName   = "dbatools",
+    $ModuleName  = "dbatools",
     $CommandName = "New-DbaReplPublication",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
-
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
 
 
 Add-ReplicationLibrary

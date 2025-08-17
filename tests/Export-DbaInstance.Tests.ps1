@@ -3,7 +3,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 $global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
+    Context "Parameter validation" {
         It "Should only contain our specific parameters" {
             [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
             [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Credential', 'Path', 'NoRecovery', 'IncludeDbMasterKey', 'Exclude', 'BatchSeparator', 'ScriptingOption', 'NoPrefix', 'ExcludePassword', 'EnableException', 'Force', 'AzureCredential'
@@ -34,7 +34,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $random = Get-Random
         $dbName = "dbatoolsci_$random"
-        $exportDir = "C:\temp\dbatools_export_dbainstance"
+        $exportDir = "$($TestConfig.Temp)\dbatools_export_dbainstance"
         if (-not (Test-Path $exportDir -PathType Container)) {
             $null = New-Item -Path $exportDir -ItemType Container
         }
@@ -62,7 +62,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         New-DbaLogin -SqlInstance $testServer -Login "dbatools$random" -SecurePassword (ConvertTo-SecureString -String "dbatools1" -AsPlainText -Force) -Confirm:$false
 
         # backup device
-        $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "EXEC sp_addumpdevice 'disk', 'backupdevice$random', 'c:\temp\backupdevice$random.bak'"
+        $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "EXEC sp_addumpdevice 'disk', 'backupdevice$random', '$($TestConfig.Temp)\backupdevice$random.bak'"
 
         # linked server
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "EXEC sp_addlinkedserver @server = N'server$random', @srvproduct=N'SQL Server'"
@@ -79,7 +79,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         Backup-DbaDatabase -SqlInstance $testServer -Database $dbName -BackupDirectory $backupdir
 
         # server audit and spec
-        $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "CREATE SERVER AUDIT [Audit_$random] TO FILE (FILEPATH = N'c:\temp', MAXSIZE = 8 MB, MAX_ROLLOVER_FILES = 2, RESERVE_DISK_SPACE = OFF) WITH (QUEUE_DELAY = 1000, ON_FAILURE = CONTINUE)"
+        $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "CREATE SERVER AUDIT [Audit_$random] TO FILE (FILEPATH = N'$($TestConfig.Temp)', MAXSIZE = 8 MB, MAX_ROLLOVER_FILES = 2, RESERVE_DISK_SPACE = OFF) WITH (QUEUE_DELAY = 1000, ON_FAILURE = CONTINUE)"
 
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "CREATE SERVER AUDIT SPECIFICATION [Audit_Specification_$random] FOR SERVER AUDIT [Audit_$random] ADD (FAILED_LOGIN_GROUP) WITH (STATE=ON)"
 

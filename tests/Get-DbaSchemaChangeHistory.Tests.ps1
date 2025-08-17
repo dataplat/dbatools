@@ -2,7 +2,7 @@
 param(
     $ModuleName  = "dbatools",
     $CommandName = "Get-DbaSchemaChangeHistory",
-    $PSDefaultParameterValues = (Get-TestConfig).Defaults
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe $CommandName -Tag UnitTests {
@@ -26,6 +26,15 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     Context "Testing if schema changes are discovered" {
+        BeforeAll {
+            $testConfig = Get-TestConfig
+            $schemaChangeDb = Get-DbaDatabase -SqlInstance $testConfig.instance1 -Database tempdb
+            $schemaChangeDb.Query("CREATE TABLE dbatoolsci_schemachange (id int identity)")
+            $schemaChangeDb.Query("EXEC sp_rename 'dbatoolsci_schemachange', 'dbatoolsci_schemachange1'")
+
+            $schemaResults = Get-DbaSchemaChangeHistory -SqlInstance $testConfig.instance1 -Database tempdb
+        }
+
         AfterAll {
             $testConfig = Get-TestConfig
             $cleanupDb = Get-DbaDatabase -SqlInstance $testConfig.instance1 -Database tempdb
@@ -33,12 +42,6 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "notices dbatoolsci_schemachange changed" {
-            $testConfig = Get-TestConfig
-            $schemaChangeDb = Get-DbaDatabase -SqlInstance $testConfig.instance1 -Database tempdb
-            $schemaChangeDb.Query("CREATE TABLE dbatoolsci_schemachange (id int identity)")
-            $schemaChangeDb.Query("EXEC sp_rename 'dbatoolsci_schemachange', 'dbatoolsci_schemachange1'")
-
-            $schemaResults = Get-DbaSchemaChangeHistory -SqlInstance $testConfig.instance1 -Database tempdb
             $schemaResults.Object -match "dbatoolsci_schemachange" | Should -Be $true
         }
     }

@@ -2,14 +2,13 @@
 param(
     $ModuleName  = "dbatools",
     $CommandName = "Enable-DbaStartupProcedure",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command $CommandName
-            $hasParameters = $command.Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
                 "SqlInstance",
@@ -17,9 +16,6 @@ Describe $CommandName -Tag UnitTests {
                 "StartupProcedure",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }

@@ -1,12 +1,9 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName   = "dbatools",
+    $ModuleName  = "dbatools",
     $CommandName = "Start-DbaMigration",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
-
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
@@ -44,12 +41,6 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
@@ -125,7 +116,7 @@ Describe $CommandName -Tag IntegrationTests {
         # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
 
-    Context "When using backup restore method" {
+    Context  "When using backup restore method" {
         BeforeAll {
             $splatMigration = @{
                 Force         = $true
@@ -173,7 +164,8 @@ Describe $CommandName -Tag IntegrationTests {
                 Source        = $TestConfig.instance2
                 Destination   = $TestConfig.instance3
                 UseLastBackup = $true
-                Exclude       = "Logins", "SpConfigure", "SysDbUserObjects", "AgentServer", "CentralManagementServer", "ExtendedEvents", "PolicyManagement", "ResourceGovernor", "Endpoints", "ServerAuditSpecifications", "Audits", "LinkedServers", "SystemTriggers", "DataCollector", "DatabaseMail", "BackupDevices", "Credentials", "StartupProcedures"
+                # Excluding MasterCertificates to avoid this warning: [Copy-DbaDbCertificate] The SQL Server service account (NT Service\MSSQL$SQLINSTANCE2) for CLIENT\SQLInstance2 does not have access to
+                Exclude       = "Logins", "SpConfigure", "SysDbUserObjects", "AgentServer", "CentralManagementServer", "ExtendedEvents", "PolicyManagement", "ResourceGovernor", "Endpoints", "ServerAuditSpecifications", "Audits", "LinkedServers", "SystemTriggers", "DataCollector", "DatabaseMail", "BackupDevices", "Credentials", "StartupProcedures", "MasterCertificates"
             }
             $lastBackupResults = Start-DbaMigration @splatLastBackup
         }

@@ -5,12 +5,9 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -36,9 +33,6 @@ Describe $CommandName -Tag UnitTests {
                 "IgnoreDiffBackup",
                 "LsnSort"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
@@ -49,7 +43,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $DestBackupDir = "C:\Temp\backups"
+        $DestBackupDir = "$($TestConfig.Temp)\backups"
         if (-Not (Test-Path $DestBackupDir)) {
             New-Item -ItemType Container -Path $DestBackupDir
         }

@@ -1,12 +1,9 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName   = "dbatools",
+    $ModuleName  = "dbatools",
     $CommandName = "Set-DbaAgentServer",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
-
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
@@ -44,7 +41,6 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 Describe $CommandName -Tag IntegrationTests {
-
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
@@ -264,18 +260,22 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     It "set values outside of the expected ranges for MaximumHistoryRows" {
-        $results = Set-DbaAgentServer -SqlInstance $testServer -MaximumHistoryRows 1000000
+        $results = Set-DbaAgentServer -SqlInstance $testServer -MaximumHistoryRows 1000000 -WarningAction SilentlyContinue
+        $WarnVar | Should -Match "You must specify a MaximumHistoryRows value"
         $results | Should -BeNull
 
-        $results = Set-DbaAgentServer -SqlInstance $testServer -MaximumHistoryRows 1
+        $results = Set-DbaAgentServer -SqlInstance $testServer -MaximumHistoryRows 1 -WarningAction SilentlyContinue
+        $WarnVar | Should -Match "You must specify a MaximumHistoryRows value"
         $results | Should -BeNull
     }
 
     It "set values outside of the expected ranges for MaximumJobHistoryRows" {
-        $results = Set-DbaAgentServer -SqlInstance $testServer -MaximumJobHistoryRows 1000000
+        $results = Set-DbaAgentServer -SqlInstance $testServer -MaximumJobHistoryRows 1000000 -WarningAction SilentlyContinue
+        $WarnVar | Should -Match "You must specify a MaximumJobHistoryRows value"
         $results | Should -BeNull
 
-        $results = Set-DbaAgentServer -SqlInstance $testServer -MaximumJobHistoryRows 1
+        $results = Set-DbaAgentServer -SqlInstance $testServer -MaximumJobHistoryRows 1 -WarningAction SilentlyContinue
+        $WarnVar | Should -Match "You must specify a MaximumJobHistoryRows value"
         $results | Should -BeNull
     }
 

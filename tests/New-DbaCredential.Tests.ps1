@@ -1,12 +1,9 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName   = "dbatools",
+    $ModuleName  = "dbatools",
     $CommandName = "New-DbaCredential",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
-
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
 . "$PSScriptRoot\..\private\functions\Invoke-Command2.ps1"
 
 Describe $CommandName -Tag UnitTests {

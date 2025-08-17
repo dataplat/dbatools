@@ -32,8 +32,10 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        # For all the files that we want to clean up after the test, we create an array that we can iterate through at the end.
-        $allFiles = @()
+        # For all the backups that we want to clean up after the test, we create a directory that we can delete at the end.
+        # Other files can be written there as well, maybe we change the name of that variable later. But for now we focus on backups.
+        $backupPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+        $null = New-Item -Path $backupPath -ItemType Directory
 
         # Explain what needs to be set up for the test:
         # To test exporting credentials, we need to create test credentials with specific identities and passwords.
@@ -83,8 +85,8 @@ Describe $CommandName -Tag IntegrationTests {
             $credentialsToRemove.Drop()
         }
 
-        # Remove all test files.
-        Remove-Item -Path $allFiles -ErrorAction SilentlyContinue
+        # Remove the backup directory.
+        Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
 
         # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
@@ -93,7 +95,6 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $exportFile = Export-DbaCredential -SqlInstance $TestConfig.instance2
             $exportResults = Get-Content -Path $exportFile -Raw
-            $allFiles += $exportFile
         }
 
         It "Should have information" {
@@ -119,7 +120,6 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $null = Export-DbaCredential @splatExportSpecific
             $specificResults = Get-Content -Path $specificFilePath
-            $allFiles += $specificFilePath
         }
 
         It "Should have information" {
@@ -172,7 +172,6 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $null = Export-DbaCredential @splatExportNoPassword
             $excludePasswordResults = Get-Content -Path $excludePasswordFilePath
-            $allFiles += $excludePasswordFilePath
         }
 
         It "Should have information" {

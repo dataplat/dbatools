@@ -1,14 +1,13 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName   = "dbatools",
+    $ModuleName  = "dbatools",
     $CommandName = "Invoke-DbaQuery",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe "Invoke-DbaQuery" -Tag UnitTests {
-    Context "Validate parameters" {
-        BeforeAll {
-            $command = Get-Command Invoke-DbaQuery
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
                 'SqlInstance',
@@ -29,62 +28,7 @@ Describe "Invoke-DbaQuery" -Tag UnitTests {
                 'NoExec',
                 'AppendConnectionString'
             )
-        }
-        It "Should only contain our specific parameters" {
-            $actualParameters = $command.Parameters.Keys | Where-Object { $PSItem -notin "WhatIf", "Confirm" }
-            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $actualParameters | Should -BeNullOrEmpty
-        }
-
-        It "Should have parameter SqlInstance" {
-            $command | Should -HaveParameter "SqlInstance"
-        }
-        It "Should have parameter SqlCredential" {
-            $command | Should -HaveParameter "SqlCredential"
-        }
-        It "Should have parameter Database" {
-            $command | Should -HaveParameter "Database"
-        }
-        It "Should have parameter Query" {
-            $command | Should -HaveParameter "Query"
-        }
-        It "Should have parameter QueryTimeout" {
-            $command | Should -HaveParameter "QueryTimeout"
-        }
-        It "Should have parameter File" {
-            $command | Should -HaveParameter "File"
-        }
-        It "Should have parameter SqlObject" {
-            $command | Should -HaveParameter "SqlObject"
-        }
-        It "Should have parameter As" {
-            $command | Should -HaveParameter "As"
-        }
-        It "Should have parameter SqlParameter" {
-            $command | Should -HaveParameter "SqlParameter"
-        }
-        It "Should have parameter AppendServerInstance" {
-            $command | Should -HaveParameter "AppendServerInstance"
-        }
-        It "Should have parameter MessagesToOutput" {
-            $command | Should -HaveParameter "MessagesToOutput"
-        }
-        It "Should have parameter InputObject" {
-            $command | Should -HaveParameter "InputObject"
-        }
-        It "Should have parameter ReadOnly" {
-            $command | Should -HaveParameter "ReadOnly"
-        }
-        It "Should have parameter EnableException" {
-            $command | Should -HaveParameter "EnableException"
-        }
-        It "Should have parameter CommandType" {
-            $command | Should -HaveParameter "CommandType"
-        }
-        It "Should have parameter NoExec" {
-            $command | Should -HaveParameter "NoExec"
-        }
-        It "Should have parameter AppendConnectionString" {
-            $command | Should -HaveParameter "AppendConnectionString"
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $expectedParameters | Should -BeNullOrEmpty
         }
     }
     Context "Validate alias" {

@@ -5,9 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         It "Should have the expected parameters" {
@@ -40,7 +37,6 @@ Describe $CommandName -Tag IntegrationTests {
             # For all temp files that we want to clean up after the test, we create a directory that we can delete at the end.
             $tempPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
             $null = New-Item -Path $tempPath -ItemType Directory
-            $tempFiles = @()
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -52,7 +48,6 @@ Describe $CommandName -Tag IntegrationTests {
 
             # Remove the temp directory.
             Remove-Item -Path $tempPath -Recurse -ErrorAction SilentlyContinue
-            Remove-Item -Path $tempFiles -ErrorAction SilentlyContinue
 
             # As this is the last block we do not need to reset the $PSDefaultParameterValues.
         }
@@ -80,7 +75,6 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should not append when using NoPrefix (#7455)" {
             $tempFile = "$tempPath\msdb-$(Get-Random).txt"
-            $tempFiles += $tempFile
 
             $null = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database msdb | Select-Object -First 1 | Export-DbaScript -NoPrefix -FilePath $tempFile
             $linecount1 = (Get-Content $tempFile).Count

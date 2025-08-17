@@ -1,7 +1,7 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName   = "dbatools",
-    $CommandName = "Grant-DbaAgPermission",
+    $ModuleName  = "dbatools",
+    $CommandName = "Import-DbaBinaryFile",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
@@ -13,11 +13,16 @@ Describe $CommandName -Tag UnitTests {
             $expectedParameters += @(
                 "SqlInstance",
                 "SqlCredential",
-                "Login",
-                "AvailabilityGroup",
-                "Type",
-                "Permission",
+                "Database",
+                "Table",
+                "Schema",
+                "Statement",
+                "FileNameColumn",
+                "BinaryColumn",
+                "NoFileNameColumn",
                 "InputObject",
+                "FilePath",
+                "Path",
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty

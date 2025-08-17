@@ -6,7 +6,7 @@ param(
 )
 
 Describe $CommandName -Tag UnitTests {
-    Context "Validate parameters" {
+    Context "Parameter validation" {
         BeforeAll {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
@@ -43,7 +43,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
 
-        $DestBackupDir = "C:\Temp\GetBackups"
+        $DestBackupDir = "$($TestConfig.Temp)\GetBackups"
         if (-Not(Test-Path $DestBackupDir)) {
             $null = New-Item -Type Container -Path $DestBackupDir
         } else {
@@ -78,7 +78,7 @@ Describe $CommandName -Tag IntegrationTests {
         $db2 | Backup-DbaDatabase -Type Differential -BackupDirectory $DestBackupDir
         $db2 | Backup-DbaDatabase -Type Log -BackupDirectory $DestBackupDir
 
-        $DestBackupDirOla = "C:\Temp\GetBackupsOla"
+        $DestBackupDirOla = "$($TestConfig.Temp)\GetBackupsOla"
         if (-Not(Test-Path $DestBackupDirOla)) {
             $null = New-Item -Type Container -Path $DestBackupDirOla
             $null = New-Item -Type Container -Path $DestBackupDirOla\FULL

@@ -6,7 +6,7 @@ param(
 )
 
 Describe $CommandName -Tag UnitTests {
-    Context "Validate parameters" {
+    Context "Parameter validation" {
         It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
@@ -38,7 +38,7 @@ Describe $CommandName -Tag IntegrationTests {
             $dbname2 = "dbatoolsci_orphanedfile_$(Get-Random)"
             $db2 = New-DbaDatabase -SqlInstance $server -Name $dbname2
 
-            $tmpdir = "c:\temp\orphan_$(Get-Random)"
+            $tmpdir = "$($TestConfig.Temp)\orphan_$(Get-Random)"
             if (-not(Test-Path $tmpdir)) {
                 $null = New-Item -Path $tmpdir -ItemType Directory
             }
@@ -47,7 +47,7 @@ Describe $CommandName -Tag IntegrationTests {
             $tmpBackupPath = Join-Path $tmpdirInner "backup"
             $null = New-Item -Path $tmpBackupPath -ItemType Directory
 
-            $tmpdir2 = "c:\temp\orphan_$(Get-Random)"
+            $tmpdir2 = "$($TestConfig.Temp)\orphan_$(Get-Random)"
             if (-not(Test-Path $tmpdir2)) {
                 $null = New-Item -Path $tmpdir2 -ItemType Directory
             }

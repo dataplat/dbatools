@@ -5,9 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         It "Should have the expected parameters" {
@@ -42,8 +39,8 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Count | Should -Be 2
         }
 
-        foreach ($result in $results) {
-            It "Windows up time should be more than SQL Uptime for $($result.SqlServer)" {
+        It "Windows up time should be more than SQL Uptime for $($result.SqlServer)" {
+            foreach ($result in $results) {
                 $result.SqlUptime | Should -BeLessThan $result.WindowsUpTime
             }
         }
@@ -54,12 +51,14 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbaUptime -SqlInstance $TestConfig.instance1
         }
 
-        foreach ($result in $results) {
-            It "SqlStartTime should be a DbaDateTime for $($result.SqlServer)" {
+        It "SqlStartTime should be a DbaDateTime for $($result.SqlServer)" {
+            foreach ($result in $results) {
                 $result.SqlStartTime | Should -BeOfType DbaDateTime
             }
+        }
 
-            It "WindowsBootTime should be a DbaDateTime for $($result.SqlServer)" {
+        It "WindowsBootTime should be a DbaDateTime for $($result.SqlServer)" {
+            foreach ($result in $results) {
                 $result.WindowsBootTime | Should -BeOfType DbaDateTime
             }
         }

@@ -5,9 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         It "Should have the expected parameters" {
@@ -100,7 +97,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "parameters work" {
         It "returns server level permissions with -IncludeServerLevel" {
             $results = Get-DbaPermission -SqlInstance $server -IncludeServerLevel
-            $results | Where-Object Database -eq "" | Should -HaveCount -MoreThan 0
+            $results | Where-Object Database -eq "" | Should -Not -BeNullOrEmpty
         }
         It "returns no server level permissions without -IncludeServerLevel" {
             $results = Get-DbaPermission -SqlInstance $server
@@ -112,7 +109,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
         It "returns system object permissions without -ExcludeSystemObjects" {
             $results = Get-DbaPermission -SqlInstance $server
-            $results | Where-Object securable -like "sys.*" | Should -HaveCount -MoreThan 0
+            $results | Where-Object securable -like "sys.*" | Should -Not -BeNullOrEmpty
         }
         It "db object level permissions for a user are returned correctly" {
             $results = Get-DbaPermission -SqlInstance $server -Database $dbName -ExcludeSystemObjects | Where-Object { $PSItem.Grantee -eq $loginNameUser1 -and $PSItem.SecurableType -ne "SCHEMA" }

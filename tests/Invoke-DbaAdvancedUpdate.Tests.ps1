@@ -1,12 +1,9 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName   = "dbatools",
+    $ModuleName  = "dbatools",
     $CommandName = "Invoke-DbaAdvancedUpdate",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
-
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
 
 $exeDir = "C:\Temp\dbatools_$CommandName"
 
@@ -79,12 +76,12 @@ Describe $CommandName -Tag UnitTests {
                 ExitCode      = $null
                 Log           = $null
             },
-            [PSCustomObject]@ {
+            [PSCustomObject]@{
                 ComputerName  = $env:COMPUTERNAME
                 MajorVersion  = "2008"
                 Build         = "10.0.5500"
                 Architecture  = "x64"
-                TargetVersion = [PSCustomObject]@ {
+                TargetVersion = [PSCustomObject]@{
                     "SqlInstance" = $null
                     "Build" = "10.0.5794"
                     "NameLevel" = "2008"

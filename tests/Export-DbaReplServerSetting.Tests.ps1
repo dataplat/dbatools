@@ -5,11 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
-Add-ReplicationLibrary
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         It "Should have the expected parameters" {

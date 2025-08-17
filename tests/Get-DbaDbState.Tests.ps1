@@ -5,9 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         It "Should have the expected parameters" {
@@ -46,7 +43,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Database    = $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8
                 Confirm     = $false
             }
-            Get-DbaDatabase @splatRemoveDb | Remove-DbaDatabase -Confirm $false
+            Get-DbaDatabase @splatRemoveDb | Remove-DbaDatabase
 
             $server.Query("CREATE DATABASE $db1")
             $server.Query("CREATE DATABASE $db2; ALTER DATABASE $db2 SET OFFLINE WITH ROLLBACK IMMEDIATE")

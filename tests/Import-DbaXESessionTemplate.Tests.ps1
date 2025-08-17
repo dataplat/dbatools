@@ -1,7 +1,7 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName   = "dbatools",
-    $CommandName = "Get-DbaXESessionTemplate",
+    $ModuleName  = "dbatools",
+    $CommandName = "Import-DbaXESessionTemplate",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
@@ -11,9 +11,14 @@ Describe $CommandName -Tag UnitTests {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Name",
                 "Path",
-                "Pattern",
                 "Template",
+                "TargetFilePath",
+                "TargetFileMetadataPath",
+                "StartUpState",
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
@@ -21,6 +26,7 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
+# TODO: We are testing the wrong command here
 Describe $CommandName -Tag IntegrationTests {
     Context "Get Template Index" {
         It "returns good results with no missing information" {

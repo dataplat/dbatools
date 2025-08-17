@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName   = "dbatools",
+    $ModuleName  = "dbatools",
     $CommandName = "New-DbaDbMaskingConfig",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -38,8 +38,10 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        # For all the files that we want to clean up after the test, we create a list that we can iterate over at the end.
-        $filesToRemove = @()
+        # For all the backups that we want to clean up after the test, we create a directory that we can delete at the end.
+        # Other files can be written there as well, maybe we change the name of that variable later. But for now we focus on backups.
+        $backupPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+        $null = New-Item -Path $backupPath -ItemType Directory
 
         $maskingDbName = "dbatoolsci_maskconfig"
         $createPeopleTableSql = "CREATE TABLE [dbo].[people](
@@ -78,7 +80,9 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Cleanup all created objects.
         Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $maskingDbName -Confirm:$false
-        Remove-Item -Path $filesToRemove -Confirm:$false -ErrorAction SilentlyContinue
+
+        # Remove the backup directory.
+        Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
 
         # As this is the last block we do not need to reset the $PSDefaultParameterValues.
     }
@@ -88,12 +92,11 @@ Describe $CommandName -Tag IntegrationTests {
             $splatMaskingConfig = @{
                 SqlInstance = $TestConfig.instance1
                 Database    = $maskingDbName
-                Path        = "C:\temp"
+                Path        = $backupPath
             }
             $configResults = New-DbaDbMaskingConfig @splatMaskingConfig
-            $filesToRemove += $configResults.FullName
 
-            $configResults.Directory.Name | Should -Be "temp"
+            $configResults.Directory.Name | Should -Match $CommandName
             $configResults.FullName | Should -FileContentMatch $maskingDbName
             $configResults.FullName | Should -FileContentMatch "fname"
         }
@@ -103,10 +106,9 @@ Describe $CommandName -Tag IntegrationTests {
                 SqlInstance = $TestConfig.instance1
                 Database    = $maskingDbName
                 Table       = "DbConfigTest"
-                Path        = "C:\temp"
+                Path        = $backupPath
             }
             $configResults = New-DbaDbMaskingConfig @splatMaskingConfig
-            $filesToRemove += $configResults.FullName
             $jsonOutput = Get-Content $configResults.FullName | ConvertFrom-Json
 
             $jsonOutput.Tables.Columns[1].Name | Should -Be "IPAddress"

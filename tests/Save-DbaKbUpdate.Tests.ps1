@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName   = "dbatools",
+    $ModuleName  = "dbatools",
     $CommandName = "Save-DbaKbUpdate",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -29,12 +29,10 @@ Describe $CommandName -Tag IntegrationTests {
         # Create unique temp path for this test run to avoid conflicts
         $tempPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
         $null = New-Item -Path $tempPath -ItemType Directory -Force
-        $filesToRemove = @()
     }
 
     AfterAll {
         # Clean up all downloaded files and temp directory
-        Remove-Item -Path $filesToRemove -ErrorAction SilentlyContinue
         Remove-Item -Path $tempPath -Recurse -ErrorAction SilentlyContinue
     }
 

@@ -1,12 +1,9 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName   = "dbatools",
+    $ModuleName  = "dbatools",
     $CommandName = "Invoke-DbaDbMirroring",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
-
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
@@ -71,7 +68,7 @@ Describe $CommandName -Tag IntegrationTests {
             Database   = $dbName
             Confirm    = $false
             Force      = $true
-            SharedPath = "C:\temp"
+            SharedPath = $TestConfig.Temp
         }
         $results = Invoke-DbaDbMirroring @splatMirroring -WarningVariable WarnVar
         $WarnVar | Should -BeNullOrEmpty

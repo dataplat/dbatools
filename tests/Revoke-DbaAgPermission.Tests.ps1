@@ -1,12 +1,9 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName   = "dbatools",
+    $ModuleName  = "dbatools",
     $CommandName = "Revoke-DbaAgPermission",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
-
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {

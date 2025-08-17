@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName   = "dbatools",
+    $ModuleName  = "dbatools",
     $CommandName = "Invoke-DbatoolsRenameHelper",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -19,12 +19,6 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
-
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
@@ -80,8 +74,8 @@ function Get-DbaStub {
             $results.Count | Should -Be 4
         }
 
-        foreach ($result in $results) {
-            It "Returns the expected results" {
+        It "Returns the expected results" {
+            foreach ($result in $results) {
                 $result.Path | Should -Be $tempPath
                 $result.Pattern -in "Export-SqlUser", "Find-SqlDuplicateIndex", "UseLastBackups", "NoSystem" | Should -Be $true
                 $result.ReplacedWith -in "Export-DbaUser", "Find-DbaDbDuplicateIndex", "UseLastBackup", "ExcludeSystemLogins" | Should -Be $true

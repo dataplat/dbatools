@@ -69,7 +69,6 @@ function Remove-DbaAgentOperator {
         [string[]]$ExcludeOperator,
         [parameter(ValueFromPipeline, ParameterSetName = 'Pipeline', Mandatory = $true)]
         [Microsoft.SqlServer.Management.Smo.Agent.Operator[]]$InputObject,
-        [Parameter(ParameterSetName = 'Pipeline')]
         [switch]$EnableException
     )
 

@@ -5,12 +5,9 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -22,19 +19,13 @@ Describe $CommandName -Tag UnitTests {
                 "InputObject",
                 "EnableException"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 
     Context "Ensure array" {
-        BeforeAll {
-            $results = Get-Command -Name Get-DbaDbFile | Select-Object -ExpandProperty ScriptBlock
-        }
-
         It "Returns disks as an array" {
+            $results = Get-Command -Name Get-DbaDbFile | Select-Object -ExpandProperty ScriptBlock
             $results -match '\$disks \= \@\(' | Should -Be $true
         }
     }
@@ -42,21 +33,15 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     Context "Should return file information" {
-        BeforeAll {
-            $results = Get-DbaDbFile -SqlInstance $TestConfig.instance1
-        }
-
         It "Returns information about tempdb files" {
+            $results = Get-DbaDbFile -SqlInstance $TestConfig.instance1
             $results.Database -contains "tempdb" | Should -Be $true
         }
     }
 
     Context "Should return file information for only tempdb" {
-        BeforeAll {
-            $results = Get-DbaDbFile -SqlInstance $TestConfig.instance1 -Database tempdb
-        }
-
         It "Returns only tempdb files" {
+            $results = Get-DbaDbFile -SqlInstance $TestConfig.instance1 -Database tempdb
             foreach ($result in $results) {
                 $result.Database | Should -Be "tempdb"
             }
@@ -64,11 +49,8 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Should return file information for only tempdb primary filegroup" {
-        BeforeAll {
-            $results = Get-DbaDbFile -SqlInstance $TestConfig.instance1 -Database tempdb -FileGroup Primary
-        }
-
         It "Returns only tempdb files that are in Primary filegroup" {
+            $results = Get-DbaDbFile -SqlInstance $TestConfig.instance1 -Database tempdb -FileGroup Primary
             foreach ($result in $results) {
                 $result.Database | Should -Be "tempdb"
                 $result.FileGroupName | Should -Be "Primary"
@@ -77,11 +59,8 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Physical name is populated" {
-        BeforeAll {
-            $results = Get-DbaDbFile -SqlInstance $TestConfig.instance1 -Database master
-        }
-
         It "Master returns proper results" {
+            $results = Get-DbaDbFile -SqlInstance $TestConfig.instance1 -Database master
             $result = $results | Where-Object LogicalName -eq "master"
             $result.PhysicalName -match "master.mdf" | Should -Be $true
             $result = $results | Where-Object LogicalName -eq "mastlog"

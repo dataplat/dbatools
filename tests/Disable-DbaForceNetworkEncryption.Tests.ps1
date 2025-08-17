@@ -2,7 +2,7 @@
 param(
     $ModuleName  = "dbatools",
     $CommandName = "Disable-DbaForceNetworkEncryption",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe $CommandName -Tag UnitTests {
