@@ -5,9 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 $exeDir = "C:\Temp\dbatools_$CommandName"
 
 Describe $CommandName -Tag UnitTests {

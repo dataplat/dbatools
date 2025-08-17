@@ -4,9 +4,6 @@ param(
     $CommandName = "Stop-Function",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
-
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
 . "$PSScriptRoot\..\private\functions\flowcontrol\Stop-Function.ps1"
 
 Describe $CommandName -Tag UnitTests {

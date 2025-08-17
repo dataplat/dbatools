@@ -4,11 +4,6 @@ param(
     $CommandName = "Get-DbaHelpIndex",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
-
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
-Write-Host -Object "${script:instance2}" -ForegroundColor Cyan
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         It "Should have the expected parameters" {

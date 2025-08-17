@@ -4,9 +4,6 @@ param(
     $CommandName = "Test-DbaLoginPassword",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
-
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
 . "$PSScriptRoot\..\private\functions\Get-PasswordHash.ps1"
 
 Describe $CommandName -Tag UnitTests {

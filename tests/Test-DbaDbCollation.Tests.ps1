@@ -7,7 +7,7 @@ param(
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        It "Should only contain our specific parameters" {
+        It "Should have the expected parameters" {
             $command = Get-Command Test-DbaDbCollation
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(

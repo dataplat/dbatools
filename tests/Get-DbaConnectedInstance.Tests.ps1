@@ -5,13 +5,10 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         # fake tests, no parameters to validate
-        It "Should only contain our specific parameters" {
+        It "Should have the expected parameters" {
             $null | Should -BeNullOrEmpty
         }
     }
