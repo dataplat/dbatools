@@ -11,9 +11,14 @@ Describe $CommandName -Tag UnitTests {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Name",
                 "Path",
-                "Pattern",
                 "Template",
+                "TargetFilePath",
+                "TargetFileMetadataPath",
+                "StartUpState",
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty

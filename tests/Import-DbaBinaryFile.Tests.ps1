@@ -13,11 +13,16 @@ Describe $CommandName -Tag UnitTests {
             $expectedParameters += @(
                 "SqlInstance",
                 "SqlCredential",
-                "Login",
-                "AvailabilityGroup",
-                "Type",
-                "Permission",
+                "Database",
+                "Table",
+                "Schema",
+                "Statement",
+                "FileNameColumn",
+                "BinaryColumn",
+                "NoFileNameColumn",
                 "InputObject",
+                "FilePath",
+                "Path",
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
