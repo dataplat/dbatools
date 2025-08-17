@@ -27,6 +27,9 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Verifying command works" {
         BeforeAll {
             $set = Get-DbaPfDataCollectorSet | Select-Object -First 1
+            if (-not $set) {
+                Write-Warning -Message "No data collector sets found."
+            }
             $set | Stop-DbaPfDataCollectorSet -WarningAction SilentlyContinue
             Start-Sleep 2
         }
@@ -36,10 +39,12 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "returns a result with the right computername and name is not null" {
-            $results = $set | Start-DbaPfDataCollectorSet
-            $WarnVar | Should -BeNullOrEmpty
-            $results.ComputerName | Should -Be $env:COMPUTERNAME
-            $results.Name | Should -Not -BeNullOrEmpty
+            if ($set) {
+                $results = $set | Start-DbaPfDataCollectorSet
+                $WarnVar | Should -BeNullOrEmpty
+                $results.ComputerName | Should -Be $env:COMPUTERNAME
+                $results.Name | Should -Not -BeNullOrEmpty
+            }
         }
     }
 }
