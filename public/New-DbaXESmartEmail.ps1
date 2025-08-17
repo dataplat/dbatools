@@ -113,6 +113,7 @@ function New-DbaXESmartEmail {
     begin {
         $xedll = Get-XESmartTargetPath -EnableException:$EnableException
         if (-not $xedll) {
+            Stop-Function -Message "Could not find XESmartTarget.Core.dll. Use Install-DbaXESmartTarget to install the required libraries."
             return
         }
         try {
