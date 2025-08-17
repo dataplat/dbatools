@@ -1,11 +1,12 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName   = "dbatools",
+    $ModuleName  = "dbatools",
+    $CommandName = "Test-DbaDbCollation",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Describe "Test-DbaDbCollation" -Tag 'UnitTests' {
-    Context "Validate parameters" {
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
         It "Should only contain our specific parameters" {
             $command = Get-Command Test-DbaDbCollation
             $expectedParameters = $TestConfig.CommonParameters
@@ -23,7 +24,7 @@ Describe "Test-DbaDbCollation" -Tag 'UnitTests' {
     }
 }
 
-Describe "Test-DbaDbCollation Integration Tests" -Tags "IntegrationTests" {
+Describe $CommandName -Tags IntegrationTests {
     Context "testing collation of a single database" {
         BeforeAll {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.

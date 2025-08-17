@@ -3,7 +3,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 $global:TestConfig = Get-TestConfig
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
+    Context "Parameter validation" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
         [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'ExcludeUser', 'ExcludeSystem', 'Owner', 'Encrypted', 'Status', 'Access', 'RecoveryModel', 'NoFullBackup', 'NoFullBackupSince', 'NoLogBackup', 'NoLogBackupSince', 'EnableException', 'IncludeLastUsed', 'OnlyAccessible'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters

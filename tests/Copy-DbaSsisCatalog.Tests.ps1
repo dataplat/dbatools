@@ -1,8 +1,8 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
     $ModuleName  = "dbatools",
-    $CommandName = "Copy-DbaSsisCatalog", # Static command name for dbatools
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $CommandName = "Copy-DbaSsisCatalog",
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe $CommandName -Tag UnitTests {

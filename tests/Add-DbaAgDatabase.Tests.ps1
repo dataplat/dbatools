@@ -2,11 +2,6 @@
 param(
     $ModuleName  = "dbatools",
     $CommandName = "Add-DbaAgDatabase",
-    # $TestConfig has to be set outside of the tests by running: $TestConfig = Get-TestConfig
-    # This will set $TestConfig.Defaults with the parameter defaults, including:
-    # * Confirm = $false
-    # * WarningVariable = 'WarnVar'
-    # So you don't have to use -Confirm:$false and you can always use $WarnVar to test for warnings.
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 

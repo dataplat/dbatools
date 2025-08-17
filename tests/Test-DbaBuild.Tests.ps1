@@ -8,7 +8,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $PSDefaultParameterValues["*:WarningVariable"] = 'WarnVar'
     }
 
-    Context "Validate parameters" {
+    Context "Parameter validation" {
         It "Should only contain our specific parameters" {
             $params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
             $knownParameters = 'Build', 'MinimumBuild', 'MaxBehind', 'Latest', 'SqlInstance', 'SqlCredential', 'Update', 'Quiet', 'EnableException'

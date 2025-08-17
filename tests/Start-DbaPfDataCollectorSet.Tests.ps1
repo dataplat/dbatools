@@ -1,10 +1,9 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName   = "dbatools",
-    $CommandName = "Start-DbaPfDataCollectorSet"
+    $ModuleName  = "dbatools",
+    $CommandName = "Start-DbaPfDataCollectorSet",
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
-
-$global:TestConfig = Get-TestConfig
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
