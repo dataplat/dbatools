@@ -1,7 +1,7 @@
 
 -- SQL Server 2017 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: March 1, 2025
+-- Last Modified: August 12, 2025
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -56,8 +56,8 @@ IF NOT EXISTS (SELECT * WHERE CONVERT(varchar(128), SERVERPROPERTY('ProductVersi
 SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version Info];
 ------
 
--- SQL Server 2017 is out of mainstream from Microsoft
-
+-- SQL Server 2017 fell out of Mainstream Support on Oct 11, 2022
+-- SQL Server 2017 will fall out of Extended Support on Oct 12, 2027
 
 -- SQL Server 2017 Builds																		
 -- Build			Description							Release Date	URL to KB Article								
@@ -113,6 +113,11 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 14.0.3475.1		CU31 + GDR							9/10/2024		https://support.microsoft.com/en-us/topic/kb5042215-description-of-the-security-update-for-sql-server-2017-cu31-september-10-2024-55bba26f-548d-466c-9c48-edfb51a53a8a
 -- 14.0.3480.1		CU31 + GDR							10/8/2024		https://support.microsoft.com/en-us/topic/kb5046061-description-of-the-security-update-for-sql-server-2017-cu31-october-8-2024-af669e75-bc43-4679-bfbe-e153e679dd2f
 -- 14.0.3485.1		CU31 + GDR						   11/12/2024		https://support.microsoft.com/en-us/topic/kb5046858-description-of-the-security-update-for-sql-server-2017-cu31-november-12-2024-2984d3a5-0683-4f9b-9e6a-3888e67bd859
+-- 14.0.3500.1		CU31 + GDR							8/12/2025		https://support.microsoft.com/en-us/topic/kb5063759-description-of-the-security-update-for-sql-server-2017-cu31-august-12-2025-7f5dfab6-e32b-4af3-87fe-0e527b5729d3
+
+-- SQL Server 2017 Azure Connect Pack builds
+-- Azure Connect Feature Pack is optional and should be installed only if you intend to connect SQL Server with Azure SQL Managed Instance
+-- 14.0.3490.10		Azure Connect Pack					3/6/2025		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2017/azureconnect
 
 
 -- How to determine the version, edition and update level of SQL Server and its components 
@@ -493,22 +498,78 @@ FROM sys.dm_os_sys_memory WITH (NOLOCK) OPTION (RECOMPILE);
 
 
 
--- You can skip the next two queries if you know you don't have a clustered instance
+-- Consolidated memory information from SQL Server 2025 (Query 14) (Memory Snapshot)
+DECLARE @MaxServerMemoryMB AS DECIMAL (15,2);
+DECLARE @SQLServerMemoryUsageMB AS BIGINT;
+DECLARE @SQLServerLockedPagesAllocationMB AS BIGINT;
+DECLARE @TotalPhysicalMemoryMB AS DECIMAL (15,2);
+DECLARE @AvailablePhysicalMemoryMB AS BIGINT;
+DECLARE @SystemMemoryState AS NVARCHAR(50);
+DECLARE @SQLServerStartTime AS DATETIME; 
+DECLARE @SQLBufferPoolMemoryUsageMB AS DECIMAL (15,2);
+DECLARE @SQLSOSNODEMemoryUsageMB AS DECIMAL (15,2);
+DECLARE @AvgPageLifeExpectancy int = 0;
 
+-- Basic information about OS memory amounts and state  
+SELECT @TotalPhysicalMemoryMB = total_physical_memory_kb/1024, 
+		@AvailablePhysicalMemoryMB = available_physical_memory_kb/1024, 
+		@SystemMemoryState = system_memory_state_desc 
+FROM sys.dm_os_sys_memory WITH (NOLOCK) OPTION (RECOMPILE);
 
--- Get information about your cluster nodes and their status  (Query 14) (Cluster Node Properties)
--- (if your database server is in a failover cluster)
-SELECT NodeName, status_description, is_current_owner
-FROM sys.dm_os_cluster_nodes WITH (NOLOCK) OPTION (RECOMPILE);
+-- Get instance-level configuration value for instance  
+SELECT @MaxServerMemoryMB = CONVERT(INT, value)
+FROM sys.configurations WITH (NOLOCK)
+WHERE [name] = N'max server memory (MB)' OPTION (RECOMPILE);
+
+-- SQL Server Memory Usage and Locked Pages Allocations 
+SELECT @SQLServerMemoryUsageMB = physical_memory_in_use_kb/1024, 
+		@SQLServerLockedPagesAllocationMB = locked_page_allocations_kb/1024	   
+FROM sys.dm_os_process_memory WITH (NOLOCK) OPTION (RECOMPILE);
+
+-- SQL Server Start Time
+SELECT @SQLServerStartTime = sqlserver_start_time 
+FROM sys.dm_os_sys_info WITH (NOLOCK) OPTION (RECOMPILE);
+
+-- SQLBUFFERPOOL Memory Clerk Usage 
+SELECT @SQLBufferPoolMemoryUsageMB = 
+		CAST((SUM(mc.pages_kb)/1024.0) AS DECIMAL (15,2)) 
+FROM sys.dm_os_memory_clerks AS mc WITH (NOLOCK)
+WHERE mc.[type] = N'MEMORYCLERK_SQLBUFFERPOOL'
+GROUP BY mc.[type] OPTION (RECOMPILE);  
+
+-- MEMORYCLERK_SOSNODE Memory Clerk Usage 
+SELECT @SQLSOSNODEMemoryUsageMB = 
+		CAST((SUM(mc.pages_kb)/1024.0) AS DECIMAL (15,2)) 
+FROM sys.dm_os_memory_clerks AS mc WITH (NOLOCK)
+WHERE mc.[type] = N'MEMORYCLERK_SOSNODE'
+GROUP BY mc.[type] OPTION (RECOMPILE);  
+
+-- Page Life Expectancy (PLE) value for current instance  
+SET @AvgPageLifeExpectancy = (SELECT AVG(cntr_value) AS [PageLifeExpectancy]
+FROM sys.dm_os_performance_counters WITH (NOLOCK)
+WHERE [object_name] LIKE N'%Buffer Node%' -- Handles named instances
+AND counter_name = N'Page life expectancy'); 
+
+-- Return final results
+SELECT  @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version Info],
+		CONVERT(INT, @TotalPhysicalMemoryMB) AS [OS Physical Memory (MB)],		
+		@SystemMemoryState AS [System Memory State],
+		@AvailablePhysicalMemoryMB AS [OS Available Memory (MB)],
+		CONVERT(INT, @MaxServerMemoryMB) AS [SQL Server Max Server Memory (MB)],
+		CONVERT(DECIMAL(18,2),(@MaxServerMemoryMB/@TotalPhysicalMemoryMB) * 100.0) AS [Max Server Memory %],
+		@SQLServerMemoryUsageMB AS [SQL Server Total Memory Usage (MB)],
+		@AvgPageLifeExpectancy AS [Page Life Expectancy (Seconds)],
+		@SQLBufferPoolMemoryUsageMB AS [SQL Buffer Pool Memory Usage (MB)],
+		@SQLSOSNODEMemoryUsageMB AS [SOSNODE Memory Clerk Memory Usage (MB)],
+		@SQLServerLockedPagesAllocationMB AS [SQL Server Locked Pages Allocation (MB)],
+		@SQLServerStartTime AS [SQL Server Start Time];
+GO
 ------
+-- End of Query 14 ***************************************************
 
--- Knowing which node owns the cluster resources is critical
--- Especially when you are installing Windows or SQL Server updates
--- You will see no results if your instance is not clustered
 
--- Recommended hotfixes and updates for Windows Server 2012 R2-based failover clusters
--- https://bit.ly/1z5BfCw
 
+-- You can skip the next two queries if you know you don't have an AG
 
 -- Get information about any AlwaysOn AG cluster this instance is a part of (Query 15) (AlwaysOn AG Cluster)
 SELECT cluster_name, quorum_type_desc, quorum_state_desc
@@ -846,7 +907,7 @@ DROP TABLE IF EXISTS #IOWarningResults;
 
 
 -- Resource Governor Resource Pool information (Query 31) (RG Resource Pools)
-SELECT pool_id, [Name], statistics_start_time,
+SELECT pool_id, [name], statistics_start_time,
        min_memory_percent, max_memory_percent,  
        max_memory_kb/1024 AS [max_memory_mb],  
        used_memory_kb/1024 AS [used_memory_mb],   
@@ -1790,7 +1851,7 @@ ORDER BY index_advantage DESC OPTION (RECOMPILE);
 -- Note: This query could take some time on a busy instance
 SELECT TOP(25) OBJECT_NAME(objectid) AS [ObjectName], 
                cp.objtype, cp.usecounts, cp.size_in_bytes
-			   , qp.query_plan								-- Uncomment if you want the Query Plan
+--			   , qp.query_plan								-- Uncomment if you want the Query Plan
 FROM sys.dm_exec_cached_plans AS cp WITH (NOLOCK)
 CROSS APPLY sys.dm_exec_query_plan(cp.plan_handle) AS qp
 WHERE CAST(qp.query_plan AS NVARCHAR(MAX)) LIKE N'%MissingIndex%'
@@ -2012,7 +2073,7 @@ ON ios.[object_id] = i.[object_id]
 AND ios.index_id = i.index_id
 WHERE o.[object_id] > 100
 GROUP BY o.name, i.name, ios.index_id, ios.partition_number
-HAVING SUM(ios.page_lock_wait_in_ms)+ SUM(row_lock_wait_in_ms) > 0
+HAVING SUM(ios.page_lock_wait_in_ms) + SUM(row_lock_wait_in_ms) > 0
 ORDER BY total_lock_wait_in_ms DESC OPTION (RECOMPILE);
 ------
 
@@ -2080,20 +2141,6 @@ AND es.is_user_process = 1 OPTION (RECOMPILE);
 -- sys.dm_exec_input_buffer (Transact-SQL)
 -- https://bit.ly/2J5Hf9q
 
-
-
--- Get any resumable index rebuild operation information (Query 82) (Resumable Index Rebuild)
-SELECT OBJECT_NAME(iro.object_id) AS [Object Name], iro.index_id, iro.name AS [Index Name],
-       iro.sql_text, iro.last_max_dop_used, iro.partition_number, iro.state_desc, 
-       iro.start_time, CONVERT(decimal(15,2),iro.percent_complete) AS [Percent Complete], 
-	   iro.last_pause_time, iro.total_execution_time AS [Execution Min],
-       CONVERT(decimal(15,2),iro.total_execution_time * (100.0 - iro.percent_complete)/iro.percent_complete) AS [Approx Execution Min Left] 
-FROM  sys.index_resumable_operations AS iro WITH (NOLOCK)
-OPTION (RECOMPILE);
------- 
-
--- index_resumable_operations (Transact-SQL)
--- https://bit.ly/2pYSWqq
 
 
 -- Get database automatic tuning options (Query 83) (Automatic Tuning Options)
