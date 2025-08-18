@@ -7,8 +7,7 @@ param(
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeAll {
-            $TestConfig = Get-TestConfig
+        It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
@@ -40,9 +39,6 @@ Describe $CommandName -Tag UnitTests {
                 "IgnoreDiffBackup",
                 "ReuseSourceFolderStructure"
             )
-        }
-
-        It "Should have the expected parameters" {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }

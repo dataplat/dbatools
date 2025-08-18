@@ -1,4 +1,4 @@
-#Requires -Module @{ ModuleName = "Pester"; ModuleVersion = "5.0" }
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
     $ModuleName  = "dbatools",
     $CommandName = "Set-DbaAgReplica",

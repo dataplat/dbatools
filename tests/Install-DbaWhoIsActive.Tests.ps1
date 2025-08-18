@@ -4,7 +4,6 @@ param(
     $CommandName = "Install-DbaWhoIsActive",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
-. "$PSScriptRoot\..\private\functions\Invoke-TlsWebRequest"
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {

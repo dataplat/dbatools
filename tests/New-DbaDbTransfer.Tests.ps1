@@ -27,7 +27,7 @@ Describe $CommandName -Tag UnitTests {
                 "DataOnly",
                 "ScriptingOption"
             )
-            @(Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters) | Should -BeNullOrEmpty
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }

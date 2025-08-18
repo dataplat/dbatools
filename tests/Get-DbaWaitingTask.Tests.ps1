@@ -5,9 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-<#
-    Unit test is required for any command added
-#>
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         It "Should have the expected parameters" {
@@ -24,13 +21,6 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-<#
-    Integration test are custom to the command you are writing it for,
-        but something similar to below should be included if applicable.
-
-    The below examples are by no means set in stone and there are already
-        a number of test that you can pull examples from in how they are done.
-#>
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {

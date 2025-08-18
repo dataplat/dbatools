@@ -5,30 +5,31 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Describe "Invoke-DbaQuery" -Tag UnitTests {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
-                'SqlInstance',
-                'SqlCredential',
-                'Database',
-                'Query',
-                'QueryTimeout',
-                'File',
-                'SqlObject',
-                'As',
-                'SqlParameter',
-                'AppendServerInstance',
-                'MessagesToOutput',
-                'InputObject',
-                'ReadOnly',
-                'EnableException',
-                'CommandType',
-                'NoExec',
-                'AppendConnectionString'
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "Query",
+                "QueryTimeout",
+                "File",
+                "SqlObject",
+                "As",
+                "SqlParameter",
+                "AppendServerInstance",
+                "MessagesToOutput",
+                "InputObject",
+                "ReadOnly",
+                "EnableException",
+                "CommandType",
+                "NoExec",
+                "AppendConnectionString"
             )
-            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $expectedParameters | Should -BeNullOrEmpty
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
     Context "Validate alias" {
@@ -38,7 +39,7 @@ Describe "Invoke-DbaQuery" -Tag UnitTests {
     }
 }
 
-Describe "Invoke-DbaQuery" -Tag IntegrationTests {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $PSDefaultParameterValues['*-Dba*:EnableException'] = $true
 

@@ -6,28 +6,6 @@ param(
 )
 
 Describe $CommandName -Tag UnitTests {
-    BeforeAll {
-        # Prevent the functions from executing dangerous stuff and getting right responses where needed
-        Mock -CommandName Invoke-Program -MockWith { [PSCustomObject]@{ Successful = $true; ExitCode = [uint32[]]0 } } -ModuleName dbatools
-        Mock -CommandName Test-PendingReboot -MockWith { $false } -ModuleName dbatools
-        Mock -CommandName Test-ElevationRequirement -MockWith { $null } -ModuleName dbatools
-        Mock -CommandName Restart-Computer -MockWith { $null } -ModuleName dbatools
-        Mock -CommandName Register-RemoteSessionConfiguration -ModuleName dbatools -MockWith {
-            [PSCustomObject]@{ 'Name' = 'dbatoolsInstallSqlServerUpdate' ; Successful = $true ; Status = 'Dummy' }
-        }
-        Mock -CommandName Unregister-RemoteSessionConfiguration -ModuleName dbatools -MockWith {
-            [PSCustomObject]@{ 'Name' = 'dbatoolsInstallSqlServerUpdate' ; Successful = $true ; Status = 'Dummy' }
-        }
-        Mock -CommandName Set-DbaPrivilege -ModuleName dbatools -MockWith { }
-        Mock -CommandName Set-DbaTcpPort -ModuleName dbatools -MockWith { }
-        Mock -CommandName Restart-DbaService -ModuleName dbatools -MockWith { }
-        Mock -CommandName Get-DbaCmObject -ModuleName dbatools -MockWith { [PSCustomObject]@{NumberOfCores = 24 } } -ParameterFilter { $ClassName -eq 'Win32_processor' }
-        # mock searching for setup, proper file should always it find
-        Mock -CommandName Find-SqlInstanceSetup -MockWith {
-            Get-ChildItem $Path -Filter "dummy.exe" -ErrorAction Stop | Select-Object -ExpandProperty FullName -First 1
-        } -ModuleName dbatools
-        $null = New-Item -ItemType File -Path TestDrive:\dummy.exe -Force
-    }
     Context "Parameter validation" {
         It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
@@ -53,6 +31,32 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+}
+
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        # Prevent the functions from executing dangerous stuff and getting right responses where needed
+        Mock -CommandName Invoke-Program -MockWith { [PSCustomObject]@{ Successful = $true; ExitCode = [uint32[]]0 } } -ModuleName dbatools
+        Mock -CommandName Test-PendingReboot -MockWith { $false } -ModuleName dbatools
+        Mock -CommandName Test-ElevationRequirement -MockWith { $null } -ModuleName dbatools
+        Mock -CommandName Restart-Computer -MockWith { $null } -ModuleName dbatools
+        Mock -CommandName Register-RemoteSessionConfiguration -ModuleName dbatools -MockWith {
+            [PSCustomObject]@{ 'Name' = 'dbatoolsInstallSqlServerUpdate' ; Successful = $true ; Status = 'Dummy' }
+        }
+        Mock -CommandName Unregister-RemoteSessionConfiguration -ModuleName dbatools -MockWith {
+            [PSCustomObject]@{ 'Name' = 'dbatoolsInstallSqlServerUpdate' ; Successful = $true ; Status = 'Dummy' }
+        }
+        Mock -CommandName Set-DbaPrivilege -ModuleName dbatools -MockWith { }
+        Mock -CommandName Set-DbaTcpPort -ModuleName dbatools -MockWith { }
+        Mock -CommandName Restart-DbaService -ModuleName dbatools -MockWith { }
+        Mock -CommandName Get-DbaCmObject -ModuleName dbatools -MockWith { [PSCustomObject]@{NumberOfCores = 24 } } -ParameterFilter { $ClassName -eq 'Win32_processor' }
+        # mock searching for setup, proper file should always it find
+        Mock -CommandName Find-SqlInstanceSetup -MockWith {
+            Get-ChildItem $Path -Filter "dummy.exe" -ErrorAction Stop | Select-Object -ExpandProperty FullName -First 1
+        } -ModuleName dbatools
+        $null = New-Item -ItemType File -Path TestDrive:\dummy.exe -Force
+    }
+
     Context "SQL Server version 10.0 install validation" {
         It "Should install SQL 10.0" {
             $version = [version]'10.0'

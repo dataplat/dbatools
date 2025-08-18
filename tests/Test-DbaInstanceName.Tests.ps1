@@ -6,22 +6,16 @@ param(
 )
 
 Describe $CommandName -Tag UnitTests {
-    BeforeAll {
-        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-        $global:TestConfig = Get-TestConfig
-
-        $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
-        $expectedParameters = $TestConfig.CommonParameters
-        $expectedParameters += @(
-            "SqlInstance",
-            "SqlCredential",
-            "ExcludeSsrs",
-            "EnableException"
-        )
-    }
-
     Context "Parameter validation" {
         It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "SqlInstance",
+                "SqlCredential",
+                "ExcludeSsrs",
+                "EnableException"
+            )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
