@@ -5,22 +5,20 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Describe "$CommandName Unit Tests" -Tag "UnitTests" {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         It "Should have the expected parameters" {
-            $command = Get-Command $CommandName
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
-                'SqlInstance',
-                'Database',
-                'ExcludeDatabase',
-                'SqlCredential',
-                'RecoveryModel',
-                'EnableException'
+                "SqlInstance",
+                "Database",
+                "ExcludeDatabase",
+                "SqlCredential",
+                "RecoveryModel",
+                "EnableException"
             )
-            $actualParameters = $command.Parameters.Keys | Where-Object { $PSItem -notin "WhatIf", "Confirm" }
-            $actualParameters | Should -BeIn $expectedParameters
-            $expectedParameters | Should -BeIn $actualParameters
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }

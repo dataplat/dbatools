@@ -4,6 +4,7 @@ param(
     $CommandName = "Get-DbaHelpIndex",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
+
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         It "Should have the expected parameters" {

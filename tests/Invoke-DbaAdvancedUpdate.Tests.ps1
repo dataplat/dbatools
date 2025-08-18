@@ -5,9 +5,28 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-$exeDir = "C:\Temp\dbatools_$CommandName"
-
 Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "ComputerName",
+                "Action",
+                "Restart",
+                "Authentication",
+                "Credential",
+                "ExtractPath",
+                "ArgumentList",
+                "NoPendingRenameCheck",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+}
+
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         # Prevent the functions from executing dangerous stuff and getting right responses where needed
         Mock -CommandName Invoke-Program -MockWith { [PSCustomObject]@{ Successful = $true; ExitCode = [uint32[]]3010 } } -ModuleName dbatools
@@ -22,6 +41,7 @@ Describe $CommandName -Tag UnitTests {
         }
         Mock -CommandName Get-DbaDiskSpace -MockWith { [PSCustomObject]@{ Name = "C:\"; Free = 1 } } -ModuleName dbatools
     }
+
     BeforeEach {
         $singleAction = [PSCustomObject]@{
             ComputerName  = $env:COMPUTERNAME
@@ -75,7 +95,7 @@ Describe $CommandName -Tag UnitTests {
                 Notes         = @()
                 ExitCode      = $null
                 Log           = $null
-            },
+            }
             [PSCustomObject]@{
                 ComputerName  = $env:COMPUTERNAME
                 MajorVersion  = "2008"
@@ -104,24 +124,7 @@ Describe $CommandName -Tag UnitTests {
             }
         )
     }
-    Context "Parameter validation" {
-        It "Should have the expected parameters" {
-            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
-            $expectedParameters = $TestConfig.CommonParameters
-            $expectedParameters += @(
-                "ComputerName",
-                "Action",
-                "Restart",
-                "Authentication",
-                "Credential",
-                "ExtractPath",
-                "ArgumentList",
-                "NoPendingRenameCheck",
-                "EnableException"
-            )
-            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
-        }
-    }
+
     Context "Validate upgrades to a latest version" {
         It "Should mock-upgrade SQL2017\LAB0 to SP0CU12 thinking it's latest" {
             $result = Invoke-DbaAdvancedUpdate -ComputerName $env:COMPUTERNAME -EnableException -Action $singleAction -ArgumentList @("/foo")
@@ -173,6 +176,7 @@ Describe $CommandName -Tag UnitTests {
             $result.ExtractPath | Should -BeLike "*\dbatools_KB*Extract_*"
         }
     }
+
     Context "Negative tests" {
         It "fails when update execution has failed" {
             #override default mock

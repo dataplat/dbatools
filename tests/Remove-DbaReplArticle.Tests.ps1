@@ -6,13 +6,6 @@ param(
 )
 
 Describe $CommandName -Tag UnitTests {
-    BeforeAll {
-        Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-        $global:TestConfig = Get-TestConfig
-
-        Add-ReplicationLibrary
-    }
-
     Context "Parameter validation" {
         It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }

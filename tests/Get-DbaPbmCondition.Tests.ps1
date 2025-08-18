@@ -5,7 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         It "Should have the expected parameters" {
@@ -23,12 +22,6 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {

@@ -4,7 +4,6 @@ param(
     $CommandName = "Test-DbaLsnChain",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
-. "$PSScriptRoot\..\private\functions\Test-DbaLsnChain.ps1"
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {

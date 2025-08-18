@@ -5,8 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         It "Should have the expected parameters" {

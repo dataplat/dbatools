@@ -4,7 +4,6 @@ param(
     $CommandName = "Invoke-DbaDbCorruption",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
-. "$PSScriptRoot\..\private\functions\Invoke-DbaDbCorruption.ps1"
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
