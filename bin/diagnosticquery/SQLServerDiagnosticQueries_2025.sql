@@ -1,7 +1,7 @@
 
 -- SQL Server 2025 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: March 3, 2025
+-- Last Modified: August 4, 2025
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -58,7 +58,8 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 
 -- SQL Server 2025 Builds																		
 -- Build			Description							Release Date	URL to KB Article
--- None yet
+-- 17.0.700.9		CTP 2.0								5-19-2025
+-- 17.0.800.9		CTP 2.1								6-12-2025
 
 
 -- How to determine the version, edition and update level of SQL Server and its components 
@@ -435,20 +436,96 @@ FROM sys.dm_os_sys_memory WITH (NOLOCK) OPTION (RECOMPILE);
 -- https://bit.ly/2pcV0xq
 
 
+-- Consolidated memory information from SQL Server 2025 (Query 15) (Memory Snapshot)
+DECLARE @MaxServerMemoryMB AS DECIMAL (15,2);
+DECLARE @SQLServerMemoryUsageMB AS BIGINT;
+DECLARE @SQLServerLockedPagesAllocationMB AS BIGINT;
+DECLARE @TotalPhysicalMemoryMB AS DECIMAL (15,2);
+DECLARE @AvailablePhysicalMemoryMB AS BIGINT;
+DECLARE @SystemMemoryState AS NVARCHAR(50);
+DECLARE @SQLServerStartTime AS DATETIME; 
+DECLARE @SQLBufferPoolMemoryUsageMB AS DECIMAL (15,2);
+DECLARE @SQLSOSNODEMemoryUsageMB AS DECIMAL (15,2);
+DECLARE @AvgPageLifeExpectancy int = 0;
+DECLARE @LastMemoryHealthSeverityLevel tinyint = 0;
+DECLARE @PeakMemoryHealthSeverityLevel tinyint = 0;
+DECLARE @AllocationPotentialMemory int = 0;
+DECLARE @ReclaimableCacheMemory int = 0;
 
--- You can skip the next two queries if you know you don't have a clustered instance
+-- Basic information about OS memory amounts and state  
+SELECT @TotalPhysicalMemoryMB = total_physical_memory_kb/1024, 
+		@AvailablePhysicalMemoryMB = available_physical_memory_kb/1024, 
+		@SystemMemoryState = system_memory_state_desc 
+FROM sys.dm_os_sys_memory WITH (NOLOCK) OPTION (RECOMPILE);
 
+-- Get instance-level configuration value for instance  
+SELECT @MaxServerMemoryMB = CONVERT(INT, value)
+FROM sys.configurations WITH (NOLOCK)
+WHERE [name] = N'max server memory (MB)' OPTION (RECOMPILE);
 
--- Get information about your cluster nodes and their status  (Query 15) (Cluster Node Properties)
--- (if your database server is in a failover cluster)
-SELECT NodeName, status_description, is_current_owner
-FROM sys.dm_os_cluster_nodes WITH (NOLOCK) OPTION (RECOMPILE);
+-- SQL Server Memory Usage and Locked Pages Allocations 
+SELECT @SQLServerMemoryUsageMB = physical_memory_in_use_kb/1024, 
+		@SQLServerLockedPagesAllocationMB = locked_page_allocations_kb/1024	   
+FROM sys.dm_os_process_memory WITH (NOLOCK) OPTION (RECOMPILE);
+
+-- SQL Server Start Time
+SELECT @SQLServerStartTime = sqlserver_start_time 
+FROM sys.dm_os_sys_info WITH (NOLOCK) OPTION (RECOMPILE);
+
+-- SQLBUFFERPOOL Memory Clerk Usage 
+SELECT @SQLBufferPoolMemoryUsageMB = 
+		CAST((SUM(mc.pages_kb)/1024.0) AS DECIMAL (15,2)) 
+FROM sys.dm_os_memory_clerks AS mc WITH (NOLOCK)
+WHERE mc.[type] = N'MEMORYCLERK_SQLBUFFERPOOL'
+GROUP BY mc.[type] OPTION (RECOMPILE);  
+
+-- MEMORYCLERK_SOSNODE Memory Clerk Usage 
+SELECT @SQLSOSNODEMemoryUsageMB = 
+		CAST((SUM(mc.pages_kb)/1024.0) AS DECIMAL (15,2)) 
+FROM sys.dm_os_memory_clerks AS mc WITH (NOLOCK)
+WHERE mc.[type] = N'MEMORYCLERK_SOSNODE'
+GROUP BY mc.[type] OPTION (RECOMPILE);  
+
+-- Most recent and peak sys.dm_os_memory_health_history values
+SELECT TOP (1) @LastMemoryHealthSeverityLevel = mh.severity_level,
+               @PeakMemoryHealthSeverityLevel = (
+                                                SELECT MAX(severity_level)
+                                                FROM sys.dm_os_memory_health_history WITH (NOLOCK)
+                                                ),
+               @AllocationPotentialMemory = mh.allocation_potential_memory_mb,
+               @ReclaimableCacheMemory = mh.reclaimable_cache_memory_mb
+FROM sys.dm_os_memory_health_history AS mh WITH (NOLOCK)
+ORDER BY mh.snapshot_time DESC OPTION (RECOMPILE);
+
+-- Page Life Expectancy (PLE) value for current instance  
+SET @AvgPageLifeExpectancy = (SELECT AVG(cntr_value) AS [PageLifeExpectancy]
+FROM sys.dm_os_performance_counters WITH (NOLOCK)
+WHERE [object_name] LIKE N'%Buffer Node%' -- Handles named instances
+AND counter_name = N'Page life expectancy'); 
+
+-- Return final results
+SELECT  @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version Info],
+		CONVERT(INT, @TotalPhysicalMemoryMB) AS [OS Physical Memory (MB)],		
+		@SystemMemoryState AS [System Memory State],
+		@AvailablePhysicalMemoryMB AS [OS Available Memory (MB)],
+		CONVERT(INT, @MaxServerMemoryMB) AS [SQL Server Max Server Memory (MB)],
+		CONVERT(DECIMAL(18,2),(@MaxServerMemoryMB/@TotalPhysicalMemoryMB) * 100.0) AS [Max Server Memory %],
+		@LastMemoryHealthSeverityLevel AS [Last Internal Memory Health Level],
+		@PeakMemoryHealthSeverityLevel AS [Peak Internal Memory Health Level],
+		@AllocationPotentialMemory AS [Allocation Potential Memory (MB)],
+		@ReclaimableCacheMemory AS [Reclaimable Cache Memory (MB)],
+		@SQLServerMemoryUsageMB AS [SQL Server Total Memory Usage (MB)],
+		@AvgPageLifeExpectancy AS [Page Life Expectancy (Seconds)],
+		@SQLBufferPoolMemoryUsageMB AS [SQL Buffer Pool Memory Usage (MB)],
+		@SQLSOSNODEMemoryUsageMB AS [SOSNODE Memory Clerk Memory Usage (MB)],
+		@SQLServerLockedPagesAllocationMB AS [SQL Server Locked Pages Allocation (MB)],
+		@SQLServerStartTime AS [SQL Server Start Time];
+GO
 ------
+-- End of Query 15 ***************************************************
 
--- Knowing which node owns the cluster resources is critical
--- Especially when you are installing Windows or SQL Server updates
--- You will see no results if your instance is not clustered
 
+-- You can skip the next two queries if you know you don't have an AG
 
 -- Get information about any AlwaysOn AG cluster this instance is a part of (Query 16) (AlwaysOn AG Cluster)
 SELECT cluster_name, quorum_type_desc, quorum_state_desc
@@ -876,7 +953,7 @@ DROP TABLE IF EXISTS #IOWarningResults;
 
 
 -- Resource Governor Resource Pool information (Query 34) (RG Resource Pools)
-SELECT pool_id, [Name], statistics_start_time,
+SELECT pool_id, [name], statistics_start_time,
        min_memory_percent, max_memory_percent,  
        max_memory_kb/1024 AS [max_memory_mb],  
        used_memory_kb/1024 AS [used_memory_mb],   
@@ -1865,15 +1942,16 @@ ORDER BY [Difference] DESC, [Total Writes] DESC, [Total Reads] ASC OPTION (RECOM
 
 
 -- Missing Indexes for current database by Index Advantage  (Query 72) (Missing Indexes)
-SELECT CONVERT(decimal(18,2), migs.user_seeks * migs.avg_total_user_cost * (migs.avg_user_impact * 0.01)) AS [index_advantage], 
-CONVERT(nvarchar(25), migs.last_user_seek, 20) AS [last_user_seek],
+SELECT CONVERT(decimal(18,2), migs.user_seeks * migs.avg_total_user_cost * (migs.avg_user_impact * 0.01)) AS [Index Advantage], 
+CONVERT(nvarchar(25), migs.last_user_seek, 20) AS [Last User Seek],
 mid.[statement] AS [Database.Schema.Table], 
 COUNT(1) OVER(PARTITION BY mid.[statement]) AS [missing_indexes_for_table], 
 COUNT(1) OVER(PARTITION BY mid.[statement], mid.equality_columns) AS [similar_missing_indexes_for_table], 
 mid.equality_columns, mid.inequality_columns, mid.included_columns, migs.user_seeks, 
-CONVERT(decimal(18,2), migs.avg_total_user_cost) AS [avg_total_user_,cost], migs.avg_user_impact,
+CONVERT(decimal(18,2), migs.avg_total_user_cost) AS [Avg Total User Cost], 
+CONVERT(decimal(18,2), migs.avg_user_impact) AS [Avg User Impact],
 REPLACE(REPLACE(LEFT(st.[text], 512), CHAR(10),''), CHAR(13),'') AS [Short Query Text],
-OBJECT_NAME(mid.[object_id]) AS [Table Name], p.rows AS [Table Rows]
+OBJECT_NAME(mid.[object_id]) AS [Table Name], p.[rows] AS [Table Rows]
 FROM sys.dm_db_missing_index_groups AS mig WITH (NOLOCK) 
 INNER JOIN sys.dm_db_missing_index_group_stats_query AS migs WITH(NOLOCK) 
 ON mig.index_group_handle = migs.group_handle 
@@ -1884,7 +1962,7 @@ INNER JOIN sys.partitions AS p WITH (NOLOCK)
 ON p.[object_id] = mid.[object_id]
 WHERE mid.database_id = DB_ID()
 AND p.index_id < 2 
-ORDER BY index_advantage DESC OPTION (RECOMPILE);
+ORDER BY [Index Advantage] DESC OPTION (RECOMPILE);
 ------
 
 -- Look at index advantage, last user seek time, number of user seeks to help determine source and importance
@@ -1897,7 +1975,7 @@ ORDER BY index_advantage DESC OPTION (RECOMPILE);
 -- Note: This query could take some time on a busy instance
 SELECT TOP(25) OBJECT_NAME(objectid) AS [ObjectName], 
                cp.objtype, cp.usecounts, cp.size_in_bytes
-			   , qp.query_plan								-- Uncomment if you want the Query Plan
+--			   , qp.query_plan								-- Uncomment if you want the Query Plan
 FROM sys.dm_exec_cached_plans AS cp WITH (NOLOCK)
 CROSS APPLY sys.dm_exec_query_plan(cp.plan_handle) AS qp
 WHERE CAST(qp.query_plan AS NVARCHAR(MAX)) LIKE N'%MissingIndex%'
@@ -1911,10 +1989,10 @@ ORDER BY cp.usecounts DESC OPTION (RECOMPILE);
 
 -- Breaks down buffers used by current database by object (table, index) in the buffer cache  (Query 74) (Buffer Usage)
 -- Note: This query could take some time on a busy instance
-SELECT fg.name AS [Filegroup Name], SCHEMA_NAME(o.Schema_ID) AS [Schema Name],
+SELECT fg.name AS [Filegroup Name], SCHEMA_NAME(o.schema_id) AS [Schema Name],
 OBJECT_NAME(p.[object_id]) AS [Object Name], p.index_id, 
 CAST(COUNT(*)/128.0 AS DECIMAL(10, 2)) AS [Buffer size(MB)],  
-COUNT(*) AS [BufferCount], p.[Rows] AS [Row Count],
+COUNT(*) AS [BufferCount], p.[rows] AS [Row Count],
 p.data_compression_desc AS [Compression Type]
 FROM sys.allocation_units AS a WITH (NOLOCK)
 INNER JOIN sys.dm_os_buffer_descriptors AS b WITH (NOLOCK)
@@ -1932,8 +2010,8 @@ AND p.[object_id] > 100
 AND OBJECT_NAME(p.[object_id]) NOT LIKE N'plan_%'
 AND OBJECT_NAME(p.[object_id]) NOT LIKE N'sys%'
 AND OBJECT_NAME(p.[object_id]) NOT LIKE N'xml_index_nodes%'
-GROUP BY fg.name, o.Schema_ID, p.[object_id], p.index_id, 
-         p.data_compression_desc, p.[Rows]
+GROUP BY fg.name, o.schema_id, p.[object_id], p.index_id, 
+         p.data_compression_desc, p.[rows]
 ORDER BY [BufferCount] DESC OPTION (RECOMPILE);
 ------
 
@@ -1987,7 +2065,7 @@ ORDER BY OBJECT_NAME(t.[object_id]), p.index_id OPTION (RECOMPILE);
 
 
 -- When were Statistics last updated on all indexes?  (Query 77) (Statistics Update)
-SELECT SCHEMA_NAME(o.Schema_ID) + N'.' + o.[NAME] AS [Object Name], o.[type_desc] AS [Object Type],
+SELECT SCHEMA_NAME(o.schema_id) + N'.' + o.[name] AS [Object Name], o.[type_desc] AS [Object Type],
       i.[name] AS [Index Name], STATS_DATE(i.[object_id], i.index_id) AS [Statistics Date], 
       s.auto_created, s.no_recompute, s.user_created, s.is_incremental, s.is_temporary, 
 	  s.has_persisted_sample, sp.persisted_sample_percent, 
@@ -2041,7 +2119,7 @@ ORDER BY sp.modification_counter DESC, o.name OPTION (RECOMPILE);
 -- Get fragmentation info for all indexes above a certain size in the current database  (Query 79) (Index Fragmentation)
 -- Note: This query could take some time on a very large database
 SELECT DB_NAME(ps.database_id) AS [Database Name], SCHEMA_NAME(o.[schema_id]) AS [Schema Name],
-OBJECT_NAME(ps.OBJECT_ID) AS [Object Name], i.[name] AS [Index Name], ps.index_id, ps.index_type_desc, 
+OBJECT_NAME(ps.object_id) AS [Object Name], i.[name] AS [Index Name], ps.index_id, ps.index_type_desc, 
 CAST(ps.avg_fragmentation_in_percent AS DECIMAL (15,3)) AS [Avg Fragmentation in Pct], 
 ps.fragment_count, ps.page_count, i.fill_factor, i.has_filter, i.filter_definition, i.[allow_page_locks]
 FROM sys.dm_db_index_physical_stats(DB_ID(),NULL, NULL, NULL , N'LIMITED') AS ps
@@ -2119,7 +2197,7 @@ ON ios.[object_id] = i.[object_id]
 AND ios.index_id = i.index_id
 WHERE o.[object_id] > 100
 GROUP BY o.name, i.name, ios.index_id, ios.partition_number
-HAVING SUM(ios.page_lock_wait_in_ms)+ SUM(row_lock_wait_in_ms) > 0
+HAVING SUM(ios.page_lock_wait_in_ms) + SUM(row_lock_wait_in_ms) > 0
 ORDER BY total_lock_wait_in_ms DESC OPTION (RECOMPILE);
 ------
 
@@ -2212,19 +2290,7 @@ AND es.is_user_process = 1 OPTION (RECOMPILE);
 
 
 
--- Get any resumable index rebuild operation information (Query 87) (Resumable Index Rebuild)
-SELECT OBJECT_NAME(iro.object_id) AS [Object Name], iro.index_id, iro.name AS [Index Name],
-       iro.sql_text, iro.last_max_dop_used, iro.partition_number, iro.state_desc, 
-	   iro.start_time, iro.percent_complete
-FROM  sys.index_resumable_operations AS iro WITH (NOLOCK)
-OPTION (RECOMPILE);
------- 
-
--- index_resumable_operations (Transact-SQL)
--- https://bit.ly/2pYSWqq
-
-
--- Get database automatic tuning options (Query 88) (Automatic Tuning Options)
+-- Get database automatic tuning options (Query 87) (Automatic Tuning Options)
 SELECT [name], desired_state_desc, actual_state_desc, reason_desc
 FROM sys.database_automatic_tuning_options WITH (NOLOCK)
 OPTION (RECOMPILE);
@@ -2234,7 +2300,7 @@ OPTION (RECOMPILE);
 -- https://bit.ly/2FHhLkL
 
 
--- Is Optimized Locking enabled for the current database? (Query 89) (Optimized Locking)
+-- Is Optimized Locking enabled for the current database? (Query 88) (Optimized Locking)
 SELECT DATABASEPROPERTYEX(DB_NAME(), 'IsOptimizedLockingOn') AS [Is Optimized Locking On];
 ------ 
 
@@ -2247,7 +2313,7 @@ SELECT DATABASEPROPERTYEX(DB_NAME(), 'IsOptimizedLockingOn') AS [Is Optimized Lo
 -- https://learn.microsoft.com/en-us/sql/relational-databases/performance/optimized-locking?view=azuresqldb-current
 
 
--- Look at recent Full backups for the current database (Query 90) (Recent Full Backups)
+-- Look at recent Full backups for the current database (Query 89) (Recent Full Backups)
 SELECT TOP (30) bs.machine_name AS [Machine Name], bs.server_name AS [Server Name], 
 bs.database_name AS [Database Name], bs.recovery_model,
 CONVERT (BIGINT, bs.backup_size / 1048576 ) AS [Uncompressed Backup Size (MB)],
