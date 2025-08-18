@@ -18,7 +18,6 @@ Describe $CommandName -Tag UnitTests {
                 "Id",
                 "EnableException"
             )
-
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }

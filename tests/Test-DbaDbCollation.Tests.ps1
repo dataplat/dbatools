@@ -8,18 +8,16 @@ param(
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         It "Should have the expected parameters" {
-            $command = Get-Command Test-DbaDbCollation
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
-                'SqlInstance',
-                'SqlCredential',
-                'Database',
-                'ExcludeDatabase',
-                'EnableException'
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "EnableException"
             )
-            $actualParameters = $command.Parameters.Keys | Where-Object { $PSItem -notin "WhatIf", "Confirm" }
-            $actualParameters | Should -BeIn $expectedParameters
-            $expectedParameters | Should -BeIn $actualParameters
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }

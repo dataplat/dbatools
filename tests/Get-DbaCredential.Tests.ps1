@@ -5,8 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-. "$PSScriptRoot\..\private\functions\Invoke-Command2.ps1"
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         It "Should have the expected parameters" {

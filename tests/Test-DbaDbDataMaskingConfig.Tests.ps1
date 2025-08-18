@@ -14,7 +14,6 @@ Describe $CommandName -Tag UnitTests {
                 "FilePath",
                 "EnableException"
             )
-
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }

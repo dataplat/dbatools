@@ -5,12 +5,9 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-$global:TestConfig = Get-TestConfig
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         It "Should have the expected parameters" {
-            #$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(

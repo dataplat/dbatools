@@ -5,15 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-<#
-    The below statement stays in for every test you build.
-#>
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
-
-<#
-    Unit test is required for any command added
-#>
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         It "Should have the expected parameters" {

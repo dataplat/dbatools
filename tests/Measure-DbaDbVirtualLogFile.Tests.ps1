@@ -5,9 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-<#
-    Unit test is required for any command added
-#>
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         It "Should have the expected parameters" {
@@ -25,7 +22,7 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-# Get-DbaNoun
+
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.

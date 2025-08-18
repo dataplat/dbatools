@@ -4,7 +4,6 @@ param(
     $CommandName = "Test-DbaLoginPassword",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
-. "$PSScriptRoot\..\private\functions\Get-PasswordHash.ps1"
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {

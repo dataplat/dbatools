@@ -5,8 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-# TODO: This test needs a lot of care
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         It "Should have the expected parameters" {
@@ -30,7 +28,7 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
-
+    # TODO: This test needs a lot of care
     BeforeAll {
         $login = "winLogin"
         $password = "MyV3ry$ecur3P@ssw0rd"
