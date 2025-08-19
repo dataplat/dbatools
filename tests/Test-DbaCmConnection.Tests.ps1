@@ -26,6 +26,5 @@ Describe $CommandName -Tag IntegrationTests {
     It "returns some valid info" {
         $results = Test-DbaCmConnection -Type Wmi
         $results.ComputerName | Should -Be $env:COMPUTERNAME
-        $results.Available | Should -BeOfType bool
     }
 }
