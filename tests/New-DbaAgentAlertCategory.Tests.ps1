@@ -23,6 +23,16 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # TODO: This can be removed if we are sure that no other tests are not removing the EnableException parameter.
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
     Context "New Agent Alert Category is added properly" {
         AfterAll {
             $null = Get-DbaAgentAlertCategory -SqlInstance $TestConfig.instance2 -Category CategoryTest1, CategoryTest2 | Remove-DbaAgentAlertCategory

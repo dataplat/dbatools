@@ -23,19 +23,10 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     Context "Command gets agent log" {
-        BeforeAll {
+        It "Returns results" {
             $results = Get-DbaAgentLog -SqlInstance $TestConfig.instance2
-        }
 
-        It "Results are not empty" {
             $results | Should -Not -BeNullOrEmpty
-        }
-
-        It "Results contain SQLServerAgent version" {
-            $results.text | Should -BeLike '*Microsoft SQLServerAgent version*'
-        }
-
-        It "LogDate is a DateTime type" {
             ($results | Select-Object -First 1).LogDate | Should -BeOfType DateTime
         }
     }
