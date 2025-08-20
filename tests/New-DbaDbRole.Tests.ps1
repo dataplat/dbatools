@@ -27,18 +27,26 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $instance = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $dbname = "dbatoolsci_adddb_newrole"
         $instance.Query("create database $dbname")
         $roleExecutor = "dbExecuter"
         $roleSPAccess = "dbSPAccess"
         $owner = 'dbo'
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     AfterEach {
         $null = Remove-DbaDbRole -SqlInstance $instance -Database $dbname -Role $roleExecutor, $roleSPAccess -Confirm:$false
     }
     AfterAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $null = Remove-DbaDatabase -SqlInstance $instance -Database $dbname -Confirm:$false
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Functionality" {

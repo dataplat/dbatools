@@ -34,8 +34,12 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         # TODO: Should not be needed as the default trace should always be enabled
         Set-DbaSpConfigure -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -Name DefaultTraceEnabled -Value $true -WarningAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Verifying command output" {

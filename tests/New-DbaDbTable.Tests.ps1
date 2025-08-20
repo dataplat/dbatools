@@ -77,6 +77,8 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $dbname = "dbatoolsscidb_$(Get-Random)"
         $null = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbname
         $tablename = "dbatoolssci_$(Get-Random)"
@@ -84,11 +86,19 @@ Describe $CommandName -Tag IntegrationTests {
         $tablename3 = "dbatoolssci2_$(Get-Random)"
         $tablename4 = "dbatoolssci2_$(Get-Random)"
         $tablename5 = "dbatoolssci2_$(Get-Random)"
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+
     AfterAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database $dbname -Query "drop table $tablename, $tablename2"
         $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname -Confirm:$false
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+
     Context "Should create the table" {
         BeforeEach {
             $map = @{

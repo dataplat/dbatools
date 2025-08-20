@@ -27,6 +27,8 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         Get-DbaProcess -SqlInstance $TestConfig.instance2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $db1 = "dbatoolsci_RestoreSnap1"
@@ -43,17 +45,25 @@ Describe $CommandName -Tag IntegrationTests {
         $server.Query("INSERT INTO [$db1].[dbo].[Example] values ('sample')")
         $server.Query("CREATE TABLE [$db2].[dbo].[Example] (id int identity, name nvarchar(max))")
         $server.Query("INSERT INTO [$db2].[dbo].[Example] values ('sample')")
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+
     AfterAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         Remove-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -Database $db1, $db2 -Confirm:$false -ErrorAction SilentlyContinue
         Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance2 -Database $db1, $db2 -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+
     Context "Parameters validation" {
         It "Stops if no Database or Snapshot" {
-            { Restore-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -EnableException } | Should -Throw "You must specify"
+            { Restore-DbaDbSnapshot -SqlInstance $TestConfig.instance2 -EnableException } | Should -Throw "You must specify*"
         }
         It "Is nice by default" {
-            { Restore-DbaDbSnapshot -SqlInstance $TestConfig.instance2 *> $null } | Should -Not -Throw "You must specify"
+            { Restore-DbaDbSnapshot -SqlInstance $TestConfig.instance2 *> $null } | Should -Not -Throw "You must specify*"
         }
     }
     Context "Operations on snapshots" {

@@ -25,6 +25,8 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $random = Get-Random
         $instance2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $instance3 = Connect-DbaInstance -SqlInstance $TestConfig.instance3
@@ -55,11 +57,18 @@ Describe $CommandName -Tag IntegrationTests {
         $linkedServerLogin5 = New-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin5Name -RemoteUser $remoteLoginName -RemoteUserPassword $securePassword
         $linkedServerLogin6 = New-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin6Name -RemoteUser $remoteLoginName -RemoteUserPassword $securePassword
         $linkedServerLogin7 = New-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name, $linkedServer2Name -LocalLogin $localLogin7Name -RemoteUser $remoteLoginName -RemoteUserPassword $securePassword
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
+
     AfterAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         Remove-DbaLinkedServer -SqlInstance $instance2 -LinkedServer $linkedServer1Name, $linkedServer2Name -Confirm:$false -Force
         Remove-DbaLogin -SqlInstance $instance2 -Login $localLogin1Name, $localLogin2Name, $localLogin3Name, $localLogin4Name, $localLogin5Name, $localLogin6Name, $localLogin7Name -Confirm:$false
         Remove-DbaLogin -SqlInstance $instance3 -Login $remoteLoginName -Confirm:$false
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "ensure command works" {

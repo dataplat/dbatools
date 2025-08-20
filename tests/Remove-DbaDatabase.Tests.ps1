@@ -25,7 +25,11 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Should not munge system databases." {
         BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
             $dbs = @( "master", "model", "tempdb", "msdb" )
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should not attempt to remove system databases." {
