@@ -13,6 +13,7 @@ Describe $CommandName -Tag UnitTests {
             $expectedParameters += @(
                 "Source",
                 "SourceSqlCredential",
+                "Destination",
                 "DestinationSqlCredential",
                 "Login",
                 "ExcludeLogin",
@@ -136,16 +137,16 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "ExcludeSystemLogins Parameter" {
-        $results = Copy-DbaLogin -Source $TestConfig.instance1 -Destination $TestConfig.instance2 -ExcludeSystemLogins
         It "Should say skipped" {
+            $results = Copy-DbaLogin -Source $TestConfig.instance1 -Destination $TestConfig.instance2 -ExcludeSystemLogins
             $results.Status.Contains('Skipped') | Should -Be $true
             $results.Notes.Contains('System login') | Should -Be $true
         }
     }
 
     Context "Supports pipe" {
-        $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login tester | Copy-DbaLogin -Destination $TestConfig.instance2 -Force
         It "migrates the one tester login" {
+            $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 -Login tester | Copy-DbaLogin -Destination $TestConfig.instance2 -Force
             $results.Name | Should -Be "tester"
             $results.Status | Should -Be "Successful"
         }
